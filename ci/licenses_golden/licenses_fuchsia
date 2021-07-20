@@ -1,4 +1,4 @@
-Signature: 43f19d43fe1abfc6b7aa1367f48d7338
+Signature: 13faa47df9515b21ec21574873c103ab
 
 UNUSED LICENSES:
 
@@ -3419,6 +3419,7 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/codegen_common.dart + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/codegen_common.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/wire_format.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/reader.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/diagnostic_config.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/diagnostic_data.dart
@@ -3441,6 +3442,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/inotify.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/profile.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/allocator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/flatland.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/screenshot.fidl
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/inotify.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/barrier.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/bridge.h
