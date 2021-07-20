@@ -26,11 +26,6 @@ const uint64_t kValueMask = 0x000ffffffff;
  */
 const uint64_t kUnicodePlane = 0x00000000000;
 
-/**
- * The plane value for the private keys defined by the iOS embedding.
- */
-const uint64_t kIosPlane = 0x01300000000;
-
 // Maps iOS-specific key code values representing PhysicalKeyboardKey.
 //
 // iOS doesn't provide a scan code, but a virtual keycode to represent a physical key.
