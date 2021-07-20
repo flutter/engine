@@ -22,8 +22,6 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
  public:
   ~EngineLayer() override;
 
-  size_t GetAllocationSize() const override;
-
   static void MakeRetained(Dart_Handle dart_handle,
                            std::shared_ptr<flutter::ContainerLayer> layer) {
     auto engine_layer = fml::MakeRefCounted<EngineLayer>(layer);
@@ -31,6 +29,8 @@ class EngineLayer : public RefCountedDartWrappable<EngineLayer> {
   }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
+
+  void dispose();
 
   std::shared_ptr<flutter::ContainerLayer> Layer() const { return layer_; }
 

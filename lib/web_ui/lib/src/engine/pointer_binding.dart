@@ -8,10 +8,13 @@ import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../engine.dart' show registerHotRestartListener;
+import 'browser_detection.dart';
+import 'platform_dispatcher.dart';
 import 'pointer_converter.dart';
+import 'semantics.dart';
 
 /// Set this flag to true to see all the fired events in the console.
 const bool _debugLogPointerEvents = false;
@@ -679,7 +682,7 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (html.Touch touch in event.changedTouches!) {
-        final nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (!nowPressed) {
           _pressTouch(touch.identifier!);
           _convertEventToPointerData(
@@ -699,7 +702,7 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (html.Touch touch in event.changedTouches!) {
-        final nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _convertEventToPointerData(
             data: pointerData,
@@ -720,7 +723,7 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (html.Touch touch in event.changedTouches!) {
-        final nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _unpressTouch(touch.identifier!);
           _convertEventToPointerData(
@@ -739,7 +742,7 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (html.Touch touch in event.changedTouches!) {
-        final nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _unpressTouch(touch.identifier!);
           _convertEventToPointerData(

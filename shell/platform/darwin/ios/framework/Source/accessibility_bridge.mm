@@ -200,30 +200,35 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     view_controller_.view.accessibilityElements = nil;
   }
 
-  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_.get() allKeys]];
-  if (root)
+  NSMutableArray<NSNumber*>* doomed_uids = [NSMutableArray arrayWithArray:[objects_ allKeys]];
+  if (root) {
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
+  }
   [objects_ removeObjectsForKeys:doomed_uids];
 
-  layoutChanged = layoutChanged || [doomed_uids count] > 0;
+  for (SemanticsObject* object in [objects_ allValues]) {
+    [object accessibilityBridgeDidFinishUpdate];
+  }
 
-  if (routeChanged) {
-    if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
+  if (!ios_delegate_->IsFlutterViewControllerPresentingModalViewController(view_controller_)) {
+    layoutChanged = layoutChanged || [doomed_uids count] > 0;
+
+    if (routeChanged) {
       NSString* routeName = [lastAdded routeName];
       ios_delegate_->PostAccessibilityNotification(UIAccessibilityScreenChangedNotification,
                                                    routeName);
     }
-  }
 
-  if (layoutChanged) {
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
-                                                 FindNextFocusableIfNecessary());
-  } else if (scrollOccured) {
-    // TODO(chunhtai): figure out what string to use for notification. At this
-    // point, it is guarantee the previous focused object is still in the tree
-    // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
-    ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
-                                                 FindNextFocusableIfNecessary());
+    if (layoutChanged) {
+      ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
+                                                   FindNextFocusableIfNecessary());
+    } else if (scrollOccured) {
+      // TODO(chunhtai): figure out what string to use for notification. At this
+      // point, it is guarantee the previous focused object is still in the tree
+      // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
+      ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
+                                                   FindNextFocusableIfNecessary());
+    }
   }
 }
 
@@ -233,7 +238,7 @@ void AccessibilityBridge::DispatchSemanticsAction(int32_t uid, flutter::Semantic
 
 void AccessibilityBridge::DispatchSemanticsAction(int32_t uid,
                                                   flutter::SemanticsAction action,
-                                                  std::vector<uint8_t> args) {
+                                                  fml::MallocMapping args) {
   platform_view_->DispatchSemanticsAction(uid, action, std::move(args));
 }
 
@@ -257,9 +262,11 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[TextInputSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasToggledState) ||
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
+    return [[[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
+  } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
     SemanticsObject* delegateObject =
         [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
-    return (SemanticsObject*)[[[FlutterSwitchSemanticsObject alloc]
+    return (SemanticsObject*)[[[FlutterScrollableSemanticsObject alloc]
         initWithSemanticsObject:delegateObject] autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];

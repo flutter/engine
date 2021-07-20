@@ -11,7 +11,6 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
-#include "third_party/skia/include/gpu/GrContextOptions.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
 namespace flutter {
@@ -50,7 +49,7 @@ void PlatformView::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
                                            SemanticsAction action,
-                                           std::vector<uint8_t> args) {
+                                           fml::MallocMapping args) {
   delegate_.OnPlatformViewDispatchSemanticsAction(id, action, std::move(args));
 }
 

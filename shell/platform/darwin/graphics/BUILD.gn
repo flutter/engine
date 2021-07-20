@@ -20,10 +20,11 @@ source_set("graphics") {
   deps = [
     "//flutter/common/graphics",
     "//flutter/fml",
+    "//flutter/shell/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
   ]
 
-  libs = [ "CoreVideo.framework" ]
+  frameworks = [ "CoreVideo.framework" ]
 
   public_deps = [ "//third_party/skia" ]
 

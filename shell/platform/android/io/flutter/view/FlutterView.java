@@ -8,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Insets;
@@ -42,8 +41,9 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
 import io.flutter.Log;
 import io.flutter.app.FlutterPluginRegistry;
-import io.flutter.embedding.android.AndroidKeyProcessor;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.android.KeyChannelResponder;
+import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
@@ -64,6 +64,7 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.util.ViewUtils;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,6 +91,8 @@ public class FlutterView extends SurfaceView
   public interface Provider {
     /**
      * Returns a reference to the Flutter view maintained by this object. This may be {@code null}.
+     *
+     * @return a reference to the Flutter view maintained by this object.
      */
     FlutterView getFlutterView();
   }
@@ -127,7 +130,7 @@ public class FlutterView extends SurfaceView
   private final TextInputPlugin mTextInputPlugin;
   private final LocalizationPlugin mLocalizationPlugin;
   private final MouseCursorPlugin mMouseCursorPlugin;
-  private final AndroidKeyProcessor androidKeyProcessor;
+  private final KeyboardManager mKeyboardManager;
   private final AndroidTouchProcessor androidTouchProcessor;
   private AccessibilityBridge mAccessibilityNodeProvider;
   private final SurfaceHolder.Callback mSurfaceCallback;
@@ -159,7 +162,7 @@ public class FlutterView extends SurfaceView
   public FlutterView(Context context, AttributeSet attrs, FlutterNativeView nativeView) {
     super(context, attrs);
 
-    Activity activity = getActivity(getContext());
+    Activity activity = ViewUtils.getActivity(getContext());
     if (activity == null) {
       throw new IllegalArgumentException("Bad context");
     }
@@ -228,13 +231,18 @@ public class FlutterView extends SurfaceView
         mNativeView.getPluginRegistry().getPlatformViewsController();
     mTextInputPlugin =
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
+    mKeyboardManager =
+        new KeyboardManager(
+            this,
+            mTextInputPlugin,
+            new KeyChannelResponder[] {new KeyChannelResponder(keyEventChannel)});
+
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
     } else {
       mMouseCursorPlugin = null;
     }
     mLocalizationPlugin = new LocalizationPlugin(context, localizationChannel);
-    androidKeyProcessor = new AndroidKeyProcessor(this, keyEventChannel, mTextInputPlugin);
     androidTouchProcessor =
         new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ false);
     platformViewsController.attachToFlutterRenderer(flutterRenderer);
@@ -247,20 +255,6 @@ public class FlutterView extends SurfaceView
     // Send initial platform information to Dart
     mLocalizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendUserPlatformSettingsToDart();
-  }
-
-  private static Activity getActivity(Context context) {
-    if (context == null) {
-      return null;
-    }
-    if (context instanceof Activity) {
-      return (Activity) context;
-    }
-    if (context instanceof ContextWrapper) {
-      // Recurse up chain of base contexts until we find an Activity.
-      return getActivity(((ContextWrapper) context).getBaseContext());
-    }
-    return null;
   }
 
   @NonNull
@@ -282,7 +276,7 @@ public class FlutterView extends SurfaceView
     // superclass. The key processor will typically handle all events except
     // those where it has re-dispatched the event after receiving a reply from
     // the framework that the framework did not handle it.
-    return (isAttached() && androidKeyProcessor.onKeyEvent(event)) || super.dispatchKeyEvent(event);
+    return (isAttached() && mKeyboardManager.handleEvent(event)) || super.dispatchKeyEvent(event);
   }
 
   public FlutterNativeView getFlutterNativeView() {
@@ -442,7 +436,7 @@ public class FlutterView extends SurfaceView
 
   @Override
   public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
-    return mTextInputPlugin.createInputConnection(this, outAttrs);
+    return mTextInputPlugin.createInputConnection(this, mKeyboardManager, outAttrs);
   }
 
   @Override

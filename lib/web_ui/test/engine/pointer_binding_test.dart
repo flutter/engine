@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
-import 'package:meta/meta.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show domRenderer, window;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom_renderer.dart';
 import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -47,13 +46,11 @@ void main() {
 }
 
 void testMain() {
-  html.Element glassPane = domRenderer.glassPaneElement;
+  final html.Element glassPane = domRenderer.glassPaneElement!;
   double dpi = 1.0;
 
   setUp(() {
-    // Touching domRenderer creates PointerBinding.instance.
-    domRenderer;
-
+    ensureDomRendererInitialized();
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
   });
@@ -65,7 +62,7 @@ void testMain() {
 
     html.PointerEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.PointerEvent));
-      return e;
+      return e as html.PointerEvent;
     }
 
     List<html.PointerEvent> expectCorrectTypes(List<html.Event> events) {
@@ -233,7 +230,7 @@ void testMain() {
 
     html.TouchEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.TouchEvent));
-      return e;
+      return e as html.TouchEvent;
     }
 
     List<html.TouchEvent> expectCorrectTypes(List<html.Event> events) {
@@ -246,10 +243,10 @@ void testMain() {
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('touchstart'));
-    expect(event.changedTouches.length, equals(1));
-    expect(event.changedTouches[0].identifier, equals(1));
-    expect(event.changedTouches[0].client.x, equals(100));
-    expect(event.changedTouches[0].client.y, equals(101));
+    expect(event.changedTouches!.length, equals(1));
+    expect(event.changedTouches![0].identifier, equals(1));
+    expect(event.changedTouches![0].client.x, equals(100));
+    expect(event.changedTouches![0].client.y, equals(101));
 
     events = expectCorrectTypes(context.multiTouchDown(<_TouchDetails>[
       _TouchDetails(pointer: 100, clientX: 120, clientY: 121),
@@ -257,20 +254,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchstart'));
-    expect(events[0].changedTouches.length, equals(2));
-    expect(events[0].changedTouches[0].identifier, equals(100));
-    expect(events[0].changedTouches[0].client.x, equals(120));
-    expect(events[0].changedTouches[0].client.y, equals(121));
-    expect(events[0].changedTouches[1].identifier, equals(101));
-    expect(events[0].changedTouches[1].client.x, equals(122));
-    expect(events[0].changedTouches[1].client.y, equals(123));
+    expect(events[0].changedTouches!.length, equals(2));
+    expect(events[0].changedTouches![0].identifier, equals(100));
+    expect(events[0].changedTouches![0].client.x, equals(120));
+    expect(events[0].changedTouches![0].client.y, equals(121));
+    expect(events[0].changedTouches![1].identifier, equals(101));
+    expect(events[0].changedTouches![1].client.x, equals(122));
+    expect(events[0].changedTouches![1].client.y, equals(123));
 
     event = expectCorrectType(context.primaryMove(clientX: 200, clientY: 201));
     expect(event.type, equals('touchmove'));
-    expect(event.changedTouches.length, equals(1));
-    expect(event.changedTouches[0].identifier, equals(1));
-    expect(event.changedTouches[0].client.x, equals(200));
-    expect(event.changedTouches[0].client.y, equals(201));
+    expect(event.changedTouches!.length, equals(1));
+    expect(event.changedTouches![0].identifier, equals(1));
+    expect(event.changedTouches![0].client.x, equals(200));
+    expect(event.changedTouches![0].client.y, equals(201));
 
     events = expectCorrectTypes(context.multiTouchMove(<_TouchDetails>[
       _TouchDetails(pointer: 102, clientX: 220, clientY: 221),
@@ -278,20 +275,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchmove'));
-    expect(events[0].changedTouches.length, equals(2));
-    expect(events[0].changedTouches[0].identifier, equals(102));
-    expect(events[0].changedTouches[0].client.x, equals(220));
-    expect(events[0].changedTouches[0].client.y, equals(221));
-    expect(events[0].changedTouches[1].identifier, equals(103));
-    expect(events[0].changedTouches[1].client.x, equals(222));
-    expect(events[0].changedTouches[1].client.y, equals(223));
+    expect(events[0].changedTouches!.length, equals(2));
+    expect(events[0].changedTouches![0].identifier, equals(102));
+    expect(events[0].changedTouches![0].client.x, equals(220));
+    expect(events[0].changedTouches![0].client.y, equals(221));
+    expect(events[0].changedTouches![1].identifier, equals(103));
+    expect(events[0].changedTouches![1].client.x, equals(222));
+    expect(events[0].changedTouches![1].client.y, equals(223));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('touchend'));
-    expect(event.changedTouches.length, equals(1));
-    expect(event.changedTouches[0].identifier, equals(1));
-    expect(event.changedTouches[0].client.x, equals(300));
-    expect(event.changedTouches[0].client.y, equals(301));
+    expect(event.changedTouches!.length, equals(1));
+    expect(event.changedTouches![0].identifier, equals(1));
+    expect(event.changedTouches![0].client.x, equals(300));
+    expect(event.changedTouches![0].client.y, equals(301));
 
     events = expectCorrectTypes(context.multiTouchUp(<_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -299,13 +296,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchend'));
-    expect(events[0].changedTouches.length, equals(2));
-    expect(events[0].changedTouches[0].identifier, equals(104));
-    expect(events[0].changedTouches[0].client.x, equals(320));
-    expect(events[0].changedTouches[0].client.y, equals(321));
-    expect(events[0].changedTouches[1].identifier, equals(105));
-    expect(events[0].changedTouches[1].client.x, equals(322));
-    expect(events[0].changedTouches[1].client.y, equals(323));
+    expect(events[0].changedTouches!.length, equals(2));
+    expect(events[0].changedTouches![0].identifier, equals(104));
+    expect(events[0].changedTouches![0].client.x, equals(320));
+    expect(events[0].changedTouches![0].client.y, equals(321));
+    expect(events[0].changedTouches![1].identifier, equals(105));
+    expect(events[0].changedTouches![1].client.x, equals(322));
+    expect(events[0].changedTouches![1].client.y, equals(323));
 
     events = expectCorrectTypes(context.multiTouchCancel(<_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -313,13 +310,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchcancel'));
-    expect(events[0].changedTouches.length, equals(2));
-    expect(events[0].changedTouches[0].identifier, equals(104));
-    expect(events[0].changedTouches[0].client.x, equals(320));
-    expect(events[0].changedTouches[0].client.y, equals(321));
-    expect(events[0].changedTouches[1].identifier, equals(105));
-    expect(events[0].changedTouches[1].client.x, equals(322));
-    expect(events[0].changedTouches[1].client.y, equals(323));
+    expect(events[0].changedTouches!.length, equals(2));
+    expect(events[0].changedTouches![0].identifier, equals(104));
+    expect(events[0].changedTouches![0].client.x, equals(320));
+    expect(events[0].changedTouches![0].client.y, equals(321));
+    expect(events[0].changedTouches![1].identifier, equals(105));
+    expect(events[0].changedTouches![1].client.x, equals(322));
+    expect(events[0].changedTouches![1].client.y, equals(323));
   });
 
   test('_MouseEventContext generates expected events', () {
@@ -329,7 +326,7 @@ void testMain() {
 
     html.MouseEvent expectCorrectType(html.Event e) {
       expect(e.runtimeType, equals(html.MouseEvent));
-      return e;
+      return e as html.MouseEvent;
     }
 
     final _MouseEventContext context = _MouseEventContext();
@@ -407,15 +404,15 @@ void testMain() {
   // ALL ADAPTERS
 
   _testEach<_BasicEventContext>(
-    [
+    <_BasicEventContext>[
       _PointerEventContext(),
       _MouseEventContext(),
       _TouchEventContext(),
     ],
     'can receive pointer events on the glass pane',
     (_BasicEventContext context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      ui.PointerDataPacket receivedPacket;
+      PointerBinding.instance!.debugOverrideDetector(context);
+      ui.PointerDataPacket? receivedPacket;
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         receivedPacket = packet;
       };
@@ -423,20 +420,20 @@ void testMain() {
       glassPane.dispatchEvent(context.primaryDown());
 
       expect(receivedPacket, isNotNull);
-      expect(receivedPacket.data[0].buttons, equals(1));
+      expect(receivedPacket!.data[0].buttons, equals(1));
     },
   );
 
   _testEach<_BasicEventContext>(
-    [
+    <_BasicEventContext>[
       _PointerEventContext(),
       _MouseEventContext(),
       _TouchEventContext(),
     ],
     'does create an add event if got a pointerdown',
     (_BasicEventContext context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -452,14 +449,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly detects events on the semantics placeholder',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -526,14 +523,14 @@ void testMain() {
   // BUTTONED ADAPTERS
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'creates an add event if the first pointer activity is a hover',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -544,20 +541,20 @@ void testMain() {
       expect(packets.single.data, hasLength(2));
 
       expect(packets.single.data[0].change, equals(ui.PointerChange.add));
-      expect(packets.single.data[0].synthesized, equals(true));
+      expect(packets.single.data[0].synthesized, isTrue);
       expect(packets.single.data[1].change, equals(ui.PointerChange.hover));
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'sends a pointermove event instead of the second pointerdown in a row',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -570,7 +567,7 @@ void testMain() {
       // An add will be synthesized.
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       packets.clear();
 
@@ -587,14 +584,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'does synthesize add or hover or move for scroll',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -636,7 +633,7 @@ void testMain() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
       expect(packets[0].data[0].pointerIdentifier, equals(0));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -646,7 +643,7 @@ void testMain() {
       expect(
           packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(packets[0].data[1].pointerIdentifier, equals(0));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
       expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[1].physicalDeltaX, equals(0.0));
@@ -656,7 +653,7 @@ void testMain() {
       expect(packets[1].data, hasLength(2));
       expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
       expect(packets[1].data[0].pointerIdentifier, equals(0));
-      expect(packets[1].data[0].synthesized, equals(true));
+      expect(packets[1].data[0].synthesized, isTrue);
       expect(packets[1].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[1].data[0].physicalY, equals(50.0 * dpi));
       expect(packets[1].data[0].physicalDeltaX, equals(10.0 * dpi));
@@ -666,7 +663,7 @@ void testMain() {
       expect(
           packets[1].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(packets[1].data[1].pointerIdentifier, equals(0));
-      expect(packets[1].data[1].synthesized, equals(false));
+      expect(packets[1].data[1].synthesized, isFalse);
       expect(packets[1].data[1].physicalX, equals(20.0 * dpi));
       expect(packets[1].data[1].physicalY, equals(50.0 * dpi));
       expect(packets[1].data[1].physicalDeltaX, equals(0.0));
@@ -677,7 +674,7 @@ void testMain() {
       expect(packets[2].data[0].change, equals(ui.PointerChange.down));
       expect(packets[2].data[0].signalKind, equals(ui.PointerSignalKind.none));
       expect(packets[2].data[0].pointerIdentifier, equals(1));
-      expect(packets[2].data[0].synthesized, equals(false));
+      expect(packets[2].data[0].synthesized, isFalse);
       expect(packets[2].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[2].data[0].physicalY, equals(50.0 * dpi));
       expect(packets[2].data[0].physicalDeltaX, equals(0.0));
@@ -687,7 +684,7 @@ void testMain() {
       expect(packets[3].data, hasLength(2));
       expect(packets[3].data[0].change, equals(ui.PointerChange.move));
       expect(packets[3].data[0].pointerIdentifier, equals(1));
-      expect(packets[3].data[0].synthesized, equals(true));
+      expect(packets[3].data[0].synthesized, isTrue);
       expect(packets[3].data[0].physicalX, equals(30.0 * dpi));
       expect(packets[3].data[0].physicalY, equals(60.0 * dpi));
       expect(packets[3].data[0].physicalDeltaX, equals(10.0 * dpi));
@@ -697,7 +694,7 @@ void testMain() {
       expect(
           packets[3].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(packets[3].data[1].pointerIdentifier, equals(1));
-      expect(packets[3].data[1].synthesized, equals(false));
+      expect(packets[3].data[1].synthesized, isFalse);
       expect(packets[3].data[1].physicalX, equals(30.0 * dpi));
       expect(packets[3].data[1].physicalY, equals(60.0 * dpi));
       expect(packets[3].data[1].physicalDeltaX, equals(0.0));
@@ -706,14 +703,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext()
     ],
     'does calculate delta and pointer identifier correctly',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -726,7 +723,7 @@ void testMain() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
       expect(packets[0].data[0].pointerIdentifier, equals(0));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -734,7 +731,7 @@ void testMain() {
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
       expect(packets[0].data[1].pointerIdentifier, equals(0));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
       expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[1].physicalDeltaX, equals(0.0));
@@ -749,7 +746,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
       expect(packets[0].data[0].pointerIdentifier, equals(0));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(10.0 * dpi));
@@ -764,7 +761,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -779,7 +776,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(30.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(20.0 * dpi));
@@ -794,7 +791,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(30.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -809,7 +806,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(-20.0 * dpi));
@@ -824,7 +821,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
       expect(packets[0].data[0].pointerIdentifier, equals(2));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -834,14 +831,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly converts buttons of down, move and up events',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -856,12 +853,12 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].physicalX, equals(10 * dpi));
       expect(packets[0].data[0].physicalY, equals(11 * dpi));
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(10 * dpi));
       expect(packets[0].data[1].physicalY, equals(11 * dpi));
       expect(packets[0].data[1].buttons, equals(0));
@@ -876,7 +873,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(10 * dpi));
       expect(packets[0].data[0].physicalY, equals(11 * dpi));
       expect(packets[0].data[0].buttons, equals(1));
@@ -891,7 +888,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20 * dpi));
       expect(packets[0].data[0].physicalY, equals(21 * dpi));
       expect(packets[0].data[0].buttons, equals(1));
@@ -905,7 +902,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20 * dpi));
       expect(packets[0].data[0].physicalY, equals(21 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
@@ -921,7 +918,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20 * dpi));
       expect(packets[0].data[0].physicalY, equals(21 * dpi));
       expect(packets[0].data[0].buttons, equals(2));
@@ -936,7 +933,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(30 * dpi));
       expect(packets[0].data[0].physicalY, equals(31 * dpi));
       expect(packets[0].data[0].buttons, equals(2));
@@ -950,7 +947,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(30 * dpi));
       expect(packets[0].data[0].physicalY, equals(31 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
@@ -966,7 +963,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(30 * dpi));
       expect(packets[0].data[0].physicalY, equals(31 * dpi));
       expect(packets[0].data[0].buttons, equals(4));
@@ -981,7 +978,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40 * dpi));
       expect(packets[0].data[0].physicalY, equals(41 * dpi));
       expect(packets[0].data[0].buttons, equals(4));
@@ -995,7 +992,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40 * dpi));
       expect(packets[0].data[0].physicalY, equals(41 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
@@ -1004,14 +1001,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles button changes during a down sequence',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1024,10 +1021,10 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(1));
       packets.clear();
 
@@ -1039,7 +1036,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(5));
       packets.clear();
 
@@ -1051,7 +1048,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(4));
       packets.clear();
 
@@ -1062,24 +1059,24 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'synthesizes a pointerup event when pointermove comes before the up',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen when the user pops up the context menu by right
       // clicking, then dismisses it with a left click.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1094,12 +1091,12 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].physicalX, equals(10 * dpi));
       expect(packets[0].data[0].physicalY, equals(11 * dpi));
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(10 * dpi));
       expect(packets[0].data[1].physicalY, equals(11 * dpi));
       expect(packets[0].data[1].buttons, equals(2));
@@ -1114,7 +1111,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20 * dpi));
       expect(packets[0].data[0].physicalY, equals(21 * dpi));
       expect(packets[0].data[0].buttons, equals(2));
@@ -1129,7 +1126,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20 * dpi));
       expect(packets[0].data[0].physicalY, equals(21 * dpi));
       expect(packets[0].data[0].buttons, equals(2));
@@ -1143,7 +1140,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(20 * dpi));
       expect(packets[0].data[0].physicalY, equals(21 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
@@ -1152,20 +1149,20 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles uncontinuous button changes during a down sequence',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking, but holds RMB;
       //  - Clicks LMB;
       //  - Releases RMB.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1178,10 +1175,10 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1195,7 +1192,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(3));
       packets.clear();
 
@@ -1207,7 +1204,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(2));
       packets.clear();
 
@@ -1218,26 +1215,26 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
     ],
     'correctly handles missing right mouse button up when followed by move',
         (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking;
       //  - Clicks LMB to close context menu.
       //  - Moves mouse.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1251,10 +1248,10 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1266,28 +1263,28 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'handles RMB click when the browser sends it as a move',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // When the user clicks the RMB and moves the mouse quickly (before the
       // context menu shows up), the browser sends a move event before down.
       // The move event will have "button:-1, buttons:2".
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1302,29 +1299,29 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles hover after RMB click',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking, but holds RMB;
       //  - Move the pointer to hover.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1339,10 +1336,10 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1356,26 +1353,26 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(3));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].buttons, equals(2));
       expect(packets[0].data[1].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(0));
       expect(packets[0].data[2].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[2].synthesized, equals(false));
+      expect(packets[0].data[2].synthesized, isFalse);
       expect(packets[0].data[2].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles LMB click after RMB click',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking, but holds RMB;
@@ -1387,7 +1384,7 @@ void testMain() {
       // `pointermove`/`mousemove` events. Then when the LMB click comes in, it
       // could be in a different location without any `*move` events in between.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1402,10 +1399,10 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1419,7 +1416,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(3));
       packets.clear();
 
@@ -1431,26 +1428,26 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles two consecutive RMB clicks with no up in between',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking, but holds RMB;
       //  - Clicks RMB again in a different location;
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1465,9 +1462,9 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1483,15 +1480,15 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(3));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].buttons, equals(2));
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(20.0 * dpi));
       expect(packets[0].data[1].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(0));
       expect(packets[0].data[2].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[2].synthesized, equals(false));
+      expect(packets[0].data[2].synthesized, isFalse);
       expect(packets[0].data[2].buttons, equals(2));
       packets.clear();
 
@@ -1504,20 +1501,20 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles two consecutive RMB clicks with up in between',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking, but doesn't hold RMB;
@@ -1525,7 +1522,7 @@ void testMain() {
       //
       // This seems to be happening sometimes when using RMB on the Mac trackpad.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1540,9 +1537,9 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1555,7 +1552,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
 
@@ -1571,10 +1568,10 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].buttons, equals(0));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1587,20 +1584,20 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles two consecutive RMB clicks in two different locations',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //  - Pops up the context menu by right clicking;
@@ -1611,7 +1608,7 @@ void testMain() {
       // cases, the browser actually sends an `up` event for the RMB click even
       // when the context menu is shown.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1626,9 +1623,9 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
 
@@ -1654,30 +1651,30 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].buttons, equals(0));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(2));
       packets.clear();
     },
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'handles overlapping left/right down and up events',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
       //     LMB:   down-------------------up
       //     RMB:              down------------------up
       // Flutter:   down-------move-------move-------up
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1692,9 +1689,9 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].buttons, equals(1));
       expect(packets[0].data[1].physicalX, equals(5.0 * dpi));
       expect(packets[0].data[1].physicalY, equals(100.0 * dpi));
@@ -1748,17 +1745,17 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly detects up event outside of glasspane',
     (_ButtonedEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen when the up event occurs while the mouse is outside the
       // browser window.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1815,14 +1812,14 @@ void testMain() {
   // MULTIPOINTER ADAPTERS
 
   _testEach<_MultiPointerEventMixin>(
-    [
+    <_MultiPointerEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _TouchEventContext(),
     ],
     'treats each pointer separately',
     (_MultiPointerEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       List<ui.PointerData> data;
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
@@ -1847,7 +1844,7 @@ void testMain() {
       data = _allPointerData(packets);
       expect(data, hasLength(4));
       expect(data[0].change, equals(ui.PointerChange.add));
-      expect(data[0].synthesized, equals(true));
+      expect(data[0].synthesized, isTrue);
       expect(data[0].device, equals(2));
       expect(data[0].physicalX, equals(100 * dpi));
       expect(data[0].physicalY, equals(101 * dpi));
@@ -1861,7 +1858,7 @@ void testMain() {
       expect(data[1].physicalDeltaY, equals(0));
 
       expect(data[2].change, equals(ui.PointerChange.add));
-      expect(data[2].synthesized, equals(true));
+      expect(data[2].synthesized, isTrue);
       expect(data[2].device, equals(3));
       expect(data[2].physicalX, equals(200 * dpi));
       expect(data[2].physicalY, equals(201 * dpi));
@@ -1975,7 +1972,7 @@ void testMain() {
       data = _allPointerData(packets);
       expect(data, hasLength(4));
       expect(data[0].change, equals(ui.PointerChange.add));
-      expect(data[0].synthesized, equals(true));
+      expect(data[0].synthesized, isTrue);
       expect(data[0].device, equals(3));
       expect(data[0].physicalX, equals(500 * dpi));
       expect(data[0].physicalY, equals(501 * dpi));
@@ -1989,7 +1986,7 @@ void testMain() {
       expect(data[1].physicalDeltaY, equals(0));
 
       expect(data[2].change, equals(ui.PointerChange.add));
-      expect(data[2].synthesized, equals(true));
+      expect(data[2].synthesized, isTrue);
       expect(data[2].device, equals(2));
       expect(data[2].physicalX, equals(600 * dpi));
       expect(data[2].physicalY, equals(601 * dpi));
@@ -2006,14 +2003,14 @@ void testMain() {
   );
 
   _testEach<_MultiPointerEventMixin>(
-    [
+    <_MultiPointerEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _TouchEventContext(),
     ],
     'correctly parses cancel event',
     (_MultiPointerEventMixin context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -2053,13 +2050,13 @@ void testMain() {
   // POINTER ADAPTER
 
   _testEach<_PointerEventContext>(
-    [
+    <_PointerEventContext>[
       if (!isIosSafari) _PointerEventContext(),
     ],
     'does not synthesize pointer up if from different device',
     (_PointerEventContext context) {
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -2071,7 +2068,7 @@ void testMain() {
       // An add will be synthesized.
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].device, equals(1));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].device, equals(1));
@@ -2084,7 +2081,7 @@ void testMain() {
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].device, equals(2));
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].device, equals(2));
@@ -2093,19 +2090,19 @@ void testMain() {
   );
 
   _testEach<_PointerEventContext>(
-    [
+    <_PointerEventContext>[
       _PointerEventContext(),
     ],
     'handles random pointer id on up events',
     (_PointerEventContext context) {
-      PointerBinding.instance.debugOverrideDetector(context);
+      PointerBinding.instance!.debugOverrideDetector(context);
       // This happens with pens that are simulated with mouse events
       // (e.g. Wacom). It sends events with the pointer type "mouse", and
       // assigns a random pointer ID to each event.
       //
       // For more info, see: https://github.com/flutter/flutter/issues/75559
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -2122,7 +2119,7 @@ void testMain() {
       expect(packets.single.data, hasLength(2));
 
       expect(packets.single.data[0].change, equals(ui.PointerChange.add));
-      expect(packets.single.data[0].synthesized, equals(true));
+      expect(packets.single.data[0].synthesized, isTrue);
       expect(packets.single.data[1].change, equals(ui.PointerChange.down));
       packets.clear();
 
@@ -2148,15 +2145,15 @@ void testMain() {
 
   // TOUCH ADAPTER
 
-  _testEach(
-    [
+  _testEach<_TouchEventContext>(
+    <_TouchEventContext>[
       if (!isIosSafari) _TouchEventContext(),
     ],
     'does calculate delta and pointer identifier correctly',
     (_TouchEventContext context) {
       // Mouse and Pointer are in another test since these tests can involve hovering
-      PointerBinding.instance.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -2168,7 +2165,7 @@ void testMain() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -2176,7 +2173,7 @@ void testMain() {
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].pointerIdentifier, equals(1));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[1].physicalY, equals(20.0 * dpi));
       expect(packets[0].data[1].physicalDeltaX, equals(0.0));
@@ -2190,7 +2187,7 @@ void testMain() {
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(30.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(20.0 * dpi));
@@ -2204,7 +2201,7 @@ void testMain() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.up));
       expect(packets[0].data[0].pointerIdentifier, equals(1));
-      expect(packets[0].data[0].synthesized, equals(false));
+      expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(30.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -2212,7 +2209,7 @@ void testMain() {
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.remove));
       expect(packets[0].data[1].pointerIdentifier, equals(1));
-      expect(packets[0].data[1].synthesized, equals(true));
+      expect(packets[0].data[1].synthesized, isTrue);
       expect(packets[0].data[1].physicalX, equals(40.0 * dpi));
       expect(packets[0].data[1].physicalY, equals(30.0 * dpi));
       expect(packets[0].data[1].physicalDeltaX, equals(0.0));
@@ -2226,7 +2223,7 @@ void testMain() {
       expect(packets[0].data, hasLength(2));
       expect(packets[0].data[0].change, equals(ui.PointerChange.add));
       expect(packets[0].data[0].pointerIdentifier, equals(2));
-      expect(packets[0].data[0].synthesized, equals(true));
+      expect(packets[0].data[0].synthesized, isTrue);
       expect(packets[0].data[0].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[0].physicalDeltaX, equals(0.0));
@@ -2234,7 +2231,7 @@ void testMain() {
 
       expect(packets[0].data[1].change, equals(ui.PointerChange.down));
       expect(packets[0].data[1].pointerIdentifier, equals(2));
-      expect(packets[0].data[1].synthesized, equals(false));
+      expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(20.0 * dpi));
       expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
       expect(packets[0].data[1].physicalDeltaX, equals(0.0));
@@ -2271,19 +2268,19 @@ abstract class _BasicEventContext implements PointerSupportDetector {
 mixin _ButtonedEventMixin on _BasicEventContext {
   // Generate an event that is a mouse down with the specific buttons.
   html.Event mouseDown(
-      {double clientX, double clientY, int button, int buttons});
+      {double? clientX, double? clientY, int? button, int? buttons});
 
   // Generate an event that is a mouse drag with the specific buttons, or button
   // changes during the drag.
   //
   // If there is no button change, assign `button` with _kNoButtonChange.
   html.Event mouseMove(
-      {double clientX, double clientY, int button, int buttons});
+      {double? clientX, double? clientY, required int button, required int buttons});
 
   // Generate an event that releases all mouse buttons.
-  html.Event mouseUp({double clientX, double clientY, int button, int buttons});
+  html.Event mouseUp({double? clientX, double? clientY, int? button, int? buttons});
 
-  html.Event hover({double clientX, double clientY}) {
+  html.Event hover({double? clientX, double? clientY}) {
     return mouseMove(
       buttons: 0,
       button: _kNoButtonChange,
@@ -2293,7 +2290,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryDown({double clientX, double clientY}) {
+  html.Event primaryDown({double? clientX, double? clientY}) {
     return mouseDown(
       buttons: 1,
       button: 0,
@@ -2303,7 +2300,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryMove({double clientX, double clientY}) {
+  html.Event primaryMove({double? clientX, double? clientY}) {
     return mouseMove(
       buttons: 1,
       button: _kNoButtonChange,
@@ -2313,7 +2310,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryUp({double clientX, double clientY}) {
+  html.Event primaryUp({double? clientX, double? clientY}) {
     return mouseUp(
       button: 0,
       clientX: clientX,
@@ -2322,11 +2319,11 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   html.Event wheel({
-    @required int buttons,
-    @required double clientX,
-    @required double clientY,
-    @required double deltaX,
-    @required double deltaY,
+    required int? buttons,
+    required double? clientX,
+    required double? clientY,
+    required double? deltaX,
+    required double? deltaY,
   }) {
     final Function jsWheelEvent = js_util.getProperty(html.window, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
@@ -2346,9 +2343,9 @@ mixin _ButtonedEventMixin on _BasicEventContext {
 class _TouchDetails {
   const _TouchDetails({this.pointer, this.clientX, this.clientY});
 
-  final int pointer;
-  final double clientX;
-  final double clientY;
+  final int? pointer;
+  final double? clientX;
+  final double? clientY;
 }
 
 mixin _MultiPointerEventMixin on _BasicEventContext {
@@ -2358,7 +2355,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   List<html.Event> multiTouchCancel(List<_TouchDetails> touches);
 
   @override
-  html.Event primaryDown({double clientX, double clientY}) {
+  html.Event primaryDown({double? clientX, double? clientY}) {
     return multiTouchDown(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2369,7 +2366,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryMove({double clientX, double clientY}) {
+  html.Event primaryMove({double? clientX, double? clientY}) {
     return multiTouchMove(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2380,7 +2377,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryUp({double clientX, double clientY}) {
+  html.Event primaryUp({double? clientX, double? clientY}) {
     return multiTouchUp(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2396,9 +2393,8 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
 class _TouchEventContext extends _BasicEventContext
     with _MultiPointerEventMixin
     implements PointerSupportDetector {
-  _TouchEventContext() {
+  _TouchEventContext() :
     _target = html.document.createElement('div');
-  }
 
   @override
   String get name => 'TouchAdapter';
@@ -2418,9 +2414,9 @@ class _TouchEventContext extends _BasicEventContext
   html.EventTarget _target;
 
   html.Touch _createTouch({
-    int identifier,
-    double clientX,
-    double clientY,
+    int? identifier,
+    double? clientX,
+    double? clientY,
   }) {
     return html.Touch(<String, dynamic>{
       'identifier': identifier,
@@ -2492,8 +2488,12 @@ class _MouseEventContext extends _BasicEventContext
   bool get hasMouseEvents => true;
 
   @override
-  html.Event mouseDown(
-      {double clientX, double clientY, int button, int buttons}) {
+  html.Event mouseDown({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+  }) {
     return _createMouseEvent(
       'mousedown',
       buttons: buttons,
@@ -2504,8 +2504,12 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseMove(
-      {double clientX, double clientY, int button, int buttons}) {
+  html.Event mouseMove({
+    double? clientX,
+    double? clientY,
+    required int button,
+    required int buttons,
+  }) {
     final bool hasButtonChange = button != _kNoButtonChange;
     final bool changeIsButtonDown =
         hasButtonChange && (buttons & convertButtonToButtons(button)) != 0;
@@ -2523,7 +2527,12 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({double clientX, double clientY, int button, int buttons}) {
+  html.Event mouseUp({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+  }) {
     return _createMouseEvent(
       'mouseup',
       buttons: buttons,
@@ -2535,10 +2544,10 @@ class _MouseEventContext extends _BasicEventContext
 
   html.MouseEvent _createMouseEvent(
     String type, {
-    int buttons,
-    int button,
-    double clientX,
-    double clientY,
+    int? buttons,
+    int? button,
+    double? clientX,
+    double? clientY,
   }) {
     final Function jsMouseEvent =
         js_util.getProperty(html.window, 'MouseEvent');
@@ -2592,8 +2601,13 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseDown(
-      {double clientX, double clientY, int button, int buttons, int pointerId = 1}) {
+  html.Event mouseDown({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointerId = 1,
+  }) {
     return _downWithFullDetails(
       pointer: pointerId,
       buttons: buttons,
@@ -2604,13 +2618,14 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _downWithFullDetails(
-      {double clientX,
-      double clientY,
-      int button,
-      int buttons,
-      int pointer,
-      String pointerType}) {
+  html.Event _downWithFullDetails({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointer,
+    String? pointerType,
+  }) {
     return html.PointerEvent('pointerdown', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
@@ -2636,8 +2651,13 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseMove(
-      {double clientX, double clientY, int button, int buttons, int pointerId = 1}) {
+  html.Event mouseMove({
+    double? clientX,
+    double? clientY,
+    required int button,
+    required int buttons,
+    int pointerId = 1,
+  }) {
     return _moveWithFullDetails(
       pointer: pointerId,
       buttons: buttons,
@@ -2648,13 +2668,14 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _moveWithFullDetails(
-      {double clientX,
-      double clientY,
-      int button,
-      int buttons,
-      int pointer,
-      String pointerType}) {
+  html.Event _moveWithFullDetails({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointer,
+    String? pointerType,
+  }) {
     return html.PointerEvent('pointermove', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
@@ -2679,7 +2700,13 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({double clientX, double clientY, int button, int buttons, int pointerId = 1}) {
+  html.Event mouseUp({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointerId = 1,
+  }) {
     return _upWithFullDetails(
       pointer: pointerId,
       button: button,
@@ -2690,13 +2717,14 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _upWithFullDetails(
-      {double clientX,
-      double clientY,
-      int button,
-      int buttons,
-      int pointer,
-      String pointerType}) {
+  html.Event _upWithFullDetails({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointer,
+    String? pointerType,
+  }) {
     return html.PointerEvent('pointerup', <String, dynamic>{
       'pointerId': pointer,
       'button': button,

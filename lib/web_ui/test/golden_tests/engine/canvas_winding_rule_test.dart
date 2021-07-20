@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
@@ -19,7 +18,7 @@ void main() {
 void testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 500, 500);
 
-  BitmapCanvas canvas;
+  late BitmapCanvas canvas;
 
   setUp(() {
     canvas = BitmapCanvas(region, RenderStrategy());
@@ -31,7 +30,7 @@ void testMain() async {
 
   test('draws paths using nonzero and evenodd winding rules', () async {
     paintPaths(canvas);
-    html.document.body.append(canvas.rootElement);
+    html.document.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_path_winding.png', region: region);
   });
 
@@ -43,14 +42,14 @@ void paintPaths(BitmapCanvas canvas) {
         ..color = Color(0xFFFFFFFF)
         ..style = PaintingStyle.fill); // white
 
-  SurfacePaint paintFill = SurfacePaint()
+  final SurfacePaint paintFill = SurfacePaint()
     ..style = PaintingStyle.fill
     ..color = Color(0xFF00B0FF);
-  SurfacePaint paintStroke = SurfacePaint()
+  final SurfacePaint paintStroke = SurfacePaint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2
     ..color = Color(0xFFE00000);
-  Path path1 = Path()
+  final Path path1 = Path()
     ..fillType = PathFillType.evenOdd
     ..moveTo(50, 0)
     ..lineTo(21, 90)
@@ -60,7 +59,7 @@ void paintPaths(BitmapCanvas canvas) {
     ..close()
     ..addRect(Rect.fromLTWH(20, 100, 200, 50))
     ..addRect(Rect.fromLTWH(40, 120, 160, 10));
-  Path path2 = Path()
+  final Path path2 = Path()
     ..fillType = PathFillType.nonZero
     ..moveTo(50, 200)
     ..lineTo(21, 290)

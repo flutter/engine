@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/ui.dart' hide window;
@@ -22,15 +20,15 @@ void testMain() async {
   setUpStableTestFonts();
 
   test('paints multiple shadows', () {
-    final canvas = BitmapCanvas(bounds, RenderStrategy());
+    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
 
     final CanvasParagraph paragraph = rich(
-      ParagraphStyle(fontFamily: 'Roboto'),
-      (builder) {
+      EngineParagraphStyle(fontFamily: 'Roboto'),
+      (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(
           fontSize: 32.0,
           color: blue,
-          shadows: [
+          shadows: <Shadow>[
             Shadow(color: red, blurRadius:2.0, offset: Offset(4.0, 2.0)),
             Shadow(color: green, blurRadius: 3.0),
           ],
@@ -39,7 +37,7 @@ void testMain() async {
         builder.pushStyle(EngineTextStyle.only(
           color: green,
           background: Paint()..color = yellow,
-          shadows: [
+          shadows: <Shadow>[
             Shadow(color: black, blurRadius: 10.0),
           ],
         ));

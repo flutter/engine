@@ -12,12 +12,10 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-// ignore: import_of_legacy_library_into_null_safe
-import 'package:isolate/isolate.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:process_runner/process_runner.dart';
 import 'package:process/process.dart';
+import 'package:process_runner/process_runner.dart';
 
 class FormattingException implements Exception {
   FormattingException(this.message, [this.result]);
@@ -31,8 +29,8 @@ class FormattingException implements Exception {
   String toString() {
     final StringBuffer output = StringBuffer(runtimeType.toString());
     output.write(': $message');
-    final String stderr = result?.stderr! as String;
-    if (stderr.isNotEmpty) {
+    final String? stderr = result?.stderr as String?;
+    if (stderr?.isNotEmpty == true) {
       output.write(':\n$stderr');
     }
     return output.toString();
@@ -344,7 +342,7 @@ class ClangFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    return await applyPatch(failures);
+    return applyPatch(failures);
   }
 
   Future<String> _getClangFormatVersion() async {
@@ -373,7 +371,7 @@ class ClangFormatChecker extends FormatChecker {
       message('Using ${await _getClangFormatVersion()}');
     }
     final List<WorkerJob> clangJobs = <WorkerJob>[];
-    for (String file in files) {
+    for (final String file in files) {
       if (file.trim().isEmpty) {
         continue;
       }
@@ -475,7 +473,7 @@ class JavaFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    return await applyPatch(failures);
+    return applyPatch(failures);
   }
 
   Future<String> _getJavaVersion() async {
@@ -509,7 +507,7 @@ class JavaFormatChecker extends FormatChecker {
     if (verbose) {
       message('Using $javaFormatVersion with Java $javaVersion');
     }
-    for (String file in files) {
+    for (final String file in files) {
       if (file.trim().isEmpty) {
         continue;
       }
@@ -696,7 +694,7 @@ class WhitespaceFormatChecker extends FormatChecker {
   Future<bool> fixFormatting() async {
     final List<File> failures = await _getWhitespaceFailures();
     if (failures.isNotEmpty) {
-      for (File file in failures) {
+      for (final File file in failures) {
         stderr.writeln('Fixing $file');
         String contents = file.readAsStringSync();
         contents = contents.replaceAll(trailingWsRegEx, '');
@@ -706,7 +704,7 @@ class WhitespaceFormatChecker extends FormatChecker {
     return true;
   }
 
-  static Future<_GrepResult> _hasTrailingWhitespace(File file) async {
+  static _GrepResult _hasTrailingWhitespace(File file) {
     final List<String> hits = <String>[];
     final List<int> lineNumbers = <int>[];
     int lineNumber = 0;
@@ -723,12 +721,8 @@ class WhitespaceFormatChecker extends FormatChecker {
     return _GrepResult(file, hits, lineNumbers);
   }
 
-  Stream<_GrepResult> _whereHasTrailingWhitespace(Iterable<File> files) async* {
-    final LoadBalancer pool =
-        await LoadBalancer.create(Platform.numberOfProcessors, IsolateRunner.spawn);
-    for (final File file in files) {
-      yield await pool.run<_GrepResult, File>(_hasTrailingWhitespace, file);
-    }
+  Iterable<_GrepResult> _whereHasTrailingWhitespace(Iterable<File> files) {
+    return files.map(_hasTrailingWhitespace);
   }
 
   Future<List<File>> _getWhitespaceFailures() async {
@@ -764,7 +758,7 @@ class WhitespaceFormatChecker extends FormatChecker {
     int inProgress = Platform.numberOfProcessors;
     int pending = total;
     int failed = 0;
-    await for (final _GrepResult result in _whereHasTrailingWhitespace(
+    for (final _GrepResult result in _whereHasTrailingWhitespace(
       files.map<File>(
         (String file) => File(
           path.join(repoDir.absolute.path, file),

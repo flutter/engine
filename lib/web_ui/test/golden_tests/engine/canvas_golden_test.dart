@@ -27,13 +27,13 @@ void testMain() async {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
     final html.Element testScene = html.Element.tag('flt-scene');
     testScene.append(canvas.rootElement);
-    html.document.querySelector('flt-scene-host')!.append(testScene);
+    domRenderer.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
   }
 
   setUpStableTestFonts();
 
   tearDown(() {
-    html.document.querySelector('flt-scene')!.remove();
+    domRenderer.glassPaneShadow?.querySelector('flt-scene')?.remove();
   });
 
   /// Draws several lines, some aligned precisely with the pixel grid, and some
@@ -172,7 +172,7 @@ void testMain() async {
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
-      canvas.rootElement.querySelectorAll('p').map<String>((e) => e.innerText).toList(),
+      canvas.rootElement.querySelectorAll('p').map<String>((html.Element e) => e.innerText).toList(),
       <String>['Am I blurry?', 'Am I blurry?'],
       reason: 'Expected to render text using HTML',
     );
@@ -230,7 +230,7 @@ void testMain() async {
     canvas.drawParagraph(paragraph, const Offset(180, 50));
 
     expect(
-      canvas.rootElement.querySelectorAll('p').map<String?>((e) => e.text).toList(),
+      canvas.rootElement.querySelectorAll('p').map<String?>((html.Element e) => e.text).toList(),
       <String>[text],
       reason: 'Expected to render text using HTML',
     );
@@ -249,7 +249,7 @@ void testMain() async {
     final html.Element sceneElement = scene.webOnlyRootElement!;
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    html.document.querySelector('flt-scene-host')!.append(sceneElement);
+    domRenderer.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',

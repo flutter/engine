@@ -119,13 +119,6 @@ abstract class SceneBuilder {
     double width = 0.0,
     double height = 0.0,
   });
-  void addChildScene({
-    Offset offset = Offset.zero,
-    double width = 0.0,
-    double height = 0.0,
-    required SceneHost sceneHost,
-    bool hitTestable = true,
-  });
   void setRasterizerTracingThreshold(int frameInterval);
   void setCheckerboardRasterCacheImages(bool checkerboard);
   void setCheckerboardOffscreenLayers(bool checkerboard);
@@ -141,25 +134,6 @@ abstract class SceneBuilder {
   );
 }
 
-class EngineLayer {}
-
-class SceneHost {
-  SceneHost(
-    dynamic viewHolderToken,
-    void Function() viewConnectedCallback,
-    void Function() viewDisconnectedCallback,
-    void Function(bool) viewStateChangedCallback,
-  );
+class EngineLayer {
   void dispose() {}
-  void setProperties(
-    double width,
-    double height,
-    double insetTop,
-    double insetRight,
-    double insetBottom,
-    double insetLeft,
-    bool focusable,
-  ) {
-    throw UnimplementedError();
-  }
 }

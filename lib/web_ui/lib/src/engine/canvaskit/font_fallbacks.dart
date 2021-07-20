@@ -2,7 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../font_change_util.dart';
+import '../platform_dispatcher.dart';
+import '../util.dart';
+import 'canvaskit_api.dart';
+import 'fonts.dart';
+import 'initialization.dart';
+import 'interval_tree.dart';
 
 /// Global static font fallback data.
 class FontFallbackData {
@@ -33,7 +46,7 @@ class FontFallbackData {
   final IntervalTree<NotoFont> notoTree = createNotoFontTree();
 
   static IntervalTree<NotoFont> createNotoFontTree() {
-    Map<NotoFont, List<CodeunitRange>> ranges =
+    final Map<NotoFont, List<CodeunitRange>> ranges =
         <NotoFont, List<CodeunitRange>>{};
 
     for (NotoFont font in _notoFonts) {
@@ -52,11 +65,159 @@ class FontFallbackData {
   }
 
   /// Fallback fonts which have been registered and loaded.
-  final List<_RegisteredFont> registeredFallbackFonts = <_RegisteredFont>[];
+  final List<RegisteredFont> registeredFallbackFonts = <RegisteredFont>[];
 
   final List<String> globalFontFallbacks = <String>['Roboto'];
 
   final Map<String, int> fontFallbackCounts = <String, int>{};
+
+  /// A list of code units to check against the global fallback fonts.
+  final Set<int> _codeUnitsToCheckAgainstFallbackFonts = <int>{};
+
+  /// This is [true] if we have scheduled a check for missing code units.
+  ///
+  /// We only do this once a frame, since checking if a font supports certain
+  /// code units is very expensive.
+  bool _scheduledCodeUnitCheck = false;
+
+  /// Determines if the given [text] contains any code points which are not
+  /// supported by the current set of fonts.
+  void ensureFontsSupportText(String text, List<String> fontFamilies) {
+    // TODO(hterkelsen): Make this faster for the common case where the text
+    // is supported by the given fonts.
+
+    // If the text is ASCII, then skip this check.
+    bool isAscii = true;
+    for (int i = 0; i < text.length; i++) {
+      if (text.codeUnitAt(i) >= 160) {
+        isAscii = false;
+        break;
+      }
+    }
+    if (isAscii) {
+      return;
+    }
+
+    // We have a cache of code units which are known to be covered by at least
+    // one of our fallback fonts, and a cache of code units which are known not
+    // to be covered by any fallback font. From the given text, construct a set
+    // of code units which need to be checked.
+    final Set<int> runesToCheck = <int>{};
+    for (final int rune in text.runes) {
+      // Filter out code units which ASCII, known to be covered, or known not
+      // to be covered.
+      if (!(rune < 160 ||
+          knownCoveredCodeUnits.contains(rune) ||
+          codeUnitsWithNoKnownFont.contains(rune))) {
+        runesToCheck.add(rune);
+      }
+    }
+    if (runesToCheck.isEmpty) {
+      return;
+    }
+
+    final List<int> codeUnits = runesToCheck.toList();
+
+    final List<SkFont> fonts = <SkFont>[];
+    for (String font in fontFamilies) {
+      final List<SkFont>? typefacesForFamily =
+          skiaFontCollection.familyToFontMap[font];
+      if (typefacesForFamily != null) {
+        fonts.addAll(typefacesForFamily);
+      }
+    }
+    final List<bool> codeUnitsSupported =
+        List<bool>.filled(codeUnits.length, false);
+    final String testString = String.fromCharCodes(codeUnits);
+    for (SkFont font in fonts) {
+      final Uint8List glyphs = font.getGlyphIDs(testString);
+      assert(glyphs.length == codeUnitsSupported.length);
+      for (int i = 0; i < glyphs.length; i++) {
+        codeUnitsSupported[i] |= glyphs[i] != 0 || _isControlCode(codeUnits[i]);
+      }
+    }
+
+    if (codeUnitsSupported.any((bool x) => !x)) {
+      final List<int> missingCodeUnits = <int>[];
+      for (int i = 0; i < codeUnitsSupported.length; i++) {
+        if (!codeUnitsSupported[i]) {
+          missingCodeUnits.add(codeUnits[i]);
+        }
+      }
+      _codeUnitsToCheckAgainstFallbackFonts.addAll(missingCodeUnits);
+      if (!_scheduledCodeUnitCheck) {
+        _scheduledCodeUnitCheck = true;
+        // ignore: invalid_use_of_visible_for_testing_member
+        EnginePlatformDispatcher.instance.rasterizer!
+            .addPostFrameCallback(_ensureFallbackFonts);
+      }
+    }
+  }
+
+  /// Returns [true] if [codepoint] is a Unicode control code.
+  bool _isControlCode(int codepoint) {
+    return codepoint < 32 || (codepoint > 127 && codepoint < 160);
+  }
+
+  /// Checks the missing code units against the current set of fallback fonts
+  /// and starts downloading new fallback fonts if the current set can't cover
+  /// the code units.
+  void _ensureFallbackFonts() {
+    _scheduledCodeUnitCheck = false;
+    // We don't know if the remaining code units are covered by our fallback
+    // fonts. Check them and update the cache.
+    final List<int> codeUnits = _codeUnitsToCheckAgainstFallbackFonts.toList();
+    _codeUnitsToCheckAgainstFallbackFonts.clear();
+    final List<bool> codeUnitsSupported =
+        List<bool>.filled(codeUnits.length, false);
+    final String testString = String.fromCharCodes(codeUnits);
+
+    for (String font in globalFontFallbacks) {
+      final List<SkFont>? fontsForFamily =
+          skiaFontCollection.familyToFontMap[font];
+      if (fontsForFamily == null) {
+        printWarning('A fallback font was registered but we '
+            'cannot retrieve the typeface for it.');
+        continue;
+      }
+      for (SkFont font in fontsForFamily) {
+        final Uint8List glyphs = font.getGlyphIDs(testString);
+        assert(glyphs.length == codeUnitsSupported.length);
+        for (int i = 0; i < glyphs.length; i++) {
+          final bool codeUnitSupported = glyphs[i] != 0;
+          if (codeUnitSupported) {
+            knownCoveredCodeUnits.add(codeUnits[i]);
+          }
+          codeUnitsSupported[i] |=
+              codeUnitSupported || _isControlCode(codeUnits[i]);
+        }
+      }
+
+      // Once we've checked every typeface for this family, check to see if
+      // every code unit has been covered in order to avoid unnecessary checks.
+      bool keepGoing = false;
+      for (bool supported in codeUnitsSupported) {
+        if (!supported) {
+          keepGoing = true;
+          break;
+        }
+      }
+
+      if (!keepGoing) {
+        return;
+      }
+    }
+
+    // If we reached here, then there are some code units which aren't covered
+    // by the global fallback fonts. Remove the ones which were covered and
+    // try to find fallback fonts which cover them.
+    for (int i = codeUnits.length - 1; i >= 0; i--) {
+      if (codeUnitsSupported[i]) {
+        codeUnits.removeAt(i);
+      }
+    }
+    findFontsForMissingCodeunits(codeUnits);
+  }
 
   void registerFallbackFont(String family, Uint8List bytes) {
     final SkTypeface? typeface =
@@ -66,28 +227,34 @@ class FontFallbackData {
       return;
     }
     fontFallbackCounts.putIfAbsent(family, () => 0);
-    int fontFallbackTag = fontFallbackCounts[family]!;
+    final int fontFallbackTag = fontFallbackCounts[family]!;
     fontFallbackCounts[family] = fontFallbackCounts[family]! + 1;
-    String countedFamily = '$family $fontFallbackTag';
-    registeredFallbackFonts
-        .add(_RegisteredFont(bytes, countedFamily, typeface));
-    globalFontFallbacks.add(countedFamily);
+    final String countedFamily = '$family $fontFallbackTag';
+    // Insert emoji font before all other fallback fonts so we use the emoji
+    // whenever it's available.
+    registeredFallbackFonts.add(RegisteredFont(bytes, countedFamily, typeface));
+    // Insert emoji font before all other fallback fonts so we use the emoji
+    // whenever it's available.
+    if (family == 'Noto Color Emoji Compat') {
+      if (globalFontFallbacks.first == 'Roboto') {
+        globalFontFallbacks.insert(1, countedFamily);
+      } else {
+        globalFontFallbacks.insert(0, countedFamily);
+      }
+    } else {
+      globalFontFallbacks.add(countedFamily);
+    }
   }
 }
 
 Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   final FontFallbackData data = FontFallbackData.instance;
 
-  // If all of the code units are known to have no Noto Font which covers them,
-  // then just give up. We have already logged a warning.
-  if (codeUnits.every((u) => data.codeUnitsWithNoKnownFont.contains(u))) {
-    return;
-  }
   Set<NotoFont> fonts = <NotoFont>{};
-  Set<int> coveredCodeUnits = <int>{};
-  Set<int> missingCodeUnits = <int>{};
+  final Set<int> coveredCodeUnits = <int>{};
+  final Set<int> missingCodeUnits = <int>{};
   for (int codeUnit in codeUnits) {
-    List<NotoFont> fontsForUnit = data.notoTree.intersections(codeUnit);
+    final List<NotoFont> fontsForUnit = data.notoTree.intersections(codeUnit);
     fonts.addAll(fontsForUnit);
     if (fontsForUnit.isNotEmpty) {
       coveredCodeUnits.add(codeUnit);
@@ -105,7 +272,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   final Set<int> unmatchedCodeUnits = Set<int>.from(coveredCodeUnits);
   fonts = findMinimumFontsForCodeUnits(unmatchedCodeUnits, fonts);
 
-  Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
+  final Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
   for (int codeUnit in coveredCodeUnits) {
     for (NotoFont font in fonts) {
       if (font.resolvedFont == null) {
@@ -168,7 +335,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
 ///       unicode-range: U+d723-d728, U+d72a-d733, U+d735-d748, U+d74a-d74f, U+d752-d753, U+d755-d757, U+d75a-d75f, U+d762-d764, U+d766-d768, U+d76a-d76b, U+d76d-d76f, U+d771-d787, U+d789-d78b, U+d78d-d78f, U+d791-d797, U+d79a, U+d79c, U+d79e-d7a3, U+f900-f909, U+f90b-f92e;
 ///     }
 _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
-  List<_ResolvedNotoSubset> subsets = <_ResolvedNotoSubset>[];
+  final List<_ResolvedNotoSubset> subsets = <_ResolvedNotoSubset>[];
   bool resolvingFontFace = false;
   String? fontFaceUrl;
   List<CodeunitRange>? fontFaceUnicodeRanges;
@@ -183,31 +350,33 @@ _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
     } else {
       // We are resolving a @font-face, read out the url and ranges.
       if (line.startsWith('  src:')) {
-        int urlStart = line.indexOf('url(');
+        final int urlStart = line.indexOf('url(');
         if (urlStart == -1) {
           printWarning('Unable to resolve Noto font URL: $line');
           return null;
         }
-        int urlEnd = line.indexOf(')');
+        final int urlEnd = line.indexOf(')');
         fontFaceUrl = line.substring(urlStart + 4, urlEnd);
       } else if (line.startsWith('  unicode-range:')) {
         fontFaceUnicodeRanges = <CodeunitRange>[];
-        String rangeString = line.substring(17, line.length - 1);
-        List<String> rawRanges = rangeString.split(', ');
+        final String rangeString = line.substring(17, line.length - 1);
+        final List<String> rawRanges = rangeString.split(', ');
         for (final String rawRange in rawRanges) {
-          List<String> startEnd = rawRange.split('-');
+          final List<String> startEnd = rawRange.split('-');
           if (startEnd.length == 1) {
-            String singleRange = startEnd.single;
+            final String singleRange = startEnd.single;
             assert(singleRange.startsWith('U+'));
-            int rangeValue = int.parse(singleRange.substring(2), radix: 16);
+            final int rangeValue =
+                int.parse(singleRange.substring(2), radix: 16);
             fontFaceUnicodeRanges.add(CodeunitRange(rangeValue, rangeValue));
           } else {
             assert(startEnd.length == 2);
-            String startRange = startEnd[0];
-            String endRange = startEnd[1];
+            final String startRange = startEnd[0];
+            final String endRange = startEnd[1];
             assert(startRange.startsWith('U+'));
-            int startValue = int.parse(startRange.substring(2), radix: 16);
-            int endValue = int.parse(endRange, radix: 16);
+            final int startValue =
+                int.parse(startRange.substring(2), radix: 16);
+            final int endValue = int.parse(endRange, radix: 16);
             fontFaceUnicodeRanges.add(CodeunitRange(startValue, endValue));
           }
         }
@@ -230,7 +399,7 @@ _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
     return null;
   }
 
-  Map<_ResolvedNotoSubset, List<CodeunitRange>> rangesMap =
+  final Map<_ResolvedNotoSubset, List<CodeunitRange>> rangesMap =
       <_ResolvedNotoSubset, List<CodeunitRange>>{};
   for (_ResolvedNotoSubset subset in subsets) {
     for (CodeunitRange range in subset.ranges) {
@@ -243,7 +412,7 @@ _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
     return null;
   }
 
-  IntervalTree<_ResolvedNotoSubset> tree =
+  final IntervalTree<_ResolvedNotoSubset> tree =
       IntervalTree<_ResolvedNotoSubset>.createFromRanges(rangesMap);
 
   return _ResolvedNotoFont(name, subsets, tree);
@@ -258,25 +427,25 @@ Future<void> _registerSymbolsAndEmoji() async {
     return;
   }
   data.registeredSymbolsAndEmoji = true;
-  const String symbolsUrl =
-      'https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols';
   const String emojiUrl =
       'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat';
+  const String symbolsUrl =
+      'https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols';
 
-  String symbolsCss =
-      await notoDownloadQueue.downloader.downloadAsString(symbolsUrl);
-  String emojiCss =
+  final String emojiCss =
       await notoDownloadQueue.downloader.downloadAsString(emojiUrl);
+  final String symbolsCss =
+      await notoDownloadQueue.downloader.downloadAsString(symbolsUrl);
 
   String? extractUrlFromCss(String css) {
     for (final String line in LineSplitter.split(css)) {
       if (line.startsWith('  src:')) {
-        int urlStart = line.indexOf('url(');
+        final int urlStart = line.indexOf('url(');
         if (urlStart == -1) {
           printWarning('Unable to resolve Noto font URL: $line');
           return null;
         }
-        int urlEnd = line.indexOf(')');
+        final int urlEnd = line.indexOf(')');
         return line.substring(urlStart + 4, urlEnd);
       }
     }
@@ -284,21 +453,21 @@ Future<void> _registerSymbolsAndEmoji() async {
     return null;
   }
 
-  String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
-  String? emojiFontUrl = extractUrlFromCss(emojiCss);
-
-  if (symbolsFontUrl != null) {
-    notoDownloadQueue.add(_ResolvedNotoSubset(
-        symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
-  } else {
-    printWarning('Error parsing CSS for Noto Symbols font.');
-  }
+  final String? emojiFontUrl = extractUrlFromCss(emojiCss);
+  final String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
 
   if (emojiFontUrl != null) {
     notoDownloadQueue.add(_ResolvedNotoSubset(
         emojiFontUrl, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
   } else {
     printWarning('Error parsing CSS for Noto Emoji font.');
+  }
+
+  if (symbolsFontUrl != null) {
+    notoDownloadQueue.add(_ResolvedNotoSubset(
+        symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
+  } else {
+    printWarning('Error parsing CSS for Noto Symbols font.');
   }
 }
 
@@ -316,15 +485,15 @@ Future<void> _registerSymbolsAndEmoji() async {
 Set<NotoFont> findMinimumFontsForCodeUnits(
     Set<int> codeUnits, Set<NotoFont> fonts) {
   assert(fonts.isNotEmpty || codeUnits.isEmpty);
-  Set<NotoFont> minimumFonts = <NotoFont>{};
-  List<NotoFont> bestFonts = <NotoFont>[];
+  final Set<NotoFont> minimumFonts = <NotoFont>{};
+  final List<NotoFont> bestFonts = <NotoFont>[];
 
-  String language = html.window.navigator.language;
+  final String language = html.window.navigator.language;
 
   while (codeUnits.isNotEmpty) {
     int maxCodeUnitsCovered = 0;
     bestFonts.clear();
-    for (var font in fonts) {
+    for (NotoFont font in fonts) {
       int codeUnitsCovered = 0;
       for (int codeUnit in codeUnits) {
         if (font.resolvedFont?.tree.containsDeep(codeUnit) == true) {
@@ -347,7 +516,7 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
     // on locale. Otherwise just choose the first font.
     NotoFont bestFont = bestFonts.first;
     if (bestFonts.length > 1) {
-      if (bestFonts.every((font) => _cjkFonts.contains(font))) {
+      if (bestFonts.every((NotoFont font) => _cjkFonts.contains(font))) {
         if (language == 'zh-Hans' ||
             language == 'zh-CN' ||
             language == 'zh-SG' ||
@@ -372,7 +541,7 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
         }
       }
     }
-    codeUnits.removeWhere((codeUnit) {
+    codeUnits.removeWhere((int codeUnit) {
       return bestFont.resolvedFont!.tree.containsDeep(codeUnit);
     });
     minimumFonts.addAll(bestFonts);
@@ -396,7 +565,7 @@ class NotoFont {
     if (resolvedFont == null) {
       if (_decodingCompleter == null) {
         _decodingCompleter = Completer<void>();
-        String googleFontCss = await notoDownloadQueue.downloader
+        final String googleFontCss = await notoDownloadQueue.downloader
             .downloadAsString(googleFontsCssUrl);
         final _ResolvedNotoFont? googleFont =
             _makeResolvedNotoFontFromCss(googleFontCss, name);
@@ -429,7 +598,7 @@ class CodeunitRange {
     if (other is! CodeunitRange) {
       return false;
     }
-    CodeunitRange range = other;
+    final CodeunitRange range = other;
     return range.start == start && range.end == end;
   }
 
@@ -712,7 +881,7 @@ class FallbackFontDownloadQueue {
         pendingSubsets.containsKey(subset.url)) {
       return;
     }
-    bool firstInBatch = pendingSubsets.isEmpty;
+    final bool firstInBatch = pendingSubsets.isEmpty;
     pendingSubsets[subset.url] = subset;
     if (firstInBatch) {
       Timer.run(startDownloads);

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import '../util.dart';
+import 'word_break_properties.dart';
 
 class _FindBreakDirection {
   static const _FindBreakDirection forward = _FindBreakDirection(step: 1);
@@ -54,8 +55,8 @@ abstract class WordBreaker {
       return false;
     }
 
-    final WordCharProperty? immediateRight = wordLookup.find(text, index);
-    WordCharProperty? immediateLeft = wordLookup.find(text, index - 1);
+    final WordCharProperty immediateRight = wordLookup.find(text, index);
+    WordCharProperty immediateLeft = wordLookup.find(text, index - 1);
 
     // Do not break within CRLF.
     // WB3: CR × LF

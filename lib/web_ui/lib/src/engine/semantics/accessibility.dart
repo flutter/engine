@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+import '../../engine.dart'  show registerHotRestartListener;
+import '../services.dart';
 
 /// Singleton for accessing accessibility announcements from the platform.
 final AccessibilityAnnouncements accessibilityAnnouncements =

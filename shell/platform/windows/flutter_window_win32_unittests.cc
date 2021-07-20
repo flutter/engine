@@ -52,9 +52,8 @@ struct SimulatedEvent {
 // key event handler.
 class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
  public:
-  SpyKeyboardKeyHandler(
-      flutter::BinaryMessenger* messenger,
-      KeyboardKeyHandler::EventRedispatcher redispatch_event) {
+  SpyKeyboardKeyHandler(flutter::BinaryMessenger* messenger,
+                        KeyboardKeyHandler::EventDispatcher redispatch_event) {
     real_implementation_ =
         std::make_unique<KeyboardKeyHandler>(redispatch_event);
     real_implementation_->AddDelegate(
@@ -156,6 +155,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD2(OnScroll, void(double, double));
   MOCK_METHOD4(DefaultWindowProc, LRESULT(HWND, UINT, WPARAM, LPARAM));
   MOCK_METHOD0(GetDpiScale, float());
+  MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
 };
 

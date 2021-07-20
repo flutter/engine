@@ -2,7 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../engine.dart'  show registerHotRestartListener;
+import 'browser_detection.dart';
+import 'key_map.dart';
+import 'platform_dispatcher.dart';
+import 'semantics.dart';
 
 typedef _VoidCallback = void Function();
 typedef ValueGetter<T> = T Function();
@@ -24,7 +32,7 @@ final int _kLogicalMetaLeft = kWebLogicalLocationMap['Meta']![_kLocationLeft]!;
 final int _kLogicalMetaRight = kWebLogicalLocationMap['Meta']![_kLocationRight]!;
 // Map logical keys for modifier keys to the functions that can get their
 // modifier flag out of an event.
-final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = {
+final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = <int, _ModifierGetter>{
   _kLogicalAltLeft: (FlutterHtmlKeyboardEvent event) => event.altKey,
   _kLogicalAltRight: (FlutterHtmlKeyboardEvent event) => event.altKey,
   _kLogicalControlLeft: (FlutterHtmlKeyboardEvent event) => event.ctrlKey,
@@ -474,7 +482,7 @@ class KeyboardConverter {
       synthesized: false,
     );
 
-    bool primaryHandled = dispatchKeyData(keyData);
+    final bool primaryHandled = dispatchKeyData(keyData);
     if (primaryHandled) {
       event.preventDefault();
     }

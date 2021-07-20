@@ -97,6 +97,7 @@ source_set("fml") {
   public_deps = [ ":command_line" ]
 
   deps = [
+    "//third_party/abseil-cpp/absl/debugging:symbolize",
     "//third_party/dart/runtime:dart_api",
 
     # These need to be in sync with the Fuchsia buildroot.
@@ -180,6 +181,8 @@ source_set("fml") {
       "platform/fuchsia/message_loop_fuchsia.cc",
       "platform/fuchsia/message_loop_fuchsia.h",
       "platform/fuchsia/paths_fuchsia.cc",
+      "platform/fuchsia/task_observers.cc",
+      "platform/fuchsia/task_observers.h",
     ]
 
     public_deps += [
@@ -262,6 +265,7 @@ if (enable_unittests) {
       "file_unittest.cc",
       "hash_combine_unittests.cc",
       "logging_unittests.cc",
+      "mapping_unittests.cc",
       "memory/ref_counted_unittest.cc",
       "memory/task_runner_checker_unittest.cc",
       "memory/weak_ptr_unittest.cc",

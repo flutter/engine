@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 
 @interface FlutterEngine ()
@@ -77,6 +78,6 @@
  */
 - (void)dispatchSemanticsAction:(FlutterSemanticsAction)action
                        toTarget:(uint16_t)target
-                       withData:(const std::vector<uint8_t>&)data;
+                       withData:(fml::MallocMapping)data;
 
 @end

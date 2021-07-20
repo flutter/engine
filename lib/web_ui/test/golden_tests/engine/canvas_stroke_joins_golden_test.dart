@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
@@ -19,7 +18,7 @@ void main() {
 void testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 300, 300);
 
-  BitmapCanvas canvas;
+  late BitmapCanvas canvas;
 
   setUp(() {
     canvas = BitmapCanvas(region, RenderStrategy());
@@ -33,7 +32,7 @@ void testMain() async {
 
     paintStrokeJoins(canvas);
 
-    html.document.body.append(canvas.rootElement);
+    html.document.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_stroke_joins.png', region: region);
   });
 
@@ -49,15 +48,15 @@ void paintStrokeJoins(BitmapCanvas canvas) {
   Offset mid = Offset(120, 10);
   Offset end = Offset(120, 20);
 
-  var strokeCaps = [StrokeCap.butt, StrokeCap.round, StrokeCap.square];
+  final List<StrokeCap> strokeCaps = <StrokeCap>[StrokeCap.butt, StrokeCap.round, StrokeCap.square];
   for (StrokeCap cap in strokeCaps) {
-    var joints = [StrokeJoin.miter, StrokeJoin.bevel, StrokeJoin.round];
-    var colors = [Color(0xFFF44336), Color(0xFF4CAF50), Color(0xFF2196F3)]; // red, green, blue
+    final List<StrokeJoin> joints = <StrokeJoin>[StrokeJoin.miter, StrokeJoin.bevel, StrokeJoin.round];
+    final List<Color> colors = <Color>[Color(0xFFF44336), Color(0xFF4CAF50), Color(0xFF2196F3)]; // red, green, blue
     for (int i = 0; i < joints.length; i++) {
-      var join = joints[i];
-      var color = colors[i % colors.length];
+      final StrokeJoin join = joints[i];
+      final Color color = colors[i % colors.length];
 
-      Path path = new Path();
+      final Path path = new Path();
       path.moveTo(start.dx, start.dy);
       path.lineTo(mid.dx, mid.dy);
       path.lineTo(end.dx, end.dy);
