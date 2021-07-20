@@ -4,9 +4,9 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show EnginePlatformDispatcher;
 import 'package:ui/ui.dart' as ui;
 
+import '../platform_dispatcher.dart';
 import '../services/message_codec.dart';
 import '../services/message_codecs.dart';
 import 'url_strategy.dart';
@@ -190,7 +190,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
     // Restores the html browser history.
     assert(_hasSerialCount(currentState));
-    int backCount = _currentSerialCount;
+    final int backCount = _currentSerialCount;
     if (backCount > 0) {
       await urlStrategy!.go(-backCount);
     }

@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/src/engine.dart' show transformRect, Matrix4;
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
+import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views.dart';
 import 'n_way_canvas.dart';
@@ -172,13 +173,13 @@ class BackdropFilterEngineLayer extends ContainerLayer
 
   @override
   void preroll(PrerollContext preRollContext, Matrix4 matrix) {
-    ui.Rect childBounds = prerollChildren(preRollContext, matrix);
+    final ui.Rect childBounds = prerollChildren(preRollContext, matrix);
     paintBounds = childBounds.expandToInclude(preRollContext.cullRect);
   }
 
   @override
   void paint(PaintContext context) {
-    CkPaint paint = CkPaint()..blendMode = _blendMode;
+    final CkPaint paint = CkPaint()..blendMode = _blendMode;
     context.internalNodesCanvas
         .saveLayerWithFilter(paintBounds, _filter, paint);
     paintChildren(context);
@@ -426,7 +427,7 @@ class ShaderMaskEngineLayer extends ContainerLayer
     paintContext.internalNodesCanvas.saveLayer(paintBounds, null);
     paintChildren(paintContext);
 
-    CkPaint paint = CkPaint();
+    final CkPaint paint = CkPaint();
     paint.shader = shader;
     paint.blendMode = blendMode;
     paint.filterQuality = filterQuality;
@@ -567,7 +568,7 @@ class ColorFilterEngineLayer extends ContainerLayer
   void paint(PaintContext paintContext) {
     assert(needsPainting);
 
-    CkPaint paint = CkPaint();
+    final CkPaint paint = CkPaint();
     paint.colorFilter = filter;
 
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
@@ -600,7 +601,7 @@ class PlatformViewLayer extends Layer {
 
   @override
   void paint(PaintContext context) {
-    CkCanvas? canvas = context.viewEmbedder!.compositeEmbeddedView(viewId);
+    final CkCanvas? canvas = context.viewEmbedder!.compositeEmbeddedView(viewId);
     context.leafNodesCanvas = canvas;
   }
 }

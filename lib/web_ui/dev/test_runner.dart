@@ -26,6 +26,7 @@ import 'package:test_core/src/runner/reporter.dart'
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:test_core/src/executable.dart'
     as test;
+import 'package:watcher/src/watch_event.dart';
 import 'package:web_test_utils/goldens.dart';
 
 import 'browser.dart';
@@ -38,8 +39,6 @@ import 'environment.dart';
 import 'exceptions.dart';
 import 'firefox.dart';
 import 'firefox_installer.dart';
-import 'integration_tests_manager.dart';
-import 'macos_info.dart';
 import 'safari_installation.dart';
 import 'safari_ios.dart';
 import 'safari_macos.dart';
@@ -57,18 +56,6 @@ List<String> failedShards = <String>[];
 
 /// Whether all test shards succeeded.
 bool get allShardsPassed => failedShards.isEmpty;
-
-/// The type of tests requested by the tool user.
-enum TestTypesRequested {
-  /// For running the unit tests only.
-  unit,
-
-  /// For running the integration tests only.
-  integration,
-
-  /// For running both unit and integration tests.
-  all,
-}
 
 /// Command-line argument parsers that parse browser-specific options.
 final List<BrowserArgParser> _browserArgParsers  = <BrowserArgParser>[
@@ -93,7 +80,7 @@ BrowserEnvironment _createBrowserEnvironment(String browserName) {
 }
 
 /// Runs tests.
-class TestCommand extends Command<bool> with ArgUtils {
+class TestCommand extends Command<bool> with ArgUtils<bool> {
   TestCommand() {
     argParser
       ..addFlag(
@@ -115,13 +102,6 @@ class TestCommand extends Command<bool> with ArgUtils {
         defaultsTo: false,
         help: 'felt test command runs the unit tests and the integration tests '
             'at the same time. If this flag is set, only run the unit tests.',
-      )
-      ..addFlag(
-        'integration-tests-only',
-        defaultsTo: false,
-        help: 'felt test command runs the unit tests and the integration tests '
-            'at the same time. If this flag is set, only run the integration '
-            'tests.',
       )
       ..addFlag('use-system-flutter',
           defaultsTo: false,
@@ -170,7 +150,6 @@ class TestCommand extends Command<bool> with ArgUtils {
       browserArgParser.populateOptions(argParser);
     }
     GeneralTestsArgumentParser.instance.populateOptions(argParser);
-    IntegrationTestsArgumentParser.instance.populateOptions(argParser);
   }
 
   @override
@@ -193,25 +172,6 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// repeat them.
   bool _testPreparationReady = false;
 
-  /// Check the flags to see what type of tests are requested.
-  TestTypesRequested get testType {
-    if (boolArg('unit-tests-only')! && boolArg('integration-tests-only')!) {
-      throw ArgumentError('Conflicting arguments: unit-tests-only and '
-          'integration-tests-only are both set');
-    } else if (boolArg('unit-tests-only')!) {
-      print('Running the unit tests only');
-      return TestTypesRequested.unit;
-    } else if (boolArg('integration-tests-only')!) {
-      if (!isChrome && !isSafariOnMacOS && !isFirefox) {
-        throw UnimplementedError(
-            'Integration tests are only available on Chrome Desktop for now');
-      }
-      return TestTypesRequested.integration;
-    } else {
-      return TestTypesRequested.all;
-    }
-  }
-
   @override
   Future<bool> run() async {
     for (BrowserArgParser browserArgParser in _browserArgParsers) {
@@ -219,17 +179,11 @@ class TestCommand extends Command<bool> with ArgUtils {
     }
     GeneralTestsArgumentParser.instance.parseOptions(argResults!);
 
-    /// Collect information on the bot.
-    if (isSafariOnMacOS && isLuci) {
-      final MacOSInfo macOsInfo = new MacOSInfo();
-      await macOsInfo.printInformation();
-    }
-
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
-      ClearTerminalScreenStep(),
+      if (isWatchMode) ClearTerminalScreenStep(),
       TestRunnerStep(this),
     ]);
-    await testPipeline.start();
+    await testPipeline.run();
 
     if (isWatchMode) {
       final FilePath dir = FilePath.fromWebUi('');
@@ -241,7 +195,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       await PipelineWatcher(
           dir: dir.absolute,
           pipeline: testPipeline,
-          ignore: (event) {
+          ignore: (WatchEvent event) {
             // Ignore font files that are copied whenever tests run.
             if (event.path.endsWith('.ttf')) {
               return true;
@@ -277,46 +231,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     return message.toString();
   }
 
-  Future<bool> runTests() async {
-    try {
-      switch (testType) {
-        case TestTypesRequested.unit:
-          return runUnitTests();
-        case TestTypesRequested.integration:
-          return runIntegrationTests();
-        case TestTypesRequested.all:
-          if (runAllTests && isIntegrationTestsAvailable) {
-            bool unitTestResult = await runUnitTests();
-            bool integrationTestResult = await runIntegrationTests();
-            if (integrationTestResult != unitTestResult) {
-              print(
-                  'Tests run. Integration tests passed: $integrationTestResult '
-                  'unit tests passed: $unitTestResult');
-            }
-            return integrationTestResult && unitTestResult;
-          } else {
-            return await runUnitTests();
-          }
-      }
-    } on TestFailureException {
-      return true;
-    }
-  }
-
-  Future<bool> runIntegrationTests() async {
-    // Parse additional arguments specific for integration testing.
-    IntegrationTestsArgumentParser.instance.parseOptions(argResults!);
-    await _prepare();
-    final bool result = await IntegrationTestsManager(
-            browser, useSystemFlutter, doUpdateScreenshotGoldens)
-        .runTests();
-    if (!result) {
-      failedShards.add('Integration tests');
-    }
-    return result;
-  }
-
-  Future<bool> runUnitTests() async {
+  Future<void> runUnitTests() async {
     _copyTestFontsIntoWebUi();
     await _buildHostPage();
     await _prepare();
@@ -327,7 +242,6 @@ class TestCommand extends Command<bool> with ArgUtils {
     } else {
       await _runSpecificTests(targetFiles);
     }
-    return true;
   }
 
   /// Preparations before running the tests such as booting simulators or
@@ -411,7 +325,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   List<String> get targets => argResults!.rest;
 
   /// The target test files to run.
-  List<FilePath> get targetFiles => targets.map((t) => FilePath.fromCwd(t)).toList();
+  List<FilePath> get targetFiles => targets.map((String t) => FilePath.fromCwd(t)).toList();
 
   /// Whether all tests should run.
   bool get runAllTests => targets.isEmpty;
@@ -640,7 +554,7 @@ class TestCommand extends Command<bool> with ArgUtils {
         .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit))
         .toList();
 
-    final results = _pool.forEach(
+    final Stream<bool> results = _pool.forEach(
       buildInputs,
       _buildTest,
     );
@@ -669,7 +583,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
   Future<bool> _buildTest(TestBuildInput input) async {
-    String targetFileName = path.join(
+    final String targetFileName = path.join(
       environment.webUiBuildDir.path,
       '${input.path.relativeToWebUi}.browser_test.dart.js',
     );
@@ -682,7 +596,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       directoryToTarget.createSync(recursive: true);
     }
 
-    List<String> arguments = <String>[
+    final List<String> arguments = <String>[
       '--no-minify',
       '--disable-inlining',
       '--enable-asserts',
@@ -739,7 +653,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       '--precompiled=${environment.webUiBuildDir.path}',
       '--configuration=$configurationFilePath',
       '--',
-      ...testFiles.map((f) => f.relativeToWebUi).toList(),
+      ...testFiles.map((FilePath f) => f.relativeToWebUi).toList(),
     ];
 
     if (expectFailure) {
@@ -887,6 +801,6 @@ class TestRunnerStep implements PipelineStep {
 
   @override
   Future<void> run() async {
-    await testCommand.runTests();
+    await testCommand.runUnitTests();
   }
 }

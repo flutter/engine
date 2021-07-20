@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'services.dart';
+import 'util.dart';
 
 /// Handles clipboard related platform messages.
 class ClipboardMessageHandler {
@@ -78,17 +84,13 @@ class ClipboardMessageHandler {
   }
 }
 
-bool _unsafeIsNull(dynamic object) {
-  return object == null;
-}
-
 /// Provides functionality for writing text to clipboard.
 ///
 /// A concrete implementation is picked at runtime based on the available
 /// APIs and the browser.
 abstract class CopyToClipboardStrategy {
   factory CopyToClipboardStrategy() {
-    return !_unsafeIsNull(html.window.navigator.clipboard)
+    return !unsafeIsNull(html.window.navigator.clipboard)
         ? ClipboardAPICopyStrategy()
         : ExecCommandCopyStrategy();
   }
@@ -108,7 +110,7 @@ abstract class CopyToClipboardStrategy {
 abstract class PasteFromClipboardStrategy {
   factory PasteFromClipboardStrategy() {
     return (browserEngine == BrowserEngine.firefox ||
-            _unsafeIsNull(html.window.navigator.clipboard))
+            unsafeIsNull(html.window.navigator.clipboard))
         ? ExecCommandPasteStrategy()
         : ClipboardAPIPasteStrategy();
   }
@@ -128,9 +130,9 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
       await html.window.navigator.clipboard!.writeText(text!);
     } catch (error) {
       print('copy is not successful $error');
-      return Future.value(false);
+      return Future<bool>.value(false);
     }
-    return Future.value(true);
+    return Future<bool>.value(true);
   }
 }
 
@@ -151,7 +153,7 @@ class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
 class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   @override
   Future<bool> setData(String? text) {
-    return Future.value(_setDataSync(text));
+    return Future<bool>.value(_setDataSync(text));
   }
 
   bool _setDataSync(String? text) {
@@ -202,7 +204,7 @@ class ExecCommandPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() {
     // TODO(nurhan): https://github.com/flutter/flutter/issues/48581
-    return Future.error(
+    return Future<String>.error(
         UnimplementedError('Paste is not implemented for this browser.'));
   }
 }

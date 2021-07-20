@@ -86,7 +86,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
 
   static SkStrutStyleProperties toSkStrutStyleProperties(
       ui.StrutStyle value, ui.TextHeightBehavior? paragraphHeightBehavior) {
-    CkStrutStyle style = value as CkStrutStyle;
+    final CkStrutStyle style = value as CkStrutStyle;
     final SkStrutStyleProperties skStrutStyle = SkStrutStyleProperties();
     skStrutStyle.fontFamilies =
         _getEffectiveFontFamilies(style._fontFamily, style._fontFamilyFallback);
@@ -426,9 +426,9 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (shadows != null) {
-      List<SkTextShadow> ckShadows = <SkTextShadow>[];
+      final List<SkTextShadow> ckShadows = <SkTextShadow>[];
       for (ui.Shadow shadow in shadows) {
-        final ckShadow = SkTextShadow();
+        final SkTextShadow ckShadow = SkTextShadow();
         ckShadow.color = makeFreshSkColor(shadow.color);
         ckShadow.offset = toSkPoint(shadow.offset);
         ckShadow.blurRadius = shadow.blurRadius;
@@ -438,9 +438,9 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (fontFeatures != null) {
-      List<SkFontFeature> skFontFeatures = <SkFontFeature>[];
+      final List<SkFontFeature> skFontFeatures = <SkFontFeature>[];
       for (ui.FontFeature fontFeature in fontFeatures) {
-        SkFontFeature skFontFeature = SkFontFeature();
+        final SkFontFeature skFontFeature = SkFontFeature();
         skFontFeature.name = fontFeature.feature;
         skFontFeature.value = fontFeature.value;
         skFontFeatures.add(skFontFeature);
@@ -516,7 +516,7 @@ class CkStrutStyle implements ui.StrutStyle {
 }
 
 SkFontStyle toSkFontStyle(ui.FontWeight? fontWeight, ui.FontStyle? fontStyle) {
-  final style = SkFontStyle();
+  final SkFontStyle style = SkFontStyle();
   if (fontWeight != null) {
     style.weight = toSkFontWeight(fontWeight);
   }
@@ -573,7 +573,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     // existing object.
     bool didRebuildSkiaObject = false;
     if (paragraph == null) {
-      final builder = CkParagraphBuilder(_paragraphStyle);
+      final CkParagraphBuilder builder = CkParagraphBuilder(_paragraphStyle);
       for (_ParagraphCommand command in _paragraphCommands) {
         switch (command.type) {
           case _ParagraphCommandType.addText:
@@ -722,7 +722,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   }
 
   List<ui.TextBox> skRectsToTextBoxes(List<dynamic> skRects) {
-    List<ui.TextBox> result = <ui.TextBox>[];
+    final List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
       final List<double> rect = skRects[i];
@@ -859,11 +859,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     ui.TextBaseline? baseline,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
-    assert((alignment == ui.PlaceholderAlignment.aboveBaseline ||
+    assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
             alignment == ui.PlaceholderAlignment.belowBaseline ||
-            alignment == ui.PlaceholderAlignment.baseline)
-        ? baseline != null
-        : true);
+            alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
 
     _placeholderCount++;
     _placeholderScales.add(scale);
@@ -895,7 +893,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     double baselineOffset,
     ui.TextBaseline baseline,
   ) {
-    final properties = _CkParagraphPlaceholder(
+    final _CkParagraphPlaceholder properties = _CkParagraphPlaceholder(
       width: width,
       height: height,
       alignment: toSkPlaceholderAlignment(alignment),
@@ -907,8 +905,8 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    List<String> fontFamilies = <String>[];
-    CkTextStyle style = _peekStyle();
+    final List<String> fontFamilies = <String>[];
+    final CkTextStyle style = _peekStyle();
     if (style.fontFamily != null) {
       fontFamilies.add(style.fontFamily!);
     }
@@ -922,7 +920,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   CkParagraph build() {
-    final builtParagraph = _buildSkParagraph();
+    final SkParagraph builtParagraph = _buildSkParagraph();
     return CkParagraph(builtParagraph, _style, _commands);
   }
 
@@ -1051,12 +1049,12 @@ enum _ParagraphCommandType {
 
 List<String> _getEffectiveFontFamilies(String? fontFamily,
     [List<String>? fontFamilyFallback]) {
-  List<String> fontFamilies = <String>[];
+  final List<String> fontFamilies = <String>[];
   if (fontFamily != null) {
     fontFamilies.add(fontFamily);
   }
   if (fontFamilyFallback != null &&
-      !fontFamilyFallback.every((font) => fontFamily == font)) {
+      !fontFamilyFallback.every((String font) => fontFamily == font)) {
     fontFamilies.addAll(fontFamilyFallback);
   }
   fontFamilies.addAll(FontFallbackData.instance.globalFontFallbacks);

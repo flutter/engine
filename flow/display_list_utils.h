@@ -12,9 +12,9 @@
 // This file contains various utility classes to ease implementing
 // a Flutter DisplayList Dispatcher, including:
 //
-// IngoreAttributeDispatchHelper:
-// IngoreClipDispatchHelper:
-// IngoreTransformDispatchHelper
+// IgnoreAttributeDispatchHelper:
+// IgnoreClipDispatchHelper:
+// IgnoreTransformDispatchHelper
 //     Empty overrides of all of the associated methods of Dispatcher
 //     for dispatchers that only track some of the rendering operations
 //
@@ -37,7 +37,7 @@ namespace flutter {
 
 // A utility class that will ignore all Dispatcher methods relating
 // to the setting of attributes.
-class IngoreAttributeDispatchHelper : public virtual Dispatcher {
+class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
  public:
   void setAA(bool aa) override {}
   void setDither(bool dither) override {}
@@ -49,7 +49,7 @@ class IngoreAttributeDispatchHelper : public virtual Dispatcher {
   void setMiterLimit(SkScalar limit) override {}
   void setColor(SkColor color) override {}
   void setBlendMode(SkBlendMode mode) override {}
-  void setFilterQuality(SkFilterQuality quality) override {}
+  void setBlender(sk_sp<SkBlender> blender) override {}
   void setShader(sk_sp<SkShader> shader) override {}
   void setImageFilter(sk_sp<SkImageFilter> filter) override {}
   void setColorFilter(sk_sp<SkColorFilter> filter) override {}
@@ -60,7 +60,7 @@ class IngoreAttributeDispatchHelper : public virtual Dispatcher {
 
 // A utility class that will ignore all Dispatcher methods relating
 // to setting a clip.
-class IngoreClipDispatchHelper : public virtual Dispatcher {
+class IgnoreClipDispatchHelper : public virtual Dispatcher {
   void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) override {}
   void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) override {}
   void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) override {}
@@ -68,7 +68,7 @@ class IngoreClipDispatchHelper : public virtual Dispatcher {
 
 // A utility class that will ignore all Dispatcher methods relating
 // to modifying the transform.
-class IngoreTransformDispatchHelper : public virtual Dispatcher {
+class IgnoreTransformDispatchHelper : public virtual Dispatcher {
  public:
   void translate(SkScalar tx, SkScalar ty) override {}
   void scale(SkScalar sx, SkScalar sy) override {}
@@ -106,7 +106,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setMiterLimit(SkScalar limit) override;
   void setColor(SkColor color) override;
   void setBlendMode(SkBlendMode mode) override;
-  void setFilterQuality(SkFilterQuality quality) override;
+  void setBlender(sk_sp<SkBlender> blender) override;
   void setShader(sk_sp<SkShader> shader) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
   void setColorFilter(sk_sp<SkColorFilter> filter) override;
@@ -310,7 +310,8 @@ class DisplayListBoundsCalculator final
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes) override;
+                  bool occludes,
+                  SkScalar dpr) override;
 
   SkRect getBounds() { return accumulator_->getBounds(); }
 

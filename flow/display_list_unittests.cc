@@ -14,6 +14,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkVertices.h"
+#include "third_party/skia/include/effects/SkBlenders.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
@@ -66,6 +67,12 @@ constexpr SkPoint TestPoints[] = {
 };
 #define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
 
+static const sk_sp<SkBlender> TestBlender1 =
+    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
+static const sk_sp<SkBlender> TestBlender2 =
+    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
+static const sk_sp<SkBlender> TestBlender3 =
+    SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
 static const sk_sp<SkShader> TestShader1 =
     SkGradientShader::MakeLinear(end_points,
                                  colors,
@@ -295,11 +302,11 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kDstIn);}},
     }
   },
-  { "SetFilterQuality", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kNone_SkFilterQuality);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kLow_SkFilterQuality);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kMedium_SkFilterQuality);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kHigh_SkFilterQuality);}},
+  { "SetBlender", {
+      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
+      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender1);}},
+      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender2);}},
+      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender3);}},
     }
   },
   { "SetShader", {
@@ -670,11 +677,12 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   { "DrawShadow", {
       // cv shadows are turned into an opaque ShadowRec which is not exposed
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath2, SK_ColorGREEN, 1.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorBLUE, 1.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 2.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, true);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath2, SK_ColorGREEN, 1.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorBLUE, 1.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 2.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, true, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false, 2.5);}},
     }
   },
 };

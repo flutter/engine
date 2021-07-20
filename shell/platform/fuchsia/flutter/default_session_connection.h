@@ -7,7 +7,9 @@
 
 #include <fuchsia/scenic/scheduling/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
+#include <lib/async/dispatcher.h>
 #include <lib/fidl/cpp/interface_handle.h>
+#include <lib/inspect/cpp/inspect.h>
 #include <lib/ui/scenic/cpp/session.h>
 
 #include "flutter/fml/closure.h"
@@ -102,6 +104,21 @@ class DefaultSessionConnection final {
 
   scenic::Session session_wrapper_;
 
+  inspect::Node inspect_node_;
+  inspect::UintProperty secondary_vsyncs_completed_;
+  inspect::UintProperty vsyncs_requested_;
+  inspect::UintProperty vsyncs_completed_;
+  inspect::UintProperty presents_requested_;
+  inspect::UintProperty presents_submitted_;
+  inspect::UintProperty presents_completed_;
+  inspect::IntProperty last_secondary_vsync_completed_;
+  inspect::IntProperty last_vsync_requested_;
+  inspect::IntProperty last_vsync_completed_;
+  inspect::IntProperty last_frame_requested_;
+  inspect::IntProperty last_frame_presented_;
+  inspect::IntProperty last_frame_completed_;
+  async_dispatcher_t* inspect_dispatcher_;
+
   on_frame_presented_event on_frame_presented_callback_;
 
   fml::TimePoint last_latch_point_targeted_ =
@@ -128,7 +145,6 @@ class DefaultSessionConnection final {
   const int kMaxFramesInFlight;
 
   int frames_in_flight_ = 0;
-  int frames_in_flight_allowed_ = 0;
   bool present_session_pending_ = false;
 
   // The time from vsync that the Flutter animator should begin its frames. This

@@ -57,8 +57,8 @@ void SkPaintDispatchHelper::setColor(SkColor color) {
 void SkPaintDispatchHelper::setBlendMode(SkBlendMode mode) {
   paint_.setBlendMode(mode);
 }
-void SkPaintDispatchHelper::setFilterQuality(SkFilterQuality quality) {
-  paint_.setFilterQuality(quality);
+void SkPaintDispatchHelper::setBlender(sk_sp<SkBlender> blender) {
+  paint_.setBlender(blender);
 }
 void SkPaintDispatchHelper::setShader(sk_sp<SkShader> shader) {
   paint_.setShader(shader);
@@ -338,23 +338,10 @@ void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkColor color,
                                              const SkScalar elevation,
-                                             bool occludes) {
-  // Constants from physical_shape_layer.cc
-  const SkScalar kLightHeight = 600;
-  const SkScalar kLightRadius = 800;
-
-  SkShadowFlags flags = occludes
-                            ? SkShadowFlags::kTransparentOccluder_ShadowFlag
-                            : SkShadowFlags::kNone_ShadowFlag;
-  const SkRect& bounds = path.getBounds();
-  SkScalar shadow_x = (bounds.left() + bounds.right()) / 2;
-  SkScalar shadow_y = bounds.top() - 600.0f;
-  SkRect shadow_bounds;
-  SkShadowUtils::GetLocalBounds(
-      matrix(), path, SkPoint3::Make(0, 0, elevation),
-      SkPoint3::Make(shadow_x, shadow_y, kLightHeight), kLightRadius, flags,
-      &shadow_bounds);
-  accumulateRect(shadow_bounds);
+                                             bool occludes,
+                                             SkScalar dpr) {
+  accumulateRect(
+      PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix()));
 }
 
 void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,

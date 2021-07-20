@@ -189,7 +189,7 @@ OperatingSystem detectOperatingSystem({
 ///
 /// These devices tend to behave differently on many core issues such as events,
 /// screen readers, input devices.
-const Set<OperatingSystem> _desktopOperatingSystems = {
+const Set<OperatingSystem> _desktopOperatingSystems = <OperatingSystem>{
   OperatingSystem.macOs,
   OperatingSystem.linux,
   OperatingSystem.windows,
@@ -206,6 +206,14 @@ bool get isDesktop => _desktopOperatingSystems.contains(operatingSystem);
 /// See [_desktopOperatingSystems].
 /// See [isDesktop].
 bool get isMobile => !isDesktop;
+
+/// Whether the browser is running on macOS or iOS.
+///
+/// - See [operatingSystem].
+/// - See [OperatingSystem].
+bool get isMacOrIOS =>
+    operatingSystem == OperatingSystem.iOs ||
+    operatingSystem == OperatingSystem.macOs;
 
 int? _cachedWebGLVersion;
 

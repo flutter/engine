@@ -10,6 +10,14 @@ import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 
+# Loaded via FFI
+_common_runner_libs = common_libs + [
+                        {
+                          name = "libzircon_ffi.so"
+                          path = rebase_path("$root_out_dir")
+                        },
+                      ]
+
 template("runner") {
   assert(defined(invoker.product), "The parameter 'product' must be defined")
   assert(defined(invoker.output_name),
@@ -40,6 +48,9 @@ template("runner") {
 
     defines = extra_defines
 
+    # For `libzircon_ffi` see _common_runner_libs.
+    public_deps = [ "../dart-pkg/zircon_ffi:zircon_ffi" ]
+
     dart_deps = []
     if (!invoker.product) {
       dart_deps += [
@@ -58,6 +69,7 @@ template("runner") {
              "//flutter/fml",
              "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
              "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+             "$fuchsia_sdk_root/fidl:fuchsia.component.runner",
              "$fuchsia_sdk_root/pkg:async",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
@@ -150,7 +162,7 @@ template("aot_runner_package") {
 
     cmx_file = rebase_path("meta/dart_aot${product_suffix}_runner.cmx")
 
-    libraries = common_libs
+    libraries = _common_runner_libs
 
     resources = []
     if (!invoker.product) {
@@ -209,8 +221,9 @@ template("jit_runner_package") {
     binary = "dart_jit${product_suffix}_runner"
 
     cmx_file = rebase_path("meta/dart_jit${product_suffix}_runner.cmx")
+    cml_file = rebase_path("meta/dart_jit${product_suffix}_runner.cml")
 
-    libraries = common_libs
+    libraries = _common_runner_libs
 
     resources = [
       {

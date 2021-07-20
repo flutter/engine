@@ -2,7 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../engine_canvas.dart';
+import '../picture.dart';
+import '../rrect_renderer.dart';
+import '../shadow.dart';
+import '../text/paragraph.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'bitmap_canvas.dart';
+import 'painting.dart';
+import 'path/path.dart';
+import 'path/path_utils.dart';
+import 'render_vertices.dart';
+import 'shaders/image_shader.dart';
 
 /// Enable this to print every command applied by a canvas.
 const bool _debugDumpPaintCommands = false;
@@ -13,8 +30,8 @@ const bool _debugDumpPaintCommands = false;
 // negative radii (which Skia assumes to be 0), see:
 // https://skia.org/user/api/SkRRect_Reference#SkRRect_inset
 double _measureBorderRadius(double x, double y) {
-  double clampedX = x < 0 ? 0 : x;
-  double clampedY = y < 0 ? 0 : y;
+  final double clampedX = x < 0 ? 0 : x;
+  final double clampedY = y < 0 ? 0 : y;
   return clampedX * clampedX + clampedY * clampedY;
 }
 
@@ -169,13 +186,15 @@ class RecordingCanvas {
         if (rectContainsOther(clipRect, _pictureBounds!)) {
           // No need to check if commands fit in the clip rect if we already
           // know that the entire picture fits it.
-          for (int i = 0, len = _commands.length; i < len; i++) {
+          final int len = _commands.length;
+          for (int i = 0; i < len; i++) {
             _commands[i].apply(engineCanvas);
           }
         } else {
           // The picture doesn't fit the clip rect. Check that drawing commands
           // fit before applying them.
-          for (int i = 0, len = _commands.length; i < len; i++) {
+          final int len = _commands.length;
+          for (int i = 0; i < len; i++) {
             final PaintCommand command = _commands[i];
             if (command is DrawCommand) {
               if (command.isInvisible(clipRect)) {
@@ -391,8 +410,8 @@ class RecordingCanvas {
     assert(!_recordingEnded);
     // Check the inner bounds are contained within the outer bounds
     // see: https://cs.chromium.org/chromium/src/third_party/skia/src/core/SkCanvas.cpp?l=1787-1789
-    ui.Rect innerRect = inner.outerRect;
-    ui.Rect outerRect = outer.outerRect;
+    final ui.Rect innerRect = inner.outerRect;
+    final ui.Rect outerRect = outer.outerRect;
     if (outerRect == innerRect || outerRect.intersect(innerRect) != innerRect) {
       return; // inner is not fully contained within outer
     }
@@ -481,7 +500,7 @@ class RecordingCanvas {
     if (paint.shader == null) {
       // For Rect/RoundedRect paths use drawRect/drawRRect code paths for
       // DomCanvas optimization.
-      SurfacePath sPath = path as SurfacePath;
+      final SurfacePath sPath = path as SurfacePath;
       final ui.Rect? rect = sPath.toRect();
       if (rect != null) {
         drawRect(rect, paint);
@@ -493,7 +512,7 @@ class RecordingCanvas {
         return;
       }
     }
-    SurfacePath sPath = path as SurfacePath;
+    final SurfacePath sPath = path as SurfacePath;
     if (!sPath.pathRef.isEmpty) {
       renderStrategy.hasArbitraryPaint = true;
       _didDraw = true;
@@ -503,7 +522,7 @@ class RecordingCanvas {
         pathBounds = pathBounds.inflate(paintSpread);
       }
       // Clone path so it can be reused for subsequent draw calls.
-      final ui.Path clone = SurfacePath._shallowCopy(path);
+      final ui.Path clone = SurfacePath.shallowCopy(path);
       final PaintDrawPath command =
           PaintDrawPath(clone as SurfacePath, paint.paintData);
       _paintBounds.grow(pathBounds, command);
@@ -521,7 +540,7 @@ class RecordingCanvas {
     _didDraw = true;
     final double left = offset.dx;
     final double top = offset.dy;
-    final command = PaintDrawImage(image, offset, paint.paintData);
+    final PaintDrawImage command = PaintDrawImage(image, offset, paint.paintData);
     _paintBounds.growLTRB(
         left, top, left + image.width, top + image.height, command);
     _commands.add(command);
@@ -631,7 +650,8 @@ class RecordingCanvas {
     double minValueX, maxValueX, minValueY, maxValueY;
     minValueX = maxValueX = points[0];
     minValueY = maxValueY = points[1];
-    for (int i = 2, len = points.length; i < len; i += 2) {
+    final int len = points.length;
+    for (int i = 2; i < len; i += 2) {
       final double x = points[i];
       final double y = points[i + 1];
       if (x.isNaN || y.isNaN) {
@@ -1373,7 +1393,7 @@ class Ellipse extends PathCommand {
         anticlockwise ? startAngle - endAngle : endAngle - startAngle,
         matrix4,
         bezierPath);
-    targetPath._addPath(bezierPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
+    targetPath.addPathWithMode(bezierPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
   }
 
   void _drawArcWithBezier(
@@ -1627,8 +1647,8 @@ class RRectCommand extends PathCommand {
   @override
   void transform(Float32List matrix4, SurfacePath targetPath) {
     final ui.Path roundRectPath = ui.Path();
-    _RRectToPathRenderer(roundRectPath).render(rrect);
-    targetPath._addPath(roundRectPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
+    RRectToPathRenderer(roundRectPath).render(rrect);
+    targetPath.addPathWithMode(roundRectPath, 0, 0, matrix4, SPathAddPathMode.kAppend);
   }
 
   @override
@@ -2022,12 +2042,12 @@ class RenderStrategy {
   /// This is used to decide whether to use simplified DomCanvas.
   bool hasArbitraryPaint = false;
 
-  /// Whether commands are executed within a shadermask.
+  /// Whether commands are executed within a shadermask or color filter.
   ///
   /// Webkit doesn't apply filters to canvas elements in its child
   /// element tree. When this is set to true, we prevent canvas usage in
   /// bitmap canvas and instead render using dom primitives and svg only.
-  bool isInsideShaderMask = false;
+  bool isInsideSvgFilterTree = false;
 
   RenderStrategy();
 

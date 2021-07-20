@@ -15,8 +15,9 @@ import 'dart:js' as js;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+
+import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
@@ -329,7 +330,7 @@ final List<SkTextHeightBehavior> _skTextHeightBehaviors =
 ];
 
 SkTextHeightBehavior toSkTextHeightBehavior(ui.TextHeightBehavior behavior) {
-  int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
+  final int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
       (behavior.applyHeightToLastDescent ? 0 : 1 << 1);
   return _skTextHeightBehaviors[index];
 }
@@ -890,7 +891,6 @@ class SkPaint {
   external void setColorInt(int color);
   external void setShader(SkShader? shader);
   external void setMaskFilter(SkMaskFilter? maskFilter);
-  external void setFilterQuality(SkFilterQuality filterQuality);
   external void setColorFilter(SkColorFilter? colorFilter);
   external void setStrokeMiter(double miterLimit);
   external void setImageFilter(SkImageFilter? imageFilter);
