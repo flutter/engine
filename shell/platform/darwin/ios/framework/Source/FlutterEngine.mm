@@ -725,8 +725,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Text input delegate
 
-- (void)handlePressEvent:(FlutterUIPressProxy*)press
-              nextAction:(void (^)())next API_AVAILABLE(ios(13.4)) {
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+            handlePressEvent:(FlutterUIPressProxy*)press
+                  nextAction:(void (^)())next API_AVAILABLE(ios(13.4)) {
   if (_viewController.get() != nullptr) {
     [_viewController.get() handlePressEvent:press nextAction:next];
   }

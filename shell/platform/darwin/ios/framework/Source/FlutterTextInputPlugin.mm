@@ -857,11 +857,12 @@ static BOOL isPositionCloserToPoint(CGPoint point,
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [_textInputDelegate handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                            withEvent:event]
-                                nextAction:^() {
-                                  [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
-                                }];
+      [_textInputDelegate
+          flutterTextInputView:self
+              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+                    nextAction:^() {
+                      [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+                    }];
     }
   } else {
     [super pressesBegan:presses withEvent:event];
@@ -873,10 +874,11 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
       [_textInputDelegate
-          handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
-                nextAction:^() {
-                  [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
-                }];
+          flutterTextInputView:self
+              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+                    nextAction:^() {
+                      [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
+                    }];
     }
   } else {
     [super pressesChanged:presses withEvent:event];
@@ -887,11 +889,12 @@ static BOOL isPositionCloserToPoint(CGPoint point,
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [_textInputDelegate handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                            withEvent:event]
-                                nextAction:^() {
-                                  [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
-                                }];
+      [_textInputDelegate
+          flutterTextInputView:self
+              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+                    nextAction:^() {
+                      [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+                    }];
     }
   } else {
     [super pressesEnded:presses withEvent:event];
@@ -903,10 +906,11 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
       [_textInputDelegate
-          handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
-                nextAction:^() {
-                  [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
-                }];
+          flutterTextInputView:self
+              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+                    nextAction:^() {
+                      [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
+                    }];
     }
   } else {
     [super pressesCancelled:presses withEvent:event];
