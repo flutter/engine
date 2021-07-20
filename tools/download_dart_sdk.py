@@ -150,7 +150,7 @@ def ExtractDartSDK(archive, os_name, arch, verbose):
   if os.path.isdir(dart_sdk):
     shutil.rmtree(dart_sdk)
 
-  extract_dest = os.path.join(FLUTTER_PREBUILTS_DIR, 'temp')
+  extract_dest = os.path.join(FLUTTER_PREBUILTS_DIR, os_arch, 'temp')
   if os.path.isdir(extract_dest):
     shutil.rmtree(extract_dest)
   os.makedirs(extract_dest, exist_ok=True)
