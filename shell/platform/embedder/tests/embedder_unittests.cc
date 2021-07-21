@@ -126,6 +126,7 @@ TEST_F(EmbedderTest, CanInvokeCustomEntrypointMacro) {
 /*
  * Uncomment once a Dart roll with the fix to reinitialize dart-io state
  * correctly has landed and rolled into the engine.
+ * https://dart-review.googlesource.com/c/sdk/+/207642
  *
 TEST_F(EmbedderTest, CanTerminateCleanly) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
