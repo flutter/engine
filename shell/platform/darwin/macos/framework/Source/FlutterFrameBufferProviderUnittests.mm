@@ -5,18 +5,16 @@
 #import <Foundation/Foundation.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
-#import "flutter/testing/testing.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterGLTestUtils.h"
 
 #import <OpenGL/gl.h>
+
+#import "flutter/testing/testing.h"
 
 namespace flutter::testing {
 
 TEST(FlutterFrameBufferProviderTest, TestCreate) {
-  NSOpenGLPixelFormatAttribute attributes[] = {
-      NSOpenGLPFAColorSize, 24, NSOpenGLPFAAlphaSize, 8, 0,
-  };
-  NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-  NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:nil];
+  NSOpenGLContext* context = CreateTestOpenGLContext();
 
   [context makeCurrentContext];
   FlutterFrameBufferProvider* framebufferProvider =
