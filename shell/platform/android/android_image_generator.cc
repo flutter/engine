@@ -17,7 +17,7 @@ static jmethodID g_decode_image_method = nullptr;
 AndroidImageGenerator::~AndroidImageGenerator() = default;
 
 AndroidImageGenerator::AndroidImageGenerator(sk_sp<SkData> data)
-    : data_(data), image_info_(SkImageInfo::MakeUnknown()) {}
+    : data_(data), image_info_(SkImageInfo::MakeUnknown(-1, -1)) {}
 
 const SkImageInfo& AndroidImageGenerator::GetInfo() {
   header_decoded_latch_.Wait();
@@ -101,6 +101,10 @@ void AndroidImageGenerator::DoDecodeImage() {
                                            g_decode_image_method,
                                            direct_buffer.obj(), (long)this));
   FML_CHECK(fml::jni::CheckException(env));
+
+  if (bitmap->is_null()) {
+    return;
+  }
 
   AndroidBitmapInfo info;
   int status;
@@ -189,9 +193,10 @@ void AndroidImageGenerator::NativeImageHeaderCallback(JNIEnv* env,
 
 bool AndroidImageGenerator::IsValidImageData() {
   // The generator kicks off an IO task to decode everything, and calls to
-  // "GetInfo()" block until the header has been decoded. The decoder explicitly
-  // marks the height as -1 if the image is invalid or if the SDK image decoder
-  // is unavailable.
+  // "GetInfo()" block until either the header has been decoded or decoding has
+  // failed, whichever is sooner. The decoder is initialized with a width and
+  // height of -1 and will update the dimensions if the image is able to be
+  // decoded.
   return GetInfo().height() != -1;
 }
 
