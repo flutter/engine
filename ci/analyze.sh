@@ -31,8 +31,16 @@ SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 FLUTTER_DIR="$SRC_DIR/flutter"
 DART_BIN="$SRC_DIR/out/host_debug_unopt/dart-sdk/bin"
-PUB="$DART_BIN/pub"
 DART="$DART_BIN/dart"
+
+if [[ ! -f "$DART" ]]; then
+  echo "'$DART' not found"
+  echo ""
+  echo "To build the Dart SDK, run:"
+  echo "  flutter/tools/gn --unoptimized --runtime-mode=debug"
+  echo "  ninja -C out/host_debug_unopt"
+  exit 1
+fi
 
 echo "Using dart from $DART_BIN"
 "$DART" --version
