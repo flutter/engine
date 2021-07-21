@@ -59,7 +59,7 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   void OnWindowResized() override;
 
   // |FlutterWindowBindingHandler|
-  uint64_t FrameInterval() override;
+  void GetVsyncParameters(int64_t* offset, int64_t* interval) override;
 
   // |WindowBindingHandler|
   bool OnBitmapSurfaceUpdated(const void* allocation,

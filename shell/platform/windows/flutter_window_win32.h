@@ -52,7 +52,7 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
   void OnSetCursor() override;
 
   // |FlutterWindowBindingHandler|
-  uint64_t FrameInterval() override;
+  void GetVsyncParameters(int64_t* offset, int64_t* interval) override;
 
   // |WindowWin32|
   void OnText(const std::u16string& text) override;
@@ -122,6 +122,9 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
 
   // The cursor rect set by Flutter.
   RECT cursor_rect_;
+
+  // The frequency of the performance counter, in counts per second.
+  LARGE_INTEGER lp_frequency_;
 };
 
 }  // namespace flutter

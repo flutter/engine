@@ -53,9 +53,7 @@ PlatformWindow FlutterWindowWinUWP::GetPlatformWindow() {
   return application_view_;
 }
 
-uint64_t FlutterWindowWinUWP::FrameInterval() {
-  return 16600000;
-}
+void GetVsyncParameters(int64_t* offset, int64_t* interval) {}
 
 void FlutterWindowWinUWP::ApplyInverseDpiScalingTransform() {
   // Apply inverse transform to negate built in DPI scaling in order to render

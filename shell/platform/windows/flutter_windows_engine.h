@@ -26,6 +26,8 @@
 #include "flutter/shell/platform/windows/window_proc_delegate_manager_win32.h"  // nogncheck
 #endif
 
+#undef GetCurrentTime
+
 namespace flutter {
 
 class FlutterWindowsView;

@@ -18,6 +18,7 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
+// winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
 
 namespace flutter {
@@ -143,7 +144,6 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
       aot_data_(nullptr, nullptr) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
-
   task_runner_ = TaskRunner::Create(
       GetCurrentThreadId(), embedder_api_.GetCurrentTime,
       [this](const auto* task) {
@@ -288,15 +288,13 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
-  auto current_time = embedder_api_.GetCurrentTime();
-  if (view_ == nullptr) {
-    embedder_api_.OnVsync(engine_, baton, current_time,
-                          current_time + 16600000);
-  } else {
-    auto interval = view_->FrameInterval();
-    embedder_api_.OnVsync(engine_, baton, current_time,
-                          current_time + interval);
+  int64_t interval = 16600000;
+  int64_t timebase = 0;
+  if (view_ != nullptr) {
+    view_->GetVsyncParameters(&timebase, &interval);
   }
+  auto next = embedder_api_.GetCurrentTime() + timebase;
+  embedder_api_.OnVsync(engine_, baton, next + interval, next + interval + interval);
 }
 
 bool FlutterWindowsEngine::Stop() {
