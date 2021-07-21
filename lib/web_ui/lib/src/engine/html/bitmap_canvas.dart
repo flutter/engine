@@ -945,7 +945,7 @@ class BitmapCanvas extends EngineCanvas {
     /// check isInsideSvgFilterTree to make sure dom node doesn't have any
     /// parents that apply one.
     if (paragraph.drawOnCanvas && _childOverdraw == false &&
-        _renderStrategy.isInsideSvgFilterTree == false) {
+        !_renderStrategy.isInsideSvgFilterTree) {
       paragraph.paint(this, offset);
       return;
     }
