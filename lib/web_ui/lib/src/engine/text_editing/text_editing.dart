@@ -1143,7 +1143,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // 3. The virtual keyboard is closed by tapping "done". We can't detect this
     //    programmatically, so we end up refocusing the input field. This is
     //    okay because the virtual keyboard will hide, and as soon as the user
-    //    taps the text field again, the virtual keyboard will up.
+    //    taps the text field again, the virtual keyboard will come up.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
       if (domRenderer.windowHasFocus) {
         activeDomElement.focus();
