@@ -66,11 +66,10 @@ bool AndroidImageGenerator::GetPixels(const SkImageInfo& info,
       return false;
   }
 
-  // Since this decoder is only installed for API 28 and 29, there is no
-  // supported way to work around this unfortunate copy. It's possible to
-  // produce an `SkImage` direcly from an `AHardwareBuffer`, but
-  // `AndroidBitmap_getHardwareBuffer` and `Bitmap.getHardwareBuffer` are only
-  // available in API 30+ and 31+ respectively.
+  // TODO(bdero): Override `GetImage()` to use `SkImage::FromAHardwareBuffer` on
+  // API level 30+ once it's updated to do symbol lookups and not get
+  // preprocessed out in Skia. This will allow for avoiding this copy in
+  // cases where the result image doesn't need to be resized.
   memcpy(pixels, software_decoded_data_->data(),
          software_decoded_data_->size());
   return true;
