@@ -23,27 +23,6 @@ namespace {
 // '\0'.
 constexpr size_t kCharacterCacheSize = 8;
 
-/**
- * The code prefix for keys which do not have a Unicode representation.
- *
- * This is used by platform-specific code to generate Flutter key codes using
- * HID Usage codes.
- */
-constexpr uint64_t kHidPlane = 0x00100000000;
-
-/**
- * The code prefix for keys which have a Unicode representation.
- *
- * This is used by platform-specific code to generate Flutter key codes.
- */
-constexpr uint64_t kUnicodePlane = 0x00000000000;
-
-/**
- * The code prefix for keys from Windows which do not have a Unicode
- * representation.
- */
-constexpr uint64_t kWindowsKeyIdPlane = 0x00700000000;
-
 constexpr SHORT kStateMaskToggled = 0x01;
 constexpr SHORT kStateMaskPressed = 0x80;
 
