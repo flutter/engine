@@ -245,15 +245,6 @@ template("fuchsia_test_archive") {
       libraries += invoker.libraries
     }
 
-    # TODO(fxbug.dev/79873): Only cfv2 components should be allowed after
-    # FakeScenic is available.
-    if (defined(invoker.cmx_file)) {
-      cmx_file = invoker.cmx_file
-
-      # Don't include cml files.
-      deps = invoker.deps
-    } else {
-      deps = invoker.deps + [ ":$compile_test_suite_cml_target" ]
-    }
+    deps = invoker.deps + [ ":$compile_test_suite_cml_target" ]
   }
 }

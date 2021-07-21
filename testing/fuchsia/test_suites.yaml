@@ -21,7 +21,5 @@
   test_command: run-test-suite fuchsia-pkg://fuchsia.com/embedder_tests#meta/embedder_tests.cm
 - package: dart_utils_tests-0.far
   test_command: run-test-suite fuchsia-pkg://fuchsia.com/dart_utils_tests#meta/dart_utils_tests.cm
-
-# Legacy v1 components.
 - package: flutter_runner_tests-0.far
-  test_command: run-test-component fuchsia-pkg://fuchsia.com/flutter_runner_tests#meta/flutter_runner_tests.cmx
+  test_command: run-test-suite fuchsia-pkg://fuchsia.com/flutter_runner_tests#meta/flutter_runner_tests.cm

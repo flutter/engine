@@ -529,8 +529,6 @@ fuchsia_test_archive("flutter_runner_tests") {
       dest = "tzdata/zoneinfo64.res"
     },
   ]
-
-  cmx_file = rebase_path("meta/$target_name.cmx")
 }
 
 fuchsia_test_archive("flutter_runner_tzdata_tests") {
