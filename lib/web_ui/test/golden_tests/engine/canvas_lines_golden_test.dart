@@ -10,6 +10,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -31,9 +32,10 @@ void testMain() async {
   test('draws lines with varying strokeWidth', () async {
 
     paintLines(canvas);
-
-    html.document.body!.append(canvas.rootElement);
+    final html.Element scene = canvas.rootElement;
+    hostTestScene(scene);
     await matchGoldenFile('canvas_lines_thickness.png', region: region);
+    scene.remove();
   });
 }
 

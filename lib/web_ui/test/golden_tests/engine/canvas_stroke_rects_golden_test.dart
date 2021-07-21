@@ -11,6 +11,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -33,8 +34,9 @@ void testMain() async {
 
     paintSideBySideRects(canvas);
 
-    html.document.body!.append(canvas.rootElement);
+    hostTestScene(canvas.rootElement);
     await matchGoldenFile('canvas_stroke_rects.png', region: region);
+    canvas.rootElement.remove();
   });
 
 }

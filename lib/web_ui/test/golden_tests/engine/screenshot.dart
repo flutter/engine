@@ -32,7 +32,7 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
       }
     }
     sceneElement.append(engineCanvas.rootElement);
-    html.document.body!.append(sceneElement);
+    hostTestScene(sceneElement);
     await matchGoldenFile('$fileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
   } finally {
@@ -40,6 +40,10 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
     // Scuba screenshot.
     sceneElement.remove();
   }
+}
+
+void hostTestScene(html.Element element) {
+  domRenderer.sceneHostElement!.append(element);
 }
 
 Future<void> sceneScreenshot(SurfaceSceneBuilder sceneBuilder, String fileName,

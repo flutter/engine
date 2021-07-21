@@ -41,7 +41,7 @@ void testMain() async {
       final html.Element elm1 = builder
           .build()
           .webOnlyRootElement!;
-      html.document.body!.append(elm1);
+      hostTestScene(elm1);
 
       // Now draw picture again but at larger size.
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
@@ -71,7 +71,7 @@ void testMain() async {
       final html.Element elm1 = builder
           .build()
           .webOnlyRootElement!;
-      html.document.body!.append(elm1);
+      hostTestScene(elm1);
 
       // Now draw picture again but at larger size.
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
