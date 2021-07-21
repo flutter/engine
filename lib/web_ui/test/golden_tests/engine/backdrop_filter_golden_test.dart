@@ -110,8 +110,7 @@ void testMain() async {
         .build()
         .webOnlyRootElement!);
 
-    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region,
-      maxDiffRatePercent: 0.8);
+    await matchGoldenFile('backdrop_filter_clip_moved.png', region: region);
   });
 
   // The blur filter should be applied to the background inside the clip even
