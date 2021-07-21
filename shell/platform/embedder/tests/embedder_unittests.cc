@@ -123,6 +123,10 @@ TEST_F(EmbedderTest, CanInvokeCustomEntrypointMacro) {
   ASSERT_TRUE(engine.is_valid());
 }
 
+/*
+ * Uncomment once a Dart roll with the fix to reinitialize dart-io state
+ * correctly has landed and rolled into the engine.
+ *
 TEST_F(EmbedderTest, CanTerminateCleanly) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
@@ -131,6 +135,7 @@ TEST_F(EmbedderTest, CanTerminateCleanly) {
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 }
+*/
 
 std::atomic_size_t EmbedderTestTaskRunner::sEmbedderTaskRunnerIdentifiers = {};
 
