@@ -160,7 +160,7 @@ class PersistedClipRRect extends PersistedContainerSurface
 
   @override
   void apply() {
-    html.CssStyleDeclaration style = rootElement!.style;
+    final html.CssStyleDeclaration style = rootElement!.style;
     style
       ..left = '${rrect.left}px'
       ..top = '${rrect.top}px'
@@ -241,6 +241,15 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   @override
   html.Element createElement() {
     return super.createElement()..setAttribute('clip-type', 'physical-shape');
+  }
+
+  @override
+  void discard() {
+    super.discard();
+    _clipElement?.remove();
+    _clipElement = null;
+    _svgElement?.remove();
+    _svgElement = null;
   }
 
   @override
@@ -412,7 +421,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   @override
   void update(PersistedPhysicalShape oldSurface) {
     super.update(oldSurface);
-    bool pathChanged = oldSurface.path != path;
+    final bool pathChanged = oldSurface.path != path;
     if (pathChanged) {
       localClipBounds = null;
     }
@@ -443,6 +452,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       if (_svgElement != null) {
         rootElement!.insertBefore(_svgElement!, childContainer);
       }
+      oldSurface._svgElement = null;
     }
   }
 }
