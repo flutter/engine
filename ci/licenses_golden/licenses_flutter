@@ -759,6 +759,8 @@ FILE: ../../../flutter/shell/platform/android/android_environment_gl.h
 FILE: ../../../flutter/shell/platform/android/android_exports.lst
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_external_texture_gl.h
+FILE: ../../../flutter/shell/platform/android/android_image_generator.cc
+FILE: ../../../flutter/shell/platform/android/android_image_generator.h
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.cc
 FILE: ../../../flutter/shell/platform/android/android_shell_holder.h
 FILE: ../../../flutter/shell/platform/android/android_surface_gl.cc
@@ -1194,6 +1196,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExter
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProviderUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositorUnittests.mm
@@ -1309,6 +1312,7 @@ FILE: ../../../flutter/shell/platform/embedder/fixtures/verifyb143464703.png
 FILE: ../../../flutter/shell/platform/embedder/fixtures/verifyb143464703_soft_noxform.png
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/platform_view_embedder.h
+FILE: ../../../flutter/shell/platform/embedder/test_utils/key_codes.h
 FILE: ../../../flutter/shell/platform/embedder/test_utils/proc_table_replacement.h
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.cc
 FILE: ../../../flutter/shell/platform/embedder/vsync_waiter_embedder.h
@@ -1374,8 +1378,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unitt
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/default_session_connection.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/default_session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/flutter_runner_fakes.h
@@ -1389,6 +1391,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embe
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/gfx_session_connection.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/isolate_configurator.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/kernel/extract_far.dart
@@ -1405,7 +1409,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_product_r
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_runner.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_runner_scenic_tests.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_runner_tests.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_product_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_runtime
