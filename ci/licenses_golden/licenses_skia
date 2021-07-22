@@ -1,4 +1,4 @@
-Signature: fedea3b2bdaa73cd5e2bdb8b6215899b
+Signature: 8cfd066876bd81b8fd4a31f020abed1a
 
 UNUSED LICENSES:
 
@@ -672,7 +672,6 @@ FILE: ../../../third_party/skia/experimental/skottiekit/release.js
 FILE: ../../../third_party/skia/experimental/skottiekit/skottiekit/package.json
 FILE: ../../../third_party/skia/experimental/sktext/editor/Editor.cpp
 FILE: ../../../third_party/skia/experimental/sktext/editor/Editor.h
-FILE: ../../../third_party/skia/experimental/sktext/include/Layout.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Text.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Types.h
 FILE: ../../../third_party/skia/experimental/sktext/samples/Text.cpp
@@ -2335,7 +2334,6 @@ FILE: ../../../third_party/skia/gm/xform.cpp
 FILE: ../../../third_party/skia/include/codec/SkAndroidCodec.h
 FILE: ../../../third_party/skia/include/codec/SkCodec.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
-FILE: ../../../third_party/skia/include/core/SkFilterQuality.h
 FILE: ../../../third_party/skia/include/core/SkPathBuilder.h
 FILE: ../../../third_party/skia/include/core/SkPixmap.h
 FILE: ../../../third_party/skia/include/core/SkPngChunkReader.h
@@ -3938,6 +3936,8 @@ FILE: ../../../third_party/skia/src/gpu/GrThreadSafePipelineBuilder.cpp
 FILE: ../../../third_party/skia/src/gpu/GrThreadSafePipelineBuilder.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockSurfaceProxy.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlFramebuffer.h
+FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlFramebuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.h
@@ -5168,6 +5168,7 @@ FILE: ../../../third_party/skia/src/core/SkBlendModeBlender.h
 FILE: ../../../third_party/skia/src/core/SkBlenderBase.h
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.h
+FILE: ../../../third_party/skia/src/core/SkVMBlitter.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/effects/SkBlenders.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkRuntimeImageFilter.cpp
@@ -5179,6 +5180,7 @@ FILE: ../../../third_party/skia/src/gpu/GrEagerVertexAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrInnerFanTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/GrMeshDrawTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/GrMeshDrawTarget.h
+FILE: ../../../third_party/skia/src/gpu/GrOpsTypes.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSubRunAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSubRunAllocator.h
@@ -5720,6 +5722,8 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrModulateAtlasCoverageFP.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrModulateAtlasCoverageFP.h
+FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.cpp
+FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLParsedModule.h
 FILE: ../../../third_party/skia/src/sksl/dsl/DSLBlock.cpp
