@@ -86,7 +86,7 @@ public class FlutterMutatorView extends FrameLayout {
    * @param userFocusListener A user provided focus listener.
    */
   public void addOnFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {
-    this.removeOnFocusChangeListenerIfNeeded();
+    removeOnFocusChangeListenerIfNeeded();
 
     final View mutatorView = this;
     final ViewTreeObserver observer = getViewTreeObserver();
