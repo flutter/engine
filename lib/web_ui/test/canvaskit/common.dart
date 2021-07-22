@@ -28,7 +28,6 @@ void setUpCanvasKitTest() {
   setUpAll(() async {
     expect(useCanvasKit, true, reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
-    ui.debugEmulateFlutterTesterEnvironment = true;
     await ui.webOnlyInitializePlatform(assetManager: WebOnlyMockAssetManager());
   });
 
