@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
 
-import '../golden_tests/engine/screenshot.dart';
+import '../screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
