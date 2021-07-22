@@ -261,7 +261,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   };
   args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    return host->OnVsync(baton);
+    host->OnVsync(baton);
   };
 
   args.custom_task_runners = &custom_task_runners;
@@ -310,9 +310,13 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
   if (result == S_OK && qpc_supported_) {
     LARGE_INTEGER current_ticks;
     QueryPerformanceCounter(&current_ticks);
-    auto quad_part = lp_frequency_.QuadPart;
-    double cycle_delta = static_cast<double>((current_ticks.QuadPart - timing_info.qpcVBlank) * 1000000000) / quad_part;
-    double local_interval = static_cast<double>(timing_info.qpcRefreshPeriod * 1000000000) / quad_part;
+    double cycle_delta =
+        static_cast<double>((current_ticks.QuadPart - timing_info.qpcVBlank) *
+                            1000000000) /
+        lp_frequency_.QuadPar;
+    double local_interval =
+        static_cast<double>(timing_info.qpcRefreshPeriod * 1000000000) /
+        lp_frequency_.QuadPar;
     int64_t offset = llround(cycle_delta) * -1;
     interval = llround(local_interval);
     next_time = current_time + (offset % interval) + interval;
@@ -322,7 +326,8 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
       // timing info.
       if (timing_info.rateRefresh.uiDenominator > 0 &&
           timing_info.rateRefresh.uiNumerator > 0) {
-        interval = timing_info.rateRefresh.uiDenominator * 1000000000 / timing_info.rateRefresh.uiNumerator;
+        interval = timing_info.rateRefresh.uiDenominator * 1000000000 /
+                   timing_info.rateRefresh.uiNumerator;
       } else {
         interval = 16600000;
       }
@@ -332,7 +337,8 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
       // placeholder values.
       interval = 16600000;
     }
-    // Use the same strategy as the vsync fallback waiter to snap to a frame time.
+    // Use the same strategy as the vsync fallback waiter to snap to a frame
+    // time.
     next_time = SnapToNextTick(current_time, time_base_, interval);
   }
 
