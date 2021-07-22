@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 import 'package:ui/src/engine.dart' as engine;
 
-import 'screenshot.dart';
+import '../golden_tests/engine/screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
