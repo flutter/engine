@@ -212,10 +212,15 @@ public class FlutterMutatorViewTest {
     assertNull(view.activeFocusListener);
 
     view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
-    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
-
     assertNotNull(view.activeFocusListener);
-    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(view.activeFocusListener);
+
+    final ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener =
+        view.activeFocusListener;
+
+    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
+    assertNotNull(view.activeFocusListener);
+
+    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
   }
 
   @Test
@@ -235,14 +240,14 @@ public class FlutterMutatorViewTest {
 
     view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
     assertNotNull(view.activeFocusListener);
+
     final ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener =
         view.activeFocusListener;
 
     view.unsetOnDescendantFocusChangeListener();
-    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
     assertNull(view.activeFocusListener);
 
     view.unsetOnDescendantFocusChangeListener();
-    verify(viewTreeObserver, never()).removeOnGlobalFocusChangeListener(any());
+    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
   }
 }
