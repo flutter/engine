@@ -194,6 +194,18 @@ void FlutterWindowsEngine::SetSwitches(
   project_->SetSwitches(switches);
 }
 
+double ApproxFrameRate() {
+  DWM_TIMING_INFO timing_info;
+
+  timing_info.cbSize = sizeof(timing_info);
+  HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
+  if (result == S_OK) {
+    return static_cast<double>(timing_info.rateRefresh.uiNumerator) /
+           timing_info.rateRefresh.uiDenominator;
+  }
+  return 60.0;
+}
+
 bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
   if (!project_->HasValidPaths()) {
     std::cerr << "Missing or unresolvable paths to assets." << std::endl;
@@ -284,6 +296,16 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
               << std::endl;
     return false;
   }
+  FlutterEngineDisplay display;
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate = ApproxFrameRate();
+
+  std::vector<FlutterEngineDisplay> displays = {display};
+  embedder_api_.NotifyDisplayUpdate(engine_,
+                                    kFlutterEngineDisplaysUpdateTypeStartup,
+                                    displays.data(), displays.size());
 
   SendSystemSettings();
 
@@ -311,15 +333,17 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
     LARGE_INTEGER current_ticks;
     QueryPerformanceCounter(&current_ticks);
     double cycle_delta =
-        static_cast<double>((current_ticks.QuadPart - timing_info.qpcVBlank) *
+        static_cast<double>((timing_info.qpcVBlank - current_ticks.QuadPart) *
                             1000000000) /
-        lp_frequency_.QuadPar;
+        lp_frequency_.QuadPart;
     double local_interval =
         static_cast<double>(timing_info.qpcRefreshPeriod * 1000000000) /
-        lp_frequency_.QuadPar;
-    int64_t offset = llround(cycle_delta) * -1;
+        lp_frequency_.QuadPart;
     interval = llround(local_interval);
-    next_time = current_time + (offset % interval) + interval;
+    next_time = current_time + cycle_delta;
+    if (next_time > current_time + interval) {
+      next_time = current_time + interval;
+    }
   } else {
     if (result == S_OK) {
       // QPC is not supported. The frame rate can still be retrieved from the
