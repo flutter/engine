@@ -9,7 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
 
-import 'screenshot.dart';
+import '../golden_tests/engine/screenshot.dart';
 
 final Rect region = Rect.fromLTWH(0, 0, 500, 100);
 
