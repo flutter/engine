@@ -195,4 +195,54 @@ public class FlutterMutatorViewTest {
         };
     view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
   }
+
+  @Test
+  public void setOnDescendantFocusChangeListener_keepsSingleListener() {
+    final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
+    when(viewTreeObserver.isAlive()).thenReturn(true);
+
+    final FlutterMutatorView view =
+        new FlutterMutatorView(RuntimeEnvironment.systemContext) {
+          @Override
+          public ViewTreeObserver getViewTreeObserver() {
+            return viewTreeObserver;
+          }
+        };
+
+    assertNull(view.activeFocusListener);
+
+    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
+    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
+
+    assertNotNull(view.activeFocusListener);
+    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(view.activeFocusListener);
+  }
+
+  @Test
+  public void unsetOnDescendantFocusChangeListener_removesActiveListener() {
+    final ViewTreeObserver viewTreeObserver = mock(ViewTreeObserver.class);
+    when(viewTreeObserver.isAlive()).thenReturn(true);
+
+    final FlutterMutatorView view =
+        new FlutterMutatorView(RuntimeEnvironment.systemContext) {
+          @Override
+          public ViewTreeObserver getViewTreeObserver() {
+            return viewTreeObserver;
+          }
+        };
+
+    assertNull(view.activeFocusListener);
+
+    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
+    assertNotNull(view.activeFocusListener);
+    final ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener =
+        view.activeFocusListener;
+
+    view.unsetOnDescendantFocusChangeListener();
+    verify(viewTreeObserver, times(1)).removeOnGlobalFocusChangeListener(activeFocusListener);
+    assertNull(view.activeFocusListener);
+
+    view.unsetOnDescendantFocusChangeListener();
+    verify(viewTreeObserver, never()).removeOnGlobalFocusChangeListener(any());
+  }
 }
