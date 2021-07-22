@@ -12,7 +12,7 @@ import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
 
 import 'text_scuba.dart';
-import 'helper.dart';
+import 'helper_golden_test.dart';
 
 typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
 
