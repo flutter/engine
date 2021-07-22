@@ -69,36 +69,12 @@ FlutterWindowWin32::FlutterWindowWin32(int width, int height)
     : binding_handler_delegate_(nullptr) {
   WindowWin32::InitializeChild("FLUTTERVIEW", width, height);
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
-  QueryPerformanceFrequency(&lp_frequency_);
 }
 
 FlutterWindowWin32::~FlutterWindowWin32() {}
 
 void FlutterWindowWin32::SetView(WindowBindingHandlerDelegate* window) {
   binding_handler_delegate_ = window;
-}
-
-void FlutterWindowWin32::GetVsyncParameters(int64_t* offset, int64_t* interval) {
-  DWM_TIMING_INFO timing_info;
-  timing_info.cbSize = sizeof(timing_info);
-  HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
-  if (result == S_OK) {
-    // TODO: handle fallback if QPC is not supported
-    LARGE_INTEGER current_ticks;
-    QueryPerformanceCounter(&current_ticks);
-    auto quad_part = lp_frequency_.QuadPart;
-    double cycle_delta = static_cast<double>((current_ticks.QuadPart - timing_info.qpcVBlank) * 1000000000) / quad_part;
-    double local_interval = static_cast<double>(timing_info.qpcRefreshPeriod * 1000000000) / quad_part;
-    *offset = llround(cycle_delta) * -1;
-    *interval = llround(local_interval);
-  } else {
-    // TODO
-    // DWM Compositing is disabled. Flutter doesn't currently support the
-    // exclusive fullscreen mode required to trigger this. Fall back to
-    // placeholder values.
-    *offset = 0;
-    *interval = 16600000;
-  }
 }
 
 WindowsRenderTarget FlutterWindowWin32::GetRenderTarget() {

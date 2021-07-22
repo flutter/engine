@@ -199,6 +199,15 @@ class FlutterWindowsEngine {
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_ = nullptr;
 
+  // The frequency of the performance counter, in counts per second.
+  LARGE_INTEGER lp_frequency_;
+
+  // Whether the high precision counter is supported.
+  BOOL qpc_supported_;
+
+  // The time base used to compute a fallback framerate if DWM/QPC are disabled.
+  uint64_t time_base_;
+
 #ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManagerWin32> window_proc_delegate_manager_;

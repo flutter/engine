@@ -262,10 +262,6 @@ void FlutterWindowsView::SendInitialBounds() {
                     binding_handler_->GetDpiScale());
 }
 
-void FlutterWindowsView::GetVsyncParameters(int64_t* offset, int64_t* interval) {
-  binding_handler_->GetVsyncParameters(offset, interval);
-}
-
 // Set's |event_data|'s phase to either kMove or kHover depending on the current
 // primary mouse button state.
 void FlutterWindowsView::SetEventPhaseFromCursorButtonState(
