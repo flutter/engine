@@ -77,7 +77,7 @@ public class FlutterMutatorView extends FrameLayout {
   @Nullable private ViewTreeObserver.OnGlobalFocusChangeListener focusListener;
 
   /**
-   * Adds a focus change listener that notifies when the current view or any of its descendant views
+   * Sets a focus change listener that notifies when the current view or any of its descendant views
    * have received focus.
    *
    * <p>If there's an active focus listener, it will first remove the current listener, and then add
@@ -85,8 +85,8 @@ public class FlutterMutatorView extends FrameLayout {
    *
    * @param userFocusListener A user provided focus listener.
    */
-  public void addOnFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {
-    removeOnFocusChangeListenerIfNeeded();
+  public void setOnDescendantFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {
+    unsetOnDescendantFocusChangeListener();
 
     final View mutatorView = this;
     final ViewTreeObserver observer = getViewTreeObserver();
@@ -102,8 +102,8 @@ public class FlutterMutatorView extends FrameLayout {
     }
   }
 
-  /** Removes any active focus listener. */
-  public void removeOnFocusChangeListenerIfNeeded() {
+  /** Unsets any active focus listener. */
+  public void unsetOnDescendantFocusChangeListener() {
     final ViewTreeObserver observer = getViewTreeObserver();
     if (observer.isAlive() && focusListener != null) {
       final ViewTreeObserver.OnGlobalFocusChangeListener currFocusListener = focusListener;

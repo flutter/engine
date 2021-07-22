@@ -143,7 +143,7 @@ public class FlutterMutatorViewTest {
         };
 
     final OnFocusChangeListener focusListener = mock(OnFocusChangeListener.class);
-    view.addOnFocusChangeListener(focusListener);
+    view.setOnDescendantFocusChangeListener(focusListener);
 
     final ArgumentCaptor<ViewTreeObserver.OnGlobalFocusChangeListener> focusListenerCaptor =
         ArgumentCaptor.forClass(ViewTreeObserver.OnGlobalFocusChangeListener.class);
@@ -172,7 +172,7 @@ public class FlutterMutatorViewTest {
         };
 
     final OnFocusChangeListener focusListener = mock(OnFocusChangeListener.class);
-    view.addOnFocusChangeListener(focusListener);
+    view.setOnDescendantFocusChangeListener(focusListener);
 
     final ArgumentCaptor<ViewTreeObserver.OnGlobalFocusChangeListener> focusListenerCaptor =
         ArgumentCaptor.forClass(ViewTreeObserver.OnGlobalFocusChangeListener.class);
@@ -193,6 +193,6 @@ public class FlutterMutatorViewTest {
             return viewTreeObserver;
           }
         };
-    view.addOnFocusChangeListener(mock(OnFocusChangeListener.class));
+    view.setOnDescendantFocusChangeListener(mock(OnFocusChangeListener.class));
   }
 }

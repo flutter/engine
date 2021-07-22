@@ -165,7 +165,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformView.dispose();
           }
           if (parentView != null) {
-            parentView.removeOnFocusChangeListenerIfNeeded();
+            parentView.unsetOnDescendantFocusChangeListener();
             ((ViewGroup) parentView.getParent()).removeView(parentView);
             platformViewParent.remove(viewId);
           }
@@ -748,7 +748,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
 
-    parentView.addOnFocusChangeListener(
+    parentView.setOnDescendantFocusChangeListener(
         (view, hasFocus) -> {
           if (hasFocus) {
             platformViewsChannel.invokeViewFocused(viewId);
