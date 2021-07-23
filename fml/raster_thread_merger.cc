@@ -17,9 +17,7 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
       shared_merger_impl_(
           fml::SharedThreadMergerImpl::GetSharedImpl(platform_queue_id,
                                                      gpu_queue_id)),
-      enabled_(true) {
-  FML_LOG(ERROR) << "shared_merger_impl_=" << shared_merger_impl_.get();
-}
+      enabled_(true) {}
 
 void RasterThreadMerger::SetMergeUnmergeCallback(const fml::closure& callback) {
   merge_unmerge_callback_ = callback;
