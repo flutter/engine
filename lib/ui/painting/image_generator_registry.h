@@ -14,19 +14,15 @@
 
 namespace flutter {
 
-/// @brief  `ImageGeneratorFactory` is the top level primitive for specifying an
-///         image decoder in Flutter. When called, it should return an
-///         `ImageGenerator` that typically compatible with the given input
-///         data.
-using ImageGeneratorFactory =
-    std::function<std::shared_ptr<ImageGenerator>(sk_sp<SkData> buffer)>;
-
 /// @brief Keeps a priority-ordered registry of image generator builders to be
 ///        used when decoding images. This object must be created, accessed, and
 ///        collected on the UI thread (typically the engine or its runtime
 ///        controller).
 class ImageGeneratorRegistry {
  public:
+  using ImageGeneratorFactory =
+      std::function<std::unique_ptr<ImageGenerator>(sk_sp<SkData> buffer)>;
+
   ImageGeneratorRegistry();
 
   ~ImageGeneratorRegistry();
@@ -53,9 +49,9 @@ class ImageGeneratorRegistry {
   /// @param[in]  buffer  The raw encoded image data.
   /// @return     An `ImageGenerator` that is compatible with the input buffer.
   ///             If no compatible `ImageGenerator` type was found, then
-  ///             `std::shared_ptr<ImageGenerator>(nullptr)` is returned.
+  ///             `std::unique_ptr<ImageGenerator>(nullptr)` is returned.
   /// @see        `ImageGenerator`
-  std::shared_ptr<ImageGenerator> CreateCompatibleGenerator(
+  std::unique_ptr<ImageGenerator> CreateCompatibleGenerator(
       sk_sp<SkData> buffer);
 
   fml::WeakPtr<ImageGeneratorRegistry> GetWeakPtr() const;

@@ -54,7 +54,7 @@ class FakeImageGenerator : public ImageGenerator {
                                 SkColorType::kRGBA_8888_SkColorType,
                                 SkAlphaType::kOpaque_SkAlphaType)){};
   ~FakeImageGenerator() = default;
-  const SkImageInfo& GetInfo() { return info_; }
+  const SkImageInfo& GetInfo() const { return info_; }
 
   unsigned int GetFrameCount() const { return 1; }
 
@@ -64,7 +64,7 @@ class FakeImageGenerator : public ImageGenerator {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
-  SkISize GetScaledDimensions(float scale) {
+  SkISize GetScaledDimensions(float scale) const {
     return SkISize::Make(info_.width(), info_.height());
   }
 
@@ -72,7 +72,7 @@ class FakeImageGenerator : public ImageGenerator {
                  void* pixels,
                  size_t row_bytes,
                  unsigned int frame_index,
-                 std::optional<unsigned int> prior_frame) {
+                 std::optional<unsigned int> prior_frame) const {
     return false;
   };
 

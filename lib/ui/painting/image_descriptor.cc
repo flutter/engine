@@ -47,7 +47,7 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
       row_bytes_(row_bytes) {}
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
-                                 std::shared_ptr<ImageGenerator> generator)
+                                 std::unique_ptr<ImageGenerator> generator)
     : buffer_(std::move(buffer)),
       generator_(std::move(generator)),
       image_info_(CreateImageInfo()),
@@ -83,7 +83,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
     return;
   }
 
-  auto generator =
+  std::unique_ptr<ImageGenerator> generator =
       registry->CreateCompatibleGenerator(immutable_buffer->data());
 
   if (!generator) {
@@ -140,7 +140,20 @@ void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
 }
 
 sk_sp<SkImage> ImageDescriptor::image() const {
-  return generator_->GetImage();
+  SkBitmap bitmap;
+  if (!bitmap.tryAllocPixels(image_info_)) {
+    FML_DLOG(ERROR) << "Failed to allocate memory for bitmap of size "
+                    << image_info_.computeMinByteSize() << "B";
+    return nullptr;
+  }
+
+  const auto& pixmap = bitmap.pixmap();
+  if (!get_pixels(pixmap)) {
+    FML_DLOG(ERROR) << "Failed to get pixels for image.";
+    return nullptr;
+  }
+  bitmap.setImmutable();
+  return SkImage::MakeFromBitmap(bitmap);
 }
 
 bool ImageDescriptor::get_pixels(const SkPixmap& pixmap) const {

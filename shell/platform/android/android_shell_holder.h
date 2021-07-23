@@ -128,8 +128,6 @@ class AndroidShellHolder {
       const std::string& entrypoint,
       const std::string& libraryUrl) const;
 
-  bool IsNDKImageDecoderAvailable();
-
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidShellHolder);
 };
 
