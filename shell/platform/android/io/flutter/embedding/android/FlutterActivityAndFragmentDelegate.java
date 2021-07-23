@@ -6,17 +6,16 @@ package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
-import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.USE_LEGACY_SPLASH_SCREEN_META_DATA_KEY;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver.OnPreDrawListener;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -308,8 +307,11 @@ import java.util.Arrays;
 
     SplashScreen splashScreen = host.provideSplashScreen();
 
-    if (shouldShowLegacySplashScreen()) {
-      Log.i(TAG, "Showing the legacy splash screen.");
+    if (splashScreen != null) {
+      Log.w(
+          TAG,
+          "A splash screen was provided to Flutter, but this is deprecated. See"
+              + " flutter.dev/go/android-splash-migration for migration steps.");
       FlutterSplashView flutterSplashView = new FlutterSplashView(host.getContext());
       flutterSplashView.setId(ViewUtils.generateViewId(486947586));
       flutterSplashView.displayFlutterViewWithSplash(flutterView, splashScreen);
@@ -317,33 +319,23 @@ import java.util.Arrays;
       return flutterSplashView;
     }
 
-    if (splashScreen != null) {
-      Log.i(
-          TAG,
-          "A splash screen was provided to Flutter, but ignored because this is deprecated. See"
-              + " flutter.dev/go/android-splash-migration for more details.");
-    }
-
     // Make Android only report that the host has drawn when the Flutter UI is displayed. This
     // results in more accurate timings reported with tools, such as the timings printed with
     // `am start`.
-    flutterView.getViewTreeObserver().addOnPreDrawListener(() -> isFlutterUiDisplayed);
+    flutterView
+        .getViewTreeObserver()
+        .addOnPreDrawListener(
+            new OnPreDrawListener() {
+              @Override
+              public boolean onPreDraw() {
+                if (isFlutterUiDisplayed) {
+                  flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
+                }
+                return isFlutterUiDisplayed;
+              }
+            });
 
     return flutterView;
-  }
-
-  private boolean shouldShowLegacySplashScreen() {
-    Activity activity = host.getActivity();
-    try {
-      Bundle metaData =
-          activity
-              .getPackageManager()
-              .getActivityInfo(activity.getComponentName(), PackageManager.GET_META_DATA)
-              .metaData;
-      return metaData != null && metaData.getBoolean(USE_LEGACY_SPLASH_SCREEN_META_DATA_KEY);
-    } catch (PackageManager.NameNotFoundException e) {
-      return false;
-    }
   }
 
   void onRestoreInstanceState(@Nullable Bundle bundle) {
