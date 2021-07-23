@@ -314,7 +314,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             configuration.enableSuggestions,
             configuration.requestPrivacy,
             configuration.textCapitalization);
-    outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
+    outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
     int enterAction;
     if (configuration.inputAction == null) {
       // If an explicit input action isn't set, then default to none for multi-line fields
