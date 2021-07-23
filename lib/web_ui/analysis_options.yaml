@@ -14,9 +14,7 @@ analyzer:
 linter:
   rules:
     avoid_classes_with_only_static_members: false
-    avoid_empty_else: false
     avoid_function_literals_in_foreach_calls: false
-    avoid_init_to_null: false
     avoid_null_checks_in_equality_operators: false
     avoid_relative_lib_imports: false
     avoid_renaming_method_parameters: false

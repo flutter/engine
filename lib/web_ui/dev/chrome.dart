@@ -232,7 +232,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
     }
     final wip.WipConnection wipConnection = await chromeTab.connect();
 
-    Map<String, dynamic>? captureScreenshotParameters = null;
+    Map<String, dynamic>? captureScreenshotParameters;
     if (region != null) {
       captureScreenshotParameters = <String, dynamic>{
         'format': 'png',
