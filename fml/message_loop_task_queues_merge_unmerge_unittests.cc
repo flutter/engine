@@ -132,7 +132,8 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadySubsumed) {
   ASSERT_FALSE(task_queue->Merge(queue_id_2, queue_id_1));
 }
 
-TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadyOwnsButTryToBeSubsumed) {
+TEST(MessageLoopTaskQueueMergeUnmerge,
+     MergeFailIfAlreadyOwnsButTryToBeSubsumed) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
 
   auto queue_id_1 = task_queue->CreateTaskQueue();

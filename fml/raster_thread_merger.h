@@ -86,8 +86,8 @@ class RasterThreadMerger
   void Disable();
 
   // Whether the thread merger is enabled. By default, the thread merger is
-  // enabled. If false, calls to |MergeWithLease| or |UnMergeNowIfLastOne| results in a
-  // noop.
+  // enabled. If false, calls to |MergeWithLease| or |UnMergeNowIfLastOne|
+  // results in a noop.
   bool IsEnabled();
 
   // Registers a callback that can be used to clean up global state right after

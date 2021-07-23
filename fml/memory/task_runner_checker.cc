@@ -20,7 +20,7 @@ bool TaskRunnerChecker::RunsOnCreationTaskRunner() const {
   if (RunsOnTheSameThread(current_queue_id, initialized_queue_id_)) {
     return true;
   }
-  for (auto &subsumed: subsumed_queue_ids_) {
+  for (auto& subsumed : subsumed_queue_ids_) {
     if (RunsOnTheSameThread(current_queue_id, subsumed)) {
       return true;
     }

@@ -750,7 +750,8 @@ TEST(RasterThreadMerger, TheLastCallerOfMultipleMergersCanUnmergeNow) {
   thread2.join();
 }
 
-TEST(RasterThreadMerger, MultipleMergersCanIndependentlyMergeTwoOrMoreThreadsIntoOne) {
+TEST(RasterThreadMerger,
+     MultipleMergersCanIndependentlyMergeTwoOrMoreThreadsIntoOne) {
   fml::MessageLoop* loop1 = nullptr;
   fml::AutoResetWaitableEvent latch1;
   fml::AutoResetWaitableEvent term1;

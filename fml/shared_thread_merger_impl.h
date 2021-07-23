@@ -20,7 +20,7 @@ class RasterThreadMerger;
 struct ThreadMergerKey {
   TaskQueueId owner;
   TaskQueueId subsumed;
-  bool operator<(const ThreadMergerKey &other) const {
+  bool operator<(const ThreadMergerKey& other) const {
     if (owner == other.owner) {
       return subsumed < other.subsumed;
     } else {
@@ -29,17 +29,21 @@ struct ThreadMergerKey {
   }
 };
 
-class SharedThreadMergerImpl : public fml::RefCountedThreadSafe<SharedThreadMergerImpl> {
+class SharedThreadMergerImpl
+    : public fml::RefCountedThreadSafe<SharedThreadMergerImpl> {
  public:
   SharedThreadMergerImpl(fml::TaskQueueId owner, fml::TaskQueueId subsumed);
-  static fml::RefPtr<SharedThreadMergerImpl> GetSharedImpl(fml::TaskQueueId owner, fml::TaskQueueId subsumed);
-  void RecordMergerCaller(RasterThreadMerger *caller);
+  static fml::RefPtr<SharedThreadMergerImpl> GetSharedImpl(
+      fml::TaskQueueId owner,
+      fml::TaskQueueId subsumed);
+  void RecordMergerCaller(RasterThreadMerger* caller);
   bool MergeWithLease(size_t lease_term);
   /// TODO DOC
-  bool UnMergeNowIfLastOne(RasterThreadMerger *caller);
+  bool UnMergeNowIfLastOne(RasterThreadMerger* caller);
   void ExtendLeaseTo(size_t lease_term);
   bool IsMergedUnSafe() const;
   bool DecrementLease();
+
  private:
   static const int kLeaseNotSet;
   fml::TaskQueueId owner_;
@@ -47,10 +51,11 @@ class SharedThreadMergerImpl : public fml::RefCountedThreadSafe<SharedThreadMerg
   fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
   std::atomic_int lease_term_;
   std::mutex mutex_;
-  std::set<fml::RasterThreadMerger *> merge_callers_;
+  std::set<fml::RasterThreadMerger*> merge_callers_;
   static std::mutex creation_mutex_;
   // Guarded by creation_mutex_
-  static std::map<ThreadMergerKey, fml::RefPtr<SharedThreadMergerImpl>> shared_merger_instances_;
+  static std::map<ThreadMergerKey, fml::RefPtr<SharedThreadMergerImpl>>
+      shared_merger_instances_;
   bool UnMergeNowUnSafe();
 };
 
