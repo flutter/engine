@@ -63,8 +63,6 @@ bool SharedThreadMergerImpl::UnMergeNowIfLastOne(RasterThreadMerger* caller) {
   std::scoped_lock lock(mutex_);
 
   merge_callers_.erase(caller);
-  // 如果我是最后一个caller，那么不管lease_term_，立马Unmerge
-  // 如果我不是最后一个caller，那么需要等lease_term_通过DecrementLease()降低到0来Unmerge
   if (!merge_callers_.empty()) {
     return true;
   }
