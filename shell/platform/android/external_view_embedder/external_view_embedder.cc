@@ -4,7 +4,6 @@
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
-#include <set>
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 
@@ -210,8 +209,6 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
   overlay_canvas->drawPicture(picture);
   return frame;
 }
-
-// static std::set<fml::RasterThreadMerger*, size_t> merged_merger_map;
 
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
