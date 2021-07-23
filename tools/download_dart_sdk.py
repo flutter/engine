@@ -150,7 +150,9 @@ def ExtractDartSDK(archive, os_name, arch, verbose):
   if os.path.isdir(dart_sdk):
     shutil.rmtree(dart_sdk)
 
-  extract_dest = os.path.join(FLUTTER_PREBUILTS_DIR, os_arch)
+  extract_dest = os.path.join(FLUTTER_PREBUILTS_DIR, os_arch, 'temp')
+  if os.path.isdir(extract_dest):
+    shutil.rmtree(extract_dest)
   os.makedirs(extract_dest, exist_ok=True)
 
   if verbose:
@@ -159,6 +161,17 @@ def ExtractDartSDK(archive, os_name, arch, verbose):
   with ZipFileWithPermissions(archive, "r") as z:
     z.extractall(extract_dest)
 
+  shutil.move(os.path.join(extract_dest, 'dart-sdk'), dart_sdk)
+
+
+def PrintFileIfSmall(file):
+  if not os.path.isfile(file):
+    return
+  size = os.path.getsize(file)
+  if size < (1 << 14): # < 16KB
+    with open(file) as f:
+      contents = f.read()
+      eprint(contents)
 
 
 def DownloadAndExtract(channel, version, os_name, arch, verbose):
@@ -171,6 +184,7 @@ def DownloadAndExtract(channel, version, os_name, arch, verbose):
     ExtractDartSDK(archive, os_name, arch, verbose)
   except Exception as e:
     eprint('Failed to extract Dart SDK archive:\n%s' % e)
+    PrintFileIfSmall(archive)
     return 1
   try:
     stamp_file = '{}.stamp'.format(archive)
@@ -187,7 +201,7 @@ def Main():
   parser.add_argument(
     '--fail-loudly',
     action='store_true',
-    default='LUCI_CONTEXT' in os.environ,
+    default=False,
     help="Return an error code if a prebuilt couldn't be fetched and extracted")
   parser.add_argument(
     '--verbose',

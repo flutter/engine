@@ -368,7 +368,7 @@ class BitmapCanvas extends EngineCanvas {
   ///   prefer DOM if canvas has not been allocated yet.
   ///
   bool _useDomForRenderingFill(SurfacePaintData paint) =>
-      _renderStrategy.isInsideShaderMask ||
+      _renderStrategy.isInsideSvgFilterTree ||
       (_preserveImageData == false && _contains3dTransform) ||
       (_childOverdraw &&
           _canvasPool.canvas == null &&
@@ -380,7 +380,7 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// DOM canvas is generated for simple strokes using borders.
   bool _useDomForRenderingFillAndStroke(SurfacePaintData paint) =>
-      _renderStrategy.isInsideShaderMask ||
+      _renderStrategy.isInsideSvgFilterTree ||
       (_preserveImageData == false && _contains3dTransform) ||
       ((_childOverdraw ||
               _renderStrategy.hasImageElements ||
@@ -936,7 +936,16 @@ class BitmapCanvas extends EngineCanvas {
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
     assert(paragraph.isLaidOut);
 
-    if (paragraph.drawOnCanvas && _childOverdraw == false) {
+    /// - paragraph.drawOnCanvas checks that the text styling doesn't include
+    /// features that prevent text from being rendered correctly using canvas.
+    /// - _childOverdraw check prevents sandwitching multiple canvas elements
+    /// when we have alternating paragraphs and other drawing commands that are
+    /// suitable for canvas.
+    /// - To make sure an svg filter is applied correctly to paragraph we
+    /// check isInsideSvgFilterTree to make sure dom node doesn't have any
+    /// parents that apply one.
+    if (paragraph.drawOnCanvas && _childOverdraw == false &&
+        !_renderStrategy.isInsideSvgFilterTree) {
       paragraph.paint(this, offset);
       return;
     }
