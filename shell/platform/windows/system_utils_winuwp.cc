@@ -8,8 +8,8 @@
 
 #include <sstream>
 
-#include <third_party/cppwinrt/generated/winrt/Windows.Foundation.Collections.h>
-#include <third_party/cppwinrt/generated/winrt/Windows.System.UserProfile.h>
+#include "third_party/cppwinrt/generated/winrt/Windows.Foundation.Collections.h"
+#include "third_party/cppwinrt/generated/winrt/Windows.System.UserProfile.h"
 
 #include "flutter/shell/platform/windows/string_conversion.h"
 
@@ -28,7 +28,7 @@ std::vector<std::wstring> GetPreferredLanguages() {
   std::vector<std::wstring> languages;
   auto platform_langueages = winrt::Windows::System::UserProfile::
       GlobalizationPreferences::Languages();
-  for (auto platform_language : platform_langueages) {
+  for (const auto& platform_language : platform_langueages) {
     languages.push_back(std::wstring{platform_language});
   }
   return languages;
