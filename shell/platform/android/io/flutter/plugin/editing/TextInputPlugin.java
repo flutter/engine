@@ -14,7 +14,6 @@ import android.text.InputType;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.View;
-import android.widget.TextView;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
 import android.view.autofill.AutofillId;
