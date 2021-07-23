@@ -14,6 +14,7 @@ import android.text.InputType;
 import android.util.SparseArray;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.TextView;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
 import android.view.autofill.AutofillId;
@@ -230,6 +231,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       boolean obscureText,
       boolean autocorrect,
       boolean enableSuggestions,
+      boolean requestPrivacy,
       TextInputChannel.TextCapitalization textCapitalization) {
     if (type.type == TextInputChannel.TextInputType.DATETIME) {
       return InputType.TYPE_CLASS_DATETIME;
@@ -311,8 +313,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             configuration.obscureText,
             configuration.autocorrect,
             configuration.enableSuggestions,
+            configuration.requestPrivacy,
             configuration.textCapitalization);
-    outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
+    outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
     int enterAction;
     if (configuration.inputAction == null) {
       // If an explicit input action isn't set, then default to none for multi-line fields
