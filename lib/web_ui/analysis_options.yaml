@@ -83,6 +83,6 @@ linter:
     unnecessary_string_interpolations: false
     cast_nullable_to_non_nullable: false
     flutter_style_todos: false
-    
+
     # We have some legitimate use-cases for this (preserve tear-off identity)
     prefer_function_declarations_over_variables: false
