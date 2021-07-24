@@ -175,27 +175,25 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
                                             bool with_paint) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  SaveInfo info =
-      with_paint ? SaveLayerWithPaintInfo(this, accumulator_, matrix(), paint())
-                 : SaveLayerInfo(accumulator_, matrix());
-  saved_infos_.push_back(info);
-  accumulator_ = info.save();
+  saved_infos_.emplace_back(
+      with_paint ? std::make_unique<SaveLayerWithPaintInfo>(
+                       this, accumulator_, matrix(), bounds, paint())
+                 : std::make_unique<SaveLayerInfo>(accumulator_, matrix()));
+  accumulator_ = saved_infos_.back()->save();
   SkMatrixDispatchHelper::reset();
 }
 void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  SaveInfo info = SaveInfo(accumulator_);
-  saved_infos_.push_back(info);
-  accumulator_ = info.save();
+  saved_infos_.emplace_back(std::make_unique<SaveInfo>(accumulator_));
+  accumulator_ = saved_infos_.back()->save();
 }
 void DisplayListBoundsCalculator::restore() {
   if (!saved_infos_.empty()) {
     SkMatrixDispatchHelper::restore();
     ClipBoundsDispatchHelper::restore();
-    SaveInfo info = saved_infos_.back();
+    accumulator_ = saved_infos_.back()->restore();
     saved_infos_.pop_back();
-    accumulator_ = info.restore();
   }
 }
 
@@ -388,6 +386,7 @@ BoundsAccumulator* DisplayListBoundsCalculator::SaveLayerInfo::save() {
 }
 BoundsAccumulator* DisplayListBoundsCalculator::SaveLayerInfo::restore() {
   SkRect layer_bounds = layer_accumulator_.getBounds();
+  layer_bounds.roundOut(&layer_bounds);
   matrix_.mapRect(&layer_bounds);
   saved_accumulator_->accumulate(layer_bounds);
   return saved_accumulator_;
@@ -397,21 +396,71 @@ DisplayListBoundsCalculator::SaveLayerWithPaintInfo::SaveLayerWithPaintInfo(
     DisplayListBoundsCalculator* calculator,
     BoundsAccumulator* accumulator,
     const SkMatrix& saveMatrix,
+    const SkRect* saveBounds,
     const SkPaint& savePaint)
     : SaveLayerInfo(accumulator, saveMatrix),
       calculator_(calculator),
+      bounds_(saveBounds
+                  ? (saveBounds->isEmpty() ? SkRect::MakeEmpty() : *saveBounds)
+                  : kMissingBounds),
       paint_(savePaint) {}
+
+static bool PaintPreservesTransparency(const SkPaint& paint) {
+  SkImageFilter* image_filter = paint.getImageFilter();
+  // SkImageFilter::canComputeFastBounds tests for transparency behavior
+  if (image_filter && !image_filter->canComputeFastBounds()) {
+    return false;
+  }
+  SkColorFilter* color_filter = paint.getColorFilter();
+  if (color_filter &&
+      color_filter->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT) {
+    return false;
+  }
+
+  const auto blend_mode = paint.asBlendMode();
+  if (!blend_mode) {
+    return false;  // can we query other blenders for this?
+  }
+  // Unusual blendmodes require us to process a saved layer
+  // even with operations outisde the clip.
+  // For example, DstIn is used by masking layers.
+  // https://code.google.com/p/skia/issues/detail?id=1291
+  // https://crbug.com/401593
+  switch (blend_mode.value()) {
+    // For each of the following transfer modes, if the source
+    // alpha is zero (our transparent black), the resulting
+    // blended alpha is not necessarily equal to the original
+    // destination alpha.
+    case SkBlendMode::kClear:
+    case SkBlendMode::kSrc:
+    case SkBlendMode::kSrcIn:
+    case SkBlendMode::kDstIn:
+    case SkBlendMode::kSrcOut:
+    case SkBlendMode::kDstATop:
+    case SkBlendMode::kModulate:
+      return false;
+      break;
+    default:
+      break;
+  }
+  return true;
+}
 
 BoundsAccumulator*
 DisplayListBoundsCalculator::SaveLayerWithPaintInfo::restore() {
-  SkRect layer_bounds = layer_accumulator_.getBounds();
-  if (paint_.canComputeFastBounds()) {
+  SkRect layer_bounds;
+  if (paint_.canComputeFastBounds() && PaintPreservesTransparency(paint_)) {
+    layer_bounds = layer_accumulator_.getBounds();
     layer_bounds = paint_.computeFastBounds(layer_bounds, &layer_bounds);
-    matrix_.mapRect(&layer_bounds);
-    saved_accumulator_->accumulate(layer_bounds);
-  } else {
+  } else if (bounds_ == kMissingBounds) {
     calculator_->root_accumulator_.accumulate(calculator_->bounds_cull_);
+    return saved_accumulator_;
+  } else {
+    layer_bounds = bounds_;
   }
+  layer_bounds.roundOut(&layer_bounds);
+  matrix_.mapRect(&layer_bounds);
+  saved_accumulator_->accumulate(layer_bounds);
   return saved_accumulator_;
 }
 

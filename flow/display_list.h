@@ -177,7 +177,12 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const { Dispatch(ctx, ptr_, ptr_ + used_); }
+  typedef const std::function<bool()> AbortFunction;
+
+  void Dispatch(Dispatcher& ctx,
+                AbortFunction* abort_function = nullptr) const {
+    Dispatch(ctx, ptr_, ptr_ + used_, abort_function);
+  }
 
   void RenderTo(SkCanvas* canvas) const;
 
@@ -210,7 +215,10 @@ class DisplayList : public SkRefCnt {
   SkRect bounds_cull_;
 
   void ComputeBounds();
-  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
+  void Dispatch(Dispatcher& ctx,
+                uint8_t* ptr,
+                uint8_t* end,
+                AbortFunction* abort) const;
 
   friend class DisplayListBuilder;
 };
@@ -222,7 +230,7 @@ class DisplayList : public SkRefCnt {
 class Dispatcher {
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
-  static constexpr int MaxDrawPointsCount = ((1 << 29) - 1);
+  static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
 
   virtual void setAA(bool aa) = 0;
   virtual void setDither(bool dither) = 0;
@@ -334,7 +342,7 @@ class Dispatcher {
 // the DisplayListCanvasRecorder class.
 class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
  public:
-  DisplayListBuilder(const SkRect& cull = SkRect::MakeEmpty());
+  DisplayListBuilder(const SkRect& cull = kMaxCull_);
   ~DisplayListBuilder();
 
   void setAA(bool aa) override;
@@ -451,6 +459,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   int save_level_ = 0;
 
   SkRect cull_;
+  static constexpr SkRect kMaxCull_ =
+      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   template <typename T, typename... Args>
   void* Push(size_t extra, Args&&... args);
