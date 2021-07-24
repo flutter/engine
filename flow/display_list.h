@@ -177,12 +177,7 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  typedef const std::function<bool()> AbortFunction;
-
-  void Dispatch(Dispatcher& ctx,
-                AbortFunction* abort_function = nullptr) const {
-    Dispatch(ctx, ptr_, ptr_ + used_, abort_function);
-  }
+  void Dispatch(Dispatcher& ctx) const { Dispatch(ctx, ptr_, ptr_ + used_); }
 
   void RenderTo(SkCanvas* canvas) const;
 
@@ -215,10 +210,7 @@ class DisplayList : public SkRefCnt {
   SkRect bounds_cull_;
 
   void ComputeBounds();
-  void Dispatch(Dispatcher& ctx,
-                uint8_t* ptr,
-                uint8_t* end,
-                AbortFunction* abort) const;
+  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 
   friend class DisplayListBuilder;
 };

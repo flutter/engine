@@ -830,9 +830,8 @@ void DisplayList::ComputeBounds() {
 
 void DisplayList::Dispatch(Dispatcher& dispatcher,
                            uint8_t* ptr,
-                           uint8_t* end,
-                           DisplayList::AbortFunction* abort) const {
-  while (ptr < end && !(abort && (*abort)())) {
+                           uint8_t* end) const {
+  while (ptr < end) {
     auto op = (const DLOp*)ptr;
     ptr += op->size;
     FML_DCHECK(ptr <= end);
