@@ -722,24 +722,28 @@ TEST(RasterThreadMerger, TheLastCallerOfMultipleMergersCanUnmergeNow) {
 
   // Recording mergers themselves is needed.
   raster_thread_merger1_->RecordMergeCaller();
+  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
+  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
   raster_thread_merger2_->RecordMergeCaller();
+  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
+  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
+
   // Merge using the mergers
   raster_thread_merger1_->MergeWithLease(kNumFramesMerged);
+  ASSERT_TRUE(raster_thread_merger1_->IsMerged());
+  ASSERT_TRUE(raster_thread_merger2_->IsMerged());
   raster_thread_merger2_->MergeWithLease(kNumFramesMerged);
-
   ASSERT_TRUE(raster_thread_merger1_->IsMerged());
   ASSERT_TRUE(raster_thread_merger2_->IsMerged());
 
   // Two callers state becomes one caller left.
   raster_thread_merger1_->UnMergeNowIfLastOne();
-
   // Check if still merged
   ASSERT_TRUE(raster_thread_merger1_->IsMerged());
   ASSERT_TRUE(raster_thread_merger2_->IsMerged());
 
   // One caller state becomes no callers left.
   raster_thread_merger2_->UnMergeNowIfLastOne();
-
   // Check if unmerged
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
@@ -824,10 +828,18 @@ TEST(RasterThreadMerger,
 
   // test caller records are separated below
   raster_thread_merger1_->RecordMergeCaller();
+  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
+  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
   raster_thread_merger2_->RecordMergeCaller();
+  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
+  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
 
   raster_thread_merger1_->MergeWithLease(kNumFramesMerged);
+  ASSERT_TRUE(raster_thread_merger1_->IsMerged());
+  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
   raster_thread_merger2_->MergeWithLease(kNumFramesMerged);
+  ASSERT_TRUE(raster_thread_merger1_->IsMerged());
+  ASSERT_TRUE(raster_thread_merger2_->IsMerged());
 
   // Can unmerge independently
   raster_thread_merger1_->UnMergeNowIfLastOne();

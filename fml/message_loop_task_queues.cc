@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/task_source.h"
 #include "flutter/fml/thread_local.h"
 
@@ -233,18 +232,22 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
     return true;
   }
 
-  // Only don't check owner_entry->owner_of, it may contains items when merged
-  // with other different queues.
+  // Won't check owner_entry->owner_of, because it may contains items when
+  // merged with other different queues.
+
+  // Ensure owner_entry->subsumed_by being _kUnmerged
   if (owner_entry->subsumed_by != _kUnmerged) {
     FML_LOG(WARNING)
         << "Thread merging failed: owner_entry was already subsumed by others.";
     return false;
   }
+  // Ensure subsumed_entry->owner_of being empty
   if (!subsumed_entry->owner_of.empty()) {
     FML_LOG(WARNING)
         << "Thread merging failed: subsumed_entry already owns others.";
     return false;
   }
+  // Ensure subsumed_entry->subsumed_by being _kUnmerged
   if (subsumed_entry->subsumed_by != _kUnmerged) {
     FML_LOG(WARNING) << "Thread merging failed: subsumed_entry was already "
                         "subsumed by others.";
@@ -378,7 +381,12 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
   // HasPendingTasksUnlocked()
   FML_CHECK(!candidate_top_tasks.empty());
   TaskSource::TopTask& top =
-      *std::min_element(candidate_top_tasks.begin(), candidate_top_tasks.end());
+      *std::min_element(candidate_top_tasks.begin(), candidate_top_tasks.end(),
+                        [](const auto& a, const auto& b) {
+                          // Because only operator>() is implemented in
+                          // DelayedTask
+                          return b.task > a.task;
+                        });
   return top;
 }
 

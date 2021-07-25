@@ -7,7 +7,6 @@
 #include "flutter/fml/shared_thread_merger_impl.h"
 
 #include <set>
-#include "flutter/fml/message_loop_impl.h"
 
 namespace fml {
 
@@ -24,14 +23,21 @@ fml::RefPtr<SharedThreadMergerImpl> SharedThreadMergerImpl::GetSharedImpl(
     fml::TaskQueueId subsumed) {
   std::scoped_lock creation(creation_mutex_);
   ThreadMergerKey key = {.owner = owner, .subsumed = subsumed};
-
-  if (shared_merger_instances_.find(key) != shared_merger_instances_.end()) {
-    return shared_merger_instances_[key];
+  auto iter = shared_merger_instances_.find(key);
+  if (iter != shared_merger_instances_.end()) {
+    return iter->second;
   }
   auto merger = fml::MakeRefCounted<SharedThreadMergerImpl>(owner, subsumed);
   shared_merger_instances_[key] = merger;
   return merger;
 }
+
+SharedThreadMergerImpl::SharedThreadMergerImpl(fml::TaskQueueId owner,
+                                               fml::TaskQueueId subsumed)
+    : owner_(owner),
+      subsumed_(subsumed),
+      task_queues_(fml::MessageLoopTaskQueues::GetInstance()),
+      lease_term_(kLeaseNotSet) {}
 
 void SharedThreadMergerImpl::RecordMergerCaller(RasterThreadMerger* caller) {
   std::scoped_lock lock(mutex_);
@@ -39,7 +45,8 @@ void SharedThreadMergerImpl::RecordMergerCaller(RasterThreadMerger* caller) {
   merge_callers_.insert(caller);
 }
 
-bool SharedThreadMergerImpl::MergeWithLease(size_t lease_term) {
+bool SharedThreadMergerImpl::MergeWithLease(int lease_term) {
+  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(mutex_);
   if (IsMergedUnSafe()) {
     return true;
@@ -61,13 +68,12 @@ bool SharedThreadMergerImpl::UnMergeNowUnSafe() {
 
 bool SharedThreadMergerImpl::UnMergeNowIfLastOne(RasterThreadMerger* caller) {
   std::scoped_lock lock(mutex_);
-
   merge_callers_.erase(caller);
   if (!merge_callers_.empty()) {
     return true;
   }
   FML_CHECK(IsMergedUnSafe())
-      << "UnMergeNowIfLastOne() must be called only when thread are merged";
+      << "UnMergeNowIfLastOne() must be called only when threads are merged";
   lease_term_ = 0;  // mark need unmerge now
   return UnMergeNowUnSafe();
 }
@@ -85,20 +91,12 @@ bool SharedThreadMergerImpl::DecrementLease() {
   return false;
 }
 
-SharedThreadMergerImpl::SharedThreadMergerImpl(fml::TaskQueueId owner,
-                                               fml::TaskQueueId subsumed)
-    : owner_(owner),
-      subsumed_(subsumed),
-      task_queues_(fml::MessageLoopTaskQueues::GetInstance()),
-      lease_term_(kLeaseNotSet) {}
-
-void SharedThreadMergerImpl::ExtendLeaseTo(size_t lease_term) {
+void SharedThreadMergerImpl::ExtendLeaseTo(int lease_term) {
+  FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(mutex_);
-
   FML_DCHECK(IsMergedUnSafe())
       << "should be merged state when calling this method";
-  if (lease_term_ != kLeaseNotSet &&
-      static_cast<int>(lease_term) > lease_term_) {
+  if (lease_term_ != kLeaseNotSet && lease_term > lease_term_) {
     lease_term_ = lease_term;
   }
 }

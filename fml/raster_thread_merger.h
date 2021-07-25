@@ -35,9 +35,12 @@ class RasterThreadMerger
   //
   // If the task queues are the same, we consider them statically merged.
   // When task queues are statically merged this method becomes no-op.
-  void MergeWithLease(size_t lease_term);
+  void MergeWithLease(int lease_term);
 
-  // Un-merges the threads now, and resets the lease term to 0.
+  // Un-merges the threads now if current caller is the last merge caller,
+  // and it resets the lease term to 0, otherwise it will remove the caller
+  // record and return. The multiple caller records were recorded by the
+  // |RecordMergeCaller| method.
   //
   // Must be executed on the raster task runner.
   //
@@ -48,7 +51,7 @@ class RasterThreadMerger
 
   // If the task queues are the same, we consider them statically merged.
   // When task queues are statically merged this method becomes no-op.
-  void ExtendLeaseTo(size_t lease_term);
+  void ExtendLeaseTo(int lease_term);
 
   // Returns |RasterThreadStatus::kUnmergedNow| if this call resulted in
   // splitting the raster and platform threads. Reduces the lease term by 1.
@@ -57,9 +60,19 @@ class RasterThreadMerger
   // When task queues are statically merged this method becomes no-op.
   RasterThreadStatus DecrementLease();
 
+  // Record current merge caller in the set of SharedThreadMergerImpl object.
+  // This method should be called before multiple merge callers of same
+  // owner/subsumed pair are going to call |MergeWithLease| method.
+  //
+  // And the reason why not putting this method inside |MergeWithLease| is
+  // |MergeWithLease| should not called when another caller already merged the
+  // threads and |IsMerged| return true. In this case only recording the
+  // current caller is needed.
   void RecordMergeCaller();
 
-  // TODO DOC
+  // The method is locked by current instance, and asks the shared instance of
+  // SharedThreadMergerImpl and the merging state is determined by the
+  // lease_term_ counter.
   bool IsMerged();
 
   // Waits until the threads are merged.

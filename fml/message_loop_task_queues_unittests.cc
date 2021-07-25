@@ -62,6 +62,35 @@ TEST(MessageLoopTaskQueue, RegisterTwoTasksAndCount) {
   ASSERT_TRUE(task_queue->GetNumPendingTasks(queue_id) == 2);
 }
 
+TEST(MessageLoopTaskQueue, RegisterTasksOnMergedQueuesAndCount) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster_queue = task_queue->CreateTaskQueue();
+  // A task in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, []() {}, fml::TimePoint::Now());
+  // A task in raster_queue
+  task_queue->RegisterTask(
+      raster_queue, []() {}, fml::TimePoint::Now());
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 1);
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 1);
+
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+  task_queue->Merge(platform_queue, raster_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster_queue));
+
+  ASSERT_TRUE(task_queue->HasPendingTasks(platform_queue));
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 2);
+  // The task count of subsumed queue is 0
+  ASSERT_FALSE(task_queue->HasPendingTasks(raster_queue));
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 0);
+
+  task_queue->Unmerge(platform_queue, raster_queue);
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 1);
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 1);
+}
+
 TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
@@ -79,6 +108,46 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
   int expected_value = 1;
   for (;;) {
     fml::closure invocation = task_queue->GetNextTaskToRun(queue_id, now);
+    if (!invocation) {
+      break;
+    }
+    invocation();
+    ASSERT_TRUE(test_val == expected_value);
+    expected_value++;
+  }
+}
+
+TEST(MessageLoopTaskQueue, RegisterTasksOnMergedQueuesPreserveTaskOrdering) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster1_queue = task_queue->CreateTaskQueue();
+  auto raster2_queue = task_queue->CreateTaskQueue();
+  int test_val = 0;
+
+  // order 0 in raster1_queue
+  task_queue->RegisterTask(
+      raster1_queue, [&test_val]() { test_val = 0; }, fml::TimePoint::Now());
+
+  // order 1 in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, [&test_val]() { test_val = 1; }, fml::TimePoint::Now());
+
+  // order 2 in raster2_queue
+  task_queue->RegisterTask(
+      raster2_queue, [&test_val]() { test_val = 2; }, fml::TimePoint::Now());
+
+  task_queue->Merge(platform_queue, raster1_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster1_queue));
+  task_queue->Merge(platform_queue, raster2_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster2_queue));
+  const auto now = fml::TimePoint::Now();
+  int expected_value = 0;
+  // Right order:
+  // "test_val = 0" in raster1_queue
+  // "test_val = 1" in platform_queue
+  // "test_val = 2" in raster2_queue
+  for (;;) {
+    fml::closure invocation = task_queue->GetNextTaskToRun(platform_queue, now);
     if (!invocation) {
       break;
     }
@@ -192,6 +261,17 @@ TEST(MessageLoopTaskQueue, QueueDoNotOwnUnmergedTaskQueueId) {
   ASSERT_FALSE(task_queue->Owns(task_queue->CreateTaskQueue(), _kUnmerged));
   ASSERT_FALSE(task_queue->Owns(_kUnmerged, task_queue->CreateTaskQueue()));
   ASSERT_FALSE(task_queue->Owns(_kUnmerged, _kUnmerged));
+}
+
+TEST(MessageLoopTaskQueue, QueueOwnsMergedTaskQueueId) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster_queue = task_queue->CreateTaskQueue();
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+  ASSERT_FALSE(task_queue->Owns(raster_queue, platform_queue));
+  task_queue->Merge(platform_queue, raster_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster_queue));
+  ASSERT_FALSE(task_queue->Owns(raster_queue, platform_queue));
 }
 
 //------------------------------------------------------------------------------

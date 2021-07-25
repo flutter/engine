@@ -23,7 +23,7 @@ void RasterThreadMerger::SetMergeUnmergeCallback(const fml::closure& callback) {
   merge_unmerge_callback_ = callback;
 }
 
-void RasterThreadMerger::MergeWithLease(size_t lease_term) {
+void RasterThreadMerger::MergeWithLease(int lease_term) {
   std::scoped_lock lock(mutex_);
   if (TaskQueuesAreSame()) {
     return;
@@ -73,7 +73,7 @@ bool RasterThreadMerger::IsOnRasterizingThread() const {
   }
 }
 
-void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
+void RasterThreadMerger::ExtendLeaseTo(int lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   if (TaskQueuesAreSame()) {
     return;
@@ -84,8 +84,7 @@ void RasterThreadMerger::ExtendLeaseTo(size_t lease_term) {
 
 bool RasterThreadMerger::IsMerged() {
   std::scoped_lock lock(mutex_);
-  bool is_merged = IsMergedUnSafe();
-  return is_merged;
+  return IsMergedUnSafe();
 }
 
 void RasterThreadMerger::Enable() {
