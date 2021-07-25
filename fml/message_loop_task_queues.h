@@ -35,11 +35,11 @@ class TaskQueueEntry {
   TaskObservers task_observers;
   std::unique_ptr<TaskSource> task_source;
 
-  // Note: Both of these can be _kUnmerged, which indicates that
-  // this queue has not been merged or subsumed. OR exactly one
-  // of these will be _kUnmerged, if owner_of is _kUnmerged, it means
-  // that the queue has been subsumed or else it owns another queue.
+  // If owner_of is not empty, it means it owns another queue.
   std::set<TaskQueueId> owner_of;
+
+  // If subsumed_by is not _kUnmerged, which indicates that
+  // this queue has been subsumed (owned by another queue)
   TaskQueueId subsumed_by;
 
   TaskQueueId created_for;
