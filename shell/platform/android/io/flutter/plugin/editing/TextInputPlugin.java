@@ -316,7 +316,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             configuration.textCapitalization);
     outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN;
 
-    if (configuration.requestPrivacy) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && configuration.requestPrivacy) {
       outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
     }
 
