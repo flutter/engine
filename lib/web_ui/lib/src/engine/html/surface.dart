@@ -683,7 +683,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         assert(oldLayer.rootElement != null);
         assert(debugAssertSurfaceState(
             oldLayer, PersistedSurfaceState.pendingUpdate));
-        child.update(child.oldLayer! as PersistedContainerSurface);
+        child.update(oldLayer as PersistedContainerSurface);
       } else {
         assert(debugAssertSurfaceState(child, PersistedSurfaceState.created));
         assert(child.rootElement == null);
