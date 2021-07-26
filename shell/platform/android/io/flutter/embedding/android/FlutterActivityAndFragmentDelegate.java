@@ -75,6 +75,7 @@ import java.util.Arrays;
   @Nullable private FlutterEngine flutterEngine;
   @Nullable private FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
+  @Nullable private OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
   private boolean isFlutterUiDisplayed;
 
@@ -340,18 +341,17 @@ import java.util.Arrays;
                 + " RenderMode.surface.");
       }
 
-      flutterView
-          .getViewTreeObserver()
-          .addOnPreDrawListener(
-              new OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                  if (isFlutterUiDisplayed) {
-                    flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
-                  }
-                  return isFlutterUiDisplayed;
-                }
-              });
+      activePreDrawListener =
+          new OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+              if (isFlutterUiDisplayed) {
+                flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
+              }
+              return isFlutterUiDisplayed;
+            }
+          };
+      flutterView.getViewTreeObserver().addOnPreDrawListener(activePreDrawListener);
     }
 
     return flutterView;
@@ -544,6 +544,10 @@ import java.util.Arrays;
     Log.v(TAG, "onDestroyView()");
     ensureAlive();
 
+    if (activePreDrawListener != null) {
+      flutterView.getViewTreeObserver().removeOnPreDrawListener(activePreDrawListener);
+      activePreDrawListener = null;
+    }
     flutterView.detachFromFlutterEngine();
     flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
   }
