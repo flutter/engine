@@ -24,7 +24,7 @@ typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
-@property(nonatomic, readonly) id<FlutterViewResponder> viewController;
+// @property(nonatomic, readonly) id<FlutterViewResponder> viewResponder;
 @property(nonatomic, assign)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
@@ -41,8 +41,8 @@ typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element
  */
-- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewController;
-- (void)resetViewController;
+- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
+- (void)resetViewResponder;
 
 @end
 
@@ -130,7 +130,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
 
 // Scribble Support
-@property(nonatomic, assign) id<FlutterViewResponder> viewController;
+@property(nonatomic, assign) id<FlutterViewResponder> viewResponder;
 @property(nonatomic) FlutterScribbleStatus scribbleFocusStatus;
 @property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
 

@@ -830,26 +830,26 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   }
 }
 
-// Forward touches to the viewController to allow tapping inside the UITextField as normal
+// Forward touches to the viewResponder to allow tapping inside the UITextField as normal
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   _scribbleFocusStatus = FlutterScribbleStatusUnfocused;
-  [self.viewController touchesBegan:touches withEvent:event];
+  [self.viewResponder touchesBegan:touches withEvent:event];
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self.viewController touchesMoved:touches withEvent:event];
+  [self.viewResponder touchesMoved:touches withEvent:event];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self.viewController touchesEnded:touches withEvent:event];
+  [self.viewResponder touchesEnded:touches withEvent:event];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self.viewController touchesCancelled:touches withEvent:event];
+  [self.viewResponder touchesCancelled:touches withEvent:event];
 }
 
 - (void)touchesEstimatedPropertiesUpdated:(NSSet*)touches {
-  [self.viewController touchesEstimatedPropertiesUpdated:touches];
+  [self.viewResponder touchesEstimatedPropertiesUpdated:touches];
 }
 // The documentation for presses* handlers (implemented below) is entirely
 // unclear about how to handle the case where some, but not all, of the presses
@@ -1770,6 +1770,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 @property(nonatomic, strong) FlutterTextInputView* activeView;
 @property(nonatomic, strong) FlutterTextInputViewAccessibilityHider* inputHider;
+@property(nonatomic, readonly) id<FlutterViewResponder> viewResponder;
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -1892,7 +1893,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (void)showTextInput {
   _activeView.textInputDelegate = _textInputDelegate;
-  _activeView.viewController = _viewController;
+  _activeView.viewResponder = _viewResponder;
   [self addToInputParentViewIfNeeded:_activeView];
   // Adds a delay to prevent the text view from receiving accessibility
   // focus in case it is activated during semantics updates.
@@ -2251,10 +2252,10 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 #pragma mark - Methods related to Scribble support
 
-- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewController {
-  if (_viewController != viewController) {
+- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder {
+  if (_viewResponder != viewResponder) {
     if (@available(iOS 14.0, *)) {
-      UIView* parentView = viewController.view;
+      UIView* parentView = viewResponder.view;
       if (parentView != nil) {
         UIIndirectScribbleInteraction* _scribbleInteraction =
             [[[UIIndirectScribbleInteraction alloc]
@@ -2263,11 +2264,11 @@ static BOOL isPositionCloserToPoint(CGPoint point,
       }
     }
   }
-  _viewController = viewController;
+  _viewResponder = viewResponder;
 }
 
-- (void)resetViewController {
-  _viewController = nil;
+- (void)resetViewResponder {
+  _viewResponder = nil;
 }
 
 #pragma mark -
