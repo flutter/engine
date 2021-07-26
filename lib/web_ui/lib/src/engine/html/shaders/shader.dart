@@ -237,7 +237,17 @@ class GradientLinear extends EngineGradient {
         _createLinearFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 
+    /// When creating an image to apply to a dom element, render
+    /// contents at 0,0 and adjust gradient vector for shaderBounds.
+    final bool translateToOrigin = createDataUrl && shaderBounds != null;
+
+    if (translateToOrigin) {
+      shaderBounds = shaderBounds.translate(-shaderBounds.left, -shaderBounds.top);
+    }
+
     // Setup from/to uniforms.
+    //
+    // From/to is relative to shaderBounds.
     //
     // To compute t value between 0..1 for any point on the screen,
     // we need to use from,to point pair to construct a matrix that will
@@ -270,7 +280,7 @@ class GradientLinear extends EngineGradient {
         ? (shaderBounds.height / 2)
         : (fromY + toY) / 2.0 - shaderBounds.top;
 
-    final Matrix4 translateToOrigin =
+    final Matrix4 originTranslation =
         Matrix4.translationValues(-originX, -originY, 0);
     // Rotate around Z axis.
     final Matrix4 rotationZ = Matrix4.identity();
@@ -306,7 +316,7 @@ class GradientLinear extends EngineGradient {
     }
 
     gradientTransform.multiply(rotationZ);
-    gradientTransform.multiply(translateToOrigin);
+    gradientTransform.multiply(originTranslation);
     // Setup gradient uniforms for t search.
     normalizedGradient.setupUniforms(gl, glProgram);
     // Setup matrix transform uniform.
@@ -688,6 +698,7 @@ class _BlurEngineImageFilter extends EngineImageFilter {
   final ui.TileMode tileMode;
 
   // TODO(flutter_web): implement TileMode.
+  @override
   String get filterAttribute => blurSigmasToCssString(sigmaX, sigmaY);
 
   @override
@@ -718,6 +729,7 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
   final ui.FilterQuality filterQuality;
 
   // TODO(flutter_web): implement FilterQuality.
+  @override
   String get transformAttribute => float64ListToCssTransform(webMatrix);
 
   @override
