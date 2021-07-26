@@ -57,6 +57,13 @@ static const double kIdleDelay = 1.0;
 }
 
 - (void)swapBuffers {
+  if (_ioSurfaces[kFlutterSurfaceManagerBackBuffer] == nil) {
+    // We can have a `nil` back-buffer when we call present on an embedded view
+    // this isn't supported: https://github.com/flutter/flutter/issues/86932
+    // but to prevent crashes, no-op is preferred.
+    return;
+  }
+
   _contentLayer.frame = _containingLayer.bounds;
   _contentLayer.transform = _contentTransform;
   IOSurfaceRef contentIOSurface = [_ioSurfaces[kFlutterSurfaceManagerBackBuffer] ioSurface];
