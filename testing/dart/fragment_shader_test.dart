@@ -64,9 +64,33 @@ void _expectShadersRenderGreen(String leafFolderName) {
 
   for (final File spvFile in files) {
     test('${path.basenameWithoutExtension(spvFile.path)} renders correctly', () {
-      _expectShaderRendersGreen(spvFile.readAsBytesSync());
+      final Uint8List spirvBytes = spvFile.readAsBytesSync();
+      final spvFileName = path.basenameWithoutExtension(spvFile.path);
+      if (_basePathChunks.contains(spvFileName)) {
+        _expectShaderHasOp(spirvBytes, spvFileName);
+        _expectShaderRendersGreen(spirvBytes);
+      }
     });
   }
+}
+
+// Expects that a spirv shader has the op code identified by its file name.
+Future<void> _expectShaderHasOp(Uint8List spirvBytes, String spvFileName) async {
+  final Uint32List words = spirvBytes.buffer.asUint32List();
+
+  // skip the header
+  int position = 5;
+
+  int opCount = 0;
+  int nextPosition = -1;
+  while (nextPosition != 0 && position > nextPosition) {
+    final int word = words[position];
+    final int currentOpCode = word & 0xFFFF;
+    if (currentOpCode == _spvTestDatas[spvFileName]!.opCode) opCount++;
+    nextPosition = position + (word >> 16) - 1;
+  }
+
+  expect(opCount, _spvTestDatas[spvFileName]!.occurranceCount);
 }
 
 // Expects that a spirv shader only outputs the color green.
@@ -137,3 +161,17 @@ const double epsilon = 0.5 / 255.0;
 double toFloat(int v) => v.toDouble() / 255.0;
 
 String toHexString(int color) => '#${color.toRadixString(16)}';
+
+// Map from spv file names without extension to their expected op code and occurrance count.
+const _spvTestDatas = {
+  'op_type_void': _SpvTestData(opCode: 19, occurranceCount: 1),
+  'op_type_float': _SpvTestData(opCode: 22, occurranceCount: 2),
+  // 'op_type_bool': _SpvTestData(opCode: 20, occurranceCount: 2),
+};
+
+class _SpvTestData {
+  const _SpvTestData({required this.opCode, required this.occurranceCount});
+
+  final int opCode;
+  final int occurranceCount;
+}

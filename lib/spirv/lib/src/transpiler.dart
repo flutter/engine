@@ -76,6 +76,14 @@ class _Transpiler {
   /// ID mapped to ID. Used by [OpLoad].
   final Map<int, int> alias = <int, int>{};
 
+  /// The ID for a constant true value.
+  /// See [opConstantTrue].
+  int constantTrue = 0;
+
+  /// The ID for a constant false value.
+  /// See [opConstantFalse].
+  int constantFalse = 0;
+
   /// The current word-index in the SPIR-V buffer.
   int position = 0;
 
@@ -279,6 +287,12 @@ class _Transpiler {
       case _opTypeFunction:
         opTypeFunction();
         break;
+      case _opConstantTrue:
+        opConstantTrue();
+        break;
+      case _opConstantFalse:
+        opConstantFalse();
+        break;
       case _opConstant:
         opConstant();
         break;
@@ -357,6 +371,14 @@ class _Transpiler {
         break;
       case _opReturnValue:
         opReturnValue();
+        break;
+      // Unsupported ops with no semantic meaning.
+      case _opSource:
+      case _opSourceExtension:
+      case _opName:
+      case _opMemberName:
+      case _opString:
+      case _opLine:
         break;
       default:
         throw failure('Not a supported op.');
@@ -518,6 +540,18 @@ class _Transpiler {
       params[i] = readWord();
     }
     functionTypes[id] = _FunctionType(returnType, params);
+  }
+
+  void opConstantTrue() {
+    // Skip type operand.
+    position++;
+    constantTrue = readWord();
+  }
+
+  void opConstantFalse() {
+    // Skip type operand.
+    position++;
+    constantFalse = readWord();
   }
 
   void opConstant() {
