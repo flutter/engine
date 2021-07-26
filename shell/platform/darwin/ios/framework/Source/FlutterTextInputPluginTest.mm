@@ -12,17 +12,6 @@
 
 FLUTTER_ASSERT_ARC
 
-// TODO(fbcouch)
-// - tests for closestPositionToPoint
-// - setMarkedText does nothing when scribble in progress
-// - setMarkedText does nothing when scribble focus in progress
-// - positionFromPosition returns early when scribble in progress
-// - firstRectForRange only shows autocorrect prompt rect if not scribbling
-// - firstRectForRange logic tests
-// - closestPositionToPoint logic tests
-// - selectionRectsForRange logic tests
-// - insertText adds placeholder selection rects
-
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
 - (void)setEditableTransform:(NSArray*)matrix;
@@ -230,6 +219,57 @@ FLUTTER_ASSERT_ARC
                                 withClient:0]);
 }
 
+- (void)testAutocorrectionPromptRectDoesNotAppearDuringScribble {
+  if (@available(iOS 14.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
+    inputView.textInputDelegate = engine;
+
+    __block int callCount = 0;
+    OCMStub([engine flutterTextInputView:inputView
+                showAutocorrectionPromptRectForStart:0
+                                                 end:1
+                                          withClient:0])
+        .andDo(^(NSInvocation* invocation) {
+          callCount++;
+        });
+
+    [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+    // showAutocorrectionPromptRectForStart fires in response to firstRectForRange
+    XCTAssertEqual(callCount, 1);
+
+    UIScribbleInteraction* scribbleInteraction =
+        [[UIScribbleInteraction alloc] initWithDelegate:inputView];
+
+    [inputView scribbleInteractionWillBeginWriting:scribbleInteraction];
+    [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+    // showAutocorrectionPromptRectForStart does not fire in response to setMarkedText during a
+    // scribble interaction.firstRectForRange
+    XCTAssertEqual(callCount, 1);
+
+    [inputView scribbleInteractionDidFinishWriting:scribbleInteraction];
+    [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+    // showAutocorrectionPromptRectForStart fires in response to firstRectForRange.
+    XCTAssertEqual(callCount, 2);
+
+    inputView.scribbleFocusStatus = FlutterScribbleStatusFocusing;
+    [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+    // showAutocorrectionPromptRectForStart does not fire in response to firstRectForRange during a
+    // scribble-initiated focus.
+    XCTAssertEqual(callCount, 2);
+
+    inputView.scribbleFocusStatus = FlutterScribbleStatusFocused;
+    [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+    // showAutocorrectionPromptRectForStart does not fire in response to firstRectForRange after a
+    // scribble-initiated focus.
+    XCTAssertEqual(callCount, 2);
+
+    inputView.scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+    [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
+    // showAutocorrectionPromptRectForStart fires in response to firstRectForRange.
+    XCTAssertEqual(callCount, 3);
+  }
+}
+
 - (void)testTextRangeFromPositionMatchesUITextViewBehavior {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
   FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:2];
@@ -413,6 +453,55 @@ FLUTTER_ASSERT_ARC
   [inputView unmarkText];
   // updateEditingClient fires in response to unmarkText.
   XCTAssertEqual(updateCount, 2);
+}
+
+- (void)testSetMarkedTextDuringScribbleDoesNotTriggerUpdateEditingClient {
+  if (@available(iOS 14.0, *)) {
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+    inputView.textInputDelegate = engine;
+
+    __block int updateCount = 0;
+    OCMStub([engine flutterTextInputView:inputView
+                     updateEditingClient:0
+                               withState:[OCMArg isNotNil]])
+        .andDo(^(NSInvocation* invocation) {
+          updateCount++;
+        });
+
+    [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+    // updateEditingClient fires in response to setMarkedText.
+    XCTAssertEqual(updateCount, 1);
+
+    UIScribbleInteraction* scribbleInteraction =
+        [[UIScribbleInteraction alloc] initWithDelegate:inputView];
+
+    [inputView scribbleInteractionWillBeginWriting:scribbleInteraction];
+    [inputView setMarkedText:@"during writing" selectedRange:NSMakeRange(1, 2)];
+    // updateEditingClient does not fire in response to setMarkedText during a scribble interaction.
+    XCTAssertEqual(updateCount, 1);
+
+    [inputView scribbleInteractionDidFinishWriting:scribbleInteraction];
+    [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+    // updateEditingClient fires in response to setMarkedText.
+    XCTAssertEqual(updateCount, 2);
+
+    inputView.scribbleFocusStatus = FlutterScribbleStatusFocusing;
+    [inputView setMarkedText:@"during focus" selectedRange:NSMakeRange(1, 2)];
+    // updateEditingClient does not fire in response to setMarkedText during a scribble-initiated
+    // focus.
+    XCTAssertEqual(updateCount, 2);
+
+    inputView.scribbleFocusStatus = FlutterScribbleStatusFocused;
+    [inputView setMarkedText:@"after focus" selectedRange:NSMakeRange(2, 3)];
+    // updateEditingClient does not fire in response to setMarkedText after a scribble-initiated
+    // focus.
+    XCTAssertEqual(updateCount, 2);
+
+    inputView.scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+    [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+    // updateEditingClient fires in response to setMarkedText.
+    XCTAssertEqual(updateCount, 3);
+  }
 }
 
 - (void)testUpdateEditingClientNegativeSelection {
@@ -635,8 +724,6 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
 
-  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
-
   CGRect testRect0 = CGRectMake(100, 100, 100, 100);
   CGRect testRect1 = CGRectMake(200, 200, 100, 100);
   [inputView setSelectionRects:@[
@@ -645,9 +732,19 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:testRect1 position:2U],
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 300, 100, 100) position:3U],
   ]];
+
+  // Returns the matching rects within a range
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
   XCTAssertTrue(CGRectEqualToRect(testRect0, [inputView selectionRectsForRange:range][0].rect));
   XCTAssertTrue(CGRectEqualToRect(testRect1, [inputView selectionRectsForRange:range][1].rect));
   XCTAssertEqual(2U, [[inputView selectionRectsForRange:range] count]);
+
+  // Returns a 0 width rect for a 0-length range
+  range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 0)];
+  XCTAssertEqual(1U, [[inputView selectionRectsForRange:range] count]);
+  XCTAssertTrue(CGRectEqualToRect(
+      CGRectMake(testRect0.origin.x, testRect0.origin.y, 0, testRect0.size.height),
+      [inputView selectionRectsForRange:range][0].rect));
 }
 
 - (void)testClosestPositionToPointWithinRange {
@@ -726,6 +823,52 @@ FLUTTER_ASSERT_ARC
 
   [inputView endFloatingCursor];
   XCTAssertTrue(CGRectEqualToRect(initialBounds, inputView.bounds));
+}
+
+#pragma mark - UIKeyInput Overrides - Tests
+
+- (void)testInsertTextAddsPlaceholderSelectionRects {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  [inputView
+      setTextInputState:@{@"text" : @"test", @"selectionBase" : @1, @"selectionExtent" : @1}];
+
+  FlutterTextSelectionRect* first =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 0, 100, 100) position:0U];
+  FlutterTextSelectionRect* second =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(100, 100, 100, 100) position:1U];
+  FlutterTextSelectionRect* third =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(200, 200, 100, 100) position:2U];
+  FlutterTextSelectionRect* fourth =
+      [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 300, 100, 100) position:3U];
+  [inputView setSelectionRects:@[ first, second, third, fourth ]];
+
+  // Inserts additional selection rects at the selection start
+  [inputView insertText:@"in"];
+  NSArray* selectionRects =
+      [inputView selectionRectsForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 6)]];
+  XCTAssertEqual(6U, [selectionRects count]);
+
+  XCTAssertEqual(first.position, ((FlutterTextSelectionRect*)selectionRects[0]).position);
+  XCTAssertTrue(CGRectEqualToRect(first.rect, ((FlutterTextSelectionRect*)selectionRects[0]).rect));
+
+  XCTAssertEqual(second.position, ((FlutterTextSelectionRect*)selectionRects[1]).position);
+  XCTAssertTrue(
+      CGRectEqualToRect(second.rect, ((FlutterTextSelectionRect*)selectionRects[1]).rect));
+
+  XCTAssertEqual(second.position + 1, ((FlutterTextSelectionRect*)selectionRects[2]).position);
+  XCTAssertTrue(
+      CGRectEqualToRect(second.rect, ((FlutterTextSelectionRect*)selectionRects[2]).rect));
+
+  XCTAssertEqual(second.position + 2, ((FlutterTextSelectionRect*)selectionRects[3]).position);
+  XCTAssertTrue(
+      CGRectEqualToRect(second.rect, ((FlutterTextSelectionRect*)selectionRects[3]).rect));
+
+  XCTAssertEqual(third.position + 2, ((FlutterTextSelectionRect*)selectionRects[4]).position);
+  XCTAssertTrue(CGRectEqualToRect(third.rect, ((FlutterTextSelectionRect*)selectionRects[4]).rect));
+
+  XCTAssertEqual(fourth.position + 2, ((FlutterTextSelectionRect*)selectionRects[5]).position);
+  XCTAssertTrue(
+      CGRectEqualToRect(fourth.rect, ((FlutterTextSelectionRect*)selectionRects[5]).rect));
 }
 
 #pragma mark - Autofill - Utilities

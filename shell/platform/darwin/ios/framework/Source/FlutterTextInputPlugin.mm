@@ -1622,12 +1622,10 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   NSAssert([_selectedTextRange.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for position (got %@).",
            [_selectedTextRange.start class]);
-  NSUInteger insertPosition = ((FlutterTextPosition*)_selectedTextRange.start).index - 1;
-  NSUInteger insertIndex = 0;
+  NSUInteger insertPosition = ((FlutterTextPosition*)_selectedTextRange.start).index;
   for (NSUInteger i = 0; i < [_selectionRects count]; i++) {
     NSUInteger rectPosition = _selectionRects[i].position;
     if (rectPosition == insertPosition) {
-      insertIndex = i;
       for (NSUInteger j = 0; j <= text.length; j++) {
         [copiedRects
             addObject:[FlutterTextSelectionRect selectionRectWithRect:_selectionRects[i].rect
