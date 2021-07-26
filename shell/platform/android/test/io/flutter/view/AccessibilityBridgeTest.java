@@ -210,15 +210,8 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    ArgumentCaptor<AccessibilityEvent> eventCaptor =
-        ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(2))
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    AccessibilityEvent event = eventCaptor.getAllValues().get(0);
-    assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-    List<CharSequence> sentences = event.getText();
-    assertEquals(sentences.size(), 1);
-    assertEquals(sentences.get(0).toString(), "node1");
+    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
+    assertEquals(spy.panelTitle, "node1");
 
     TestSemanticsNode new_root = new TestSemanticsNode();
     new_root.id = 0;
@@ -237,14 +230,7 @@ public class AccessibilityBridgeTest {
     testSemanticsUpdate = new_root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    eventCaptor = ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(4))
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    event = eventCaptor.getAllValues().get(2);
-    assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-    sentences = event.getText();
-    assertEquals(sentences.size(), 1);
-    assertEquals(sentences.get(0).toString(), "new_node2");
+    assertEquals(spy.panelTitle, "new_node2");
   }
 
   @Test
@@ -517,12 +503,8 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    ArgumentCaptor<AccessibilityEvent> eventCaptor =
-        ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(2))
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    AccessibilityEvent event = eventCaptor.getAllValues().get(0);
-    assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
+    assertEquals(spy.panelTitle, " ");
 
     // Synthesize an accessibility hit test event.
     MotionEvent mockEvent = mock(MotionEvent.class);
@@ -533,10 +515,11 @@ public class AccessibilityBridgeTest {
 
     assertEquals(hit, true);
 
-    eventCaptor = ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(3))
+    ArgumentCaptor<AccessibilityEvent> eventCaptor =
+        ArgumentCaptor.forClass(AccessibilityEvent.class);
+    verify(mockParent, times(2))
         .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    event = eventCaptor.getAllValues().get(2);
+    AccessibilityEvent event = eventCaptor.getAllValues().get(1);
     assertEquals(event.getEventType(), AccessibilityEvent.TYPE_VIEW_HOVER_ENTER);
     assertEquals(accessibilityBridge.getHoveredObjectId(), 2);
   }
@@ -572,15 +555,8 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    ArgumentCaptor<AccessibilityEvent> eventCaptor =
-        ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(2))
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    AccessibilityEvent event = eventCaptor.getAllValues().get(0);
-    assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-    List<CharSequence> sentences = event.getText();
-    assertEquals(sentences.size(), 1);
-    assertEquals(sentences.get(0).toString(), "node2");
+    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
+    assertEquals(spy.panelTitle, "node2");
 
     TestSemanticsNode new_root = new TestSemanticsNode();
     new_root.id = 0;
@@ -597,14 +573,7 @@ public class AccessibilityBridgeTest {
     testSemanticsUpdate = new_root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    eventCaptor = ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(4))
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    event = eventCaptor.getAllValues().get(2);
-    assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-    sentences = event.getText();
-    assertEquals(sentences.size(), 1);
-    assertEquals(sentences.get(0).toString(), "new_node2");
+    assertEquals(spy.panelTitle, "new_node2");
   }
 
   @TargetApi(21)
@@ -1087,15 +1056,8 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    ArgumentCaptor<AccessibilityEvent> eventCaptor =
-        ArgumentCaptor.forClass(AccessibilityEvent.class);
-    verify(mockParent, times(2))
-        .requestSendAccessibilityEvent(eq(mockRootView), eventCaptor.capture());
-    AccessibilityEvent event = eventCaptor.getAllValues().get(0);
-    assertEquals(event.getEventType(), AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
-    List<CharSequence> sentences = event.getText();
-    assertEquals(sentences.size(), 1);
-    assertEquals(sentences.get(0).toString(), " ");
+    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
+    assertEquals(spy.panelTitle, " ");
   }
 
   @Test
@@ -1339,7 +1301,7 @@ public class AccessibilityBridgeTest {
     if (platformViewsAccessibilityDelegate == null) {
       platformViewsAccessibilityDelegate = mock(PlatformViewsAccessibilityDelegate.class);
     }
-    return new AccessibilityBridge(
+    return new AccessibilityBridgeSpy(
         rootAccessibilityView,
         accessibilityChannel,
         accessibilityManager,
@@ -1539,5 +1501,30 @@ public class AccessibilityBridgeTest {
           break;
       }
     }
+  }
+}
+
+class AccessibilityBridgeSpy extends AccessibilityBridge {
+  public AccessibilityBridgeSpy(
+      View rootAccessibilityView,
+      AccessibilityChannel accessibilityChannel,
+      AccessibilityManager accessibilityManager,
+      ContentResolver contentResolver,
+      AccessibilityViewEmbedder accessibilityViewEmbedder,
+      PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate) {
+    super(
+        rootAccessibilityView,
+        accessibilityChannel,
+        accessibilityManager,
+        contentResolver,
+        accessibilityViewEmbedder,
+        platformViewsAccessibilityDelegate);
+  }
+
+  String panelTitle;
+
+  @Override
+  public void setAccessibilityPaneTitle(String title) {
+    panelTitle = title;
   }
 }
