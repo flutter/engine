@@ -86,7 +86,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // We're testing lifecycle behaviors, which require/expect that certain methods have already
     // been executed by the time they run. Therefore, we run those expected methods first.
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
 
     // --- Execute the behavior under test ---
     // By the time an Activity/Fragment is started, we don't expect any lifecycle messages
@@ -164,7 +164,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is obtained in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
 
@@ -220,7 +220,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // --- Execute the behavior under test ---
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
 
     // Verify that the host was asked to configure a FlutterSurfaceView.
     verify(mockHost, times(1)).onFlutterSurfaceViewCreated(notNull(FlutterSurfaceView.class));
@@ -249,7 +249,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // --- Execute the behavior under test ---
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, false);
 
     // Verify that the host was asked to configure a FlutterTextureView.
     verify(customMockHost, times(1)).onFlutterTextureViewCreated(notNull(FlutterTextureView.class));
@@ -282,7 +282,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The initial route is sent in onStart().
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
 
     // Verify that the navigation channel was given our initial route.
@@ -306,7 +306,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // Dart is executed in onStart().
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
 
     // Verify that the host's Dart entrypoint was used.
@@ -335,7 +335,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // Dart is executed in onStart().
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
 
     // Verify that the host's Dart entrypoint was used.
@@ -390,7 +390,7 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Make sure all of the other lifecycle methods can run safely as well
     // without a valid Activity
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
     delegate.onPause();
@@ -751,7 +751,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
     delegate.onPause();
@@ -775,7 +775,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
     delegate.onPause();
@@ -806,7 +806,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
     delegate.onPause();
@@ -838,7 +838,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // Push the delegate through all lifecycle methods all the way to destruction.
     delegate.onAttach(RuntimeEnvironment.application);
-    delegate.onCreateView(null, null, null, 0);
+    delegate.onCreateView(null, null, null, 0, true);
     delegate.onStart();
     delegate.onResume();
     delegate.onPause();
