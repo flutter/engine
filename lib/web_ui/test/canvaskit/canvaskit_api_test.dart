@@ -413,6 +413,11 @@ void _maskFilterTests() {
         canvasKit.MaskFilter.MakeBlur(canvasKit.BlurStyle.Normal, 0.0, false),
         isNull);
   });
+  test('MaskFilter.MakeBlur with NaN sigma returns null', () {
+    expect(
+        canvasKit.MaskFilter.MakeBlur(canvasKit.BlurStyle.Normal, double.nan, false),
+        isNull);
+  });
 }
 
 void _colorFilterTests() {
