@@ -257,6 +257,15 @@ import java.util.Arrays;
    *
    * <p>{@code inflater} and {@code container} may be null when invoked from an {@code Activity}.
    *
+   * <p>{@code shouldInterceptFirstDraw} determines whether to set up an {@link
+   * android.view.ViewTreeObserver.OnPreDrawListener}, which will defer the current drawing pass
+   * till after the Flutter UI has been displayed. This results in more accurate timings reported
+   * with Android tools, such as "Displayed" timing printed with `am start`. Note that it should
+   * only be set to true when {@code Host#getRenderMode()} is {@code RenderMode.surface}. This
+   * parameter is also ignored, disabling the interception should the legacy {@code
+   * Host#provideSplashScreen()} be non-null. See <a
+   * href="https://flutter.dev/go/android-splash-migration">Android Splash Migration</a>.
+   *
    * <p>This method:
    *
    * <ol>
@@ -272,7 +281,8 @@ import java.util.Arrays;
       LayoutInflater inflater,
       @Nullable ViewGroup container,
       @Nullable Bundle savedInstanceState,
-      int flutterViewId) {
+      int flutterViewId,
+      boolean shouldInterceptFirstDraw) {
     Log.v(TAG, "Creating FlutterView.");
     ensureAlive();
 
@@ -319,21 +329,30 @@ import java.util.Arrays;
       return flutterSplashView;
     }
 
-    // Make Android only report that the host has drawn when the Flutter UI is displayed. This
-    // results in more accurate timings reported with tools, such as the timings printed with
-    // `am start`.
-    flutterView
-        .getViewTreeObserver()
-        .addOnPreDrawListener(
-            new OnPreDrawListener() {
-              @Override
-              public boolean onPreDraw() {
-                if (isFlutterUiDisplayed) {
-                  flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
+    if (shouldInterceptFirstDraw) {
+      if (host.getRenderMode() != RenderMode.surface) {
+        // Using a TextureView will cause a deadlock, where the underlying SurfaceTexture is never
+        // available since it will wait for drawing to be completed first. At the same time, the
+        // preDraw listener keeps returning false since the Flutter Engine waits for the
+        // SurfaceTexture to be available.
+        throw new RuntimeException(
+            "shouldInterceptFirstDraw was requested but is not compatible when not using"
+                + " RenderMode.surface.");
+      }
+
+      flutterView
+          .getViewTreeObserver()
+          .addOnPreDrawListener(
+              new OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                  if (isFlutterUiDisplayed) {
+                    flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
+                  }
+                  return isFlutterUiDisplayed;
                 }
-                return isFlutterUiDisplayed;
-              }
-            });
+              });
+    }
 
     return flutterView;
   }

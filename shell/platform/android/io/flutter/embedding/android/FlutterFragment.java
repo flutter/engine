@@ -113,6 +113,8 @@ public class FlutterFragment extends Fragment
   protected static final String ARG_HANDLE_DEEPLINKING = "handle_deeplinking";
   /** Path to Flutter's Dart code. */
   protected static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
+
+  protected static final String ARG_SHOULD_INTERCEPT_FIRST_DRAW = "should_intercept_first_draw";
   /** Flutter shell arguments. */
   protected static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
   /**
@@ -229,6 +231,7 @@ public class FlutterFragment extends Fragment
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
+    private boolean shouldInterceptFirstDraw = false;
 
     /**
      * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
@@ -383,6 +386,18 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether to defer the Android drawing pass till after the Flutter UI has been displayed.
+     *
+     * <p>See {#link FlutterActivityAndFragmentDelegate#onCreateView} for more details.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder shouldInterceptFirstDraw(
+        @NonNull boolean shouldInterceptFirstDraw) {
+      this.shouldInterceptFirstDraw = shouldInterceptFirstDraw;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -410,6 +425,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
       args.putBoolean(
           ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
+      args.putBoolean(ARG_SHOULD_INTERCEPT_FIRST_DRAW, shouldInterceptFirstDraw);
       return args;
     }
 
@@ -496,6 +512,7 @@ public class FlutterFragment extends Fragment
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
+    private boolean shouldInterceptFirstDraw = false;
 
     private CachedEngineFragmentBuilder(@NonNull String engineId) {
       this(FlutterFragment.class, engineId);
@@ -622,6 +639,18 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether to defer the Android drawing pass till after the Flutter UI has been displayed.
+     *
+     * <p>See {#link FlutterActivityAndFragmentDelegate#onCreateView} for more details.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder shouldInterceptFirstDraw(
+        @NonNull boolean shouldInterceptFirstDraw) {
+      this.shouldInterceptFirstDraw = shouldInterceptFirstDraw;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -642,6 +671,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
       args.putBoolean(
           ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
+      args.putBoolean(ARG_SHOULD_INTERCEPT_FIRST_DRAW, shouldInterceptFirstDraw);
       return args;
     }
 
@@ -727,7 +757,11 @@ public class FlutterFragment extends Fragment
   public View onCreateView(
       LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     return delegate.onCreateView(
-        inflater, container, savedInstanceState, /*flutterViewId=*/ FLUTTER_VIEW_ID);
+        inflater,
+        container,
+        savedInstanceState,
+        /*flutterViewId=*/ FLUTTER_VIEW_ID,
+        shouldInterceptFirstDraw());
   }
 
   @Override
@@ -1003,6 +1037,10 @@ public class FlutterFragment extends Fragment
   @NonNull
   public String getAppBundlePath() {
     return getArguments().getString(ARG_APP_BUNDLE_PATH);
+  }
+
+  private boolean shouldInterceptFirstDraw() {
+    return getArguments().getBoolean(ARG_SHOULD_INTERCEPT_FIRST_DRAW);
   }
 
   /**

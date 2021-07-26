@@ -542,7 +542,8 @@ public class FlutterActivity extends Activity
         /* inflater=*/ null,
         /* container=*/ null,
         /* savedInstanceState=*/ null,
-        /*flutterViewId=*/ FLUTTER_VIEW_ID);
+        /*flutterViewId=*/ FLUTTER_VIEW_ID,
+        /*shouldInterceptFirstDraw=*/ getRenderMode() == RenderMode.surface);
   }
 
   private void configureStatusBarForFullscreenFlutterExperience() {
