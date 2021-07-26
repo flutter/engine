@@ -472,8 +472,8 @@ void testMain() {
       paragraph.layout(ui.ParagraphConstraints(width: 1000));
       canvas.drawParagraph(paragraph, ui.Offset.zero);
       final ui.EngineLayer newLayer = useOffset
-          ? builder.pushOffset(0, 0, oldLayer: oldLayer! as ui.OffsetEngineLayer)
-          : builder.pushOpacity(100, oldLayer: oldLayer! as ui.OpacityEngineLayer);
+          ? builder.pushOffset(0, 0, oldLayer: oldLayer == null ? null : oldLayer as ui.OffsetEngineLayer)
+          : builder.pushOpacity(100, oldLayer: oldLayer == null ? null : oldLayer as ui.OpacityEngineLayer);
       builder.addPicture(ui.Offset.zero, recorder.endRecording());
       builder.pop();
       return newLayer;
