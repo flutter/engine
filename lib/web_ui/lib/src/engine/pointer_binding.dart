@@ -604,7 +604,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
       physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
       buttons: details.buttons,
-      pressure: event.pressure as double,
+      pressure: event.pressure! as double,
       pressureMin: 0.0,
       pressureMax: 1.0,
       tilt: tilt,
