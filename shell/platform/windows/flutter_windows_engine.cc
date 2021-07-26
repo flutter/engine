@@ -326,24 +326,34 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
   int64_t interval;
   uint64_t next_time;
   DWM_TIMING_INFO timing_info;
-
+  int64_t adjustment;
   timing_info.cbSize = sizeof(timing_info);
   HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
+
   if (result == S_OK && qpc_supported_) {
+    int64_t next_qpc_time;
     LARGE_INTEGER current_ticks;
     QueryPerformanceCounter(&current_ticks);
-    double cycle_delta =
-        static_cast<double>((timing_info.qpcVBlank - current_ticks.QuadPart) *
-                            1000000000) /
-        lp_frequency_.QuadPart;
-    double local_interval =
-        static_cast<double>(timing_info.qpcRefreshPeriod * 1000000000) /
-        lp_frequency_.QuadPart;
-    interval = llround(local_interval);
-    next_time = current_time + cycle_delta;
-    if (next_time > current_time + interval) {
-      next_time = current_time + interval;
+    auto now = static_cast<int64_t>(current_ticks.QuadPart);
+
+    // The QPC Vblank time is _a_ vblank time, not necessary the next one. Find
+    // the closest vblank time using the computed refresh period.
+    int64_t vsync_interval = static_cast<int64_t>(timing_info.qpcRefreshPeriod);
+    int64_t vsync_sample = static_cast<int64_t>(timing_info.qpcVBlank);
+    int64_t delta = std::abs(vsync_sample - now);
+    int64_t rem = delta % vsync_interval;
+
+    if (vsync_sample > now) {
+      next_qpc_time = now + rem;
+    } else {
+      next_qpc_time = now + (vsync_interval - rem);
     }
+
+    auto qpc_delta = next_qpc_time - now;
+    auto now_delta = (qpc_delta * 1000000000) / lp_frequency_.QuadPart;
+    next_time = current_time + now_delta;
+    interval = (vsync_interval * 1000000000) / lp_frequency_.QuadPart;
+
   } else {
     if (result == S_OK) {
       // QPC is not supported. The frame rate can still be retrieved from the
@@ -365,7 +375,7 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
     // time.
     next_time = SnapToNextTick(current_time, time_base_, interval);
   }
-
+  timing_info = {};
   embedder_api_.OnVsync(engine_, baton, next_time, next_time + interval);
 }
 
