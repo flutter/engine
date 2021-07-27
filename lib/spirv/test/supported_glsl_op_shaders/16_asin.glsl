@@ -8,7 +8,7 @@ layout(location = 0) uniform float a;
 
 void main() {
     fragColor = vec4(
-        // sin(0.0) = 0.0
+        /* sin(0.0) = 0.0 */
         asin(0.0),
         // sin(1.0) = 0.8414709848
         asin(a * 0.8414709848),
