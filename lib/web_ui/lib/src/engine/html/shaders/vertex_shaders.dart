@@ -14,7 +14,7 @@ abstract class VertexShaders {
   // This class is not meant to be instantiated or extended; this constructor
   // prevents instantiation and extension.
   VertexShaders._();
-  
+
   static final Uint16List vertexIndicesForRect =
       Uint16List.fromList(<int>[0, 1, 2, 2, 3, 0]);
 

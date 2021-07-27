@@ -19,7 +19,7 @@ abstract class WordBreaker {
   // This class is not meant to be instantiated or extended; this constructor
   // prevents instantiation and extension.
   WordBreaker._();
-  
+
   /// It starts from [index] and tries to find the next word boundary in [text].
   static int nextBreakIndex(String text, int index) =>
       _findBreakIndex(_FindBreakDirection.forward, text, index);

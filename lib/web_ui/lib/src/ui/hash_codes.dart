@@ -17,7 +17,7 @@ abstract class _Jenkins {
   // This class is not meant to be instantiated or extended; this constructor
   // prevents instantiation and extension.
   _Jenkins._();
-  
+
   static int combine(int hash, Object? o) {
     assert(o is! Iterable);
     hash = 0x1fffffff & (hash + o.hashCode);
