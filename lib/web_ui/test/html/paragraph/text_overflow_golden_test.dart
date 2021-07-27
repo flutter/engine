@@ -5,8 +5,8 @@
 import 'dart:async';
 
 import 'package:test/bootstrap/browser.dart';
-import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' hide window;
 
 import 'text_scuba.dart';
 
@@ -25,7 +25,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   final EngineScubaTester scuba = await EngineScubaTester.initialize(
     viewportSize: const Size(800, 800),
   );

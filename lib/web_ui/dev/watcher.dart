@@ -216,7 +216,7 @@ class PipelineWatcher {
     }
 
     final String relativePath = path.relative(event.path, from: dir);
-    print('- [${event.type}] ${relativePath}');
+    print('- [${event.type}] $relativePath');
 
     _pipelineRunCount++;
     _scheduledPipeline?.cancel();
@@ -226,7 +226,7 @@ class PipelineWatcher {
     });
   }
 
-  void _runPipeline() async {
+  Future<void> _runPipeline() async {
     if (pipeline.status == PipelineStatus.stopping) {
       // We are already trying to stop the pipeline. No need to do anything.
       return;

@@ -6,8 +6,8 @@ import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import '../screenshot.dart';
 
@@ -19,7 +19,7 @@ void main() {
 
 SurfacePaint makePaint() => Paint() as SurfacePaint;
 
-void testMain() async {
+Future<void> testMain() async {
   setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();

@@ -4,11 +4,11 @@
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' hide window;
 
-import 'text_scuba.dart';
 import 'helper.dart';
+import 'text_scuba.dart';
 
 const Rect bounds = Rect.fromLTWH(0, 0, 800, 600);
 
@@ -16,7 +16,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   setUpStableTestFonts();
 
   test('paints multiple shadows', () {

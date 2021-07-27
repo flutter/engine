@@ -16,25 +16,25 @@ import 'package:path/path.dart' as p;
 import 'package:pool/pool.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_packages_handler/shelf_packages_handler.dart';
 import 'package:shelf_static/shelf_static.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:shelf_packages_handler/shelf_packages_handler.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_test_utils/goldens.dart';
-import 'package:web_test_utils/image_compare.dart';
 
 import 'package:test_api/src/backend/runtime.dart';
 import 'package:test_api/src/backend/suite_platform.dart';
-import 'package:test_core/src/runner/runner_suite.dart';
-import 'package:test_core/src/runner/platform.dart';
-import 'package:test_core/src/util/stack_trace_mapper.dart';
-import 'package:test_core/src/runner/suite.dart';
-import 'package:test_core/src/runner/plugin/platform_helpers.dart';
-import 'package:test_core/src/runner/environment.dart';
-
-import 'package:test_core/src/util/io.dart';
 import 'package:test_core/src/runner/configuration.dart';
+import 'package:test_core/src/runner/environment.dart';
+import 'package:test_core/src/runner/platform.dart';
+import 'package:test_core/src/runner/plugin/platform_helpers.dart';
+import 'package:test_core/src/runner/runner_suite.dart';
+import 'package:test_core/src/runner/suite.dart';
+import 'package:test_core/src/util/io.dart';
+import 'package:test_core/src/util/stack_trace_mapper.dart';
+
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_test_utils/goldens.dart';
+import 'package:web_test_utils/image_compare.dart';
 
 import 'browser.dart';
 import 'common.dart';
@@ -371,6 +371,7 @@ class BrowserPlatform extends PlatformPlugin {
     return suite;
   }
 
+  @override
   StreamChannel<dynamic> loadChannel(String path, SuitePlatform platform) =>
       throw UnimplementedError();
 
@@ -413,6 +414,7 @@ class BrowserPlatform extends PlatformPlugin {
   ///
   /// Note that this doesn't close the server itself. Browser tests can still be
   /// loaded, they'll just spawn new browsers.
+  @override
   Future<void> closeEphemeral() async {
     if (_browserManager != null) {
       final BrowserManager? result = await _browserManager!;
@@ -424,6 +426,7 @@ class BrowserPlatform extends PlatformPlugin {
   ///
   /// Returns a [Future] that completes once the server is closed and its
   /// resources have been fully released.
+  @override
   Future<void> close() {
     return _closeMemo.runOnce(() async {
       final List<Future<void>> futures = <Future<void>>[];
@@ -448,7 +451,7 @@ class BrowserPlatform extends PlatformPlugin {
 /// invalid and don't need to have a persistent URL.
 class OneOffHandler {
   /// A map from URL paths to handlers.
-  final Map<String, shelf.Handler> _handlers = Map<String, shelf.Handler>();
+  final Map<String, shelf.Handler> _handlers = <String, shelf.Handler>{};
 
   /// The counter of handlers that have been activated.
   int _counter = 0;
@@ -537,7 +540,7 @@ class BrowserManager {
   ///
   /// These are used to mark suites as debugging or not based on the browser's
   /// pings.
-  final Set<RunnerSuiteController> _controllers = Set<RunnerSuiteController>();
+  final Set<RunnerSuiteController> _controllers = <RunnerSuiteController>{};
 
   // A timer that's reset whenever we receive a message from the browser.
   //
@@ -780,17 +783,22 @@ class BrowserManager {
 class _BrowserEnvironment implements Environment {
   final BrowserManager _manager;
 
+  @override
   final bool supportsDebugging = true;
 
+  @override
   final Uri? observatoryUrl;
 
+  @override
   final Uri? remoteDebuggerUrl;
 
+  @override
   final Stream<dynamic> onRestart;
 
   _BrowserEnvironment(this._manager, this.observatoryUrl,
       this.remoteDebuggerUrl, this.onRestart);
 
+  @override
   CancelableOperation<void> displayPause() => _manager._displayPause();
 }
 

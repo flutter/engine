@@ -421,6 +421,7 @@ class DomParagraph implements EngineParagraph {
     }
   }
 
+  @override
   bool get hasArbitraryPaint => _geometricStyle.ellipsis != null;
 
   @override
@@ -533,6 +534,7 @@ class DomParagraph implements EngineParagraph {
   /// - Paragraphs that contain decorations.
   /// - Paragraphs that have a non-null word-spacing.
   /// - Paragraphs with a background.
+  @override
   bool get drawOnCanvas {
     if (!_hasLineMetrics) {
       return false;
@@ -552,6 +554,7 @@ class DomParagraph implements EngineParagraph {
   }
 
   /// Whether this paragraph has been laid out.
+  @override
   bool get isLaidOut => _measurementResult != null;
 
   /// Asserts that the properties used to measure paragraph layout are the same
@@ -1845,7 +1848,7 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
   // Shadows are applied front-to-back with first shadow on top.
   // Color is optional. offsetx,y are required. blur-radius is optional as well
   // and defaults to 0.
-  final StringBuffer sb = new StringBuffer();
+  final StringBuffer sb = StringBuffer();
   final int len = shadows.length;
   for (int i = 0; i < len; i++) {
     if (i != 0) {
@@ -1863,7 +1866,7 @@ String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
 
   // For more details, see:
   // * https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings
-  final StringBuffer sb = new StringBuffer();
+  final StringBuffer sb = StringBuffer();
   final int len = fontFeatures.length;
   for (int i = 0; i < len; i++) {
     if (i != 0) {

@@ -15,7 +15,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   final Rect region = Rect.fromLTWH(0, 0, 300, 300);
 
   late BitmapCanvas canvas;
@@ -56,7 +56,7 @@ void paintStrokeJoins(BitmapCanvas canvas) {
       final StrokeJoin join = joints[i];
       final Color color = colors[i % colors.length];
 
-      final Path path = new Path();
+      final Path path = Path();
       path.moveTo(start.dx, start.dy);
       path.lineTo(mid.dx, mid.dy);
       path.lineTo(end.dx, end.dy);
