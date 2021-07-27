@@ -32,9 +32,6 @@ linter:
     prefer_single_quotes: false
     prefer_typing_uninitialized_variables: false
     public_member_api_docs: false
-    recursive_getters: false
-    slash_for_doc_comments: false
-    sort_unnamed_constructors_first: false
     flutter_style_todos: false
 
     # We have some legitimate use-cases for this (preserve tear-off identity)
