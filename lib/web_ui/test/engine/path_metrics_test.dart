@@ -117,8 +117,8 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 90.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
@@ -146,8 +146,8 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 180.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
@@ -175,8 +175,8 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 270.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
@@ -204,8 +204,8 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 270.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));

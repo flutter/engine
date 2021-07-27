@@ -70,8 +70,7 @@ void testMain() {
       'flutter/navigation',
       JSONMethodCodec().encodeMethodCall(MethodCall(
         'routeUpdated',
-        // ignore: prefer_const_literals_to_create_immutables
-        <String, dynamic>{'routeName': '/bar'},
+        const <String, dynamic>{'routeName': '/bar'},
       )),
       (_) { callback.complete(); },
     );
