@@ -272,19 +272,25 @@ bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner, TaskQueueId subsumed) {
   const auto& owner_entry = queue_entries_.at(owner);
   if (owner_entry->owner_of.empty()) {
     FML_LOG(WARNING)
-        << "Thread unmerging failed: owner_entry doesn't own anyone.";
+    << "Thread unmerging failed: owner_entry doesn't own anyone, owner=" << owner << ", subsumed=" << subsumed;
     return false;
   }
-
   if (owner_entry->subsumed_by != _kUnmerged) {
     FML_LOG(WARNING)
-        << "Thread unmerging failed: owner_entry was subsumed by others.";
+    << "Thread unmerging failed: owner_entry was subsumed by others, owner=" << owner << ", subsumed=" << subsumed
+    << ", owner_entry->subsumed_by=" << owner_entry->subsumed_by;
     return false;
   }
-
   if (queue_entries_.at(subsumed)->subsumed_by == _kUnmerged) {
     FML_LOG(WARNING)
-        << "Thread unmerging failed: subsumed_entry wasn't subsumed by others.";
+    << "Thread unmerging failed: subsumed_entry wasn't subsumed by others, owner=" << owner << ", subsumed="
+    << subsumed;
+    return false;
+  }
+  if (owner_entry->owner_of.find(subsumed) == owner_entry->owner_of.end()) {
+    FML_LOG(WARNING)
+    << "Thread unmerging failed: owner_entry didn't own the given subsumed queue id, owner=" << owner << ", subsumed="
+    << subsumed;
     return false;
   }
 

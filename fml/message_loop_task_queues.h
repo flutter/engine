@@ -109,17 +109,19 @@ class MessageLoopTaskQueues
   //     to it. It is not aware of whether a queue is merged or not. Same with
   //     task observers.
   //  2. When we get the tasks to run now, we look at both the queue_ids
-  //     for the owner, subsumed will spin.
-  //  3. Each task queue can only be merged and subsumed once.
+  //     for the owner and the subsumed task queues.
+  //  3. We can merge multiple subsumed queues into one owner task queue, but
+  //     the subsumed queues cannot be subsumed by other owner, and the owner
+  //     cannot be owned by other owners. The merge function will check these
+  //     error cases and return false result.
   //
   //  Methods currently aware of the merged state of the queues:
   //  HasPendingTasks, GetNextTaskToRun, GetNumPendingTasks
-
-  // This method returns false if either the owner or subsumed has already been
-  // merged with something else.
   bool Merge(TaskQueueId owner, TaskQueueId subsumed);
 
-  // Will return false if the owner has not been merged before.
+  // Will return false if the owner has not been merged before, or owner was
+  // subsumed by others, or subsumed wasn't subsumed by others, or owner
+  // didn't own the given subsumed queue id.
   bool Unmerge(TaskQueueId owner, TaskQueueId subsumed);
 
   /// Returns \p true if \p owner owns the \p subsumed task queue.

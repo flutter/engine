@@ -106,17 +106,39 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeUnmergeTasksPreserved) {
 }
 
 /// Multiple standalone engines scene
-TEST(MessageLoopTaskQueueMergeUnmerge, OneCanOwnMultipleQueues) {
+TEST(MessageLoopTaskQueueMergeUnmerge, OneCanOwnMultipleQueuesAndUnmergeIndependently) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
-
   auto queue_id_1 = task_queue->CreateTaskQueue();
   auto queue_id_2 = task_queue->CreateTaskQueue();
   auto queue_id_3 = task_queue->CreateTaskQueue();
-  auto queue_id_4 = task_queue->CreateTaskQueue();
 
+  // merge
   ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_2));
+  ASSERT_TRUE(task_queue->Owns(queue_id_1, queue_id_2));
+  ASSERT_FALSE(task_queue->Owns(queue_id_1, queue_id_3));
+
   ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_3));
-  ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_4));
+  ASSERT_TRUE(task_queue->Owns(queue_id_1, queue_id_2));
+  ASSERT_TRUE(task_queue->Owns(queue_id_1, queue_id_3));
+
+  // unmerge
+  ASSERT_TRUE(task_queue->Unmerge(queue_id_1, queue_id_2));
+  ASSERT_FALSE(task_queue->Owns(queue_id_1, queue_id_2));
+  ASSERT_TRUE(task_queue->Owns(queue_id_1, queue_id_3));
+
+  ASSERT_TRUE(task_queue->Unmerge(queue_id_1, queue_id_3));
+  ASSERT_FALSE(task_queue->Owns(queue_id_1, queue_id_2));
+  ASSERT_FALSE(task_queue->Owns(queue_id_1, queue_id_3));
+}
+
+TEST(MessageLoopTaskQueueMergeUnmerge, CannotMergeSameQueueToTwoDifferentOwners) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto queue = task_queue->CreateTaskQueue();
+  auto owner_1 = task_queue->CreateTaskQueue();
+  auto owner_2 = task_queue->CreateTaskQueue();
+
+  ASSERT_TRUE(task_queue->Merge(owner_1, queue));
+  ASSERT_FALSE(task_queue->Merge(owner_2, queue));
 }
 
 TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadySubsumed) {
@@ -126,8 +148,7 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeFailIfAlreadySubsumed) {
   auto queue_id_2 = task_queue->CreateTaskQueue();
   auto queue_id_3 = task_queue->CreateTaskQueue();
 
-  task_queue->Merge(queue_id_1, queue_id_2);
-
+  ASSERT_TRUE(task_queue->Merge(queue_id_1, queue_id_2));
   ASSERT_FALSE(task_queue->Merge(queue_id_2, queue_id_3));
   ASSERT_FALSE(task_queue->Merge(queue_id_2, queue_id_1));
 }
