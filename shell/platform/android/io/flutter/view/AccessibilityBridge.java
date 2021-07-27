@@ -33,7 +33,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.view.ViewCompat;
 import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
@@ -1779,11 +1778,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   }
 
   /**
-   * Called when needs to inform the TalkBack user about window name changes.
+   * Informs TalkBack user about window name changes.
    *
    * <p>This method sets accessibility panel title if the API level >= 28, otherwise, it creates a
    * {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends the event to Android's
-   * accessibility system.
+   * accessibility system. In both cases, TalkBack announces the label of the route and re-addjusts
+   * the accessibility focus.
    *
    * <p>The given {@code route} should be a {@link SemanticsNode} that represents a navigation route
    * in the Flutter app.
@@ -1811,11 +1811,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
   }
 
-  @TargetApi(28)
-  @RequiresApi(28)
-  @VisibleForTesting
-  public void setAccessibilityPaneTitle(String title) {
-    ViewCompat.setAccessibilityPaneTitle(rootAccessibilityView, title);
+  @TargetApi(Build.VERSION_CODES.P)
+  @RequiresApi(Build.VERSION_CODES.P)
+  private void setAccessibilityPaneTitle(String title) {
+    rootAccessibilityView.setAccessibilityPaneTitle(title);
   }
 
   /**

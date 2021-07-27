@@ -210,8 +210,7 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
-    assertEquals(spy.panelTitle, "node1");
+    verify(mockRootView, times(1)).setAccessibilityPaneTitle(eq("node1"));
 
     TestSemanticsNode new_root = new TestSemanticsNode();
     new_root.id = 0;
@@ -230,7 +229,7 @@ public class AccessibilityBridgeTest {
     testSemanticsUpdate = new_root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    assertEquals(spy.panelTitle, "new_node2");
+    verify(mockRootView, times(1)).setAccessibilityPaneTitle(eq("new_node2"));
   }
 
   @Test
@@ -503,8 +502,7 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
-    assertEquals(spy.panelTitle, " ");
+    verify(mockRootView, times(1)).setAccessibilityPaneTitle(eq(" "));
 
     // Synthesize an accessibility hit test event.
     MotionEvent mockEvent = mock(MotionEvent.class);
@@ -555,8 +553,7 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
-    assertEquals(spy.panelTitle, "node2");
+    verify(mockRootView, times(1)).setAccessibilityPaneTitle(eq("node2"));
 
     TestSemanticsNode new_root = new TestSemanticsNode();
     new_root.id = 0;
@@ -573,7 +570,7 @@ public class AccessibilityBridgeTest {
     testSemanticsUpdate = new_root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    assertEquals(spy.panelTitle, "new_node2");
+    verify(mockRootView, times(1)).setAccessibilityPaneTitle(eq("new_node2"));
   }
 
   @TargetApi(21)
@@ -1056,8 +1053,7 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
 
-    AccessibilityBridgeSpy spy = (AccessibilityBridgeSpy) accessibilityBridge;
-    assertEquals(spy.panelTitle, " ");
+    verify(mockRootView, times(1)).setAccessibilityPaneTitle(eq(" "));
   }
 
   @Test
@@ -1301,7 +1297,7 @@ public class AccessibilityBridgeTest {
     if (platformViewsAccessibilityDelegate == null) {
       platformViewsAccessibilityDelegate = mock(PlatformViewsAccessibilityDelegate.class);
     }
-    return new AccessibilityBridgeSpy(
+    return new AccessibilityBridge(
         rootAccessibilityView,
         accessibilityChannel,
         accessibilityManager,
@@ -1501,30 +1497,5 @@ public class AccessibilityBridgeTest {
           break;
       }
     }
-  }
-}
-
-class AccessibilityBridgeSpy extends AccessibilityBridge {
-  public AccessibilityBridgeSpy(
-      View rootAccessibilityView,
-      AccessibilityChannel accessibilityChannel,
-      AccessibilityManager accessibilityManager,
-      ContentResolver contentResolver,
-      AccessibilityViewEmbedder accessibilityViewEmbedder,
-      PlatformViewsAccessibilityDelegate platformViewsAccessibilityDelegate) {
-    super(
-        rootAccessibilityView,
-        accessibilityChannel,
-        accessibilityManager,
-        contentResolver,
-        accessibilityViewEmbedder,
-        platformViewsAccessibilityDelegate);
-  }
-
-  String panelTitle;
-
-  @Override
-  public void setAccessibilityPaneTitle(String title) {
-    panelTitle = title;
   }
 }
