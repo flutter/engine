@@ -3747,6 +3747,9 @@ class ImageShader extends Shader {
 }
 
 /// A shader (as used by [Paint.shader]) that runs provided SPIR-V code.
+/// 
+/// NOTE: This API is in beta and does not yet work on web.
+/// See https://github.com/flutter/flutter/projects/207 for roadmap.
 ///
 /// When initializing or updating the [floatUniforms], the length of float
 /// uniforms must match the total number of floats defined as uniforms in
