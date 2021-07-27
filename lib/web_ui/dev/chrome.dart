@@ -157,8 +157,9 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
       })
       .firstWhere((String line) => line.startsWith('DevTools listening'), orElse: () {
         if (hitGlibcBug) {
-          final String message = 'Encountered glibc bug https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
-            'Will try launching browser again.';
+          const String message = 'Encountered glibc bug '
+              'https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
+              'Will try launching browser again.';
           print(message);
           return message;
         }

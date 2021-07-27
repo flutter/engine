@@ -24,7 +24,7 @@ class CreateSimulatorCommand extends Command<bool> with ArgUtils<bool> {
   }
 
   /// Currently the only iOS Simulators are supported.
-  static final String _defaultType = 'iOS';
+  static const String _defaultType = 'iOS';
 
   @override
   String get name => 'create_simulator';

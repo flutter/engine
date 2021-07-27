@@ -125,7 +125,7 @@ void testMain() {
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -154,7 +154,7 @@ void testMain() {
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -183,7 +183,7 @@ void testMain() {
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -212,7 +212,7 @@ void testMain() {
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
