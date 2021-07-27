@@ -319,3 +319,10 @@ targets:
       jazzy_version: 0.9.5
     timeout: 90
     scheduler: luci
+
+  - name: Linux ci_yaml roller
+    builder: Linux ci_yaml roller
+    bringup: true
+    presubmit: false
+    recipe: infra/ci_yaml
+    scheduler: luci
