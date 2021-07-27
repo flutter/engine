@@ -32,12 +32,7 @@ Future<void> canvasScreenshot(RecordingCanvas rc, String fileName,
       }
     }
     sceneElement.append(engineCanvas.rootElement);
-    // TODO: remove webkit special case.
-    if (browserEngine == BrowserEngine.webkit) {
-      html.document.body!.append(sceneElement);
-    } else {
-      hostTestScene(sceneElement);
-    }
+    hostTestScene(sceneElement);
     await matchGoldenFile('$fileName.png',
         region: region, maxDiffRatePercent: maxDiffRatePercent, write: write);
   } finally {
