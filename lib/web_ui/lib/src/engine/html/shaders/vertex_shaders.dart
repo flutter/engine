@@ -74,6 +74,7 @@ class FragmentShaders {
   // This class is not meant to be instantiated or extended; this constructor
   // prevents instantiation and extension.
   FragmentShaders._();
+
   static String writeTextureFragmentShader(
       bool isWebGl2, ui.TileMode? tileModeX, ui.TileMode? tileModeY) {
     final ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
