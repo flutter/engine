@@ -4,17 +4,16 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart';
-import 'package:ui/src/engine.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   setUp(() async {
     await webOnlyInitializePlatform();
     webOnlyFontCollection.debugRegisterTestFonts();

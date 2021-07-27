@@ -15,11 +15,17 @@ import 'package:web_engine_tester/golden_tester.dart';
 
 import 'common.dart';
 
+// TODO(yjbanov): tests that render using Noto are not hermetic, as those fonts
+//                come from fonts.google.com, where fonts can change any time.
+//                These tests are skipped.
+//                https://github.com/flutter/flutter/issues/86432
+const bool kIssue86432Exists = true;
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 500, 250);
+const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {ui.Rect region = kDefaultRegion, bool write = false}) async {
@@ -72,8 +78,7 @@ void testMain() {
       await matchPictureGolden('canvaskit_picture.png', originalPicture);
 
       final ByteData originalPixels =
-          await (await originalPicture.toImage(50, 50)).toByteData()
-              as ByteData;
+          (await (await originalPicture.toImage(50, 50)).toByteData())!;
 
       // Test that a picture restored from a snapshot looks the same.
       final CkPictureSnapshot? snapshot = canvas.pictureSnapshot;
@@ -83,8 +88,7 @@ void testMain() {
       final CkPicture restoredPicture = CkPicture(
           restoredSkPicture, ui.Rect.fromLTRB(0, 0, 50, 50), snapshot);
       final ByteData restoredPixels =
-          await (await restoredPicture.toImage(50, 50)).toByteData()
-              as ByteData;
+        (await (await restoredPicture.toImage(50, 50)).toByteData())!;
 
       await matchPictureGolden('canvaskit_picture.png', restoredPicture);
       expect(restoredPixels.buffer.asUint8List(),
@@ -307,28 +311,28 @@ void testMain() {
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('zh', 'CN'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - paragraph locale zh_TW', () async {
       await testTextStyle('paragraph locale zh_TW',
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('zh', 'TW'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - paragraph locale ja', () async {
       await testTextStyle('paragraph locale ja',
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('ja'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - paragraph locale ko', () async {
       await testTextStyle('paragraph locale ko',
           outerText: '次 化 刃 直 入 令',
           innerText: '',
           paragraphLocale: const ui.Locale('ko'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - color', () async {
       await testTextStyle('color', color: const ui.Color(0xFF009900));
@@ -428,28 +432,28 @@ void testMain() {
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('zh', 'CN'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - locale zh_TW', () async {
       await testTextStyle('locale zh_TW',
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('zh', 'TW'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - locale ja', () async {
       await testTextStyle('locale ja',
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('ja'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - locale ko', () async {
       await testTextStyle('locale ko',
           innerText: '次 化 刃 直 入 令',
           outerText: '',
           locale: const ui.Locale('ko'));
-    });
+    }, skip: kIssue86432Exists);
 
     test('text styles - background', () async {
       await testTextStyle('background',
@@ -565,7 +569,7 @@ void testMain() {
         outerText: '欢',
         innerText: '',
       );
-    });
+    }, skip: kIssue86432Exists);
 
     test('text style - symbols', () async {
       // One of the CJK fonts loaded in one of the tests above also contains
@@ -578,7 +582,7 @@ void testMain() {
         outerText: '← ↑ → ↓ ',
         innerText: '',
       );
-    });
+    }, skip: kIssue86432Exists);
 
     test(
         'text style - foreground/background/color do not leak across paragraphs',
@@ -846,12 +850,14 @@ Future<void> testSampleText(String language, String text,
     paragraphHeight = paragraph.height;
     return recorder.endRecording();
   });
-  await matchPictureGolden(
-    'canvaskit_sample_text_$language.png',
-    picture,
-    region: ui.Rect.fromLTRB(0, 0, testWidth, paragraphHeight + 20),
-    write: write,
-  );
+  if (!kIssue86432Exists) {
+    await matchPictureGolden(
+      'canvaskit_sample_text_$language.png',
+      picture,
+      region: ui.Rect.fromLTRB(0, 0, testWidth, paragraphHeight + 20),
+      write: write,
+    );
+  }
 }
 
 typedef ParagraphFactory = CkParagraph Function();

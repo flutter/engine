@@ -7,8 +7,8 @@ import 'dart:html';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import 'matchers.dart';
 
@@ -16,7 +16,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
   await webOnlyInitializeTestDomRenderer();
