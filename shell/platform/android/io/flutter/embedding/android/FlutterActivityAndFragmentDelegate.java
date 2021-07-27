@@ -76,7 +76,7 @@ import java.util.Arrays;
   @Nullable private FlutterEngine flutterEngine;
   @Nullable private FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
-  @Nullable private OnPreDrawListener activePreDrawListener;
+  @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
   private boolean isFlutterUiDisplayed;
 
@@ -452,7 +452,7 @@ import java.util.Arrays;
       // available since it will wait for drawing to be completed first. At the same time, the
       // preDraw listener keeps returning false since the Flutter Engine waits for the
       // SurfaceTexture to be available.
-      throw new RuntimeException(
+      throw new IllegalArgumentException(
           "Cannot delay the first Android view draw when the render mode is not set to"
               + " `RenderMode.surface`.");
     }
@@ -465,7 +465,6 @@ import java.util.Arrays;
         new OnPreDrawListener() {
           @Override
           public boolean onPreDraw() {
-            Log.w(TAG, "blah predraw " + isFlutterUiDisplayed);
             if (isFlutterUiDisplayed && activePreDrawListener != null) {
               flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
               activePreDrawListener = null;

@@ -1041,10 +1041,6 @@ public class FlutterFragment extends Fragment
     return getArguments().getString(ARG_APP_BUNDLE_PATH);
   }
 
-  private boolean shouldDelayFirstAndroidViewDraw() {
-    return getArguments().getBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW);
-  }
-
   /**
    * Returns the initial route that should be rendered within Flutter, once the Flutter app starts.
    *
@@ -1305,6 +1301,12 @@ public class FlutterFragment extends Fragment
     }
     // Hook for subclass. No-op if returns false.
     return false;
+  }
+
+  @VisibleForTesting
+  @NonNull
+  boolean shouldDelayFirstAndroidViewDraw() {
+    return getArguments().getBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW);
   }
 
   private boolean stillAttachedForEvent(String event) {

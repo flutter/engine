@@ -2,7 +2,9 @@ package io.flutter.embedding.android;
 
 import static android.content.ComponentCallbacks2.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.notNull;
@@ -15,6 +17,8 @@ import static org.mockito.Mockito.when;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
@@ -848,6 +852,78 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // --- Verify that the cached engine was NOT destroyed ---
     verify(cachedEngine, never()).destroy();
+  }
+
+  @Test
+  public void itDelaysFirstDrawWhenRequested() {
+    // ---- Test setup ----
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // We're testing lifecycle behaviors, which require/expect that certain methods have already
+    // been executed by the time they run. Therefore, we run those expected methods first.
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    // --- Execute the behavior under test ---
+    boolean shouldDelayFirstAndroidViewDraw = true;
+    delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
+
+    assertNotNull(delegate.activePreDrawListener);
+  }
+
+  @Test
+  public void itDoesNotDelayFirstDrawWhenNotRequested() {
+    // ---- Test setup ----
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // We're testing lifecycle behaviors, which require/expect that certain methods have already
+    // been executed by the time they run. Therefore, we run those expected methods first.
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    // --- Execute the behavior under test ---
+    boolean shouldDelayFirstAndroidViewDraw = false;
+    delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
+
+    assertNull(delegate.activePreDrawListener);
+  }
+
+  @Test
+  public void itThrowsWhenDelayingTheFirstDrawAndUsingATextureView() {
+
+    // ---- Test setup ----
+    when(mockHost.getRenderMode()).thenReturn(RenderMode.texture);
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // We're testing lifecycle behaviors, which require/expect that certain methods have already
+    // been executed by the time they run. Therefore, we run those expected methods first.
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    // --- Execute the behavior under test ---
+    boolean shouldDelayFirstAndroidViewDraw = true;
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
+        });
+  }
+
+  @Test
+  public void itDoesNotDelayTheFirstDrawWhenRequestedAndWithAProvidedSplashScreen() {
+    when(mockHost.provideSplashScreen())
+        .thenReturn(new DrawableSplashScreen(new ColorDrawable(Color.GRAY)));
+
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // We're testing lifecycle behaviors, which require/expect that certain methods have already
+    // been executed by the time they run. Therefore, we run those expected methods first.
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    // --- Execute the behavior under test ---
+    boolean shouldDelayFirstAndroidViewDraw = true;
+    delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
+
+    assertNull(delegate.activePreDrawListener);
   }
 
   /**
