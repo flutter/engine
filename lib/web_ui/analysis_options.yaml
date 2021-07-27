@@ -26,7 +26,6 @@ linter:
     prefer_conditional_assignment: false
     prefer_const_constructors: false
     prefer_const_constructors_in_immutables: false
-    prefer_const_literals_to_create_immutables: false
     prefer_foreach: false
     prefer_generic_function_type_aliases: false
     prefer_initializing_formals: false
@@ -36,7 +35,6 @@ linter:
     recursive_getters: false
     slash_for_doc_comments: false
     sort_unnamed_constructors_first: false
-    test_types_in_equals: false
     flutter_style_todos: false
 
     # We have some legitimate use-cases for this (preserve tear-off identity)

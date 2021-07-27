@@ -306,7 +306,7 @@ void testMain() {
     final Completer<bool> completer = Completer<bool>();
     final ByteData inputData = JSONMethodCodec().encodeMethodCall(MethodCall(
         'SystemChrome.setPreferredOrientations',
-        <dynamic>[]))!;
+        <dynamic>[]))!; // ignore: prefer_const_literals_to_create_immutables
 
     window.sendPlatformMessage(
       'flutter/platform',
