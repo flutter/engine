@@ -68,6 +68,7 @@ import java.util.Arrays;
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
+  private static final int FLUTTER_SPLASH_VIEW_FALLBACK_ID = 486947586;
 
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
@@ -258,12 +259,12 @@ import java.util.Arrays;
    *
    * <p>{@code inflater} and {@code container} may be null when invoked from an {@code Activity}.
    *
-   * <p>{@code shouldInterceptFirstDraw} determines whether to set up an {@link
+   * <p>{@code shouldDelayFirstAndroidViewDraw} determines whether to set up an {@link
    * android.view.ViewTreeObserver.OnPreDrawListener}, which will defer the current drawing pass
    * till after the Flutter UI has been displayed. This results in more accurate timings reported
    * with Android tools, such as "Displayed" timing printed with `am start`. Note that it should
    * only be set to true when {@code Host#getRenderMode()} is {@code RenderMode.surface}. This
-   * parameter is also ignored, disabling the interception should the legacy {@code
+   * parameter is also ignored, disabling the delay should the legacy {@code
    * Host#provideSplashScreen()} be non-null. See <a
    * href="https://flutter.dev/go/android-splash-migration">Android Splash Migration</a>.
    *
@@ -283,7 +284,7 @@ import java.util.Arrays;
       @Nullable ViewGroup container,
       @Nullable Bundle savedInstanceState,
       int flutterViewId,
-      boolean shouldInterceptFirstDraw) {
+      boolean shouldDelayFirstAndroidViewDraw) {
     Log.v(TAG, "Creating FlutterView.");
     ensureAlive();
 
@@ -324,36 +325,15 @@ import java.util.Arrays;
           "A splash screen was provided to Flutter, but this is deprecated. See"
               + " flutter.dev/go/android-splash-migration for migration steps.");
       FlutterSplashView flutterSplashView = new FlutterSplashView(host.getContext());
-      flutterSplashView.setId(ViewUtils.generateViewId(486947586));
+      flutterSplashView.setId(ViewUtils.generateViewId(FLUTTER_SPLASH_VIEW_FALLBACK_ID));
       flutterSplashView.displayFlutterViewWithSplash(flutterView, splashScreen);
 
       return flutterSplashView;
     }
 
-    if (shouldInterceptFirstDraw) {
-      if (host.getRenderMode() != RenderMode.surface) {
-        // Using a TextureView will cause a deadlock, where the underlying SurfaceTexture is never
-        // available since it will wait for drawing to be completed first. At the same time, the
-        // preDraw listener keeps returning false since the Flutter Engine waits for the
-        // SurfaceTexture to be available.
-        throw new RuntimeException(
-            "shouldInterceptFirstDraw was requested but is not compatible when not using"
-                + " RenderMode.surface.");
-      }
-
-      activePreDrawListener =
-          new OnPreDrawListener() {
-            @Override
-            public boolean onPreDraw() {
-              if (isFlutterUiDisplayed) {
-                flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
-              }
-              return isFlutterUiDisplayed;
-            }
-          };
-      flutterView.getViewTreeObserver().addOnPreDrawListener(activePreDrawListener);
+    if (shouldDelayFirstAndroidViewDraw) {
+      delayFirstAndroidViewDraw(flutterView);
     }
-
     return flutterView;
   }
 
@@ -461,6 +441,39 @@ import java.util.Arrays;
       }
     }
     return null;
+  }
+
+  /**
+   * Delays the first drawing of the {@code flutterView} until the Flutter first has been displayed.
+   */
+  private void delayFirstAndroidViewDraw(FlutterView flutterView) {
+    if (host.getRenderMode() != RenderMode.surface) {
+      // Using a TextureView will cause a deadlock, where the underlying SurfaceTexture is never
+      // available since it will wait for drawing to be completed first. At the same time, the
+      // preDraw listener keeps returning false since the Flutter Engine waits for the
+      // SurfaceTexture to be available.
+      throw new RuntimeException(
+          "Cannot delay the first Android view draw when the render mode is not set to"
+              + " `RenderMode.surface`.");
+    }
+
+    if (activePreDrawListener != null) {
+      flutterView.getViewTreeObserver().removeOnPreDrawListener(activePreDrawListener);
+    }
+
+    activePreDrawListener =
+        new OnPreDrawListener() {
+          @Override
+          public boolean onPreDraw() {
+            Log.w(TAG, "blah predraw " + isFlutterUiDisplayed);
+            if (isFlutterUiDisplayed && activePreDrawListener != null) {
+              flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
+              activePreDrawListener = null;
+            }
+            return isFlutterUiDisplayed;
+          }
+        };
+    flutterView.getViewTreeObserver().addOnPreDrawListener(activePreDrawListener);
   }
 
   /**
