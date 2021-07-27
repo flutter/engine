@@ -594,13 +594,8 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _computeOptimalCullRect(oldSurface);
     if (identical(picture, oldSurface.picture)) {
-<<<<<<< HEAD
       final bool densityChanged = _canvas is BitmapCanvas &&
           _density != (_canvas! as BitmapCanvas).density;
-=======
-      final bool densityChanged = (_canvas is BitmapCanvas &&
-          _density != (_canvas! as BitmapCanvas).density);
->>>>>>> upstream/master
 
       // The picture is the same. Attempt to avoid repaint.
       if (_requiresRepaint || densityChanged) {
