@@ -2064,10 +2064,10 @@ void checkInputEditingState(
 void clearBackUpDomElementIfExists() {
   final List<Node> domElementsToRemove = <Node>[];
   if (defaultTextEditingRoot.querySelectorAll('input').isNotEmpty) {
-    domElementsToRemove..addAll(defaultTextEditingRoot.querySelectorAll('input'));
+    domElementsToRemove.addAll(defaultTextEditingRoot.querySelectorAll('input'));
   }
   if (defaultTextEditingRoot.querySelectorAll('textarea').isNotEmpty) {
-    domElementsToRemove..addAll(defaultTextEditingRoot.querySelectorAll('textarea'));
+    domElementsToRemove.addAll(defaultTextEditingRoot.querySelectorAll('textarea'));
   }
   domElementsToRemove.forEach(_removeNode);
 }

@@ -14,7 +14,7 @@ class CreateSimulatorCommand extends Command<bool> with ArgUtils<bool> {
   CreateSimulatorCommand() {
     IosSafariArgParser.instance.populateOptions(argParser);
     argParser
-      ..addOption(
+      .addOption(
         'type',
         defaultsTo: _defaultType,
         help: 'Type of the mobile simulator. Currently the only iOS '

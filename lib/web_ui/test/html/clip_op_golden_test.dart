@@ -34,7 +34,7 @@ Future<void> testMain() async {
     } finally {
       canvas.restore();
     }
-    canvas..drawRect(titleRect, paint);
+    canvas.drawRect(titleRect, paint);
     await canvasScreenshot(canvas, 'clip_op_difference',
         region: const Rect.fromLTRB(0, 0, 420, 360));
   });
