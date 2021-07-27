@@ -13,7 +13,19 @@ DartTimestampProvider::DartTimestampProvider() = default;
 DartTimestampProvider::~DartTimestampProvider() = default;
 
 fml::TimePoint DartTimestampProvider::Now() {
-  return fml::TimePoint::FromTicks(Dart_TimelineGetTicks());
+  const int64_t ticks = Dart_TimelineGetTicks();
+  const int64_t frequency = Dart_TimelineGetTicksFrequency();
+  // optimization for the most common case.
+  if (frequency != kNanosPerSecond) {
+    // convert from frequency base to nanos.
+    int64_t seconds = ticks / frequency;
+    int64_t leftover_ticks = ticks - (seconds * frequency);
+    int64_t result = seconds * kNanosPerSecond;
+    result += ((leftover_ticks * kNanosPerSecond) / frequency);
+    return fml::TimePoint::FromTicks(result);
+  } else {
+    return fml::TimePoint::FromTicks(ticks);
+  }
 }
 
 fml::TimePoint DartTimelineTicksSinceEpoch() {

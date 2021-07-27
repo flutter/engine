@@ -27,6 +27,8 @@ class DartTimestampProvider : TimestampProvider {
   fml::TimePoint Now() override;
 
  private:
+  static constexpr int64_t kNanosPerSecond = 1000000000;
+
   DartTimestampProvider();
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartTimestampProvider);
