@@ -238,19 +238,22 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
   // Ensure owner_entry->subsumed_by being _kUnmerged
   if (owner_entry->subsumed_by != _kUnmerged) {
     FML_LOG(WARNING)
-        << "Thread merging failed: owner_entry was already subsumed by others.";
+    << "Thread merging failed: owner_entry was already subsumed by others, owner=" << owner << ", subsumed=" << subsumed
+    << ", owner->subsumed_by=" << owner_entry->subsumed_by;
     return false;
   }
   // Ensure subsumed_entry->owner_of being empty
   if (!subsumed_entry->owner_of.empty()) {
     FML_LOG(WARNING)
-        << "Thread merging failed: subsumed_entry already owns others.";
+    << "Thread merging failed: subsumed_entry already owns others, owner=" << owner << ", subsumed=" << subsumed
+    << ", subsumed->owner_of.size()=" << subsumed_entry->owner_of.size();
     return false;
   }
   // Ensure subsumed_entry->subsumed_by being _kUnmerged
   if (subsumed_entry->subsumed_by != _kUnmerged) {
-    FML_LOG(WARNING) << "Thread merging failed: subsumed_entry was already "
-                        "subsumed by others.";
+    FML_LOG(WARNING)
+    << "Thread merging failed: subsumed_entry was already subsumed by others, owner=" << owner << ", subsumed="
+    << subsumed << ", subsumed->subsumed_by=" << subsumed_entry->subsumed_by;
     return false;
   }
   // All checking is OK, set merged state.
