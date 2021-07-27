@@ -112,7 +112,7 @@ class Chrome extends Browser {
     }, remoteDebuggerCompleter.future);
   }
 
-  Chrome._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
+  Chrome._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
       : super(startBrowser);
 }
 

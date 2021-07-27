@@ -42,8 +42,6 @@ linter:
     type_init_formals: false
     unnecessary_getters_setters: false
     use_rethrow_when_possible: false
-    valid_regexps: false
-    use_function_type_syntax_for_parameters: false
     avoid_single_cascade_in_expression_statements: false
     flutter_style_todos: false
 

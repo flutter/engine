@@ -111,6 +111,6 @@ user_pref("dom.max_script_run_time", 0);
     }, remoteDebuggerCompleter.future);
   }
 
-  Firefox._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
+  Firefox._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
       : super(startBrowser);
 }
