@@ -10,15 +10,22 @@ if (enable_unittests) {
     tool = "//flutter/lib/spirv/test:glsl_to_spirv"
 
     sources = [
-      # "op_type_bool.glsl",
-      "op_type_float.glsl",
-      "op_type_function.glsl",
-      "op_type_int.glsl",
-      "op_type_matrix.glsl",
-
-      # "op_type_pointer.glsl",
-      "op_type_vector.glsl",
-      "op_type_void.glsl",
+      "127_OpFNegate.glsl",
+      "129_OpFAdd.glsl",
+      "131_OpFSub.glsl",
+      "142_OpVectorTimesScalar.glsl",
+      "143_OpMatrixTimesScalar.glsl",
+      "144_OpVectorTimesMatrix.glsl",
+      "145_OpMatrixTimesVector.glsl",
+      "146_OpMatrixTimesMatrix.glsl",
+      "148_OpDot.glsl",
+      "19_OpTypeVoid.glsl",
+      "20_OpTypeBool.glsl",
+      "21_OpTypeInt.glsl",
+      "22_OpTypeFloat.glsl",
+      "23_OpTypeVector.glsl",
+      "24_OpTypeMatrix.glsl",
+      "33_OpTypeFunction.glsl",
     ]
 
     outputs = [ "$target_gen_dir/{{source_name_part}}.spv" ]

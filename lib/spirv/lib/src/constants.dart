@@ -65,6 +65,7 @@ const int _opFunction = 54;
 const int _opFunctionParameter = 55;
 const int _opFunctionEnd = 56;
 const int _opFunctionCall = 57;
+const int _opFUnordNotEqual = 183;
 const int _opVariable = 59;
 const int _opLoad = 61;
 const int _opStore = 62;
@@ -73,6 +74,8 @@ const int _opDecorate = 71;
 const int _opVectorShuffle = 79;
 const int _opCompositeConstruct = 80;
 const int _opCompositeExtract = 81;
+const int _opConvertFToS = 110;
+const int _opConvertSToF = 111;
 const int _opFNegate = 127;
 const int _opFAdd = 129;
 const int _opFSub = 131;
@@ -85,6 +88,7 @@ const int _opVectorTimesMatrix = 144;
 const int _opMatrixTimesVector = 145;
 const int _opMatrixTimesMatrix = 146;
 const int _opDot = 148;
+const int _opSelect = 169;
 const int _opLabel = 248;
 const int _opReturn = 253;
 const int _opReturnValue = 254;
@@ -96,7 +100,6 @@ const int _opReturnValue = 254;
 const String _glslStd450 = 'GLSL.std.450';
 
 // Supported GLSL ops
-const int _glslStd450Trunc = 3;
 const int _glslStd450FAbs = 4;
 const int _glslStd450FSign = 6;
 const int _glslStd450Floor = 8;
@@ -132,7 +135,6 @@ const int _glslStd450FaceForward = 70;
 const int _glslStd450Reflect = 71;
 
 const Map<int, String> _glslStd450OpNames = <int, String>{
-  _glslStd450Trunc: 'trunc',
   _glslStd450FAbs: 'abs',
   _glslStd450FSign: 'sign',
   _glslStd450Floor: 'floor',
@@ -169,7 +171,6 @@ const Map<int, String> _glslStd450OpNames = <int, String>{
 };
 
 const Map<int, int> _glslStd450OpArgc = <int, int>{
-  _glslStd450Trunc: 1,
   _glslStd450FAbs: 1,
   _glslStd450FSign: 1,
   _glslStd450Floor: 1,
@@ -185,7 +186,7 @@ const Map<int, int> _glslStd450OpArgc = <int, int>{
   _glslStd450Atan: 1,
   _glslStd450Atan2: 2,
   _glslStd450Pow: 2,
-  _glslStd450Exp: 2,
+  _glslStd450Exp: 1,
   _glslStd450Log: 1,
   _glslStd450Exp2: 1,
   _glslStd450Log2: 1,

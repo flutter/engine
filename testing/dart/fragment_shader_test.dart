@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -18,7 +19,7 @@ void main() {
 
   test('simple shader renders correctly', () async {
     final Uint8List shaderBytes = await _createFile('general_shaders', 'simple.spv').readAsBytes();
-    _expectShaderRendersGreen(shaderBytes);
+    _expectShaderRendersGreen(shaderBytes.buffer.asUint32List());
   });
 
   test('shader with uniforms renders and updates correctly', () async {
@@ -46,56 +47,82 @@ void main() {
   });
 
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
-  _expectShadersRenderGreen('supported_glsl_op_shaders');
+  final Map<String, Uint32List> supportedGLSLOpShaders =
+    _loadSpv('supported_glsl_op_shaders');
+  expect(supportedGLSLOpShaders.length > 0, true);
+  _expectShadersRenderGreen(supportedGLSLOpShaders);
+  _expectShadersHaveOp(supportedGLSLOpShaders, true /* glsl ops */);
 
   // Test all supported instructions. See lib/spirv/lib/src/constants.dart
-  _expectShadersRenderGreen('supported_op_shaders');
+  final Map<String, Uint32List> supportedOpShaders =
+    _loadSpv('supported_op_shaders');
+  expect(supportedOpShaders.length > 0, true);
+  _expectShadersRenderGreen(supportedOpShaders);
+  _expectShadersHaveOp(supportedOpShaders, false /* glsl ops */);
 }
 
 // Expect that all of the spirv shaders in this folder render green.
 // Keeping the outer loop of the test synchronous allows for easy printing
 // of the file name within the test case.
-void _expectShadersRenderGreen(String leafFolderName) {
-  final List<File> files = _spvFiles(leafFolderName);
-
-  test('$leafFolderName has shaders', () {
-    expect(files.length > 0, true);
-  });
-
-  for (final File spvFile in files) {
-    test('${path.basenameWithoutExtension(spvFile.path)} renders correctly', () {
-      final Uint8List spirvBytes = spvFile.readAsBytesSync();
-      final spvFileName = path.basenameWithoutExtension(spvFile.path);
-      if (_basePathChunks.contains(spvFileName)) {
-        _expectShaderHasOp(spirvBytes, spvFileName);
-        _expectShaderRendersGreen(spirvBytes);
-      }
+void _expectShadersRenderGreen(Map<String, Uint32List> shaders) {
+  for (final String key in shaders.keys) {
+    test('$key renders green', () {
+      _expectShaderRendersGreen(shaders[key]!);
     });
   }
 }
 
+void _expectShadersHaveOp(Map<String, Uint32List> shaders, bool glsl) {
+  for (final String key in shaders.keys) {
+    test('$key contains opcode', () {
+      _expectShaderHasOp(shaders[key]!, key, glsl);
+    });
+  }
+}
+
+const int _opExtInst = 12;
+
 // Expects that a spirv shader has the op code identified by its file name.
-Future<void> _expectShaderHasOp(Uint8List spirvBytes, String spvFileName) async {
-  final Uint32List words = spirvBytes.buffer.asUint32List();
+void _expectShaderHasOp(Uint32List words, String filename, bool glsl) {
+  final List<String> sections = filename.split("_");
+  expect(sections.length, greaterThan(1));
+  final int op = int.parse(sections.first);
 
   // skip the header
   int position = 5;
 
-  int opCount = 0;
-  int nextPosition = -1;
-  while (nextPosition != 0 && position > nextPosition) {
+  bool found = false;
+  int glslInstructionSetId = 0;
+  while (position < words.length) {
     final int word = words[position];
     final int currentOpCode = word & 0xFFFF;
-    if (currentOpCode == _spvTestDatas[spvFileName]!.opCode) opCount++;
-    nextPosition = position + (word >> 16) - 1;
+    if (glsl) {
+      if (currentOpCode == _opExtInst && words[position+4] == op) {
+        found = true;
+        break;
+      }
+    } else {
+      if (currentOpCode == op) {
+        found = true;
+        break;
+      }
+    }
+    final int advance = (word >> 16);
+    if (advance <= 0) {
+      break;
+    }
+    position += advance;
   }
 
-  expect(opCount, _spvTestDatas[spvFileName]!.occurranceCount);
+  expect(found, true);
 }
 
 // Expects that a spirv shader only outputs the color green.
-Future<void> _expectShaderRendersGreen(Uint8List spirvBytes) async {
-  final FragmentShader shader = FragmentShader(spirv: spirvBytes.buffer);
+Future<void> _expectShaderRendersGreen(Uint32List spirv) async {
+  final FragmentShader shader = FragmentShader(
+    spirv: spirv.buffer,
+    floatUniforms: Float32List.fromList([1]),
+  );
   final ByteData renderedBytes = (await _imageByteDataFromShader(
     shader: shader,
     imageDimension: _shaderImageDimension,
@@ -121,13 +148,17 @@ Future<ByteData?> _imageByteDataFromShader({
   return image.toByteData();
 }
 
-// Gets the .spv files in a generated folder in alphabetical order.
-List<File> _spvFiles(String leafFolderName) {
-  return _createDirectory(leafFolderName).listSync()
+// Loads the path and spirv content of the files at
+// out/host_debug_unopt/gen/flutter/lib/spirv/test/$leafFolderName
+Map<String, Uint32List> _loadSpv(String leafFolderName) {
+  final Map<String, Uint32List> out = SplayTreeMap<String, Uint32List>();
+  _createDirectory(leafFolderName).listSync()
     .where((FileSystemEntity entry) => path.extension(entry.path) == '.spv')
-    .map((FileSystemEntity entry) => entry as File)
-    .toList()
-    ..sort((File a, File b) => a.path.compareTo(b.path));
+    .forEach((FileSystemEntity entry) {
+      final String key = path.basenameWithoutExtension(entry.path);
+      out[key] = (entry as File).readAsBytesSync().buffer.asUint32List();
+    });
+  return out;
 }
 
 // Creates the directory that contains shader test files.
@@ -161,17 +192,3 @@ const double epsilon = 0.5 / 255.0;
 double toFloat(int v) => v.toDouble() / 255.0;
 
 String toHexString(int color) => '#${color.toRadixString(16)}';
-
-// Map from spv file names without extension to their expected op code and occurrance count.
-const _spvTestDatas = {
-  'op_type_void': _SpvTestData(opCode: 19, occurranceCount: 1),
-  'op_type_float': _SpvTestData(opCode: 22, occurranceCount: 2),
-  // 'op_type_bool': _SpvTestData(opCode: 20, occurranceCount: 2),
-};
-
-class _SpvTestData {
-  const _SpvTestData({required this.opCode, required this.occurranceCount});
-
-  final int opCode;
-  final int occurranceCount;
-}

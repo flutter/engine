@@ -69,6 +69,10 @@ class _Transpiler {
   /// Function ID mapped to source-code definition.
   final Map<int, StringBuffer> functionDefs = <int, StringBuffer>{};
 
+  /// Function ID mapped to referenced functions.
+  /// This is used to ensure they are written in the right order.
+  final Map<int, List<int>> functionDeps = <int, List<int>>{};
+
   /// ID mapped to location decorator.
   /// See [opDecorate] for more information.
   final Map<int, int> locations = <int, int>{};
@@ -151,13 +155,23 @@ class _Transpiler {
     }
 
     src.writeln();
-    for (final StringBuffer def in functionDefs.values) {
-      src.write(def.toString());
-    }
+    final Set<int> visited = <int>{};
+    writeFunctionAndDeps(visited, entryPoint);
   }
 
   TranspileException failure(String why) =>
       TranspileException._(currentOp, why);
+
+  void writeFunctionAndDeps(Set<int> visited, int function) {
+    if (visited.contains(function)) {
+      return;
+    }
+    visited.add(function);
+    for (final dep in functionDeps[function]!) {
+      writeFunctionAndDeps(visited, dep);
+    }
+    src.write(functionDefs[function]!.toString());
+  }
 
   void writeHeader() {
     switch (target) {
@@ -179,7 +193,11 @@ class _Transpiler {
     if (alias.containsKey(id)) {
       return resolveName(alias[id]!);
     }
-    if (id == colorOutput) {
+    if (constantTrue > 0 && id == constantTrue) {
+      return 'true';
+    } else if (constantFalse > 0 && id == constantFalse) {
+      return 'false';
+    } if (id == colorOutput) {
       if (target == TargetLanguage.glslES) {
         return _glslESColorName;
       } else {
@@ -234,6 +252,14 @@ class _Transpiler {
     throw failure('No null-terminating character found for string literal');
   }
 
+  void typeCast() {
+    final String type = resolveType(readWord());
+    final String name = resolveName(readWord());
+    final String value = resolveName(readWord());
+    out.writeln('$indent$type $name = $type($value);');
+  }
+
+
   /// Read an instruction word, and handle the operation.
   ///
   /// SPIR-V instructions contain an op-code as well as a
@@ -262,6 +288,9 @@ class _Transpiler {
         break;
       case _opCapability:
         opCapability();
+        break;
+      case _opConvertSToF:
+        typeCast();
         break;
       case _opTypeVoid:
         opTypeVoid();
@@ -299,6 +328,9 @@ class _Transpiler {
       case _opConstantComposite:
         opConstantComposite();
         break;
+      case _opConvertFToS:
+        typeCast();
+        break;
       case _opFunction:
         opFunction();
         break;
@@ -316,6 +348,9 @@ class _Transpiler {
         break;
       case _opLoad:
         opLoad();
+        break;
+      case _opSelect:
+        opSelect();
         break;
       case _opStore:
         opStore();
@@ -352,6 +387,9 @@ class _Transpiler {
         break;
       case _opFMod:
         parseBuiltinFunction('mod');
+        break;
+      case _opFUnordNotEqual:
+        parseOperatorInst('!=');
         break;
       case _opVectorTimesScalar:
       case _opMatrixTimesScalar:
@@ -599,12 +637,10 @@ class _Transpiler {
     final String opening = '$returnType $name(';
     final StringBuffer def = StringBuffer();
     def.write(opening);
-    src.write(opening);
 
     if (target == TargetLanguage.sksl && id == entryPoint) {
       const String fragParam = 'float2 $_fragParamName';
       def.write(fragParam);
-      src.write(fragParam);
     }
 
     final int typeIndex = readWord();
@@ -615,7 +651,6 @@ class _Transpiler {
 
     if (functionType.params.isEmpty) {
       def.write(') ');
-      src.writeln(');');
     }
 
     currentFunction = id;
@@ -623,6 +658,7 @@ class _Transpiler {
     declaredParams = 0;
     out = def;
     functionDefs[id] = def;
+    functionDeps[id] = <int>[];
   }
 
   void opFunctionParameter() {
@@ -660,7 +696,12 @@ class _Transpiler {
   void opFunctionCall() {
     final String type = resolveType(readWord());
     final String name = resolveName(readWord());
-    final String functionName = resolveName(readWord());
+    final int functionId = readWord();
+    final String functionName = resolveName(functionId);
+
+    // Make the current function depend on this function.
+    functionDeps[currentFunction]!.add(functionId);
+
     final List<String> args =
         List<String>.generate(nextPosition - position, (int i) {
       return resolveName(readWord());
@@ -716,6 +757,15 @@ class _Transpiler {
     final int id = readWord();
     final int pointer = readWord();
     alias[id] = pointer;
+  }
+
+  void opSelect() {
+    final String type = resolveType(readWord());
+    final String name = resolveName(readWord());
+    final String condition = resolveName(readWord());
+    final String a = resolveName(readWord());
+    final String b = resolveName(readWord());
+    out.writeln('$indent$type $name = mix($b, $a, $type($condition));');
   }
 
   void opStore() {
@@ -866,7 +916,10 @@ class _Transpiler {
   }
 
   void parseGLSLInst(int id, int type) {
-    final int inst = readWord();
+    int inst = readWord();
+    if (inst == _glslStd450Atan2 && target == TargetLanguage.sksl) {
+      inst = _glslStd450Atan;
+    }
     final String? opName = _glslStd450OpNames[inst];
     if (opName == null) {
       throw failure('$id is not a supported GLSL instruction.');

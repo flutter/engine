@@ -3818,7 +3818,10 @@ class FragmentShader extends Shader {
     // TODO(https://github.com/flutter/flutter/issues/85240): Change both params to ? and assert that
     // at least one is non null.
   }) {
-    assert(floatUniforms.length == _uniformFloatCount);
+    if (floatUniforms.length != _uniformFloatCount) {
+      throw ArgumentError(
+        'FragmentShader floatUniforms size must match given shader');
+    }
     _update(floatUniforms);
   }
 
