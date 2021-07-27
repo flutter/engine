@@ -6,6 +6,8 @@
 
 #include "flutter/fml/time/dart_timestamp_provider.h"
 
+#include <thread>
+
 #include "gtest/gtest.h"
 
 namespace fml {
@@ -17,8 +19,11 @@ TEST(TimePoint, Control) {
 }
 
 TEST(TimePoint, DartClockIsMonotonic) {
+  using namespace std::chrono_literals;
   const auto t1 = DartTimelineTicksSinceEpoch();
+  std::this_thread::sleep_for(1us);
   const auto t2 = DartTimelineTicksSinceEpoch();
+  std::this_thread::sleep_for(1us);
   const auto t3 = DartTimelineTicksSinceEpoch();
   EXPECT_LT(TimePoint::Min(), t1);
   EXPECT_LT(t1, t2);
