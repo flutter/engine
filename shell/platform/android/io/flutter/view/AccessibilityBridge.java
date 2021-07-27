@@ -1811,8 +1811,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
   }
 
-  @TargetApi(Build.VERSION_CODES.P)
-  @RequiresApi(Build.VERSION_CODES.P)
+  @TargetApi(28)
+  @RequiresApi(28)
   private void setAccessibilityPaneTitle(String title) {
     rootAccessibilityView.setAccessibilityPaneTitle(title);
   }
