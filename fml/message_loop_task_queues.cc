@@ -362,32 +362,33 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
   FML_DCHECK(HasPendingTasksUnlocked(owner));
   const auto& entry = queue_entries_.at(owner);
   if (entry->owner_of.empty()) {
+    FML_CHECK(!entry->task_source->IsEmpty());
     return entry->task_source->Top();
   }
 
-  TaskSource* owner_tasks = entry->task_source.get();
-  std::vector<TaskSource::TopTask> candidate_top_tasks;
+  // Use optional for the memory of TopTask object.
+  std::optional<TaskSource::TopTask> top_task;
 
-  if (!owner_tasks->IsEmpty()) {
-    candidate_top_tasks.push_back(owner_tasks->Top());
-  }
-  for (TaskQueueId subsumed : entry->owner_of) {
-    TaskSource* subsumed_tasks = queue_entries_.at(subsumed)->task_source.get();
-    if (!subsumed_tasks->IsEmpty()) {
-      candidate_top_tasks.push_back(subsumed_tasks->Top());
+  auto top_task_updater = [&top_task](const TaskSource *source) {
+    if (source && !source->IsEmpty()) {
+      auto other_task = source->Top();
+      if (!top_task.has_value() || top_task->task > other_task.task) {
+        top_task.emplace(other_task);
+      }
     }
+  };
+
+  TaskSource *owner_tasks = entry->task_source.get();
+  top_task_updater(owner_tasks);
+
+  for (TaskQueueId subsumed : entry->owner_of) {
+    TaskSource *subsumed_tasks = queue_entries_.at(subsumed)->task_source.get();
+    top_task_updater(subsumed_tasks);
   }
   // At least one task at the top because PeekNextTaskUnlocked() is called after
   // HasPendingTasksUnlocked()
-  FML_CHECK(!candidate_top_tasks.empty());
-  TaskSource::TopTask& top =
-      *std::min_element(candidate_top_tasks.begin(), candidate_top_tasks.end(),
-                        [](const auto& a, const auto& b) {
-                          // Because only operator>() is implemented in
-                          // DelayedTask
-                          return b.task > a.task;
-                        });
-  return top;
+  FML_CHECK(top_task.has_value());
+  return top_task.value();
 }
 
 }  // namespace fml

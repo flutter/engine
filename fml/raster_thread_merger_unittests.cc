@@ -39,13 +39,6 @@ struct TaskQueueWrapper {
     latch.Wait();
   }
 
-  void ThreadFunc() {
-    fml::MessageLoop::EnsureInitializedForCurrentThread();
-    loop = &fml::MessageLoop::GetCurrent();
-    latch.Signal();
-    term.Wait();
-  }
-
   ~TaskQueueWrapper() {
     term.Signal();
     thread.join();
