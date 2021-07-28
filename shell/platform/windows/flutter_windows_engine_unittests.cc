@@ -12,6 +12,9 @@
 namespace flutter {
 namespace testing {
 
+// winbase.h defines GetCurrentTime as a macro.
+#undef GetCurrentTime
+
 namespace {
 // Returns an engine instance configured with dummy project path values.
 std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
@@ -56,6 +59,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         EXPECT_NE(args->platform_message_callback, nullptr);
         EXPECT_NE(args->custom_task_runners, nullptr);
         EXPECT_EQ(args->custom_dart_entrypoint, nullptr);
+        EXPECT_NE(args->vsync_callback, nullptr);
 
         return kSuccess;
       }));
@@ -99,6 +103,31 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   // engine pointer that the overridden Run returned.
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
   modifier.ReleaseSurfaceManager();
+}
+
+TEST(FlutterWindowsEngine, ConfiguresFrameVsync) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+  bool on_vsync_called = false;
+
+  modifier.embedder_api().GetCurrentTime =
+      MOCK_ENGINE_PROC(GetCurrentTime, ([]() -> uint64_t { return 0; }));
+  modifier.embedder_api().OnVsync = MOCK_ENGINE_PROC(
+      OnVsync,
+      ([&on_vsync_called, engine_instance = engine.get()](
+           FLUTTER_API_SYMBOL(FlutterEngine) engine, intptr_t baton,
+           uint64_t frame_start_time_nanos, uint64_t frame_target_time_nanos) {
+        EXPECT_EQ(baton, 1);
+        EXPECT_EQ(frame_start_time_nanos, 0 + 16600000);
+        EXPECT_EQ(frame_target_time_nanos, 0 + 16600000 * 2);
+        on_vsync_called = true;
+        return kSuccess;
+      }));
+
+  engine->RunWithEntrypoint(nullptr);
+  engine->OnVsync(1);
+
+  EXPECT_EQ(on_vsync_called, true);
 }
 
 TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {

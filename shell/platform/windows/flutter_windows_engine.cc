@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include <dwmapi.h>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -18,9 +19,23 @@
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
+// winbase.h defines GetCurrentTime as a macro.
+#undef GetCurrentTime
+
 namespace flutter {
 
 namespace {
+
+// Lifted from vsync_waiter_fallback.cc
+static std::chrono::nanoseconds SnapToNextTick(
+    std::chrono::nanoseconds value,
+    std::chrono::nanoseconds tick_phase,
+    std::chrono::nanoseconds tick_interval) {
+  std::chrono::nanoseconds offset = (tick_phase - value) % tick_interval;
+  if (offset != std::chrono::nanoseconds::zero())
+    offset = offset + tick_interval;
+  return value + offset;
+}
 
 // Creates and returns a FlutterRendererConfig that renders to the view (if any)
 // of a FlutterWindowsEngine, using OpenGL (via ANGLE).
@@ -141,6 +156,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
       aot_data_(nullptr, nullptr) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
+  start_time_ = std::chrono::nanoseconds(embedder_api_.GetCurrentTime());
 
   task_runner_ = TaskRunner::Create(
       GetCurrentThreadId(), embedder_api_.GetCurrentTime,
@@ -254,6 +270,10 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
   };
+  args.vsync_callback = [](void* user_data, intptr_t baton) -> void {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    host->OnVsync(baton);
+  };
 
   args.custom_task_runners = &custom_task_runners;
 
@@ -276,9 +296,45 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     return false;
   }
 
+  // Configure device frame rate and monitor.
+  FlutterEngineDisplay display = {};
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate =
+      1.0 / (static_cast<double>(FrameInterval().count()) / 1000000000.0);
+
+  std::vector<FlutterEngineDisplay> displays = {display};
+  embedder_api_.NotifyDisplayUpdate(engine_,
+                                    kFlutterEngineDisplaysUpdateTypeStartup,
+                                    displays.data(), displays.size());
+
   SendSystemSettings();
 
   return true;
+}
+
+void FlutterWindowsEngine::OnVsync(intptr_t baton) {
+  std::chrono::nanoseconds current_time =
+      std::chrono::nanoseconds(embedder_api_.GetCurrentTime());
+  std::chrono::nanoseconds frame_interval = FrameInterval();
+  auto next = SnapToNextTick(current_time, start_time_, frame_interval);
+  embedder_api_.OnVsync(engine_, baton, next.count(),
+                        (next + frame_interval).count());
+}
+
+std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
+  DWM_TIMING_INFO timing_info = {};
+  uint64_t interval = 16600000;
+  timing_info.cbSize = sizeof(timing_info);
+  HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
+  if (result == S_OK && timing_info.rateRefresh.uiDenominator > 0 &&
+      timing_info.rateRefresh.uiNumerator > 0) {
+    interval = static_cast<double>(timing_info.rateRefresh.uiDenominator *
+                                   1000000000.0) /
+               static_cast<double>(timing_info.rateRefresh.uiNumerator);
+  }
+  return std::chrono::nanoseconds(interval);
 }
 
 bool FlutterWindowsEngine::Stop() {

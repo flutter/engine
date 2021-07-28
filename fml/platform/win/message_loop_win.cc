@@ -4,13 +4,23 @@
 
 #include "flutter/fml/platform/win/message_loop_win.h"
 
+#include <timeapi.h>
+
 #include "flutter/fml/logging.h"
+
+const int kHighResolutionTimer = 1;
 
 namespace fml {
 
 MessageLoopWin::MessageLoopWin()
     : timer_(CreateWaitableTimer(NULL, FALSE, NULL)) {
   FML_CHECK(timer_.is_valid());
+
+  // We should determine how precise of a timer is needed based on the device's
+  // approximate frame rate and windows version, otherwise this is wasteful.
+  timer_resolution_ = kHighResolutionTimer;
+
+  timeBeginPeriod(timer_resolution_);
 }
 
 MessageLoopWin::~MessageLoopWin() = default;
@@ -27,6 +37,7 @@ void MessageLoopWin::Run() {
 void MessageLoopWin::Terminate() {
   running_ = false;
   WakeUp(fml::TimePoint::Now());
+  timeEndPeriod(timer_resolution_);
 }
 
 void MessageLoopWin::WakeUp(fml::TimePoint time_point) {

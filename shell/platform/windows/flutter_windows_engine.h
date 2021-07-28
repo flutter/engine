@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <optional>
@@ -141,6 +142,9 @@ class FlutterWindowsEngine {
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
+  // Invoke on the embedder's vsync callback to schedule a frame.
+  void OnVsync(intptr_t baton);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -150,6 +154,11 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemSettings();
+
+  // The approximate time between vblank events.
+  std::chrono::nanoseconds FrameInterval();
+
+  std::chrono::nanoseconds start_time_;
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
