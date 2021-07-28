@@ -122,7 +122,7 @@ bool FlutterWindowWinUWP::IsVisible() {
   // if window is invisible. However CoreWindow is not agile so we can't call
   // Visible() from raster thread. For now assume window is always visible.
   // Possible solution would be to register a VisibilityChanged handler and
-  // store the visiblity state in a variable TODO(knopp).
+  // store the visiblity state in a variable. TODO(knopp)
   return true;
 }
 
