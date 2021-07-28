@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/task_source.h"
