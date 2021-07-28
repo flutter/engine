@@ -26,8 +26,8 @@ TEST(TimePoint, DartClockIsMonotonic) {
   std::this_thread::sleep_for(1us);
   const auto t3 = DartTimelineTicksSinceEpoch();
   EXPECT_LT(TimePoint::Min(), t1);
-  EXPECT_LT(t1, t2);
-  EXPECT_LT(t2, t3);
+  EXPECT_LE(t1, t2);
+  EXPECT_LE(t2, t3);
   EXPECT_LT(t3, TimePoint::Max());
 }
 

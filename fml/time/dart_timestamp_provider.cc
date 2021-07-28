@@ -12,17 +12,20 @@ DartTimestampProvider::DartTimestampProvider() = default;
 
 DartTimestampProvider::~DartTimestampProvider() = default;
 
+int64_t DartTimestampProvider::ConvertToNanos(int64_t ticks,
+                                              int64_t frequency) {
+  int64_t nano_seconds = (ticks / frequency) * kNanosPerSecond;
+  int64_t leftover_ticks = ticks % frequency;
+  int64_t leftover_nanos = (leftover_ticks * kNanosPerSecond) / frequency;
+  return nano_seconds + leftover_nanos;
+}
+
 fml::TimePoint DartTimestampProvider::Now() {
   const int64_t ticks = Dart_TimelineGetTicks();
   const int64_t frequency = Dart_TimelineGetTicksFrequency();
   // optimization for the most common case.
   if (frequency != kNanosPerSecond) {
-    // convert from frequency base to nanos.
-    int64_t seconds = ticks / frequency;
-    int64_t leftover_ticks = ticks - (seconds * frequency);
-    int64_t result = seconds * kNanosPerSecond;
-    result += ((leftover_ticks * kNanosPerSecond) / frequency);
-    return fml::TimePoint::FromTicks(result);
+    return fml::TimePoint::FromTicks(ConvertToNanos(ticks, frequency));
   } else {
     return fml::TimePoint::FromTicks(ticks);
   }

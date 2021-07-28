@@ -29,6 +29,8 @@ class DartTimestampProvider : TimestampProvider {
  private:
   static constexpr int64_t kNanosPerSecond = 1000000000;
 
+  int64_t ConvertToNanos(int64_t ticks, int64_t frequency);
+
   DartTimestampProvider();
 
   FML_DISALLOW_COPY_AND_ASSIGN(DartTimestampProvider);
