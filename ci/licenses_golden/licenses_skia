@@ -1,4 +1,4 @@
-Signature: 1e1d0c8c07e06469a925dbc9429a6875
+Signature: 65d5d226d51e5bcba6ab1d3b7efc48a4
 
 UNUSED LICENSES:
 
@@ -4070,6 +4070,8 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrCullTest.h
+FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
+FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
 FILE: ../../../third_party/skia/src/utils/SkOrderedFontMgr.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google Inc.
