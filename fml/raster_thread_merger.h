@@ -113,7 +113,7 @@ class RasterThreadMerger
  private:
   fml::TaskQueueId platform_queue_id_;
   fml::TaskQueueId gpu_queue_id_;
-  fml::RefPtr<SharedThreadMergerImpl> shared_merger_impl_;
+  SharedThreadMergerImpl* shared_merger_impl_;
   std::condition_variable merged_condition_;
   std::mutex mutex_;
   fml::closure merge_unmerge_callback_;
