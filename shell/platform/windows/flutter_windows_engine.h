@@ -162,7 +162,8 @@ class FlutterWindowsEngine {
   std::chrono::nanoseconds start_time_ = std::chrono::nanoseconds::zero();
 
   // An override of the frame interval used by EngineModifier for testing.
-  std::optional<std::chrono::nanoseconds> frame_interval_override_ = std::nullopt;
+  std::optional<std::chrono::nanoseconds> frame_interval_override_ =
+      std::nullopt;
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
