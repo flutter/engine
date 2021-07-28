@@ -891,9 +891,29 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   const CGFloat scale = [UIScreen mainScreen].scale;
-  auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
+
+  bool will_drop_hover = NO;
+
+  if (@available(iOS 13.4, *)) {
+    if ([UIFocusSystem focusSystemForEnvironment:self.view] == nil) {
+      // There is no focus environment, the pointer is no longer attached
+      will_drop_hover = YES;
+    }
+  }
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(will_drop_hover ? touches.count + 1
+                                                                             : touches.count);
 
   size_t pointer_index = 0;
+
+  if (@available(iOS 13.4, *)) {
+    if (will_drop_hover) {
+      _mouseState.flutter_state_is_added = false;
+      flutter::PointerData drop_hover_pointer_data = [self generatePointerDataForMouse];
+      drop_hover_pointer_data.change = flutter::PointerData::Change::kRemove;
+      packet->SetPointerData(pointer_index++, drop_hover_pointer_data);
+    }
+  }
 
   for (UITouch* touch in touches) {
     CGPoint windowCoordinates = [touch locationInView:self.view];
@@ -1682,7 +1702,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
   pointer_data.change = _mouseState.flutter_state_is_added ? flutter::PointerData::Change::kAdd
                                                            : flutter::PointerData::Change::kHover;
-  pointer_data.pointer_identifier = reinterpret_cast<int64_t>(_pointerInteraction.get());
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
+  pointer_data.device = reinterpret_cast<int64_t>(_pointerInteraction.get());
 
   pointer_data.physical_x = _mouseState.location.x;
   pointer_data.physical_y = _mouseState.location.y;
@@ -1704,6 +1725,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     packet->SetPointerData(/*index=*/0, pointer_data);
 
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+
+    _mouseState.flutter_state_is_added = true;
   }
   return nil;
 }
@@ -1735,6 +1758,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+
+  _mouseState.flutter_state_is_added = true;
 }
 
 #pragma mark - State Restoration
