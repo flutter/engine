@@ -74,7 +74,7 @@ Future<void> testMain() async {
           '23',
           textStyle: EngineTextStyle.only(color: const Color(0xff0000ff)),
         );
-        p.layout(ParagraphConstraints(width: double.infinity));
+        p.layout(const ParagraphConstraints(width: double.infinity));
         canvas.drawParagraph(p, Offset(x, y));
         canvas.restore();
         // Draw the red border.
