@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.10
-
 import 'dart:async';
+import 'dart:convert';
+import 'dart:core';
+import 'dart:ffi';
+import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:isolate';
-import 'dart:ffi';
-import 'dart:core';
-import 'dart:convert';
 
 void main() {}
 
@@ -32,6 +31,14 @@ void customEntrypoint1() {
 void sayHiFromCustomEntrypoint1() native 'SayHiFromCustomEntrypoint1';
 void sayHiFromCustomEntrypoint2() native 'SayHiFromCustomEntrypoint2';
 void sayHiFromCustomEntrypoint3() native 'SayHiFromCustomEntrypoint3';
+
+
+@pragma('vm:entry-point')
+void terminateExitCodeHandler() {
+  final ProcessResult result = Process.runSync(
+        'ls', <String>[]
+  );
+}
 
 
 @pragma('vm:entry-point')
@@ -506,7 +513,7 @@ void _echoKeyEvent(
 
 // Convert `kind` in enum form to its integer form.
 //
-// It performs a revesed mapping from `unserializeKeyEventKind`
+// It performs a reversed mapping from `unserializeKeyEventKind`
 // in shell/platform/embedder/tests/embedder_unittests.cc.
 int _serializeKeyEventType(KeyEventType change) {
   switch(change) {

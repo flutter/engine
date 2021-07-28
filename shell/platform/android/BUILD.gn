@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/config/android/config.gni")
+import("//build/toolchain/clang.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
@@ -14,6 +15,24 @@ shell_gpu_configuration("android_gpu_configuration") {
   enable_vulkan = shell_enable_vulkan
   enable_gl = true
   enable_metal = false
+}
+
+source_set("image_generator") {
+  sources = [
+    "android_image_generator.cc",
+    "android_image_generator.h",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/lib/ui:ui",
+    "//third_party/skia",
+  ]
+
+  libs = [
+    "android",
+    "jnigraphics",
+  ]
 }
 
 shared_library("flutter_shell_native") {
@@ -53,6 +72,7 @@ shared_library("flutter_shell_native") {
   deps = [
     ":android_gpu_configuration",
     ":icudtl_object",
+    ":image_generator",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/common/graphics",
@@ -127,7 +147,6 @@ android_java_sources = [
   "io/flutter/app/FlutterFragmentActivity.java",
   "io/flutter/app/FlutterPlayStoreSplitApplication.java",
   "io/flutter/app/FlutterPluginRegistry.java",
-  "io/flutter/embedding/android/AndroidKeyProcessor.java",
   "io/flutter/embedding/android/AndroidTouchProcessor.java",
   "io/flutter/embedding/android/DrawableSplashScreen.java",
   "io/flutter/embedding/android/ExclusiveAppComponent.java",
@@ -143,6 +162,8 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
   "io/flutter/embedding/android/FlutterView.java",
+  "io/flutter/embedding/android/KeyChannelResponder.java",
+  "io/flutter/embedding/android/KeyboardManager.java",
   "io/flutter/embedding/android/MotionEventTracker.java",
   "io/flutter/embedding/android/RenderMode.java",
   "io/flutter/embedding/android/SplashScreen.java",
@@ -239,6 +260,7 @@ android_java_sources = [
   "io/flutter/util/PathUtils.java",
   "io/flutter/util/Preconditions.java",
   "io/flutter/util/Predicate.java",
+  "io/flutter/util/ViewUtils.java",
   "io/flutter/view/AccessibilityBridge.java",
   "io/flutter/view/AccessibilityViewEmbedder.java",
   "io/flutter/view/FlutterCallbackInformation.java",
@@ -457,14 +479,16 @@ action("robolectric_tests") {
     "test/io/flutter/FlutterTestSuite.java",
     "test/io/flutter/SmokeTest.java",
     "test/io/flutter/TestUtils.java",
-    "test/io/flutter/embedding/android/AndroidKeyProcessorTest.java",
     "test/io/flutter/embedding/android/FlutterActivityAndFragmentDelegateTest.java",
     "test/io/flutter/embedding/android/FlutterActivityTest.java",
     "test/io/flutter/embedding/android/FlutterAndroidComponentTest.java",
     "test/io/flutter/embedding/android/FlutterFragmentActivityTest.java",
     "test/io/flutter/embedding/android/FlutterFragmentTest.java",
     "test/io/flutter/embedding/android/FlutterViewTest.java",
+    "test/io/flutter/embedding/android/KeyChannelResponderTest.java",
+    "test/io/flutter/embedding/android/KeyboardManagerTest.java",
     "test/io/flutter/embedding/android/RobolectricFlutterActivity.java",
+    "test/io/flutter/embedding/android/SplashShadowResources.java",
     "test/io/flutter/embedding/engine/FlutterEngineCacheTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineConnectionRegistryTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineGroupComponentTest.java",
@@ -486,6 +510,7 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java",
     "test/io/flutter/embedding/engine/systemchannels/RestorationChannelTest.java",
     "test/io/flutter/external/FlutterLaunchTests.java",
+    "test/io/flutter/plugin/common/BinaryCodecTest.java",
     "test/io/flutter/plugin/common/StandardMessageCodecTest.java",
     "test/io/flutter/plugin/common/StandardMethodCodecTest.java",
     "test/io/flutter/plugin/editing/InputConnectionAdaptorTest.java",
@@ -499,6 +524,7 @@ action("robolectric_tests") {
     "test/io/flutter/plugins/GeneratedPluginRegistrant.java",
     "test/io/flutter/util/FakeKeyEvent.java",
     "test/io/flutter/util/PreconditionsTest.java",
+    "test/io/flutter/util/ViewUtilsTest.java",
     "test/io/flutter/view/AccessibilityBridgeTest.java",
   ]
 
@@ -536,7 +562,7 @@ action("robolectric_tests") {
   args += rebase_path(sources, root_build_dir)
 
   deps = [
-    ":android",
+    ":android_jar",
     ":flutter_shell_java",
   ]
 }
@@ -553,7 +579,7 @@ zip_bundle("android_symbols") {
   deps = [ ":flutter_shell_native" ]
 }
 
-zip_bundle("android") {
+zip_bundle("flutter_jar_zip") {
   output = "$android_zip_archive_dir/artifacts.zip"
   files = [
     {
@@ -562,10 +588,7 @@ zip_bundle("android") {
     },
   ]
 
-  deps = [
-    ":android_jar",
-    ":android_symbols",
-  ]
+  deps = [ ":android_jar" ]
 
   if (current_cpu == "x86" || current_cpu == "x64") {
     files += [
@@ -578,8 +601,6 @@ zip_bundle("android") {
   }
 }
 
-# TODO(dnfield): make these targets pass.
-# https://github.com/flutter/flutter/issues/42400
 action("gen_android_javadoc") {
   script = "//flutter/tools/gen_javadoc.py"
   sources = android_java_sources + embedding_dependencies_jars
@@ -594,7 +615,10 @@ action("gen_android_javadoc") {
     rebase_path(target_gen_dir),
     "--third-party",
     rebase_path("//third_party"),
+    "--quiet",
   ]
+
+  deps = [ ":gen_android_build_config_java" ]
 }
 
 zip_bundle("android_javadoc") {
@@ -608,4 +632,47 @@ zip_bundle("android_javadoc") {
     },
   ]
   deps = [ ":gen_android_javadoc" ]
+}
+
+if (target_cpu != "x86") {
+  zip_bundle("gen_snapshot") {
+    gen_snapshot_bin = "gen_snapshot"
+    gen_snapshot_path = rebase_path("$root_out_dir/clang_x64/$gen_snapshot_bin")
+
+    if (host_os == "linux") {
+      output = "$android_zip_archive_dir/linux-x64.zip"
+    } else if (host_os == "mac") {
+      output = "$android_zip_archive_dir/darwin-x64.zip"
+    } else if (host_os == "win") {
+      output = "$android_zip_archive_dir/windows-x64.zip"
+      gen_snapshot_bin = "gen_snapshot.exe"
+      gen_snapshot_path = rebase_path("$root_out_dir/$gen_snapshot_bin")
+    }
+
+    files = [
+      {
+        source = gen_snapshot_path
+        destination = gen_snapshot_bin
+      },
+    ]
+
+    deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+  }
+}
+
+group("android") {
+  deps = [
+    ":android_javadoc",
+    ":android_symbols",
+    ":flutter_jar_zip",
+  ]
+  if (target_cpu != "x86") {
+    deps += [ ":gen_snapshot" ]
+  }
+
+  # We only run the robolectric tests for android_debug_unopt (arm CPU), and
+  # the target is relatively expensive to build.
+  if (flutter_runtime_mode == "debug" && current_cpu == "arm") {
+    deps += [ ":robolectric_tests" ]
+  }
 }

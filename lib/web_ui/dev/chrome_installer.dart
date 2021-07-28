@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
 import 'package:args/args.dart';
 import 'package:http/http.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:yaml/yaml.dart';
 
@@ -24,8 +23,8 @@ class ChromeArgParser extends BrowserArgParser {
   /// The [ChromeArgParser] singleton.
   static ChromeArgParser get instance => _singletonInstance;
 
-  String _version;
-  int _pinnedChromeBuildNumber;
+  late String _version;
+  late int _pinnedChromeBuildNumber;
 
   ChromeArgParser._();
 
@@ -35,10 +34,9 @@ class ChromeArgParser extends BrowserArgParser {
     _pinnedChromeBuildNumber =
         PlatformBinding.instance.getChromeBuild(browserLock);
 
-    argParser
-      ..addOption(
+    argParser.addOption(
         'chrome-version',
-        defaultsTo: '$pinnedChromeBuildNumber',
+        defaultsTo: pinnedChromeBuildNumber,
         help: 'The Chrome version to use while running tests. If the requested '
             'version has not been installed, it will be downloaded and installed '
             'automatically. A specific Chrome build version number, such as 695653, '
@@ -73,7 +71,7 @@ class ChromeArgParser extends BrowserArgParser {
 /// https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html?prefix=Linux_x64/
 Future<BrowserInstallation> getOrInstallChrome(
   String requestedVersion, {
-  StringSink infoLog,
+  StringSink? infoLog,
 }) async {
   infoLog ??= io.stdout;
 
@@ -84,7 +82,7 @@ Future<BrowserInstallation> getOrInstallChrome(
     );
   }
 
-  ChromeInstaller installer;
+  ChromeInstaller? installer;
   try {
     installer = requestedVersion == 'latest'
         ? await ChromeInstaller.latest()
@@ -96,11 +94,11 @@ Future<BrowserInstallation> getOrInstallChrome(
     } else {
       infoLog.writeln('Installing Chrome version: ${installer.version}');
       await installer.install();
-      final BrowserInstallation installation = installer.getInstallation();
+      final BrowserInstallation installation = installer.getInstallation()!;
       infoLog.writeln(
           'Installations complete. To launch it run ${installation.executable}');
     }
-    return installer.getInstallation();
+    return installer.getInstallation()!;
   } finally {
     installer?.close();
   }
@@ -121,7 +119,7 @@ Future<String> _findSystemChromeExecutable() async {
 /// Manages the installation of a particular [version] of Chrome.
 class ChromeInstaller {
   factory ChromeInstaller({
-    @required String version,
+    required String version,
   }) {
     if (version == 'system') {
       throw BrowserInstallerException(
@@ -150,9 +148,9 @@ class ChromeInstaller {
   }
 
   ChromeInstaller._({
-    @required this.version,
-    @required this.chromeInstallationDir,
-    @required this.versionDir,
+    required this.version,
+    required this.chromeInstallationDir,
+    required this.versionDir,
   });
 
   /// Chrome version managed by this installer.
@@ -171,7 +169,7 @@ class ChromeInstaller {
     return versionDir.existsSync();
   }
 
-  BrowserInstallation getInstallation() {
+  BrowserInstallation? getInstallation() {
     if (!isInstalled) {
       return null;
     }
@@ -222,7 +220,7 @@ class ChromeInstaller {
       final Stopwatch stopwatch = Stopwatch()..start();
 
       // Read the Zip file from disk.
-      final bytes = downloadedFile.readAsBytesSync();
+      final Uint8List bytes = downloadedFile.readAsBytesSync();
 
       final Archive archive = ZipDecoder().decodeBytes(bytes);
 
@@ -230,13 +228,13 @@ class ChromeInstaller {
       for (final ArchiveFile file in archive) {
         final String filename = file.name;
         if (file.isFile) {
-          final data = file.content as List<int>;
+          final List<int> data = file.content as List<int>;
           io.File(path.join(versionDir.path, filename))
             ..createSync(recursive: true)
             ..writeAsBytesSync(data);
         } else {
-          io.Directory(path.join(versionDir.path, filename))
-            ..create(recursive: true);
+          io.Directory(path.join(versionDir.path, filename)).create(
+              recursive: true);
         }
       }
 
@@ -281,18 +279,6 @@ Future<String> fetchLatestChromeVersion() async {
   }
 }
 
-/// Get the Chrome Driver version for the system Chrome.
-// TODO(nurhan): https://github.com/flutter/flutter/issues/53179
-Future<String> queryChromeDriverVersion() async {
-  final int chromeVersion = await _querySystemChromeMajorVersion();
-  final io.File lockFile = io.File(
-      path.join(environment.webUiRootDir.path, 'dev', 'driver_version.yaml'));
-  YamlMap _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
-  final String chromeDriverVersion =
-      _configuration['chrome'][chromeVersion] as String;
-  return chromeDriverVersion;
-}
-
 /// Make sure LUCI bot has the pinned Chrome version and return the executable.
 ///
 /// We are using CIPD packages in LUCI. The pinned chrome version from the
@@ -304,63 +290,12 @@ String preinstalledChromeExecutable() {
   final String buildNumber = ChromeArgParser.instance.pinnedChromeBuildNumber;
   final ChromeInstaller chromeInstaller = ChromeInstaller(version: buildNumber);
   if (chromeInstaller.isInstalled) {
-    print('INFO: Found chrome executable for LUCI: '
-        '${chromeInstaller.getInstallation().executable}');
-    return chromeInstaller.getInstallation().executable;
+    final String executable = chromeInstaller.getInstallation()!.executable;
+    print('INFO: Found chrome executable for LUCI: $executable');
+    return executable;
   } else {
     throw StateError(
-        'Failed to locate pinned Chrome build: $buildNumber on LUCI.');
+      'Failed to locate pinned Chrome build: $buildNumber on LUCI.',
+    );
   }
-}
-
-Future<int> _querySystemChromeMajorVersion() async {
-  String chromeExecutable = '';
-  // LUCI uses the Chrome from CIPD packages.
-  if (isLuci) {
-    chromeExecutable = preinstalledChromeExecutable();
-  } else if (io.Platform.isLinux) {
-    chromeExecutable = 'google-chrome';
-  } else if (io.Platform.isMacOS) {
-    chromeExecutable = await _findChromeExecutableOnMac();
-  } else {
-    throw UnimplementedError('Web installers only work on Linux and Mac.');
-  }
-
-  final io.ProcessResult versionResult =
-      await io.Process.run('$chromeExecutable', <String>['--version']);
-
-  if (versionResult.exitCode != 0) {
-    throw Exception('Failed to locate system Chrome.');
-  }
-  // The output looks like: Google Chrome 79.0.3945.36.
-  final String output = versionResult.stdout as String;
-
-  print('INFO: chrome version in use $output');
-
-  // Version number such as 79.0.3945.36.
-  try {
-    final String versionAsString = output.trim().split(' ').last;
-    final String majorVersion = versionAsString.split('.')[0];
-    return int.parse(majorVersion);
-  } catch (e) {
-    throw Exception(
-        'Was expecting a version of the form Google Chrome 79.0.3945.36., '
-        'received $output');
-  }
-}
-
-/// Find Google Chrome App on Mac.
-Future<String> _findChromeExecutableOnMac() async {
-  io.Directory chromeDirectory = io.Directory('/Applications')
-      .listSync()
-      .whereType<io.Directory>()
-      .firstWhere(
-        (d) => path.basename(d.path).endsWith('Chrome.app'),
-        orElse: () => throw Exception('Failed to locate system Chrome'),
-      );
-
-  final io.File chromeExecutableDir = io.File(
-      path.join(chromeDirectory.path, 'Contents', 'MacOS', 'Google Chrome'));
-
-  return chromeExecutableDir.path;
 }

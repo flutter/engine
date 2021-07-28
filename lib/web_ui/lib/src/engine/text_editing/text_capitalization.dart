@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import '../browser_detection.dart';
 
 /// Controls the capitalization of the text.
 ///
@@ -37,7 +39,7 @@ class TextCapitalizationConfig {
       : textCapitalization = TextCapitalization.none;
 
   const TextCapitalizationConfig.fromInputConfiguration(String inputConfiguration)
-      : this.textCapitalization =
+      : textCapitalization =
             inputConfiguration == 'TextCapitalization.words'
                 ? TextCapitalization.words
                 : inputConfiguration == 'TextCapitalization.characters'
@@ -81,10 +83,10 @@ class TextCapitalizationConfig {
         break;
     }
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       element.setAttribute('autocapitalize', autocapitalize);
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       element.setAttribute('autocapitalize', autocapitalize);
     }
   }

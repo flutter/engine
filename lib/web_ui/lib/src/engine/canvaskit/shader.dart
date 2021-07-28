@@ -2,7 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../util.dart';
+import '../validators.dart';
+import 'canvaskit_api.dart';
+import 'image.dart';
+import 'initialization.dart';
+import 'skia_object_cache.dart';
 
 abstract class CkShader extends ManagedSkiaObject<SkShader>
     implements ui.Shader {
@@ -69,7 +79,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
         assert(offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix {
+        matrix4 = matrix {
     if (assertionsEnabled) {
       assert(matrix4 == null || matrix4IsValid(matrix4!));
       validateColorStops(colors, colorStops);
@@ -165,7 +175,8 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 }
 
 class CkImageShader extends CkShader implements ui.ImageShader {
-  CkImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4, this.filterQuality)
+  CkImageShader(ui.Image image, this.tileModeX, this.tileModeY, this.matrix4,
+      this.filterQuality)
       : _image = image as CkImage;
 
   final ui.TileMode tileModeX;
@@ -177,7 +188,7 @@ class CkImageShader extends CkShader implements ui.ImageShader {
   ui.FilterQuality? _cachedQuality;
   @override
   SkShader withQuality(ui.FilterQuality contextualQuality) {
-    ui.FilterQuality quality = filterQuality ?? contextualQuality;
+    final ui.FilterQuality quality = filterQuality ?? contextualQuality;
     SkShader? shader = rawSkiaObject;
     if (_cachedQuality != quality || shader == null) {
       if (quality == ui.FilterQuality.high) {

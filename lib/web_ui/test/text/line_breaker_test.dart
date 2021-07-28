@@ -304,9 +304,9 @@ class Line {
     final String bk = String.fromCharCode(0x000B);
     final String nl = String.fromCharCode(0x0085);
     return text
-        .replaceAll('"', '\\"')
-        .replaceAll('\n', '\\n')
-        .replaceAll('\r', '\\r')
+        .replaceAll('"', r'\"')
+        .replaceAll('\n', r'\n')
+        .replaceAll('\r', r'\r')
         .replaceAll(bk, '{BK}')
         .replaceAll(nl, '{NL}');
   }
@@ -321,7 +321,7 @@ List<Line> split(String text) {
   final List<Line> lines = <Line>[];
 
   int lastIndex = 0;
-  for (LineBreakResult brk in findBreaks(text)) {
+  for (final LineBreakResult brk in findBreaks(text)) {
     lines.add(Line(text.substring(lastIndex, brk.index), brk.type));
     lastIndex = brk.index;
   }

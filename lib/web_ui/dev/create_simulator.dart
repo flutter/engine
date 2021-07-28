@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 
 import 'package:args/command_runner.dart';
@@ -11,11 +10,11 @@ import 'package:simulators/simulator_manager.dart';
 import 'safari_installation.dart';
 import 'utils.dart';
 
-class CreateSimulatorCommand extends Command<bool> with ArgUtils {
+class CreateSimulatorCommand extends Command<bool> with ArgUtils<bool> {
   CreateSimulatorCommand() {
     IosSafariArgParser.instance.populateOptions(argParser);
     argParser
-      ..addOption(
+      .addOption(
         'type',
         defaultsTo: _defaultType,
         help: 'Type of the mobile simulator. Currently the only iOS '
@@ -25,7 +24,7 @@ class CreateSimulatorCommand extends Command<bool> with ArgUtils {
   }
 
   /// Currently the only iOS Simulators are supported.
-  static final String _defaultType = 'iOS';
+  static const String _defaultType = 'iOS';
 
   @override
   String get name => 'create_simulator';
@@ -35,8 +34,8 @@ class CreateSimulatorCommand extends Command<bool> with ArgUtils {
 
   @override
   FutureOr<bool> run() async {
-    IosSafariArgParser.instance.parseOptions(argResults);
-    final String simulatorType = argResults['type'] as String;
+    IosSafariArgParser.instance.parseOptions(argResults!);
+    final String simulatorType = argResults!['type'] as String;
     if (simulatorType.toUpperCase() != 'IOS') {
       throw Exception('Currently the only iOS Simulators are supported');
     }

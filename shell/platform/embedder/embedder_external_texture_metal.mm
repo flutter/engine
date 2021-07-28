@@ -36,8 +36,8 @@ void EmbedderExternalTextureMetal::Paint(SkCanvas& canvas,
                                          bool freeze,
                                          GrDirectContext* context,
                                          const SkSamplingOptions& sampling) {
-  if (auto image = ResolveTexture(Id(), context, SkISize::Make(bounds.width(), bounds.height()))) {
-    last_image_ = image;
+  if (last_image_ == nullptr) {
+    last_image_ = ResolveTexture(Id(), context, SkISize::Make(bounds.width(), bounds.height()));
   }
 
   if (last_image_) {
@@ -56,8 +56,6 @@ sk_sp<SkImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
       external_texture_callback_(texture_id, size.width(), size.height());
 
   if (!texture) {
-    FML_LOG(ERROR) << "External texture callback for ID " << texture_id
-                   << " did not return a valid texture.";
     return nullptr;
   }
 
@@ -102,7 +100,9 @@ void EmbedderExternalTextureMetal::OnGrContextCreated() {}
 void EmbedderExternalTextureMetal::OnGrContextDestroyed() {}
 
 // |flutter::Texture|
-void EmbedderExternalTextureMetal::MarkNewFrameAvailable() {}
+void EmbedderExternalTextureMetal::MarkNewFrameAvailable() {
+  last_image_ = nullptr;
+}
 
 // |flutter::Texture|
 void EmbedderExternalTextureMetal::OnTextureUnregistered() {}

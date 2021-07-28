@@ -2,7 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart' show toMatrix32;
+import '../picture.dart';
+import '../util.dart';
+import '../validators.dart';
+import 'painting.dart';
+import 'recording_canvas.dart';
+import 'render_vertices.dart';
 
 class SurfaceCanvas implements ui.Canvas {
   RecordingCanvas _canvas;
@@ -310,7 +321,7 @@ class SurfaceCanvas implements ui.Canvas {
       // the center portion has disappeared, leaving only the edges to scale to a common
       // center position in the destination
       // this produces only 2 slices which is 8 values
-      double dstC = dst0 + destDim * edge0Dim / edgesDim;
+      final double dstC = dst0 + destDim * edge0Dim / edgesDim;
       return <double>[
         img0,  dst0, imgC0, dstC,
         imgC1, dstC, img1,  dst1,
@@ -358,15 +369,15 @@ class SurfaceCanvas implements ui.Canvas {
     );
 
     for (int yi = 0; yi < vSlices.length; yi += 4) {
-      double srcY0 = vSlices[yi];
-      double dstY0 = vSlices[yi + 1];
-      double srcY1 = vSlices[yi + 2];
-      double dstY1 = vSlices[yi + 3];
+      final double srcY0 = vSlices[yi];
+      final double dstY0 = vSlices[yi + 1];
+      final double srcY1 = vSlices[yi + 2];
+      final double dstY1 = vSlices[yi + 3];
       for (int xi = 0; xi < hSlices.length; xi += 4) {
-        double srcX0 = hSlices[xi];
-        double dstX0 = hSlices[xi + 1];
-        double srcX1 = hSlices[xi + 2];
-        double dstX1 = hSlices[xi + 3];
+        final double srcX0 = hSlices[xi];
+        final double dstX0 = hSlices[xi + 1];
+        final double srcX1 = hSlices[xi + 2];
+        final double dstX1 = hSlices[xi + 3];
         drawImageRect(
           image,
           ui.Rect.fromLTRB(srcX0, srcY0, srcX1, srcY1),

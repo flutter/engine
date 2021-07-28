@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'semantics.dart';
 
 /// Renders [_label] and [_value] to the semantics DOM.
 ///
@@ -49,12 +53,9 @@ class LabelAndValue extends RoleManager {
     final bool hasValue = semanticsObject.hasValue;
     final bool hasLabel = semanticsObject.hasLabel;
 
-    // If the node is incrementable or a text field the value is reported to the
-    // browser via the respective role managers. We do not need to also render
-    // it again here.
-    final bool shouldDisplayValue = hasValue &&
-        !semanticsObject.isIncrementable &&
-        !semanticsObject.isTextField;
+    // If the node is incrementable the value is reported to the browser via
+    // the respective role manager. We do not need to also render it again here.
+    final bool shouldDisplayValue = hasValue && !semanticsObject.isIncrementable;
 
     if (!hasLabel && !shouldDisplayValue) {
       _cleanUpDom();
@@ -99,7 +100,7 @@ class LabelAndValue extends RoleManager {
       // Normally use a small font size so that text doesn't leave the scope
       // of the semantics node. When debugging semantics, use a font size
       // that's reasonably visible.
-      _auxiliaryValueElement!.style.fontSize = _debugShowSemanticsNodes ? '12px' : '6px';
+      _auxiliaryValueElement!.style.fontSize = debugShowSemanticsNodes ? '12px' : '6px';
       semanticsObject.element.append(_auxiliaryValueElement!);
     }
     _auxiliaryValueElement!.text = combinedValue.toString();

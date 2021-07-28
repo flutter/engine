@@ -69,7 +69,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,
                     SemanticsAction action,
-                    std::vector<uint8_t> args));
+                    fml::MallocMapping args));
 
   MOCK_METHOD1(OnPlatformViewSetSemanticsEnabled, void(bool enabled));
 
@@ -457,7 +457,6 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
       "--lazy_async_stacks",
-      "--no-causal_async_stacks",
   };
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
@@ -524,6 +523,12 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
 
     fml::TimePoint last_phase_time;
     for (auto phase : FrameTiming::kPhases) {
+      // raster finish wall time doesn't use the same clock base
+      // as rest of the frame timings.
+      if (phase == FrameTiming::kRasterFinishWallTime) {
+        continue;
+      }
+
       ASSERT_TRUE(timings[i].Get(phase) >= start);
       ASSERT_TRUE(timings[i].Get(phase) <= finish);
 
@@ -1489,7 +1494,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
                                 "method": "Skia.setResourceCacheMaxBytes",
                                 "args": 10000
                               })json";
-  std::vector<uint8_t> data(request_json.begin(), request_json.end());
+  auto data =
+      fml::MallocMapping::Copy(request_json.c_str(), request_json.length());
   auto platform_message = std::make_unique<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));
@@ -1811,10 +1817,7 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
       buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
 
   std::unique_ptr<fml::Mapping> mapping =
-      std::make_unique<fml::NonOwnedMapping>(
-          buffer, buffer_size, [](const uint8_t* buffer, size_t size) {
-            ::free(const_cast<uint8_t*>(buffer));
-          });
+      std::make_unique<fml::MallocMapping>(buffer, buffer_size);
 
   ASSERT_EQ(mapping->GetSize(), buffer_size);
 
@@ -1922,6 +1925,75 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   configuration.SetEntrypoint("canDecompressImageFromAsset");
   std::unique_ptr<Shell> shell = CreateShell(settings);
   ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+  DestroyShell(std::move(shell));
+}
+
+/// An image generator that always creates a 1x1 single-frame green image.
+class SinglePixelImageGenerator : public ImageGenerator {
+ public:
+  SinglePixelImageGenerator()
+      : info_(SkImageInfo::MakeN32(1, 1, SkAlphaType::kOpaque_SkAlphaType)){};
+  ~SinglePixelImageGenerator() = default;
+  const SkImageInfo& GetInfo() { return info_; }
+
+  unsigned int GetFrameCount() const { return 1; }
+
+  unsigned int GetPlayCount() const { return 1; }
+
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+    return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
+  }
+
+  SkISize GetScaledDimensions(float scale) {
+    return SkISize::Make(info_.width(), info_.height());
+  }
+
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 unsigned int frame_index,
+                 std::optional<unsigned int> prior_frame) {
+    assert(info.width() == 1);
+    assert(info.height() == 1);
+    assert(row_bytes == 4);
+
+    reinterpret_cast<uint32_t*>(pixels)[0] = 0x00ff00ff;
+    return true;
+  };
+
+ private:
+  SkImageInfo info_;
+};
+
+TEST_F(ShellTest, CanRegisterImageDecoders) {
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto width = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      auto height = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 1));
+                      ASSERT_EQ(width, 1);
+                      ASSERT_EQ(height, 1);
+                      latch.Signal();
+                    }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canRegisterImageDecoders");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
+        shell->RegisterImageDecoder(
+            [](sk_sp<SkData> buffer) {
+              return std::make_unique<SinglePixelImageGenerator>();
+            },
+            100);
+      });
+
   RunEngine(shell.get(), std::move(configuration));
   latch.Wait();
   DestroyShell(std::move(shell));
@@ -2113,7 +2185,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   document.Accept(writer);
   std::string expected_json =
       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400}";
+      "Bytes\":400,\"displayListBytes\":0}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
@@ -2487,10 +2559,12 @@ TEST_F(ShellTest, Spawn) {
         main_latch.Signal();
       }));
   // Fulfill native function for the second Shell's entrypoint.
+  fml::CountDownLatch second_latch(2);
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is just
       // the native function name of the second vm entrypoint in the fixture.
-      "NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {}));
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](auto args) { second_latch.CountDown(); }));
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
@@ -2500,7 +2574,7 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration]() {
+      [this, &spawner = shell, &second_configuration, &second_latch]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
             std::move(second_configuration),
@@ -2543,6 +2617,11 @@ TEST_F(ShellTest, Spawn) {
               ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
                         spawn->GetIOManager()->GetResourceContext().get());
             });
+
+        // Before destroying the shell, wait for expectations of the spawned
+        // isolate to be met.
+        second_latch.Wait();
+
         DestroyShell(std::move(spawn));
       });
 
@@ -2781,6 +2860,39 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UserTagSetOnStartup) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  // Make sure the shell launch does not kick off the creation of the VM
+  // instance by already creating one upfront.
+  auto vm_settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(vm_settings);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  auto settings = vm_settings;
+  fml::AutoResetWaitableEvent isolate_create_latch;
+
+  // ensure that "AppStartUpTag" is set during isolate creation.
+  settings.root_isolate_create_callback = [&](const DartIsolate& isolate) {
+    Dart_Handle current_tag = Dart_GetCurrentUserTag();
+    Dart_Handle startup_tag = Dart_NewUserTag("AppStartUp");
+    EXPECT_TRUE(Dart_IdentityEquals(current_tag, startup_tag));
+
+    isolate_create_latch.Signal();
+  };
+
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+
+  RunEngine(shell.get(), std::move(configuration));
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  DestroyShell(std::move(shell));
+  isolate_create_latch.Wait();
 }
 
 }  // namespace testing

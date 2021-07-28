@@ -4,6 +4,7 @@
 
 #include "flutter/shell/common/engine.h"
 
+#include <cstring>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,6 +35,12 @@ static constexpr char kNavigationChannel[] = "flutter/navigation";
 static constexpr char kLocalizationChannel[] = "flutter/localization";
 static constexpr char kSettingsChannel[] = "flutter/settings";
 static constexpr char kIsolateChannel[] = "flutter/isolate";
+
+namespace {
+fml::MallocMapping MakeMapping(const std::string& str) {
+  return fml::MallocMapping::Copy(str.c_str(), str.length());
+}
+}  // namespace
 
 Engine::Engine(
     Delegate& delegate,
@@ -83,21 +90,22 @@ Engine::Engine(Delegate& delegate,
       *this,                                 // runtime delegate
       &vm,                                   // VM
       std::move(isolate_snapshot),           // isolate snapshot
-      task_runners_,                         // task runners
-      std::move(snapshot_delegate),          // snapshot delegate
-      GetWeakPtr(),                          // hint freed delegate
-      std::move(io_manager),                 // io manager
-      std::move(unref_queue),                // Skia unref queue
-      image_decoder_.GetWeakPtr(),           // image decoder
-      settings_.advisory_script_uri,         // advisory script uri
-      settings_.advisory_script_entrypoint,  // advisory script entrypoint
       settings_.idle_notification_callback,  // idle notification callback
       platform_data,                         // platform data
       settings_.isolate_create_callback,     // isolate create callback
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
       settings_.persistent_isolate_data,     // persistent isolate data
-      std::move(volatile_path_tracker)       // volatile path tracker
-  );
+      UIDartState::Context{
+          task_runners_,                           // task runners
+          std::move(snapshot_delegate),            // snapshot delegate
+          std::move(io_manager),                   // io manager
+          std::move(unref_queue),                  // Skia unref queue
+          image_decoder_.GetWeakPtr(),             // image decoder
+          image_generator_registry_.GetWeakPtr(),  // image generator registry
+          settings_.advisory_script_uri,           // advisory script uri
+          settings_.advisory_script_entrypoint,    // advisory script entrypoint
+          std::move(volatile_path_tracker),        // volatile path tracker
+      });
 }
 
 std::unique_ptr<Engine> Engine::Spawn(
@@ -141,6 +149,10 @@ void Engine::SetupDefaultFontManager() {
 
 std::shared_ptr<AssetManager> Engine::GetAssetManager() {
   return asset_manager_;
+}
+
+fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
+  return image_generator_registry_.GetWeakPtr();
 }
 
 bool Engine::UpdateAssetManager(
@@ -205,19 +217,16 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
   if (service_id.has_value()) {
     std::unique_ptr<PlatformMessage> service_id_message =
         std::make_unique<flutter::PlatformMessage>(
-            kIsolateChannel,
-            std::vector<uint8_t>(service_id.value().begin(),
-                                 service_id.value().end()),
-            nullptr);
+            kIsolateChannel, MakeMapping(service_id.value()), nullptr);
     HandlePlatformMessage(std::move(service_id_message));
   }
 
   return Engine::RunStatus::Success;
 }
 
-void Engine::BeginFrame(fml::TimePoint frame_time) {
+void Engine::BeginFrame(fml::TimePoint frame_time, uint64_t frame_number) {
   TRACE_EVENT0("flutter", "Engine::BeginFrame");
-  runtime_controller_->BeginFrame(frame_time);
+  runtime_controller_->BeginFrame(frame_time, frame_number);
 }
 
 void Engine::ReportTimings(std::vector<int64_t> timings) {
@@ -225,27 +234,11 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
-void Engine::HintFreed(size_t size) {
-  hint_freed_bytes_since_last_call_ += size;
-}
-
 void Engine::NotifyIdle(int64_t deadline) {
   auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
                trace_event.c_str());
-  // Avoid asking the RuntimeController to call Dart_HintFreed more than once
-  // every 5 seconds.
-  // This is to avoid GCs happening too frequently e.g. when an animated GIF is
-  // playing and disposing of an image every frame.
-  fml::TimePoint now = delegate_.GetCurrentTimePoint();
-  fml::TimeDelta delta = now - last_hint_freed_call_time_;
-  size_t hint_freed_bytes = 0;
-  if (delta.ToMilliseconds() > 5000 && hint_freed_bytes_since_last_call_ > 0) {
-    hint_freed_bytes = hint_freed_bytes_since_last_call_;
-    hint_freed_bytes_since_last_call_ = 0;
-    last_hint_freed_call_time_ = now;
-  }
-  runtime_controller_->NotifyIdle(deadline, hint_freed_bytes);
+  runtime_controller_->NotifyIdle(deadline);
 }
 
 std::optional<uint32_t> Engine::GetUIIsolateReturnCode() {
@@ -326,7 +319,8 @@ void Engine::DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) {
 
 bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
-  std::string state(reinterpret_cast<const char*>(data.data()), data.size());
+  std::string state(reinterpret_cast<const char*>(data.GetMapping()),
+                    data.GetSize());
   if (state == "AppLifecycleState.paused" ||
       state == "AppLifecycleState.detached") {
     activity_running_ = false;
@@ -353,7 +347,8 @@ bool Engine::HandleNavigationPlatformMessage(
   const auto& data = message->data();
 
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject()) {
     return false;
   }
@@ -371,7 +366,8 @@ bool Engine::HandleLocalizationPlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
 
   rapidjson::Document document;
-  document.Parse(reinterpret_cast<const char*>(data.data()), data.size());
+  document.Parse(reinterpret_cast<const char*>(data.GetMapping()),
+                 data.GetSize());
   if (document.HasParseError() || !document.IsObject()) {
     return false;
   }
@@ -411,7 +407,8 @@ bool Engine::HandleLocalizationPlatformMessage(PlatformMessage* message) {
 
 void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
-  std::string jsonData(reinterpret_cast<const char*>(data.data()), data.size());
+  std::string jsonData(reinterpret_cast<const char*>(data.GetMapping()),
+                       data.GetSize());
   if (runtime_controller_->SetUserSettingsData(std::move(jsonData)) &&
       have_surface_) {
     ScheduleFrame();
@@ -436,7 +433,7 @@ void Engine::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
 
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
-                                     std::vector<uint8_t> args) {
+                                     fml::MallocMapping args) {
   runtime_controller_->DispatchSemanticsAction(id, action, std::move(args));
 }
 
@@ -538,8 +535,8 @@ void Engine::HandleAssetPlatformMessage(
     return;
   }
   const auto& data = message->data();
-  std::string asset_name(reinterpret_cast<const char*>(data.data()),
-                         data.size());
+  std::string asset_name(reinterpret_cast<const char*>(data.GetMapping()),
+                         data.GetSize());
 
   if (asset_manager_) {
     std::unique_ptr<fml::Mapping> asset_mapping =

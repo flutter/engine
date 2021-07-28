@@ -26,28 +26,21 @@ class ContainerLayer : public Layer {
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  void CheckForChildLayerBelow(PrerollContext* context) override;
-  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
-#endif
 
   const std::vector<std::shared_ptr<Layer>>& layers() const { return layers_; }
 
- protected:
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
-  void DiffChildren(DiffContext* context, const ContainerLayer* old_layer);
+  virtual void DiffChildren(DiffContext* context,
+                            const ContainerLayer* old_layer);
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
+ protected:
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
                        SkRect* child_paint_bounds);
   void PaintChildren(PaintContext& context) const;
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  void UpdateSceneChildren(std::shared_ptr<SceneUpdateContext> context);
-#endif
 
   // Try to prepare the raster cache for a given layer.
   //
@@ -114,9 +107,12 @@ class MergedContainerLayer : public ContainerLayer {
  public:
   MergedContainerLayer();
 
-  void AssignOldLayer(Layer* old_layer) override;
-
   void Add(std::shared_ptr<Layer> layer) override;
+
+#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+  void DiffChildren(DiffContext* context,
+                    const ContainerLayer* old_layer) override;
+#endif
 
  protected:
   /**

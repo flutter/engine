@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -28,18 +29,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TestActivity extends TestableFlutterActivity {
+public abstract class TestActivity extends TestableFlutterActivity {
   static final String TAG = "Scenarios";
 
   @Override
-  protected void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     final Intent launchIntent = getIntent();
     if ("com.google.intent.action.TEST_LOOP".equals(launchIntent.getAction())) {
       if (Build.VERSION.SDK_INT > 22) {
         requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
       }
-      // Run for one minute, get the timeline data, write it, and finish.
       final Uri logFileUri = launchIntent.getData();
       new Handler()
           .postDelayed(
@@ -47,7 +47,6 @@ public class TestActivity extends TestableFlutterActivity {
                 @Override
                 public void run() {
                   writeTimelineData(logFileUri);
-
                   testFlutterLoaderCallbackWhenInitializedTwice();
                 }
               },
@@ -70,18 +69,19 @@ public class TestActivity extends TestableFlutterActivity {
   @Override
   public void onFlutterUiDisplayed() {
     final Intent launchIntent = getIntent();
-    if (!launchIntent.hasExtra("scenario")) {
-      return;
-    }
     MethodChannel channel =
         new MethodChannel(getFlutterEngine().getDartExecutor(), "driver", JSONMethodCodec.INSTANCE);
     Map<String, Object> test = new HashMap<>(2);
-    test.put("name", launchIntent.getStringExtra("scenario"));
+    if (launchIntent.hasExtra("scenario_name")) {
+      test.put("name", launchIntent.getStringExtra("scenario_name"));
+    } else {
+      test.put("name", "animated_color_square");
+    }
     test.put("use_android_view", launchIntent.getBooleanExtra("use_android_view", false));
     channel.invokeMethod("set_scenario", test);
   }
 
-  private void writeTimelineData(Uri logFile) {
+  protected void writeTimelineData(@Nullable Uri logFile) {
     if (logFile == null) {
       throw new IllegalArgumentException();
     }
@@ -102,17 +102,18 @@ public class TestActivity extends TestableFlutterActivity {
             outputStream.write(reply.array());
             outputStream.close();
           } catch (IOException ex) {
-            Log.e(TAG, "Could not write timeline file: " + ex.toString());
+            Log.e(TAG, "Could not write timeline file", ex);
           }
           finish();
         });
   }
 
   /**
-   * This method verifies that {@link FlutterLoader#ensureInitializationCompleteAsync(Context,
+   * This method verifies that {@link
+   * io.flutter.embedding.engine.loader.FlutterLoader#ensureInitializationCompleteAsync(Context,
    * String[], Handler, Runnable)} invokes its callback when called after initialization.
    */
-  private void testFlutterLoaderCallbackWhenInitializedTwice() {
+  protected void testFlutterLoaderCallbackWhenInitializedTwice() {
     FlutterLoader flutterLoader = new FlutterLoader();
 
     // Flutter is probably already loaded in this app based on

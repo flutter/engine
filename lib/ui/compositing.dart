@@ -13,7 +13,7 @@ part of dart.ui;
 /// Scene objects can be displayed on the screen using the [FlutterView.render]
 /// method.
 @pragma('vm:entry-point')
-class Scene extends NativeFieldWrapperClass2 {
+class Scene extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
@@ -57,9 +57,19 @@ class Scene extends NativeFieldWrapperClass2 {
 // passed as `oldLayer` to `pushTransform`. This is achieved by having one
 // concrete subclass of this class per push method.
 abstract class _EngineLayerWrapper implements EngineLayer {
-  _EngineLayerWrapper._(this._nativeLayer);
+  _EngineLayerWrapper._(EngineLayer nativeLayer) : _nativeLayer = nativeLayer;
 
-  EngineLayer _nativeLayer;
+  EngineLayer? _nativeLayer;
+
+  @override
+  void dispose() {
+    assert(_nativeLayer != null, 'Object disposed');
+    _nativeLayer!.dispose();
+    assert(() {
+      _nativeLayer = null;
+      return true;
+    }());
+  }
 
   // Children of this layer.
   //
@@ -195,7 +205,7 @@ class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
 /// To draw graphical operations onto a [Scene], first create a
 /// [Picture] using a [PictureRecorder] and a [Canvas], and then add
 /// it to the scene using [addPicture].
-class SceneBuilder extends NativeFieldWrapperClass2 {
+class SceneBuilder extends NativeFieldWrapperClass1 {
   /// Creates an empty [SceneBuilder] object.
   @pragma('vm:entry-point')
   SceneBuilder() {
@@ -230,6 +240,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
       if (layer == null) {
         return true;
       }
+      assert(layer._nativeLayer != null, 'Object disposed');
       layer._debugCheckNotUsedAsOldLayer();
       assert(_debugCheckUsedOnce(layer, 'oldLayer in $methodName'));
       layer._debugWasUsedAsOldLayer = true;
@@ -638,6 +649,8 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     assert(() {
       final _EngineLayerWrapper layer = retainedLayer as _EngineLayerWrapper;
 
+      assert(layer._nativeLayer != null);
+
       void recursivelyCheckChildrenUsedOnce(_EngineLayerWrapper parentLayer) {
         _debugCheckUsedOnce(parentLayer, 'retained layer');
         parentLayer._debugCheckNotUsedAsOldLayer();
@@ -655,7 +668,7 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
     }());
 
     final _EngineLayerWrapper wrapper = retainedLayer as _EngineLayerWrapper;
-    _addRetained(wrapper._nativeLayer);
+    _addRetained(wrapper._nativeLayer!);
   }
 
   void _addRetained(EngineLayer retainedLayer) native 'SceneBuilder_addRetained';
@@ -767,21 +780,6 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   void _addPlatformView(double dx, double dy, double width, double height, int viewId)
       native 'SceneBuilder_addPlatformView';
 
-  /// (Fuchsia-only) Adds a scene rendered by another application to the scene
-  /// for this application.
-  void addChildScene({
-    Offset offset = Offset.zero,
-    double width = 0.0,
-    double height = 0.0,
-    required SceneHost sceneHost,
-    bool hitTestable = true,
-  }) {
-    _addChildScene(offset.dx, offset.dy, width, height, sceneHost, hitTestable);
-  }
-
-  void _addChildScene(double dx, double dy, double width, double height, SceneHost sceneHost,
-      bool hitTestable) native 'SceneBuilder_addChildScene';
-
   /// Sets a threshold after which additional debugging information should be recorded.
   ///
   /// Currently this interface is difficult to use by end-developers. If you're
@@ -831,52 +829,4 @@ class SceneBuilder extends NativeFieldWrapperClass2 {
   }
 
   void _build(Scene outScene) native 'SceneBuilder_build';
-}
-
-/// (Fuchsia-only) Hosts content provided by another application.
-class SceneHost extends NativeFieldWrapperClass2 {
-  /// Creates a host for a child scene's content.
-  ///
-  /// The ViewHolder token is bound to a ViewHolder scene graph node which acts
-  /// as a container for the child's content.  The creator of the SceneHost is
-  /// responsible for sending the corresponding ViewToken to the child.
-  ///
-  /// The ViewHolder token is a dart:zircon Handle, but that type isn't
-  /// available here. This is called by ChildViewConnection in
-  /// //topaz/public/dart/fuchsia_scenic_flutter/.
-  ///
-  /// The SceneHost takes ownership of the provided ViewHolder token.
-  SceneHost(
-    dynamic viewHolderToken,
-    void Function()? viewConnectedCallback,
-    void Function()? viewDisconnectedCallback,
-    void Function(bool)? viewStateChangedCallback,
-  ) {
-    _constructor(
-        viewHolderToken, viewConnectedCallback, viewDisconnectedCallback, viewStateChangedCallback);
-  }
-
-  void _constructor(
-    dynamic viewHolderToken,
-    void Function()? viewConnectedCallback,
-    void Function()? viewDisconnectedCallback,
-    void Function(bool)? viewStateChangedCallbac,
-  ) native 'SceneHost_constructor';
-
-  /// Releases the resources associated with the SceneHost.
-  ///
-  /// After calling this function, the SceneHost cannot be used further.
-  void dispose() native 'SceneHost_dispose';
-
-  /// Set properties on the linked scene.  These properties include its bounds,
-  /// as well as whether it can be the target of focus events or not.
-  void setProperties(
-    double width,
-    double height,
-    double insetTop,
-    double insetRight,
-    double insetBottom,
-    double insetLeft,
-    bool focusable,
-  ) native 'SceneHost_setProperties';
 }

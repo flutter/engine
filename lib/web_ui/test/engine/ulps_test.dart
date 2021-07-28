@@ -37,7 +37,7 @@ void testMain() {
     });
 
     test('Should convert float to bits', () {
-      Float32List floatList = Float32List(1);
+      final Float32List floatList = Float32List(1);
       floatList[0] = 0;
       expect(float2Bits(floatList, 0), 0);
       floatList[0] = 0.1;
@@ -54,40 +54,40 @@ void testMain() {
     test('Should compare equality based on ulps', () {
       // If number of floats between a=1.1 and b are below 16, equals should
       // return true.
-      final double a = 1.1;
-      int aBits = floatAs2sCompliment(a);
+      const double a = 1.1;
+      final int aBits = floatAs2sCompliment(a);
       double b = twosComplimentAsFloat(aBits + 1);
-      expect(almostEqualUlps(a, b), true);
+      expect(almostEqualUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 15);
-      expect(almostEqualUlps(a, b), true);
+      expect(almostEqualUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 16);
-      expect(almostEqualUlps(a, b), false);
+      expect(almostEqualUlps(a, b), isFalse);
 
       // Test between variant of equalUlps.
       b = twosComplimentAsFloat(aBits + 1);
-      expect(almostBequalUlps(a, b), true);
+      expect(almostBequalUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 1);
-      expect(almostBequalUlps(a, b), true);
+      expect(almostBequalUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 2);
-      expect(almostBequalUlps(a, b), false);
+      expect(almostBequalUlps(a, b), isFalse);
     });
 
     test('Should compare 2 coordinates based on ulps', () {
       double a = 1.1;
       int aBits = floatAs2sCompliment(a);
       double b = twosComplimentAsFloat(aBits + 1);
-      expect(approximatelyEqual(5.0, a, 5.0, b), true);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isTrue);
       b = twosComplimentAsFloat(aBits + 16);
-      expect(approximatelyEqual(5.0, a, 5.0, b), true);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isTrue);
 
       // Increase magnitude which should start checking with ulps rather than
       // fltEpsilon.
       a = 3000000.1;
       aBits = floatAs2sCompliment(a);
       b = twosComplimentAsFloat(aBits + 1);
-      expect(approximatelyEqual(5.0, a, 5.0, b), true);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isTrue);
       b = twosComplimentAsFloat(aBits + 16);
-      expect(approximatelyEqual(5.0, a, 5.0, b), false);
+      expect(approximatelyEqual(5.0, a, 5.0, b), isFalse);
     });
   });
 }

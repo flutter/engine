@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -96,10 +97,11 @@ public class PlatformPluginTest {
     assertEquals(dataInputStream.read(), uriInputStream.read());
   }
 
+  @Config(sdk = 28)
   @Test
   public void platformPlugin_hasStrings() {
     ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+        spy(RuntimeEnvironment.application.getSystemService(ClipboardManager.class));
 
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
@@ -110,13 +112,44 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
+    // Plain text
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
+    // Empty plain text
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
+    // Without actually accessing clipboard data (preferred behavior), it is not possible to
+    // distinguish between empty and non-empty string contents.
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    // HTML text
+    clip = ClipData.newHtmlText("motto", "Don't be evil", "<b>Don't</b> be evil");
+    clipboardManager.setPrimaryClip(clip);
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    // Text MIME type
+    clip = new ClipData("label", new String[] {"text/something"}, new ClipData.Item("content"));
+    clipboardManager.setPrimaryClip(clip);
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    // Other MIME type
+    clip =
+        new ClipData(
+            "label", new String[] {"application/octet-stream"}, new ClipData.Item("content"));
+    clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    if (Build.VERSION.SDK_INT >= 28) {
+      // Empty clipboard
+      clipboardManager.clearPrimaryClip();
+      assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    }
+
+    // Verify that the clipboard contents are never accessed.
+    verify(clipboardManager, never()).getPrimaryClip();
+    verify(clipboardManager, never()).getText();
   }
 
   @Config(sdk = 29)
@@ -129,7 +162,8 @@ public class PlatformPluginTest {
     when(fakeActivity.getWindow()).thenReturn(fakeWindow);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
-    SystemChromeStyle style = new SystemChromeStyle(0XFF000000, null, 0XFFC70039, null, 0XFF006DB3);
+    SystemChromeStyle style =
+        new SystemChromeStyle(0XFF000000, null, true, 0XFFC70039, null, 0XFF006DB3, true);
 
     if (Build.VERSION.SDK_INT >= 28) {
       platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
@@ -137,6 +171,60 @@ public class PlatformPluginTest {
       assertEquals(0XFF006DB3, fakeActivity.getWindow().getNavigationBarDividerColor());
       assertEquals(0XFFC70039, fakeActivity.getWindow().getStatusBarColor());
       assertEquals(0XFF000000, fakeActivity.getWindow().getNavigationBarColor());
+    }
+  }
+
+  @Config(sdk = 29)
+  @Test
+  public void setSystemUiMode() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    if (Build.VERSION.SDK_INT >= 28) {
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.LEAN_BACK);
+      assertEquals(
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN,
+          fakeActivity.getWindow().getDecorView().getSystemUiVisibility());
+
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.IMMERSIVE);
+      assertEquals(
+          View.SYSTEM_UI_FLAG_IMMERSIVE
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN,
+          fakeActivity.getWindow().getDecorView().getSystemUiVisibility());
+
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.IMMERSIVE_STICKY);
+      assertEquals(
+          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN,
+          fakeActivity.getWindow().getDecorView().getSystemUiVisibility());
+
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
+      assertEquals(
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN,
+          fakeActivity.getWindow().getDecorView().getSystemUiVisibility());
     }
   }
 

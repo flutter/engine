@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
-import 'dart:js_util' as js_util;
 import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 const int kPhysicalKeyA = 0x00070004;
 const int kLogicalKeyA = 0x00000000061;
@@ -98,7 +97,7 @@ void testMain() {
       expect(window.onBeginFrame, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnBeginFrame(null);
+    EnginePlatformDispatcher.instance.invokeOnBeginFrame(Duration.zero);
   });
 
   test('onReportTimings preserves the zone', () {
@@ -114,7 +113,7 @@ void testMain() {
       expect(window.onReportTimings, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnReportTimings(null);
+    EnginePlatformDispatcher.instance.invokeOnReportTimings(<ui.FrameTiming>[]);
   });
 
   test('onDrawFrame preserves the zone', () {
@@ -146,7 +145,7 @@ void testMain() {
       expect(window.onPointerDataPacket, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(null);
+    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(ui.PointerDataPacket());
   });
 
   test('invokeOnKeyData returns normally when onKeyData is null', () {
@@ -224,7 +223,7 @@ void testMain() {
       expect(window.onSemanticsAction, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(null, null, null);
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
@@ -256,7 +255,9 @@ void testMain() {
       expect(window.onPlatformMessage, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(null, null, null);
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('foo', null, (ByteData? data) {
+      // Not testing anything here.
+    });
   });
 
   test('sendPlatformMessage preserves the zone', () async {
@@ -269,7 +270,7 @@ void testMain() {
       window.sendPlatformMessage(
         'flutter/debug-echo',
         inputData,
-        (outputData) {
+        (ByteData? outputData) {
           expect(Zone.current, innerZone);
           completer.complete();
         },
@@ -287,7 +288,7 @@ void testMain() {
     window.sendPlatformMessage(
       'flutter/__unknown__channel__',
       null,
-      (outputData) {
+      (ByteData? outputData) {
         responded = true;
         expect(outputData, isNull);
       },
@@ -299,25 +300,23 @@ void testMain() {
 
   /// Regression test for https://github.com/flutter/flutter/issues/66128.
   test('setPreferredOrientation responds even if browser doesn\'t support api', () async {
-    final html.Screen screen = html.window.screen;
+    final html.Screen screen = html.window.screen!;
     js_util.setProperty(screen, 'orientation', null);
-    bool responded = false;
 
-    final Completer<void> completer = Completer<void>();
+    final Completer<bool> completer = Completer<bool>();
     final ByteData inputData = JSONMethodCodec().encodeMethodCall(MethodCall(
         'SystemChrome.setPreferredOrientations',
-        <dynamic>[]));
+        const <dynamic>[]))!;
 
     window.sendPlatformMessage(
       'flutter/platform',
           inputData,
-          (outputData) {
-        responded = true;
-        completer.complete();
+          (ByteData? outputData) {
+        completer.complete(true);
       },
     );
-    await completer.future;
-    expect(responded, true);
+
+    expect(await completer.future, isTrue);
   });
 
   test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
@@ -327,8 +326,7 @@ void testMain() {
       localeChangedCount += 1;
     };
 
-    // Cause DomRenderer to initialize itself.
-    domRenderer;
+    ensureDomRendererInitialized();
 
     // We populate the initial list of locales automatically (only test that we
     // got some locales; some contributors may be in different locales, so we
@@ -357,7 +355,7 @@ void testMain() {
       window.sendPlatformMessage(
         'flutter/service_worker',
         ByteData(0),
-        (outputData) { },
+        (ByteData? outputData) { },
       );
     });
 

@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import 'canvaskit_api.dart';
+import 'skia_object_cache.dart';
 
 /// The CanvasKit implementation of [ui.MaskFilter].
 class CkMaskFilter extends ManagedSkiaObject<SkMaskFilter> {
@@ -24,7 +27,7 @@ class CkMaskFilter extends ManagedSkiaObject<SkMaskFilter> {
       toSkBlurStyle(_blurStyle),
       _sigma,
       true,
-    );
+    )!;
   }
 
   @override

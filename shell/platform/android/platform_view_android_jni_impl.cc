@@ -37,22 +37,6 @@
 
 namespace flutter {
 
-namespace {
-
-bool CheckException(JNIEnv* env) {
-  if (env->ExceptionCheck() == JNI_FALSE) {
-    return true;
-  }
-
-  jthrowable exception = env->ExceptionOccurred();
-  env->ExceptionClear();
-  FML_LOG(ERROR) << fml::jni::GetJavaExceptionInfo(env, exception);
-  env->DeleteLocalRef(exception);
-  return false;
-}
-
-}  // anonymous namespace
-
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_callback_info_class =
     nullptr;
 
@@ -828,7 +812,7 @@ bool RegisterApi(JNIEnv* env) {
 
   g_handle_platform_message_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "handlePlatformMessage",
-                       "(Ljava/lang/String;[BI)V");
+                       "(Ljava/lang/String;Ljava/nio/ByteBuffer;I)V");
 
   if (g_handle_platform_message_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessage method";
@@ -836,16 +820,17 @@ bool RegisterApi(JNIEnv* env) {
   }
 
   g_handle_platform_message_response_method = env->GetMethodID(
-      g_flutter_jni_class->obj(), "handlePlatformMessageResponse", "(I[B)V");
+      g_flutter_jni_class->obj(), "handlePlatformMessageResponse",
+      "(ILjava/nio/ByteBuffer;)V");
 
   if (g_handle_platform_message_response_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessageResponse method";
     return false;
   }
 
-  g_update_semantics_method =
-      env->GetMethodID(g_flutter_jni_class->obj(), "updateSemantics",
-                       "(Ljava/nio/ByteBuffer;[Ljava/lang/String;)V");
+  g_update_semantics_method = env->GetMethodID(
+      g_flutter_jni_class->obj(), "updateSemantics",
+      "(Ljava/nio/ByteBuffer;[Ljava/lang/String;[Ljava/nio/ByteBuffer;)V");
 
   if (g_update_semantics_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate updateSemantics method";
@@ -1107,11 +1092,10 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
       fml::jni::StringToJavaString(env, message->channel());
 
   if (message->hasData()) {
-    fml::jni::ScopedJavaLocalRef<jbyteArray> message_array(
-        env, env->NewByteArray(message->data().size()));
-    env->SetByteArrayRegion(
-        message_array.obj(), 0, message->data().size(),
-        reinterpret_cast<const jbyte*>(message->data().data()));
+    fml::jni::ScopedJavaLocalRef<jobject> message_array(
+        env, env->NewDirectByteBuffer(
+                 const_cast<uint8_t*>(message->data().GetMapping()),
+                 message->data().GetSize()));
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), message_array.obj(), responseId);
   } else {
@@ -1119,7 +1103,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
                         java_channel.obj(), nullptr, responseId);
   }
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
@@ -1141,22 +1125,22 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessageResponse(
                         nullptr);
   } else {
     // Convert the vector to a Java byte array.
-    fml::jni::ScopedJavaLocalRef<jbyteArray> data_array(
-        env, env->NewByteArray(data->GetSize()));
-    env->SetByteArrayRegion(data_array.obj(), 0, data->GetSize(),
-                            reinterpret_cast<const jbyte*>(data->GetMapping()));
+    fml::jni::ScopedJavaLocalRef<jobject> data_array(
+        env, env->NewDirectByteBuffer(const_cast<uint8_t*>(data->GetMapping()),
+                                      data->GetSize()));
 
     env->CallVoidMethod(java_object.obj(),
                         g_handle_platform_message_response_method, responseId,
                         data_array.obj());
   }
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(
     std::vector<uint8_t> buffer,
-    std::vector<std::string> strings) {
+    std::vector<std::string> strings,
+    std::vector<std::vector<uint8_t>> string_attribute_args) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1168,11 +1152,14 @@ void PlatformViewAndroidJNIImpl::FlutterViewUpdateSemantics(
       env, env->NewDirectByteBuffer(buffer.data(), buffer.size()));
   fml::jni::ScopedJavaLocalRef<jobjectArray> jstrings =
       fml::jni::VectorToStringArray(env, strings);
+  fml::jni::ScopedJavaLocalRef<jobjectArray> jstring_attribute_args =
+      fml::jni::VectorToBufferArray(env, string_attribute_args);
 
   env->CallVoidMethod(java_object.obj(), g_update_semantics_method,
-                      direct_buffer.obj(), jstrings.obj());
+                      direct_buffer.obj(), jstrings.obj(),
+                      jstring_attribute_args.obj());
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewUpdateCustomAccessibilityActions(
@@ -1196,7 +1183,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewUpdateCustomAccessibilityActions(
                       g_update_custom_accessibility_actions_method,
                       direct_actions_buffer.obj(), jstrings.obj());
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewOnFirstFrame() {
@@ -1209,7 +1196,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnFirstFrame() {
 
   env->CallVoidMethod(java_object.obj(), g_on_first_frame_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewOnPreEngineRestart() {
@@ -1222,7 +1209,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnPreEngineRestart() {
 
   env->CallVoidMethod(java_object.obj(), g_on_engine_restart_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureAttachToGLContext(
@@ -1239,7 +1226,7 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureAttachToGLContext(
   env->CallVoidMethod(surface_texture_local_ref.obj(),
                       g_attach_to_gl_context_method, textureId);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
@@ -1255,7 +1242,7 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
   env->CallVoidMethod(surface_texture_local_ref.obj(),
                       g_update_tex_image_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 // The bounds we set for the canvas are post composition.
@@ -1286,7 +1273,7 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
 
   env->CallVoidMethod(surface_texture_local_ref.obj(),
                       g_get_transform_matrix_method, transformMatrix.obj());
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 
   float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
   float scaleX = m[0], scaleY = m[5];
@@ -1313,7 +1300,7 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
   env->CallVoidMethod(surface_texture_local_ref.obj(),
                       g_detach_from_gl_context_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
@@ -1392,7 +1379,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
                       view_id, x, y, width, height, viewWidth, viewHeight,
                       mutatorsStack);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
@@ -1411,7 +1398,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewDisplayOverlaySurface(
   env->CallVoidMethod(java_object.obj(), g_on_display_overlay_surface_method,
                       surface_id, x, y, width, height);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {
@@ -1424,7 +1411,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewBeginFrame() {
 
   env->CallVoidMethod(java_object.obj(), g_on_begin_frame_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewEndFrame() {
@@ -1437,7 +1424,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewEndFrame() {
 
   env->CallVoidMethod(java_object.obj(), g_on_end_frame_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata>
@@ -1452,7 +1439,7 @@ PlatformViewAndroidJNIImpl::FlutterViewCreateOverlaySurface() {
   fml::jni::ScopedJavaLocalRef<jobject> overlay(
       env, env->CallObjectMethod(java_object.obj(),
                                  g_create_overlay_surface_method));
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 
   if (overlay.is_null()) {
     return std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(0,
@@ -1482,7 +1469,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewDestroyOverlaySurfaces() {
 
   env->CallVoidMethod(java_object.obj(), g_destroy_overlay_surfaces_method);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 }
 
 std::unique_ptr<std::vector<std::string>>
@@ -1503,7 +1490,7 @@ PlatformViewAndroidJNIImpl::FlutterViewComputePlatformResolvedLocale(
       java_object.obj(), g_compute_platform_resolved_locale_method,
       j_locales_data.obj()));
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
 
   int length = env->GetArrayLength(result);
   for (int i = 0; i < length; i++) {
@@ -1542,7 +1529,7 @@ bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(
   env->CallVoidMethod(java_object.obj(), g_request_dart_deferred_library_method,
                       loading_unit_id);
 
-  FML_CHECK(CheckException(env));
+  FML_CHECK(fml::jni::CheckException(env));
   return true;
 }
 

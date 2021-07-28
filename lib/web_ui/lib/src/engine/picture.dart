@@ -2,7 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'html/bitmap_canvas.dart';
+import 'html/recording_canvas.dart';
+import 'html_image_codec.dart';
 
 /// An implementation of [ui.PictureRecorder] backed by a [RecordingCanvas].
 class EnginePictureRecorder implements ui.PictureRecorder {
@@ -23,7 +30,7 @@ class EnginePictureRecorder implements ui.PictureRecorder {
   bool get isRecording => _isRecording;
 
   @override
-  ui.Picture endRecording() {
+  EnginePicture endRecording() {
     if (!_isRecording) {
       // The mobile version returns an empty picture in this case. To match the
       // behavior we produce a blank picture too.

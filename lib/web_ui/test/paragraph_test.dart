@@ -2,35 +2,34 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide window;
 
 
-void testEachMeasurement(String description, VoidCallback body, {bool skip}) {
+void testEachMeasurement(String description, VoidCallback body, {bool? skip}) {
   test('$description (dom measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      WebExperiments.instance.useCanvasText = false;
-      WebExperiments.instance.useCanvasRichText = false;
+      WebExperiments.instance!.useCanvasText = false;
+      WebExperiments.instance!.useCanvasRichText = false;
       return body();
     } finally {
-      WebExperiments.instance.useCanvasText = null;
-      WebExperiments.instance.useCanvasRichText = null;
+      WebExperiments.instance!.useCanvasText = null;
+      WebExperiments.instance!.useCanvasRichText = null;
       TextMeasurementService.clearCache();
     }
   }, skip: skip);
   test('$description (canvas measurement)', () async {
     try {
       TextMeasurementService.initialize(rulerCacheCapacity: 2);
-      WebExperiments.instance.useCanvasText = true;
-      WebExperiments.instance.useCanvasRichText = false;
+      WebExperiments.instance!.useCanvasText = true;
+      WebExperiments.instance!.useCanvasRichText = false;
       return body();
     } finally {
-      WebExperiments.instance.useCanvasText = null;
-      WebExperiments.instance.useCanvasRichText = null;
+      WebExperiments.instance!.useCanvasText = null;
+      WebExperiments.instance!.useCanvasRichText = null;
       TextMeasurementService.clearCache();
     }
   }, skip: skip);
@@ -40,14 +39,14 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   await webOnlyInitializeTestDomRenderer();
 
   // Ahem font uses a constant ideographic/alphabetic baseline ratio.
   const double kAhemBaselineRatio = 1.25;
 
   testEachMeasurement('predictably lays out a single-line paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -71,7 +70,7 @@ void testMain() async {
   });
 
   testEachMeasurement('predictably lays out a multi-line paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -98,7 +97,7 @@ void testMain() async {
   });
 
   testEachMeasurement('predictably lays out a single-line rich paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -120,10 +119,10 @@ void testMain() async {
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
       // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      skip: (browserEngine != BrowserEngine.blink));
+      skip: browserEngine != BrowserEngine.blink);
 
   testEachMeasurement('predictably lays out a multi-line rich paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -146,7 +145,7 @@ void testMain() async {
       // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
-      skip: (browserEngine != BrowserEngine.blink));
+      skip: browserEngine != BrowserEngine.blink);
 
   testEachMeasurement('getPositionForOffset single-line', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -195,8 +194,8 @@ void testMain() async {
   test('getPositionForOffset multi-line', () {
     // [Paragraph.getPositionForOffset] for multi-line text doesn't work well
     // with dom-based measurement.
-    WebExperiments.instance.useCanvasText = true;
-    WebExperiments.instance.useCanvasRichText = false;
+    WebExperiments.instance!.useCanvasText = true;
+    WebExperiments.instance!.useCanvasRichText = false;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -292,13 +291,13 @@ void testMain() async {
     );
 
     TextMeasurementService.clearCache();
-    WebExperiments.instance.useCanvasText = null;
-    WebExperiments.instance.useCanvasRichText = null;
+    WebExperiments.instance!.useCanvasText = null;
+    WebExperiments.instance!.useCanvasRichText = null;
   });
 
   test('getPositionForOffset multi-line centered', () {
-    WebExperiments.instance.useCanvasText = true;
-    WebExperiments.instance.useCanvasRichText = false;
+    WebExperiments.instance!.useCanvasText = true;
+    WebExperiments.instance!.useCanvasRichText = false;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -401,8 +400,8 @@ void testMain() async {
     );
 
     TextMeasurementService.clearCache();
-    WebExperiments.instance.useCanvasText = null;
-    WebExperiments.instance.useCanvasRichText = null;
+    WebExperiments.instance!.useCanvasText = null;
+    WebExperiments.instance!.useCanvasRichText = null;
   });
 
   test('getWordBoundary', () {
@@ -892,8 +891,8 @@ void testMain() async {
 
   test('longestLine', () {
     // [Paragraph.longestLine] is only supported by canvas-based measurement.
-    WebExperiments.instance.useCanvasText = true;
-    WebExperiments.instance.useCanvasRichText = false;
+    WebExperiments.instance!.useCanvasText = true;
+    WebExperiments.instance!.useCanvasRichText = false;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -908,8 +907,8 @@ void testMain() async {
     expect(paragraph.longestLine, 50.0);
 
     TextMeasurementService.clearCache();
-    WebExperiments.instance.useCanvasText = null;
-    WebExperiments.instance.useCanvasRichText = null;
+    WebExperiments.instance!.useCanvasText = null;
+    WebExperiments.instance!.useCanvasRichText = null;
   });
 
   testEachMeasurement('getLineBoundary (single-line)', () {
@@ -936,8 +935,8 @@ void testMain() async {
   test('getLineBoundary (multi-line)', () {
     // [Paragraph.getLineBoundary] for multi-line paragraphs is only supported
     // by canvas-based measurement.
-    WebExperiments.instance.useCanvasText = true;
-    WebExperiments.instance.useCanvasRichText = false;
+    WebExperiments.instance!.useCanvasText = true;
+    WebExperiments.instance!.useCanvasRichText = false;
     TextMeasurementService.initialize(rulerCacheCapacity: 2);
 
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -980,8 +979,8 @@ void testMain() async {
     }
 
     TextMeasurementService.clearCache();
-    WebExperiments.instance.useCanvasText = null;
-    WebExperiments.instance.useCanvasRichText = null;
+    WebExperiments.instance!.useCanvasText = null;
+    WebExperiments.instance!.useCanvasRichText = null;
   });
 
   testEachMeasurement('width should be a whole integer', () {

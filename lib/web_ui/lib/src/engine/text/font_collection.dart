@@ -2,12 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+import 'dart:typed_data';
 
-const String _ahemFontFamily = 'Ahem';
-const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
-const String _robotoFontFamily = 'Roboto';
-const String _robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+import '../assets.dart';
+import '../browser_detection.dart';
+import '../util.dart';
+import 'layout_service.dart';
+import 'measurement.dart';
+
+const String ahemFontFamily = 'Ahem';
+const String ahemFontUrl = 'packages/ui/assets/ahem.ttf';
+const String robotoFontFamily = 'Roboto';
+const String robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -48,16 +58,16 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    for (Map<String, dynamic> fontFamily
+    for (final Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
       final String? family = fontFamily['family'];
       final List<dynamic> fontAssets = fontFamily['fonts'];
 
-      for (dynamic fontAssetItem in fontAssets) {
+      for (final dynamic fontAssetItem in fontAssets) {
         final Map<String, dynamic> fontAsset = fontAssetItem;
         final String asset = fontAsset['asset'];
         final Map<String, String> descriptors = <String, String>{};
-        for (String descriptor in fontAsset.keys) {
+        for (final String descriptor in fontAsset.keys) {
           if (descriptor != 'asset') {
             descriptors[descriptor] = '${fontAsset[descriptor]}';
           }
@@ -76,9 +86,9 @@ class FontCollection {
   void debugRegisterTestFonts() {
     _testFontManager = FontManager();
     _testFontManager!.registerAsset(
-        _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
-    _testFontManager!.registerAsset(_robotoFontFamily,
-        'url($_robotoTestFontUrl)', const <String, String>{});
+        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(robotoFontFamily,
+        'url($robotoTestFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -187,7 +197,7 @@ class FontManager {
         //
         // TODO(mdebbar): Revert this once the dart:html type is fixed.
         //                https://github.com/dart-lang/sdk/issues/45676
-        js_util.callMethod(html.document.fonts!, 'add', [fontFace]);
+        js_util.callMethod(html.document.fonts!, 'add', <dynamic>[fontFace]);
       }, onError: (dynamic e) {
         printWarning('Error while trying to load font family "$family":\n$e');
       }));

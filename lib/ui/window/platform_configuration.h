@@ -325,7 +325,7 @@ class PlatformConfiguration final {
   ///
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Registers a callback to be invoked when the framework has
@@ -364,7 +364,12 @@ class PlatformConfiguration final {
   ///                         began. May be used by animation interpolators,
   ///                         physics simulations, etc..
   ///
-  void BeginFrame(fml::TimePoint frame_time);
+  /// @param[in]  frame_number The frame number recorded by the animator. Used
+  ///                          by the framework to associate frame specific
+  ///                          debug information with frame timings and timeline
+  ///                          events.
+  ///
+  void BeginFrame(fml::TimePoint frame_time, uint64_t frame_number);
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a

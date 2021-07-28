@@ -12,6 +12,10 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 
+#define TRACE_EVENT_WITH_FRAME_NUMBER(recorder, category_group, name) \
+  TRACE_EVENT1(category_group, name, "frame_number",                  \
+               recorder->GetFrameNumberTraceArg())
+
 namespace flutter {
 
 /// Records timestamps for various phases of a frame rendering process.
@@ -35,6 +39,9 @@ class FrameTimingsRecorder {
   /// Default constructor, initializes the recorder with State::kUninitialized.
   FrameTimingsRecorder();
 
+  /// Constructor with a pre-populated frame number.
+  FrameTimingsRecorder(uint64_t frame_number);
+
   ~FrameTimingsRecorder();
 
   /// Timestamp of the vsync signal.
@@ -57,6 +64,9 @@ class FrameTimingsRecorder {
   /// Timestamp of when the frame rasterization finished.
   fml::TimePoint GetRasterEndTime() const;
 
+  /// Timestamp of when the frame rasterization is complete in wall-time.
+  fml::TimePoint GetRasterEndWallTime() const;
+
   /// Duration of the frame build time.
   fml::TimeDelta GetBuildDuration() const;
 
@@ -77,11 +87,27 @@ class FrameTimingsRecorder {
 
   /// Records a raster end event, and builds a `FrameTiming` that summarizes all
   /// the events. This summary is sent to the framework.
-  FrameTiming RecordRasterEnd(fml::TimePoint raster_end);
+  FrameTiming RecordRasterEnd();
+
+  /// Returns the frame number. Frame number is unique per frame and a frame
+  /// built earlier will have a frame number less than a frame that has been
+  /// built at a later point of time.
+  uint64_t GetFrameNumber() const;
+
+  /// Returns the frame number in a fml tracing friendly format.
+  const char* GetFrameNumberTraceArg() const;
+
+  /// Returns the recorded time from when `RecordRasterEnd` is called.
+  FrameTiming GetRecordedTime() const;
 
  private:
+  static std::atomic<uint64_t> frame_number_gen_;
+
   mutable std::mutex state_mutex_;
   State state_ = State::kUninitialized;
+
+  const uint64_t frame_number_;
+  const std::string frame_number_trace_arg_val_;
 
   fml::TimePoint vsync_start_;
   fml::TimePoint vsync_target_;
@@ -89,6 +115,10 @@ class FrameTimingsRecorder {
   fml::TimePoint build_end_;
   fml::TimePoint raster_start_;
   fml::TimePoint raster_end_;
+  fml::TimePoint raster_end_wall_time_;
+
+  // Set when `RecordRasterEnd` is called. Cannot be reset once set.
+  FrameTiming timing_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(FrameTimingsRecorder);
 };

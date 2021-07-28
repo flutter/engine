@@ -25,14 +25,14 @@ String fontFamilyToAttribute(String fontFamily) {
 final String defaultFontFamily = fontFamilyToAttribute('Ahem');
 const String defaultColor = 'color: rgb(255, 0, 0);';
 const String defaultFontSize = 'font-size: 14px;';
-final String paragraphStyle =
+const String paragraphStyle =
     'position: absolute; white-space: pre;';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   await webOnlyInitializeTestDomRenderer();
 
   setUpAll(() {

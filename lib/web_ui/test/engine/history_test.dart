@@ -164,7 +164,7 @@ void testMain() {
       // The next browser back will exit the app. We store the strategy locally
       // because it will be remove from the browser history class once it exits
       // the app.
-      TestUrlStrategy originalStrategy = strategy;
+      final TestUrlStrategy originalStrategy = strategy;
       await originalStrategy.go(-1);
       // 1. The engine sends a `popRoute` platform message.
       expect(spy.messages, hasLength(1));
@@ -547,7 +547,10 @@ Future<void> systemNavigatorPop() {
 
 /// A mock implementation of [PlatformLocation] that doesn't access the browser.
 class TestPlatformLocation extends PlatformLocation {
+  @override
   String? hash;
+
+  @override
   dynamic state;
 
   @override

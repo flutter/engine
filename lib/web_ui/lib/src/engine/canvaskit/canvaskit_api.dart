@@ -6,8 +6,18 @@
 ///
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
+@JS()
+library canvaskit_api;
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js' as js;
+import 'dart:typed_data';
+
+import 'package:js/js.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
@@ -16,8 +26,15 @@ late CanvasKit canvasKit;
 /// static APIs.
 ///
 /// See, e.g. [SkPaint].
+///
+/// This also acts as a cache of an initialized CanvasKit instance. We can use
+/// this, for example, to perform a hot restart without needing to redownload
+/// and reinitialize CanvasKit.
 @JS('window.flutterCanvasKit')
-external set windowFlutterCanvasKit(CanvasKit value);
+external set windowFlutterCanvasKit(CanvasKit? value);
+
+@JS('window.flutterCanvasKit')
+external CanvasKit? get windowFlutterCanvasKit;
 
 @JS()
 @anonymous
@@ -141,7 +158,7 @@ class ColorSpace {}
 @anonymous
 class SkWebGLContextOptions {
   external factory SkWebGLContextOptions({
-    required int anitalias,
+    required int antialias,
     // WebGL version: 1 or 2.
     required int majorVersion,
   });
@@ -313,7 +330,7 @@ final List<SkTextHeightBehavior> _skTextHeightBehaviors =
 ];
 
 SkTextHeightBehavior toSkTextHeightBehavior(ui.TextHeightBehavior behavior) {
-  int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
+  final int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
       (behavior.applyHeightToLastDescent ? 0 : 1 << 1);
   return _skTextHeightBehaviors[index];
 }
@@ -762,7 +779,7 @@ class SkAnimatedImage {
   /// Returns duration in milliseconds.
   external int getRepetitionCount();
   external int decodeNextFrame();
-  external SkImage getCurrentFrame();
+  external SkImage makeImageAtCurrentFrame();
   external int width();
   external int height();
 
@@ -853,7 +870,10 @@ class SkShader {
 
 @JS()
 class SkMaskFilterNamespace {
-  external SkMaskFilter MakeBlur(
+  // Creates a blur MaskFilter.
+  //
+  // Returns `null` if [sigma] is 0 or infinite.
+  external SkMaskFilter? MakeBlur(
       SkBlurStyle blurStyle, double sigma, bool respectCTM);
 }
 
@@ -874,7 +894,6 @@ class SkPaint {
   external void setColorInt(int color);
   external void setShader(SkShader? shader);
   external void setMaskFilter(SkMaskFilter? maskFilter);
-  external void setFilterQuality(SkFilterQuality filterQuality);
   external void setColorFilter(SkColorFilter? colorFilter);
   external void setStrokeMiter(double miterLimit);
   external void setImageFilter(SkImageFilter? imageFilter);
@@ -909,18 +928,18 @@ class SkImageFilterNamespace {
     double sigmaX,
     double sigmaY,
     SkTileMode tileMode,
-    Null input, // we don't use this yet
+    void input, // we don't use this yet
   );
 
   external SkImageFilter MakeMatrixTransform(
     Float32List matrix, // 3x3 matrix
     SkFilterQuality filterQuality,
-    Null input, // we don't use this yet
+    void input, // we don't use this yet
   );
 
   external SkImageFilter MakeColorFilter(
     SkColorFilter colorFilter,
-    Null input, // we don't use this yet
+    void input, // we don't use this yet
   );
 
   external SkImageFilter MakeCompose(
@@ -1507,7 +1526,6 @@ class SkCanvas {
   external void skew(double x, double y);
   external void concat(Float32List matrix);
   external void translate(double x, double y);
-  external void flush();
   external void drawPicture(SkPicture picture);
   external void drawParagraph(
     SkParagraph paragraph,
@@ -1667,6 +1685,7 @@ class SkTextStyleProperties {
   external set letterSpacing(double? value);
   external set wordSpacing(double? value);
   external set heightMultiplier(double? value);
+  external set halfLeading(bool? value);
   external set locale(String? value);
   external set fontFamilies(List<String>? value);
   external set fontStyle(SkFontStyle? value);
@@ -1681,6 +1700,7 @@ class SkStrutStyleProperties {
   external set fontStyle(SkFontStyle? value);
   external set fontSize(double? value);
   external set heightMultiplier(double? value);
+  external set halfLeading(bool? value);
   external set leading(double? value);
   external set strutEnabled(bool? value);
   external set forceStrutHeight(bool? value);
@@ -1769,7 +1789,7 @@ class SkParagraph {
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
   );
-  external List<Float32List> getRectsForPlaceholders();
+  external List<dynamic> getRectsForPlaceholders();
   external SkTextPosition getGlyphPositionAtCoordinate(
     double x,
     double y,

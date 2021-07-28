@@ -294,15 +294,11 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
+            PhysicalShapeLayer::ComputeShadowBounds(
+                layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
-  // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
-  // their shadows , so we do not use the direct |Paint()| path there.
-#if !defined(LEGACY_FUCHSIA_EMBEDDER)
   const SkRect paint_bounds = SkRect::MakeXYWH(0, 0, 8, 8);
   const SkPaint clip_paint;
   SkPaint layer_paint;
@@ -323,7 +319,6 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerNotCheckBoard) {
            MockCanvas::DrawCall{2, MockCanvas::DrawPaint{layer_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
-#endif
 }
 
 TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
@@ -338,15 +333,11 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            PhysicalShapeLayer::ComputeShadowBounds(layer_path.getBounds(),
-                                                    initial_elevation, 1.0f));
+            PhysicalShapeLayer::ComputeShadowBounds(
+                layer_path, initial_elevation, 1.0f, SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
-  EXPECT_FALSE(layer->needs_system_composite());
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
-  // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
-  // their shadows , so we do not use the direct |Paint()| path there.
-#if !defined(LEGACY_FUCHSIA_EMBEDDER)
   const SkRect paint_bounds = SkRect::MakeXYWH(0, 0, 8, 8);
   const SkPaint clip_paint;
   SkPaint layer_paint;
@@ -367,7 +358,6 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
            MockCanvas::DrawCall{2, MockCanvas::DrawPaint{layer_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
-#endif
 }
 
 #endif

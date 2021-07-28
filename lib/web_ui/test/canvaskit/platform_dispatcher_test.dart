@@ -5,11 +5,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
 
@@ -37,7 +37,7 @@ void testMain() {
       expect(response, isNotNull);
       expect(
         codec.decodeEnvelope(response!),
-        [true],
+        <bool>[true],
       );
     });
     // TODO: https://github.com/flutter/flutter/issues/60040
