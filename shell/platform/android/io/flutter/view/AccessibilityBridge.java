@@ -1778,7 +1778,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   }
 
   /**
-   * Informs TalkBack user about window name changes.
+   * Informs the TalkBack user about window name changes.
    *
    * <p>This method sets accessibility panel title if the API level >= 28, otherwise, it creates a
    * {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends the event to Android's
