@@ -320,8 +320,8 @@ targets:
     timeout: 90
     scheduler: luci
 
-  - name: Linux ci_yaml roller
-    builder: Linux ci_yaml roller
+  - name: Linux ci_yaml engine roller
+    builder: Linux ci_yaml engine roller
     bringup: true
     presubmit: false
     recipe: infra/ci_yaml
