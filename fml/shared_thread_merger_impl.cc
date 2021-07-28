@@ -13,7 +13,7 @@ namespace fml {
 std::mutex SharedThreadMergerImpl::creation_mutex_;
 
 // Guarded by creation_mutex_
-std::map<ThreadMergerKey, SharedThreadMergerImpl *>
+std::map<ThreadMergerKey, SharedThreadMergerImpl*>
     SharedThreadMergerImpl::shared_merger_instances_;
 
 const int SharedThreadMergerImpl::kLeaseNotSet = -1;

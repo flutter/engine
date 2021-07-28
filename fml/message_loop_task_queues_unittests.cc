@@ -157,7 +157,6 @@ TEST(MessageLoopTaskQueue, RegisterTasksOnMergedQueuesPreserveTaskOrdering) {
   }
 }
 
-
 TEST(MessageLoopTaskQueue, UnmergeRespectTheOriginalTaskOrderingInQueues) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto platform_queue = task_queue->CreateTaskQueue();

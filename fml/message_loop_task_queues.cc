@@ -74,10 +74,11 @@ void MessageLoopTaskQueues::Dispose(TaskQueueId queue_id) {
   const auto& queue_entry = queue_entries_.at(queue_id);
   FML_DCHECK(queue_entry->subsumed_by == _kUnmerged);
   auto& subsumed_set = queue_entry->owner_of;
-  queue_entries_.erase(queue_id);
   for (auto& subsumed : subsumed_set) {
     queue_entries_.erase(subsumed);
   }
+  // Erase owner queue_id at last to avoid &subsumed_set from being invalid
+  queue_entries_.erase(queue_id);
 }
 
 void MessageLoopTaskQueues::DisposeTasks(TaskQueueId queue_id) {
@@ -237,23 +238,27 @@ bool MessageLoopTaskQueues::Merge(TaskQueueId owner, TaskQueueId subsumed) {
 
   // Ensure owner_entry->subsumed_by being _kUnmerged
   if (owner_entry->subsumed_by != _kUnmerged) {
-    FML_LOG(WARNING)
-    << "Thread merging failed: owner_entry was already subsumed by others, owner=" << owner << ", subsumed=" << subsumed
-    << ", owner->subsumed_by=" << owner_entry->subsumed_by;
+    FML_LOG(WARNING) << "Thread merging failed: owner_entry was already "
+                        "subsumed by others, owner="
+                     << owner << ", subsumed=" << subsumed
+                     << ", owner->subsumed_by=" << owner_entry->subsumed_by;
     return false;
   }
   // Ensure subsumed_entry->owner_of being empty
   if (!subsumed_entry->owner_of.empty()) {
     FML_LOG(WARNING)
-    << "Thread merging failed: subsumed_entry already owns others, owner=" << owner << ", subsumed=" << subsumed
-    << ", subsumed->owner_of.size()=" << subsumed_entry->owner_of.size();
+        << "Thread merging failed: subsumed_entry already owns others, owner="
+        << owner << ", subsumed=" << subsumed
+        << ", subsumed->owner_of.size()=" << subsumed_entry->owner_of.size();
     return false;
   }
   // Ensure subsumed_entry->subsumed_by being _kUnmerged
   if (subsumed_entry->subsumed_by != _kUnmerged) {
-    FML_LOG(WARNING)
-    << "Thread merging failed: subsumed_entry was already subsumed by others, owner=" << owner << ", subsumed="
-    << subsumed << ", subsumed->subsumed_by=" << subsumed_entry->subsumed_by;
+    FML_LOG(WARNING) << "Thread merging failed: subsumed_entry was already "
+                        "subsumed by others, owner="
+                     << owner << ", subsumed=" << subsumed
+                     << ", subsumed->subsumed_by="
+                     << subsumed_entry->subsumed_by;
     return false;
   }
   // All checking is OK, set merged state.
@@ -272,25 +277,27 @@ bool MessageLoopTaskQueues::Unmerge(TaskQueueId owner, TaskQueueId subsumed) {
   const auto& owner_entry = queue_entries_.at(owner);
   if (owner_entry->owner_of.empty()) {
     FML_LOG(WARNING)
-    << "Thread unmerging failed: owner_entry doesn't own anyone, owner=" << owner << ", subsumed=" << subsumed;
+        << "Thread unmerging failed: owner_entry doesn't own anyone, owner="
+        << owner << ", subsumed=" << subsumed;
     return false;
   }
   if (owner_entry->subsumed_by != _kUnmerged) {
     FML_LOG(WARNING)
-    << "Thread unmerging failed: owner_entry was subsumed by others, owner=" << owner << ", subsumed=" << subsumed
-    << ", owner_entry->subsumed_by=" << owner_entry->subsumed_by;
+        << "Thread unmerging failed: owner_entry was subsumed by others, owner="
+        << owner << ", subsumed=" << subsumed
+        << ", owner_entry->subsumed_by=" << owner_entry->subsumed_by;
     return false;
   }
   if (queue_entries_.at(subsumed)->subsumed_by == _kUnmerged) {
-    FML_LOG(WARNING)
-    << "Thread unmerging failed: subsumed_entry wasn't subsumed by others, owner=" << owner << ", subsumed="
-    << subsumed;
+    FML_LOG(WARNING) << "Thread unmerging failed: subsumed_entry wasn't "
+                        "subsumed by others, owner="
+                     << owner << ", subsumed=" << subsumed;
     return false;
   }
   if (owner_entry->owner_of.find(subsumed) == owner_entry->owner_of.end()) {
-    FML_LOG(WARNING)
-    << "Thread unmerging failed: owner_entry didn't own the given subsumed queue id, owner=" << owner << ", subsumed="
-    << subsumed;
+    FML_LOG(WARNING) << "Thread unmerging failed: owner_entry didn't own the "
+                        "given subsumed queue id, owner="
+                     << owner << ", subsumed=" << subsumed;
     return false;
   }
 
@@ -378,7 +385,7 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
   // Use optional for the memory of TopTask object.
   std::optional<TaskSource::TopTask> top_task;
 
-  auto top_task_updater = [&top_task](const TaskSource *source) {
+  auto top_task_updater = [&top_task](const TaskSource* source) {
     if (source && !source->IsEmpty()) {
       auto other_task = source->Top();
       if (!top_task.has_value() || top_task->task > other_task.task) {
@@ -387,11 +394,11 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
     }
   };
 
-  TaskSource *owner_tasks = entry->task_source.get();
+  TaskSource* owner_tasks = entry->task_source.get();
   top_task_updater(owner_tasks);
 
   for (TaskQueueId subsumed : entry->owner_of) {
-    TaskSource *subsumed_tasks = queue_entries_.at(subsumed)->task_source.get();
+    TaskSource* subsumed_tasks = queue_entries_.at(subsumed)->task_source.get();
     top_task_updater(subsumed_tasks);
   }
   // At least one task at the top because PeekNextTaskUnlocked() is called after

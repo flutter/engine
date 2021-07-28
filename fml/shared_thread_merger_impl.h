@@ -33,7 +33,8 @@ class SharedThreadMergerImpl
     : public fml::RefCountedThreadSafe<SharedThreadMergerImpl> {
  public:
   SharedThreadMergerImpl(TaskQueueId owner, TaskQueueId subsumed);
-  static SharedThreadMergerImpl* GetSharedImpl(TaskQueueId owner, TaskQueueId subsumed);
+  static SharedThreadMergerImpl* GetSharedImpl(TaskQueueId owner,
+                                               TaskQueueId subsumed);
   // It's called by |RasterThreadMerger::RecordMergerCaller()|.
   // See the doc of |RasterThreadMerger::RecordMergerCaller()|.
   void RecordMergerCaller(RasterThreadMerger* caller);
@@ -73,7 +74,7 @@ class SharedThreadMergerImpl
 
   static std::mutex creation_mutex_;
   // Guarded by creation_mutex_
-  static std::map<ThreadMergerKey, SharedThreadMergerImpl *>
+  static std::map<ThreadMergerKey, SharedThreadMergerImpl*>
       shared_merger_instances_;
   bool UnMergeNowUnSafe();
 };

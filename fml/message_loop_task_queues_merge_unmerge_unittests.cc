@@ -106,7 +106,8 @@ TEST(MessageLoopTaskQueueMergeUnmerge, MergeUnmergeTasksPreserved) {
 }
 
 /// Multiple standalone engines scene
-TEST(MessageLoopTaskQueueMergeUnmerge, OneCanOwnMultipleQueuesAndUnmergeIndependently) {
+TEST(MessageLoopTaskQueueMergeUnmerge,
+     OneCanOwnMultipleQueuesAndUnmergeIndependently) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id_1 = task_queue->CreateTaskQueue();
   auto queue_id_2 = task_queue->CreateTaskQueue();
@@ -131,7 +132,8 @@ TEST(MessageLoopTaskQueueMergeUnmerge, OneCanOwnMultipleQueuesAndUnmergeIndepend
   ASSERT_FALSE(task_queue->Owns(queue_id_1, queue_id_3));
 }
 
-TEST(MessageLoopTaskQueueMergeUnmerge, CannotMergeSameQueueToTwoDifferentOwners) {
+TEST(MessageLoopTaskQueueMergeUnmerge,
+     CannotMergeSameQueueToTwoDifferentOwners) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue = task_queue->CreateTaskQueue();
   auto owner_1 = task_queue->CreateTaskQueue();

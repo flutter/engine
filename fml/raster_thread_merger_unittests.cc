@@ -21,7 +21,7 @@ namespace testing {
 
 /// A mock task queue NOT calling MessageLoop->Run() in thread
 struct TaskQueueWrapper {
-  fml::MessageLoop *loop = nullptr;
+  fml::MessageLoop* loop = nullptr;
   std::thread thread;
 
   /// The waiter for message loop initialized ok
@@ -30,12 +30,13 @@ struct TaskQueueWrapper {
   /// The waiter for thread finished
   fml::AutoResetWaitableEvent term;
 
-  TaskQueueWrapper() : thread([this]() {
-    fml::MessageLoop::EnsureInitializedForCurrentThread();
-    loop = &fml::MessageLoop::GetCurrent();
-    latch.Signal();
-    term.Wait();
-  }) {
+  TaskQueueWrapper()
+      : thread([this]() {
+          fml::MessageLoop::EnsureInitializedForCurrentThread();
+          loop = &fml::MessageLoop::GetCurrent();
+          latch.Signal();
+          term.Wait();
+        }) {
     latch.Wait();
   }
 
@@ -48,7 +49,6 @@ struct TaskQueueWrapper {
     return loop->GetTaskRunner()->GetTaskQueueId();
   }
 };
-
 
 TEST(RasterThreadMerger, RemainMergedTillLeaseExpires) {
   TaskQueueWrapper queue1;
@@ -520,7 +520,6 @@ TEST(RasterThreadMerger, MultipleMergersCanMergeSameThreadPair) {
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
 }
-
 
 TEST(RasterThreadMerger, TheLastCallerOfMultipleMergersCanUnmergeNow) {
   TaskQueueWrapper queue1;
