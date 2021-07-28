@@ -296,7 +296,7 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
     return false;
   }
 
-  // Configure device frame rate and monitor.
+  // Configure device frame rate displayed via devtools.
   FlutterEngineDisplay display = {};
   display.struct_size = sizeof(FlutterEngineDisplay);
   display.display_id = 0;
