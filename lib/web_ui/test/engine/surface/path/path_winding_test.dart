@@ -6,8 +6,8 @@
 import 'dart:math' as math;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart' hide window;
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' hide window;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -70,7 +70,7 @@ void testMain() {
             SPathDirection.kCW),
       ];
 
-      for (LineTestCase testCase in testCases) {
+      for (final LineTestCase testCase in testCases) {
         final SurfacePath path = SurfacePath();
         setFromString(path, testCase.pathContent);
         expect(path.convexityType, testCase.convexity);

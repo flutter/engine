@@ -49,14 +49,14 @@ class FontFallbackData {
     final Map<NotoFont, List<CodeunitRange>> ranges =
         <NotoFont, List<CodeunitRange>>{};
 
-    for (NotoFont font in _notoFonts) {
+    for (final NotoFont font in _notoFonts) {
       // TODO(yjbanov): instead of mutating the font tree during reset, it's
       //                better to construct an immutable tree of resolved fonts
       //                pointing back to the original NotoFont objects. Then
       //                resetting the tree would be a matter of reconstructing
       //                the new resolved tree.
       font.reset();
-      for (CodeunitRange range in font.approximateUnicodeRanges) {
+      for (final CodeunitRange range in font.approximateUnicodeRanges) {
         ranges.putIfAbsent(font, () => <CodeunitRange>[]).add(range);
       }
     }
@@ -119,16 +119,17 @@ class FontFallbackData {
     final List<int> codeUnits = runesToCheck.toList();
 
     final List<SkFont> fonts = <SkFont>[];
-    for (String font in fontFamilies) {
+    for (final String font in fontFamilies) {
       final List<SkFont>? typefacesForFamily =
           skiaFontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
       }
     }
-    final List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
+    final List<bool> codeUnitsSupported =
+        List<bool>.filled(codeUnits.length, false);
     final String testString = String.fromCharCodes(codeUnits);
-    for (SkFont font in fonts) {
+    for (final SkFont font in fonts) {
       final Uint8List glyphs = font.getGlyphIDs(testString);
       assert(glyphs.length == codeUnitsSupported.length);
       for (int i = 0; i < glyphs.length; i++) {
@@ -167,17 +168,19 @@ class FontFallbackData {
     // fonts. Check them and update the cache.
     final List<int> codeUnits = _codeUnitsToCheckAgainstFallbackFonts.toList();
     _codeUnitsToCheckAgainstFallbackFonts.clear();
-    final List<bool> codeUnitsSupported = List<bool>.filled(codeUnits.length, false);
+    final List<bool> codeUnitsSupported =
+        List<bool>.filled(codeUnits.length, false);
     final String testString = String.fromCharCodes(codeUnits);
 
-    for (String font in globalFontFallbacks) {
-      final List<SkFont>? fontsForFamily = skiaFontCollection.familyToFontMap[font];
+    for (final String font in globalFontFallbacks) {
+      final List<SkFont>? fontsForFamily =
+          skiaFontCollection.familyToFontMap[font];
       if (fontsForFamily == null) {
         printWarning('A fallback font was registered but we '
             'cannot retrieve the typeface for it.');
         continue;
       }
-      for (SkFont font in fontsForFamily) {
+      for (final SkFont font in fontsForFamily) {
         final Uint8List glyphs = font.getGlyphIDs(testString);
         assert(glyphs.length == codeUnitsSupported.length);
         for (int i = 0; i < glyphs.length; i++) {
@@ -193,7 +196,7 @@ class FontFallbackData {
       // Once we've checked every typeface for this family, check to see if
       // every code unit has been covered in order to avoid unnecessary checks.
       bool keepGoing = false;
-      for (bool supported in codeUnitsSupported) {
+      for (final bool supported in codeUnitsSupported) {
         if (!supported) {
           keepGoing = true;
           break;
@@ -227,8 +230,20 @@ class FontFallbackData {
     final int fontFallbackTag = fontFallbackCounts[family]!;
     fontFallbackCounts[family] = fontFallbackCounts[family]! + 1;
     final String countedFamily = '$family $fontFallbackTag';
+    // Insert emoji font before all other fallback fonts so we use the emoji
+    // whenever it's available.
     registeredFallbackFonts.add(RegisteredFont(bytes, countedFamily, typeface));
-    globalFontFallbacks.add(countedFamily);
+    // Insert emoji font before all other fallback fonts so we use the emoji
+    // whenever it's available.
+    if (family == 'Noto Color Emoji Compat') {
+      if (globalFontFallbacks.first == 'Roboto') {
+        globalFontFallbacks.insert(1, countedFamily);
+      } else {
+        globalFontFallbacks.insert(0, countedFamily);
+      }
+    } else {
+      globalFontFallbacks.add(countedFamily);
+    }
   }
 }
 
@@ -238,7 +253,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   Set<NotoFont> fonts = <NotoFont>{};
   final Set<int> coveredCodeUnits = <int>{};
   final Set<int> missingCodeUnits = <int>{};
-  for (int codeUnit in codeUnits) {
+  for (final int codeUnit in codeUnits) {
     final List<NotoFont> fontsForUnit = data.notoTree.intersections(codeUnit);
     fonts.addAll(fontsForUnit);
     if (fontsForUnit.isNotEmpty) {
@@ -248,7 +263,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
     }
   }
 
-  for (NotoFont font in fonts) {
+  for (final NotoFont font in fonts) {
     await font.ensureResolved();
   }
 
@@ -258,8 +273,8 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   fonts = findMinimumFontsForCodeUnits(unmatchedCodeUnits, fonts);
 
   final Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
-  for (int codeUnit in coveredCodeUnits) {
-    for (NotoFont font in fonts) {
+  for (final int codeUnit in coveredCodeUnits) {
+    for (final NotoFont font in fonts) {
       if (font.resolvedFont == null) {
         // We failed to resolve the font earlier.
         continue;
@@ -268,7 +283,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
     }
   }
 
-  for (_ResolvedNotoSubset resolvedFont in resolvedFonts) {
+  for (final _ResolvedNotoSubset resolvedFont in resolvedFonts) {
     notoDownloadQueue.add(resolvedFont);
   }
 
@@ -351,14 +366,16 @@ _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
           if (startEnd.length == 1) {
             final String singleRange = startEnd.single;
             assert(singleRange.startsWith('U+'));
-            final int rangeValue = int.parse(singleRange.substring(2), radix: 16);
+            final int rangeValue =
+                int.parse(singleRange.substring(2), radix: 16);
             fontFaceUnicodeRanges.add(CodeunitRange(rangeValue, rangeValue));
           } else {
             assert(startEnd.length == 2);
             final String startRange = startEnd[0];
             final String endRange = startEnd[1];
             assert(startRange.startsWith('U+'));
-            final int startValue = int.parse(startRange.substring(2), radix: 16);
+            final int startValue =
+                int.parse(startRange.substring(2), radix: 16);
             final int endValue = int.parse(endRange, radix: 16);
             fontFaceUnicodeRanges.add(CodeunitRange(startValue, endValue));
           }
@@ -384,8 +401,8 @@ _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
 
   final Map<_ResolvedNotoSubset, List<CodeunitRange>> rangesMap =
       <_ResolvedNotoSubset, List<CodeunitRange>>{};
-  for (_ResolvedNotoSubset subset in subsets) {
-    for (CodeunitRange range in subset.ranges) {
+  for (final _ResolvedNotoSubset subset in subsets) {
+    for (final CodeunitRange range in subset.ranges) {
       rangesMap.putIfAbsent(subset, () => <CodeunitRange>[]).add(range);
     }
   }
@@ -410,15 +427,15 @@ Future<void> _registerSymbolsAndEmoji() async {
     return;
   }
   data.registeredSymbolsAndEmoji = true;
-  const String symbolsUrl =
-      'https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols';
   const String emojiUrl =
       'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat';
+  const String symbolsUrl =
+      'https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols';
 
-  final String symbolsCss =
-      await notoDownloadQueue.downloader.downloadAsString(symbolsUrl);
   final String emojiCss =
       await notoDownloadQueue.downloader.downloadAsString(emojiUrl);
+  final String symbolsCss =
+      await notoDownloadQueue.downloader.downloadAsString(symbolsUrl);
 
   String? extractUrlFromCss(String css) {
     for (final String line in LineSplitter.split(css)) {
@@ -436,21 +453,21 @@ Future<void> _registerSymbolsAndEmoji() async {
     return null;
   }
 
-  final String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
   final String? emojiFontUrl = extractUrlFromCss(emojiCss);
-
-  if (symbolsFontUrl != null) {
-    notoDownloadQueue.add(_ResolvedNotoSubset(
-        symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
-  } else {
-    printWarning('Error parsing CSS for Noto Symbols font.');
-  }
+  final String? symbolsFontUrl = extractUrlFromCss(symbolsCss);
 
   if (emojiFontUrl != null) {
     notoDownloadQueue.add(_ResolvedNotoSubset(
         emojiFontUrl, 'Noto Color Emoji Compat', const <CodeunitRange>[]));
   } else {
     printWarning('Error parsing CSS for Noto Emoji font.');
+  }
+
+  if (symbolsFontUrl != null) {
+    notoDownloadQueue.add(_ResolvedNotoSubset(
+        symbolsFontUrl, 'Noto Sans Symbols', const <CodeunitRange>[]));
+  } else {
+    printWarning('Error parsing CSS for Noto Symbols font.');
   }
 }
 
@@ -476,9 +493,9 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
   while (codeUnits.isNotEmpty) {
     int maxCodeUnitsCovered = 0;
     bestFonts.clear();
-    for (NotoFont font in fonts) {
+    for (final NotoFont font in fonts) {
       int codeUnitsCovered = 0;
-      for (int codeUnit in codeUnits) {
+      for (final int codeUnit in codeUnits) {
         if (font.resolvedFont?.tree.containsDeep(codeUnit) == true) {
           codeUnitsCovered++;
         }
@@ -874,7 +891,7 @@ class FallbackFontDownloadQueue {
   Future<void> startDownloads() async {
     final Map<String, Future<void>> downloads = <String, Future<void>>{};
     final Map<String, Uint8List> downloadedData = <String, Uint8List>{};
-    for (_ResolvedNotoSubset subset in pendingSubsets.values) {
+    for (final _ResolvedNotoSubset subset in pendingSubsets.values) {
       downloads[subset.url] = Future<void>(() async {
         ByteBuffer buffer;
         try {
@@ -898,7 +915,7 @@ class FallbackFontDownloadQueue {
     // visual differences between app reloads.
     final List<String> downloadOrder =
         (downloadedData.keys.toList()..sort()).reversed.toList();
-    for (String url in downloadOrder) {
+    for (final String url in downloadOrder) {
       final _ResolvedNotoSubset subset = pendingSubsets.remove(url)!;
       final Uint8List bytes = downloadedData[url]!;
       FontFallbackData.instance.registerFallbackFont(subset.family, bytes);

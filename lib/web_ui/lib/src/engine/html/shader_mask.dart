@@ -8,6 +8,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show NullTreeSanitizer;
 import '../browser_detection.dart';
+import '../dom_renderer.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
 import 'shaders/shader.dart';
@@ -40,7 +41,6 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   html.Element? _shaderElement;
-  static int activeShaderMaskCount = 0;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -58,6 +58,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void discard() {
     super.discard();
+    domRenderer.removeResource(_shaderElement);
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -65,17 +66,17 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  void preroll() {
-    ++activeShaderMaskCount;
-    super.preroll();
-    --activeShaderMaskCount;
+  void preroll(PrerollSurfaceContext prerollContext) {
+    ++prerollContext.activeShaderMaskCount;
+    super.preroll(prerollContext);
+    --prerollContext.activeShaderMaskCount;
   }
 
   @override
   html.Element createElement() {
     final html.Element element = defaultCreateElement('flt-shader-mask');
     final html.Element container = html.Element.tag('flt-mask-interior');
-    container.style..position = 'absolute';
+    container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
     return element;
@@ -83,7 +84,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   void apply() {
-    _shaderElement?.remove();
+    domRenderer.removeResource(_shaderElement);
     _shaderElement = null;
     if (shader is ui.Gradient) {
       rootElement!.style
@@ -160,11 +161,11 @@ class PersistedShaderMask extends PersistedContainerSurface
       _shaderElement =
           html.Element.html(code, treeSanitizer: NullTreeSanitizer());
       if (isWebKit) {
-        _childContainer!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
+        _childContainer!.style.filter = 'url(#_fmf$_maskFilterIdCounter';
       } else {
-        rootElement!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
+        rootElement!.style.filter = 'url(#_fmf$_maskFilterIdCounter';
       }
-      rootElement!.append(_shaderElement!);
+      domRenderer.addResource(_shaderElement!);
     }
   }
 

@@ -12,8 +12,8 @@ import '../shadow.dart';
 import '../util.dart';
 import 'dom_canvas.dart';
 import 'painting.dart';
-import 'path_to_svg_clip.dart';
 import 'path/path.dart';
+import 'path_to_svg_clip.dart';
 import 'surface.dart';
 import 'surface_stats.dart';
 
@@ -244,6 +244,15 @@ class PersistedPhysicalShape extends PersistedContainerSurface
   }
 
   @override
+  void discard() {
+    super.discard();
+    _clipElement?.remove();
+    _clipElement = null;
+    _svgElement?.remove();
+    _svgElement = null;
+  }
+
+  @override
   void apply() {
     _applyShape();
   }
@@ -443,6 +452,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       if (_svgElement != null) {
         rootElement!.insertBefore(_svgElement!, childContainer);
       }
+      oldSurface._svgElement = null;
     }
   }
 }
@@ -477,7 +487,7 @@ class PersistedClipPath extends PersistedContainerSurface
   void apply() {
     _clipElement?.remove();
     final String svgClipPath =
-        createSvgClipDef(childContainer as html.HtmlElement, clipPath);
+        createSvgClipDef(childContainer! as html.HtmlElement, clipPath);
     _clipElement =
         html.Element.html(svgClipPath, treeSanitizer: NullTreeSanitizer());
     domRenderer.append(childContainer!, _clipElement!);

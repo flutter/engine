@@ -15,11 +15,11 @@ import 'dom_renderer.dart';
 import 'engine_canvas.dart';
 import 'html/bitmap_canvas.dart';
 import 'html/painting.dart';
-import 'html/picture.dart';
 import 'html/path/conic.dart';
 import 'html/path/path.dart';
 import 'html/path/path_ref.dart';
 import 'html/path/path_utils.dart';
+import 'html/picture.dart';
 import 'html/shaders/image_shader.dart';
 import 'html/shaders/shader.dart';
 import 'platform_dispatcher.dart';
@@ -181,7 +181,7 @@ class CanvasPool extends _SaveStackTracking {
       _canvas = null;
       return;
     }
-    _contextHandle = ContextStateHandle(this, _context!, this._density);
+    _contextHandle = ContextStateHandle(this, _context!, _density);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
   }
@@ -267,7 +267,7 @@ class CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.rrect != null) {
           _clipRRect(ctx, clipEntry.rrect!);
         } else if (clipEntry.path != null) {
-          final SurfacePath path = clipEntry.path as SurfacePath;
+          final SurfacePath path = clipEntry.path! as SurfacePath;
           _runPath(ctx, path);
           if (path.fillType == ui.PathFillType.nonZero) {
             ctx.clip();
@@ -330,7 +330,7 @@ class CanvasPool extends _SaveStackTracking {
 
   void endOfPaint() {
     if (_reusablePool != null) {
-      for (html.CanvasElement e in _reusablePool!) {
+      for (final html.CanvasElement e in _reusablePool!) {
         if (browserEngine == BrowserEngine.webkit) {
           e.width = e.height = 0;
         }
@@ -476,6 +476,7 @@ class CanvasPool extends _SaveStackTracking {
     }
   }
 
+  @override
   void clipRect(ui.Rect rect) {
     super.clipRect(rect);
     if (_canvas != null) {
@@ -489,6 +490,7 @@ class CanvasPool extends _SaveStackTracking {
     ctx.clip();
   }
 
+  @override
   void clipRRect(ui.RRect rrect) {
     super.clipRRect(rrect);
     if (_canvas != null) {
@@ -502,6 +504,7 @@ class CanvasPool extends _SaveStackTracking {
     ctx.clip();
   }
 
+  @override
   void clipPath(ui.Path path) {
     super.clipPath(path);
     if (_canvas != null) {
@@ -822,7 +825,7 @@ class CanvasPool extends _SaveStackTracking {
 
   void _clearActiveCanvasList() {
     if (_activeCanvasList != null) {
-      for (html.CanvasElement c in _activeCanvasList!) {
+      for (final html.CanvasElement c in _activeCanvasList!) {
         if (browserEngine == BrowserEngine.webkit) {
           c.width = c.height = 0;
         }
@@ -939,7 +942,7 @@ class ContextStateHandle {
 
     if (paint.shader != null) {
       if (paint.shader is EngineGradient) {
-        final EngineGradient engineShader = paint.shader as EngineGradient;
+        final EngineGradient engineShader = paint.shader! as EngineGradient;
         final Object paintStyle =
             engineShader.createPaintStyle(_canvasPool.context, shaderBounds,
                 density);
@@ -949,7 +952,7 @@ class ContextStateHandle {
         // Align pattern origin to destination.
         context.translate(shaderBounds!.left, shaderBounds.top);
       } else if (paint.shader is EngineImageShader) {
-        final EngineImageShader imageShader = paint.shader as EngineImageShader;
+        final EngineImageShader imageShader = paint.shader! as EngineImageShader;
         final Object paintStyle =
             imageShader.createPaintStyle(_canvasPool.context, shaderBounds,
                 density);

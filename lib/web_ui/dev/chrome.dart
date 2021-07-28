@@ -103,7 +103,7 @@ class Chrome extends Browser {
           await _spawnChromiumProcess(installation.executable, args);
 
       remoteDebuggerCompleter.complete(
-          getRemoteDebuggerUrl(Uri.parse('http://localhost:${kDevtoolsPort}')));
+          getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
 
       unawaited(process.exitCode
           .then((_) => Directory(dir).deleteSync(recursive: true)));
@@ -112,7 +112,7 @@ class Chrome extends Browser {
     }, remoteDebuggerCompleter.future);
   }
 
-  Chrome._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
+  Chrome._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
       : super(startBrowser);
 }
 
@@ -157,8 +157,9 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
       })
       .firstWhere((String line) => line.startsWith('DevTools listening'), orElse: () {
         if (hitGlibcBug) {
-          final String message = 'Encountered glibc bug https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
-            'Will try launching browser again.';
+          const String message = 'Encountered glibc bug '
+              'https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
+              'Will try launching browser again.';
           print(message);
           return message;
         }
@@ -194,9 +195,9 @@ Future<Uri> getRemoteDebuggerUrl(Uri base) async {
     final HttpClient client = HttpClient();
     final HttpClientRequest request = await client.getUrl(base.resolve('/json/list'));
     final HttpClientResponse response = await request.close();
-    final List<dynamic> jsonObject =
-        await json.fuse(utf8).decoder.bind(response).single as List<dynamic>;
-    return base.resolve(jsonObject.first['devtoolsFrontendUrl'] as String);
+    final List<dynamic>? jsonObject =
+        await json.fuse(utf8).decoder.bind(response).single as List<dynamic>?;
+    return base.resolve(jsonObject!.first['devtoolsFrontendUrl'] as String);
   } catch (_) {
     // If we fail to talk to the remote debugger protocol, give up and return
     // the raw URL rather than crashing.
@@ -209,6 +210,7 @@ Future<Uri> getRemoteDebuggerUrl(Uri base) async {
 /// This manager can be used for both macOS and Linux.
 // TODO: https://github.com/flutter/flutter/issues/65673
 class ChromeScreenshotManager extends ScreenshotManager {
+  @override
   String get filenameSuffix => '';
 
   /// Capture a screenshot of the web content.
@@ -218,6 +220,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
   /// [region] is used to decide which part of the web content will be used in
   /// test image. It includes starting coordinate x,y as well as height and
   /// width of the area to capture.
+  @override
   Future<Image> capture(math.Rectangle<num>? region) async {
     final wip.ChromeConnection chromeConnection =
         wip.ChromeConnection('localhost', kDevtoolsPort);
@@ -230,7 +233,7 @@ class ChromeScreenshotManager extends ScreenshotManager {
     }
     final wip.WipConnection wipConnection = await chromeTab.connect();
 
-    Map<String, dynamic>? captureScreenshotParameters = null;
+    Map<String, dynamic>? captureScreenshotParameters;
     if (region != null) {
       captureScreenshotParameters = <String, dynamic>{
         'format': 'png',

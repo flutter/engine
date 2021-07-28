@@ -8,19 +8,19 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../offscreen_canvas.dart';
-import '../render_vertices.dart';
 import '../../browser_detection.dart';
 import '../../html_image_codec.dart';
 import '../../vector_math.dart';
+import '../offscreen_canvas.dart';
+import '../render_vertices.dart';
 import 'vertex_shaders.dart';
 import 'webgl_context.dart';
 
 class EngineImageShader implements ui.ImageShader {
   EngineImageShader(ui.Image image, this.tileModeX, this.tileModeY,
       Float64List matrix4, this.filterQuality)
-      : this.image = image as HtmlImage,
-        this.matrix4 = Float32List.fromList(matrix4);
+      : this.image = image as HtmlImage, // ignore: unnecessary_this
+        this.matrix4 = Float32List.fromList(matrix4); // ignore: unnecessary_this
 
   final ui.TileMode tileModeX;
   final ui.TileMode tileModeY;

@@ -31,7 +31,7 @@ class LicensesCommand extends Command<bool> {
     final List<String> allDartPaths =
         allSourceFiles.map((io.File f) => f.path).toList();
 
-    for (String expectedDirectory in const <String>[
+    for (final String expectedDirectory in const <String>[
       'lib',
       'test',
       'dev',
@@ -75,7 +75,7 @@ class LicensesCommand extends Command<bool> {
 
   void _expect(bool value, String requirement) {
     if (!value) {
-      throw Exception('Test failed: ${requirement}');
+      throw Exception('Test failed: $requirement');
     }
   }
 

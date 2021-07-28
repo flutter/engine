@@ -143,7 +143,7 @@ void testMain() {
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 0);
 
-      scene1.preroll();
+      scene1.preroll(PrerollSurfaceContext());
       scene1.build();
       commitScene(scene1);
       expect(picture.retainCount, 0);
@@ -162,7 +162,7 @@ void testMain() {
       opacity.state = PersistedSurfaceState.pendingRetention;
       clip2.appendChild(opacity);
 
-      scene2.preroll();
+      scene2.preroll(PrerollSurfaceContext());
       scene2.update(scene1);
       commitScene(scene2);
       expect(picture.retainCount, 1);
@@ -181,7 +181,7 @@ void testMain() {
       opacity.state = PersistedSurfaceState.pendingRetention;
       clip3.appendChild(opacity);
 
-      scene3.preroll();
+      scene3.preroll(PrerollSurfaceContext());
       scene3.update(scene2);
       commitScene(scene3);
       expect(picture.retainCount, 2);
@@ -189,7 +189,7 @@ void testMain() {
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 2);
     }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+        skip: browserEngine == BrowserEngine.firefox);
   });
 
   group('Compositing order', () {
@@ -268,7 +268,7 @@ void testMain() {
     final html.Element content = builder.build().webOnlyRootElement!;
     html.document.body!.append(content);
     List<html.ImageElement> list = content.querySelectorAll('img');
-    for (html.ImageElement image in list) {
+    for (final html.ImageElement image in list) {
       image.alt = 'marked';
     }
 
@@ -284,7 +284,7 @@ void testMain() {
 
     final html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
     list = contentAfterReuse.querySelectorAll('img');
-    for (html.ImageElement image in list) {
+    for (final html.ImageElement image in list) {
       expect(image.alt, 'marked');
     }
     expect(list.length, 1);
@@ -472,8 +472,8 @@ void testMain() {
       paragraph.layout(ui.ParagraphConstraints(width: 1000));
       canvas.drawParagraph(paragraph, ui.Offset.zero);
       final ui.EngineLayer newLayer = useOffset
-          ? builder.pushOffset(0, 0, oldLayer: oldLayer as ui.OffsetEngineLayer)
-          : builder.pushOpacity(100, oldLayer: oldLayer as ui.OpacityEngineLayer);
+          ? builder.pushOffset(0, 0, oldLayer: oldLayer == null ? null : oldLayer as ui.OffsetEngineLayer)
+          : builder.pushOpacity(100, oldLayer: oldLayer == null ? null : oldLayer as ui.OpacityEngineLayer);
       builder.addPicture(ui.Offset.zero, recorder.endRecording());
       builder.pop();
       return newLayer;
@@ -497,7 +497,7 @@ void testMain() {
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
       final html.MutationObserver observer = html.MutationObserver((List<dynamic> mutations, _) {
-        for (html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
+        for (final html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);
         }
@@ -588,7 +588,7 @@ void testMain() {
     builder.pop();
 
     final html.Element content = builder.build().webOnlyRootElement!;
-    final html.CanvasElement canvas = content.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas = content.querySelector('canvas')! as html.CanvasElement;
     final int unscaledWidth = canvas.width!;
     final int unscaledHeight = canvas.height!;
 
@@ -605,7 +605,7 @@ void testMain() {
     builder2.pop();
 
     final html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
-    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas')! as html.CanvasElement;
     // Although we are drawing same picture, due to scaling the new canvas
     // should have fewer pixels.
     expect(canvas2.width! < unscaledWidth, isTrue);
@@ -620,7 +620,7 @@ void testMain() {
     builder.pop();
 
     final html.Element content = builder.build().webOnlyRootElement!;
-    final html.CanvasElement canvas = content.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas = content.querySelector('canvas')! as html.CanvasElement;
     final int unscaledWidth = canvas.width!;
     final int unscaledHeight = canvas.height!;
 
@@ -637,7 +637,7 @@ void testMain() {
     builder2.pop();
 
     final html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
-    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas')! as html.CanvasElement;
     // Although we are drawing same picture, due to scaling the new canvas
     // should have more pixels.
     expect(canvas2.width! > unscaledWidth, isTrue);
@@ -760,7 +760,7 @@ class MockPersistedPicture extends PersistedPicture {
     final EnginePictureRecorder recorder = EnginePictureRecorder();
     // Use the largest cull rect so that layer clips are effective. The tests
     // rely on this.
-    recorder.beginRecording(ui.Rect.largest)..drawPaint(SurfacePaint());
+    recorder.beginRecording(ui.Rect.largest).drawPaint(SurfacePaint());
     return MockPersistedPicture._(recorder.endRecording());
   }
 
@@ -906,7 +906,7 @@ EnginePicture _drawPathImagePath() {
 
 HtmlImage createTestImage({int width = 100, int height = 50}) {
   final html.CanvasElement canvas =
-  new html.CanvasElement(width: width, height: height);
+      html.CanvasElement(width: width, height: height);
   final html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);

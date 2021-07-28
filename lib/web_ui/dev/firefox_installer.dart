@@ -28,10 +28,9 @@ class FirefoxArgParser extends BrowserArgParser {
     final YamlMap browserLock = BrowserLock.instance.configuration;
     final String firefoxVersion = browserLock['firefox']['version'] as String;
 
-    argParser
-      ..addOption(
+    argParser.addOption(
         'firefox-version',
-        defaultsTo: '$firefoxVersion',
+        defaultsTo: firefoxVersion,
         help: 'The Firefox version to use while running tests. If the requested '
             'version has not been installed, it will be downloaded and installed '
             'automatically. Value "latest" will use the latest '
@@ -252,7 +251,7 @@ class FirefoxInstaller {
     final io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
       'attach',
       '-readonly',
-      '${dmgFile.path}',
+      dmgFile.path,
     ]);
     if (mountResult.exitCode != 0) {
       throw BrowserInstallerException(
@@ -273,7 +272,7 @@ class FirefoxInstaller {
   // Parses volume from mount result.
   // Output is of form: {devicename} /Volumes/{name}.
   String? _volumeFromMountResult(List<String> lines) {
-    for (String line in lines) {
+    for (final String line in lines) {
       final int pos = line.indexOf('/Volumes');
       if (pos != -1) {
         return line.substring(pos);
@@ -285,11 +284,11 @@ class FirefoxInstaller {
   Future<void> _hdiUtilUnmount(String volumeName) async {
     final io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
       'unmount',
-      '$volumeName',
+      volumeName,
     ]);
     if (unmountResult.exitCode != 0) {
       throw BrowserInstallerException(
-          'Failed to unmount Firefox disk image ${volumeName}.\n'
+          'Failed to unmount Firefox disk image $volumeName.\n'
               'Exit code ${unmountResult.exitCode}. ${unmountResult.stderr}');
     }
   }

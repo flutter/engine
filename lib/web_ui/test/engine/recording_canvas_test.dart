@@ -4,8 +4,8 @@
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import '../mock_engine_canvas.dart';
 
@@ -16,7 +16,7 @@ void main() {
 void testMain() {
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;
-  final Rect screenRect = Rect.largest;
+  const Rect screenRect = Rect.largest;
 
   setUp(() {
     underTest = RecordingCanvas(screenRect);

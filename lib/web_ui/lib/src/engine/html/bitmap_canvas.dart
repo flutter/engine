@@ -25,10 +25,10 @@ import '../window.dart';
 import 'clip.dart';
 import 'color_filter.dart';
 import 'dom_canvas.dart';
-import 'recording_canvas.dart';
-import 'render_vertices.dart';
 import 'painting.dart';
 import 'path/path.dart';
+import 'recording_canvas.dart';
+import 'render_vertices.dart';
 import 'shaders/image_shader.dart';
 
 /// A raw HTML canvas that is directly written to.
@@ -68,7 +68,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// The last CSS font string is cached to optimize the case where the font
   /// styles hasn't changed.
-  String? _cachedLastCssFont = null;
+  String? _cachedLastCssFont;
 
   /// List of extra sibling elements created for paragraphs and clipping.
   final List<html.Element> _children = <html.Element>[];
@@ -336,11 +336,11 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   @override
-  void clipRect(ui.Rect rect, ui.ClipOp op) {
-    if (op == ui.ClipOp.difference) {
+  void clipRect(ui.Rect rect, ui.ClipOp clipOp) {
+    if (clipOp == ui.ClipOp.difference) {
       // Create 2 rectangles inside each other that represents
       // clip area difference using even-odd fill rule.
-      final SurfacePath path = new SurfacePath();
+      final SurfacePath path = SurfacePath();
       path.fillType = ui.PathFillType.evenOdd;
       path.addRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height));
       path.addRect(rect);
@@ -368,7 +368,7 @@ class BitmapCanvas extends EngineCanvas {
   ///   prefer DOM if canvas has not been allocated yet.
   ///
   bool _useDomForRenderingFill(SurfacePaintData paint) =>
-      _renderStrategy.isInsideShaderMask ||
+      _renderStrategy.isInsideSvgFilterTree ||
       (_preserveImageData == false && _contains3dTransform) ||
       (_childOverdraw &&
           _canvasPool.canvas == null &&
@@ -380,7 +380,7 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// DOM canvas is generated for simple strokes using borders.
   bool _useDomForRenderingFillAndStroke(SurfacePaintData paint) =>
-      _renderStrategy.isInsideShaderMask ||
+      _renderStrategy.isInsideSvgFilterTree ||
       (_preserveImageData == false && _contains3dTransform) ||
       ((_childOverdraw ||
               _renderStrategy.hasImageElements ||
@@ -457,7 +457,7 @@ class BitmapCanvas extends EngineCanvas {
           element,
           ui.Offset.zero,
           transformWithOffset(_canvasPool.currentTransform, offset));
-      for (html.Element clipElement in clipElements) {
+      for (final html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -510,7 +510,7 @@ class BitmapCanvas extends EngineCanvas {
               math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
           paint);
       element.style.borderRadius =
-          '${(rect.width / 2.0)}px / ${(rect.height / 2.0)}px';
+          '${rect.width / 2.0}px / ${rect.height / 2.0}px';
     } else {
       setUpPaint(paint, rect);
       _canvasPool.drawOval(rect, paint.style);
@@ -674,7 +674,7 @@ class BitmapCanvas extends EngineCanvas {
       imgElement.style..removeProperty('width')..removeProperty('height');
       final List<html.Element> clipElements = _clipContent(
           _canvasPool.clipStack!, imgElement, p, _canvasPool.currentTransform);
-      for (html.Element clipElement in clipElements) {
+      for (final html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -857,7 +857,7 @@ class BitmapCanvas extends EngineCanvas {
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
-    imgElement.style.filter = 'url(#_fcf${filterIdCounter})';
+    imgElement.style.filter = 'url(#_fcf$filterIdCounter)';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
       imgElement.style.backgroundColor = colorToCssString(filterColor);
     }
@@ -874,7 +874,7 @@ class BitmapCanvas extends EngineCanvas {
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
-    imgElement.style.filter = 'url(#_fcf${filterIdCounter})';
+    imgElement.style.filter = 'url(#_fcf$filterIdCounter)';
     return imgElement;
   }
 
@@ -936,7 +936,16 @@ class BitmapCanvas extends EngineCanvas {
   void drawParagraph(EngineParagraph paragraph, ui.Offset offset) {
     assert(paragraph.isLaidOut);
 
-    if (paragraph.drawOnCanvas && _childOverdraw == false) {
+    /// - paragraph.drawOnCanvas checks that the text styling doesn't include
+    /// features that prevent text from being rendered correctly using canvas.
+    /// - _childOverdraw check prevents sandwitching multiple canvas elements
+    /// when we have alternating paragraphs and other drawing commands that are
+    /// suitable for canvas.
+    /// - To make sure an svg filter is applied correctly to paragraph we
+    /// check isInsideSvgFilterTree to make sure dom node doesn't have any
+    /// parents that apply one.
+    if (paragraph.drawOnCanvas && _childOverdraw == false &&
+        !_renderStrategy.isInsideSvgFilterTree) {
       paragraph.paint(this, offset);
       return;
     }
@@ -949,7 +958,7 @@ class BitmapCanvas extends EngineCanvas {
           paragraphElement as html.HtmlElement,
           offset,
           _canvasPool.currentTransform);
-      for (html.Element clipElement in clipElements) {
+      for (final html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -1048,7 +1057,7 @@ class BitmapCanvas extends EngineCanvas {
     _elementCache?.commitFrame();
     // Wrap all elements in translate3d (workaround for webkit paint order bug).
     if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
-      for (html.Element element in rootElement.children) {
+      for (final html.Element element in rootElement.children) {
         final html.DivElement paintOrderElement = html.DivElement()
           ..style.transform = 'translate3d(0,0,0)';
         paintOrderElement.append(element);
@@ -1056,10 +1065,11 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(paintOrderElement);
       }
     }
-    if (rootElement.firstChild is html.HtmlElement &&
-        (rootElement.firstChild as html.HtmlElement).tagName.toLowerCase() ==
+    final html.Node? firstChild = rootElement.firstChild;
+    if (firstChild != null && firstChild is html.HtmlElement &&
+        firstChild.tagName.toLowerCase() ==
             'canvas') {
-      (rootElement.firstChild as html.HtmlElement).style.zIndex = '-1';
+      firstChild.style.zIndex = '-1';
     }
   }
 
@@ -1244,7 +1254,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
       // Clipping optimization when we know that the path is an oval.
       // We use a div with border-radius set to 50% with a size that is
       // set to path bounds and set overflow to hidden.
-      final SurfacePath surfacePath = entry.path as SurfacePath;
+      final SurfacePath surfacePath = entry.path! as SurfacePath;
       if (surfacePath.pathRef.isOval != -1) {
         final ui.Rect ovalBounds = surfacePath.getBounds();
         final double clipOffsetX = ovalBounds.left;

@@ -65,12 +65,12 @@ class Edge extends Browser {
 
       final Process process = await Process.start(
         installation.executable,
-        <String>['$pathToOpen','-k'],
+        <String>[pathToOpen,'-k'],
       );
 
       return process;
     });
   }
 
-  Edge._(Future<Process> startBrowser()) : super(startBrowser);
+  Edge._(Future<Process> Function() startBrowser) : super(startBrowser);
 }

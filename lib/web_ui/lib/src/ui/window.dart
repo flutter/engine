@@ -88,6 +88,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   String get defaultRouteName => platformDispatcher.defaultRouteName;
 
   void scheduleFrame() => platformDispatcher.scheduleFrame();
+
+  @override
   void render(Scene scene) => platformDispatcher.render(scene, this);
 
   bool get semanticsEnabled => platformDispatcher.semanticsEnabled;
@@ -209,6 +211,7 @@ class CallbackHandle {
   bool operator ==(Object other) => identical(this, other);
 
   @override
+  // ignore: unnecessary_overrides
   int get hashCode => super.hashCode;
 }
 

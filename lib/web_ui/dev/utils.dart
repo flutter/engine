@@ -33,6 +33,9 @@ class FilePath {
   }
 
   @override
+  int get hashCode => _absolutePath.hashCode;
+
+  @override
   String toString() => _absolutePath;
 }
 
@@ -334,8 +337,7 @@ class GeneralTestsArgumentParser {
   bool verbose = false;
 
   void populateOptions(ArgParser argParser) {
-    argParser
-      ..addFlag(
+    argParser.addFlag(
         'verbose',
         defaultsTo: false,
         help: 'Flag to indicate extra logs should also be printed.',
@@ -372,14 +374,14 @@ final List<AsyncCallback> cleanupCallbacks = <AsyncCallback>[];
 /// Cleanup the remaning processes, close open browsers, delete temp files.
 Future<void> cleanup() async {
   // Cleanup remaining processes if any.
-  if (processesToCleanUp.length > 0) {
-    for (io.Process process in processesToCleanUp) {
+  if (processesToCleanUp.isNotEmpty) {
+    for (final io.Process process in processesToCleanUp) {
       process.kill();
     }
   }
   // Delete temporary directories.
-  if (temporaryDirectories.length > 0) {
-    for (io.Directory directory in temporaryDirectories) {
+  if (temporaryDirectories.isNotEmpty) {
+    for (final io.Directory directory in temporaryDirectories) {
       if (!directory.existsSync()) {
         directory.deleteSync(recursive: true);
       }

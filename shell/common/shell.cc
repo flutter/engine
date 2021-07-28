@@ -634,6 +634,8 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   // Set the external view embedder for the rasterizer.
   auto view_embedder = platform_view_->CreateExternalViewEmbedder();
   rasterizer_->SetExternalViewEmbedder(view_embedder);
+  rasterizer_->SetSnapshotSurfaceProducer(
+      platform_view_->CreateSnapshotSurfaceProducer());
 
   // The weak ptr must be generated in the platform thread which owns the unique
   // ptr.
@@ -1648,6 +1650,21 @@ bool Shell::OnServiceProtocolGetDisplayRefreshRate(
 
 double Shell::GetMainDisplayRefreshRate() {
   return display_manager_->GetMainDisplayRefreshRate();
+}
+
+void Shell::RegisterImageDecoder(ImageGeneratorFactory factory,
+                                 int32_t priority) {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(is_setup_);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetUITaskRunner(),
+      [engine = engine_->GetWeakPtr(), factory = std::move(factory),
+       priority]() {
+        if (engine) {
+          engine->GetImageGeneratorRegistry()->AddFactory(factory, priority);
+        }
+      });
 }
 
 bool Shell::OnServiceProtocolGetSkSLs(

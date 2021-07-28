@@ -10,6 +10,7 @@ import 'package:watcher/watcher.dart';
 
 import 'utils.dart';
 
+/// Describes what [Pipeline] is currently doing.
 enum PipelineStatus {
   /// The pipeline has not started yet.
   ///
@@ -115,7 +116,7 @@ class Pipeline {
   Future<void> run() async {
     _status = PipelineStatus.started;
     try {
-      for (PipelineStep step in steps) {
+      for (final PipelineStep step in steps) {
         if (status != PipelineStatus.started) {
           break;
         }
@@ -215,7 +216,7 @@ class PipelineWatcher {
     }
 
     final String relativePath = path.relative(event.path, from: dir);
-    print('- [${event.type}] ${relativePath}');
+    print('- [${event.type}] $relativePath');
 
     _pipelineRunCount++;
     _scheduledPipeline?.cancel();
@@ -225,7 +226,7 @@ class PipelineWatcher {
     });
   }
 
-  void _runPipeline() async {
+  Future<void> _runPipeline() async {
     if (pipeline.status == PipelineStatus.stopping) {
       // We are already trying to stop the pipeline. No need to do anything.
       return;

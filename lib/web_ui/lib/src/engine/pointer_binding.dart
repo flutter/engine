@@ -594,6 +594,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
+    final num? pressure = event.pressure;
     _pointerDataConverter.convert(
       data,
       change: details.change,
@@ -604,7 +605,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       physicalX: event.client.x.toDouble() * ui.window.devicePixelRatio,
       physicalY: event.client.y.toDouble() * ui.window.devicePixelRatio,
       buttons: details.buttons,
-      pressure: event.pressure as double,
+      pressure:  pressure == null ? 0.0 : pressure.toDouble(),
       pressureMin: 0.0,
       pressureMax: 1.0,
       tilt: tilt,
@@ -681,7 +682,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener('touchstart', (html.TouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (!nowPressed) {
           _pressTouch(touch.identifier!);
@@ -701,7 +702,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _convertEventToPointerData(
@@ -722,7 +723,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _unpressTouch(touch.identifier!);
@@ -741,7 +742,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener('touchcancel', (html.TouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _unpressTouch(touch.identifier!);

@@ -27,7 +27,7 @@ void _testEach<T extends _BasicEventContext>(
   String description,
   _ContextTestBody<T> body,
 ) {
-  for (T context in contexts) {
+  for (final T context in contexts) {
     if (context.isSupported) {
       test('${context.name} $description', () {
         body(context);
@@ -38,8 +38,8 @@ void _testEach<T extends _BasicEventContext>(
 
 /// Some methods in this class are skipped for iOS-Safari.
 /// TODO: https://github.com/flutter/flutter/issues/60033
-bool get isIosSafari => (browserEngine == BrowserEngine.webkit &&
-    operatingSystem == OperatingSystem.iOs);
+bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);

@@ -9,8 +9,8 @@ import 'package:args/command_runner.dart';
 import 'build.dart';
 import 'clean.dart';
 import 'create_simulator.dart';
-import 'licenses.dart';
 import 'exceptions.dart';
+import 'licenses.dart';
 import 'test_runner.dart';
 import 'utils.dart';
 
@@ -24,7 +24,7 @@ CommandRunner<bool> runner = CommandRunner<bool>(
   ..addCommand(TestCommand())
   ..addCommand(BuildCommand());
 
-void main(List<String> rawArgs) async {
+Future<void> main(List<String> rawArgs) async {
   // Remove --clean from the list as that's processed by the wrapper script.
   final List<String> args = rawArgs.where((String arg) => arg != '--clean').toList();
 
@@ -38,7 +38,7 @@ void main(List<String> rawArgs) async {
 
   int exitCode = -1;
   try {
-    final bool result = (await runner.run(args)) as bool;
+    final bool result = (await runner.run(args))!;
     if (result == false) {
       print('Sub-command failed: `${args.join(' ')}`');
       exitCode = 1;
@@ -69,7 +69,7 @@ void main(List<String> rawArgs) async {
   io.exit(io.exitCode);
 }
 
-void _listenToShutdownSignals() async {
+Future<void> _listenToShutdownSignals() async {
   io.ProcessSignal.sigint.watch().listen((_) async {
     print('Received SIGINT. Shutting down.');
     await cleanup();

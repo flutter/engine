@@ -7,8 +7,8 @@ import 'dart:html';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import 'matchers.dart';
 
@@ -16,7 +16,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
   await webOnlyInitializeTestDomRenderer();
@@ -32,7 +32,7 @@ void testMain() async {
   });
 
   test('predictably lays out a single-line paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -58,7 +58,7 @@ void testMain() async {
   });
 
   test('predictably lays out a multi-line paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -381,8 +381,8 @@ void testMain() async {
   },
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
       // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge));
+      skip: browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.edge);
 
   test('adds Arial and sans-serif as fallback fonts', () {
     // Set this to false so it doesn't default to 'Ahem' font.
@@ -403,8 +403,8 @@ void testMain() async {
   },
       // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
       // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge));
+      skip: browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.edge);
 
   test('does not add fallback fonts to generic families', () {
     // Set this to false so it doesn't default to 'Ahem' font.

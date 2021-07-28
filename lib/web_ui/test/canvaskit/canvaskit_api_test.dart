@@ -95,7 +95,7 @@ void _blendModeTests() {
   });
 
   test('ui.BlendMode converts to SkBlendMode', () {
-    for (ui.BlendMode blendMode in ui.BlendMode.values) {
+    for (final ui.BlendMode blendMode in ui.BlendMode.values) {
       expect(toSkBlendMode(blendMode).value, blendMode.index);
     }
   });
@@ -108,7 +108,7 @@ void _paintStyleTests() {
   });
 
   test('ui.PaintingStyle converts to SkPaintStyle', () {
-    for (ui.PaintingStyle style in ui.PaintingStyle.values) {
+    for (final ui.PaintingStyle style in ui.PaintingStyle.values) {
       expect(toSkPaintStyle(style).value, style.index);
     }
   });
@@ -122,7 +122,7 @@ void _strokeCapTests() {
   });
 
   test('ui.StrokeCap converts to SkStrokeCap', () {
-    for (ui.StrokeCap cap in ui.StrokeCap.values) {
+    for (final ui.StrokeCap cap in ui.StrokeCap.values) {
       expect(toSkStrokeCap(cap).value, cap.index);
     }
   });
@@ -136,7 +136,7 @@ void _strokeJoinTests() {
   });
 
   test('ui.StrokeJoin converts to SkStrokeJoin', () {
-    for (ui.StrokeJoin join in ui.StrokeJoin.values) {
+    for (final ui.StrokeJoin join in ui.StrokeJoin.values) {
       expect(toSkStrokeJoin(join).value, join.index);
     }
   });
@@ -151,7 +151,7 @@ void _filterQualityTests() {
   });
 
   test('ui.FilterQuality converts to SkFilterQuality', () {
-    for (ui.FilterQuality cap in ui.FilterQuality.values) {
+    for (final ui.FilterQuality cap in ui.FilterQuality.values) {
       expect(toSkFilterQuality(cap).value, cap.index);
     }
   });
@@ -166,7 +166,7 @@ void _blurStyleTests() {
   });
 
   test('ui.BlurStyle converts to SkBlurStyle', () {
-    for (ui.BlurStyle style in ui.BlurStyle.values) {
+    for (final ui.BlurStyle style in ui.BlurStyle.values) {
       expect(toSkBlurStyle(style).value, style.index);
     }
   });
@@ -180,7 +180,7 @@ void _tileModeTests() {
   });
 
   test('ui.TileMode converts to SkTileMode', () {
-    for (ui.TileMode mode in ui.TileMode.values) {
+    for (final ui.TileMode mode in ui.TileMode.values) {
       expect(toSkTileMode(mode).value, mode.index);
     }
   });
@@ -193,7 +193,7 @@ void _fillTypeTests() {
   });
 
   test('ui.PathFillType converts to SkFillType', () {
-    for (ui.PathFillType type in ui.PathFillType.values) {
+    for (final ui.PathFillType type in ui.PathFillType.values) {
       expect(toSkFillType(type).value, type.index);
     }
   });
@@ -211,7 +211,7 @@ void _pathOpTests() {
   });
 
   test('ui.PathOperation converts to SkPathOp', () {
-    for (ui.PathOperation op in ui.PathOperation.values) {
+    for (final ui.PathOperation op in ui.PathOperation.values) {
       expect(toSkPathOp(op).value, op.index);
     }
   });
@@ -246,7 +246,7 @@ void _clipOpTests() {
   });
 
   test('ui.ClipOp converts to SkClipOp', () {
-    for (ui.ClipOp op in ui.ClipOp.values) {
+    for (final ui.ClipOp op in ui.ClipOp.values) {
       expect(toSkClipOp(op).value, op.index);
     }
   });
@@ -260,7 +260,7 @@ void _pointModeTests() {
   });
 
   test('ui.PointMode converts to SkPointMode', () {
-    for (ui.PointMode op in ui.PointMode.values) {
+    for (final ui.PointMode op in ui.PointMode.values) {
       expect(toSkPointMode(op).value, op.index);
     }
   });
@@ -276,7 +276,7 @@ void _vertexModeTests() {
   });
 
   test('ui.VertexMode converts to SkVertexMode', () {
-    for (ui.VertexMode op in ui.VertexMode.values) {
+    for (final ui.VertexMode op in ui.VertexMode.values) {
       expect(toSkVertexMode(op).value, op.index);
     }
   });
@@ -407,6 +407,16 @@ void _maskFilterTests() {
           false,
         ),
         isNotNull);
+  });
+  test('MaskFilter.MakeBlur with 0 sigma returns null', () {
+    expect(
+        canvasKit.MaskFilter.MakeBlur(canvasKit.BlurStyle.Normal, 0.0, false),
+        isNull);
+  });
+  test('MaskFilter.MakeBlur with NaN sigma returns null', () {
+    expect(
+        canvasKit.MaskFilter.MakeBlur(canvasKit.BlurStyle.Normal, double.nan, false),
+        isNull);
   });
 }
 
@@ -1085,7 +1095,7 @@ void _canvasTests() {
   });
 
   test('drawShadow', () {
-    for (int flags in const <int>[0x01, 0x00]) {
+    for (final int flags in const <int>[0x01, 0x00]) {
       const double devicePixelRatio = 2.0;
       const double elevation = 4.0;
       const double ambientAlpha = 0.039;
@@ -1099,7 +1109,8 @@ void _canvasTests() {
       const ui.Color color = ui.Color(0xAABBCCDD);
       final ui.Color inAmbient =
           color.withAlpha((color.alpha * ambientAlpha).round());
-      final ui.Color inSpot = color.withAlpha((color.alpha * spotAlpha).round());
+      final ui.Color inSpot =
+          color.withAlpha((color.alpha * spotAlpha).round());
 
       final SkTonalColors inTonalColors = SkTonalColors(
         ambient: makeFreshSkColor(inAmbient),
@@ -1154,8 +1165,8 @@ void _canvasTests() {
 
   test('drawPicture', () {
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
-    final SkCanvas otherCanvas =
-        otherRecorder.beginRecording(Float32List.fromList(<double>[0, 0, 100, 100]));
+    final SkCanvas otherCanvas = otherRecorder
+        .beginRecording(Float32List.fromList(<double>[0, 0, 100, 100]));
     otherCanvas.drawLine(0, 0, 10, 10, SkPaint());
     canvas.drawPicture(otherRecorder.finishRecordingAsPicture());
   });
@@ -1180,15 +1191,15 @@ void _canvasTests() {
     // ProductionCollector)
     browserSupportsFinalizationRegistry = true;
     final SkPictureRecorder otherRecorder = SkPictureRecorder();
-    final SkCanvas otherCanvas =
-        otherRecorder.beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
+    final SkCanvas otherCanvas = otherRecorder
+        .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
     otherCanvas.drawRect(
       Float32List.fromList(<double>[0, 0, 1, 1]),
       SkPaint(),
     );
     final CkPicture picture =
         CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
-    final CkImage image = (await picture.toImage(1, 1)) as CkImage;
+    final CkImage image = await picture.toImage(1, 1) as CkImage;
     final ByteData rawData =
         await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     expect(rawData.lengthInBytes, greaterThan(0));
@@ -1213,7 +1224,7 @@ void _textStyleTests() {
   });
 
   test('ui.TextDecorationStyle converts to SkTextDecorationStyle', () {
-    for (ui.TextDecorationStyle decorationStyle
+    for (final ui.TextDecorationStyle decorationStyle
         in ui.TextDecorationStyle.values) {
       expect(toSkTextDecorationStyle(decorationStyle).value,
           decorationStyle.index);
@@ -1228,7 +1239,7 @@ void _textStyleTests() {
   });
 
   test('ui.TextBaseline converts to SkTextBaseline', () {
-    for (ui.TextBaseline textBaseline in ui.TextBaseline.values) {
+    for (final ui.TextBaseline textBaseline in ui.TextBaseline.values) {
       expect(toSkTextBaseline(textBaseline).value, textBaseline.index);
     }
   });
@@ -1249,7 +1260,7 @@ void _textStyleTests() {
   });
 
   test('ui.PlaceholderAlignment converts to SkPlaceholderAlignment', () {
-    for (ui.PlaceholderAlignment placeholderAlignment
+    for (final ui.PlaceholderAlignment placeholderAlignment
         in ui.PlaceholderAlignment.values) {
       expect(toSkPlaceholderAlignment(placeholderAlignment).value,
           placeholderAlignment.index);

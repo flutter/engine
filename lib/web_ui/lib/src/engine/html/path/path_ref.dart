@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import 'path_utils.dart';
 import '../../util.dart';
+import 'path_utils.dart';
 
 /// Stores the path verbs, points and conic weights.
 ///
@@ -301,6 +301,7 @@ class PathRef {
         bottomLeft: radii[_Corner.kLowerLeft]);
   }
 
+  @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
@@ -308,8 +309,12 @@ class PathRef {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return equals(other as PathRef);
+    return other is PathRef && equals(other);
   }
+
+  @override
+  int get hashCode => ui.hashValues(fSegmentMask,
+      fPoints, _conicWeights, _fVerbs);
 
   bool equals(PathRef ref) {
     // We explicitly check fSegmentMask as a quick-reject. We could skip it,
@@ -582,7 +587,7 @@ class PathRef {
         maxX = math.max(maxX, x);
         maxY = math.max(maxY, y);
       }
-      final bool allFinite = (accum * 0 == 0);
+      final bool allFinite = accum * 0 == 0;
       if (allFinite) {
         fBounds = ui.Rect.fromLTRB(minX, minY, maxX, maxY);
         fIsFinite = true;
@@ -871,7 +876,7 @@ class PathRef {
       for (int i = 0; i < len; i += 2) {
         final double pointX = fPoints[i];
         final double pointY = fPoints[i + 1];
-        final double tolerance = 0.0001;
+        const double tolerance = 0.0001;
         final bool pointIsFinite = pointX.isFinite && pointY.isFinite;
         if (pointIsFinite &&
             (pointX + tolerance < boundsLeft ||

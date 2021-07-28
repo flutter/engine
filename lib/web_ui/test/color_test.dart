@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/ui.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/ui.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -156,5 +155,6 @@ class DynamicColorClass extends Color {
 
   final int _newValue;
 
+  @override
   int get value => _newValue;
 }

@@ -144,10 +144,16 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     }
     _maskFilter = value;
     if (value != null) {
-      _ckMaskFilter = CkMaskFilter.blur(
-        value.webOnlyBlurStyle,
-        value.webOnlySigma,
-      );
+      // CanvasKit returns `null` if the sigma is `0` or infinite.
+      if (!(value.webOnlySigma.isFinite && value.webOnlySigma > 0)) {
+        // Don't create a [CkMaskFilter].
+        _ckMaskFilter = null;
+      } else {
+        _ckMaskFilter = CkMaskFilter.blur(
+          value.webOnlyBlurStyle,
+          value.webOnlySigma,
+        );
+      }
     } else {
       _ckMaskFilter = null;
     }
@@ -171,7 +177,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
 
   @override
-  ui.ColorFilter? get colorFilter => _managedColorFilter?.ckColorFilter;
+  ui.ColorFilter? get colorFilter => _managedColorFilter?.colorFilter;
   @override
   set colorFilter(ui.ColorFilter? value) {
     if (colorFilter == value) {

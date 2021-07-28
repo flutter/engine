@@ -15,43 +15,45 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
 bucket = 'gs://flutter_firebase_testlab'
-error_re = re.compile('[EF]/flutter')
+error_re = re.compile(r'[EF]/flutter.+')
 
 
 def RunFirebaseTest(apk, results_dir):
-  try:
-    # game-loop tests are meant for OpenGL apps.
-    # This type of test will give the application a handle to a file, and
-    # we'll write the timeline JSON to that file.
-    # See https://firebase.google.com/docs/test-lab/android/game-loop
-    # Pixel 4. As of this commit, this is a highly available device in FTL.
-    subprocess.check_output([
-        'gcloud',
-        '--project', 'flutter-infra',
-        'firebase', 'test', 'android', 'run',
-        '--type', 'game-loop',
-        '--app', apk,
-        '--timeout', '2m',
-        '--results-bucket', bucket,
-        '--results-dir', results_dir,
-        '--device', 'model=flame,version=29',
-    ])
-  except subprocess.CalledProcessError as ex:
-    print(ex.output)
-    # Recipe will retry return codes from firebase that indicate an infra
-    # failure.
-    sys.exit(ex.returncode)
+  # game-loop tests are meant for OpenGL apps.
+  # This type of test will give the application a handle to a file, and
+  # we'll write the timeline JSON to that file.
+  # See https://firebase.google.com/docs/test-lab/android/game-loop
+  # Pixel 4. As of this commit, this is a highly available device in FTL.
+  process = subprocess.Popen(
+    [
+      'gcloud',
+      '--project', 'flutter-infra',
+      'firebase', 'test', 'android', 'run',
+      '--type', 'game-loop',
+      '--app', apk,
+      '--timeout', '2m',
+      '--results-bucket', bucket,
+      '--results-dir', results_dir,
+      '--device', 'model=flame,version=29',
+    ],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    universal_newlines=True,
+  )
+  return process
 
 
 def CheckLogcat(results_dir):
   logcat = subprocess.check_output([
       'gsutil', 'cat', '%s/%s/*/logcat' % (bucket, results_dir)
   ])
+  if not logcat:
+    sys.exit(1)
 
-  logcat_match = error_re.match(logcat)
-  if logcat_match:
+  logcat_matches = error_re.findall(logcat)
+  if logcat_matches:
     print('Errors in logcat:')
-    print(logcat_match)
+    print(logcat_matches)
     sys.exit(1)
 
 
@@ -85,13 +87,25 @@ def main():
   git_revision = subprocess.check_output(
       ['git', 'rev-parse', 'HEAD'], cwd=script_dir).strip()
 
+  results = []
   for apk in apks:
     results_dir = '%s/%s/%s' % (os.path.basename(apk), git_revision, args.build_id)
+    process = RunFirebaseTest(apk, results_dir)
+    results.append((results_dir, process))
 
-    RunFirebaseTest(apk, results_dir)
+  for results_dir, process in results:
+    for line in iter(process.stdout.readline, ""):
+      print(line.strip())
+    return_code = process.wait()
+    if return_code != 0:
+      print('Firebase test failed ' + returncode)
+      sys.exit(process.returncode)
+
+    print('Checking logcat for %s' % results_dir)
     CheckLogcat(results_dir)
     # scenario_app produces a timeline, but the android image test does not.
     if 'scenario' in apk:
+      print('Checking timeline for %s' % results_dir)
       CheckTimeline(results_dir)
 
   return 0
