@@ -4,7 +4,10 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#ifndef WINUWP
 #include <dwmapi.h>
+#endif
+
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -327,8 +330,9 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
   if (frame_interval_override_.has_value()) {
     return frame_interval_override_.value();
   }
-  DWM_TIMING_INFO timing_info = {};
   uint64_t interval = 16600000;
+#ifndef WINUWP
+  DWM_TIMING_INFO timing_info = {};
   timing_info.cbSize = sizeof(timing_info);
   HRESULT result = DwmGetCompositionTimingInfo(NULL, &timing_info);
   if (result == S_OK && timing_info.rateRefresh.uiDenominator > 0 &&
@@ -337,6 +341,7 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
                                    1000000000.0) /
                static_cast<double>(timing_info.rateRefresh.uiNumerator);
   }
+#endif
   return std::chrono::nanoseconds(interval);
 }
 
