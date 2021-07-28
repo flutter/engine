@@ -62,7 +62,6 @@ static const char* kDartLanguageArgs[] = {
     "--background_compilation",
     "--lazy_async_stacks",
     "--enable-isolate-groups",
-    "--experimental-enable-isolate-groups-jit",
     // clang-format on
 };
 
