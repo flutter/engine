@@ -71,13 +71,28 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         return kSuccess;
       }));
 
-  modifier.embedder_api().NotifyDisplayUpdate =
-      MOCK_ENGINE_PROC(NotifyDisplayUpdate,
-                       ([engine_instance = engine.get()](
-                            FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
-                            const FlutterEngineDisplaysUpdateType update_type,
-                            const FlutterEngineDisplay* embedder_displays,
-                            size_t display_count) { return kSuccess; }));
+  // it should send display info.
+  bool notify_display_update_called = false;
+  modifier.SetFrameInterval(16600000);  // 60 fps.
+  modifier.embedder_api().NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate,
+      ([&notify_display_update_called, engine_instance = engine.get()](
+           FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+           const FlutterEngineDisplaysUpdateType update_type,
+           const FlutterEngineDisplay* embedder_displays,
+           size_t display_count) {
+        EXPECT_EQ(update_type, kFlutterEngineDisplaysUpdateTypeStartup);
+        EXPECT_EQ(display_count, 1);
+
+        FlutterEngineDisplay display = embedder_displays[0];
+
+        EXPECT_EQ(display.display_id, 0);
+        EXPECT_EQ(display.single_display, true);
+        EXPECT_EQ(std::floor(display.refresh_rate), 60.0);
+
+        notify_display_update_called = true;
+        return kSuccess;
+      }));
 
   // It should send locale info.
   bool update_locales_called = false;
@@ -113,6 +128,7 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   EXPECT_TRUE(run_called);
   EXPECT_TRUE(update_locales_called);
   EXPECT_TRUE(settings_message_sent);
+  EXPECT_TRUE(notify_display_update_called);
 
   // Ensure that deallocation doesn't call the actual Shutdown with the bogus
   // engine pointer that the overridden Run returned.
@@ -143,7 +159,7 @@ TEST(FlutterWindowsEngine, ConfiguresFrameVsync) {
 
   engine->OnVsync(1);
 
-  EXPECT_EQ(on_vsync_called, true);
+  EXPECT_TRUE(on_vsync_called);
 }
 
 TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
