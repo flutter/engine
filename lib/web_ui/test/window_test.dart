@@ -70,7 +70,7 @@ void testMain() {
       'flutter/navigation',
       const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeUpdated',
-        <String, dynamic>{'routeName': '/bar'},
+        const <String, dynamic>{'routeName': '/bar'},
       )),
       (_) { callback.complete(); },
     );
