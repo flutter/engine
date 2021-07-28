@@ -83,6 +83,14 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
         return kSuccess;
       };
 
+  modifier.embedder_api().NotifyDisplayUpdate =
+      MOCK_ENGINE_PROC(NotifyDisplayUpdate,
+                       ([engine_instance = engine.get()](
+                            FLUTTER_API_SYMBOL(FlutterEngine) raw_engine,
+                            const FlutterEngineDisplaysUpdateType update_type,
+                            const FlutterEngineDisplay* embedder_displays,
+                            size_t display_count) { return kSuccess; }));
+
   // This mock handles key events sent through the embedder API,
   // and records it in `key_event_logs`.
   modifier.embedder_api().SendKeyEvent =
