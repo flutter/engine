@@ -111,20 +111,21 @@ TEST(FlutterWindowsEngine, ConfiguresFrameVsync) {
   bool on_vsync_called = false;
 
   modifier.embedder_api().GetCurrentTime =
-      MOCK_ENGINE_PROC(GetCurrentTime, ([]() -> uint64_t { return 0; }));
+      MOCK_ENGINE_PROC(GetCurrentTime, ([]() -> uint64_t { return 1; }));
   modifier.embedder_api().OnVsync = MOCK_ENGINE_PROC(
       OnVsync,
       ([&on_vsync_called, engine_instance = engine.get()](
            FLUTTER_API_SYMBOL(FlutterEngine) engine, intptr_t baton,
            uint64_t frame_start_time_nanos, uint64_t frame_target_time_nanos) {
         EXPECT_EQ(baton, 1);
-        EXPECT_EQ(frame_start_time_nanos, 0 + 16600000);
-        EXPECT_EQ(frame_target_time_nanos, 0 + 16600000 * 2);
+        EXPECT_EQ(frame_start_time_nanos, 16600000);
+        EXPECT_EQ(frame_target_time_nanos, 33200000);
         on_vsync_called = true;
         return kSuccess;
       }));
+  modifier.SetStartTime(0);
+  modifier.SetFrameInterval(16600000);
 
-  engine->RunWithEntrypoint(nullptr);
   engine->OnVsync(1);
 
   EXPECT_EQ(on_vsync_called, true);

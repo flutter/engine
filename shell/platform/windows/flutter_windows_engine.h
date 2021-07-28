@@ -158,7 +158,11 @@ class FlutterWindowsEngine {
   // The approximate time between vblank events.
   std::chrono::nanoseconds FrameInterval();
 
+  // The start time used to align frames.
   std::chrono::nanoseconds start_time_;
+
+  // An override of the frame interval used by EngineModifier for testing.
+  std::optional<std::chrono::nanoseconds> frame_interval_override_;
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;

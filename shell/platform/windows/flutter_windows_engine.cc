@@ -324,6 +324,9 @@ void FlutterWindowsEngine::OnVsync(intptr_t baton) {
 }
 
 std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
+  if (frame_interval_override_.has_value()) {
+    return frame_interval_override_.value();
+  }
   DWM_TIMING_INFO timing_info = {};
   uint64_t interval = 16600000;
   timing_info.cbSize = sizeof(timing_info);
