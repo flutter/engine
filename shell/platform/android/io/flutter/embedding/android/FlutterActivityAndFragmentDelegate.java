@@ -262,10 +262,11 @@ import java.util.Arrays;
    * <p>{@code shouldDelayFirstAndroidViewDraw} determines whether to set up an {@link
    * android.view.ViewTreeObserver.OnPreDrawListener}, which will defer the current drawing pass
    * till after the Flutter UI has been displayed. This results in more accurate timings reported
-   * with Android tools, such as "Displayed" timing printed with `am start`. Note that it should
-   * only be set to true when {@code Host#getRenderMode()} is {@code RenderMode.surface}. This
-   * parameter is also ignored, disabling the delay should the legacy {@code
-   * Host#provideSplashScreen()} be non-null. See <a
+   * with Android tools, such as "Displayed" timing printed with `am start`.
+   *
+   * <p>Note that it should only be set to true when {@code Host#getRenderMode()} is {@code
+   * RenderMode.surface}. This parameter is also ignored, disabling the delay should the legacy
+   * {@code Host#provideSplashScreen()} be non-null. See <a
    * href="https://flutter.dev/go/android-splash-migration">Android Splash Migration</a>.
    *
    * <p>This method:

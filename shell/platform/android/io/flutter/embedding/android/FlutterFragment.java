@@ -394,7 +394,7 @@ public class FlutterFragment extends Fragment
      */
     @NonNull
     public NewEngineFragmentBuilder shouldDelayFirstAndroidViewDraw(
-        @NonNull boolean shouldDelayFirstAndroidViewDraw) {
+        boolean shouldDelayFirstAndroidViewDraw) {
       this.shouldDelayFirstAndroidViewDraw = shouldDelayFirstAndroidViewDraw;
       return this;
     }

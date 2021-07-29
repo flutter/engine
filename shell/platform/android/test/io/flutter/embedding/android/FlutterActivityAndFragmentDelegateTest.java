@@ -888,7 +888,6 @@ public class FlutterActivityAndFragmentDelegateTest {
 
   @Test
   public void itThrowsWhenDelayingTheFirstDrawAndUsingATextureView() {
-
     // ---- Test setup ----
     when(mockHost.getRenderMode()).thenReturn(RenderMode.texture);
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
