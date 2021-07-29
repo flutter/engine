@@ -22,13 +22,18 @@ namespace testing {
 /// A mock task queue NOT calling MessageLoop->Run() in thread
 struct TaskQueueWrapper {
   fml::MessageLoop* loop = nullptr;
-  std::thread thread;
 
   /// The waiter for message loop initialized ok
   fml::AutoResetWaitableEvent latch;
 
   /// The waiter for thread finished
   fml::AutoResetWaitableEvent term;
+
+  /// This field must below latch and term member, because
+  /// cpp standard reference:
+  /// non-static data members are initialized in the order they were declared in
+  /// the class definition
+  std::thread thread;
 
   TaskQueueWrapper()
       : thread([this]() {
@@ -45,7 +50,7 @@ struct TaskQueueWrapper {
     thread.join();
   }
 
-  fml::TaskQueueId GetTaskQueueId() {
+  fml::TaskQueueId GetTaskQueueId() const {
     return loop->GetTaskRunner()->GetTaskQueueId();
   }
 };
