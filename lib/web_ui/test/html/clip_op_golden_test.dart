@@ -17,22 +17,19 @@ void main() {
 Future<void> testMain() async {
   setUpStableTestFonts();
 
-  setUp(() async {
-    debugEmulateFlutterTesterEnvironment = true;
-  });
-
   /// Regression test for https://github.com/flutter/flutter/issues/64734.
   test('Clips using difference', () async {
+    const Offset shift = Offset(8, 8);
     const Rect region = Rect.fromLTRB(0, 0, 400, 300);
     final RecordingCanvas canvas = RecordingCanvas(region);
-    const Rect titleRect = Rect.fromLTWH(20, 0, 50, 20);
+    final Rect titleRect = const Rect.fromLTWH(20, 0, 50, 20).shift(shift);
     final SurfacePaint paint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..color = const Color(0xff000000)
       ..strokeWidth = 1;
     canvas.save();
     try {
-      final Rect borderRect = Rect.fromLTRB(0, 10, region.width, region.height);
+      final Rect borderRect = Rect.fromLTRB(0, 10, region.width, region.height).shift(shift);
       canvas.clipRect(titleRect, ClipOp.difference);
       canvas.drawRect(borderRect, paint);
     } finally {
