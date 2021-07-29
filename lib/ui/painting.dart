@@ -3782,6 +3782,10 @@ class ImageShader extends Shader {
 class FragmentShader extends Shader {
   @pragma('vm:entry-point')
 
+  // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
+  // constructor and to [update].
+  // https://github.com/flutter/flutter/issues/85240
+
   /// Creates a fragment shader from SPIR-V byte data as an input.
   ///
   /// The [floatUniforms] can be passed optionally to initialize the
@@ -3790,7 +3794,6 @@ class FragmentShader extends Shader {
   FragmentShader({
     required ByteBuffer spirv,
     Float32List? floatUniforms,
-    // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a ? parameter.
     bool debugPrint = false,
   }) : super._() {
     _constructor();
@@ -3798,7 +3801,6 @@ class FragmentShader extends Shader {
         spv.transpile(spirv, spv.TargetLanguage.sksl);
     _uniformFloatCount = result.uniformFloatCount;
     _init(result.src, debugPrint);
-    // TODO(https://github.com/flutter/flutter/issues/85240): Pass children here.
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
 
@@ -3815,12 +3817,15 @@ class FragmentShader extends Shader {
   /// in the order that they are defined.
   ///
   /// See [FragmentShader] for more information on passing uniforms.
+  ///
+  /// This method will aquire additional fields as [FragmentShader] is
+  /// implemented further.
   void update({
-    required Float32List floatUniforms,
-    // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a paramter.
-    // TODO(https://github.com/flutter/flutter/issues/85240): Change both params to ? and assert that
-    // at least one is non null.
+    Float32List? floatUniforms,
   }) {
+    if (floatUniforms == null) {
+      throw ArgumentError('No argument was given');
+    }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
         'FragmentShader floatUniforms size must match given shader');
@@ -3828,7 +3833,6 @@ class FragmentShader extends Shader {
     _update(floatUniforms);
   }
 
-  // TODO(https://github.com/flutter/flutter/issues/85240): Add `List<Shader> children` as a parameter.
   void _update(Float32List floatUniforms) native 'FragmentShader_update';
 }
 
