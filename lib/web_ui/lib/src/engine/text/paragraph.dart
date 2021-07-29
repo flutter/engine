@@ -83,8 +83,6 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.baseline,
     required this.ascent,
     required this.descent,
-    // Didn't use `this.boxes` because we want it to be non-null in this
-    // constructor.
     required this.boxes,
   })  : displayText = null,
         unscaledAscent = double.infinity;

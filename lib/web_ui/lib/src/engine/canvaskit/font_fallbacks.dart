@@ -56,7 +56,7 @@ class FontFallbackData {
       //                resetting the tree would be a matter of reconstructing
       //                the new resolved tree.
       font.reset();
-      //ignore: prefer_foreach
+      // ignore: prefer_foreach
       for (final CodeunitRange range in font.approximateUnicodeRanges) {
         ranges.putIfAbsent(font, () => <CodeunitRange>[]).add(range);
       }
