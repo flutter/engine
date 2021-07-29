@@ -29,8 +29,9 @@ int main(int argc, const char* argv[]) {
   input.seekg(0, std::ios::end);
   std::streampos size = input.tellg();
   input.seekg(0, std::ios::beg);
-  std::vector<char> buf(size);
+  std::vector<char> buf(static_cast<int>(size) + 1);
   input.read(buf.data(), size);
+  buf[size] = 0; // make sure the string is null terminated.
   input.close();
 
   shaderc::Compiler compiler;
