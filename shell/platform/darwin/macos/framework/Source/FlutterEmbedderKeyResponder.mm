@@ -424,6 +424,13 @@ const char* getEventString(NSString* characters) {
                        callback:(nullable FlutterKeyCallbackGuard*)callback;
 
 /**
+ * Send an empty key event.
+ *
+ * The event is always synthesized.
+ */
+- (void)sendEmptyEvent;
+
+/**
  * Processes a down event from the system.
  */
 - (void)handleDownEvent:(nonnull NSEvent*)event callback:(nonnull FlutterKeyCallbackGuard*)callback;
@@ -579,6 +586,7 @@ const char* getEventString(NSString* characters) {
   uint64_t logicalKey = GetLogicalKeyForModifier(keyCode, physicalKey);
   if (physicalKey == 0 || logicalKey == 0) {
     NSLog(@"Unrecognized modifier key: keyCode 0x%hx, physical key 0x%llx", keyCode, physicalKey);
+    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
     return;
   }
@@ -599,6 +607,20 @@ const char* getEventString(NSString* characters) {
   }
 }
 
+- (void)sendEmptyEvent {
+  FlutterKeyEvent flutterEvent = {
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = 0,
+      .type = kFlutterKeyEventTypeDown,
+      .physical = 0,
+      .logical = 0,
+      .character = nil,
+      .synthesized = false,
+  };
+  _sendEvent(flutterEvent, nullptr, nullptr);
+}
+
+
 - (void)handleDownEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
@@ -611,6 +633,7 @@ const char* getEventString(NSString* characters) {
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
+    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
     return;
   }
@@ -643,6 +666,7 @@ const char* getEventString(NSString* characters) {
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
+    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
     return;
   }
@@ -669,6 +693,7 @@ const char* getEventString(NSString* characters) {
     [self sendCapsLockTapWithTimestamp:event.timestamp callback:callback];
     _lastModifierFlagsOfInterest = _lastModifierFlagsOfInterest ^ NSEventModifierFlagCapsLock;
   } else {
+    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
   }
 }

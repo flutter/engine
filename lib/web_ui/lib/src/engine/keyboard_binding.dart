@@ -410,6 +410,7 @@ class KeyboardConverter {
           // pressing keys with the same physical key, or the up event was lost
           // during a loss of focus. The down event is ignored.
           dispatchKeyData(_emptyKeyData);
+          event.preventDefault();
           return;
         }
       } else {
@@ -423,6 +424,7 @@ class KeyboardConverter {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
         dispatchKeyData(_emptyKeyData);
+        event.preventDefault();
         return;
       }
 

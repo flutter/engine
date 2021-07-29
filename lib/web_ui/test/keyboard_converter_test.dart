@@ -374,6 +374,7 @@ void testMain() {
     expect(keyDataList[0].logical, 0);
     expect(preventedDefault, isTrue);
 
+    keyDataList.clear();
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
