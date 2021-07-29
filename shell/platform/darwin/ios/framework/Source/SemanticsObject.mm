@@ -430,9 +430,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   if (_node.IsPlatformViewNode()) {
     return YES;
   }
-  if(_children){
+  if (_children) {
     return [self.children count] != 0;
-  }else{
+  } else {
     return NO;
   }
 }
