@@ -21,3 +21,4 @@ float one() {
 void main() {
     fragColor = vec4(zero(), one(), zero(), one());
 }
+
