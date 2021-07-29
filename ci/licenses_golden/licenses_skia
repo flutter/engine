@@ -1,4 +1,4 @@
-Signature: 20e97a19cb6d05350e01abb631d1be0f
+Signature: 060b8c433cd6ab9e8b52b0e900491624
 
 UNUSED LICENSES:
 
@@ -4022,6 +4022,7 @@ FILE: ../../../third_party/skia/gm/drawglyphs.cpp
 FILE: ../../../third_party/skia/gm/largeclippedpath.cpp
 FILE: ../../../third_party/skia/include/private/GrMtlTypesPriv.h
 FILE: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h
+FILE: ../../../third_party/skia/include/utils/SkStrokeUtils.h
 FILE: ../../../third_party/skia/infra/bots/task_drivers/recreate_skps/recreate_skps.go
 FILE: ../../../third_party/skia/modules/androidkit/src/AndroidKit.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Canvas.cpp
@@ -4073,6 +4074,7 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/GrCullTest.h
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
 FILE: ../../../third_party/skia/src/utils/SkOrderedFontMgr.cpp
+FILE: ../../../third_party/skia/src/utils/SkStrokeUtils.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google Inc.
 
