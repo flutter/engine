@@ -167,7 +167,7 @@ class _Transpiler {
       return;
     }
     visited.add(function);
-    for (final dep in functionDeps[function]!) {
+    for (final int dep in functionDeps[function]!) {
       writeFunctionAndDeps(visited, dep);
     }
     src.write(functionDefs[function]!.toString());
