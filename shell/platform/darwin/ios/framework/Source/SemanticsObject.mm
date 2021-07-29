@@ -149,6 +149,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   }
   [_children removeAllObjects];
   [_children release];
+  _children = nil;
   _parent = nil;
   _container.get().semanticsObject = nil;
   [_platformViewSemanticsContainer release];
@@ -203,7 +204,11 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
   if (_node.IsPlatformViewNode()) {
     return YES;
   }
-  return [self.children count] != 0;
+  if(_children){
+    return [self.children count] != 0;
+  }else{
+    return NO;
+  }
 }
 
 - (void)privateSetParent:(SemanticsObject*)parent {
