@@ -292,7 +292,7 @@ public class FlutterFragmentActivityTest {
   }
 
   @Test
-  public void itWithMetadataWithoutSplashScreenResourceDoesNotLoadsSplashScreenDrawable()
+  public void itWithMetadataWithoutSplashScreenResourceKeyDoesNotProvideSplashScreen()
       throws PackageManager.NameNotFoundException {
     Intent intent = FlutterFragmentActivity.createDefaultIntent(RuntimeEnvironment.application);
     ActivityController<FlutterFragmentActivity> activityController =
