@@ -15,6 +15,8 @@ void main() {
 }
 
 Future<void> testMain() async {
+  setUpStableTestFonts();
+
   setUp(() async {
     debugEmulateFlutterTesterEnvironment = true;
   });
