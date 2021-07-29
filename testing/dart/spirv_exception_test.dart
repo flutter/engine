@@ -30,10 +30,12 @@ void main() {
   });
 }
 
+final String _buildDirectory =
+  Platform.environment['FLUTTER_BUILD_DIRECTORY']!;
+
 Stream<Uint8List> exceptionShaders() async* {
   final Directory dir = Directory(path.joinAll(<String>[
-    'out',
-    'host_debug_unopt',
+    ...path.split(_buildDirectory),
     'gen',
     'flutter',
     'lib',

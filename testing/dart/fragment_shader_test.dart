@@ -18,12 +18,12 @@ void main() {
   });
 
   test('simple shader renders correctly', () async {
-    final Uint8List shaderBytes = await _createFile('general_shaders', 'simple.spv').readAsBytes();
+    final Uint8List shaderBytes = await _getFile('general_shaders', 'simple.spv').readAsBytes();
     _expectShaderRendersGreen(shaderBytes.buffer.asUint32List());
   });
 
   test('shader with uniforms renders and updates correctly', () async {
-    final Uint8List shaderBytes = await _createFile('general_shaders', 'uniforms.spv').readAsBytes();
+    final Uint8List shaderBytes = await _getFile('general_shaders', 'uniforms.spv').readAsBytes();
     final FragmentShader shader = FragmentShader(spirv: shaderBytes.buffer);
 
     shader.update(floatUniforms: Float32List.fromList(<double>[
@@ -149,10 +149,10 @@ Future<ByteData?> _imageByteDataFromShader({
 }
 
 // Loads the path and spirv content of the files at
-// out/host_debug_unopt/gen/flutter/lib/spirv/test/$leafFolderName
+// $FLUTTER_BUILD_DIRECTORY/gen/flutter/lib/spirv/test/$leafFolderName
 Map<String, Uint32List> _loadSpv(String leafFolderName) {
   final Map<String, Uint32List> out = SplayTreeMap<String, Uint32List>();
-  _createDirectory(leafFolderName).listSync()
+  _getDirectory(leafFolderName).listSync()
     .where((FileSystemEntity entry) => path.extension(entry.path) == '.spv')
     .forEach((FileSystemEntity entry) {
       final String key = path.basenameWithoutExtension(entry.path);
@@ -161,18 +161,27 @@ Map<String, Uint32List> _loadSpv(String leafFolderName) {
   return out;
 }
 
-// Creates the directory that contains shader test files.
-Directory _createDirectory(String leafFolderName) {
-  return Directory(path.joinAll(_basePathChunks + <String>[leafFolderName]));
+// Get the directory that contains shader test files.
+Directory _getDirectory(String leafFolderName) {
+  return Directory(path.joinAll([
+    ..._basePathChunks,
+    leafFolderName,
+  ]));
 }
 
-File _createFile(String folderName, String fileName) {
-  return File(path.joinAll(_basePathChunks + <String>[folderName, fileName]));
+File _getFile(String folderName, String fileName) {
+  return File(path.joinAll([
+    ..._basePathChunks,
+    folderName,
+    fileName,
+  ]));
 }
 
-const List<String> _basePathChunks = <String>[
-  'out',
-  'host_debug_unopt',
+final String _buildDirectory =
+  Platform.environment['FLUTTER_BUILD_DIRECTORY']!;
+
+final List<String> _basePathChunks = <String>[
+  ...path.split(_buildDirectory),
   'gen',
   'flutter',
   'lib',
