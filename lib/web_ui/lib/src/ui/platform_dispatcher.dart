@@ -167,7 +167,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
-    int? physicalTouchSlop,
+    double? physicalTouchSlop,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -190,7 +190,7 @@ class ViewConfiguration {
   final WindowPadding viewPadding;
   final WindowPadding systemGestureInsets;
   final WindowPadding padding;
-  final int? physicalTouchSlop;
+  final double? physicalTouchSlop;
 
   @override
   String toString() {
