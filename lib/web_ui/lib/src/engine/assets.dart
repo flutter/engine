@@ -19,6 +19,7 @@ class AssetManager {
   /// The directory containing the assets.
   final String assetsDir;
 
+  /// Initializes [AssetManager] with path to assets relative to baseUrl.
   const AssetManager({this.assetsDir = _defaultAssetsDir});
 
   String? get _baseUrl {
@@ -53,6 +54,7 @@ class AssetManager {
     return Uri.encodeFull((_baseUrl ?? '') + '$assetsDir/$asset');
   }
 
+  /// Loads an asset using an [html.HttpRequest] and returns data as [ByteData].
   Future<ByteData> load(String asset) async {
     final String url = getAssetUrl(asset);
     try {
@@ -77,10 +79,14 @@ class AssetManager {
   }
 }
 
+/// Thrown to indicate http failure during asset loading.
 class AssetManagerException implements Exception {
+  /// Http request url for asset.
   final String url;
+  /// Http status of of response.
   final int httpStatus;
 
+  /// Initializes exception with request url and http status.
   AssetManagerException(this.url, this.httpStatus);
 
   @override
@@ -89,9 +95,12 @@ class AssetManagerException implements Exception {
 
 /// An asset manager that gives fake empty responses for assets.
 class WebOnlyMockAssetManager implements AssetManager {
-  String defaultAssetsDir = '';
-  String defaultAssetManifest = '{}';
-  String defaultFontManifest = '''
+  /// Mock asset directory relative to base url.
+  static const String kDefaultAssetsDir = '';
+  /// Mock empty asset manifest.
+  static const String kdefaultAssetManifest = '{}';
+  /// Mock default font manifest.
+  static const String kDefaultFontManifest = '''
   [
    {
       "family":"$robotoFontFamily",
@@ -104,7 +113,7 @@ class WebOnlyMockAssetManager implements AssetManager {
   ]''';
 
   @override
-  String get assetsDir => defaultAssetsDir;
+  String get assetsDir => kDefaultAssetsDir;
 
   @override
   String get _baseUrl => '';
@@ -116,11 +125,11 @@ class WebOnlyMockAssetManager implements AssetManager {
   Future<ByteData> load(String asset) {
     if (asset == getAssetUrl('AssetManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(defaultAssetManifest)));
+          _toByteData(utf8.encode(kdefaultAssetManifest)));
     }
     if (asset == getAssetUrl('FontManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(defaultFontManifest)));
+          _toByteData(utf8.encode(kdefaultAssetManifest)));
     }
     throw AssetManagerException(asset, 404);
   }
