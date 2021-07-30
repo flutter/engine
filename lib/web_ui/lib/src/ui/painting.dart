@@ -791,7 +791,7 @@ class FragmentShader extends Shader {
     required ByteBuffer spirv,
     Float32List? floatUniforms,
     bool debugPrint = false,
-  }) {
+  }) : super._() {
     throw UnsupportedError('FragmentShader is not supported on web');
   }
 
