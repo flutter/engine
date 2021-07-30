@@ -1,4 +1,4 @@
-Signature: dcfc1ff9b77717a93acc9b9090001d04
+Signature: 8f5eb3b9c4d190d7f6d3075ce62b5780
 
 UNUSED LICENSES:
 
@@ -5714,6 +5714,7 @@ FILE: ../../../third_party/skia/include/sksl/DSLLayout.h
 FILE: ../../../third_party/skia/include/sksl/DSLRuntimeEffects.h
 FILE: ../../../third_party/skia/include/sksl/DSLStatement.h
 FILE: ../../../third_party/skia/include/sksl/DSLWrapper.h
+FILE: ../../../third_party/skia/include/utils/SkStrokeUtils.h
 FILE: ../../../third_party/skia/src/core/SkStringView.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.h
@@ -5750,6 +5751,7 @@ FILE: ../../../third_party/skia/src/sksl/dsl/priv/DSL_priv.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDeclaration.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPoison.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVariable.cpp
+FILE: ../../../third_party/skia/src/utils/SkStrokeUtils.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC.
 
