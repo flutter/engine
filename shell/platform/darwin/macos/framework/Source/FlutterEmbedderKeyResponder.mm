@@ -620,7 +620,6 @@ const char* getEventString(NSString* characters) {
   _sendEvent(flutterEvent, nullptr, nullptr);
 }
 
-
 - (void)handleDownEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
