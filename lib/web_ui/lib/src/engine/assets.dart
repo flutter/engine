@@ -98,9 +98,9 @@ class WebOnlyMockAssetManager implements AssetManager {
   /// Mock asset directory relative to base url.
   static const String kDefaultAssetsDir = '';
   /// Mock empty asset manifest.
-  static const String kdefaultAssetManifest = '{}';
-  /// Mock default font manifest.
-  static const String kDefaultFontManifest = '''
+  static const String kDefaultAssetManifest = '{}';
+  /// Mock font manifest overridable for unit testing.
+  String defaultFontManifest = '''
   [
    {
       "family":"$robotoFontFamily",
@@ -125,11 +125,11 @@ class WebOnlyMockAssetManager implements AssetManager {
   Future<ByteData> load(String asset) {
     if (asset == getAssetUrl('AssetManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(kdefaultAssetManifest)));
+          _toByteData(utf8.encode(kDefaultAssetManifest)));
     }
     if (asset == getAssetUrl('FontManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(kdefaultAssetManifest)));
+          _toByteData(utf8.encode(kDefaultAssetManifest)));
     }
     throw AssetManagerException(asset, 404);
   }
