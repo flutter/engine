@@ -215,7 +215,7 @@ class PlatformDispatcher {
         left: math.max(0.0, systemGestureInsetLeft),
       ),
       // -1 is used as a sentinel for an undefined touch slop
-      physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop,
+      physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop.toDouble(),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
@@ -1042,7 +1042,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
-    int? physicalTouchSlop,
+    double? physicalTouchSlop,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -1131,7 +1131,7 @@ class ViewConfiguration {
   ///
   /// If `null`, the framework's default touch slop configuration is used
   /// instead.
-  final int? physicalTouchSlop;
+  final double? physicalTouchSlop;
 
   @override
   String toString() {

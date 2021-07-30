@@ -1263,7 +1263,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
-    viewportMetrics.physicalTouchSlop = ViewConfiguration.of(getContext()).getScaledTouchSlop();
+    viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 

@@ -479,7 +479,7 @@ void hooksTests() {
       11,  // physical touch slop
     );
 
-    expectEquals(window.physicalTouchSlop, 11);
+    expectEquals(window.viewConfiguration.physicalTouchSlop, 11);
 
     _callHook(
       '_updateWindowMetrics',
@@ -503,7 +503,7 @@ void hooksTests() {
       -1,  // physical touch slop
     );
 
-    expectEquals(window.physicalTouchSlop, null);
+    expectEquals(window.viewConfiguration.physicalTouchSlop, null);
 
     _callHook(
       '_updateWindowMetrics',
@@ -527,7 +527,7 @@ void hooksTests() {
       22,  // physical touch slop
     );
 
-    expectEquals(window.physicalTouchSlop, 22);
+    expectEquals(window.viewConfiguration.physicalTouchSlop, 22);
   });
 
   test('onLocaleChanged preserves callback zone', () {
@@ -748,4 +748,5 @@ void _callHook(
   Object? arg14,
   Object? arg15,
   Object? arg16,
+  Object? arg17,
 ]) native 'CallHook';
