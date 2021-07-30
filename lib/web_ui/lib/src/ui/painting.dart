@@ -785,3 +785,17 @@ class ImageDescriptor {
     return _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }
+
+class FragmentShader extends Shader {
+  FragmentShader({
+    required ByteBuffer spirv,
+    Float32List? floatUniforms,
+    bool debugPrint = false,
+  }) {
+    throw UnsupportedError('FragmentShader is not supported on web');
+  }
+
+  void update({Float32List? floatUniforms}) =>
+    throw UnsupportedError('FragmentShader.update is not supported on web');
+}
+
