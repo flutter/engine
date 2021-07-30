@@ -878,14 +878,23 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
 
   // Press KeyA again (with different logical key, which is not necessari but
   // for coverage).
-  g_expected_handled = true;  // The ignored event is always handled.
+  g_expected_handled = true;  // The empty event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(102, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
                                kIsNotModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 0u);
+  EXPECT_EQ(g_call_records->len, 1u);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
+
+  g_ptr_array_clear(g_call_records);
 
   // Release KeyA
   fl_key_responder_handle_event(
@@ -913,14 +922,21 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   int user_data = 123;  // Arbitrary user data
 
   // Release KeyA before it was even pressed.
-  g_expected_handled = true;  // The ignored event is always handled.
+  g_expected_handled = true;  // The empty event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
                                kIsNotModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 0u);
+  EXPECT_EQ(g_call_records->len, 1u);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
 
   clear_g_call_records();
   g_object_unref(engine);
