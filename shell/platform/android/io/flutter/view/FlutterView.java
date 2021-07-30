@@ -180,7 +180,7 @@ public class FlutterView extends SurfaceView
     mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
-    mMetrics.physicalTouchSlop = getPhysicalTouchSlop();
+    mMetrics.physicalTouchSlop = ViewConfiguration.of(context).getScaledTouchSlop();
     setFocusable(true);
     setFocusableInTouchMode(true);
 
@@ -719,10 +719,6 @@ public class FlutterView extends SurfaceView
 
   private void preRun() {
     resetAccessibilityTree();
-  }
-
-  int getPhysicalTouchSlop(Context context) {
-    return ViewConfiguration.of(context).getScaledTouchSlop();
   }
 
   void resetAccessibilityTree() {

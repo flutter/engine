@@ -300,7 +300,8 @@ public class FlutterRenderer implements TextureRegistry {
         viewportMetrics.systemGestureInsetTop,
         viewportMetrics.systemGestureInsetRight,
         viewportMetrics.systemGestureInsetBottom,
-        viewportMetrics.systemGestureInsetLeft);
+        viewportMetrics.systemGestureInsetLeft,
+        viewportMetrics.physicalTouchSlop);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes

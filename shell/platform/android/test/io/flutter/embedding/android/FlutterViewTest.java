@@ -340,26 +340,6 @@ public class FlutterViewTest {
     assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
   }
 
-  @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
-  public void reportSystemTouchSlopValue() {
-    // Without custom shadows, the default system ui visibility flags is 0.
-    FlutterView flutterView = new FLutterViewWithConfiguredTouchSlop(RuntimeEnvironment.application);
-    assertEquals(0, flutterView.getSystemUiVisibility());
-
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
-    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
-
-    flutterView.attachToFlutterEngine(flutterEngine);
-    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
-        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
-    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(22, viewportMetricsCaptor.getValue().physicalTouchSlop);
-  }
-
   // This test uses the pre-API 30 Algorithm for window insets.
   @Test
   @TargetApi(29)
@@ -827,17 +807,4 @@ public class FlutterViewTest {
   // production classes' view hierarchy.
   @Implements(ViewGroup.class)
   public static class ShadowFullscreenViewGroup extends ShadowFullscreenView {}
-
-  class FLutterViewWithConfiguredTouchSlop extends FlutterView {
-    public FLutterViewWithConfiguredTouchSlop(Context context) {
-      super(context, null);
-    }
-
-    int mConfiguredTouchSlop = 22;
-
-    @Override
-    int getPhysicalTouchSlop() {
-      return mConfiguredTouchSlop;
-    }
-  }
 }
