@@ -179,7 +179,7 @@ class PlatformDispatcher {
     double systemGestureInsetRight,
     double systemGestureInsetBottom,
     double systemGestureInsetLeft,
-    int physicalTouchSlop,
+    double physicalTouchSlop,
   ) {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
@@ -215,7 +215,7 @@ class PlatformDispatcher {
         left: math.max(0.0, systemGestureInsetLeft),
       ),
       // -1 is used as a sentinel for an undefined touch slop
-      physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop.toDouble(),
+      physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop,
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }

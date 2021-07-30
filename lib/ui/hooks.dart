@@ -27,7 +27,7 @@ void _updateWindowMetrics(
   double systemGestureInsetRight,
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
-  int physicalTouchSlop,
+  double physicalTouchSlop,
 ) {
   PlatformDispatcher.instance._updateWindowMetrics(
     id,

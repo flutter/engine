@@ -13,7 +13,7 @@ ViewportMetrics::ViewportMetrics() = default;
 ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_width,
                                  double p_physical_height,
-                                 int32_t p_physical_touch_slop)
+                                 double p_physical_touch_slop)
     : device_pixel_ratio(p_device_pixel_ratio),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
@@ -34,7 +34,7 @@ ViewportMetrics::ViewportMetrics(double p_device_pixel_ratio,
                                  double p_physical_system_gesture_inset_right,
                                  double p_physical_system_gesture_inset_bottom,
                                  double p_physical_system_gesture_inset_left,
-                                 int32_t p_physical_touch_slop)
+                                 double p_physical_touch_slop)
     : device_pixel_ratio(p_device_pixel_ratio),
       physical_width(p_physical_width),
       physical_height(p_physical_height),
