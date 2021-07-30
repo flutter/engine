@@ -14,9 +14,8 @@ RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
                                        fml::TaskQueueId gpu_queue_id)
     : platform_queue_id_(platform_queue_id),
       gpu_queue_id_(gpu_queue_id),
-      shared_merger_impl_(
-          fml::SharedThreadMergerImpl::GetSharedImpl(platform_queue_id,
-                                                     gpu_queue_id)),
+      shared_merger_(fml::SharedThreadMerger::GetSharedMerger(platform_queue_id,
+                                                              gpu_queue_id)),
       enabled_(true) {}
 
 void RasterThreadMerger::SetMergeUnmergeCallback(const fml::closure& callback) {
@@ -38,7 +37,7 @@ void RasterThreadMerger::MergeWithLease(int lease_term) {
     return;
   }
 
-  bool success = shared_merger_impl_->MergeWithLease(lease_term);
+  bool success = shared_merger_->MergeWithLease(lease_term);
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();
   }
@@ -55,7 +54,7 @@ void RasterThreadMerger::UnMergeNowIfLastOne() {
   if (!IsEnabledUnSafe()) {
     return;
   }
-  bool success = shared_merger_impl_->UnMergeNowIfLastOne(this);
+  bool success = shared_merger_->UnMergeNowIfLastOne(this);
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();
   }
@@ -79,7 +78,7 @@ void RasterThreadMerger::ExtendLeaseTo(int lease_term) {
     return;
   }
   std::scoped_lock lock(mutex_);
-  shared_merger_impl_->ExtendLeaseTo(lease_term);
+  shared_merger_->ExtendLeaseTo(lease_term);
 }
 
 bool RasterThreadMerger::IsMerged() {
@@ -107,7 +106,7 @@ bool RasterThreadMerger::IsEnabledUnSafe() const {
 }
 
 bool RasterThreadMerger::IsMergedUnSafe() const {
-  return TaskQueuesAreSame() || shared_merger_impl_->IsMergedUnSafe();
+  return TaskQueuesAreSame() || shared_merger_->IsMergedUnSafe();
 }
 
 bool RasterThreadMerger::TaskQueuesAreSame() const {
@@ -134,7 +133,7 @@ RasterThreadStatus RasterThreadMerger::DecrementLease() {
   if (!IsEnabledUnSafe()) {
     return RasterThreadStatus::kRemainsMerged;
   }
-  bool unmerged_after_decrement = shared_merger_impl_->DecrementLease();
+  bool unmerged_after_decrement = shared_merger_->DecrementLease();
   if (unmerged_after_decrement) {
     if (merge_unmerge_callback_ != nullptr) {
       merge_unmerge_callback_();
@@ -147,7 +146,7 @@ RasterThreadStatus RasterThreadMerger::DecrementLease() {
 
 void RasterThreadMerger::RecordMergeCaller() {
   std::scoped_lock lock(mutex_);
-  shared_merger_impl_->RecordMergerCaller(this);
+  shared_merger_->RecordMergerCaller(this);
 }
 
 }  // namespace fml

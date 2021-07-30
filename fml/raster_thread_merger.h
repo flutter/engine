@@ -11,7 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/message_loop_task_queues.h"
-#include "flutter/fml/shared_thread_merger_impl.h"
+#include "flutter/fml/shared_thread_merger.h"
 
 namespace fml {
 
@@ -60,7 +60,7 @@ class RasterThreadMerger
   // When task queues are statically merged this method becomes no-op.
   RasterThreadStatus DecrementLease();
 
-  // Record current merge caller in the set of SharedThreadMergerImpl object.
+  // Record current merge caller in the set of SharedThreadMerger object.
   // This method should be called before multiple merge callers of same
   // owner/subsumed pair are going to call |MergeWithLease| method.
   //
@@ -71,7 +71,7 @@ class RasterThreadMerger
   void RecordMergeCaller();
 
   // The method is locked by current instance, and asks the shared instance of
-  // SharedThreadMergerImpl and the merging state is determined by the
+  // SharedThreadMerger and the merging state is determined by the
   // lease_term_ counter.
   bool IsMerged();
 
@@ -113,7 +113,7 @@ class RasterThreadMerger
  private:
   fml::TaskQueueId platform_queue_id_;
   fml::TaskQueueId gpu_queue_id_;
-  SharedThreadMergerImpl* shared_merger_impl_;
+  SharedThreadMerger* shared_merger_;
   std::condition_variable merged_condition_;
   std::mutex mutex_;
   fml::closure merge_unmerge_callback_;

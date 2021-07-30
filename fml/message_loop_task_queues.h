@@ -35,11 +35,12 @@ class TaskQueueEntry {
   TaskObservers task_observers;
   std::unique_ptr<TaskSource> task_source;
 
-  // If owner_of is not empty, it means it owns another queue.
+  // Set of TaskQueueIds and in-turn the TaskQueues owned by this TaskQueue. If
+  // the set is empty, this TaskQueue does not own any other TaskQueues.
   std::set<TaskQueueId> owner_of;
 
-  // If subsumed_by is not _kUnmerged, which indicates that
-  // this queue has been subsumed (owned by another queue)
+  // Identifies the TaskQueue that subsumes this TaskQueue. If it is _kUnmerged,
+  // it indiacates that this TaskQueue is not owned by any other TaskQueue.
   TaskQueueId subsumed_by;
 
   TaskQueueId created_for;
@@ -110,10 +111,11 @@ class MessageLoopTaskQueues
   //     task observers.
   //  2. When we get the tasks to run now, we look at both the queue_ids
   //     for the owner and the subsumed task queues.
-  //  3. We can merge multiple subsumed queues into one owner task queue, but
-  //     the subsumed queues cannot be subsumed by other owner, and the owner
-  //     cannot be owned by other owners. The merge function will check these
-  //     error cases and return false result.
+  //  3. One TaskQueue can subsume multiple other TaskQueues. A TaskQueue can be
+  //     in exactly one of the following three states:
+  //     a. Be an owner of multiple other TaskQueues.
+  //     b. Be subsumed by a TaskQueue (an owner can never be subsumed).
+  //     c. Be independent, i.e, neither owner nor be subsumed.
   //
   //  Methods currently aware of the merged state of the queues:
   //  HasPendingTasks, GetNextTaskToRun, GetNumPendingTasks
