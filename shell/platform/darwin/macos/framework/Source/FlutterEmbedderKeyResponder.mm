@@ -426,7 +426,9 @@ const char* getEventString(NSString* characters) {
 /**
  * Send an empty key event.
  *
- * The event is always synthesized.
+ * The event is never synthesized, and never expects an event result. An empty
+ * event is sent when no other events should be sent, such as upon back-to-back
+ * keydown events of the same key.
  */
 - (void)sendEmptyEvent;
 
