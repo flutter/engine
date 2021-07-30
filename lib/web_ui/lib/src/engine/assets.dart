@@ -129,7 +129,7 @@ class WebOnlyMockAssetManager implements AssetManager {
     }
     if (asset == getAssetUrl('FontManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(defaultAssetManifest)));
+          _toByteData(utf8.encode(defaultFontManifest)));
     }
     throw AssetManagerException(asset, 404);
   }
