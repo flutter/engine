@@ -81,6 +81,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_system_gesture_inset_right),
           tonic::ToDart(metrics.physical_system_gesture_inset_bottom),
           tonic::ToDart(metrics.physical_system_gesture_inset_left),
+          tonic::ToDart(metrics.physical_touch_slop)
       }));
 }
 

@@ -355,7 +355,8 @@ void hooksTests() {
       0.0,    // system gesture inset top
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
-      0.0,    // system gesture inset left
+      0.0,    // system gesture inset left,
+      22,     // physical touch slop
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -419,6 +420,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      22,  // physical touch slop
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -445,12 +447,87 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      22,  // physical touch slop
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
     expectEquals(window.viewPadding.bottom, 40.0);
     expectEquals(window.padding.bottom, 0.0);
     expectEquals(window.systemGestureInsets.bottom, 44.0);
+  });
+
+   test('Window physical touch slop', () {
+    _callHook(
+      '_updateWindowMetrics',
+      16,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // pattingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      0.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      0.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      11,  // physical touch slop
+    );
+
+    expectEquals(window.physicalTouchSlop, 11);
+
+    _callHook(
+      '_updateWindowMetrics',
+      16,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // pattingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      400.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      44.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      -1,  // physical touch slop
+    );
+
+    expectEquals(window.physicalTouchSlop, null);
+
+    _callHook(
+      '_updateWindowMetrics',
+      16,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // pattingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      400.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      44.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      22,  // physical touch slop
+    );
+
+    expectEquals(window.physicalTouchSlop, 22);
   });
 
   test('onLocaleChanged preserves callback zone', () {

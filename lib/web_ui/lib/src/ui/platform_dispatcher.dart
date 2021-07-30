@@ -155,6 +155,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.physicalTouchSlop,
   });
 
   ViewConfiguration copyWith({
@@ -166,6 +167,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    int? physicalTouchSlop,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -176,6 +178,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
     );
   }
 
@@ -187,6 +190,7 @@ class ViewConfiguration {
   final WindowPadding viewPadding;
   final WindowPadding systemGestureInsets;
   final WindowPadding padding;
+  final int? physicalTouchSlop;
 
   @override
   String toString() {
