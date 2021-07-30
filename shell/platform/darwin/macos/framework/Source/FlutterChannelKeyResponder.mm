@@ -39,6 +39,8 @@
 }
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
+  // Remove the 0x100 bit set by Cocoa when no modifiers are pressed.
+  NSEventModifierFlags modifierFlags = event.modifierFlags & ~0x100;
   NSString* type;
   switch (event.type) {
     case NSEventTypeKeyDown:
@@ -48,10 +50,9 @@
       type = @"keyup";
       break;
     case NSEventTypeFlagsChanged:
-      if (event.modifierFlags < _previouslyPressedFlags) {
+      if (modifierFlags < _previouslyPressedFlags) {
         type = @"keyup";
-      } else if (event.modifierFlags > _previouslyPressedFlags &&
-                 event.modifierFlags > 0x100) {  // 0x100 is empty modifierFlags
+      } else if (modifierFlags > _previouslyPressedFlags) {
         type = @"keydown";
       } else {
         // ignore duplicate modifiers; This can happen in situations like switching
@@ -62,7 +63,7 @@
     default:
       NSAssert(false, @"Unexpected key event type (got %lu).", event.type);
   }
-  _previouslyPressedFlags = event.modifierFlags;
+  _previouslyPressedFlags = modifierFlags;
   NSMutableDictionary* keyMessage = [@{
     @"keymap" : @"macos",
     @"type" : type,
