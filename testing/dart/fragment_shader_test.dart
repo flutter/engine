@@ -49,14 +49,14 @@ void main() {
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
   final Map<String, Uint32List> supportedGLSLOpShaders =
     _loadSpv('supported_glsl_op_shaders');
-  expect(supportedGLSLOpShaders.length > 0, true);
+  expect(supportedGLSLOpShaders, isNotEmpty);
   _expectShadersRenderGreen(supportedGLSLOpShaders);
   _expectShadersHaveOp(supportedGLSLOpShaders, true /* glsl ops */);
 
   // Test all supported instructions. See lib/spirv/lib/src/constants.dart
   final Map<String, Uint32List> supportedOpShaders =
     _loadSpv('supported_op_shaders');
-  expect(supportedOpShaders.length > 0, true);
+  expect(supportedOpShaders, isNotEmpty);
   _expectShadersRenderGreen(supportedOpShaders);
   _expectShadersHaveOp(supportedOpShaders, false /* glsl ops */);
 }
@@ -84,7 +84,7 @@ const int _opExtInst = 12;
 
 // Expects that a spirv shader has the op code identified by its file name.
 void _expectShaderHasOp(Uint32List words, String filename, bool glsl) {
-  final List<String> sections = filename.split("_");
+  final List<String> sections = filename.split('_');
   expect(sections.length, greaterThan(1));
   final int op = int.parse(sections.first);
 
@@ -92,7 +92,6 @@ void _expectShaderHasOp(Uint32List words, String filename, bool glsl) {
   int position = 5;
 
   bool found = false;
-  int glslInstructionSetId = 0;
   while (position < words.length) {
     final int word = words[position];
     final int currentOpCode = word & 0xFFFF;
@@ -107,7 +106,7 @@ void _expectShaderHasOp(Uint32List words, String filename, bool glsl) {
         break;
       }
     }
-    final int advance = (word >> 16);
+    final int advance = word >> 16;
     if (advance <= 0) {
       break;
     }
@@ -121,7 +120,7 @@ void _expectShaderHasOp(Uint32List words, String filename, bool glsl) {
 Future<void> _expectShaderRendersGreen(Uint32List spirv) async {
   final FragmentShader shader = FragmentShader(
     spirv: spirv.buffer,
-    floatUniforms: Float32List.fromList([1]),
+    floatUniforms: Float32List.fromList(<double>[1]),
   );
   final ByteData renderedBytes = (await _imageByteDataFromShader(
     shader: shader,
@@ -163,14 +162,14 @@ Map<String, Uint32List> _loadSpv(String leafFolderName) {
 
 // Get the directory that contains shader test files.
 Directory _getDirectory(String leafFolderName) {
-  return Directory(path.joinAll([
+  return Directory(path.joinAll(<String>[
     ..._basePathChunks,
     leafFolderName,
   ]));
 }
 
 File _getFile(String folderName, String fileName) {
-  return File(path.joinAll([
+  return File(path.joinAll(<String>[
     ..._basePathChunks,
     folderName,
     fileName,
