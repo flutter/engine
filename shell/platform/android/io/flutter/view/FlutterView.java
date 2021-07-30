@@ -36,6 +36,7 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
@@ -115,6 +116,7 @@ public class FlutterView extends SurfaceView
     int systemGestureInsetRight = 0;
     int systemGestureInsetBottom = 0;
     int systemGestureInsetLeft = 0;
+    int physicalTouchSlop = -1;
   }
 
   private final DartExecutor dartExecutor;
@@ -178,6 +180,7 @@ public class FlutterView extends SurfaceView
     mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
+    mMetrics.physicalTouchSlop = getPhysicalTouchSlop();
     setFocusable(true);
     setFocusableInTouchMode(true);
 
@@ -716,6 +719,10 @@ public class FlutterView extends SurfaceView
 
   private void preRun() {
     resetAccessibilityTree();
+  }
+
+  int getPhysicalTouchSlop(Context context) {
+    return ViewConfiguration.of(context).getScaledTouchSlop();
   }
 
   void resetAccessibilityTree() {
