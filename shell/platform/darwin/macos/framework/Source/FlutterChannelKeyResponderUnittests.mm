@@ -52,9 +52,18 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
         callback(keyMessage);
       }));
 
-  // Key down
   FlutterChannelKeyResponder* responder =
       [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
+
+  // Empty modifiers. Shouldn't result in any event
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
+
+  EXPECT_EQ([messages count], 0u);
+
+  // Key down
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
                 callback:^(BOOL handled) {
                   [responses addObject:@(handled)];

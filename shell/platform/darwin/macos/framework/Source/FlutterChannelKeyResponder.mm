@@ -50,7 +50,8 @@
     case NSEventTypeFlagsChanged:
       if (event.modifierFlags < _previouslyPressedFlags) {
         type = @"keyup";
-      } else if (event.modifierFlags > _previouslyPressedFlags) {
+      } else if (event.modifierFlags > _previouslyPressedFlags &&
+                 event.modifierFlags > 0x100) {  // 0x100 is empty modifierFlags
         type = @"keydown";
       } else {
         // ignore duplicate modifiers; This can happen in situations like switching
