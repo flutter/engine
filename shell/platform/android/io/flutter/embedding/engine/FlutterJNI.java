@@ -603,7 +603,7 @@ public class FlutterJNI {
       int systemGestureInsetRight,
       int systemGestureInsetBottom,
       int systemGestureInsetLeft,
-      physicalTouchSlop);
+      int physicalTouchSlop);
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
