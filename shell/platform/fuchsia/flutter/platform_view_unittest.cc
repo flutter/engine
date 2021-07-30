@@ -590,7 +590,7 @@ TEST_F(PlatformViewTests, SetViewportMetrics) {
   EXPECT_EQ(delegate.metrics(),
             flutter::ViewportMetrics(
                 valid_pixel_ratio, valid_pixel_ratio * valid_max_bound,
-                valid_pixel_ratio * valid_max_bound, -1.f));
+                valid_pixel_ratio * valid_max_bound, -1.0));
 }
 
 // This test makes sure that the PlatformView correctly registers semantics

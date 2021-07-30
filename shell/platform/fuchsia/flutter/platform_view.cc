@@ -418,7 +418,7 @@ void PlatformView::OnScenicEvent(
         0.0f,                           // p_physical_system_gesture_inset_right
         0.0f,  // p_physical_system_gesture_inset_bottom
         0.0f,  // p_physical_system_gesture_inset_left,
-        -1.0f, // p_physical_touch_slop,
+        -1.0,  // p_physical_touch_slop,
     });
   }
 }
