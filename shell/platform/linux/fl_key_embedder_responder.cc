@@ -14,14 +14,14 @@
 
 constexpr uint64_t kMicrosecondsPerMillisecond = 1000;
 
-static const FlutterKeyEvent empty_event {
-  .struct_size = sizeof(FlutterKeyEvent),
-  .timestamp = 0,
-  .type = kFlutterKeyEventTypeDown,
-  .physical = 0,
-  .logical = 0,
-  .character = nullptr,
-  .synthesized = false,
+static const FlutterKeyEvent empty_event{
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = 0,
+    .type = kFlutterKeyEventTypeDown,
+    .physical = 0,
+    .logical = 0,
+    .character = nullptr,
+    .synthesized = false,
 };
 
 // Look up a hash table that maps a uint64_t to a uint64_t.
