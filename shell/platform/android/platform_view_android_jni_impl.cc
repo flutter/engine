@@ -294,7 +294,7 @@ static void SetViewportMetrics(JNIEnv* env,
       static_cast<double>(systemGestureInsetRight),
       static_cast<double>(systemGestureInsetBottom),
       static_cast<double>(systemGestureInsetLeft),
-      static_cast<int32_t>(physicalTouchSlop),
+      static_cast<double>(physicalTouchSlop),
   };
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
