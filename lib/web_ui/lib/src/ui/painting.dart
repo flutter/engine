@@ -787,6 +787,7 @@ class ImageDescriptor {
 }
 
 class FragmentShader extends Shader {
+  // ignore: avoid_unused_constructor_parameters
   FragmentShader({
     required ByteBuffer spirv,
     Float32List? floatUniforms,
