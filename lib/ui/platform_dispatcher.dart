@@ -215,7 +215,9 @@ class PlatformDispatcher {
         left: math.max(0.0, systemGestureInsetLeft),
       ),
       // -1 is used as a sentinel for an undefined touch slop
-      physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop,
+      gestureSettings: GestureSettings(
+        physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop,
+      ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
@@ -1029,7 +1031,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
-    this.physicalTouchSlop,
+    this.gestureSettings = const GestureSettings(),
   });
 
   /// Copy this configuration with some fields replaced.
@@ -1042,7 +1044,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
-    double? physicalTouchSlop,
+    GestureSettings? gestureSettings
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -1053,7 +1055,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
-      physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
     );
   }
 
@@ -1126,12 +1128,8 @@ class ViewConfiguration {
   /// phone sensor housings).
   final WindowPadding padding;
 
-  /// The number of physical pixels a pointer is allowed to drift before it is
-  /// considered an intentional movement.
-  ///
-  /// If `null`, the framework's default touch slop configuration is used
-  /// instead.
-  final double? physicalTouchSlop;
+  /// The view specific gesture settings.
+  final GestureSettings gestureSettings;
 
   @override
   String toString() {

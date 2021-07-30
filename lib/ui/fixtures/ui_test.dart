@@ -479,7 +479,8 @@ void hooksTests() {
       11.0, // physical touch slop
     );
 
-    expectEquals(window.viewConfiguration.physicalTouchSlop, 11);
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 11.0));
 
     _callHook(
       '_updateWindowMetrics',
@@ -504,7 +505,8 @@ void hooksTests() {
     );
 
     // -1 is interpreted as `null`, which does not update the config with copyWith.
-    expectEquals(window.viewConfiguration.physicalTouchSlop, 11);
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 11.0));
 
     _callHook(
       '_updateWindowMetrics',
@@ -528,7 +530,8 @@ void hooksTests() {
       22.0, // physical touch slop
     );
 
-    expectEquals(window.viewConfiguration.physicalTouchSlop, 22);
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 22.0));
   });
 
   test('onLocaleChanged preserves callback zone', () {

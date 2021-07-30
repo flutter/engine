@@ -257,3 +257,20 @@ class FrameData {
 
   final int frameNumber;
 }
+
+class GestureSettings {
+  const GestureSettings({this.physicalTouchSlop});
+
+  final double? physicalTouchSlop;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is GestureSettings &&
+      other.physicalTouchSlop == physicalTouchSlop;
+  }
+
+  @override
+  int get hashCode => physicalTouchSlop.hashCode;
+}
