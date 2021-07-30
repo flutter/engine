@@ -49,14 +49,14 @@ void main() {
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
   final Map<String, Uint32List> supportedGLSLOpShaders =
     _loadSpv('supported_glsl_op_shaders');
-  expect(supportedGLSLOpShaders, isNotEmpty);
+  expect(supportedGLSLOpShaders.isNotEmpty, true);
   _expectShadersRenderGreen(supportedGLSLOpShaders);
   _expectShadersHaveOp(supportedGLSLOpShaders, true /* glsl ops */);
 
   // Test all supported instructions. See lib/spirv/lib/src/constants.dart
   final Map<String, Uint32List> supportedOpShaders =
     _loadSpv('supported_op_shaders');
-  expect(supportedOpShaders, isNotEmpty);
+  expect(supportedOpShaders.isNotEmpty, true);
   _expectShadersRenderGreen(supportedOpShaders);
   _expectShadersHaveOp(supportedOpShaders, false /* glsl ops */);
 }
