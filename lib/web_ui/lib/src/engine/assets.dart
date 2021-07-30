@@ -96,9 +96,9 @@ class AssetManagerException implements Exception {
 /// An asset manager that gives fake empty responses for assets.
 class WebOnlyMockAssetManager implements AssetManager {
   /// Mock asset directory relative to base url.
-  static const String kDefaultAssetsDir = '';
+  String defaultAssetsDir = '';
   /// Mock empty asset manifest.
-  static const String kDefaultAssetManifest = '{}';
+  String defaultAssetManifest = '{}';
   /// Mock font manifest overridable for unit testing.
   String defaultFontManifest = '''
   [
@@ -113,7 +113,7 @@ class WebOnlyMockAssetManager implements AssetManager {
   ]''';
 
   @override
-  String get assetsDir => kDefaultAssetsDir;
+  String get assetsDir => defaultAssetsDir;
 
   @override
   String get _baseUrl => '';
@@ -125,11 +125,11 @@ class WebOnlyMockAssetManager implements AssetManager {
   Future<ByteData> load(String asset) {
     if (asset == getAssetUrl('AssetManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(kDefaultAssetManifest)));
+          _toByteData(utf8.encode(defaultAssetManifest)));
     }
     if (asset == getAssetUrl('FontManifest.json')) {
       return Future<ByteData>.value(
-          _toByteData(utf8.encode(kDefaultAssetManifest)));
+          _toByteData(utf8.encode(defaultAssetManifest)));
     }
     throw AssetManagerException(asset, 404);
   }
