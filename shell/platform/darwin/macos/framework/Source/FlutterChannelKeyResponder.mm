@@ -39,7 +39,7 @@
 }
 
 - (void)handleEvent:(NSEvent*)event callback:(FlutterAsyncKeyCallback)callback {
-  // Remove the 0x100 bit set by Cocoa when no modifiers are pressed.
+  // Remove the modifier bits that Flutter is not interested in.
   NSEventModifierFlags modifierFlags = event.modifierFlags & ~0x100;
   NSString* type;
   switch (event.type) {
