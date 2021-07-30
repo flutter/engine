@@ -339,7 +339,7 @@ void hooksTests() {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      16,
+      17,
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -356,7 +356,7 @@ void hooksTests() {
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
       0.0,    // system gesture inset left,
-      22,     // physical touch slop
+      22.0,  // physical touch slop
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -403,7 +403,7 @@ void hooksTests() {
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      16,
+      17,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -420,7 +420,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      22,  // physical touch slop
+      22.0, // physical touch slop
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -430,7 +430,7 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      16,
+      17,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -447,7 +447,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      22,  // physical touch slop
+      22.0, // physical touch slop
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
@@ -459,7 +459,7 @@ void hooksTests() {
    test('Window physical touch slop', () {
     _callHook(
       '_updateWindowMetrics',
-      16,
+      17,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -476,14 +476,14 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      11,  // physical touch slop
+      11.0, // physical touch slop
     );
 
     expectEquals(window.viewConfiguration.physicalTouchSlop, 11);
 
     _callHook(
       '_updateWindowMetrics',
-      16,
+      17,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -500,14 +500,14 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      -1,  // physical touch slop
+      -1.0, // physical touch slop
     );
 
     expectEquals(window.viewConfiguration.physicalTouchSlop, null);
 
     _callHook(
       '_updateWindowMetrics',
-      16,
+      17,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -524,7 +524,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      22,  // physical touch slop
+      22.0, // physical touch slop
     );
 
     expectEquals(window.viewConfiguration.physicalTouchSlop, 22);
