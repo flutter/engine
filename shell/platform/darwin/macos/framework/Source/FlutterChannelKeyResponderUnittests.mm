@@ -55,8 +55,8 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   FlutterChannelKeyResponder* responder =
       [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
 
-  // Initial empty modifiers. This can happen when user opens window while modifier key is present
-  // and then releases the modifier. Shouldn't result in any event being sent.
+  // Initial empty modifiers. This can happen when user opens window while modifier key is pressed
+  // and then releases the modifier. Shouldn't result in an event being sent.
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
                 callback:^(BOOL handled) {
                   [responses addObject:@(handled)];
