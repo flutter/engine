@@ -47,7 +47,7 @@ echo "Using dart from $DART_BIN"
 "$DART" --version
 echo ""
 
-(cd $SKY_ENGINE_DIR && "$DART" pub get)
+(cd $SKY_ENGINE_DIR && "$DART" pub get --offline)
 "$DART" analyze "$SKY_ENGINE_DIR/lib/ui/ui.dart"
 
 "$DART" analyze "$FLUTTER_DIR/lib/spirv"
