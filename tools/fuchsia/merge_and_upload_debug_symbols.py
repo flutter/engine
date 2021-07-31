@@ -167,7 +167,7 @@ def main():
   out_dir = args.out_dir
 
   if os.path.exists(out_dir):
-    print 'Directory: %s is not empty, deleting it.' % out_dir
+    print('Directory: %s is not empty, deleting it.' % out_dir)
     shutil.rmtree(out_dir)
   os.makedirs(out_dir)
 

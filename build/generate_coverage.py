@@ -84,7 +84,7 @@ def main():
 
     RemoveIfExists(raw_profile)
 
-    print "Running test %s to gather profile." % os.path.basename(absolute_test_path)
+    print("Running test %s to gather profile." % os.path.basename(absolute_test_path))
 
     test_command = [absolute_test_path]
 

@@ -13,9 +13,9 @@ Precondition: $CWD/../../flutter is the path to the flutter engine repo.
 usage: copy_info_plist.py <src_path> <dest_path> --bitcode=<enable_bitcode>
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 import subprocess
 
 import sys

@@ -34,10 +34,10 @@ def patch(dest_dir, relative_patches_dir=os.curdir):
 
   os.chdir(dest_dir)
   for p in utils.find(["*.patch"], patches_dir):
-    print "applying patch %s" % os.path.basename(p)
+    print("applying patch %s" % os.path.basename(p))
     try:
       utils.system(["git", "apply", p])
       utils.commit("applied patch %s" % os.path.basename(p))
     except subprocess.CalledProcessError:
-      print "ERROR: patch %s failed to apply" % os.path.basename(p)
+      print("ERROR: patch %s failed to apply" % os.path.basename(p))
       raise

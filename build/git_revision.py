@@ -5,9 +5,9 @@
 # found in the LICENSE file.
 
 """Get the Git HEAD revision of a specified Git repository."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import sys
 import subprocess
