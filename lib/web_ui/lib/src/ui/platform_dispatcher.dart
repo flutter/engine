@@ -178,7 +178,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
-      gestureSettings: gestureSettings ?? this.gesturesettings,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
     );
   }
 
