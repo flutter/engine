@@ -895,4 +895,7 @@ class GestureSettings {
 
   @override
   int get hashCode => physicalTouchSlop.hashCode;
+
+  @override
+  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop}';
 }

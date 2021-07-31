@@ -504,9 +504,8 @@ void hooksTests() {
       -1.0, // physical touch slop
     );
 
-    // -1 is interpreted as `null`, which does not update the config with copyWith.
     expectEquals(window.viewConfiguration.gestureSettings,
-      GestureSettings(physicalTouchSlop: 11.0));
+      GestureSettings(physicalTouchSlop: null));
 
     _callHook(
       '_updateWindowMetrics',
