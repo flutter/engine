@@ -391,9 +391,6 @@ deps = {
   'src/third_party/fontconfig/src':
    Var('chromium_git') + '/external/fontconfig.git' + '@' + 'c336b8471877371f0190ba06f7547c54e2b890ba',
 
-  'src/third_party/gyp':
-   Var('chromium_git') + '/external/gyp.git' + '@' + 'caa60026e223fc501e8b337fd5086ece4028b1c6',
-
    # Headers for Vulkan 1.1
    'src/third_party/vulkan':
    Var('github_git') + '/KhronosGroup/Vulkan-Docs.git' + '@' + 'v1.1.91',
