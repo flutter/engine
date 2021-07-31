@@ -57,6 +57,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
 
   // Initial empty modifiers. This can happen when user opens window while modifier key is pressed
   // and then releases the modifier. Shouldn't result in an event being sent.
+  // Regression test for https://github.com/flutter/flutter/issues/87339.
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
                 callback:^(BOOL handled) {
                   [responses addObject:@(handled)];
