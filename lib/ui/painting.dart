@@ -3748,10 +3748,12 @@ class ImageShader extends Shader {
 
 /// A shader (as used by [Paint.shader]) that runs provided SPIR-V code.
 ///
-/// NOTE: This API is in beta and does not yet work on web.
+/// This API is in beta and does not yet work on web.
 /// See https://github.com/flutter/flutter/projects/207 for roadmap.
 ///
-/// When initializing or updating the [floatUniforms], the length of float
+/// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
+///
+/// When initializing or updating the `floatUniforms`, the length of float
 /// uniforms must match the total number of floats defined as uniforms in
 /// the shader. They will be updated in the order that they are defined.
 ///
@@ -3761,26 +3763,31 @@ class ImageShader extends Shader {
 ///
 /// The uniforms could be updated as follows:
 ///
-///   Example fragment shader uniforms.
+/// Consider the following snippit of GLSL code.
 ///
-///   `uniform float a;`
-///   `uniform vec2 b;`
-///   `uniform vec3 c;`
-///   `uniform mat2x2 d;`
+/// ```
+/// layout (location = 0) uniform float a;
+/// layout (location = 1) uniform vec2 b;
+/// layout (location = 2) uniform vec3 c;
+/// layout (location = 3) uniform mat2x2 d;
+/// ```
 ///
-///   Dart code to update uniforms.
+/// After being compiled to SPIR-V using [shaderc](https://github.com/google/shaderc)
+/// and provided to the constructor, `floatUniforms` must always have a length
+/// of 10. One per float-component of each uniform.
 ///
-///   `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
+/// Dart code to update uniforms.
 ///
-///   Results of shader uniforms.
+/// `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
 ///
-///   a: 1
-///   b: [2, 3]
-///   c: [4, 5, 6]
-///   d: [7, 8, 9, 10] // 2x2 matrix in column-major order
+/// Results of shader uniforms.
+///
+/// a: 1
+/// b: [2, 3]
+/// c: [4, 5, 6]
+/// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
 ///
 class FragmentShader extends Shader {
-  @pragma('vm:entry-point')
 
   // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
   // constructor and to [update].
@@ -3788,9 +3795,16 @@ class FragmentShader extends Shader {
 
   /// Creates a fragment shader from SPIR-V byte data as an input.
   ///
-  /// The [floatUniforms] can be passed optionally to initialize the
-  /// shader's uniforms. If they are not initially set, they will default
+  /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
+  /// SPIR-V not meeting this specification will throw an exception.
+  ///
+  /// `floatUniforms` can be passed optionally to initialize the shader's
+  /// uniforms. If they are not initially set, they will default
   /// to 0. They can later be updated by invoking the [update] method.
+  ///
+  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
+  /// be thrown. See [FragmentShader] docs for details.
+  @pragma('vm:entry-point')
   FragmentShader({
     required ByteBuffer spirv,
     Float32List? floatUniforms,
@@ -3812,11 +3826,8 @@ class FragmentShader extends Shader {
   /// Updates the uniform values that are supplied to the [FragmentShader]
   /// and refreshes the shader.
   ///
-  /// The length of float uniforms must match the total number of
-  /// floats defined as uniforms in the shader. They will be updated
-  /// in the order that they are defined.
-  ///
-  /// See [FragmentShader] for more information on passing uniforms.
+  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
+  /// be thrown. See [FragmentShader] docs for details.
   ///
   /// This method will aquire additional fields as [FragmentShader] is
   /// implemented further.

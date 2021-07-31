@@ -793,10 +793,10 @@ class FragmentShader extends Shader {
     Float32List? floatUniforms,
     bool debugPrint = false,
   }) : super._() {
-    throw UnsupportedError('FragmentShader is not supported on web');
+    throw UnsupportedError('FragmentShader is not supported for the CanvasKit or HTML renderers.');
   }
 
   void update({Float32List? floatUniforms}) =>
-    throw UnsupportedError('FragmentShader.update is not supported on web');
+    throw UnsupportedError('FragmentShader is not supported for the CanvasKit or HTML renderers.');
 }
 
