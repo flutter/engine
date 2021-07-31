@@ -179,6 +179,7 @@ class PlatformDispatcher {
     double systemGestureInsetRight,
     double systemGestureInsetBottom,
     double systemGestureInsetLeft,
+    double physicalTouchSlop,
   ) {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
@@ -212,6 +213,10 @@ class PlatformDispatcher {
         right: math.max(0.0, systemGestureInsetRight),
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
+      ),
+      // -1 is used as a sentinel for an undefined touch slop
+      gestureSettings: GestureSettings(
+        physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop,
       ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
@@ -1026,6 +1031,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
   });
 
   /// Copy this configuration with some fields replaced.
@@ -1038,6 +1044,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -1048,6 +1055,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
     );
   }
 
@@ -1119,6 +1127,9 @@ class ViewConfiguration {
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
   final WindowPadding padding;
+
+  /// The view specific gesture settings.
+  final GestureSettings gestureSettings;
 
   @override
   String toString() {

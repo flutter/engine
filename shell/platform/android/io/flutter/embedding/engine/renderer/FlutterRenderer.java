@@ -300,7 +300,8 @@ public class FlutterRenderer implements TextureRegistry {
         viewportMetrics.systemGestureInsetTop,
         viewportMetrics.systemGestureInsetRight,
         viewportMetrics.systemGestureInsetBottom,
-        viewportMetrics.systemGestureInsetLeft);
+        viewportMetrics.systemGestureInsetLeft,
+        viewportMetrics.physicalTouchSlop);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -372,6 +373,7 @@ public class FlutterRenderer implements TextureRegistry {
     public int systemGestureInsetRight = 0;
     public int systemGestureInsetBottom = 0;
     public int systemGestureInsetLeft = 0;
+    public int physicalTouchSlop = -1;
 
     /**
      * Whether this instance contains valid metrics for the Flutter application.

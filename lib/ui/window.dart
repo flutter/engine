@@ -871,3 +871,31 @@ class FrameData {
   /// If not provided, defaults to -1.
   final int frameNumber;
 }
+
+/// Platform specific configuration for gesture behavior, such as touch slop.
+class GestureSettings {
+
+  /// Create a new [GestureSettings] value.
+  const GestureSettings({this.physicalTouchSlop});
+
+  /// The number of physical pixels a pointer is allowed to drift before it is
+  /// considered an intentional movement.
+  ///
+  /// If `null`, the framework's default touch slop configuration should be used
+  /// instead.
+  final double? physicalTouchSlop;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is GestureSettings &&
+      other.physicalTouchSlop == physicalTouchSlop;
+  }
+
+  @override
+  int get hashCode => physicalTouchSlop.hashCode;
+
+  @override
+  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop}';
+}
