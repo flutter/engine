@@ -805,7 +805,7 @@ public class FlutterViewTest {
         ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
 
-    assertNotEquals(-1, viewportMetricsCaptor.getValue().physicalTouchSlop);
+    assertFalse(-1 == viewportMetricsCaptor.getValue().physicalTouchSlop);
   }
 
   /*
