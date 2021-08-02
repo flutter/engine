@@ -259,9 +259,24 @@ class FrameData {
 }
 
 class GestureSettings {
-  const GestureSettings({this.physicalTouchSlop});
+  const GestureSettings({
+    this.physicalTouchSlop,
+    this.physicalDoubleTapSlop,
+  });
 
   final double? physicalTouchSlop;
+
+  final double? physicalDoubleTapSlop;
+
+  GestureSettings copyWith({
+    double? physicalTouchSlop,
+    double? physicalDoubleTapSlop,
+  }) {
+    return GestureSettings(
+      physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
+      physicalDoubleTapSlop: physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
+    );
+  }
 
   @override
   bool operator ==(Object other) {
@@ -269,12 +284,13 @@ class GestureSettings {
       return false;
     }
     return other is GestureSettings &&
-      other.physicalTouchSlop == physicalTouchSlop;
+      other.physicalTouchSlop == physicalTouchSlop &&
+      other.physicalDoubleTapSlop == physicalDoubleTapSlop;
   }
 
   @override
-  int get hashCode => physicalTouchSlop.hashCode;
+  int get hashCode => hashValues(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
-  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop}';
+  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop}';
 }

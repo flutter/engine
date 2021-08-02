@@ -874,9 +874,17 @@ class FrameData {
 
 /// Platform specific configuration for gesture behavior, such as touch slop.
 class GestureSettings {
-
   /// Create a new [GestureSettings] value.
-  const GestureSettings({this.physicalTouchSlop});
+  ///
+  /// All values are optional and default to `null` if unset, which signals to
+  /// the framework that it must use a fallback value.
+  ///
+  /// Consider using [GestureSettings.copyWith] on an existing settings object
+  /// to ensure that newly added fields are correctly set.
+  const GestureSettings({
+    this.physicalTouchSlop,
+    this.physicalDoubleTapSlop,
+  });
 
   /// The number of physical pixels a pointer is allowed to drift before it is
   /// considered an intentional movement.
@@ -885,17 +893,34 @@ class GestureSettings {
   /// instead.
   final double? physicalTouchSlop;
 
+  /// The number of physical pixels that the first and second tap of a double tap
+  /// can drift apart to still be recognized as a double tap.
+  final double? physicalDoubleTapSlop;
+
+  /// Create a new [GestureSetting]s object from an existing value, overwriting
+  /// all of the provided fields.
+  GestureSettings copyWith({
+    double? physicalTouchSlop,
+    double? physicalDoubleTapSlop,
+  }) {
+    return GestureSettings(
+      physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
+      physicalDoubleTapSlop: physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (other.runtimeType != runtimeType)
       return false;
     return other is GestureSettings &&
-      other.physicalTouchSlop == physicalTouchSlop;
+      other.physicalTouchSlop == physicalTouchSlop &&
+      other.physicalDoubleTapSlop == physicalDoubleTapSlop;
   }
 
   @override
-  int get hashCode => physicalTouchSlop.hashCode;
+  int get hashCode => hashValues(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
-  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop}';
+  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop}';
 }
