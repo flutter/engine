@@ -5,6 +5,8 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
 
+#include <optional>
+
 #include "flutter/flow/display_list.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -374,7 +376,7 @@ class DisplayListBoundsCalculator final
    protected:
     DisplayListBoundsCalculator* calculator_;
 
-    SkRect bounds_;
+    std::optional<SkRect> bounds_;
     SkPaint paint_;
 
    private:

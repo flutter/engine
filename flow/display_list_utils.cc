@@ -400,18 +400,28 @@ DisplayListBoundsCalculator::SaveLayerWithPaintInfo::SaveLayerWithPaintInfo(
     const SkPaint& savePaint)
     : SaveLayerInfo(accumulator, saveMatrix),
       calculator_(calculator),
-      bounds_(saveBounds
-                  ? (saveBounds->isEmpty() ? SkRect::MakeEmpty() : *saveBounds)
-                  : kMissingBounds),
-      paint_(savePaint) {}
+      paint_(savePaint) {
+  if (saveBounds) {
+    bounds_.emplace(*saveBounds);
+  }
+}
 
-static bool PaintPreservesTransparency(const SkPaint& paint) {
+static bool PaintNopsOnTransparenBlack(const SkPaint& paint) {
   SkImageFilter* image_filter = paint.getImageFilter();
   // SkImageFilter::canComputeFastBounds tests for transparency behavior
+  // This test assumes that the blend mode checked down below will
+  // NOP on transparent black.
   if (image_filter && !image_filter->canComputeFastBounds()) {
     return false;
   }
+
   SkColorFilter* color_filter = paint.getColorFilter();
+  // We filter the transparent black that is used for the background of a
+  // saveLayer and make sure it returns transparent black. If it does, then
+  // the color filter will leave all area surrounding the contents of the
+  // save layer untouched out to the edge of the output surface.
+  // This test assumes that the blend mode checked down below will
+  // NOP on transparent black.
   if (color_filter &&
       color_filter->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT) {
     return false;
@@ -429,34 +439,71 @@ static bool PaintPreservesTransparency(const SkPaint& paint) {
   switch (blend_mode.value()) {
     // For each of the following transfer modes, if the source
     // alpha is zero (our transparent black), the resulting
-    // blended alpha is not necessarily equal to the original
-    // destination alpha.
-    case SkBlendMode::kClear:
-    case SkBlendMode::kSrc:
-    case SkBlendMode::kSrcIn:
-    case SkBlendMode::kDstIn:
-    case SkBlendMode::kSrcOut:
-    case SkBlendMode::kDstATop:
-    case SkBlendMode::kModulate:
+    // blended pixel is not necessarily equal to the original
+    // destination pixel.
+    // Mathematically, any time in the following equations where
+    // the result is not d assuming source is 0
+    case SkBlendMode::kClear:     // r = 0
+    case SkBlendMode::kSrc:       // r = s
+    case SkBlendMode::kSrcIn:     // r = s * da
+    case SkBlendMode::kDstIn:     // r = d * sa
+    case SkBlendMode::kSrcOut:    // r = s * (1-da)
+    case SkBlendMode::kDstATop:   // r = d*sa + s*(1-da)
+    case SkBlendMode::kModulate:  // r = s*d
       return false;
       break;
-    default:
+
+    // And in these equations, the result must be d if the
+    // source is 0
+    case SkBlendMode::kDst:         // r = d
+    case SkBlendMode::kSrcOver:     // r = s + (1-sa)*d
+    case SkBlendMode::kDstOver:     // r = d + (1-da)*s
+    case SkBlendMode::kDstOut:      // r = d * (1-sa)
+    case SkBlendMode::kSrcATop:     // r = s*da + d*(1-sa)
+    case SkBlendMode::kXor:         // r = s*(1-da) + d*(1-sa)
+    case SkBlendMode::kPlus:        // r = min(s + d, 1)
+    case SkBlendMode::kScreen:      // r = s + d - s*d
+    case SkBlendMode::kOverlay:     // multiply or screen, depending on dest
+    case SkBlendMode::kDarken:      // rc = s + d - max(s*da, d*sa),
+                                    // ra = kSrcOver
+    case SkBlendMode::kLighten:     // rc = s + d - min(s*da, d*sa),
+                                    // ra = kSrcOver
+    case SkBlendMode::kColorDodge:  // brighten destination to reflect source
+    case SkBlendMode::kColorBurn:   // darken destination to reflect source
+    case SkBlendMode::kHardLight:   // multiply or screen, depending on source
+    case SkBlendMode::kSoftLight:   // lighten or darken, depending on source
+    case SkBlendMode::kDifference:  // rc = s + d - 2*(min(s*da, d*sa)),
+                                    // ra = kSrcOver
+    case SkBlendMode::kExclusion:   // rc = s + d - two(s*d), ra = kSrcOver
+    case SkBlendMode::kMultiply:    // r = s*(1-da) + d*(1-sa) + s*d
+    case SkBlendMode::kHue:         // ra = kSrcOver
+    case SkBlendMode::kSaturation:  // ra = kSrcOver
+    case SkBlendMode::kColor:       // ra = kSrcOver
+    case SkBlendMode::kLuminosity:  // ra = kSrcOver
+      return true;
       break;
   }
-  return true;
 }
 
 BoundsAccumulator*
 DisplayListBoundsCalculator::SaveLayerWithPaintInfo::restore() {
   SkRect layer_bounds;
-  if (paint_.canComputeFastBounds() && PaintPreservesTransparency(paint_)) {
+  if (paint_.canComputeFastBounds() && PaintNopsOnTransparenBlack(paint_)) {
+    // The ideal situation. The paint can compute the bounds AND the
+    // surrounding transparent pixels will not affect the destination.
     layer_bounds = layer_accumulator_.getBounds();
     layer_bounds = paint_.computeFastBounds(layer_bounds, &layer_bounds);
-  } else if (bounds_ == kMissingBounds) {
-    calculator_->root_accumulator_.accumulate(calculator_->bounds_cull_);
-    return saved_accumulator_;
+  } else if (bounds_.has_value()) {
+    // Bounds were provided by the save layer, the operation will affect
+    // all of those bounds.
+    layer_bounds = bounds_.value();
   } else {
-    layer_bounds = bounds_;
+    // Bounds were not provided for the save layer. We will fill to the
+    // cull bounds provided to the original DisplayList.
+    calculator_->root_accumulator_.accumulate(calculator_->bounds_cull_);
+    // There is no need to process the layer bounds further as we just
+    // expanded bounds to the cull rect of the DisplayList.
+    return saved_accumulator_;
   }
   layer_bounds.roundOut(&layer_bounds);
   matrix_.mapRect(&layer_bounds);
