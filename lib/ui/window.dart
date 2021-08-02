@@ -873,11 +873,14 @@ class FrameData {
 }
 
 /// Platform specific configuration for gesture behavior, such as touch slop.
+///
+/// These settings are provided via [ViewConfiguration] to each window, and should
+/// be favored for configuring gesture behavior over the framework constants.
+///
+/// A `null` field indicates that the platform or view does not have a preference
+/// and the fallback constants should be used instead.
 class GestureSettings {
   /// Create a new [GestureSettings] value.
-  ///
-  /// All values are optional and default to `null` if unset, which signals to
-  /// the framework that it must use a fallback value.
   ///
   /// Consider using [GestureSettings.copyWith] on an existing settings object
   /// to ensure that newly added fields are correctly set.
