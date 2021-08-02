@@ -56,6 +56,9 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 /// Signature for [PlatformDispatcher.onConfigurationChanged].
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 
+// A gesture setting value that indicates it has not been set by the engine.
+const double _kUnsetGestureSetting = -1.0;
+
 /// Platform event dispatcher singleton.
 ///
 /// The most basic interface to the host operating system's interface.
@@ -216,7 +219,7 @@ class PlatformDispatcher {
       ),
       // -1 is used as a sentinel for an undefined touch slop
       gestureSettings: GestureSettings(
-        physicalTouchSlop: physicalTouchSlop < 0 ? null : physicalTouchSlop,
+        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
       ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);

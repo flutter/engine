@@ -356,7 +356,7 @@ void hooksTests() {
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
       0.0,    // system gesture inset left,
-      22.0,  // physical touch slop
+      22.0,   // physicalTouchSlop
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -411,7 +411,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       0.0, // insetBottom
@@ -420,7 +420,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      22.0, // physical touch slop
+      22.0, // physicalTouchSlop
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -438,7 +438,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       400.0, // insetBottom
@@ -447,7 +447,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      22.0, // physical touch slop
+      22.0, // physicalTouchSlop
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
@@ -467,7 +467,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       0.0, // insetBottom
@@ -476,7 +476,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      11.0, // physical touch slop
+      11.0, // physicalTouchSlop
     );
 
     expectEquals(window.viewConfiguration.gestureSettings,
@@ -492,7 +492,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       400.0, // insetBottom
@@ -501,7 +501,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      -1.0, // physical touch slop
+      -1.0, // physicalTouchSlop
     );
 
     expectEquals(window.viewConfiguration.gestureSettings,
@@ -517,7 +517,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       400.0, // insetBottom
@@ -526,7 +526,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
-      22.0, // physical touch slop
+      22.0, // physicalTouchSlop
     );
 
     expectEquals(window.viewConfiguration.gestureSettings,
