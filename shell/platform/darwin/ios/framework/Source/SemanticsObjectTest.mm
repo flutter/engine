@@ -644,4 +644,15 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   XCTAssertEqual(object.accessibilityValue, nativeSwitch.accessibilityValue);
 }
 
+- (void)testSemanticsObjectDeallocated {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+  SemanticsObject* parent = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
+  SemanticsObject* child = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
+  parent.children = @[ child ];
+  __weak SemanticsObject* weakObject = parent;
+  parent = nil;
+  XCTAssertNil(weakObject);
+}
 @end
