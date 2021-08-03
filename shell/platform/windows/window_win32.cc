@@ -388,7 +388,7 @@ WindowWin32::HandleMessage(UINT const message,
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
-      if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
+      if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
         handled_for_char_message_ = true;
         return 0;
       }

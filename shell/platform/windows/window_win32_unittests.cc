@@ -74,12 +74,13 @@ TEST(MockWin32Window, KeyUp) {
 TEST(MockWin32Window, KeyDownPrintable) {
   MockWin32Window window;
   LPARAM lparam = CreateKeyEventLparam(30);
-  // OnKey shouldn't be called until the WM_CHAR message.
-  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(0);
+  // OnKey shoulde called during the WM_KEYDOWN message.
+  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(1);
   // send a "A" key down event.
   window.InjectWindowMessage(WM_KEYDOWN, 65, lparam);
 
-  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(1);
+  // OnKey shouldn't be called during the WM_CHAR message.
+  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(0);
   EXPECT_CALL(window, OnText(_)).Times(1);
   window.InjectWindowMessage(WM_CHAR, 65, lparam);
 }
@@ -97,7 +98,7 @@ TEST(MockWin32Window, KeyDownWithCtrl) {
 
   // Expect OnKey, but not OnText, because Control + Key is not followed by
   // WM_CHAR
-  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 0, false, true)).Times(1);
+  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 'A', false, true)).Times(1);
   EXPECT_CALL(window, OnText(_)).Times(0);
 
   window.InjectWindowMessage(WM_KEYDOWN, 65, lparam);
@@ -117,12 +118,13 @@ TEST(MockWin32Window, KeyDownWithCtrlToggled) {
 
   LPARAM lparam = CreateKeyEventLparam(30);
 
-  // OnKey shouldn't be called until the WM_CHAR message.
-  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(0);
+  // OnKey should be called during the WM_KEYDOWN message.
+  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(1);
   // send a "A" key down event.
   window.InjectWindowMessage(WM_KEYDOWN, 65, lparam);
 
-  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(1);
+  // OnKey shouldn't be called during the WM_CHAR message.
+  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, true)).Times(0);
   EXPECT_CALL(window, OnText(_)).Times(1);
   window.InjectWindowMessage(WM_CHAR, 65, lparam);
 
