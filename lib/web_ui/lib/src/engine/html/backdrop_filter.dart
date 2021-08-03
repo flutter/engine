@@ -84,7 +84,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Therefore we need to use parent clip element bounds for
     // backdrop boundary.
     final double dpr = ui.window.devicePixelRatio;
-    ui.Rect rect = transformRect(_invertedTransform, ui.Rect.fromLTRB(0, 0,
+    final ui.Rect rect = transformRect(_invertedTransform, ui.Rect.fromLTRB(0, 0,
         ui.window.physicalSize.width * dpr,
         ui.window.physicalSize.height * dpr));
     double left = rect.left;
@@ -112,7 +112,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       ..height = '${height}px';
     if (browserEngine == BrowserEngine.firefox) {
       // For FireFox for now render transparent black background.
-      // TODO(flutter_web): Switch code to use filter when
+      // TODO(ferhat): Switch code to use filter when
       // See https://caniuse.com/#feat=css-backdrop-filter.
       filterElementStyle
         ..backgroundColor = '#000'

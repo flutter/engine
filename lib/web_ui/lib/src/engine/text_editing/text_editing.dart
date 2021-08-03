@@ -174,7 +174,7 @@ class EngineAutofillForm {
     formElement.noValidate = true;
     formElement.method = 'post';
     formElement.action = '#';
-    formElement.addEventListener('submit', (e) {
+    formElement.addEventListener('submit', (html.Event e) {
       e.preventDefault();
     });
 
@@ -182,14 +182,15 @@ class EngineAutofillForm {
 
     // We keep the ids in a list then sort them later, in case the text fields'
     // locations are re-ordered on the framework side.
-    final List<String> ids = List.empty(growable: true);
+    final List<String> ids = List<String>.empty(growable: true);
 
     // The focused text editing element will not be created here.
     final AutofillInfo focusedElement =
         AutofillInfo.fromFrameworkMessage(focusedElementAutofill);
 
     if (fields != null) {
-      for (Map<String, dynamic> field in fields.cast<Map<String, dynamic>>()) {
+      for (final Map<String, dynamic> field in
+          fields.cast<Map<String, dynamic>>()) {
         final Map<String, dynamic> autofillInfo = field['autofill'];
         final AutofillInfo autofill = AutofillInfo.fromFrameworkMessage(
             autofillInfo,
@@ -199,10 +200,10 @@ class EngineAutofillForm {
         ids.add(autofill.uniqueIdentifier);
 
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
-          EngineInputType engineInputType =
+          final EngineInputType engineInputType =
               EngineInputType.fromName(field['inputType']['name']);
 
-          html.HtmlElement htmlElement = engineInputType.createDomElement();
+          final html.HtmlElement htmlElement = engineInputType.createDomElement();
           autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
           _hideAutofillElements(htmlElement);
@@ -232,7 +233,7 @@ class EngineAutofillForm {
 
     // If a form with the same Autofill elements is already on the dom, remove
     // it from DOM.
-    html.FormElement? form = formsOnTheDom[formIdentifier];
+    final html.FormElement? form = formsOnTheDom[formIdentifier];
     form?.remove();
 
     // In order to submit the form when Framework sends a `TextInput.commit`
@@ -258,7 +259,7 @@ class EngineAutofillForm {
   }
 
   void storeForm() {
-    formsOnTheDom[formIdentifier] = this.formElement;
+    formsOnTheDom[formIdentifier] = formElement;
     _hideAutofillElements(formElement, isOffScreen: true);
   }
 
@@ -273,28 +274,32 @@ class EngineAutofillForm {
   /// [TextEditingStrategy.addEventHandlers] method call and all
   /// listeners are removed during [TextEditingStrategy.disable] method call.
   List<StreamSubscription<html.Event>> addInputEventListeners() {
-    Iterable<String> keys = elements!.keys;
-    List<StreamSubscription<html.Event>> subscriptions =
+    final Iterable<String> keys = elements!.keys;
+    final List<StreamSubscription<html.Event>> subscriptions =
         <StreamSubscription<html.Event>>[];
-    keys.forEach((String key) {
-      final html.Element element = elements![key]!;
-      subscriptions.add(element.onInput.listen((html.Event e) {
-        if (items![key] == null) {
-          throw StateError(
-              'Autofill would not work withuot Autofill value set');
-        } else {
-          final AutofillInfo autofillInfo = items![key]!;
-          handleChange(element, autofillInfo);
-        }
-      }));
-    });
+
+    void addSubscriptionForKey(String key) {
+        final html.Element element = elements![key]!;
+        subscriptions.add(
+            element.onInput.listen((html.Event e) {
+              if (items![key] == null) {
+                throw StateError(
+                    'Autofill would not work withuot Autofill value set');
+              } else {
+                final AutofillInfo autofillInfo = items![key]!;
+                handleChange(element, autofillInfo);
+              }
+            })
+        );
+    }
+
+    keys.forEach(addSubscriptionForKey);
     return subscriptions;
   }
 
   void handleChange(html.Element domElement, AutofillInfo autofillInfo) {
-    EditingState newEditingState = EditingState.fromDomElement(
-        domElement as html.HtmlElement?,
-        textCapitalization: autofillInfo.textCapitalization);
+    final EditingState newEditingState = EditingState.fromDomElement(
+        domElement as html.HtmlElement?);
 
     _sendAutofillEditingState(autofillInfo.uniqueIdentifier, newEditingState);
   }
@@ -377,7 +382,7 @@ class AutofillInfo {
       {bool focusedElement = false}) {
     domElement.id = hint;
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       element.name = hint;
       element.id = hint;
       element.autocomplete = hint;
@@ -387,7 +392,7 @@ class AutofillInfo {
         element.type = 'text';
       }
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       element.name = hint;
       element.id = hint;
       element.setAttribute('autocomplete', hint);
@@ -440,17 +445,15 @@ class EditingState {
   ///
   /// [domElement] can be a [InputElement] or a [TextAreaElement] depending on
   /// the [InputType] of the text field.
-  factory EditingState.fromDomElement(html.HtmlElement? domElement,
-      {TextCapitalizationConfig textCapitalization =
-          const TextCapitalizationConfig.defaultCapitalization()}) {
+  factory EditingState.fromDomElement(html.HtmlElement? domElement) {
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       return EditingState(
           text: element.value,
           baseOffset: element.selectionStart,
           extentOffset: element.selectionEnd);
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       return EditingState(
           text: element.value,
           baseOffset: element.selectionStart,
@@ -519,11 +522,11 @@ class EditingState {
   ///  * [applyTextToDomElement], which is used for non-focused elements.
   void applyToDomElement(html.HtmlElement? domElement) {
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       element.value = text;
       element.setSelectionRange(baseOffset!, extentOffset!);
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       element.value = text;
       element.setSelectionRange(baseOffset!, extentOffset!);
     } else {
@@ -540,10 +543,10 @@ class EditingState {
   ///  * [applyToDomElement], which is used for focused elements.
   void applyTextToDomElement(html.HtmlElement? domElement) {
     if (domElement is html.InputElement) {
-      html.InputElement element = domElement;
+      final html.InputElement element = domElement;
       element.value = text;
     } else if (domElement is html.TextAreaElement) {
-      html.TextAreaElement element = domElement;
+      final html.TextAreaElement element = domElement;
       element.value = text;
     } else {
       throw UnsupportedError('Unsupported DOM element type');
@@ -979,8 +982,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   void handleChange(html.Event event) {
     assert(isEnabled);
 
-    EditingState newEditingState = EditingState.fromDomElement(activeDomElement,
-        textCapitalization: inputConfiguration.textCapitalization);
+    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
@@ -1074,8 +1076,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   /// in iOS is set to correct place, 100ms after focus. We use this timer for
   /// timing this delay.
   Timer? _positionInputElementTimer;
-  static const Duration _delayBeforePlacement =
-      const Duration(milliseconds: 100);
+  static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
 
   /// Whether or not the input element can be positioned at this point in time.
   ///
@@ -1137,13 +1138,23 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     _addTapListener();
 
-    // On iOS, blur is trigerred if the virtual keyboard is closed or the
-    // browser is sent to background or the browser tab is changed.
+    // On iOS, blur is trigerred in the following cases:
     //
-    // Since in all these cases, the connection needs to be closed,
-    // [domRenderer.windowHasFocus] is not checked in [IOSTextEditingStrategy].
+    // 1. The browser app is sent to the background (or the tab is changed). In
+    //    this case, the window loses focus (see [domRenderer.windowHasFocus]),
+    //    so we close the input connection with the framework.
+    // 2. The user taps on another focusable element. In this case, we refocus
+    //    the input field and wait for the framework to manage the focus change.
+    // 3. The virtual keyboard is closed by tapping "done". We can't detect this
+    //    programmatically, so we end up refocusing the input field. This is
+    //    okay because the virtual keyboard will hide, and as soon as the user
+    //    taps the text field again, the virtual keyboard will come up.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      owner.sendTextConnectionClosedToFrameworkIfAny();
+      if (domRenderer.windowHasFocus) {
+        activeDomElement.focus();
+      } else {
+        owner.sendTextConnectionClosedToFrameworkIfAny();
+      }
     }));
   }
 
@@ -1315,7 +1326,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //
     // After each keyup, the start/end values of the selection is compared to
     // the previously saved editing state.
-    subscriptions.add(activeDomElement.onKeyUp.listen((event) {
+    subscriptions.add(activeDomElement.onKeyUp.listen((html.KeyboardEvent event) {
       handleChange(event);
     }));
 
@@ -1368,7 +1379,7 @@ abstract class TextInputCommand {
 
 /// Responds to the 'TextInput.setClient' message.
 class TextInputSetClient extends TextInputCommand {
-  TextInputSetClient({
+  const TextInputSetClient({
     required this.clientId,
     required this.configuration,
   });
@@ -1376,6 +1387,7 @@ class TextInputSetClient extends TextInputCommand {
   final int clientId;
   final InputConfiguration configuration;
 
+  @override
   void run(HybridTextEditing textEditing) {
     final bool clientIdChanged = textEditing._clientId != null && textEditing._clientId != clientId;
     if (clientIdChanged && textEditing.isEditing) {
@@ -1409,8 +1421,9 @@ DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing te
 
 /// Responds to the 'TextInput.updateConfig' message.
 class TextInputUpdateConfig extends TextInputCommand {
-  TextInputUpdateConfig();
+  const TextInputUpdateConfig();
 
+  @override
   void run(HybridTextEditing textEditing) {
     textEditing.strategy.applyConfiguration(textEditing.configuration!);
   }
@@ -1418,12 +1431,13 @@ class TextInputUpdateConfig extends TextInputCommand {
 
 /// Responds to the 'TextInput.setEditingState' message.
 class TextInputSetEditingState extends TextInputCommand {
-  TextInputSetEditingState({
+  const TextInputSetEditingState({
     required this.state,
   });
 
   final EditingState state;
 
+  @override
   void run(HybridTextEditing textEditing) {
     textEditing.strategy.setEditingState(state);
   }
@@ -1433,6 +1447,7 @@ class TextInputSetEditingState extends TextInputCommand {
 class TextInputShow extends TextInputCommand {
   const TextInputShow();
 
+  @override
   void run(HybridTextEditing textEditing) {
     if (!textEditing.isEditing) {
       textEditing._startEditing();
@@ -1442,12 +1457,13 @@ class TextInputShow extends TextInputCommand {
 
 /// Responds to the 'TextInput.setEditableSizeAndTransform' message.
 class TextInputSetEditableSizeAndTransform extends TextInputCommand {
-  TextInputSetEditableSizeAndTransform({
+  const TextInputSetEditableSizeAndTransform({
     required this.geometry,
   });
 
   final EditableTextGeometry geometry;
 
+  @override
   void run(HybridTextEditing textEditing) {
     textEditing.strategy.updateElementPlacement(geometry);
   }
@@ -1455,12 +1471,13 @@ class TextInputSetEditableSizeAndTransform extends TextInputCommand {
 
 /// Responds to the 'TextInput.setStyle' message.
 class TextInputSetStyle extends TextInputCommand {
-  TextInputSetStyle({
+  const TextInputSetStyle({
     required this.style,
   });
 
   final EditableTextStyle style;
 
+  @override
   void run(HybridTextEditing textEditing) {
     textEditing.strategy.updateElementStyle(style);
   }
@@ -1470,6 +1487,7 @@ class TextInputSetStyle extends TextInputCommand {
 class TextInputClearClient extends TextInputCommand {
   const TextInputClearClient();
 
+  @override
   void run(HybridTextEditing textEditing) {
     if (textEditing.isEditing) {
       textEditing.stopEditing();
@@ -1481,6 +1499,7 @@ class TextInputClearClient extends TextInputCommand {
 class TextInputHide extends TextInputCommand {
   const TextInputHide();
 
+  @override
   void run(HybridTextEditing textEditing) {
     if (textEditing.isEditing) {
       textEditing.stopEditing();
@@ -1491,6 +1510,7 @@ class TextInputHide extends TextInputCommand {
 class TextInputSetMarkedTextRect extends TextInputCommand {
   const TextInputSetMarkedTextRect();
 
+  @override
   void run(HybridTextEditing textEditing) {
     // No-op: this message is currently only used on iOS to implement
     // UITextInput.firstRecForRange.
@@ -1500,6 +1520,7 @@ class TextInputSetMarkedTextRect extends TextInputCommand {
 class TextInputSetCaretRect extends TextInputCommand {
   const TextInputSetCaretRect();
 
+  @override
   void run(HybridTextEditing textEditing) {
     // No-op: not supported on this platform.
   }
@@ -1508,18 +1529,20 @@ class TextInputSetCaretRect extends TextInputCommand {
 class TextInputRequestAutofill extends TextInputCommand {
   const TextInputRequestAutofill();
 
+  @override
   void run(HybridTextEditing textEditing) {
     // No-op: not supported on this platform.
   }
 }
 
 class TextInputFinishAutofillContext extends TextInputCommand {
-  TextInputFinishAutofillContext({
+  const TextInputFinishAutofillContext({
     required this.saveForm,
   });
 
   final bool saveForm;
 
+  @override
   void run(HybridTextEditing textEditing) {
     // Close the text editing connection. Form is finalizing.
     textEditing.sendTextConnectionClosedToFrameworkIfAny();
@@ -1549,7 +1572,7 @@ void saveForms() {
 ///
 /// Called when the form is finalized.
 void cleanForms() {
-  for (html.FormElement form in formsOnTheDom.values) {
+  for (final html.FormElement form in formsOnTheDom.values) {
     form.remove();
   }
   formsOnTheDom.clear();
@@ -1584,7 +1607,7 @@ class TextEditingChannel {
         // field used to flush the command queue. However, delaye applying the
         // configuration because the strategy may not be available yet.
         implementation.configuration = InputConfiguration.fromFrameworkMessage(call.arguments);
-        command = TextInputUpdateConfig();
+        command = const TextInputUpdateConfig();
         break;
 
       case 'TextInput.setEditingState':
@@ -1702,7 +1725,7 @@ final HybridTextEditing textEditing = HybridTextEditing();
 ///
 /// See: https://github.com/flutter/flutter/blob/bf9f3a3dcfea3022f9cf2dfc3ab10b120b48b19d/packages/flutter/lib/src/services/text_input.dart#L1277
 final Map<String, html.FormElement> formsOnTheDom =
-    Map<String, html.FormElement>();
+    <String, html.FormElement>{};
 
 /// Should be used as a singleton to provide support for text editing in
 /// Flutter Web.
@@ -1832,7 +1855,7 @@ class EditableTextStyle {
   String? get align => textAlignToCssValue(textAlign, textDirection);
 
   String get cssFont =>
-      '${fontWeight} ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
+      '$fontWeight ${fontSize}px ${canonicalizeFontFamily(fontFamily)}';
 
   void applyToDomElement(html.HtmlElement domElement) {
     domElement.style
@@ -1847,7 +1870,7 @@ class EditableTextStyle {
 /// message from the framework.
 @immutable
 class EditableTextGeometry {
-  EditableTextGeometry({
+  const EditableTextGeometry({
     required this.width,
     required this.height,
     required this.globalTransform,

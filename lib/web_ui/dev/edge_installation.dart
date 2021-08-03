@@ -24,8 +24,7 @@ class EdgeArgParser extends BrowserArgParser {
 
   @override
   void populateOptions(ArgParser argParser) {
-    argParser
-      ..addOption(
+    argParser.addOption(
         'edge-version',
         defaultsTo: 'system',
         help: 'The Edge version to use while running tests. The Edge '
@@ -51,7 +50,7 @@ class EdgeArgParser extends BrowserArgParser {
 /// exclusively with Windows 10 and cannot be downloaded or installed separately.`
 /// See: https://support.microsoft.com/en-us/help/17171/microsoft-edge-get-to-know
 ///
-// TODO(nurhan): Investigate running tests for the tech preview downloads
+// TODO(yjbanov): Investigate running tests for the tech preview downloads
 // from the beta channel.
 Future<BrowserInstallation> getEdgeInstallation(
   String requestedVersion, {
@@ -85,7 +84,7 @@ Future<BrowserInstallation> getEdgeInstallation(
       version: 'system',
       executable: io.Directory(path.join(
               edgeLauncher.launcherInstallationDir.path,
-              '${PlatformBinding.instance.getCommandToRunEdge()}'))
+              PlatformBinding.instance.getCommandToRunEdge()))
           .path,
     );
   } else {

@@ -7,9 +7,8 @@
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
-
+import 'package:ui/ui.dart' as ui;
 
 final ui.ParagraphStyle ahemStyle = ui.ParagraphStyle(
   fontFamily: 'ahem',
@@ -66,7 +65,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain()  async {
+Future<void> testMain()  async {
   await ui.webOnlyInitializeTestDomRenderer();
 
   group('$RulerManager', () {
@@ -811,7 +810,7 @@ void testMain()  async {
         expect(result.maxIntrinsicWidth, 40);
         expect(result.height, 10);
         if (instance.isCanvas) {
-          // TODO(flutter_web): https://github.com/flutter/flutter/issues/34346
+          // TODO(mdebbar): https://github.com/flutter/flutter/issues/34346
           // expect(result.lines, <EngineLineMetrics>[
           //   line('.', 0, 4, hardBreak: false, width: 10.0, lineNumber: 0, left: 0.0),
           // ]);
@@ -1044,7 +1043,7 @@ void testMain()  async {
     );
 
     test('handles textAlign', () {
-      TextMeasurementService instance = TextMeasurementService.canvasInstance;
+      final TextMeasurementService instance = TextMeasurementService.canvasInstance;
       DomParagraph p;
       MeasurementResult result;
 
@@ -1101,7 +1100,7 @@ void testMain()  async {
     testMeasurements(
       'handles rtl with textAlign',
       (TextMeasurementService instance) {
-        TextMeasurementService instance = TextMeasurementService.canvasInstance;
+        final TextMeasurementService instance = TextMeasurementService.canvasInstance;
         DomParagraph p;
         MeasurementResult result;
 

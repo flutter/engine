@@ -789,7 +789,7 @@ class ParagraphRuler {
       final html.Node node = textNodes[i];
       // Check if offset is within client rect bounds of text node's
       // parent element.
-      final html.Element parent = node.parentNode as html.Element;
+      final html.Element parent = node.parentNode! as html.Element;
       final html.Rectangle<num> bounds = parent.getBoundingClientRect();
       final double dx = offset.dx;
       final double dy = offset.dy;
@@ -809,8 +809,8 @@ class ParagraphRuler {
     if (nodes.isEmpty) {
       return;
     }
-    final List<html.Node> childNodes = [];
-    for (html.Node node in nodes) {
+    final List<html.Node> childNodes = <html.Node>[];
+    for (final html.Node node in nodes) {
       if (node.nodeType == html.Node.TEXT_NODE) {
         textNodes.add(node);
       }
@@ -823,7 +823,7 @@ class ParagraphRuler {
     int position = 0;
     final List<html.Node> stack = nodes.reversed.toList();
     while (true) {
-      var node = stack.removeLast();
+      final html.Node node = stack.removeLast();
       stack.addAll(node.childNodes.reversed);
       if (node == endNode) {
         break;
@@ -902,7 +902,7 @@ class ParagraphRuler {
         : style.maxLines! * lineHeight;
 
     html.Rectangle<num>? previousRect;
-    for (html.Rectangle<num> rect in clientRects) {
+    for (final html.Rectangle<num> rect in clientRects) {
       // If [rect] is an empty box on the same line as the previous box, don't
       // include it in the result.
       if (rect.top == previousRect?.top && rect.left == rect.right) {
@@ -1058,7 +1058,7 @@ class MeasurementResult {
   /// The text direction of the paragraph.
   final ui.TextDirection textDirection;
 
-  MeasurementResult(
+  const MeasurementResult(
     this.constraintWidth, {
     required this.isSingleLine,
     required this.width,
@@ -1082,6 +1082,6 @@ class MeasurementResult {
         assert(maxIntrinsicWidth != null), // ignore: unnecessary_null_comparison
         assert(alphabeticBaseline != null), // ignore: unnecessary_null_comparison
         assert(ideographicBaseline != null), // ignore: unnecessary_null_comparison
-        this.textAlign = textAlign ?? ui.TextAlign.start,
-        this.textDirection = textDirection ?? ui.TextDirection.ltr;
+        this.textAlign = textAlign ?? ui.TextAlign.start,// ignore: unnecessary_this
+        this.textDirection = textDirection ?? ui.TextDirection.ltr;// ignore: unnecessary_this
 }

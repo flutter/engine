@@ -6,6 +6,7 @@
 #import <OCMock/OCMock.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #import "flutter/testing/testing.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
@@ -68,23 +69,7 @@ constexpr uint64_t kKeyCodeNumpad1 = 0x53;
 constexpr uint64_t kKeyCodeF1 = 0x7a;
 constexpr uint64_t kKeyCodeAltRight = 0x3d;
 
-constexpr uint64_t kPhysicalKeyA = 0x00070004;
-constexpr uint64_t kPhysicalKeyW = 0x0007001a;
-constexpr uint64_t kPhysicalShiftLeft = 0x000700e1;
-constexpr uint64_t kPhysicalShiftRight = 0x000700e5;
-constexpr uint64_t kPhysicalCapsLock = 0x00070039;
-constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
-constexpr uint64_t kPhysicalF1 = 0x0007003a;
-constexpr uint64_t kPhysicalAltRight = 0x000700e6;
-
-constexpr uint64_t kLogicalKeyA = 0x00000061;
-constexpr uint64_t kLogicalKeyW = 0x00000077;
-constexpr uint64_t kLogicalShiftLeft = 0x0030000010d;
-constexpr uint64_t kLogicalShiftRight = 0x0040000010d;
-constexpr uint64_t kLogicalCapsLock = 0x00000000104;
-constexpr uint64_t kLogicalNumpad1 = 0x00200000031;
-constexpr uint64_t kLogicalF1 = 0x00000000801;
-constexpr uint64_t kLogicalAltRight = 0x00400000102;
+using namespace ::flutter::testing::keycodes;
 
 typedef void (^ResponseCallback)(bool handled);
 
@@ -317,8 +302,15 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
                   last_handled = handled;
                 }];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->physical, 0ull);
+  EXPECT_EQ(event->logical, 0ull);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
@@ -342,6 +334,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
 
 TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
   __block BOOL last_handled = TRUE;
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
@@ -358,8 +351,15 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
                   last_handled = handled;
                 }];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->physical, 0ull);
+  EXPECT_EQ(event->logical, 0ull);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
 }
 
 // Press L shift, A, then release L shift then A, on an US keyboard.
@@ -1057,6 +1057,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
 // Press the CapsLock key when CapsLock state is desynchronized
 TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
     last_handled = handled;
@@ -1071,13 +1072,20 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
       }];
 
   // In:  CapsLock down
-  // Out:
+  // Out: (empty)
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
                 callback:keyEventCallback];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->physical, 0ull);
+  EXPECT_EQ(event->logical, 0ull);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
 }
 
 // Press the CapsLock key when CapsLock state is desynchronized

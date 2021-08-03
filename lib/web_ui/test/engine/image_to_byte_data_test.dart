@@ -4,17 +4,16 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart';
-import 'package:ui/src/engine.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   setUp(() async {
     await webOnlyInitializePlatform();
     webOnlyFontCollection.debugRegisterTestFonts();
@@ -24,8 +23,8 @@ void testMain() async {
   test('Picture.toImage().toByteData()', () async {
     final EnginePictureRecorder recorder = EnginePictureRecorder();
     final RecordingCanvas canvas =
-        recorder.beginRecording(Rect.fromLTRB(0, 0, 2, 2));
-    canvas.drawColor(Color(0xFFCCDD00), BlendMode.srcOver);
+        recorder.beginRecording(const Rect.fromLTRB(0, 0, 2, 2));
+    canvas.drawColor(const Color(0xFFCCDD00), BlendMode.srcOver);
     final Picture testPicture = recorder.endRecording();
     final Image testImage = await testPicture.toImage(2, 2);
     final ByteData bytes =

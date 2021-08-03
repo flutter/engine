@@ -22,8 +22,7 @@ class SafariArgParser extends BrowserArgParser {
 
   @override
   void populateOptions(ArgParser argParser) {
-    argParser
-      ..addOption(
+    argParser.addOption(
         'safari-version',
         defaultsTo: 'system',
         help: 'The Safari version to use while running tests. The Safari '
@@ -41,7 +40,7 @@ class SafariArgParser extends BrowserArgParser {
     _version = argResults['safari-version'] as String;
     assert(_version == 'system');
     final String browser = argResults['browser'] as String;
-    _isMobileBrowser = browser == 'ios-safari' ? true : false;
+    _isMobileBrowser = browser == 'ios-safari';
   }
 
   @override
@@ -65,7 +64,8 @@ class IosSafariArgParser extends BrowserArgParser {
   /// The [IosSafariArgParser] singleton.
   static IosSafariArgParser get instance => _singletonInstance;
 
-  String get version => 'iOS ${iosMajorVersion}.${iosMinorVersion}';
+  @override
+  String get version => 'iOS $iosMajorVersion.$iosMinorVersion';
 
   final int _pinnedIosMajorVersion;
   int? _iosMajorVersion;
@@ -84,9 +84,9 @@ class IosSafariArgParser extends BrowserArgParser {
     required int pinnedIosMinorVersion,
     required String pinnedIosDevice,
   }) :
-    this._pinnedIosMajorVersion = pinnedIosMajorVersion,
-    this._pinnedIosMinorVersion = pinnedIosMinorVersion,
-    this._pinnedIosDevice = pinnedIosDevice;
+    _pinnedIosMajorVersion = pinnedIosMajorVersion,
+    _pinnedIosMinorVersion = pinnedIosMinorVersion,
+    _pinnedIosDevice = pinnedIosDevice;
 
   /// Returns [IosSimulator] if the [Platform] is `macOS` and simulator
   /// is started.
@@ -138,11 +138,11 @@ class IosSafariArgParser extends BrowserArgParser {
 
   @override
   void populateOptions(ArgParser argParser) {
-    final pinnedIosVersion =
-        '${_pinnedIosMajorVersion}.${_pinnedIosMinorVersion}';
+    final String pinnedIosVersion =
+        '$_pinnedIosMajorVersion.$_pinnedIosMinorVersion';
     argParser
       ..addOption('version',
-          defaultsTo: '$pinnedIosVersion',
+          defaultsTo: pinnedIosVersion,
           help: 'The version for the iOS operating system the iOS Simulator '
               'will use for tests. For example for testing with iOS 13.2, '
               'use `13.2`. Use command: '
@@ -151,7 +151,7 @@ class IosSafariArgParser extends BrowserArgParser {
               'If this value is not filled version locked in the '
               'browser_lock.yaml file will be user.')
       ..addOption('device',
-          defaultsTo: '$_pinnedIosDevice',
+          defaultsTo: _pinnedIosDevice,
           help: 'The device to be used for the iOS Simulator during the tests. '
               'Use `.` instead of space for separating the words. '
               'Common examples: iPhone.8, iPhone.8.Plus, iPhone.11, '
@@ -181,7 +181,7 @@ class IosSafariArgParser extends BrowserArgParser {
 /// Latest Safari version for Catalina, Mojave, High Siera is 13.
 ///
 /// Latest Safari version for Sierra is 12.
-// TODO(nurhan): user latest version to download and install the latest
+// TODO(yjbanov): user latest version to download and install the latest
 // technology preview.
 Future<BrowserInstallation> getOrInstallSafari(
   String requestedVersion, {

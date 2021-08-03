@@ -15,11 +15,11 @@ import 'dom_renderer.dart';
 import 'engine_canvas.dart';
 import 'html/bitmap_canvas.dart';
 import 'html/painting.dart';
-import 'html/picture.dart';
 import 'html/path/conic.dart';
 import 'html/path/path.dart';
 import 'html/path/path_ref.dart';
 import 'html/path/path_utils.dart';
+import 'html/picture.dart';
 import 'html/shaders/image_shader.dart';
 import 'html/shaders/shader.dart';
 import 'platform_dispatcher.dart';
@@ -54,16 +54,37 @@ class CanvasPool extends _SaveStackTracking {
   // List of canvases available to reuse from prior paint cycle.
   List<html.CanvasElement>? _reusablePool;
   // Current canvas element or null if marked for lazy allocation.
-  html.CanvasElement? get canvas => _canvas;
   html.CanvasElement? _canvas;
 
   html.HtmlElement? _rootElement;
   int _saveContextCount = 0;
   final double _density;
 
+  /// Initializes canvas pool for target size and dpi.
   CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels,
       this._density);
 
+  /// Initializes canvas pool to be hosted on a surface.
+  void mount(html.HtmlElement rootElement) {
+    _rootElement = rootElement;
+  }
+
+  /// Sets the translate transform to be applied to canvas to compensate for
+  /// pixel padding applied to hosting [BitmapCanvas].
+  ///
+  /// Should be called during initialization after [CanvasPool] is mounted.
+  set initialTransform(ui.Offset transform) {
+    translate(transform.dx, transform.dy);
+  }
+
+  /// Returns true if no canvas has been allocated yet.
+  bool get isEmpty => _canvas == null;
+
+  /// Returns true if a canvas has been allocated for use.
+  bool get isNotEmpty => _canvas != null;
+
+
+  /// Returns [CanvasRenderingContext2D] api to draw into this canvas.
   html.CanvasRenderingContext2D get context {
     html.CanvasRenderingContext2D? ctx = _context;
     if (ctx == null) {
@@ -75,6 +96,8 @@ class CanvasPool extends _SaveStackTracking {
     return ctx;
   }
 
+  /// Returns [ContextStateHandle] API to efficiently update state of
+  /// drawing context.
   ContextStateHandle get contextHandle {
     if (_canvas == null) {
       _createCanvas();
@@ -84,11 +107,11 @@ class CanvasPool extends _SaveStackTracking {
     return _contextHandle!;
   }
 
-  // Prevents active canvas to be used for rendering and prepares a new
-  // canvas allocation on next drawing request that will require one.
-  //
-  // Saves current canvas so we can dispose
-  // and replay the clip/transform stack on top of new canvas.
+  /// Prevents active canvas to be used for rendering and prepares a new
+  /// canvas allocation on next drawing request that will require one.
+  ///
+  /// Saves current canvas so we can dispose
+  /// and replay the clip/transform stack on top of new canvas.
   void closeCurrentCanvas() {
     assert(_rootElement != null);
     // Place clean copy of current canvas with context stack restored and paint
@@ -96,16 +119,12 @@ class CanvasPool extends _SaveStackTracking {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle!.reset();
-      _activeCanvasList ??= [];
+      _activeCanvasList ??= <html.CanvasElement>[];
       _activeCanvasList!.add(_canvas!);
       _canvas = null;
       _context = null;
       _contextHandle = null;
     }
-  }
-
-  void allocateCanvas(html.HtmlElement rootElement) {
-    _rootElement = rootElement;
   }
 
   void _createCanvas() {
@@ -181,7 +200,7 @@ class CanvasPool extends _SaveStackTracking {
       _canvas = null;
       return;
     }
-    _contextHandle = ContextStateHandle(this, _context!, this._density);
+    _contextHandle = ContextStateHandle(this, _context!, _density);
     _initializeViewport(requiresClearRect);
     _replayClipStack();
   }
@@ -213,7 +232,7 @@ class CanvasPool extends _SaveStackTracking {
 
     if (_canvas != null) {
       // Restore to the state where we have only applied the scaling.
-      html.CanvasRenderingContext2D? ctx = _context;
+      final html.CanvasRenderingContext2D? ctx = _context;
       if (ctx != null) {
         try {
           ctx.font = '';
@@ -227,22 +246,17 @@ class CanvasPool extends _SaveStackTracking {
       }
     }
     reuse();
-    resetTransform();
-  }
-
-  set initialTransform(ui.Offset transform) {
-    translate(transform.dx, transform.dy);
   }
 
   int _replaySingleSaveEntry(int clipDepth, Matrix4 prevTransform,
       Matrix4 transform, List<SaveClipEntry>? clipStack) {
     final html.CanvasRenderingContext2D ctx = context;
     if (clipStack != null) {
-      for (int clipCount = clipStack.length;
+      for (final int clipCount = clipStack.length;
           clipDepth < clipCount;
           clipDepth++) {
-        SaveClipEntry clipEntry = clipStack[clipDepth];
-        Matrix4 clipTimeTransform = clipEntry.currentTransform;
+        final SaveClipEntry clipEntry = clipStack[clipDepth];
+        final Matrix4 clipTimeTransform = clipEntry.currentTransform;
         // If transform for entry recording change since last element, update.
         // Comparing only matrix3 elements since Canvas API restricted.
         if (clipTimeTransform[0] != prevTransform[0] ||
@@ -267,7 +281,7 @@ class CanvasPool extends _SaveStackTracking {
         } else if (clipEntry.rrect != null) {
           _clipRRect(ctx, clipEntry.rrect!);
         } else if (clipEntry.path != null) {
-          final SurfacePath path = clipEntry.path as SurfacePath;
+          final SurfacePath path = clipEntry.path! as SurfacePath;
           _runPath(ctx, path);
           if (path.fillType == ui.PathFillType.nonZero) {
             ctx.clip();
@@ -295,13 +309,12 @@ class CanvasPool extends _SaveStackTracking {
 
   void _replayClipStack() {
     // Replay save/clip stack on this canvas now.
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     int clipDepth = 0;
     Matrix4 prevTransform = Matrix4.identity();
-    for (int saveStackIndex = 0, len = _saveStack.length;
-        saveStackIndex < len;
-        saveStackIndex++) {
-      SaveStackEntry saveEntry = _saveStack[saveStackIndex];
+    final int len = _saveStack.length;
+    for (int saveStackIndex = 0; saveStackIndex < len; saveStackIndex++) {
+      final SaveStackEntry saveEntry = _saveStack[saveStackIndex];
       clipDepth = _replaySingleSaveEntry(
           clipDepth, prevTransform, saveEntry.transform, saveEntry.clipStack);
       prevTransform = saveEntry.transform;
@@ -312,12 +325,12 @@ class CanvasPool extends _SaveStackTracking {
         clipDepth, prevTransform, _currentTransform, clipStack);
   }
 
-  // Marks this pool for reuse.
+  /// Marks this pool for reuse.
   void reuse() {
     if (_canvas != null) {
       _restoreContextSave();
       _contextHandle!.reset();
-      _activeCanvasList ??= [];
+      _activeCanvasList ??= <html.CanvasElement>[];
       _activeCanvasList!.add(_canvas!);
       _context = null;
       _contextHandle = null;
@@ -327,11 +340,14 @@ class CanvasPool extends _SaveStackTracking {
     _canvas = null;
     _context = null;
     _contextHandle = null;
+    _resetTransform();
   }
 
+  /// Signals to canvas pool the end of drawing commands so cached resources
+  /// that are reused from last instance can be cleanup.
   void endOfPaint() {
     if (_reusablePool != null) {
-      for (html.CanvasElement e in _reusablePool!) {
+      for (final html.CanvasElement e in _reusablePool!) {
         if (browserEngine == BrowserEngine.webkit) {
           e.width = e.height = 0;
         }
@@ -353,7 +369,7 @@ class CanvasPool extends _SaveStackTracking {
   /// coordinate system, and the pixel ratio is applied such that CSS pixels are
   /// translated to bitmap pixels.
   void _initializeViewport(bool clearCanvas) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     // Save the canvas state with top-level transforms so we can undo
     // any clips later when we reuse the canvas.
     ctx.save();
@@ -376,7 +392,7 @@ class CanvasPool extends _SaveStackTracking {
   double get dpi =>
       EnginePlatformDispatcher.browserDevicePixelRatio * _density;
 
-  void resetTransform() {
+  void _resetTransform() {
     final html.CanvasElement? canvas = _canvas;
     if (canvas != null) {
       canvas.style.transformOrigin = '';
@@ -384,8 +400,8 @@ class CanvasPool extends _SaveStackTracking {
     }
   }
 
-  // Returns a "data://" URI containing a representation of the image in this
-  // canvas in PNG format.
+  /// Returns a "data://" URI containing a representation of the image in this
+  /// canvas in PNG format.
   String toDataUrl() => _canvas?.toDataUrl() ?? '';
 
   @override
@@ -477,6 +493,7 @@ class CanvasPool extends _SaveStackTracking {
     }
   }
 
+  @override
   void clipRect(ui.Rect rect) {
     super.clipRect(rect);
     if (_canvas != null) {
@@ -490,6 +507,7 @@ class CanvasPool extends _SaveStackTracking {
     ctx.clip();
   }
 
+  @override
   void clipRRect(ui.RRect rrect) {
     super.clipRRect(rrect);
     if (_canvas != null) {
@@ -503,10 +521,11 @@ class CanvasPool extends _SaveStackTracking {
     ctx.clip();
   }
 
+  @override
   void clipPath(ui.Path path) {
     super.clipPath(path);
     if (_canvas != null) {
-      html.CanvasRenderingContext2D ctx = context;
+      final html.CanvasRenderingContext2D ctx = context;
       _runPath(ctx, path as SurfacePath);
       if (path.fillType == ui.PathFillType.nonZero) {
         ctx.clip();
@@ -516,8 +535,9 @@ class CanvasPool extends _SaveStackTracking {
     }
   }
 
+  /// Fill a virtually infinite rect with a color and optional blendMode.
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     contextHandle.blendMode = blendMode;
     contextHandle.fillStyle = colorToCssString(color);
     contextHandle.strokeStyle = '';
@@ -529,17 +549,18 @@ class CanvasPool extends _SaveStackTracking {
     ctx.fillRect(-10000, -10000, 20000, 20000);
   }
 
-  // Fill a virtually infinite rect with the color.
+  /// Fill a virtually infinite rect with the color.
   void fill() {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     ctx.beginPath();
     // We can't use (0, 0, width, height) because the current transform can
     // cause it to not fill the entire clip.
     ctx.fillRect(-10000, -10000, 20000, 20000);
   }
 
+  /// Draws a line from [p1] to [p2].
   void strokeLine(ui.Offset p1, ui.Offset p2) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     ctx.beginPath();
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     if (shaderBounds == null) {
@@ -552,12 +573,14 @@ class CanvasPool extends _SaveStackTracking {
     ctx.stroke();
   }
 
+  /// Draws a set of points with given radius, lines between points or
+  /// a polygon.
   void drawPoints(ui.PointMode pointMode, Float32List points, double radius) {
-    html.CanvasRenderingContext2D ctx = context;
+    final html.CanvasRenderingContext2D ctx = context;
     final int len = points.length;
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    double offsetX = shaderBounds == null ? 0 : -shaderBounds.left;
-    double offsetY = shaderBounds == null ? 0 : -shaderBounds.top;
+    final double offsetX = shaderBounds == null ? 0 : -shaderBounds.left;
+    final double offsetY = shaderBounds == null ? 0 : -shaderBounds.top;
     switch (pointMode) {
       case ui.PointMode.points:
         for (int i = 0; i < len; i += 2) {
@@ -612,8 +635,8 @@ class CanvasPool extends _SaveStackTracking {
           break;
         case SPath.kConicVerb:
           final double w = iter.conicWeight;
-          Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
-          List<ui.Offset> points = conic.toQuads();
+          final Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
+          final List<ui.Offset> points = conic.toQuads();
           final int len = points.length;
           for (int i = 1; i < len; i += 2) {
             final double p1x = points[i].dx;
@@ -630,6 +653,19 @@ class CanvasPool extends _SaveStackTracking {
           throw UnimplementedError('Unknown path verb $verb');
       }
     }
+  }
+
+  /// Draws a rectangle filled or stroked based on [style].
+  void drawRect(ui.Rect rect, ui.PaintingStyle? style) {
+    context.beginPath();
+    final ui.Rect? shaderBounds = contextHandle._shaderBounds;
+    if (shaderBounds == null) {
+      context.rect(rect.left, rect.top, rect.width, rect.height);
+    } else {
+      context.rect(rect.left - shaderBounds.left, rect.top - shaderBounds.top,
+          rect.width, rect.height);
+    }
+    contextHandle.paint(style);
   }
 
   /// Applies path to drawing context, preparing for fill and other operations.
@@ -659,8 +695,8 @@ class CanvasPool extends _SaveStackTracking {
           break;
         case SPath.kConicVerb:
           final double w = iter.conicWeight;
-          Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
-          List<ui.Offset> points = conic.toQuads();
+          final Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
+          final List<ui.Offset> points = conic.toQuads();
           final int len = points.length;
           for (int i = 1; i < len; i += 2) {
             final double p1x = points[i].dx;
@@ -680,18 +716,7 @@ class CanvasPool extends _SaveStackTracking {
     }
   }
 
-  void drawRect(ui.Rect rect, ui.PaintingStyle? style) {
-    context.beginPath();
-    final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    if (shaderBounds == null) {
-      context.rect(rect.left, rect.top, rect.width, rect.height);
-    } else {
-      context.rect(rect.left - shaderBounds.left, rect.top - shaderBounds.top,
-          rect.width, rect.height);
-    }
-    contextHandle.paint(style);
-  }
-
+  /// Draws a rounded rectangle filled or stroked based on [style].
   void drawRRect(ui.RRect roundRect, ui.PaintingStyle? style) {
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     RRectToCanvasRenderer(context).render(
@@ -700,8 +725,11 @@ class CanvasPool extends _SaveStackTracking {
     contextHandle.paint(style);
   }
 
+  /// Fills or strokes the area between [outer] and [inner] rounded rectangles.
+  ///
+  /// Typically used to draw a thick round border.
   void drawDRRect(ui.RRect outer, ui.RRect inner, ui.PaintingStyle? style) {
-    RRectRenderer renderer = RRectToCanvasRenderer(context);
+    final RRectRenderer renderer = RRectToCanvasRenderer(context);
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     if (shaderBounds == null) {
       renderer.render(outer);
@@ -714,9 +742,10 @@ class CanvasPool extends _SaveStackTracking {
     contextHandle.paint(style);
   }
 
+  /// Draws an axis-aligned oval that fills the given axis-aligned rectangle.
   void drawOval(ui.Rect rect, ui.PaintingStyle? style) {
     context.beginPath();
-    ui.Rect? shaderBounds = contextHandle._shaderBounds;
+    final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     final double cx = shaderBounds == null ? rect.center.dx :
         rect.center.dx - shaderBounds.left;
     final double cy = shaderBounds == null ? rect.center.dy :
@@ -726,6 +755,7 @@ class CanvasPool extends _SaveStackTracking {
     contextHandle.paint(style);
   }
 
+  /// Draws a circle centered at [c] with [radius].
   void drawCircle(ui.Offset c, double radius, ui.PaintingStyle? style) {
     context.beginPath();
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
@@ -735,6 +765,7 @@ class CanvasPool extends _SaveStackTracking {
     contextHandle.paint(style);
   }
 
+  /// Draws or strokes a path based on [style] and current context state.
   void drawPath(ui.Path path, ui.PaintingStyle? style) {
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     if (shaderBounds == null) {
@@ -746,6 +777,7 @@ class CanvasPool extends _SaveStackTracking {
     contextHandle.paintPath(style, path.fillType);
   }
 
+  /// Draws a shadow for a Path representing the given material elevation.
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
     final SurfaceShadowData? shadow = computeShadow(path.getBounds(), elevation);
@@ -808,6 +840,11 @@ class CanvasPool extends _SaveStackTracking {
     }
   }
 
+  /// Disposes html canvas element(s) used by this pool when persistent surface
+  /// is disposed.
+  ///
+  /// When this pool is reused, [clear] is called instead to be able to
+  /// draw using existing canvas elements.
   void dispose() {
     // Webkit has a threshold for the amount of canvas pixels an app can
     // allocate. Even though our canvases are being garbage-collected as
@@ -823,7 +860,7 @@ class CanvasPool extends _SaveStackTracking {
 
   void _clearActiveCanvasList() {
     if (_activeCanvasList != null) {
-      for (html.CanvasElement c in _activeCanvasList!) {
+      for (final html.CanvasElement c in _activeCanvasList!) {
         if (browserEngine == BrowserEngine.webkit) {
           c.width = c.height = 0;
         }
@@ -834,16 +871,18 @@ class CanvasPool extends _SaveStackTracking {
   }
 }
 
-// Optimizes applying paint parameters to html canvas.
-//
-// See https://www.w3.org/TR/2dcontext/ for defaults used in this class
-// to initialize current values.
-//
+/// Optimizes applying paint parameters to html canvas.
+///
+/// See https://www.w3.org/TR/2dcontext/ for defaults used in this class
+/// to initialize current values.
 class ContextStateHandle {
+  /// Associated canvas element context tracked by this context state.
   final html.CanvasRenderingContext2D context;
   final CanvasPool _canvasPool;
+  /// Dpi of context.
   final double density;
 
+  /// Initializes context state for a [CanvasPool].
   ContextStateHandle(this._canvasPool, this.context, this.density);
   ui.BlendMode? _currentBlendMode = ui.BlendMode.srcOver;
   ui.StrokeCap? _currentStrokeCap = ui.StrokeCap.butt;
@@ -854,6 +893,7 @@ class ContextStateHandle {
   Object? _currentStrokeStyle;
   double _currentLineWidth = 1.0;
 
+  /// See [html.CanvasRenderingContext2D].
   set blendMode(ui.BlendMode? blendMode) {
     if (blendMode != _currentBlendMode) {
       _currentBlendMode = blendMode;
@@ -862,6 +902,7 @@ class ContextStateHandle {
     }
   }
 
+  /// See [html.CanvasRenderingContext2D].
   set strokeCap(ui.StrokeCap? strokeCap) {
     strokeCap ??= ui.StrokeCap.butt;
     if (strokeCap != _currentStrokeCap) {
@@ -870,6 +911,7 @@ class ContextStateHandle {
     }
   }
 
+  /// See [html.CanvasRenderingContext2D].
   set lineWidth(double lineWidth) {
     if (lineWidth != _currentLineWidth) {
       _currentLineWidth = lineWidth;
@@ -877,6 +919,7 @@ class ContextStateHandle {
     }
   }
 
+  /// See [html.CanvasRenderingContext2D].
   set strokeJoin(ui.StrokeJoin? strokeJoin) {
     strokeJoin ??= ui.StrokeJoin.miter;
     if (strokeJoin != _currentStrokeJoin) {
@@ -885,6 +928,7 @@ class ContextStateHandle {
     }
   }
 
+  /// See [html.CanvasRenderingContext2D].
   set fillStyle(Object? colorOrGradient) {
     if (!identical(colorOrGradient, _currentFillStyle)) {
       _currentFillStyle = colorOrGradient;
@@ -892,6 +936,7 @@ class ContextStateHandle {
     }
   }
 
+  /// See [html.CanvasRenderingContext2D].
   set strokeStyle(Object? colorOrGradient) {
     if (!identical(colorOrGradient, _currentStrokeStyle)) {
       _currentStrokeStyle = colorOrGradient;
@@ -940,7 +985,7 @@ class ContextStateHandle {
 
     if (paint.shader != null) {
       if (paint.shader is EngineGradient) {
-        final EngineGradient engineShader = paint.shader as EngineGradient;
+        final EngineGradient engineShader = paint.shader! as EngineGradient;
         final Object paintStyle =
             engineShader.createPaintStyle(_canvasPool.context, shaderBounds,
                 density);
@@ -950,7 +995,7 @@ class ContextStateHandle {
         // Align pattern origin to destination.
         context.translate(shaderBounds!.left, shaderBounds.top);
       } else if (paint.shader is EngineImageShader) {
-        final EngineImageShader imageShader = paint.shader as EngineImageShader;
+        final EngineImageShader imageShader = paint.shader! as EngineImageShader;
         final Object paintStyle =
             imageShader.createPaintStyle(_canvasPool.context, shaderBounds,
                 density);
@@ -1013,8 +1058,8 @@ class ContextStateHandle {
         final Float32List tempVector = Float32List(2);
         tempVector[0] = kOutsideTheBoundsOffset * window.devicePixelRatio;
         _canvasPool.currentTransform.transform2(tempVector);
-        double shadowOffsetX = tempVector[0];
-        double shadowOffsetY = tempVector[1];
+        final double shadowOffsetX = tempVector[0];
+        final double shadowOffsetY = tempVector[1];
 
         tempVector[0] = tempVector[1] = 0;
         _canvasPool.currentTransform.transform2(tempVector);
@@ -1050,6 +1095,7 @@ class ContextStateHandle {
     }
   }
 
+  /// Fills or strokes the currently active path.
   void paint(ui.PaintingStyle? style) {
     if (style == ui.PaintingStyle.stroke) {
       context.stroke();
@@ -1058,6 +1104,7 @@ class ContextStateHandle {
     }
   }
 
+  /// Fills or strokes the currently active path based on fill type.
   void paintPath(ui.PaintingStyle? style, ui.PathFillType pathFillType) {
     if (style == ui.PaintingStyle.stroke) {
       context.stroke();
@@ -1070,6 +1117,8 @@ class ContextStateHandle {
     }
   }
 
+  /// Resets drawing context state to defaults for
+  /// [html.CanvasRenderingContext2D].
   void reset() {
     context.fillStyle = '';
     // Read back fillStyle/strokeStyle values from context so that input such

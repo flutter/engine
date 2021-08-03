@@ -13,7 +13,11 @@ const _HashEnd _hashEnd = _HashEnd();
 // Jenkins hash function, optimized for small integers.
 //
 // Borrowed from the dart sdk: sdk/lib/math/jenkins_smi_hash.dart.
-class _Jenkins {
+abstract class _Jenkins {
+  // This class is not meant to be instantiated or extended; this constructor
+  // prevents instantiation and extension.
+  _Jenkins._();
+
   static int combine(int hash, Object? o) {
     assert(o is! Iterable);
     hash = 0x1fffffff & (hash + o.hashCode);
@@ -116,7 +120,7 @@ int hashValues(
 int hashList(Iterable<Object?>? arguments) {
   int result = 0;
   if (arguments != null) {
-    for (Object? argument in arguments)
+    for (final Object? argument in arguments)
       result = _Jenkins.combine(result, argument);
   }
   return _Jenkins.finish(result);

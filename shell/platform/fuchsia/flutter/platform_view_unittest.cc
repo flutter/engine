@@ -19,6 +19,7 @@
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/shell/common/context_options.h"
 #include "flutter/shell/platform/fuchsia/flutter/platform_view.h"
@@ -71,6 +72,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
     metrics_ = flutter::ViewportMetrics{};
     semantics_features_ = 0;
     semantics_enabled_ = false;
+    pointer_packets_.clear();
   }
 
   // |flutter::PlatformView::Delegate|
@@ -95,7 +97,9 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
-      std::unique_ptr<flutter::PointerDataPacket> packet) {}
+      std::unique_ptr<flutter::PointerDataPacket> packet) {
+    pointer_packets_.push_back(std::move(packet));
+  }
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchKeyDataPacket(
       std::unique_ptr<flutter::KeyDataPacket> packet,
@@ -143,11 +147,22 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   const flutter::ViewportMetrics& metrics() const { return metrics_; }
   int32_t semantics_features() const { return semantics_features_; }
   bool semantics_enabled() const { return semantics_enabled_; }
+  const std::vector<std::unique_ptr<flutter::PointerDataPacket>>&
+  pointer_packets() const {
+    return pointer_packets_;
+  }
+  std::vector<std::unique_ptr<flutter::PointerDataPacket>>
+  TakePointerDataPackets() {
+    auto tmp = std::move(pointer_packets_);
+    pointer_packets_.clear();
+    return tmp;
+  }
 
  private:
   std::unique_ptr<flutter::Surface> surface_;
   std::unique_ptr<flutter::PlatformMessage> message_;
   flutter::ViewportMetrics metrics_;
+  std::vector<std::unique_ptr<flutter::PointerDataPacket>> pointer_packets_;
   int32_t semantics_features_ = 0;
   bool semantics_enabled_ = false;
 };
@@ -296,6 +311,23 @@ class PlatformViewBuilder {
   std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder_{nullptr};
   fml::TimeDelta vsync_offset_{fml::TimeDelta::Zero()};
 };
+
+// Stolen from pointer_data_packet_converter_unittests.cc.
+void UnpackPointerPacket(std::vector<flutter::PointerData>& output,  // NOLINT
+                         std::unique_ptr<flutter::PointerDataPacket> packet) {
+  size_t kBytesPerPointerData =
+      flutter::kPointerDataFieldCount * flutter::kBytesPerField;
+  auto buffer = packet->data();
+  size_t buffer_length = buffer.size();
+
+  for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
+    flutter::PointerData pointer_data;
+    memcpy(&pointer_data, &buffer[i * kBytesPerPointerData],
+           sizeof(flutter::PointerData));
+    output.push_back(pointer_data);
+  }
+  packet.reset();
+}
 
 }  // namespace
 
@@ -1176,173 +1208,6 @@ TEST_F(PlatformViewTests, RequestFocusFailTest) {
   EXPECT_TRUE(focuser.request_focus_called());
 }
 
-// This test makes sure that the PlatformView forwards messages on the
-// "flutter/platform_views" channel for GetCurrentFocusState and
-// GetNextFocusState.
-// TODO(fxbug.dev/79740): Delete after soft transition.
-TEST_F(PlatformViewTests, DeprecatedGetFocusStatesTest) {
-  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  MockPlatformViewDelegate delegate;
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
-
-  FakeViewRefFocused vrf;
-  fidl::BindingSet<fuchsia::ui::views::ViewRefFocused> vrf_bindings;
-  auto vrf_handle = vrf_bindings.AddBinding(&vrf);
-
-  flutter_runner::PlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners),
-                          services_provider.service_directory())
-          .SetViewRefFocused(std::move(vrf_handle))
-          .Build();
-
-  // Cast platform_view to its base view so we can have access to the public
-  // "HandlePlatformMessage" function.
-  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
-  EXPECT_TRUE(base_view);
-
-  std::vector<bool> vrf_states{false, true,  true, false,
-                               true,  false, true, true};
-
-  for (std::size_t i = 0; i < vrf_states.size(); ++i) {
-    // HostView.getNextFocusState should complete with the next focus state.
-    auto response1 = FakePlatformMessageResponse::Create();
-    base_view->HandlePlatformMessage(
-        response1->WithMessage("flutter/platform_views",
-                               "{\"method\":\"HostView.getNextFocusState\"}"));
-    // Duplicate HostView.getNextFocusState requests should complete empty.
-    auto response2 = FakePlatformMessageResponse::Create();
-    base_view->HandlePlatformMessage(
-        response2->WithMessage("flutter/platform_views",
-                               "{\"method\":\"HostView.getNextFocusState\"}"));
-
-    // Post watch events and make sure the hanging get is invoked each time.
-    RunLoopUntilIdle();
-    EXPECT_EQ(vrf.times_watched, i + 1);
-
-    // Dispatch the next vrf event.
-    vrf.ScheduleCallback(vrf_states[i]);
-    RunLoopUntilIdle();
-
-    // Make sure HostView.getCurrentFocusState completes with the current focus
-    // state.
-    auto response3 = FakePlatformMessageResponse::Create();
-    base_view->HandlePlatformMessage(response3->WithMessage(
-        "flutter/platform_views",
-        "{\"method\":\"HostView.getCurrentFocusState\"}"));
-    // Duplicate HostView.getCurrentFocusState are allowed.
-    auto response4 = FakePlatformMessageResponse::Create();
-    base_view->HandlePlatformMessage(response4->WithMessage(
-        "flutter/platform_views",
-        "{\"method\":\"HostView.getCurrentFocusState\"}"));
-
-    // Run event loop and check our results.
-    RunLoopUntilIdle();
-    response1->ExpectCompleted(vrf_states[i] ? "[true]" : "[false]");
-    response2->ExpectCompleted("");
-    response3->ExpectCompleted(vrf_states[i] ? "[true]" : "[false]");
-    response4->ExpectCompleted(vrf_states[i] ? "[true]" : "[false]");
-  }
-}
-
-// This test makes sure that the PlatformView forwards messages on the
-// "flutter/platform_views" channel for RequestFocus.
-// TODO(fxbug.dev/79740): Delete after soft transition.
-TEST_F(PlatformViewTests, DeprecatedRequestFocusTest) {
-  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  MockPlatformViewDelegate delegate;
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
-
-  FakeFocuser focuser;
-  fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
-  auto focuser_handle = focuser_bindings.AddBinding(&focuser);
-
-  flutter_runner::PlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners),
-                          services_provider.service_directory())
-          .SetFocuser(std::move(focuser_handle))
-          .Build();
-
-  // Cast platform_view to its base view so we can have access to the public
-  // "HandlePlatformMessage" function.
-  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
-  EXPECT_TRUE(base_view);
-
-  // This "Mock" ViewRef serves as the target for the RequestFocus operation.
-  auto mock_view_ref_pair = scenic::ViewRefPair::New();
-
-  // JSON for the message to be passed into the PlatformView.
-  std::ostringstream message;
-  message << "{"
-          << "    \"method\":\"View.requestFocus\","
-          << "    \"args\": {"
-          << "       \"viewRef\":"
-          << mock_view_ref_pair.view_ref.reference.get() << "    }"
-          << "}";
-
-  // Dispatch the plaform message request.
-  auto response = FakePlatformMessageResponse::Create();
-  base_view->HandlePlatformMessage(
-      response->WithMessage("flutter/platform_views", message.str()));
-  RunLoopUntilIdle();
-
-  response->ExpectCompleted("[0]");
-  EXPECT_TRUE(focuser.request_focus_called());
-}
-
-// This test makes sure that the PlatformView correctly replies with an error
-// response when a RequestFocus call fails.
-// TODO(fxbug.dev/79740): Delete after soft transition.
-TEST_F(PlatformViewTests, DeprecatedRequestFocusFailTest) {
-  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
-  MockPlatformViewDelegate delegate;
-  flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
-
-  FakeFocuser focuser;
-  focuser.fail_request_focus();
-  fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
-  auto focuser_handle = focuser_bindings.AddBinding(&focuser);
-
-  flutter_runner::PlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners),
-                          services_provider.service_directory())
-          .SetFocuser(std::move(focuser_handle))
-          .Build();
-
-  // Cast platform_view to its base view so we can have access to the public
-  // "HandlePlatformMessage" function.
-  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
-  EXPECT_TRUE(base_view);
-
-  // This "Mock" ViewRef serves as the target for the RequestFocus operation.
-  auto mock_view_ref_pair = scenic::ViewRefPair::New();
-
-  // JSON for the message to be passed into the PlatformView.
-  std::ostringstream message;
-  message << "{"
-          << "    \"method\":\"View.requestFocus\","
-          << "    \"args\": {"
-          << "       \"viewRef\":"
-          << mock_view_ref_pair.view_ref.reference.get() << "    }"
-          << "}";
-
-  // Dispatch the plaform message request.
-  auto response = FakePlatformMessageResponse::Create();
-  base_view->HandlePlatformMessage(
-      response->WithMessage("flutter/platform_views", message.str()));
-  RunLoopUntilIdle();
-
-  response->ExpectCompleted(
-      "[" +
-      std::to_string(
-          static_cast<std::underlying_type_t<fuchsia::ui::views::Error>>(
-              fuchsia::ui::views::Error::DENIED)) +
-      "]");
-  EXPECT_TRUE(focuser.request_focus_called());
-}
-
 struct EventFlow {
   fuchsia::ui::input3::KeyEvent event;
   fuchsia::ui::input3::KeyEventStatus expected_key_event_status;
@@ -1509,6 +1374,125 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
   expected_result_ostream << "[" << shaders.size() << "]";
   std::string expected_result_string = expected_result_ostream.str();
   EXPECT_EQ(expected_result_string, response->result_string);
+}
+
+TEST_F(PlatformViewTests, DownPointerNumericNudge) {
+  using ScenicEvent = fuchsia::ui::scenic::Event;
+  using GfxEvent = fuchsia::ui::gfx::Event;
+  using GfxViewPropertiesChangedEvent =
+      fuchsia::ui::gfx::ViewPropertiesChangedEvent;
+  using GfxViewProperties = fuchsia::ui::gfx::ViewProperties;
+  using GfxBoundingBox = fuchsia::ui::gfx::BoundingBox;
+  using GfxVec3 = fuchsia::ui::gfx::vec3;
+  using fuchsia::ui::input::InputEvent;
+  using fuchsia::ui::input::PointerEvent;
+
+  const float kSmallDiscrepancy = -0.00003f;
+
+  fuchsia::ui::scenic::SessionListenerPtr session_listener;
+  sys::testing::ServiceDirectoryProvider services_provider(dispatcher());
+  MockPlatformViewDelegate delegate;
+  flutter::TaskRunners task_runners("test_runners", nullptr, nullptr, nullptr,
+                                    nullptr);
+  flutter_runner::PlatformView platform_view =
+      PlatformViewBuilder(delegate, std::move(task_runners),
+                          services_provider.service_directory())
+          .SetSessionListenerRequest(session_listener.NewRequest())
+          .Build();
+  RunLoopUntilIdle();
+  EXPECT_EQ(delegate.pointer_packets().size(), 0u);
+
+  std::vector<fuchsia::ui::scenic::Event> events;
+  events.emplace_back(ScenicEvent::WithGfx(
+      GfxEvent::WithViewPropertiesChanged(GfxViewPropertiesChangedEvent{
+          .view_id = 0,
+          .properties =
+              GfxViewProperties{
+                  .bounding_box =
+                      GfxBoundingBox{
+                          .min =
+                              GfxVec3{
+                                  .x = 0.f,
+                                  .y = 0.f,
+                                  .z = 0.f,
+                              },
+                          .max =
+                              GfxVec3{
+                                  .x = 100.f,
+                                  .y = 100.f,
+                                  .z = 100.f,
+                              },
+                      },
+              },
+      })));
+  events.emplace_back(
+      ScenicEvent::WithGfx(GfxEvent::WithMetrics(fuchsia::ui::gfx::MetricsEvent{
+          .node_id = 0,
+          .metrics =
+              fuchsia::ui::gfx::Metrics{
+                  .scale_x = 1.f,
+                  .scale_y = 1.f,
+                  .scale_z = 1.f,
+              },
+      })));
+  events.emplace_back(
+      ScenicEvent::WithInput(InputEvent::WithPointer(PointerEvent{
+          .event_time = 1111,
+          .device_id = 2222,
+          .pointer_id = 3333,
+          .type = fuchsia::ui::input::PointerEventType::TOUCH,
+          .phase = fuchsia::ui::input::PointerEventPhase::ADD,
+          .x = 50.f,
+          .y = kSmallDiscrepancy,  // floating point inaccuracy
+          .radius_major = 0.f,
+          .radius_minor = 0.f,
+          .buttons = 0u,
+      })));
+  events.emplace_back(
+      ScenicEvent::WithInput(InputEvent::WithPointer(PointerEvent{
+          .event_time = 1111,
+          .device_id = 2222,
+          .pointer_id = 3333,
+          .type = fuchsia::ui::input::PointerEventType::TOUCH,
+          .phase = fuchsia::ui::input::PointerEventPhase::DOWN,
+          .x = 50.f,
+          .y = kSmallDiscrepancy,  // floating point inaccuracy
+          .radius_major = 0.f,
+          .radius_minor = 0.f,
+          .buttons = 0u,
+      })));
+  events.emplace_back(
+      ScenicEvent::WithInput(InputEvent::WithPointer(PointerEvent{
+          .event_time = 1111,
+          .device_id = 2222,
+          .pointer_id = 3333,
+          .type = fuchsia::ui::input::PointerEventType::TOUCH,
+          .phase = fuchsia::ui::input::PointerEventPhase::MOVE,
+          .x = 50.f,
+          .y = kSmallDiscrepancy,  // floating point inaccuracy
+          .radius_major = 0.f,
+          .radius_minor = 0.f,
+          .buttons = 0u,
+      })));
+  session_listener->OnScenicEvent(std::move(events));
+  RunLoopUntilIdle();
+  ASSERT_EQ(delegate.pointer_packets().size(), 3u);
+
+  // Embedder issues pointer data in a bytestream format, PointerDataPacket.
+  // Use this handy utility to recover data as a C struct, PointerData.
+  std::vector<std::unique_ptr<flutter::PointerDataPacket>> packets =
+      delegate.TakePointerDataPackets();
+  std::vector<flutter::PointerData> add, down, move;
+  UnpackPointerPacket(add, std::move(packets[0]));
+  UnpackPointerPacket(down, std::move(packets[1]));
+  UnpackPointerPacket(move, std::move(packets[2]));
+
+  EXPECT_EQ(add[0].physical_x, 50.f);
+  EXPECT_EQ(add[0].physical_y, kSmallDiscrepancy);
+  EXPECT_EQ(down[0].physical_x, 50.f);
+  EXPECT_EQ(down[0].physical_y, 0.f);  // clamping happened
+  EXPECT_EQ(move[0].physical_x, 50.f);
+  EXPECT_EQ(move[0].physical_y, kSmallDiscrepancy);
 }
 
 }  // namespace flutter_runner::testing

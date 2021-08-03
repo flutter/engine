@@ -47,7 +47,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
     engineDispatcher.windows[_windowId] = this;
-    engineDispatcher.windowConfigurations[_windowId] = ui.ViewConfiguration();
+    engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory =
           MultiEntriesBrowserHistory(urlStrategy: _customUrlStrategy);
@@ -58,6 +58,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   final Object _windowId;
+
+  @override
   final ui.PlatformDispatcher platformDispatcher;
 
   /// Handles the browser history integration to allow users to use the back
@@ -149,7 +151,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
   Future<bool> handleNavigationMessage(ByteData? data) async {
     return _waitInTheLine(() async {
-      final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
+      final MethodCall decoded = const JSONMethodCodec().decodeMethodCall(data);
       final Map<String, dynamic>? arguments = decoded.arguments;
       switch (decoded.method) {
         case 'selectMultiEntryHistory':
@@ -183,7 +185,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher.windowConfigurations.containsKey(_windowId));
     return engineDispatcher.windowConfigurations[_windowId] ??
-        ui.ViewConfiguration();
+        const ui.ViewConfiguration();
   }
 
   @override
@@ -330,13 +332,13 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 // Keep this js name in sync with flutter_web_plugins. Find it at:
 // https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/navigation/js_url_strategy.dart
 //
-// TODO: Add integration test https://github.com/flutter/flutter/issues/66852
+// TODO(mdebbar): Add integration test https://github.com/flutter/flutter/issues/66852
 @JS('_flutter_web_set_location_strategy')
 external set jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
 UrlStrategy? _createDefaultUrlStrategy() {
   return ui.debugEmulateFlutterTesterEnvironment
-      ? TestUrlStrategy.fromEntry(TestHistoryEntry('default', null, '/'))
+      ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
       : const HashUrlStrategy();
 }
 
@@ -367,6 +369,7 @@ class EngineFlutterWindowView extends ui.FlutterWindow {
 
   final Object _viewId;
 
+  @override
   final ui.PlatformDispatcher platformDispatcher;
 
   @override
@@ -375,7 +378,7 @@ class EngineFlutterWindowView extends ui.FlutterWindow {
         platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
     return engineDispatcher.windowConfigurations[_viewId] ??
-        ui.ViewConfiguration();
+        const ui.ViewConfiguration();
   }
 }
 
@@ -396,8 +399,12 @@ class WindowPadding implements ui.WindowPadding {
     required this.bottom,
   });
 
+  @override
   final double left;
+  @override
   final double top;
+  @override
   final double right;
+  @override
   final double bottom;
 }

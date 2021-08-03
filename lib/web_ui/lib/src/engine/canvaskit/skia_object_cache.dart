@@ -5,10 +5,10 @@
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
-import '../../engine.dart' show EnginePlatformDispatcher, Instrumentation;
 
-import 'canvaskit_api.dart';
+import '../../engine.dart' show EnginePlatformDispatcher, Instrumentation;
 import '../util.dart';
+import 'canvaskit_api.dart';
 
 /// A cache of Skia objects whose memory Flutter manages.
 ///
@@ -30,17 +30,17 @@ class SkiaObjectCache {
   /// A doubly linked list of the objects in the cache.
   ///
   /// This makes it fast to move a recently used object to the front.
-  final DoubleLinkedQueue<SkiaObject> _itemQueue;
+  final DoubleLinkedQueue<SkiaObject<Object>> _itemQueue;
 
   /// A map of objects to their associated node in the [_itemQueue].
   ///
   /// This makes it fast to find the node in the queue when we need to
   /// move the object to the front of the queue.
-  final Map<SkiaObject, DoubleLinkedQueueEntry<SkiaObject>> _itemMap;
+  final Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>> _itemMap;
 
   SkiaObjectCache(this.maximumSize)
-      : _itemQueue = DoubleLinkedQueue<SkiaObject>(),
-        _itemMap = <SkiaObject, DoubleLinkedQueueEntry<SkiaObject>>{};
+      : _itemQueue = DoubleLinkedQueue<SkiaObject<Object>>(),
+        _itemMap = <SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>{};
 
   /// The number of objects in the cache.
   int get length => _itemQueue.length;
@@ -49,7 +49,7 @@ class SkiaObjectCache {
   ///
   /// This is only for testing.
   @visibleForTesting
-  bool debugContains(SkiaObject object) {
+  bool debugContains(SkiaObject<Object> object) {
     return _itemMap.containsKey(object);
   }
 
@@ -58,7 +58,7 @@ class SkiaObjectCache {
   /// If adding [object] causes the total size of the cache to exceed
   /// [maximumSize], then the least recently used half of the cache
   /// will be deleted.
-  void add(SkiaObject object) {
+  void add(SkiaObject<Object> object) {
     _itemQueue.addFirst(object);
     _itemMap[object] = _itemQueue.firstEntry()!;
 
@@ -68,8 +68,8 @@ class SkiaObjectCache {
   }
 
   /// Records that [object] was used in the most recent frame.
-  void markUsed(SkiaObject object) {
-    DoubleLinkedQueueEntry<SkiaObject> item = _itemMap[object]!;
+  void markUsed(SkiaObject<Object> object) {
+    final DoubleLinkedQueueEntry<SkiaObject<Object>> item = _itemMap[object]!;
     item.remove();
     _itemQueue.addFirst(object);
     _itemMap[object] = _itemQueue.firstEntry()!;
@@ -79,7 +79,7 @@ class SkiaObjectCache {
   void resize() {
     final int itemsToDelete = maximumSize ~/ 2;
     for (int i = 0; i < itemsToDelete; i++) {
-      final SkiaObject oldObject = _itemQueue.removeLast();
+      final SkiaObject<Object> oldObject = _itemQueue.removeLast();
       _itemMap.remove(oldObject);
       oldObject.delete();
       oldObject.didDelete();
@@ -96,17 +96,17 @@ class SynchronousSkiaObjectCache {
   /// A doubly linked list of the objects in the cache.
   ///
   /// This makes it fast to move a recently used object to the front.
-  final DoubleLinkedQueue<SkiaObject> _itemQueue;
+  final DoubleLinkedQueue<SkiaObject<Object>> _itemQueue;
 
   /// A map of objects to their associated node in the [_itemQueue].
   ///
   /// This makes it fast to find the node in the queue when we need to
   /// move the object to the front of the queue.
-  final Map<SkiaObject, DoubleLinkedQueueEntry<SkiaObject>> _itemMap;
+  final Map<SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>> _itemMap;
 
   SynchronousSkiaObjectCache(this.maximumSize)
-      : _itemQueue = DoubleLinkedQueue<SkiaObject>(),
-        _itemMap = <SkiaObject, DoubleLinkedQueueEntry<SkiaObject>>{};
+      : _itemQueue = DoubleLinkedQueue<SkiaObject<Object>>(),
+        _itemMap = <SkiaObject<Object>, DoubleLinkedQueueEntry<SkiaObject<Object>>>{};
 
   /// The number of objects in the cache.
   int get length => _itemQueue.length;
@@ -115,7 +115,7 @@ class SynchronousSkiaObjectCache {
   ///
   /// This is only for testing.
   @visibleForTesting
-  bool debugContains(SkiaObject object) {
+  bool debugContains(SkiaObject<Object> object) {
     return _itemMap.containsKey(object);
   }
 
@@ -124,7 +124,7 @@ class SynchronousSkiaObjectCache {
   /// If adding [object] causes the total size of the cache to exceed
   /// [maximumSize], then the least recently used objects are evicted and
   /// deleted.
-  void add(SkiaObject object) {
+  void add(SkiaObject<Object> object) {
     assert(
       !_itemMap.containsKey(object),
       'Cannot add object. Object is already in the cache: $object',
@@ -139,8 +139,8 @@ class SynchronousSkiaObjectCache {
   /// If [object] is in the cache returns true. If the object is not in
   /// the cache, for example, because it was never added or because it was
   /// evicted as a result of the app reaching the cache limit, returns false.
-  bool markUsed(SkiaObject object) {
-    final DoubleLinkedQueueEntry<SkiaObject>? item = _itemMap[object];
+  bool markUsed(SkiaObject<Object> object) {
+    final DoubleLinkedQueueEntry<SkiaObject<Object>>? item = _itemMap[object];
 
     if (item == null) {
       return false;
@@ -158,7 +158,7 @@ class SynchronousSkiaObjectCache {
   /// Calls `delete` and `didDelete` on objects evicted from the cache.
   void _enforceCacheLimit() {
     while (_itemQueue.length > maximumSize) {
-      final SkiaObject oldObject = _itemQueue.removeLast();
+      final SkiaObject<Object> oldObject = _itemQueue.removeLast();
       _itemMap.remove(oldObject);
       oldObject.delete();
       oldObject.didDelete();
@@ -276,7 +276,7 @@ abstract class ManagedSkiaObject<T extends Object> extends SkiaObject<T> {
 
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter(
-        '${(rawSkiaObject as SkDeletable).constructor.name} deleted',
+        '${(rawSkiaObject! as SkDeletable).constructor.name} deleted',
       );
     }
     rawSkiaObject = null;
@@ -345,8 +345,8 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
   /// Creates an object box that's memory-managed using [SkFinalizationRegistry].
   ///
   /// This constructor must only be used if [browserSupportsFinalizationRegistry] is true.
-  SkiaObjectBox(R debugReferrer, T initialValue) : _resurrector = null {
-    assert(browserSupportsFinalizationRegistry);
+  SkiaObjectBox(R debugReferrer, T initialValue) :
+        assert(browserSupportsFinalizationRegistry), _resurrector = null {
     _initialize(debugReferrer, initialValue);
     Collector.instance.register(this, _skDeletable!);
   }
@@ -355,8 +355,8 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
   ///
   /// This constructor must only be used if [browserSupportsFinalizationRegistry] is false.
   SkiaObjectBox.resurrectable(
-      R debugReferrer, T initialValue, this._resurrector) {
-    assert(!browserSupportsFinalizationRegistry);
+      R debugReferrer, T initialValue, this._resurrector) :
+        assert(!browserSupportsFinalizationRegistry) {
     _initialize(debugReferrer, initialValue);
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter(
@@ -509,11 +509,12 @@ class SkiaObjectBox<R extends StackTraceDebugger, T extends Object>
   }
 }
 
+// ignore: avoid_classes_with_only_static_members
 /// Singleton that manages the lifecycles of [SkiaObject] instances.
 class SkiaObjects {
   @visibleForTesting
-  static final List<ManagedSkiaObject> resurrectableObjects =
-      <ManagedSkiaObject>[];
+  static final List<ManagedSkiaObject<Object>> resurrectableObjects =
+      <ManagedSkiaObject<Object>>[];
 
   @visibleForTesting
   static int maximumCacheSize = 1024;
@@ -543,7 +544,7 @@ class SkiaObjects {
   /// Starts managing the lifecycle of resurrectable [object].
   ///
   /// These can safely be deleted at any time.
-  static void manageResurrectable(ManagedSkiaObject object) {
+  static void manageResurrectable(ManagedSkiaObject<Object> object) {
     registerCleanupCallback();
     resurrectableObjects.add(object);
   }
@@ -552,7 +553,7 @@ class SkiaObjects {
   ///
   /// Since it's expensive to resurrect, we shouldn't just delete it after every
   /// frame. Instead, add it to a cache and only delete it when the cache fills.
-  static void manageExpensive(SkiaObject object) {
+  static void manageExpensive(SkiaObject<Object> object) {
     registerCleanupCallback();
     expensiveCache.add(object);
   }
@@ -573,7 +574,7 @@ class SkiaObjects {
     }
 
     for (int i = 0; i < resurrectableObjects.length; i++) {
-      final SkiaObject object = resurrectableObjects[i];
+      final SkiaObject<Object> object = resurrectableObjects[i];
       object.delete();
       object.didDelete();
     }

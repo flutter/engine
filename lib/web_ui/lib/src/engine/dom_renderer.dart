@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 
 import 'package:ui/ui.dart' as ui;
@@ -12,7 +11,6 @@ import 'package:ui/ui.dart' as ui;
 import '../engine.dart' show buildMode, registerHotRestartListener;
 import 'browser_detection.dart';
 import 'canvaskit/initialization.dart';
-import 'canvaskit/canvaskit_api.dart';
 import 'host_node.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
@@ -53,7 +51,7 @@ class DomRenderer {
 
   /// Fires when browser language preferences change.
   static const html.EventStreamProvider<html.Event> languageChangeEvent =
-      const html.EventStreamProvider<html.Event>('languagechange');
+      html.EventStreamProvider<html.Event>('languagechange');
 
   /// Listens to window resize events.
   StreamSubscription<html.Event>? _resizeSubscription;
@@ -68,14 +66,6 @@ class DomRenderer {
   /// Configures the screen, such as scaling.
   html.MetaElement? _viewportMeta;
 
-  /// The canvaskit script, downloaded from a CDN. Only created if
-  /// [useCanvasKit] is set to true.
-  html.ScriptElement? get canvasKitScript => _canvasKitScript;
-  html.ScriptElement? _canvasKitScript;
-
-  Future<void>? get canvasKitLoaded => _canvasKitLoaded;
-  Future<void>? _canvasKitLoaded;
-
   /// The element that contains the [sceneElement].
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -85,6 +75,10 @@ class DomRenderer {
   /// platform views take precedence in DOM event handling.
   html.Element? get sceneHostElement => _sceneHostElement;
   html.Element? _sceneHostElement;
+
+  /// A child element of body outside the shadowroot that hosts
+  /// global resources such svg filters and clip paths when using webkit.
+  html.Element? _resourcesHost;
 
   /// The element that contains the semantics tree.
   ///
@@ -140,14 +134,13 @@ class DomRenderer {
         _glassPaneElement,
         _styleElement,
         _viewportMeta,
-        _canvasKitScript,
       ]);
     });
   }
 
   void _clearOnHotRestart() {
     if (_staleHotRestartState!.isNotEmpty) {
-      for (html.Element? element in _staleHotRestartState!) {
+      for (final html.Element? element in _staleHotRestartState!) {
         element?.remove();
       }
       _staleHotRestartState!.clear();
@@ -286,9 +279,12 @@ class DomRenderer {
 
     _styleElement?.remove();
     _styleElement = html.StyleElement();
+    _resourcesHost?.remove();
+    _resourcesHost = null;
     html.document.head!.append(_styleElement!);
-    final html.CssStyleSheet sheet = _styleElement!.sheet as html.CssStyleSheet;
-    applyGlobalCssRulesToSheet(sheet,
+    final html.CssStyleSheet sheet = _styleElement!.sheet! as html.CssStyleSheet;
+    applyGlobalCssRulesToSheet(
+      sheet,
       browserEngine: browserEngine,
       hasAutofillOverlay: browserHasAutofillOverlay(),
     );
@@ -328,11 +324,11 @@ class DomRenderer {
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
-    // TODO(flutter_web): Disable spellcheck until changes in the framework and
+    // TODO(mdebbar): Disable spellcheck until changes in the framework and
     // engine are complete.
     bodyElement.spellcheck = false;
 
-    for (html.Element viewportMeta
+    for (final html.Element viewportMeta
         in html.document.head!.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {
         // Filter out the meta tag that we ourselves placed on the page. This is
@@ -383,8 +379,7 @@ class DomRenderer {
 
     // Don't allow the scene to receive pointer events.
     _sceneHostElement = createElement('flt-scene-host')
-      ..style
-        .pointerEvents = 'none';
+      ..style.pointerEvents = 'none';
 
     final html.Element semanticsHostElement =
         createElement('flt-semantics-host');
@@ -398,7 +393,7 @@ class DomRenderer {
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    glassPaneElementHostNode.nodes.addAll([
+    glassPaneElementHostNode.nodes.addAll(<html.Node>[
       semanticsHostElement,
       _accessibilityPlaceholder,
       _sceneHostElement!,
@@ -446,83 +441,6 @@ class DomRenderer {
           t.cancel();
         }
       });
-    }
-
-    // Only reset CanvasKit if it's not already available.
-    if (useCanvasKit && windowFlutterCanvasKit == null) {
-      _canvasKitScript?.remove();
-      _canvasKitScript = html.ScriptElement();
-      _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
-
-      Completer<void> canvasKitLoadCompleter = Completer<void>();
-      _canvasKitLoaded = canvasKitLoadCompleter.future;
-
-      late StreamSubscription<html.Event> loadSubscription;
-      loadSubscription = _canvasKitScript!.onLoad.listen((_) {
-        loadSubscription.cancel();
-        canvasKitLoadCompleter.complete();
-      });
-
-      // TODO(hterkelsen): Rather than this monkey-patch hack, we should
-      // build CanvasKit ourselves. See:
-      // https://github.com/flutter/flutter/issues/52588
-
-      // Monkey-patch the top-level `module`  and `exports` objects so that
-      // CanvasKit doesn't attempt to register itself as an anonymous module.
-      //
-      // The idea behind making these fake `exports` and `module` objects is
-      // that `canvaskit.js` contains the following lines of code:
-      //
-      //     if (typeof exports === 'object' && typeof module === 'object')
-      //       module.exports = CanvasKitInit;
-      //     else if (typeof define === 'function' && define['amd'])
-      //       define([], function() { return CanvasKitInit; });
-      //
-      // We need to avoid hitting the case where CanvasKit defines an anonymous
-      // module, since this breaks RequireJS, which DDC and some plugins use.
-      // Temporarily removing the `define` function won't work because RequireJS
-      // could load in between this code running and the CanvasKit code running.
-      // Also, we cannot monkey-patch the `define` function because it is
-      // non-configurable (it is a top-level 'var').
-
-      // First check if `exports` and `module` are already defined. If so, then
-      // CommonJS is being used, and we shouldn't have any problems.
-      js.JsFunction objectConstructor = js.context['Object'];
-      if (js.context['exports'] == null) {
-        js.JsObject exportsAccessor = js.JsObject.jsify({
-          'get': js.allowInterop(() {
-            if (html.document.currentScript == _canvasKitScript) {
-              return js.JsObject(objectConstructor);
-            } else {
-              return js.context['_flutterWebCachedExports'];
-            }
-          }),
-          'set': js.allowInterop((dynamic value) {
-            js.context['_flutterWebCachedExports'] = value;
-          }),
-          'configurable': true,
-        });
-        objectConstructor.callMethod('defineProperty',
-            <dynamic>[js.context, 'exports', exportsAccessor]);
-      }
-      if (js.context['module'] == null) {
-        js.JsObject moduleAccessor = js.JsObject.jsify({
-          'get': js.allowInterop(() {
-            if (html.document.currentScript == _canvasKitScript) {
-              return js.JsObject(objectConstructor);
-            } else {
-              return js.context['_flutterWebCachedModule'];
-            }
-          }),
-          'set': js.allowInterop((dynamic value) {
-            js.context['_flutterWebCachedModule'] = value;
-          }),
-          'configurable': true,
-        });
-        objectConstructor.callMethod(
-            'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
-      }
-      html.document.head!.append(_canvasKitScript!);
     }
 
     if (html.window.visualViewport != null) {
@@ -650,9 +568,10 @@ class DomRenderer {
       if (!unsafeIsNull(screenOrientation)) {
         if (orientations.isEmpty) {
           screenOrientation!.unlock();
-          return Future.value(true);
+          return Future<bool>.value(true);
         } else {
-          String? lockType = _deviceOrientationToLockType(orientations.first);
+          final String? lockType =
+              _deviceOrientationToLockType(orientations.first);
           if (lockType != null) {
             final Completer<bool> completer = Completer<bool>();
             try {
@@ -664,7 +583,7 @@ class DomRenderer {
                 completer.complete(false);
               });
             } catch (_) {
-              return Future.value(false);
+              return Future<bool>.value(false);
             }
             return completer.future;
           }
@@ -672,7 +591,7 @@ class DomRenderer {
       }
     }
     // API is not supported on this browser return false.
-    return Future.value(false);
+    return Future<bool>.value(false);
   }
 
   // Converts device orientation to w3c OrientationLockType enum.
@@ -694,12 +613,39 @@ class DomRenderer {
   /// The element corresponding to the only child of the root surface.
   html.Element? get _rootApplicationElement {
     final html.Element lastElement = rootElement.children.last;
-    for (html.Element child in lastElement.children) {
+    for (final html.Element child in lastElement.children) {
       if (child.tagName == 'FLT-SCENE') {
         return child;
       }
     }
     return null;
+  }
+
+  /// Add an element as a global resource to be referenced by CSS.
+  ///
+  /// This call create a global resource host element on demand and either
+  /// place it as first element of body(webkit), or as a child of
+  /// glass pane element for other browsers to make sure url resolution
+  /// works correctly when content is inside a shadow root.
+  void addResource(html.Element element) {
+    final bool isWebKit = browserEngine == BrowserEngine.webkit;
+    if (_resourcesHost == null) {
+      _resourcesHost = html.DivElement()
+        ..style.visibility = 'hidden';
+      if (isWebKit) {
+        final html.Node bodyNode = html.document.body!;
+        bodyNode.insertBefore(_resourcesHost!, bodyNode.firstChild);
+      } else {
+        _glassPaneShadow!.node.insertBefore(
+            _resourcesHost!, _glassPaneShadow!.node.firstChild);
+      }
+    }
+    _resourcesHost!.append(element);
+  }
+
+  /// Removes a global resource element.
+  void removeResource(html.Element? element) {
+    element?.remove();
   }
 
   /// Provides haptic feedback.
@@ -731,7 +677,8 @@ class DomRenderer {
 }
 
 // Applies the required global CSS to an incoming [html.CssStyleSheet] `sheet`.
-void applyGlobalCssRulesToSheet(html.CssStyleSheet sheet, {
+void applyGlobalCssRulesToSheet(
+  html.CssStyleSheet sheet, {
   required BrowserEngine browserEngine,
   required bool hasAutofillOverlay,
   String glassPaneTagName = DomRenderer._glassPaneTagName,
@@ -839,8 +786,6 @@ $glassPaneTagName * {
   }
 }
 
-
-
 /// Miscellaneous statistics collecting during a single frame's execution.
 ///
 /// This is useful when profiling the app. This class should only be used when
@@ -880,8 +825,9 @@ Frame statistics:
   }
 }
 
-// TODO(yjbanov): Replace this with an explicit initialization function. The
-//                lazy initialization of statics makes it very unpredictable, as
-//                the constructor has side-effects.
 /// Singleton DOM renderer.
-final DomRenderer domRenderer = DomRenderer();
+DomRenderer get domRenderer => ensureDomRendererInitialized();
+
+/// Initializes the [DomRenderer], if it's not already initialized.
+DomRenderer ensureDomRendererInitialized() => _domRenderer ??= DomRenderer();
+DomRenderer? _domRenderer;

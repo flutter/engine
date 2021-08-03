@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:io' as io;
+import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
@@ -33,10 +34,9 @@ class ChromeArgParser extends BrowserArgParser {
     _pinnedChromeBuildNumber =
         PlatformBinding.instance.getChromeBuild(browserLock);
 
-    argParser
-      ..addOption(
+    argParser.addOption(
         'chrome-version',
-        defaultsTo: '$pinnedChromeBuildNumber',
+        defaultsTo: pinnedChromeBuildNumber,
         help: 'The Chrome version to use while running tests. If the requested '
             'version has not been installed, it will be downloaded and installed '
             'automatically. A specific Chrome build version number, such as 695653, '
@@ -220,7 +220,7 @@ class ChromeInstaller {
       final Stopwatch stopwatch = Stopwatch()..start();
 
       // Read the Zip file from disk.
-      final bytes = downloadedFile.readAsBytesSync();
+      final Uint8List bytes = downloadedFile.readAsBytesSync();
 
       final Archive archive = ZipDecoder().decodeBytes(bytes);
 
@@ -228,13 +228,13 @@ class ChromeInstaller {
       for (final ArchiveFile file in archive) {
         final String filename = file.name;
         if (file.isFile) {
-          final data = file.content as List<int>;
+          final List<int> data = file.content as List<int>;
           io.File(path.join(versionDir.path, filename))
             ..createSync(recursive: true)
             ..writeAsBytesSync(data);
         } else {
-          io.Directory(path.join(versionDir.path, filename))
-            ..create(recursive: true);
+          io.Directory(path.join(versionDir.path, filename)).create(
+              recursive: true);
         }
       }
 

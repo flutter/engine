@@ -56,7 +56,7 @@ void commitScene(PersistedScene scene) {
         });
       }
 
-      for (PaintRequest request in paintQueue) {
+      for (final PaintRequest request in paintQueue) {
         request.paintCallback();
       }
     } finally {
@@ -180,7 +180,7 @@ class PersistedSurfaceException implements Exception {
 bool debugAssertSurfaceState(
     PersistedSurface surface, PersistedSurfaceState state1,
     [PersistedSurfaceState? state2, PersistedSurfaceState? state3]) {
-  final List<PersistedSurfaceState?> validStates = [state1, state2, state3];
+  final List<PersistedSurfaceState?> validStates = <PersistedSurfaceState?>[state1, state2, state3];
 
   if (validStates.contains(surface.state)) {
     return true;
@@ -524,11 +524,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// transforms as well as this layer's transform (if any).
   ///
   /// The value is update by [recomputeTransformAndClip].
-  Matrix4? get transform => _transform;
-  set transform(Matrix4? value) {
-    _transform = value;
-  }
-  Matrix4? _transform;
+  Matrix4? transform;
 
   /// The intersection at this surface level.
   ///
@@ -555,7 +551,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This method is called by the [preroll] method.
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
+    transform = parent!.transform;
     localClipBounds = null;
     projectedClip = null;
   }
@@ -568,7 +564,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
   ///
   /// This method recursively walks the surface tree calling `preroll` on all
   /// descendants.
-  void preroll() {
+  void preroll(PrerollSurfaceContext prerollContext) {
     recomputeTransformAndClip();
   }
 
@@ -651,17 +647,17 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   }
 
   @override
-  void preroll() {
-    super.preroll();
+  void preroll(PrerollSurfaceContext prerollContext) {
+    super.preroll(prerollContext);
     final int length = _children.length;
     for (int i = 0; i < length; i += 1) {
-      _children[i].preroll();
+      _children[i].preroll(prerollContext);
     }
   }
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
+    transform = parent!.transform;
     localClipBounds = null;
     projectedClip = null;
   }
@@ -683,7 +679,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         assert(oldLayer.rootElement != null);
         assert(debugAssertSurfaceState(
             oldLayer, PersistedSurfaceState.pendingUpdate));
-        child.update(child.oldLayer as PersistedContainerSurface);
+        child.update(oldLayer as PersistedContainerSurface);
       } else {
         assert(debugAssertSurfaceState(child, PersistedSurfaceState.created));
         assert(child.rootElement == null);
@@ -789,7 +785,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       } else if (newChild is PersistedContainerSurface &&
           newChild.oldLayer != null) {
         final PersistedContainerSurface oldLayer =
-            newChild.oldLayer as PersistedContainerSurface;
+            newChild.oldLayer! as PersistedContainerSurface;
         assert(debugAssertSurfaceState(
             oldLayer, PersistedSurfaceState.pendingUpdate));
         newChild.update(oldLayer);
@@ -854,7 +850,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       assert(newChild.oldLayer!.rootElement != null);
 
       final PersistedContainerSurface oldLayer =
-          newChild.oldLayer as PersistedContainerSurface;
+          newChild.oldLayer! as PersistedContainerSurface;
 
       // Move the HTML node if necessary.
       if (oldLayer.rootElement!.parent != childContainer) {
@@ -954,7 +950,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       } else if (newChild is PersistedContainerSurface &&
           newChild.oldLayer != null) {
         final PersistedContainerSurface oldLayer =
-            newChild.oldLayer as PersistedContainerSurface;
+            newChild.oldLayer! as PersistedContainerSurface;
         isReparenting = oldLayer.rootElement!.parent != containerElement;
         matchedOldChild = oldLayer;
         assert(debugAssertSurfaceState(
@@ -1053,7 +1049,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
           indexInNew != -1 && stationaryIndices.contains(i);
       final PersistedSurface child = _children[i];
       final html.HtmlElement childElement =
-          child.rootElement as html.HtmlElement;
+          child.rootElement! as html.HtmlElement;
       assert(childElement != null); // ignore: unnecessary_null_comparison
       if (!isStationary) {
         if (refNode == null) {
@@ -1226,4 +1222,14 @@ class _PersistedSurfaceMatch {
       return super.toString();
     }
   }
+}
+
+/// Data used during preroll to pass rendering hints efficiently to children
+/// by optimizing (prevent parent lookups) and in cases like svg filters
+/// drive the decision on whether canvas elements can be used to render.
+class PrerollSurfaceContext {
+  /// Number of active color filters in parent surfaces.
+  int activeColorFilterCount = 0;
+  /// Number of active shader masks in parent surfaces.
+  int activeShaderMaskCount = 0;
 }

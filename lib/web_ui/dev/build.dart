@@ -2,20 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' show Platform;
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
+import 'package:watcher/src/watch_event.dart';
 
 import 'environment.dart';
 import 'utils.dart';
 import 'watcher.dart';
 
-class BuildCommand extends Command<bool> with ArgUtils {
+class BuildCommand extends Command<bool> with ArgUtils<bool> {
   BuildCommand() {
-    argParser
-      ..addFlag(
+    argParser.addFlag(
         'watch',
         defaultsTo: false,
         abbr: 'w',
@@ -48,7 +48,7 @@ class BuildCommand extends Command<bool> with ArgUtils {
         dir: libPath.absolute,
         pipeline: buildPipeline,
         // Ignore font files that are copied whenever tests run.
-        ignore: (event) => event.path.endsWith('.ttf'),
+        ignore: (WatchEvent event) => event.path.endsWith('.ttf'),
       ).start();
     }
     return true;

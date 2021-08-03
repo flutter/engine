@@ -37,7 +37,7 @@ void testMain() {
     });
 
     test('Should convert float to bits', () {
-      Float32List floatList = Float32List(1);
+      final Float32List floatList = Float32List(1);
       floatList[0] = 0;
       expect(float2Bits(floatList, 0), 0);
       floatList[0] = 0.1;
@@ -54,8 +54,8 @@ void testMain() {
     test('Should compare equality based on ulps', () {
       // If number of floats between a=1.1 and b are below 16, equals should
       // return true.
-      final double a = 1.1;
-      int aBits = floatAs2sCompliment(a);
+      const double a = 1.1;
+      final int aBits = floatAs2sCompliment(a);
       double b = twosComplimentAsFloat(aBits + 1);
       expect(almostEqualUlps(a, b), isTrue);
       b = twosComplimentAsFloat(aBits + 15);

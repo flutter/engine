@@ -10,11 +10,11 @@ import 'package:simulators/simulator_manager.dart';
 import 'safari_installation.dart';
 import 'utils.dart';
 
-class CreateSimulatorCommand extends Command<bool> with ArgUtils {
+class CreateSimulatorCommand extends Command<bool> with ArgUtils<bool> {
   CreateSimulatorCommand() {
     IosSafariArgParser.instance.populateOptions(argParser);
     argParser
-      ..addOption(
+      .addOption(
         'type',
         defaultsTo: _defaultType,
         help: 'Type of the mobile simulator. Currently the only iOS '
@@ -24,7 +24,7 @@ class CreateSimulatorCommand extends Command<bool> with ArgUtils {
   }
 
   /// Currently the only iOS Simulators are supported.
-  static final String _defaultType = 'iOS';
+  static const String _defaultType = 'iOS';
 
   @override
   String get name => 'create_simulator';

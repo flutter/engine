@@ -5,8 +5,8 @@
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
@@ -451,7 +451,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
 /// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   final int length = offsetList.length;
-  final floatList = Float32List(length * 2);
+  final Float32List floatList = Float32List(length * 2);
   for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
     floatList[destIndex] = offsetList[i].dx;
     floatList[destIndex + 1] = offsetList[i].dy;

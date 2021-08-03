@@ -143,7 +143,7 @@ void testMain() {
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 0);
 
-      scene1.preroll();
+      scene1.preroll(PrerollSurfaceContext());
       scene1.build();
       commitScene(scene1);
       expect(picture.retainCount, 0);
@@ -162,7 +162,7 @@ void testMain() {
       opacity.state = PersistedSurfaceState.pendingRetention;
       clip2.appendChild(opacity);
 
-      scene2.preroll();
+      scene2.preroll(PrerollSurfaceContext());
       scene2.update(scene1);
       commitScene(scene2);
       expect(picture.retainCount, 1);
@@ -181,15 +181,15 @@ void testMain() {
       opacity.state = PersistedSurfaceState.pendingRetention;
       clip3.appendChild(opacity);
 
-      scene3.preroll();
+      scene3.preroll(PrerollSurfaceContext());
       scene3.update(scene2);
       commitScene(scene3);
       expect(picture.retainCount, 2);
       expect(picture.buildCount, 1);
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 2);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
+        skip: browserEngine == BrowserEngine.firefox);
   });
 
   group('Compositing order', () {
@@ -206,7 +206,7 @@ void testMain() {
       builder.addPicture(ui.Offset.zero, picture1);
       builder.pop();
 
-      html.Element content = builder.build().webOnlyRootElement!;
+      final html.Element content = builder.build().webOnlyRootElement!;
       expect(content.querySelector('canvas')!.style.zIndex, '-1');
 
       // Force update to scene which will utilize reuse code path.
@@ -219,20 +219,20 @@ void testMain() {
       builder2.addPicture(ui.Offset.zero, picture2);
       builder2.pop();
 
-      html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
+      final html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
       expect(contentAfterReuse.querySelector('canvas')!.style.zIndex, '-1');
     });
 
     test('Multiple canvas elements should retain zIndex after update', () async {
       final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
       final ui.Picture picture1 = _drawPathImagePath();
-      ui.ClipRectEngineLayer oldLayer = builder.pushClipRect(
+      final ui.ClipRectEngineLayer oldLayer = builder.pushClipRect(
         const ui.Rect.fromLTRB(10, 10, 300, 300),
       );
       builder.addPicture(ui.Offset.zero, picture1);
       builder.pop();
 
-      html.Element content = builder.build().webOnlyRootElement!;
+      final html.Element content = builder.build().webOnlyRootElement!;
       html.document.body!.append(content);
       expect(content.querySelector('canvas')!.style.zIndex, '-1');
 
@@ -246,8 +246,8 @@ void testMain() {
       builder2.addPicture(ui.Offset.zero, picture2);
       builder2.pop();
 
-      html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
-      List<html.CanvasElement> list =
+      final html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
+      final List<html.CanvasElement> list =
           contentAfterReuse.querySelectorAll('canvas');
       expect(list[0].style.zIndex, '-1');
       expect(list[1].style.zIndex, '');
@@ -259,16 +259,16 @@ void testMain() {
   test('Should retain same image element', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     final ui.Picture picture1 = _drawPathImagePath();
-    ui.ClipRectEngineLayer oldLayer = builder.pushClipRect(
+    final ui.ClipRectEngineLayer oldLayer = builder.pushClipRect(
       const ui.Rect.fromLTRB(10, 10, 300, 300),
     );
     builder.addPicture(ui.Offset.zero, picture1);
     builder.pop();
 
-    html.Element content = builder.build().webOnlyRootElement!;
+    final html.Element content = builder.build().webOnlyRootElement!;
     html.document.body!.append(content);
     List<html.ImageElement> list = content.querySelectorAll('img');
-    for (html.ImageElement image in list) {
+    for (final html.ImageElement image in list) {
       image.alt = 'marked';
     }
 
@@ -282,9 +282,9 @@ void testMain() {
     builder2.addPicture(ui.Offset.zero, picture2);
     builder2.pop();
 
-    html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
+    final html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
     list = contentAfterReuse.querySelectorAll('img');
-    for (html.ImageElement image in list) {
+    for (final html.ImageElement image in list) {
       expect(image.alt, 'marked');
     }
     expect(list.length, 1);
@@ -307,7 +307,7 @@ void testMain() {
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, picture);
       builder.pop();
-      html.Element content = builder.build().webOnlyRootElement!;
+      final html.Element content = builder.build().webOnlyRootElement!;
       expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
     }
 
@@ -319,7 +319,7 @@ void testMain() {
       builder.addPicture(ui.Offset.zero, picture);
       builder.pop();
       builder.pop();
-      html.Element content = builder.build().webOnlyRootElement!;
+      final html.Element content = builder.build().webOnlyRootElement!;
       expect(content.querySelectorAll('flt-picture').single.children, isEmpty);
       expect(findPictureSurfaceChild(clip)!.canvas, isNull);
     }
@@ -333,11 +333,11 @@ void testMain() {
     builder.pushOffset(0, 0);
     builder.pushClipRect(const ui.Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
     builder.pushTransform((Matrix4.identity()..scale(0.5, 0.5)).toFloat64());
-    builder.addPicture(ui.Offset(1000, 1000), picture);
+    builder.addPicture(const ui.Offset(1000, 1000), picture);
     builder.pop();
     builder.pop();
     builder.pop();
-    html.Element content = builder.build().webOnlyRootElement!;
+    final html.Element content = builder.build().webOnlyRootElement!;
     expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
   });
 
@@ -354,7 +354,7 @@ void testMain() {
     builder.pop();
     builder.pop();
     builder.pop();
-    html.Element content = builder.build().webOnlyRootElement!;
+    final html.Element content = builder.build().webOnlyRootElement!;
     expect(content.querySelectorAll('flt-picture').single.children, isNotEmpty);
   });
 
@@ -375,7 +375,7 @@ void testMain() {
     builder.pop();
     builder.pop();
     builder.pop();
-    html.Element content = builder
+    final html.Element content = builder
         .build()
         .webOnlyRootElement!;
     expect(content
@@ -392,7 +392,7 @@ void testMain() {
     final PersistedOffset offset1 = builder1.pushOffset(0, 0) as PersistedOffset;
     builder1.addPicture(ui.Offset.zero, picture);
     builder1.pop();
-    html.Element content1 = builder1.build().webOnlyRootElement!;
+    final html.Element content1 = builder1.build().webOnlyRootElement!;
     expect(content1.querySelectorAll('flt-picture').single.children, isNotEmpty);
     expect(findPictureSurfaceChild(offset1)!.canvas, isNotNull);
 
@@ -401,7 +401,7 @@ void testMain() {
     final PersistedOffset offset2 = builder2.pushOffset(-10000, -10000, oldLayer: offset1) as PersistedOffset;
     builder2.addPicture(ui.Offset.zero, picture);
     builder2.pop();
-    html.Element content = builder2.build().webOnlyRootElement!;
+    final html.Element content = builder2.build().webOnlyRootElement!;
     expect(content.querySelectorAll('flt-picture').single.children, isEmpty);
     expect(findPictureSurfaceChild(offset2)!.canvas, isNull);
   });
@@ -416,7 +416,7 @@ void testMain() {
     builder1.addPicture(ui.Offset.zero, picture);
     builder1.pop();
     builder1.pop();
-    html.Element content1 = builder1.build().webOnlyRootElement!;
+    final html.Element content1 = builder1.build().webOnlyRootElement!;
     expect(content1.querySelectorAll('flt-picture').single.children, isNotEmpty);
     expect(findPictureSurfaceChild(subOffset1)!.canvas, isNotNull);
 
@@ -429,7 +429,7 @@ void testMain() {
     // the clipped area. We should see the canvas being released.
     builder2.addRetained(subOffset1);
     builder2.pop();
-    html.Element content = builder2.build().webOnlyRootElement!;
+    final html.Element content = builder2.build().webOnlyRootElement!;
     expect(content.querySelectorAll('flt-picture').single.children, isEmpty);
     expect(findPictureSurfaceChild(subOffset1)!.canvas, isNull);
   });
@@ -450,7 +450,7 @@ void testMain() {
     builder.pop();
 
     // Expect as many layers as we pushed (not popped).
-    html.Element content = builder.build().webOnlyRootElement!;
+    final html.Element content = builder.build().webOnlyRootElement!;
     expect(content.querySelectorAll('flt-offset'), hasLength(5));
   });
 
@@ -469,11 +469,11 @@ void testMain() {
       final EnginePictureRecorder recorder = EnginePictureRecorder();
       final RecordingCanvas canvas = recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 400, 400));
       final DomParagraph paragraph = (DomParagraphBuilder(EngineParagraphStyle())..addText(char)).build() as DomParagraph;
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
       canvas.drawParagraph(paragraph, ui.Offset.zero);
       final ui.EngineLayer newLayer = useOffset
-          ? builder.pushOffset(0, 0, oldLayer: oldLayer as ui.OffsetEngineLayer)
-          : builder.pushOpacity(100, oldLayer: oldLayer as ui.OpacityEngineLayer);
+          ? builder.pushOffset(0, 0, oldLayer: oldLayer == null ? null : oldLayer as ui.OffsetEngineLayer)
+          : builder.pushOpacity(100, oldLayer: oldLayer == null ? null : oldLayer as ui.OpacityEngineLayer);
       builder.addPicture(ui.Offset.zero, recorder.endRecording());
       builder.pop();
       return newLayer;
@@ -496,8 +496,8 @@ void testMain() {
 
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
-      final html.MutationObserver observer = html.MutationObserver((List mutations, _) {
-        for (html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
+      final html.MutationObserver observer = html.MutationObserver((List<dynamic> mutations, _) {
+        for (final html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);
         }
@@ -513,10 +513,10 @@ void testMain() {
       final List<html.Element> pTags = scene.webOnlyRootElement!.querySelectorAll('p');
       expect(pTags, hasLength(string.length));
       expect(
-        scene.webOnlyRootElement!.querySelectorAll('p').map((p) => p.innerText).join(''),
+        scene.webOnlyRootElement!.querySelectorAll('p').map((html.Element p) => p.innerText).join(''),
         string,
       );
-      renderedLayers.removeWhere((key, value) => !string.contains(key));
+      renderedLayers.removeWhere((String key, ui.EngineLayer value) => !string.contains(key));
 
       // Inject a zero-duration timer to allow mutation observers to receive notification.
       return Future<void>.delayed(Duration.zero).then((_) {
@@ -587,8 +587,8 @@ void testMain() {
     builder.addPicture(ui.Offset.zero, picture1);
     builder.pop();
 
-    html.Element content = builder.build().webOnlyRootElement!;
-    html.CanvasElement canvas = content.querySelector('canvas') as html.CanvasElement;
+    final html.Element content = builder.build().webOnlyRootElement!;
+    final html.CanvasElement canvas = content.querySelector('canvas')! as html.CanvasElement;
     final int unscaledWidth = canvas.width!;
     final int unscaledHeight = canvas.height!;
 
@@ -604,8 +604,8 @@ void testMain() {
     builder2.pop();
     builder2.pop();
 
-    html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
-    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas') as html.CanvasElement;
+    final html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
+    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas')! as html.CanvasElement;
     // Although we are drawing same picture, due to scaling the new canvas
     // should have fewer pixels.
     expect(canvas2.width! < unscaledWidth, isTrue);
@@ -619,8 +619,8 @@ void testMain() {
     builder.addPicture(ui.Offset.zero, picture1);
     builder.pop();
 
-    html.Element content = builder.build().webOnlyRootElement!;
-    html.CanvasElement canvas = content.querySelector('canvas') as html.CanvasElement;
+    final html.Element content = builder.build().webOnlyRootElement!;
+    final html.CanvasElement canvas = content.querySelector('canvas')! as html.CanvasElement;
     final int unscaledWidth = canvas.width!;
     final int unscaledHeight = canvas.height!;
 
@@ -636,8 +636,8 @@ void testMain() {
     builder2.pop();
     builder2.pop();
 
-    html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
-    html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas') as html.CanvasElement;
+    final html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
+    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas')! as html.CanvasElement;
     // Although we are drawing same picture, due to scaling the new canvas
     // should have more pixels.
     expect(canvas2.width! > unscaledWidth, isTrue);
@@ -647,7 +647,7 @@ void testMain() {
   test('Should recycle canvas once', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     final ui.Picture picture1 = _drawPicture();
-    ui.ClipRectEngineLayer oldLayer = builder.pushClipRect(
+    final ui.ClipRectEngineLayer oldLayer = builder.pushClipRect(
       const ui.Rect.fromLTRB(10, 10, 300, 300),
     );
     builder.addPicture(ui.Offset.zero, picture1);
@@ -656,14 +656,14 @@ void testMain() {
 
     // Force update to scene which will utilize reuse code path.
     final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
-    ui.ClipRectEngineLayer oldLayer2 = builder2.pushClipRect(
+    final ui.ClipRectEngineLayer oldLayer2 = builder2.pushClipRect(
         const ui.Rect.fromLTRB(5, 10, 300, 300),
         oldLayer: oldLayer
     );
     builder2.addPicture(ui.Offset.zero, _drawEmptyPicture());
     builder2.pop();
 
-    html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
+    final html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
     expect(contentAfterReuse, isNotNull);
 
     final SurfaceSceneBuilder builder3 = SurfaceSceneBuilder();
@@ -674,7 +674,7 @@ void testMain() {
     builder3.addPicture(ui.Offset.zero, _drawEmptyPicture());
     builder3.pop();
     // This build will crash if canvas gets recycled twice.
-    html.Element contentAfterReuse2 = builder3.build().webOnlyRootElement!;
+    final html.Element contentAfterReuse2 = builder3.build().webOnlyRootElement!;
     expect(contentAfterReuse2, isNotNull);
   });
 }
@@ -760,7 +760,7 @@ class MockPersistedPicture extends PersistedPicture {
     final EnginePictureRecorder recorder = EnginePictureRecorder();
     // Use the largest cull rect so that layer clips are effective. The tests
     // rely on this.
-    recorder.beginRecording(ui.Rect.largest)..drawPaint(SurfacePaint());
+    recorder.beginRecording(ui.Rect.largest).drawPaint(SurfacePaint());
     return MockPersistedPicture._(recorder.endRecording());
   }
 
@@ -820,30 +820,32 @@ ui.Picture _drawPicture() {
   final EnginePictureRecorder recorder = EnginePictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 400, 400));
-  ui.Shader gradient = ui.Gradient.radial(
-      ui.Offset(100, 100), 50, [
-    const ui.Color.fromARGB(255, 0, 0, 0),
-    const ui.Color.fromARGB(255, 0, 0, 255)
-  ]);
+  final ui.Shader gradient = ui.Gradient.radial(
+    const ui.Offset(100, 100), 50,
+    const <ui.Color>[
+      ui.Color.fromARGB(255, 0, 0, 0),
+      ui.Color.fromARGB(255, 0, 0, 255),
+    ],
+  );
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 10), 10,
+      const ui.Offset(offsetX + 10, offsetY + 10), 10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..shader = gradient);
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 10),
+      const ui.Offset(offsetX + 60, offsetY + 10),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(255, 0, 0, 1));
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 60),
+      const ui.Offset(offsetX + 10, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(0, 255, 0, 1));
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 60),
+      const ui.Offset(offsetX + 60, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
@@ -863,36 +865,38 @@ EnginePicture _drawPathImagePath() {
   final EnginePictureRecorder recorder = EnginePictureRecorder();
   final RecordingCanvas canvas =
   recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 400, 400));
-  ui.Shader gradient = ui.Gradient.radial(
-      ui.Offset(100, 100), 50, [
-    const ui.Color.fromARGB(255, 0, 0, 0),
-    const ui.Color.fromARGB(255, 0, 0, 255)
-  ]);
+  final ui.Shader gradient = ui.Gradient.radial(
+    const ui.Offset(100, 100), 50,
+    const <ui.Color>[
+      ui.Color.fromARGB(255, 0, 0, 0),
+      ui.Color.fromARGB(255, 0, 0, 255),
+    ],
+  );
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 10), 10,
+      const ui.Offset(offsetX + 10, offsetY + 10), 10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..shader = gradient);
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 10),
+      const ui.Offset(offsetX + 60, offsetY + 10),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(255, 0, 0, 1));
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 60),
+      const ui.Offset(offsetX + 10, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(0, 255, 0, 1));
-  canvas.drawImage(createTestImage(), ui.Offset(0, 0), SurfacePaint());
+  canvas.drawImage(createTestImage(), const ui.Offset(0, 0), SurfacePaint());
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 10), 10,
+      const ui.Offset(offsetX + 10, offsetY + 10), 10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..shader = gradient);
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 60),
+      const ui.Offset(offsetX + 60, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
@@ -901,9 +905,9 @@ EnginePicture _drawPathImagePath() {
 }
 
 HtmlImage createTestImage({int width = 100, int height = 50}) {
-  html.CanvasElement canvas =
-  new html.CanvasElement(width: width, height: height);
-  html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final html.CanvasElement canvas =
+      html.CanvasElement(width: width, height: height);
+  final html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
   ctx.fill();
@@ -913,7 +917,7 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
-  html.ImageElement imageElement = html.ImageElement();
+  final html.ImageElement imageElement = html.ImageElement();
   imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

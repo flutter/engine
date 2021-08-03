@@ -51,7 +51,7 @@ class SafariIosEnvironment implements BrowserEnvironment {
 /// Any errors starting or running the process are reported through [onExit].
 class SafariIos extends Browser {
   @override
-  final name = 'Safari iOS';
+  final String name = 'Safari iOS';
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri].
@@ -61,24 +61,25 @@ class SafariIos extends Browser {
       // Uses `xcrun simctl`. It is a command line utility to control the
       // Simulator. For more details on interacting with the simulator:
       // https://developer.apple.com/library/archive/documentation/IDEs/Conceptual/iOS_Simulator_Guide/InteractingwiththeiOSSimulator/InteractingwiththeiOSSimulator.html
-      var process = await io.Process.start('xcrun', [
+      final io.Process process = await io.Process.start('xcrun', <String>[
         'simctl',
         'openurl', // Opens the url on Safari installed on the simulator.
         'booted', // The simulator is already booted.
-        '${url.toString()}',
+        url.toString(),
       ]);
 
       return process;
     });
   }
 
-  SafariIos._(Future<io.Process> startBrowser()) : super(startBrowser);
+  SafariIos._(Future<io.Process> Function() startBrowser) : super(startBrowser);
 }
 
 /// [ScreenshotManager] implementation for Safari.
 ///
 /// This manager will only be created/used for macOS.
 class SafariIosScreenshotManager extends ScreenshotManager {
+  @override
   String get filenameSuffix => '.iOS_Safari';
 
   SafariIosScreenshotManager() {
@@ -154,8 +155,9 @@ class SafariIosScreenshotManager extends ScreenshotManager {
   /// width of the area to capture.
   ///
   /// Uses simulator tool `xcrun simctl`'s 'screenshot' command.
-  Future<Image> capture(math.Rectangle? region) async {
-    final String filename = 'screenshot${_fileNameCounter}.png';
+  @override
+  Future<Image> capture(math.Rectangle<num>? region) async {
+    final String filename = 'screenshot$_fileNameCounter.png';
     _fileNameCounter++;
 
     await IosSafariArgParser.instance.iosSimulator.takeScreenshot(
@@ -166,7 +168,7 @@ class SafariIosScreenshotManager extends ScreenshotManager {
     List<int> imageBytes;
     if (!file.existsSync()) {
       throw Exception('Failed to read the screenshot '
-          'screenshot${_fileNameCounter}.png.');
+          'screenshot$_fileNameCounter.png.');
     }
     imageBytes = await file.readAsBytes();
     file.deleteSync();
@@ -186,7 +188,7 @@ class SafariIosScreenshotManager extends ScreenshotManager {
     if (region == null) {
       return content;
     } else {
-      final math.Rectangle scaledRegion = _scaleScreenshotRegion(region);
+      final math.Rectangle<num> scaledRegion = _scaleScreenshotRegion(region);
       return copyCrop(
         content,
         scaledRegion.left.toInt(),
@@ -200,8 +202,8 @@ class SafariIosScreenshotManager extends ScreenshotManager {
   /// Perform a linear transform on the screenshot region to convert its
   /// dimensions from linear coordinated to coordinated on the phone screen.
   /// This uniform/isotropic scaling is done using [_scaleFactor].
-  math.Rectangle _scaleScreenshotRegion(math.Rectangle region) {
-    return math.Rectangle(
+  math.Rectangle<num> _scaleScreenshotRegion(math.Rectangle<num> region) {
+    return math.Rectangle<num>(
       region.left * _scaleFactor,
       region.top * _scaleFactor,
       region.width * _scaleFactor,

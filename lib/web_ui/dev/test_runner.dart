@@ -11,10 +11,13 @@ import 'package:pool/pool.dart';
 
 // TODO(yjbanov): remove hacks when this is fixed:
 //                https://github.com/dart-lang/test/issues/1521
-import 'package:test_api/src/backend/live_test.dart'
-    as hack;
 import 'package:test_api/src/backend/group.dart'
-    as hack;
+as hack;
+import 'package:test_api/src/backend/live_test.dart'
+as hack;
+import 'package:test_api/src/backend/runtime.dart';
+import 'package:test_core/src/executable.dart'
+as test;
 import 'package:test_core/src/runner/configuration/reporters.dart'
     as hack;
 import 'package:test_core/src/runner/engine.dart'
@@ -23,9 +26,7 @@ import 'package:test_core/src/runner/hack_register_platform.dart'
     as hack;
 import 'package:test_core/src/runner/reporter.dart'
     as hack;
-import 'package:test_api/src/backend/runtime.dart';
-import 'package:test_core/src/executable.dart'
-    as test;
+import 'package:watcher/src/watch_event.dart';
 import 'package:web_test_utils/goldens.dart';
 
 import 'browser.dart';
@@ -38,7 +39,6 @@ import 'environment.dart';
 import 'exceptions.dart';
 import 'firefox.dart';
 import 'firefox_installer.dart';
-import 'macos_info.dart';
 import 'safari_installation.dart';
 import 'safari_ios.dart';
 import 'safari_macos.dart';
@@ -80,7 +80,7 @@ BrowserEnvironment _createBrowserEnvironment(String browserName) {
 }
 
 /// Runs tests.
-class TestCommand extends Command<bool> with ArgUtils {
+class TestCommand extends Command<bool> with ArgUtils<bool> {
   TestCommand() {
     argParser
       ..addFlag(
@@ -146,7 +146,7 @@ class TestCommand extends Command<bool> with ArgUtils {
               'finish.',
       );
 
-    for (BrowserArgParser browserArgParser in _browserArgParsers) {
+    for (final BrowserArgParser browserArgParser in _browserArgParsers) {
       browserArgParser.populateOptions(argParser);
     }
     GeneralTestsArgumentParser.instance.populateOptions(argParser);
@@ -174,19 +174,13 @@ class TestCommand extends Command<bool> with ArgUtils {
 
   @override
   Future<bool> run() async {
-    for (BrowserArgParser browserArgParser in _browserArgParsers) {
+    for (final BrowserArgParser browserArgParser in _browserArgParsers) {
       browserArgParser.parseOptions(argResults!);
     }
     GeneralTestsArgumentParser.instance.parseOptions(argResults!);
 
-    /// Collect information on the bot.
-    if (isSafariOnMacOS && isLuci) {
-      final MacOSInfo macOsInfo = new MacOSInfo();
-      await macOsInfo.printInformation();
-    }
-
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
-      ClearTerminalScreenStep(),
+      if (isWatchMode) ClearTerminalScreenStep(),
       TestRunnerStep(this),
     ]);
     await testPipeline.run();
@@ -201,7 +195,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       await PipelineWatcher(
           dir: dir.absolute,
           pipeline: testPipeline,
-          ignore: (event) {
+          ignore: (WatchEvent event) {
             // Ignore font files that are copied whenever tests run.
             if (event.path.endsWith('.ttf')) {
               return true;
@@ -231,7 +225,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     final StringBuffer message = StringBuffer(
       'The following test shards failed:\n',
     );
-    for (String failedShard in failedShards) {
+    for (final String failedShard in failedShards) {
       message.writeln(' - $failedShard');
     }
     return message.toString();
@@ -298,7 +292,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     final List<FilePath> canvasKitTargets = <FilePath>[];
     final String canvasKitTestDirectory =
         path.join(environment.webUiTestDir.path, 'canvaskit');
-    for (FilePath target in allTargets) {
+    for (final FilePath target in allTargets) {
       if (path.isWithin(canvasKitTestDirectory, target.absolute)) {
         canvasKitTargets.add(target);
       } else {
@@ -331,7 +325,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   List<String> get targets => argResults!.rest;
 
   /// The target test files to run.
-  List<FilePath> get targetFiles => targets.map((t) => FilePath.fromCwd(t)).toList();
+  List<FilePath> get targetFiles => targets.map((String t) => FilePath.fromCwd(t)).toList();
 
   /// Whether all tests should run.
   bool get runAllTests => targets.isEmpty;
@@ -340,7 +334,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   String get browser => stringArg('browser')!;
 
   /// The browser environment for the [browser].
-  BrowserEnvironment get browserEnvironment => (_browserEnvironment ??= _createBrowserEnvironment(browser));
+  BrowserEnvironment get browserEnvironment => _browserEnvironment ??= _createBrowserEnvironment(browser);
   BrowserEnvironment? _browserEnvironment;
 
   /// Whether [browser] is set to "chrome".
@@ -367,7 +361,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// For now Firefox integration tests only run on Linux and Mac on local.
   ///
-  // TODO: https://github.com/flutter/flutter/issues/63832
+  // TODO(yjbanov): https://github.com/flutter/flutter/issues/63832
   bool get isFirefoxIntegrationTestAvailable =>
       (isFirefox && isLuci && io.Platform.isLinux) ||
       (isFirefox && !isLuci && !io.Platform.isWindows);
@@ -375,7 +369,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   /// Latest versions of Safari Desktop are only available on macOS.
   ///
   /// Integration testing on LUCI is not supported at the moment.
-  // TODO: https://github.com/flutter/flutter/issues/63710
+  // TODO(yjbanov): https://github.com/flutter/flutter/issues/63710
   bool get isSafariIntegrationTestAvailable => isSafariOnMacOS && !isLuci;
 
   /// Due to various factors integration tests might be missing on a given
@@ -438,7 +432,7 @@ class TestCommand extends Command<bool> with ArgUtils {
     final List<FilePath> screenshotTestFiles = <FilePath>[];
     final List<FilePath> unitTestFiles = <FilePath>[];
 
-    for (io.File testFile
+    for (final io.File testFile
         in testDir.listSync(recursive: true).whereType<io.File>()) {
       final FilePath testFilePath = FilePath.fromCwd(testFile.path);
       if (!testFilePath.absolute.endsWith('_test.dart')) {
@@ -482,7 +476,7 @@ class TestCommand extends Command<bool> with ArgUtils {
 
     if (isUnitTestsScreenshotsAvailable) {
       // Run screenshot tests one at a time.
-      for (FilePath testFilePath in screenshotTestFiles) {
+      for (final FilePath testFilePath in screenshotTestFiles) {
         await _runTestBatch(
           <FilePath>[testFilePath],
           concurrency: 1,
@@ -560,7 +554,7 @@ class TestCommand extends Command<bool> with ArgUtils {
         .map((FilePath f) => TestBuildInput(f, forCanvasKit: forCanvasKit))
         .toList();
 
-    final results = _pool.forEach(
+    final Stream<bool> results = _pool.forEach(
       buildInputs,
       _buildTest,
     );
@@ -589,7 +583,7 @@ class TestCommand extends Command<bool> with ArgUtils {
   ///
   /// Later the extra files will be deleted in [_cleanupExtraFilesUnderTestDir].
   Future<bool> _buildTest(TestBuildInput input) async {
-    String targetFileName = path.join(
+    final String targetFileName = path.join(
       environment.webUiBuildDir.path,
       '${input.path.relativeToWebUi}.browser_test.dart.js',
     );
@@ -602,7 +596,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       directoryToTarget.createSync(recursive: true);
     }
 
-    List<String> arguments = <String>[
+    final List<String> arguments = <String>[
       '--no-minify',
       '--disable-inlining',
       '--enable-asserts',
@@ -617,7 +611,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       '-O2',
       '-o',
       targetFileName, // target path.
-      '${input.path.relativeToWebUi}', // current path.
+      input.path.relativeToWebUi, // current path.
     ];
 
     final int exitCode = await runProcess(
@@ -659,7 +653,7 @@ class TestCommand extends Command<bool> with ArgUtils {
       '--precompiled=${environment.webUiBuildDir.path}',
       '--configuration=$configurationFilePath',
       '--',
-      ...testFiles.map((f) => f.relativeToWebUi).toList(),
+      ...testFiles.map((FilePath f) => f.relativeToWebUi).toList(),
     ];
 
     if (expectFailure) {
@@ -722,7 +716,7 @@ void _copyTestFontsIntoWebUi() {
     'fonts',
   );
 
-  for (String fontFile in _kTestFonts) {
+  for (final String fontFile in _kTestFonts) {
     final io.File sourceTtf = io.File(path.join(fontsPath, fontFile));
     final String destinationTtfPath =
         path.join(environment.webUiRootDir.path, 'lib', 'assets', fontFile);
@@ -782,7 +776,7 @@ class ClearTerminalScreenStep implements PipelineStep {
   Future<void> run() async {
     if (!io.Platform.isWindows) {
       // See: https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_sequences
-      print("\x1B[2J\x1B[1;2H");
+      print('\x1B[2J\x1B[1;2H');
     }
   }
 }

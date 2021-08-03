@@ -6,10 +6,10 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
 import 'canvaskit_api.dart';
 import 'color_filter.dart';
 import 'skia_object_cache.dart';
-import '../util.dart';
 
 /// An [ImageFilter] that can create a managed skia [SkImageFilter] object.
 ///
@@ -18,7 +18,7 @@ import '../util.dart';
 /// whenever possible.
 ///
 /// Currently implemented by [CkImageFilter] and [CkColorFilter].
-abstract class CkManagedSkImageFilterConvertible<T extends Object>
+abstract class CkManagedSkImageFilterConvertible
     implements ui.ImageFilter {
   ManagedSkiaObject<SkImageFilter> get imageFilter;
 }
@@ -27,7 +27,7 @@ abstract class CkManagedSkImageFilterConvertible<T extends Object>
 ///
 /// Currently only supports `blur`, `matrix`, and ColorFilters.
 abstract class CkImageFilter extends ManagedSkiaObject<SkImageFilter>
-    implements CkManagedSkImageFilterConvertible<SkImageFilter> {
+    implements CkManagedSkImageFilterConvertible {
   factory CkImageFilter.blur(
       {required double sigmaX,
       required double sigmaY,
@@ -135,12 +135,13 @@ class _CkBlurImageFilter extends CkImageFilter {
 
 class _CkMatrixImageFilter extends CkImageFilter {
   _CkMatrixImageFilter({ required Float64List matrix, required this.filterQuality })
-      : this.matrix = Float64List.fromList(matrix),
+      : this.matrix = Float64List.fromList(matrix), // ignore: unnecessary_this
         super._();
 
   final Float64List matrix;
   final ui.FilterQuality filterQuality;
 
+  @override
   SkImageFilter _initSkiaObject() {
     return canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),

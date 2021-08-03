@@ -14,8 +14,8 @@ import '../util.dart';
 import '../vector_math.dart';
 import 'painting.dart';
 import 'shaders/image_shader.dart';
-import 'shaders/shader_builder.dart';
 import 'shaders/normalized_gradient.dart';
+import 'shaders/shader_builder.dart';
 import 'shaders/vertex_shaders.dart';
 import 'shaders/webgl_context.dart';
 
@@ -34,8 +34,11 @@ class SurfaceVertices implements ui.Vertices {
     List<int>? indices,
   })  : assert(mode != null), // ignore: unnecessary_null_comparison
         assert(positions != null), // ignore: unnecessary_null_comparison
+        // ignore: unnecessary_this
         this.colors = colors != null ? _int32ListFromColors(colors) : null,
+        // ignore: unnecessary_this
         this.indices = indices != null ? Uint16List.fromList(indices) : null,
+        // ignore: unnecessary_this
         this.positions = offsetListToFloat32List(positions) {
     initWebGl();
   }
@@ -51,8 +54,9 @@ class SurfaceVertices implements ui.Vertices {
   }
 
   static Int32List _int32ListFromColors(List<ui.Color> colors) {
-    Int32List list = Int32List(colors.length);
-    for (int i = 0, len = colors.length; i < len; i++) {
+    final Int32List list = Int32List(colors.length);
+    final int len = colors.length;
+    for (int i = 0; i < len; i++) {
       list[i] = colors[i].value;
     }
     return list;
@@ -112,11 +116,11 @@ class _WebGlRenderer implements GlRenderer {
       SurfacePaintData paint) {
     // Compute bounds of vertices.
     final Float32List positions = vertices.positions;
-    ui.Rect bounds = _computeVerticesBounds(positions, transform);
-    double minValueX = bounds.left;
-    double minValueY = bounds.top;
-    double maxValueX = bounds.right;
-    double maxValueY = bounds.bottom;
+    final ui.Rect bounds = _computeVerticesBounds(positions, transform);
+    final double minValueX = bounds.left;
+    final double minValueY = bounds.top;
+    final double maxValueX = bounds.right;
+    final double maxValueY = bounds.bottom;
     double offsetX = 0;
     double offsetY = 0;
     int widthInPixels = canvasWidthInPixels;
@@ -144,7 +148,7 @@ class _WebGlRenderer implements GlRenderer {
     final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
 
     final EngineImageShader? imageShader =
-        paint.shader == null ? null : paint.shader as EngineImageShader;
+        paint.shader == null ? null : paint.shader! as EngineImageShader;
 
     final String vertexShader = imageShader == null
         ? VertexShaders.writeBaseVertexShader()
@@ -154,13 +158,13 @@ class _WebGlRenderer implements GlRenderer {
         : FragmentShaders.writeTextureFragmentShader(
             isWebGl2, imageShader.tileModeX, imageShader.tileModeY);
 
-    GlContext gl =
+    final GlContext gl =
         GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
 
-    GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
+    final GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
     gl.useProgram(glProgram);
 
-    Object? positionAttributeLocation =
+    final Object positionAttributeLocation =
         gl.getAttributeLocation(glProgram.program, 'position');
 
     setupVertexTransforms(gl, glProgram, offsetX, offsetY,
@@ -181,7 +185,7 @@ class _WebGlRenderer implements GlRenderer {
     // Setup geometry.
     //
     // Create buffer for vertex coordinates.
-    Object positionsBuffer = gl.createBuffer()!;
+    final Object positionsBuffer = gl.createBuffer()!;
     assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
 
     Object? vao;
@@ -214,13 +218,13 @@ class _WebGlRenderer implements GlRenderer {
 
     if (imageShader == null) {
       // Setup color buffer.
-      Object? colorsBuffer = gl.createBuffer();
+      final Object? colorsBuffer = gl.createBuffer();
       gl.bindArrayBuffer(colorsBuffer);
 
       // Buffer kBGRA_8888.
       if (vertices.colors == null) {
-        final ui.Color color = paint.color ?? ui.Color(0xFF000000);
-        Uint32List vertexColors = Uint32List(vertexCount);
+        final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
+        final Uint32List vertexColors = Uint32List(vertexCount);
         for (int i = 0; i < vertexCount; i++) {
           vertexColors[i] = color.value;
         }
@@ -228,7 +232,7 @@ class _WebGlRenderer implements GlRenderer {
       } else {
         gl.bufferData(vertices.colors, gl.kStaticDraw);
       }
-      Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
+      final Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
       js_util.callMethod(gl.glContext, 'vertexAttribPointer',
           <dynamic>[colorLoc, 4, gl.kUnsignedByte, true, 0, 0]);
       gl.enableVertexAttribArray(colorLoc);
@@ -281,7 +285,7 @@ class _WebGlRenderer implements GlRenderer {
       /// If indices are specified to use shared vertices to reduce vertex
       /// data transfer, use drawElements to map from vertex indices to
       /// triangles.
-      Object? indexBuffer = gl.createBuffer();
+      final Object? indexBuffer = gl.createBuffer();
       gl.bindElementArrayBuffer(indexBuffer);
       gl.bufferElementData(indices, gl.kStaticDraw);
       gl.drawElements(gl.kTriangles, indices.length, gl.kUnsignedShort);
@@ -301,11 +305,12 @@ class _WebGlRenderer implements GlRenderer {
   ///
   /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
   /// will return ImageBitmap, otherwise will return CanvasElement.
+  @override
   Object? drawRect(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     drawRectToGl(
         targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
-    Object? image = gl.readPatternData();
+    final Object? image = gl.readPatternData();
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
     return image;
@@ -313,6 +318,7 @@ class _WebGlRenderer implements GlRenderer {
 
   /// Renders a rectangle using given program into an image resource and returns
   /// url.
+  @override
   String drawRectToImageUrl(
       ui.Rect targetRect,
       GlContext gl,
@@ -350,20 +356,20 @@ class _WebGlRenderer implements GlRenderer {
     vertices[6] = left;
     vertices[7] = bottom;
 
-    Object transformUniform =
+    final Object transformUniform =
         gl.getUniformLocation(glProgram.program, 'u_ctransform');
     gl.setUniformMatrix4fv(transformUniform, false, Matrix4.identity().storage);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
     // clipspace range and flip the Y axis.
-    Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
+    final Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
     gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
         -2.0 / heightInPixels.toDouble(), 1, 1);
-    Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
+    final Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
     gl.setUniform4f(shift, -1, 1, 0, 0);
 
     // Setup geometry.
-    Object positionsBuffer = gl.createBuffer()!;
+    final Object positionsBuffer = gl.createBuffer()!;
     assert(positionsBuffer != null); // ignore: unnecessary_null_comparison
     gl.bindArrayBuffer(positionsBuffer);
     gl.bufferData(vertices, gl.kStaticDraw);
@@ -373,7 +379,7 @@ class _WebGlRenderer implements GlRenderer {
     gl.enableVertexAttribArray(0);
 
     // Setup color buffer.
-    Object? colorsBuffer = gl.createBuffer();
+    final Object? colorsBuffer = gl.createBuffer();
     gl.bindArrayBuffer(colorsBuffer);
     // Buffer kBGRA_8888.
     final Int32List colors = Int32List.fromList(<int>[
@@ -387,12 +393,12 @@ class _WebGlRenderer implements GlRenderer {
         <dynamic>[1, 4, gl.kUnsignedByte, true, 0, 0]);
     gl.enableVertexAttribArray(1);
 
-    Object? indexBuffer = gl.createBuffer();
+    final Object? indexBuffer = gl.createBuffer();
     gl.bindElementArrayBuffer(indexBuffer);
     gl.bufferElementData(VertexShaders.vertexIndicesForRect, gl.kStaticDraw);
 
     if (gl.containsUniform(glProgram.program, 'u_resolution')) {
-      Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
+      final Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
       gl.setUniform2f(
           uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
     }
@@ -414,10 +420,10 @@ class _WebGlRenderer implements GlRenderer {
   ///       fragColor = vColor;
   ///     }
   String _writeVerticesFragmentShader() {
-    ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
+    final ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec4, name: 'v_color');
-    ShaderMethod method = builder.addMethod('main');
+    final ShaderMethod method = builder.addMethod('main');
     method.addStatement('${builder.fragmentColor.name} = v_color;');
     return builder.build();
   }
@@ -429,7 +435,8 @@ class _WebGlRenderer implements GlRenderer {
     final int pointCount = positions.length ~/ 2;
     _ctx!.lineWidth = 1.0;
     _ctx.beginPath();
-    for (int i = 0, len = pointCount * 2; i < len;) {
+    final int len = pointCount * 2;
+    for (int i = 0; i < len;) {
       for (int triangleVertexIndex = 0;
           triangleVertexIndex < 3;
           triangleVertexIndex++, i += 2) {
@@ -456,7 +463,8 @@ ui.Rect _computeVerticesBounds(Float32List positions, Matrix4 transform) {
   double minValueX, maxValueX, minValueY, maxValueY;
   minValueX = maxValueX = positions[0];
   minValueY = maxValueY = positions[1];
-  for (int i = 2, len = positions.length; i < len; i += 2) {
+  final int len = positions.length;
+  for (int i = 2; i < len; i += 2) {
     final double x = positions[i];
     final double y = positions[i + 1];
     if (x.isNaN || y.isNaN) {
@@ -504,8 +512,8 @@ Float32List convertVertexPositions(ui.VertexMode mode, Float32List positions) {
     final int coordinateCount = positions.length ~/ 2;
     final int triangleCount = coordinateCount - 2;
     final Float32List triangleList = Float32List(triangleCount * 3 * 2);
-    double centerX = positions[0];
-    double centerY = positions[1];
+    final double centerX = positions[0];
+    final double centerY = positions[1];
     int destIndex = 0;
     int positionIndex = 2;
     for (int triangleIndex = 0;
@@ -523,7 +531,7 @@ Float32List convertVertexPositions(ui.VertexMode mode, Float32List positions) {
     assert(mode == ui.VertexMode.triangleStrip);
     // Set of connected triangles. Each triangle shares 2 last vertices.
     final int vertexCount = positions.length ~/ 2;
-    int triangleCount = vertexCount - 2;
+    final int triangleCount = vertexCount - 2;
     double x0 = positions[0];
     double y0 = positions[1];
     double x1 = positions[2];

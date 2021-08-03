@@ -38,7 +38,7 @@ typedef PlatformViewContentHandler = void Function(html.Element);
 /// some extra cleanup of its internal state, but it can do it automatically. See
 /// [HtmlViewEmbedder.disposeViews]
 class PlatformViewMessageHandler {
-  final MethodCodec _codec = StandardMethodCodec();
+  final MethodCodec _codec = const StandardMethodCodec();
 
   final PlatformViewManager _contentManager;
   final PlatformViewContentHandler? _contentHandler;
@@ -46,8 +46,8 @@ class PlatformViewMessageHandler {
   PlatformViewMessageHandler({
     required PlatformViewManager contentManager,
     PlatformViewContentHandler? contentHandler,
-  }) : this._contentManager = contentManager,
-       this._contentHandler = contentHandler;
+  }) : _contentManager = contentManager,
+       _contentHandler = contentHandler;
 
   /// Handle a `create` Platform View message.
   ///
@@ -87,7 +87,7 @@ class PlatformViewMessageHandler {
       return;
     }
 
-    // TODO: How can users add extra `args` from the HtmlElementView widget?
+    // TODO(hterkelsen): How can users add extra `args` from the HtmlElementView widget?
     final html.Element content = _contentManager.renderContent(
       viewType,
       viewId,

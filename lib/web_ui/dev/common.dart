@@ -58,7 +58,7 @@ class _WindowsBinding implements PlatformBinding {
 
   @override
   String getChromeDownloadUrl(String version) =>
-      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F${version}%2Fchrome-win.zip?alt=media';
+      'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Win%2F$version%2Fchrome-win.zip?alt=media';
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) =>
@@ -66,11 +66,11 @@ class _WindowsBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/win64/en-US/'
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/$version/win64/en-US/'
       '${getFirefoxDownloadFilename(version)}';
 
   @override
-  String getFirefoxDownloadFilename(String version) => 'firefox-${version}.exe';
+  String getFirefoxDownloadFilename(String version) => 'firefox-$version.exe';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -105,12 +105,12 @@ class _LinuxBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/linux-x86_64/en-US/'
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/$version/linux-x86_64/en-US/'
       '${getFirefoxDownloadFilename(version)}';
 
   @override
   String getFirefoxDownloadFilename(String version) =>
-      'firefox-${version}.tar.bz2';
+      'firefox-$version.tar.bz2';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -140,6 +140,7 @@ class _MacBinding implements PlatformBinding {
   String getChromeDownloadUrl(String version) =>
       '$_kBaseDownloadUrl/Mac%2F$version%2Fchrome-mac.zip?alt=media';
 
+  @override
   String getChromeExecutablePath(io.Directory versionDir) => path.join(
       versionDir.path,
       'chrome-mac',
@@ -150,11 +151,11 @@ class _MacBinding implements PlatformBinding {
 
   @override
   String getFirefoxDownloadUrl(String version) =>
-      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/${version}/mac/en-US/'
+      'https://download-installer.cdn.mozilla.net/pub/firefox/releases/$version/mac/en-US/'
       '${getFirefoxDownloadFilename(version)}';
 
   @override
-  String getFirefoxDownloadFilename(String version) => 'Firefox ${version}.dmg';
+  String getFirefoxDownloadFilename(String version) => 'Firefox $version.dmg';
 
   @override
   String getFirefoxExecutablePath(io.Directory versionDir) =>
@@ -211,7 +212,7 @@ class BrowserLock {
   BrowserLock._() {
     final io.File lockFile = io.File(
         path.join(environment.webUiRootDir.path, 'dev', 'browser_lock.yaml'));
-    this._configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
+    _configuration = loadYaml(lockFile.readAsStringSync()) as YamlMap;
   }
 }
 
@@ -221,13 +222,13 @@ class DevNull implements StringSink {
   void write(Object? obj) {}
 
   @override
-  void writeAll(Iterable objects, [String separator = ""]) {}
+  void writeAll(Iterable<dynamic> objects, [String separator = '']) {}
 
   @override
   void writeCharCode(int charCode) {}
 
   @override
-  void writeln([Object? obj = ""]) {}
+  void writeln([Object? obj = '']) {}
 }
 
 /// Whether the felt command is running on Cirrus CI.
