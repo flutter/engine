@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart=2.10
-
 import 'dart:async';
+import 'dart:convert';
+import 'dart:core';
+import 'dart:ffi';
+import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:isolate';
-import 'dart:ffi';
-import 'dart:core';
-import 'dart:convert';
 
 void main() {}
 
@@ -32,6 +31,14 @@ void customEntrypoint1() {
 void sayHiFromCustomEntrypoint1() native 'SayHiFromCustomEntrypoint1';
 void sayHiFromCustomEntrypoint2() native 'SayHiFromCustomEntrypoint2';
 void sayHiFromCustomEntrypoint3() native 'SayHiFromCustomEntrypoint3';
+
+
+@pragma('vm:entry-point')
+void terminateExitCodeHandler() {
+  final ProcessResult result = Process.runSync(
+        'ls', <String>[]
+  );
+}
 
 
 @pragma('vm:entry-point')
@@ -506,7 +513,7 @@ void _echoKeyEvent(
 
 // Convert `kind` in enum form to its integer form.
 //
-// It performs a revesed mapping from `unserializeKeyEventKind`
+// It performs a reversed mapping from `unserializeKeyEventKind`
 // in shell/platform/embedder/tests/embedder_unittests.cc.
 int _serializeKeyEventType(KeyEventType change) {
   switch(change) {
@@ -919,4 +926,21 @@ void snapshot_large_scene(int max_size) async {
   Image small_image = await picture.toImage(small_width.toInt(), small_height.toInt());
 
   snapshotsCallback(big_image, small_image);
+}
+
+@pragma('vm:entry-point')
+void invalid_backingstore() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Color red = Color.fromARGB(127, 255, 0, 0);
+    Size size = Size(50.0, 150.0);
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    builder.addPicture(Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
+    builder.pop();
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.onDrawFrame = () {
+    signalNativeTest();
+  };
+  PlatformDispatcher.instance.scheduleFrame();
 }

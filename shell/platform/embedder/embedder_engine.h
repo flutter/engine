@@ -68,7 +68,7 @@ class EmbedderEngine {
   bool DispatchKeyDataPacket(std::unique_ptr<flutter::KeyDataPacket> packet,
                              KeyDataResponse callback);
 
-  bool SendPlatformMessage(fml::RefPtr<flutter::PlatformMessage> message);
+  bool SendPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool RegisterTexture(int64_t texture);
 
@@ -82,7 +82,7 @@ class EmbedderEngine {
 
   bool DispatchSemanticsAction(int id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   bool OnVsyncEvent(intptr_t baton,
                     fml::TimePoint frame_start_time,

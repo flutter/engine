@@ -641,13 +641,121 @@ class SemanticsFlag {
   }
 }
 
+// When adding a new StringAttribute, the classes in these files must be
+// updated as well.
+//  * engine/src/flutter/lib/web_ui/lib/src/ui/semantics.dart
+//  * engine/src/flutter/lib/ui/semantics/string_attribute.h
+//  * engine/src/flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
+
+/// An abstract interface for string attributes that affects how assistive
+/// technologies, e.g. VoiceOver or TalkBack, treat the text.
+///
+/// See also:
+///
+///  * [AttributedString], where the string attributes are used.
+///  * [SpellOutStringAttribute], which causes the assistive technologies to
+///    spell out the string character by character when announcing the string.
+///  * [LocaleStringAttribute], which causes the assistive technologies to
+///    treat the string in the specific language.
+abstract class StringAttribute extends NativeFieldWrapperClass1 {
+  StringAttribute._({
+    required this.range,
+  });
+
+  /// The range of the text to which this attribute applies.
+  final TextRange range;
+
+  /// Creates a new attribute with all properties copied except for range, which
+  /// is updated to the specified value.
+  ///
+  /// For example, the [LocaleStringAttribute] specifies a [Locale] for its
+  /// range of characters. Copying it will result in a new
+  /// [LocaleStringAttribute] that has the same locale but an updated
+  /// [TextRange].
+  StringAttribute copy({required TextRange range});
+}
+
+/// A string attribute that causes the assistive technologies, e.g. VoiceOver,
+/// to spell out the string character by character.
+///
+/// See also:
+///
+///  * [AttributedString], where the string attributes are used.
+///  * [LocaleStringAttribute], which causes the assistive technologies to
+///    treat the string in the specific language.
+class SpellOutStringAttribute extends StringAttribute {
+  /// Creates a string attribute that denotes the text in [range] must be
+  /// spell out when the assistive technologies announce the string.
+  SpellOutStringAttribute({
+    required TextRange range,
+  }) : super._(range: range) {
+    _initSpellOutStringAttribute(this, range.start, range.end);
+  }
+
+  void _initSpellOutStringAttribute(
+    SpellOutStringAttribute instance,
+    int start,
+    int end,
+  ) native 'NativeStringAttribute_initSpellOutStringAttribute';
+
+  @override
+  StringAttribute copy({required TextRange range}) {
+    return SpellOutStringAttribute(range: range);
+  }
+
+  @override
+  String toString() {
+    return 'SpellOutStringAttribute($range)';
+  }
+}
+
+/// A string attribute that causes the assistive technologies, e.g. VoiceOver,
+/// to treat string as a certain language.
+///
+/// See also:
+///
+///  * [AttributedString], where the string attributes are used.
+///  * [SpellOutStringAttribute], which causes the assistive technologies to
+///    spell out the string character by character when announcing the string.
+class LocaleStringAttribute extends StringAttribute {
+  /// Creates a string attribute that denotes the text in [range] must be
+  /// treated as the language specified by the [locale] when the assistive
+  /// technologies announce the string.
+  LocaleStringAttribute({
+    required TextRange range,
+    required this.locale,
+  }) : super._(range: range) {
+    _initLocaleStringAttribute(this, range.start, range.end, locale.toLanguageTag());
+  }
+
+  /// The lanuage of this attribute.
+  final Locale locale;
+
+  void _initLocaleStringAttribute(
+    LocaleStringAttribute instance,
+    int start,
+    int end,
+    String locale,
+  ) native 'NativeStringAttribute_initLocaleStringAttribute';
+
+  @override
+  StringAttribute copy({required TextRange range}) {
+    return LocaleStringAttribute(range: range, locale: locale);
+  }
+
+  @override
+  String toString() {
+    return 'LocaleStringAttribute($range, ${locale.toLanguageTag()})';
+  }
+}
+
 /// An object that creates [SemanticsUpdate] objects.
 ///
 /// Once created, the [SemanticsUpdate] objects can be passed to
 /// [PlatformDispatcher.updateSemantics] to update the semantics conveyed to the
 /// user.
 @pragma('vm:entry-point')
-class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
+class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
   /// Creates an empty [SemanticsUpdateBuilder] object.
   @pragma('vm:entry-point')
   SemanticsUpdateBuilder() { _constructor(); }
@@ -685,6 +793,12 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
   /// string after a [SemanticsAction.decrease] action is performed. The `hint`
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
+  ///
+  /// The `labelAttirbutes`, `valueAttirbutes`, `hintAttributes`,
+  /// `increasedValueAttirbutes`, and `decreasedValueAttributes` are the lists of
+  /// [StringAttribute] carried by the `label`, `value`, `hint`, `increasedValue`,
+  /// and `decreasedValue` respectively. Their contents must not be changed during
+  /// the semantics update.
   ///
   /// The fields `textSelectionBase` and `textSelectionExtent` describe the
   /// currently selected text within `value`. A value of -1 indicates no
@@ -743,10 +857,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     required double thickness,
     required Rect rect,
     required String label,
-    required String hint,
+    List<StringAttribute>? labelAttributes,
     required String value,
+    List<StringAttribute>? valueAttributes,
     required String increasedValue,
+    List<StringAttribute>? increasedValueAttributes,
     required String decreasedValue,
+    List<StringAttribute>? decreasedValueAttributes,
+    required String hint,
+    List<StringAttribute>? hintAttributes,
     TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
@@ -779,10 +898,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
       elevation,
       thickness,
       label,
-      hint,
+      labelAttributes,
       value,
+      valueAttributes,
       increasedValue,
+      increasedValueAttributes,
       decreasedValue,
+      decreasedValueAttributes,
+      hint,
+      hintAttributes,
       textDirection != null ? textDirection.index + 1 : 0,
       transform,
       childrenInTraversalOrder,
@@ -811,10 +935,15 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
     double elevation,
     double thickness,
     String label,
-    String hint,
+    List<StringAttribute>? labelAttributes,
     String value,
+    List<StringAttribute>? valueAttributes,
     String increasedValue,
+    List<StringAttribute>? increasedValueAttributes,
     String decreasedValue,
+    List<StringAttribute>? decreasedValueAttributes,
+    String hint,
+    List<StringAttribute>? hintAttributes,
     int textDirection,
     Float64List transform,
     Int32List childrenInTraversalOrder,
@@ -868,7 +997,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass2 {
 /// Semantics updates can be applied to the system's retained semantics tree
 /// using the [PlatformDispatcher.updateSemantics] method.
 @pragma('vm:entry-point')
-class SemanticsUpdate extends NativeFieldWrapperClass2 {
+class SemanticsUpdate extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///

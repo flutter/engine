@@ -9,7 +9,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.XmlResourceParser;
 import android.os.Bundle;
-import android.security.NetworkSecurityPolicy;
 import androidx.annotation.NonNull;
 import java.io.IOException;
 import org.json.JSONArray;
@@ -57,7 +56,8 @@ public final class ApplicationInfoLoader {
 
   private static String getNetworkPolicy(ApplicationInfo appInfo, Context context) {
     // We cannot use reflection to look at networkSecurityConfigRes because
-    // Android throws an error when we try to access fields marked as @hide.
+    // Android throws an error when we try to access fields marked as This member is not intended
+    // for public use, and is only visible for testing..
     // Instead we rely on metadata.
     Bundle metadata = appInfo.metaData;
     if (metadata == null) {
@@ -146,12 +146,6 @@ public final class ApplicationInfoLoader {
   @NonNull
   public static FlutterApplicationInfo load(@NonNull Context applicationContext) {
     ApplicationInfo appInfo = getApplicationInfo(applicationContext);
-    // Prior to API 23, cleartext traffic is allowed.
-    boolean clearTextPermitted = true;
-    if (android.os.Build.VERSION.SDK_INT >= 23) {
-      clearTextPermitted = NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted();
-    }
-
     return new FlutterApplicationInfo(
         getString(appInfo.metaData, PUBLIC_AOT_SHARED_LIBRARY_NAME),
         getString(appInfo.metaData, PUBLIC_VM_SNAPSHOT_DATA_KEY),
@@ -159,7 +153,6 @@ public final class ApplicationInfoLoader {
         getString(appInfo.metaData, PUBLIC_FLUTTER_ASSETS_DIR_KEY),
         getNetworkPolicy(appInfo, applicationContext),
         appInfo.nativeLibraryDir,
-        clearTextPermitted,
         getBoolean(appInfo.metaData, PUBLIC_AUTOMATICALLY_REGISTER_PLUGINS_METADATA_KEY, true));
   }
 }

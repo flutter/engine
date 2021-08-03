@@ -6,10 +6,13 @@
 
 #include "flutter/fml/message_loop_task_queues.h"
 
+#include <algorithm>
+#include <cstdlib>
 #include <thread>
 
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/time/chrono_timestamp_provider.h"
 #include "gtest/gtest.h"
 
 namespace fml {
@@ -53,7 +56,7 @@ TEST(MessageLoopTaskQueue, RegisterTwoTasksAndCount) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   task_queue->RegisterTask(
-      queue_id, [] {}, fml::TimePoint::Now());
+      queue_id, [] {}, ChronoTicksSinceEpoch());
   task_queue->RegisterTask(
       queue_id, [] {}, fml::TimePoint::Max());
   ASSERT_TRUE(task_queue->HasPendingTasks(queue_id));
@@ -67,13 +70,13 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
 
   // order: 0
   task_queue->RegisterTask(
-      queue_id, [&test_val]() { test_val = 1; }, fml::TimePoint::Now());
+      queue_id, [&test_val]() { test_val = 1; }, ChronoTicksSinceEpoch());
 
   // order: 1
   task_queue->RegisterTask(
-      queue_id, [&test_val]() { test_val = 2; }, fml::TimePoint::Now());
+      queue_id, [&test_val]() { test_val = 2; }, ChronoTicksSinceEpoch());
 
-  const auto now = fml::TimePoint::Now();
+  const auto now = ChronoTicksSinceEpoch();
   int expected_value = 1;
   for (;;) {
     fml::closure invocation = task_queue->GetNextTaskToRun(queue_id, now);
@@ -122,7 +125,7 @@ TEST(MessageLoopTaskQueue, WakeUpIndependentOfTime) {
                     [&num_wakes](fml::TimePoint wake_time) { ++num_wakes; }));
 
   task_queue->RegisterTask(
-      queue_id, []() {}, fml::TimePoint::Now());
+      queue_id, []() {}, ChronoTicksSinceEpoch());
   task_queue->RegisterTask(
       queue_id, []() {}, fml::TimePoint::Max());
 
@@ -145,7 +148,7 @@ TEST(MessageLoopTaskQueue, WokenUpWithNewerTime) {
   task_queue->RegisterTask(
       queue_id, []() {}, fml::TimePoint::Max());
 
-  const auto now = fml::TimePoint::Now();
+  const auto now = ChronoTicksSinceEpoch();
   expected = now;
   task_queue->RegisterTask(
       queue_id, []() {}, now);
@@ -192,63 +195,63 @@ TEST(MessageLoopTaskQueue, QueueDoNotOwnUnmergedTaskQueueId) {
   ASSERT_FALSE(task_queue->Owns(_kUnmerged, _kUnmerged));
 }
 
-// TODO(chunhtai): This unit-test is flaky and sometimes fails asynchronizely
-// after the test has finished.
-// https://github.com/flutter/flutter/issues/43858
-TEST(MessageLoopTaskQueue, DISABLED_ConcurrentQueueAndTaskCreatingCounts) {
+//------------------------------------------------------------------------------
+/// Verifies that tasks can be added to task queues concurrently.
+///
+TEST(MessageLoopTaskQueue, ConcurrentQueueAndTaskCreatingCounts) {
   auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
-  const int base_queue_id = task_queues->CreateTaskQueue();
 
-  const int num_queues = 100;
-  std::atomic_bool created[num_queues * 3];
-  std::atomic_int num_tasks[num_queues * 3];
-  std::mutex task_count_mutex[num_queues * 3];
-  std::atomic_int done = 0;
+  // kThreadCount threads post kThreadTaskCount tasks each to kTaskQueuesCount
+  // task queues. Each thread picks a task queue randomly for each task.
+  constexpr size_t kThreadCount = 4;
+  constexpr size_t kTaskQueuesCount = 2;
+  constexpr size_t kThreadTaskCount = 500;
 
-  for (int i = 0; i < num_queues * 3; i++) {
-    num_tasks[i] = 0;
-    created[i] = false;
+  std::vector<TaskQueueId> task_queue_ids;
+  for (size_t i = 0; i < kTaskQueuesCount; ++i) {
+    task_queue_ids.emplace_back(task_queues->CreateTaskQueue());
   }
 
-  auto creation_func = [&] {
-    for (int i = 0; i < num_queues; i++) {
-      fml::TaskQueueId queue_id = task_queues->CreateTaskQueue();
-      int limit = queue_id - base_queue_id;
-      created[limit] = true;
+  ASSERT_EQ(task_queue_ids.size(), kTaskQueuesCount);
 
-      for (int cur_q = 1; cur_q < limit; cur_q++) {
-        if (created[cur_q]) {
-          std::scoped_lock counter(task_count_mutex[cur_q]);
-          int cur_num_tasks = rand() % 10;
-          for (int k = 0; k < cur_num_tasks; k++) {
-            task_queues->RegisterTask(
-                fml::TaskQueueId(base_queue_id + cur_q), [] {},
-                fml::TimePoint::Now());
-          }
-          num_tasks[cur_q] += cur_num_tasks;
-        }
-      }
+  fml::CountDownLatch tasks_posted_latch(kThreadCount);
+
+  auto thread_main = [&]() {
+    for (size_t i = 0; i < kThreadTaskCount; i++) {
+      const auto current_task_queue_id =
+          task_queue_ids[std::rand() % kTaskQueuesCount];
+      const auto empty_task = []() {};
+      // The timepoint doesn't matter as the queue is never going to be drained.
+      const auto task_timepoint = ChronoTicksSinceEpoch();
+
+      task_queues->RegisterTask(current_task_queue_id, empty_task,
+                                task_timepoint);
     }
-    done++;
+
+    tasks_posted_latch.CountDown();
   };
 
-  std::thread creation_1(creation_func);
-  std::thread creation_2(creation_func);
+  std::vector<std::thread> threads;
 
-  while (done < 2) {
-    for (int i = 0; i < num_queues * 3; i++) {
-      if (created[i]) {
-        std::scoped_lock counter(task_count_mutex[i]);
-        int num_pending = task_queues->GetNumPendingTasks(
-            fml::TaskQueueId(base_queue_id + i));
-        int num_added = num_tasks[i];
-        ASSERT_EQ(num_pending, num_added);
-      }
-    }
+  for (size_t i = 0; i < kThreadCount; i++) {
+    threads.emplace_back(std::thread{thread_main});
   }
 
-  creation_1.join();
-  creation_2.join();
+  ASSERT_EQ(threads.size(), kThreadCount);
+
+  for (size_t i = 0; i < kThreadCount; i++) {
+    threads[i].join();
+  }
+
+  // All tasks have been posted by now. Check that they are all pending.
+
+  size_t pending_tasks = 0u;
+  std::for_each(task_queue_ids.begin(), task_queue_ids.end(),
+                [&](const auto& queue) {
+                  pending_tasks += task_queues->GetNumPendingTasks(queue);
+                });
+
+  ASSERT_EQ(pending_tasks, kThreadCount * kThreadTaskCount);
 }
 
 TEST(MessageLoopTaskQueue, RegisterTaskWakesUpOwnerQueue) {
@@ -269,8 +272,8 @@ TEST(MessageLoopTaskQueue, RegisterTaskWakesUpOwnerQueue) {
                             ASSERT_FALSE(true);
                           }));
 
-  auto time1 = fml::TimePoint::Now() + fml::TimeDelta::FromMilliseconds(1);
-  auto time2 = fml::TimePoint::Now() + fml::TimeDelta::FromMilliseconds(2);
+  auto time1 = ChronoTicksSinceEpoch() + fml::TimeDelta::FromMilliseconds(1);
+  auto time2 = ChronoTicksSinceEpoch() + fml::TimeDelta::FromMilliseconds(2);
 
   ASSERT_EQ(0UL, wakes.size());
 

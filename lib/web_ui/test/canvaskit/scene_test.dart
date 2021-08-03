@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -30,10 +29,10 @@ void testMain() {
 
       final ui.Paint paint = ui.Paint();
       expect(paint, isA<CkPaint>());
-      paint.color = ui.Color.fromARGB(255, 255, 0, 0);
+      paint.color = const ui.Color.fromARGB(255, 255, 0, 0);
 
       // Draw a red circle.
-      canvas.drawCircle(ui.Offset(20, 20), 10, paint);
+      canvas.drawCircle(const ui.Offset(20, 20), 10, paint);
 
       final ui.Picture picture = recorder.endRecording();
       expect(picture, isA<CkPicture>());
@@ -42,7 +41,7 @@ void testMain() {
       expect(builder, isA<LayerSceneBuilder>());
 
       builder.pushOffset(0, 0);
-      builder.addPicture(ui.Offset(0, 0), picture);
+      builder.addPicture(const ui.Offset(0, 0), picture);
 
       final ui.Scene scene = builder.build();
 
@@ -55,11 +54,11 @@ void testMain() {
       expect(builder, isA<LayerSceneBuilder>());
 
       builder.pushOffset(0, 0);
-      builder.pushColorFilter(ui.ColorFilter.srgbToLinearGamma());
+      builder.pushColorFilter(const ui.ColorFilter.srgbToLinearGamma());
 
       final ui.Scene scene = builder.build();
       expect(scene, isNotNull);
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

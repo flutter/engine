@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
 
 void main() {
   test('basic image descriptor - encoded - greyscale', () async {
@@ -82,7 +81,7 @@ void main() {
 
     final Codec codec = await descriptor.instantiateCodec();
     expect(codec.frameCount, 1);
-  }, skip: !(Platform.isIOS || Platform.isMacOS || Platform.isWindows));
+  }, skip: !(Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isWindows));
 }
 
 Future<Uint8List> readFile(String fileName, ) async {

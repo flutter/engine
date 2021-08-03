@@ -2,7 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../engine.dart' show buildMode, registerHotRestartListener;
+import 'browser_detection.dart';
+import 'canvaskit/initialization.dart';
+import 'host_node.dart';
+import 'keyboard_binding.dart';
+import 'platform_dispatcher.dart';
+import 'pointer_binding.dart';
+import 'semantics.dart';
+import 'text/measurement.dart';
+import 'text_editing/text_editing.dart';
+import 'util.dart';
+import 'window.dart';
 
 class DomRenderer {
   DomRenderer() {
@@ -12,7 +29,10 @@ class DomRenderer {
 
     reset();
 
-    TextMeasurementService.initialize(rulerCacheCapacity: 10);
+    TextMeasurementService.initialize(
+      rulerCacheCapacity: 10,
+      root: _glassPaneShadow!.node,
+    );
 
     assert(() {
       _setupHotRestart();
@@ -26,9 +46,12 @@ class DomRenderer {
   static const int vibrateHeavyImpact = 30;
   static const int vibrateSelectionClick = 10;
 
+  // The tag name for the root view of the flutter app (glass-pane)
+  static const String _glassPaneTagName = 'flt-glass-pane';
+
   /// Fires when browser language preferences change.
   static const html.EventStreamProvider<html.Event> languageChangeEvent =
-      const html.EventStreamProvider<html.Event>('languagechange');
+      html.EventStreamProvider<html.Event>('languagechange');
 
   /// Listens to window resize events.
   StreamSubscription<html.Event>? _resizeSubscription;
@@ -43,11 +66,6 @@ class DomRenderer {
   /// Configures the screen, such as scaling.
   html.MetaElement? _viewportMeta;
 
-  /// The canvaskit script, downloaded from a CDN. Only created if
-  /// [useCanvasKit] is set to true.
-  html.ScriptElement? get canvasKitScript => _canvasKitScript;
-  html.ScriptElement? _canvasKitScript;
-
   /// The element that contains the [sceneElement].
   ///
   /// This element is created and inserted in the HTML DOM once. It is never
@@ -57,6 +75,10 @@ class DomRenderer {
   /// platform views take precedence in DOM event handling.
   html.Element? get sceneHostElement => _sceneHostElement;
   html.Element? _sceneHostElement;
+
+  /// A child element of body outside the shadowroot that hosts
+  /// global resources such svg filters and clip paths when using webkit.
+  html.Element? _resourcesHost;
 
   /// The element that contains the semantics tree.
   ///
@@ -92,8 +114,8 @@ class DomRenderer {
   /// This getter calls the `hasFocus` method of the `Document` interface.
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool? get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
+  bool get windowHasFocus =>
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
@@ -112,14 +134,13 @@ class DomRenderer {
         _glassPaneElement,
         _styleElement,
         _viewportMeta,
-        _canvasKitScript,
       ]);
     });
   }
 
   void _clearOnHotRestart() {
     if (_staleHotRestartState!.isNotEmpty) {
-      for (html.Element? element in _staleHotRestartState!) {
+      for (final html.Element? element in _staleHotRestartState!) {
         element?.remove();
       }
       _staleHotRestartState!.clear();
@@ -150,6 +171,10 @@ class DomRenderer {
   /// if they are not handled by semantics.
   html.Element? get glassPaneElement => _glassPaneElement;
   html.Element? _glassPaneElement;
+
+  /// The [HostNode] of the [glassPaneElement], which contains the whole Flutter app.
+  HostNode? get glassPaneShadow => _glassPaneShadow;
+  HostNode? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
 
@@ -250,120 +275,26 @@ class DomRenderer {
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   void reset() {
+    final bool isWebKit = browserEngine == BrowserEngine.webkit;
+
     _styleElement?.remove();
     _styleElement = html.StyleElement();
+    _resourcesHost?.remove();
+    _resourcesHost = null;
     html.document.head!.append(_styleElement!);
-    final html.CssStyleSheet sheet = _styleElement!.sheet as html.CssStyleSheet;
-    final bool isWebKit = browserEngine == BrowserEngine.webkit;
-    final bool isFirefox = browserEngine == BrowserEngine.firefox;
-    // TODO(butterfly): use more efficient CSS selectors; descendant selectors
-    //                  are slow. More info:
-    //
-    //                  https://csswizardry.com/2011/09/writing-efficient-css-selectors/
-
-    // This undoes browser's default layout attributes for paragraphs. We
-    // compute paragraph layout ourselves.
-    if (isFirefox) {
-      // For firefox set line-height, otherwise textx at same font-size will
-      // measure differently in ruler.
-      sheet.insertRule(
-          'flt-ruler-host p, flt-scene p '
-          '{ margin: 0; line-height: 100%;}',
-          sheet.cssRules.length);
-    } else {
-      sheet.insertRule(
-          'flt-ruler-host p, flt-scene p '
-          '{ margin: 0; }',
-          sheet.cssRules.length);
-    }
-
-    // This undoes browser's default painting and layout attributes of range
-    // input, which is used in semantics.
-    sheet.insertRule('''
-flt-semantics input[type=range] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  position: absolute;
-  border: none;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}''', sheet.cssRules.length);
-
-    if (isWebKit) {
-      sheet.insertRule(
-          'flt-semantics input[type=range]::-webkit-slider-thumb {'
-          '  -webkit-appearance: none;'
-          '}',
-          sheet.cssRules.length);
-    }
-
-    if (isFirefox) {
-      sheet.insertRule(
-          'input::-moz-selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-      sheet.insertRule(
-          'textarea::-moz-selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-    } else {
-      // On iOS, the invisible semantic text field has a visible cursor and
-      // selection highlight. The following 2 CSS rules force everything to be
-      // transparent.
-      sheet.insertRule(
-          'input::selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-      sheet.insertRule(
-          'textarea::selection {'
-          '  background-color: transparent;'
-          '}',
-          sheet.cssRules.length);
-    }
-    sheet.insertRule('''
-flt-semantics input,
-flt-semantics textarea,
-flt-semantics [contentEditable="true"] {
-  caret-color: transparent;
-}
-''', sheet.cssRules.length);
-
-    // By default on iOS, Safari would highlight the element that's being tapped
-    // on using gray background. This CSS rule disables that.
-    if (isWebKit) {
-      sheet.insertRule('''
-flt-glass-pane * {
-  -webkit-tap-highlight-color: transparent;
-}
-''', sheet.cssRules.length);
-    }
-
-    // This css prevents an autofill overlay brought by the browser during
-    // text field autofill by delaying the transition effect.
-    // See: https://github.com/flutter/flutter/issues/61132.
-    if (browserHasAutofillOverlay()) {
-      sheet.insertRule('''
-.transparentTextEditing:-webkit-autofill,
-.transparentTextEditing:-webkit-autofill:hover,
-.transparentTextEditing:-webkit-autofill:focus,
-.transparentTextEditing:-webkit-autofill:active {
-    -webkit-transition-delay: 99999s;
-}
-''', sheet.cssRules.length);
-    }
+    final html.CssStyleSheet sheet = _styleElement!.sheet! as html.CssStyleSheet;
+    applyGlobalCssRulesToSheet(
+      sheet,
+      browserEngine: browserEngine,
+      hasAutofillOverlay: browserHasAutofillOverlay(),
+    );
 
     final html.BodyElement bodyElement = html.document.body!;
 
     setElementAttribute(
       bodyElement,
       'flt-renderer',
-      '${useCanvasKit ? 'canvaskit' : 'html'} (${_autoDetect ? 'auto-selected' : 'requested explicitly'})',
+      '${useCanvasKit ? 'canvaskit' : 'html'} (${flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
     setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
 
@@ -393,11 +324,11 @@ flt-glass-pane * {
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
-    // TODO(flutter_web): Disable spellcheck until changes in the framework and
+    // TODO(mdebbar): Disable spellcheck until changes in the framework and
     // engine are complete.
     bodyElement.spellcheck = false;
 
-    for (html.Element viewportMeta
+    for (final html.Element viewportMeta
         in html.document.head!.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {
         // Filter out the meta tag that we ourselves placed on the page. This is
@@ -429,7 +360,7 @@ flt-glass-pane * {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final html.Element glassPaneElement = createElement('flt-glass-pane');
+    final html.Element glassPaneElement = createElement(_glassPaneTagName);
     _glassPaneElement = glassPaneElement;
     glassPaneElement.style
       ..position = 'absolute'
@@ -437,37 +368,40 @@ flt-glass-pane * {
       ..right = '0'
       ..bottom = '0'
       ..left = '0';
+
+    // This must be appended to the body, so we can create a host node properly.
     bodyElement.append(glassPaneElement);
 
-    _sceneHostElement = createElement('flt-scene-host');
+    // Create a [HostNode] under the glass pane element, and attach everything
+    // there, instead of directly underneath the glass panel.
+    final HostNode glassPaneElementHostNode = _createHostNode(glassPaneElement);
+    _glassPaneShadow = glassPaneElementHostNode;
 
-    final html.Element semanticsHostElement = createElement('flt-semantics-host');
+    // Don't allow the scene to receive pointer events.
+    _sceneHostElement = createElement('flt-scene-host')
+      ..style.pointerEvents = 'none';
+
+    final html.Element semanticsHostElement =
+        createElement('flt-semantics-host');
     semanticsHostElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
     _semanticsHostElement = semanticsHostElement;
     updateSemanticsScreenProperties();
-    glassPaneElement.append(semanticsHostElement);
 
-    // Don't allow the scene to receive pointer events.
-    _sceneHostElement!.style.pointerEvents = 'none';
-
-    glassPaneElement.append(_sceneHostElement!);
-
-    final html.Element _accesibilityPlaceholder = EngineSemanticsOwner
+    final html.Element _accessibilityPlaceholder = EngineSemanticsOwner
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    // Insert the semantics placeholder after the scene host. For all widgets
-    // in the scene, except for platform widgets, the scene host will pass the
-    // pointer events through to the semantics tree. However, for platform
-    // views, the pointer events will not pass through, and will be handled
-    // by the platform view.
-    glassPaneElement.insertBefore(_accesibilityPlaceholder, _sceneHostElement);
+    glassPaneElementHostNode.nodes.addAll(<html.Node>[
+      semanticsHostElement,
+      _accessibilityPlaceholder,
+      _sceneHostElement!,
+    ]);
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is visible.
-    if (_debugShowSemanticsNodes) {
+    if (debugShowSemanticsNodes) {
       _sceneHostElement!.style.opacity = '0.3';
     }
 
@@ -480,11 +414,11 @@ flt-glass-pane * {
     setElementAttribute(_sceneHostElement!, 'aria-hidden', 'true');
 
     if (html.window.visualViewport == null && isWebKit) {
-      // Safari sometimes gives us bogus innerWidth/innerHeight values when the
-      // page loads. When it changes the values to correct ones it does not
-      // notify of the change via `onResize`. As a workaround, we set up a
-      // temporary periodic timer that polls innerWidth and triggers the
-      // resizeListener so that the framework can react to the change.
+      // Older Safari versions sometimes give us bogus innerWidth/innerHeight
+      // values when the page loads. When it changes the values to correct ones
+      // it does not notify of the change via `onResize`. As a workaround, we
+      // set up a temporary periodic timer that polls innerWidth and triggers
+      // the resizeListener so that the framework can react to the change.
       //
       // Safari 13 has implemented visualViewport API so it doesn't need this
       // timer.
@@ -509,73 +443,6 @@ flt-glass-pane * {
       });
     }
 
-    if (useCanvasKit) {
-      _canvasKitScript?.remove();
-      _canvasKitScript = html.ScriptElement();
-      _canvasKitScript!.src = canvasKitJavaScriptBindingsUrl;
-
-      // TODO(hterkelsen): Rather than this monkey-patch hack, we should
-      // build CanvasKit ourselves. See:
-      // https://github.com/flutter/flutter/issues/52588
-
-      // Monkey-patch the top-level `module`  and `exports` objects so that
-      // CanvasKit doesn't attempt to register itself as an anonymous module.
-      //
-      // The idea behind making these fake `exports` and `module` objects is
-      // that `canvaskit.js` contains the following lines of code:
-      //
-      //     if (typeof exports === 'object' && typeof module === 'object')
-      //       module.exports = CanvasKitInit;
-      //     else if (typeof define === 'function' && define['amd'])
-      //       define([], function() { return CanvasKitInit; });
-      //
-      // We need to avoid hitting the case where CanvasKit defines an anonymous
-      // module, since this breaks RequireJS, which DDC and some plugins use.
-      // Temporarily removing the `define` function won't work because RequireJS
-      // could load in between this code running and the CanvasKit code running.
-      // Also, we cannot monkey-patch the `define` function because it is
-      // non-configurable (it is a top-level 'var').
-
-      // First check if `exports` and `module` are already defined. If so, then
-      // CommonJS is being used, and we shouldn't have any problems.
-      js.JsFunction objectConstructor = js.context['Object'];
-      if (js.context['exports'] == null) {
-        js.JsObject exportsAccessor = js.JsObject.jsify({
-          'get': js.allowInterop(() {
-            if (html.document.currentScript == _canvasKitScript) {
-              return js.JsObject(objectConstructor);
-            } else {
-              return js.context['_flutterWebCachedExports'];
-            }
-          }),
-          'set': js.allowInterop((dynamic value) {
-            js.context['_flutterWebCachedExports'] = value;
-          }),
-          'configurable': true,
-        });
-        objectConstructor.callMethod('defineProperty',
-            <dynamic>[js.context, 'exports', exportsAccessor]);
-      }
-      if (js.context['module'] == null) {
-        js.JsObject moduleAccessor = js.JsObject.jsify({
-          'get': js.allowInterop(() {
-            if (html.document.currentScript == _canvasKitScript) {
-              return js.JsObject(objectConstructor);
-            } else {
-              return js.context['_flutterWebCachedModule'];
-            }
-          }),
-          'set': js.allowInterop((dynamic value) {
-            js.context['_flutterWebCachedModule'] = value;
-          }),
-          'configurable': true,
-        });
-        objectConstructor.callMethod(
-            'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
-      }
-      html.document.head!.append(_canvasKitScript!);
-    }
-
     if (html.window.visualViewport != null) {
       _resizeSubscription =
           html.window.visualViewport!.onResize.listen(_metricsDidChange);
@@ -584,14 +451,25 @@ flt-glass-pane * {
     }
     _localeSubscription =
         languageChangeEvent.forTarget(html.window).listen(_languageDidChange);
-    EnginePlatformDispatcher.instance._updateLocales();
+    EnginePlatformDispatcher.instance.updateLocales();
+  }
+
+  // Creates a [HostNode] into a `root` [html.Element].
+  HostNode _createHostNode(html.Element root) {
+    if (js_util.getProperty(root, 'attachShadow') != null) {
+      return ShadowDomHostNode(root);
+    } else {
+      // attachShadow not available, fall back to ElementHostNode.
+      return ElementHostNode(root);
+    }
   }
 
   /// The framework specifies semantics in physical pixels, but CSS uses
   /// logical pixels. To compensate, we inject an inverse scale at the root
   /// level.
   void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style.transform = 'scale(${1 / html.window.devicePixelRatio})';
+    _semanticsHostElement!.style.transform =
+        'scale(${1 / html.window.devicePixelRatio})';
   }
 
   /// Called immediately after browser window metrics change.
@@ -606,19 +484,19 @@ flt-glass-pane * {
   void _metricsDidChange(html.Event? event) {
     updateSemanticsScreenProperties();
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(true);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     } else {
-      window._computePhysicalSize();
+      window.computePhysicalSize();
       // When physical size changes this value has to be recalculated.
-      window.computeOnScreenKeyboardInsets();
+      window.computeOnScreenKeyboardInsets(false);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
   }
 
   /// Called immediately after browser window language change.
   void _languageDidChange(html.Event event) {
-    EnginePlatformDispatcher.instance._updateLocales();
+    EnginePlatformDispatcher.instance.updateLocales();
     if (ui.window.onLocaleChanged != null) {
       ui.window.onLocaleChanged!();
     }
@@ -683,16 +561,17 @@ flt-glass-pane * {
   /// defer to the operating system default.
   ///
   /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
-  Future<bool> setPreferredOrientation(List<dynamic>? orientations) {
+  Future<bool> setPreferredOrientation(List<dynamic> orientations) {
     final html.Screen screen = html.window.screen!;
-    if (!_unsafeIsNull(screen)) {
+    if (!unsafeIsNull(screen)) {
       final html.ScreenOrientation? screenOrientation = screen.orientation;
-      if (!_unsafeIsNull(screenOrientation)) {
-        if (orientations!.isEmpty) {
+      if (!unsafeIsNull(screenOrientation)) {
+        if (orientations.isEmpty) {
           screenOrientation!.unlock();
-          return Future.value(true);
+          return Future<bool>.value(true);
         } else {
-          String? lockType = _deviceOrientationToLockType(orientations.first);
+          final String? lockType =
+              _deviceOrientationToLockType(orientations.first);
           if (lockType != null) {
             final Completer<bool> completer = Completer<bool>();
             try {
@@ -704,7 +583,7 @@ flt-glass-pane * {
                 completer.complete(false);
               });
             } catch (_) {
-              return Future.value(false);
+              return Future<bool>.value(false);
             }
             return completer.future;
           }
@@ -712,11 +591,11 @@ flt-glass-pane * {
       }
     }
     // API is not supported on this browser return false.
-    return Future.value(false);
+    return Future<bool>.value(false);
   }
 
   // Converts device orientation to w3c OrientationLockType enum.
-  static String? _deviceOrientationToLockType(String deviceOrientation) {
+  static String? _deviceOrientationToLockType(String? deviceOrientation) {
     switch (deviceOrientation) {
       case 'DeviceOrientation.portraitUp':
         return orientationLockTypePortraitPrimary;
@@ -734,12 +613,39 @@ flt-glass-pane * {
   /// The element corresponding to the only child of the root surface.
   html.Element? get _rootApplicationElement {
     final html.Element lastElement = rootElement.children.last;
-    for (html.Element child in lastElement.children) {
+    for (final html.Element child in lastElement.children) {
       if (child.tagName == 'FLT-SCENE') {
         return child;
       }
     }
     return null;
+  }
+
+  /// Add an element as a global resource to be referenced by CSS.
+  ///
+  /// This call create a global resource host element on demand and either
+  /// place it as first element of body(webkit), or as a child of
+  /// glass pane element for other browsers to make sure url resolution
+  /// works correctly when content is inside a shadow root.
+  void addResource(html.Element element) {
+    final bool isWebKit = browserEngine == BrowserEngine.webkit;
+    if (_resourcesHost == null) {
+      _resourcesHost = html.DivElement()
+        ..style.visibility = 'hidden';
+      if (isWebKit) {
+        final html.Node bodyNode = html.document.body!;
+        bodyNode.insertBefore(_resourcesHost!, bodyNode.firstChild);
+      } else {
+        _glassPaneShadow!.node.insertBefore(
+            _resourcesHost!, _glassPaneShadow!.node.firstChild);
+      }
+    }
+    _resourcesHost!.append(element);
+  }
+
+  /// Removes a global resource element.
+  void removeResource(html.Element? element) {
+    element?.remove();
   }
 
   /// Provides haptic feedback.
@@ -768,6 +674,116 @@ flt-glass-pane * {
       _debugFrameStatistics!.paragraphRulerCacheMisses++;
   void debugRichTextLayout() => _debugFrameStatistics!.richTextLayouts++;
   void debugPlainTextLayout() => _debugFrameStatistics!.plainTextLayouts++;
+}
+
+// Applies the required global CSS to an incoming [html.CssStyleSheet] `sheet`.
+void applyGlobalCssRulesToSheet(
+  html.CssStyleSheet sheet, {
+  required BrowserEngine browserEngine,
+  required bool hasAutofillOverlay,
+  String glassPaneTagName = DomRenderer._glassPaneTagName,
+}) {
+  final bool isWebKit = browserEngine == BrowserEngine.webkit;
+  final bool isFirefox = browserEngine == BrowserEngine.firefox;
+  // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
+  // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
+
+  // This undoes browser's default layout attributes for paragraphs. We
+  // compute paragraph layout ourselves.
+  if (isFirefox) {
+    // For firefox set line-height, otherwise textx at same font-size will
+    // measure differently in ruler.
+    sheet.insertRule(
+        'flt-ruler-host p, flt-scene p '
+        '{ margin: 0; line-height: 100%;}',
+        sheet.cssRules.length);
+  } else {
+    sheet.insertRule(
+        'flt-ruler-host p, flt-scene p '
+        '{ margin: 0; }',
+        sheet.cssRules.length);
+  }
+
+  // This undoes browser's default painting and layout attributes of range
+  // input, which is used in semantics.
+  sheet.insertRule('''
+flt-semantics input[type=range] {
+appearance: none;
+-webkit-appearance: none;
+width: 100%;
+position: absolute;
+border: none;
+top: 0;
+right: 0;
+bottom: 0;
+left: 0;
+}''', sheet.cssRules.length);
+
+  if (isWebKit) {
+    sheet.insertRule(
+        'flt-semantics input[type=range]::-webkit-slider-thumb {'
+        '  -webkit-appearance: none;'
+        '}',
+        sheet.cssRules.length);
+  }
+
+  if (isFirefox) {
+    sheet.insertRule(
+        'input::-moz-selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+    sheet.insertRule(
+        'textarea::-moz-selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+  } else {
+    // On iOS, the invisible semantic text field has a visible cursor and
+    // selection highlight. The following 2 CSS rules force everything to be
+    // transparent.
+    sheet.insertRule(
+        'input::selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+    sheet.insertRule(
+        'textarea::selection {'
+        '  background-color: transparent;'
+        '}',
+        sheet.cssRules.length);
+  }
+  sheet.insertRule('''
+flt-semantics input,
+flt-semantics textarea,
+flt-semantics [contentEditable="true"] {
+caret-color: transparent;
+}
+''', sheet.cssRules.length);
+
+  // By default on iOS, Safari would highlight the element that's being tapped
+  // on using gray background. This CSS rule disables that.
+  if (isWebKit) {
+    sheet.insertRule('''
+$glassPaneTagName * {
+-webkit-tap-highlight-color: transparent;
+}
+''', sheet.cssRules.length);
+  }
+
+  // This css prevents an autofill overlay brought by the browser during
+  // text field autofill by delaying the transition effect.
+  // See: https://github.com/flutter/flutter/issues/61132.
+  if (browserHasAutofillOverlay()) {
+    sheet.insertRule('''
+.transparentTextEditing:-webkit-autofill,
+.transparentTextEditing:-webkit-autofill:hover,
+.transparentTextEditing:-webkit-autofill:focus,
+.transparentTextEditing:-webkit-autofill:active {
+  -webkit-transition-delay: 99999s;
+}
+''', sheet.cssRules.length);
+  }
 }
 
 /// Miscellaneous statistics collecting during a single frame's execution.
@@ -809,8 +825,9 @@ Frame statistics:
   }
 }
 
-// TODO(yjbanov): Replace this with an explicit initialization function. The
-//                lazy initialization of statics makes it very unpredictable, as
-//                the constructor has side-effects.
 /// Singleton DOM renderer.
-final DomRenderer domRenderer = DomRenderer();
+DomRenderer get domRenderer => ensureDomRendererInitialized();
+
+/// Initializes the [DomRenderer], if it's not already initialized.
+DomRenderer ensureDomRendererInitialized() => _domRenderer ??= DomRenderer();
+DomRenderer? _domRenderer;

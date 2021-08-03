@@ -128,7 +128,10 @@ source_set("embedder_headers") {
 }
 
 source_set("embedder_test_utils") {
-  public = [ "test_utils/proc_table_replacement.h" ]
+  public = [
+    "test_utils/key_codes.h",
+    "test_utils/proc_table_replacement.h",
+  ]
 
   deps = [ ":embedder_headers" ]
 
@@ -230,6 +233,8 @@ if (enable_unittests) {
 
     if (test_enable_metal) {
       sources += [
+        "tests/embedder_test_compositor_metal.cc",
+        "tests/embedder_test_compositor_metal.h",
         "tests/embedder_test_context_metal.cc",
         "tests/embedder_test_context_metal.h",
         "tests/embedder_unittests_metal.mm",

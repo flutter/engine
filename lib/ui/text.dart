@@ -341,7 +341,7 @@ class FontFeature {
   /// Widget build(BuildContext context) {
   ///   // The Barriecito font can be downloaded from Google Fonts (https://www.google.com/fonts).
   ///   return const Text(
-  ///     'Ooohh, we weren\'t going to tell him that.',
+  ///     "Ooohh, we weren't going to tell him that.",
   ///     style: TextStyle(
   ///       fontFamily: 'Barriecito',
   ///       fontFeatures: <FontFeature>[
@@ -472,7 +472,7 @@ class FontFeature {
   ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_ae#cv01-cv99>
   factory FontFeature.characterVariant(int value) {
     assert(value >= 1);
-    assert(value <= 20);
+    assert(value <= 99);
     return FontFeature('cv${value.toString().padLeft(2, "0")}');
   }
 
@@ -3116,7 +3116,7 @@ class LineMetrics {
 /// Paragraphs can be displayed on a [Canvas] using the [Canvas.drawParagraph]
 /// method.
 @pragma('vm:entry-point')
-class Paragraph extends NativeFieldWrapperClass2 {
+class Paragraph extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
@@ -3306,7 +3306,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
 ///
 /// After constructing a [Paragraph], call [Paragraph.layout] on it and then
 /// paint it with [Canvas.drawParagraph].
-class ParagraphBuilder extends NativeFieldWrapperClass2 {
+class ParagraphBuilder extends NativeFieldWrapperClass1 {
 
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].

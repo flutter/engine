@@ -24,7 +24,6 @@ TEST_F(ImageFilterLayerTest, PaintingEmptyLayerDies) {
   layer->Preroll(preroll_context(), SkMatrix());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
-  EXPECT_FALSE(layer->needs_system_composite());
 
   EXPECT_DEATH_IF_SUPPORTED(layer->Paint(paint_context()),
                             "needs_painting\\(context\\)");
@@ -261,7 +260,7 @@ TEST_F(ImageFilterLayerTest, Readback) {
 
   // ImageFilterLayer blocks child with readback
   auto mock_layer =
-      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, false, true);
+      std::make_shared<MockLayer>(SkPath(), SkPaint(), false, true);
   layer->Add(mock_layer);
   preroll_context()->surface_needs_readback = false;
   layer->Preroll(preroll_context(), initial_transform);
@@ -376,13 +375,14 @@ TEST_F(ImageFilterLayerDiffTest, ImageFilterLayer) {
   damage = DiffLayerTree(l3, l2);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(130, 130, 140, 140));
 
-  // path intersecting ImageFilterLayer, should trigger ImageFilterLayer repaint
+  // path intersecting ImageFilterLayer, shouldn't trigger entire
+  // ImageFilterLayer repaint
   MockLayerTree l4;
   l4.root()->Add(scale);
   auto path2 = SkPath().addRect(SkRect::MakeLTRB(130, 130, 141, 141));
   l4.root()->Add(std::make_shared<MockLayer>(path2));
   damage = DiffLayerTree(l4, l3);
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(130, 130, 280, 280));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(130, 130, 141, 141));
 }
 
 #endif

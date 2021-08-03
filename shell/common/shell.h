@@ -25,6 +25,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
@@ -298,11 +299,16 @@ class Shell final : public PlatformView::Delegate,
                                     bool base64_encode);
 
   //----------------------------------------------------------------------------
-  /// @brief   Pauses the calling thread until the first frame is presented.
+  /// @brief      Pauses the calling thread until the first frame is presented.
   ///
-  /// @return  'kOk' when the first frame has been presented before the timeout
-  ///          successfully, 'kFailedPrecondition' if called from the GPU or UI
-  ///          thread, 'kDeadlineExceeded' if there is a timeout.
+  /// @param[in]  timeout  The duration to wait before timing out. If this
+  ///                      duration would cause an overflow when added to
+  ///                      std::chrono::steady_clock::now(), this method will
+  ///                      wait indefinitely for the first frame.
+  ///
+  /// @return     'kOk' when the first frame has been presented before the
+  ///             timeout successfully, 'kFailedPrecondition' if called from the
+  ///             GPU or UI thread, 'kDeadlineExceeded' if there is a timeout.
   ///
   fml::Status WaitForFirstFrame(fml::TimeDelta timeout);
 
@@ -362,6 +368,21 @@ class Shell final : public PlatformView::Delegate,
   /// @brief Queries the `DisplayManager` for the main display refresh rate.
   ///
   double GetMainDisplayRefreshRate();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Install a new factory that can match against and decode image
+  ///             data.
+  /// @param[in]  factory   Callback that produces `ImageGenerator`s for
+  ///                       compatible input data.
+  /// @param[in]  priority  The priority used to determine the order in which
+  ///                       factories are tried. Higher values mean higher
+  ///                       priority. The built-in Skia decoders are installed
+  ///                       at priority 0, and so a priority > 0 takes precedent
+  ///                       over the builtin decoders. When multiple decoders
+  ///                       are added with the same priority, those which are
+  ///                       added earlier take precedent.
+  /// @see        `CreateCompatibleGenerator`
+  void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
 
  private:
   using ServiceProtocolHandler =
@@ -476,7 +497,7 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPlatformMessage(
-      fml::RefPtr<PlatformMessage> message) override;
+      std::unique_ptr<PlatformMessage> message) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
@@ -488,10 +509,9 @@ class Shell final : public PlatformView::Delegate,
       std::function<void(bool /* handled */)> callback) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewDispatchSemanticsAction(
-      int32_t id,
-      SemanticsAction action,
-      std::vector<uint8_t> args) override;
+  void OnPlatformViewDispatchSemanticsAction(int32_t id,
+                                             SemanticsAction action,
+                                             fml::MallocMapping args) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewSetSemanticsEnabled(bool enabled) override;
@@ -528,17 +548,20 @@ class Shell final : public PlatformView::Delegate,
       AssetResolver::AssetResolverType type) override;
 
   // |Animator::Delegate|
-  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
+  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+                            uint64_t frame_number) override;
 
   // |Animator::Delegate|
   void OnAnimatorNotifyIdle(int64_t deadline) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDraw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
-                      fml::TimePoint frame_target_time) override;
+  void OnAnimatorDraw(
+      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Animator::Delegate|
-  void OnAnimatorDrawLastLayerTree() override;
+  void OnAnimatorDrawLastLayerTree(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override;
 
   // |Engine::Delegate|
   void OnEngineUpdateSemantics(
@@ -547,9 +570,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void OnEngineHandlePlatformMessage(
-      fml::RefPtr<PlatformMessage> message) override;
+      std::unique_ptr<PlatformMessage> message) override;
 
-  void HandleEngineSkiaMessage(fml::RefPtr<PlatformMessage> message);
+  void HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message);
 
   // |Engine::Delegate|
   void OnPreEngineRestart() override;
@@ -570,6 +593,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |Engine::Delegate|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  // |Engine::Delegate|
+  fml::TimePoint GetCurrentTimePoint() override;
 
   // |Rasterizer::Delegate|
   void OnFrameRasterized(const FrameTiming&) override;

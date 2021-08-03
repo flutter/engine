@@ -4,7 +4,7 @@
 
 import 'dart:js' as js;
 
-import 'package:ui/src/engine.dart' show registerHotRestartListener;
+import '../engine.dart' show registerHotRestartListener;
 
 /// A bag of all experiment flags in the web engine.
 ///
@@ -30,7 +30,7 @@ class WebExperiments {
     _useCanvasText = enabled ?? _defaultUseCanvasText;
   }
 
-  static const bool _defaultUseCanvasText = const bool.fromEnvironment(
+  static const bool _defaultUseCanvasText = bool.fromEnvironment(
     'FLUTTER_WEB_USE_EXPERIMENTAL_CANVAS_TEXT',
     defaultValue: true,
   );
@@ -44,7 +44,7 @@ class WebExperiments {
     _useCanvasRichText = enabled ?? _defaultUseCanvasRichText;
   }
 
-  static const bool _defaultUseCanvasRichText = const bool.fromEnvironment(
+  static const bool _defaultUseCanvasRichText = bool.fromEnvironment(
     'FLUTTER_WEB_USE_EXPERIMENTAL_CANVAS_RICH_TEXT',
     defaultValue: true,
   );
@@ -58,7 +58,7 @@ class WebExperiments {
   }
 
   /// Used to enable/disable experimental flags in the web engine.
-  void updateExperiment(String name, bool enabled) {
+  void updateExperiment(String name, bool? enabled) {
     switch (name) {
       case 'useCanvasText':
         useCanvasText = enabled;

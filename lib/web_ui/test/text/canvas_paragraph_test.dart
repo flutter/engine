@@ -35,12 +35,12 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   await ui.webOnlyInitializeTestDomRenderer();
 
   group('$CanvasParagraph.getBoxesForRange', () {
     test('return empty list for invalid ranges', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.addText('Lorem ipsum');
       })
         ..layout(constrain(double.infinity));
@@ -53,7 +53,7 @@ void testMain() async {
     });
 
     test('handles single-line multi-span paragraphs', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem ');
         builder.pushStyle(EngineTextStyle.only(color: green));
@@ -84,7 +84,10 @@ void testMain() async {
         // "Lorem "
         paragraph.getBoxesForRange(0, 6),
         <ui.TextBox>[
-          box(0, 0, 60, 10),
+          // "Lorem"
+          box(0, 0, 50, 10),
+          // " "
+          box(50, 0, 60, 10),
         ],
       );
 
@@ -101,7 +104,10 @@ void testMain() async {
         // "um "
         paragraph.getBoxesForRange(9, 12),
         <ui.TextBox>[
-          box(90, 0, 120, 10),
+          // "um"
+          box(90, 0, 110, 10),
+          // " "
+          box(110, 0, 120, 10),
         ],
       );
 
@@ -111,7 +117,11 @@ void testMain() async {
         // "rem ipsum"
         paragraph.getBoxesForRange(2, 11),
         <ui.TextBox>[
-          box(20, 0, 60, 10),
+          // "rem"
+          box(20, 0, 50, 10),
+          // " "
+          box(50, 0, 60, 10),
+          // "ipsum"
           box(60, 0, 110, 10),
         ],
       );
@@ -119,18 +129,25 @@ void testMain() async {
       // Across all spans "Lorem ", "ipsum ", ".".
 
       expect(
-        // "Lorem ipsum."
+        // "Lorem ipsum ."
         paragraph.getBoxesForRange(0, 13),
         <ui.TextBox>[
-          box(0, 0, 60, 10),
-          box(60, 0, 120, 10),
+          // "Lorem"
+          box(0, 0, 50, 10),
+          // " "
+          box(50, 0, 60, 10),
+          // "ipsum"
+          box(60, 0, 110, 10),
+          // " "
+          box(110, 0, 120, 10),
+          // "."
           box(120, 0, 130, 10),
         ],
       );
     });
 
     test('handles multi-line single-span paragraphs', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.addText('Lorem ipsum dolor sit');
       })
         ..layout(constrain(90.0));
@@ -155,7 +172,10 @@ void testMain() async {
         // "Lorem "
         paragraph.getBoxesForRange(0, 6),
         <ui.TextBox>[
-          box(0, 0, 60, 10),
+          // "Lorem"
+          box(0, 0, 50, 10),
+          // " "
+          box(50, 0, 60, 10),
         ],
       );
 
@@ -165,7 +185,10 @@ void testMain() async {
         // "psum "
         paragraph.getBoxesForRange(7, 12),
         <ui.TextBox>[
-          box(10, 10, 60, 20),
+          // "psum"
+          box(10, 10, 50, 20),
+          // " "
+          box(50, 10, 60, 20),
         ],
       );
 
@@ -177,15 +200,26 @@ void testMain() async {
         // "dolor s"
         paragraph.getBoxesForRange(3, 19),
         <ui.TextBox>[
-          box(30, 0, 60, 10),
-          box(0, 10, 60, 20),
-          box(0, 20, 70, 30),
+          // "em"
+          box(30, 0, 50, 10),
+          // " "
+          box(50, 0, 60, 10),
+          // "ipsum"
+          box(0, 10, 50, 20),
+          // " "
+          box(50, 10, 60, 20),
+          // "dolor"
+          box(0, 20, 50, 30),
+          // " "
+          box(50, 20, 60, 30),
+          // "s"
+          box(60, 20, 70, 30),
         ],
       );
     });
 
     test('handles multi-line multi-span paragraphs', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem ipsum ');
         builder.pushStyle(EngineTextStyle.only(color: green));
@@ -213,7 +247,10 @@ void testMain() async {
         // "Lorem "
         paragraph.getBoxesForRange(0, 6),
         <ui.TextBox>[
-          box(0, 0, 60, 10),
+          // "Lorem"
+          box(0, 0, 50, 10),
+          // " "
+          box(50, 0, 60, 10),
         ],
       );
 
@@ -223,7 +260,10 @@ void testMain() async {
         // "psum "
         paragraph.getBoxesForRange(7, 12),
         <ui.TextBox>[
-          box(10, 10, 60, 20),
+          // "psum"
+          box(10, 10, 50, 20),
+          // " "
+          box(50, 10, 60, 20),
         ],
       );
 
@@ -233,7 +273,11 @@ void testMain() async {
         // "lor sit"
         paragraph.getBoxesForRange(14, 21),
         <ui.TextBox>[
-          box(20, 20, 60, 30),
+          // "lor"
+          box(20, 20, 50, 30),
+          // " "
+          box(50, 20, 60, 30),
+          // "sit"
           box(60, 20, 90, 30),
         ],
       );
@@ -246,16 +290,26 @@ void testMain() async {
         // "dolor s"
         paragraph.getBoxesForRange(3, 19),
         <ui.TextBox>[
-          box(30, 0, 60, 10),
-          box(0, 10, 60, 20),
-          box(0, 20, 60, 30),
+          //    "em"
+          box(30, 0, 50, 10),
+          //    " "
+          box(50, 0, 60, 10),
+          // "ipsum"
+          box(0, 10, 50, 20),
+          // " "
+          box(50, 10, 60, 20),
+          // "dolor"
+          box(0, 20, 50, 30),
+          // " "
+          box(50, 20, 60, 30),
+          // "s"
           box(60, 20, 70, 30),
         ],
       );
     });
 
     test('handles spans with varying heights/baselines', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(fontSize: 20.0));
         // width = 20.0 * 6 = 120.0
         // baseline = 20.0 * 80% = 16.0
@@ -287,8 +341,15 @@ void testMain() async {
         // "em ipsum dol"
         paragraph.getBoxesForRange(3, 15),
         <ui.TextBox>[
-          box(60, 16, 120, 36),
-          box(120, 0, 360, 40),
+          // "em"
+          box(60, 16, 100, 36),
+          // " "
+          box(100, 16, 120, 36),
+          // "ipsum"
+          box(120, 0, 320, 40),
+          // " "
+          box(320, 0, 360, 40),
+          // "dol"
           box(360, 24, 390, 34),
         ],
       );
@@ -298,9 +359,19 @@ void testMain() async {
         // "sit amet"
         paragraph.getBoxesForRange(8, 26),
         <ui.TextBox>[
-          box(200, 0, 360, 40),
-          box(360, 24, 420, 34),
-          box(0, 40, 120, 70),
+          // "sum"
+          box(200, 0, 320, 40),
+          // " "
+          box(320, 0, 360, 40),
+          // "dolor"
+          box(360, 24, 410, 34),
+          // " "
+          box(410, 24, 420, 34),
+          // "sit"
+          box(0, 40, 90, 70),
+          // " "
+          box(90, 40, 120, 70),
+          // "amet"
           box(120, 48, 200, 68),
         ],
       );
@@ -309,7 +380,7 @@ void testMain() async {
 
   group('$CanvasParagraph.getPositionForOffset', () {
     test('handles single-line multi-span paragraphs', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem ');
         builder.pushStyle(EngineTextStyle.only(color: green));
@@ -321,63 +392,63 @@ void testMain() async {
 
       // Above the line, at the beginning.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, -5)),
+        paragraph.getPositionForOffset(const ui.Offset(0, -5)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the top left corner of the line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 0)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 0)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the beginning of the line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 5)),
         pos(0, ui.TextAffinity.downstream),
       );
       // Below the line, at the end.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(130, 12)),
+        paragraph.getPositionForOffset(const ui.Offset(130, 12)),
         pos(13, ui.TextAffinity.upstream),
       );
       // At the end of the line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(130, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(130, 5)),
         pos(13, ui.TextAffinity.upstream),
       );
       // On the left half of "p" in "ipsum".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(74, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(74, 5)),
         pos(7, ui.TextAffinity.downstream),
       );
       // On the left half of "p" in "ipsum" (above the line).
       expect(
-        paragraph.getPositionForOffset(ui.Offset(74, -5)),
+        paragraph.getPositionForOffset(const ui.Offset(74, -5)),
         pos(7, ui.TextAffinity.downstream),
       );
       // On the left half of "p" in "ipsum" (below the line).
       expect(
-        paragraph.getPositionForOffset(ui.Offset(74, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(74, 15)),
         pos(7, ui.TextAffinity.downstream),
       );
       // On the right half of "p" in "ipsum".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(76, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(76, 5)),
         pos(8, ui.TextAffinity.upstream),
       );
       // At the top of the line, on the left half of "p" in "ipsum".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(74, 0)),
+        paragraph.getPositionForOffset(const ui.Offset(74, 0)),
         pos(7, ui.TextAffinity.downstream),
       );
       // At the top of the line, on the right half of "p" in "ipsum".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(76, 0)),
+        paragraph.getPositionForOffset(const ui.Offset(76, 0)),
         pos(8, ui.TextAffinity.upstream),
       );
     });
 
     test('handles multi-line single-span paragraphs', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.addText('Lorem ipsum dolor sit');
       })
         ..layout(constrain(90.0));
@@ -389,90 +460,90 @@ void testMain() async {
 
       // Above the first line, at the beginning.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, -5)),
+        paragraph.getPositionForOffset(const ui.Offset(0, -5)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the top left corner of the line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 0)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 0)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the beginning of the first line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 5)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the end of the first line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(60, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(60, 5)),
         pos(6, ui.TextAffinity.upstream),
       );
       // At the end of the first line (above the line).
       expect(
-        paragraph.getPositionForOffset(ui.Offset(60, -5)),
+        paragraph.getPositionForOffset(const ui.Offset(60, -5)),
         pos(6, ui.TextAffinity.upstream),
       );
       // After the end of the first line to the right.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(70, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(70, 5)),
         pos(6, ui.TextAffinity.upstream),
       );
       // On the left half of " " in "Lorem ".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(54, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(54, 5)),
         pos(5, ui.TextAffinity.downstream),
       );
       // On the right half of " " in "Lorem ".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(56, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(56, 5)),
         pos(6, ui.TextAffinity.upstream),
       );
 
       // At the beginning of the second line "ipsum ".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 15)),
         pos(6, ui.TextAffinity.downstream),
       );
       // At the end of the second line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(60, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(60, 15)),
         pos(12, ui.TextAffinity.upstream),
       );
       // After the end of the second line to the right.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(70, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(70, 15)),
         pos(12, ui.TextAffinity.upstream),
       );
 
       // Below the third line "dolor sit", at the end.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(90, 40)),
+        paragraph.getPositionForOffset(const ui.Offset(90, 40)),
         pos(21, ui.TextAffinity.upstream),
       );
       // At the end of the third line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(90, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(90, 25)),
         pos(21, ui.TextAffinity.upstream),
       );
       // After the end of the third line to the right.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(100, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(100, 25)),
         pos(21, ui.TextAffinity.upstream),
       );
       // On the left half of " " in "dolor sit".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(54, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(54, 25)),
         pos(17, ui.TextAffinity.downstream),
       );
       // On the right half of " " in "dolor sit".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(56, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(56, 25)),
         pos(18, ui.TextAffinity.upstream),
       );
     });
 
     test('handles multi-line multi-span paragraphs', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem ipsum ');
         builder.pushStyle(EngineTextStyle.only(color: green));
@@ -489,74 +560,74 @@ void testMain() async {
 
       // Above the first line, at the beginning.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, -5)),
+        paragraph.getPositionForOffset(const ui.Offset(0, -5)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the beginning of the first line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 5)),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the end of the first line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(60, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(60, 5)),
         pos(6, ui.TextAffinity.upstream),
       );
       // After the end of the first line to the right.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(70, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(70, 5)),
         pos(6, ui.TextAffinity.upstream),
       );
       // On the left half of " " in "Lorem ".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(54, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(54, 5)),
         pos(5, ui.TextAffinity.downstream),
       );
       // On the right half of " " in "Lorem ".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(56, 5)),
+        paragraph.getPositionForOffset(const ui.Offset(56, 5)),
         pos(6, ui.TextAffinity.upstream),
       );
 
       // At the beginning of the second line "ipsum ".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(0, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(0, 15)),
         pos(6, ui.TextAffinity.downstream),
       );
       // At the end of the second line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(60, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(60, 15)),
         pos(12, ui.TextAffinity.upstream),
       );
       // After the end of the second line to the right.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(70, 15)),
+        paragraph.getPositionForOffset(const ui.Offset(70, 15)),
         pos(12, ui.TextAffinity.upstream),
       );
 
       // Below the third line "dolor sit", at the end.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(90, 40)),
+        paragraph.getPositionForOffset(const ui.Offset(90, 40)),
         pos(21, ui.TextAffinity.upstream),
       );
       // At the end of the third line.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(90, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(90, 25)),
         pos(21, ui.TextAffinity.upstream),
       );
       // After the end of the third line to the right.
       expect(
-        paragraph.getPositionForOffset(ui.Offset(100, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(100, 25)),
         pos(21, ui.TextAffinity.upstream),
       );
       // On the left half of " " in "dolor sit".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(54, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(54, 25)),
         pos(17, ui.TextAffinity.downstream),
       );
       // On the right half of " " in "dolor sit".
       expect(
-        paragraph.getPositionForOffset(ui.Offset(56, 25)),
+        paragraph.getPositionForOffset(const ui.Offset(56, 25)),
         pos(18, ui.TextAffinity.upstream),
       );
     });
@@ -564,7 +635,7 @@ void testMain() async {
 
   group('$CanvasParagraph.getLineBoundary', () {
     test('single-line', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.addText('One single line');
       })
         ..layout(constrain(400.0));
@@ -573,14 +644,14 @@ void testMain() async {
       for (int i = 0; i < 15; i++) {
         expect(
           paragraph.getLineBoundary(ui.TextPosition(offset: i)),
-          ui.TextRange(start: 0, end: 15),
+          const ui.TextRange(start: 0, end: 15),
           reason: 'failed at offset $i',
         );
       }
     });
 
     test('multi-line', () {
-      final CanvasParagraph paragraph = rich(ahemStyle, (builder) {
+      final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
         builder.addText('First line\n');
         builder.addText('Second line\n');
         builder.addText('Third line');
@@ -591,7 +662,7 @@ void testMain() async {
       for (int i = 0; i < 11; i++) {
         expect(
           paragraph.getLineBoundary(ui.TextPosition(offset: i)),
-          ui.TextRange(start: 0, end: 11),
+          const ui.TextRange(start: 0, end: 11),
           reason: 'failed at offset $i',
         );
       }
@@ -600,7 +671,7 @@ void testMain() async {
       for (int i = 11; i < 23; i++) {
         expect(
           paragraph.getLineBoundary(ui.TextPosition(offset: i)),
-          ui.TextRange(start: 11, end: 23),
+          const ui.TextRange(start: 11, end: 23),
           reason: 'failed at offset $i',
         );
       }
@@ -609,7 +680,7 @@ void testMain() async {
       for (int i = 23; i < 33; i++) {
         expect(
           paragraph.getLineBoundary(ui.TextPosition(offset: i)),
-          ui.TextRange(start: 23, end: 33),
+          const ui.TextRange(start: 23, end: 33),
           reason: 'failed at offset $i',
         );
       }

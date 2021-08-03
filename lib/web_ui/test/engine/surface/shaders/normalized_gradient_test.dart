@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/html/shaders/normalized_gradient.dart';
 import 'package:ui/ui.dart' as ui hide window;
 
 void main() {
@@ -15,7 +14,7 @@ void main() {
 void testMain() {
   group('Shader Normalized Gradient', () {
     test('3 stop at start', () {
-      NormalizedGradient gradient = NormalizedGradient(<ui.Color>[
+      final NormalizedGradient gradient = NormalizedGradient(const <ui.Color>[
         ui.Color(0xFF000000), ui.Color(0xFFFF7f3f)
       ], stops: <double>[0.0, 0.5]);
       int res = _computeColorAt(gradient, 0.0);
@@ -31,7 +30,7 @@ void testMain() {
     });
 
     test('3 stop at end', () {
-      NormalizedGradient gradient = NormalizedGradient(<ui.Color>[
+      final NormalizedGradient gradient = NormalizedGradient(const <ui.Color>[
         ui.Color(0xFF000000), ui.Color(0xFFFF7f3f)
       ], stops: <double>[0.5, 1.0]);
       int res = _computeColorAt(gradient, 0.0);
@@ -47,7 +46,7 @@ void testMain() {
     });
 
     test('4 stop', () {
-      NormalizedGradient gradient = NormalizedGradient(<ui.Color>[
+      final NormalizedGradient gradient = NormalizedGradient(const <ui.Color>[
         ui.Color(0xFF000000), ui.Color(0xFFFF7f3f)
       ], stops: <double>[0.25, 0.5]);
       int res = _computeColorAt(gradient, 0.0);
@@ -65,7 +64,7 @@ void testMain() {
     });
 
     test('5 stop', () {
-      NormalizedGradient gradient = NormalizedGradient(<ui.Color>[
+      final NormalizedGradient gradient = NormalizedGradient(const <ui.Color>[
         ui.Color(0x10000000), ui.Color(0x20FF0000),
         ui.Color(0x4000FF00), ui.Color(0x800000FF),
         ui.Color(0xFFFFFFFF)
@@ -91,7 +90,7 @@ void testMain() {
     });
 
     test('2 stops at ends', () {
-      NormalizedGradient gradient = NormalizedGradient(<ui.Color>[
+      final NormalizedGradient gradient = NormalizedGradient(const <ui.Color>[
         ui.Color(0x00000000), ui.Color(0xFFFFFFFF)
       ]);
       int res = _computeColorAt(gradient, 0.0);
@@ -109,10 +108,10 @@ int _computeColorAt(NormalizedGradient gradient, double t) {
   while (t > gradient.thresholdAt(i + 1)) {
     ++i;
   }
-  double r = t * gradient.scaleAt(i * 4) + gradient.biasAt(i * 4);
-  double g = t * gradient.scaleAt(i * 4 + 1) + gradient.biasAt(i * 4 + 1);
-  double b = t * gradient.scaleAt(i * 4 + 2) + gradient.biasAt(i * 4 + 2);
-  double a = t * gradient.scaleAt(i * 4 + 3) + gradient.biasAt(i * 4 + 3);
+  final double r = t * gradient.scaleAt(i * 4) + gradient.biasAt(i * 4);
+  final double g = t * gradient.scaleAt(i * 4 + 1) + gradient.biasAt(i * 4 + 1);
+  final double b = t * gradient.scaleAt(i * 4 + 2) + gradient.biasAt(i * 4 + 2);
+  final double a = t * gradient.scaleAt(i * 4 + 3) + gradient.biasAt(i * 4 + 3);
   int val = 0;
   val |= (a * 0xFF).toInt() & 0xFF;
   val<<=8;

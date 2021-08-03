@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -16,8 +15,8 @@ void main() {
 
 void testMain() {
   group('$SkiaFontCollection', () {
-    List<String> warnings = <String>[];
-    void Function(String) oldPrintWarning;
+    final List<String> warnings = <String>[];
+    late void Function(String) oldPrintWarning;
 
     setUpAll(() async {
       await initializeCanvasKit();
@@ -73,6 +72,6 @@ void testMain() {
         ),
       );
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

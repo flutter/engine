@@ -2,7 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart'  show registerHotRestartListener;
+import '../alarm_clock.dart';
+import '../browser_detection.dart';
+import '../dom_renderer.dart';
+import '../platform_dispatcher.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'checkable.dart';
+import 'image.dart';
+import 'incrementable.dart';
+import 'label_and_value.dart';
+import 'live_region.dart';
+import 'scrollable.dart';
+import 'semantics_helper.dart';
+import 'tappable.dart';
+import 'text_field.dart';
 
 /// Set this flag to `true` to cause the engine to visualize the semantics tree
 /// on the screen for debugging.
@@ -15,7 +36,7 @@ part of engine;
 /// ```
 /// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
 /// ```
-const bool _debugShowSemanticsNodes = bool.fromEnvironment(
+const bool debugShowSemanticsNodes = bool.fromEnvironment(
   'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
   defaultValue: false,
 );
@@ -57,10 +78,15 @@ class SemanticsNodeUpdate {
     required this.scrollExtentMin,
     required this.rect,
     required this.label,
+    this.labelAttributes,
     required this.hint,
+    this.hintAttributes,
     required this.value,
+    this.valueAttributes,
     required this.increasedValue,
+    this.increasedValueAttributes,
     required this.decreasedValue,
+    this.decreasedValueAttributes,
     this.textDirection,
     required this.transform,
     required this.elevation,
@@ -116,16 +142,31 @@ class SemanticsNodeUpdate {
   final String label;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final List<ui.StringAttribute>? labelAttributes;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String hint;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final List<ui.StringAttribute>? hintAttributes;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String value;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final List<ui.StringAttribute>? valueAttributes;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String increasedValue;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final List<ui.StringAttribute>? increasedValueAttributes;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String decreasedValue;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final List<ui.StringAttribute>? decreasedValueAttributes;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final ui.TextDirection? textDirection;
@@ -246,7 +287,7 @@ class SemanticsObject {
     element.style.position = 'absolute';
 
     // The root node has some properties that other nodes do not.
-    if (id == 0 && !_debugShowSemanticsNodes) {
+    if (id == 0 && !debugShowSemanticsNodes) {
       // Make all semantics transparent. We use `filter` instead of `opacity`
       // attribute because `filter` is stronger. `opacity` does not apply to
       // some elements, particularly on iOS, such as the slider thumb and track.
@@ -263,14 +304,14 @@ class SemanticsObject {
     // Make semantic elements visible for debugging by outlining them using a
     // green border. We do not use `border` attribute because it affects layout
     // (`outline` does not).
-    if (_debugShowSemanticsNodes) {
+    if (debugShowSemanticsNodes) {
       element.style.outline = '1px solid green';
     }
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  int? get flags => _flags;
-  int? _flags;
+  int get flags => _flags;
+  int _flags = 0;
 
   /// Whether the [flags] field has been updated but has not been applied to the
   /// DOM yet.
@@ -401,6 +442,10 @@ class SemanticsObject {
   String? get label => _label;
   String? _label;
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
+  List<ui.StringAttribute>? get labelAttributes => _labelAttributes;
+  List<ui.StringAttribute>? _labelAttributes;
+
   /// Whether this object contains a non-empty label.
   bool get hasLabel => _label != null && _label!.isNotEmpty;
 
@@ -417,6 +462,10 @@ class SemanticsObject {
   String? get hint => _hint;
   String? _hint;
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
+  List<ui.StringAttribute>? get hintAttributes => _hintAttributes;
+  List<ui.StringAttribute>? _hintAttributes;
+
   static const int _hintIndex = 1 << 11;
 
   /// Whether the [hint] field has been updated but has not been
@@ -429,6 +478,10 @@ class SemanticsObject {
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   String? get value => _value;
   String? _value;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
+  List<ui.StringAttribute>? get valueAttributes => _valueAttributes;
+  List<ui.StringAttribute>? _valueAttributes;
 
   /// Whether this object contains a non-empty value.
   bool get hasValue => _value != null && _value!.isNotEmpty;
@@ -446,6 +499,10 @@ class SemanticsObject {
   String? get increasedValue => _increasedValue;
   String? _increasedValue;
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
+  List<ui.StringAttribute>? get increasedValueAttributes => _increasedValueAttributes;
+  List<ui.StringAttribute>? _increasedValueAttributes;
+
   static const int _increasedValueIndex = 1 << 13;
 
   /// Whether the [increasedValue] field has been updated but has not been
@@ -458,6 +515,10 @@ class SemanticsObject {
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   String? get decreasedValue => _decreasedValue;
   String? _decreasedValue;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode]
+  List<ui.StringAttribute>? get decreasedValueAttributes => _decreasedValueAttributes;
+  List<ui.StringAttribute>? _decreasedValueAttributes;
 
   static const int _decreasedValueIndex = 1 << 14;
 
@@ -583,7 +644,7 @@ class SemanticsObject {
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
-  bool hasFlag(ui.SemanticsFlag flag) => _flags! & flag.index != 0;
+  bool hasFlag(ui.SemanticsFlag flag) => _flags & flag.index != 0;
 
   /// Whether [actions] contains the given action.
   bool hasAction(ui.SemanticsAction action) => (_actions! & action.index) != 0;
@@ -652,8 +713,18 @@ class SemanticsObject {
       _markValueDirty();
     }
 
+    if (_valueAttributes != update.valueAttributes) {
+      _valueAttributes = update.valueAttributes;
+      _markValueDirty();
+    }
+
     if (_label != update.label) {
       _label = update.label;
+      _markLabelDirty();
+    }
+
+    if (_labelAttributes != update.labelAttributes) {
+      _labelAttributes = update.labelAttributes;
       _markLabelDirty();
     }
 
@@ -712,13 +783,28 @@ class SemanticsObject {
       _markHintDirty();
     }
 
+    if (_hintAttributes != update.hintAttributes) {
+      _hintAttributes = update.hintAttributes;
+      _markHintDirty();
+    }
+
     if (_increasedValue != update.increasedValue) {
       _increasedValue = update.increasedValue;
       _markIncreasedValueDirty();
     }
 
+    if (_increasedValueAttributes != update.increasedValueAttributes) {
+      _increasedValueAttributes = update.increasedValueAttributes;
+      _markIncreasedValueDirty();
+    }
+
     if (_decreasedValue != update.decreasedValue) {
       _decreasedValue = update.decreasedValue;
+      _markDecreasedValueDirty();
+    }
+
+    if (_decreasedValueAttributes != update.decreasedValueAttributes) {
+      _decreasedValueAttributes = update.decreasedValueAttributes;
       _markDecreasedValueDirty();
     }
 
@@ -784,15 +870,24 @@ class SemanticsObject {
   /// > A map literal is ordered: iterating over the keys and/or values of the maps always happens in the order the keys appeared in the source code.
   final Map<Role, RoleManager?> _roleManagers = <Role, RoleManager?>{};
 
+  /// Returns the role manager for the given [role].
+  ///
+  /// If a role manager does not exist for the given role, returns null.
+  RoleManager? debugRoleManagerFor(Role role) => _roleManagers[role];
+
   /// Detects the roles that this semantics object corresponds to and manages
   /// the lifecycles of [SemanticsObjectRole] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isVisualOnly);
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isTextField && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
-    _updateRole(
-        Role.tappable,
-        hasAction(ui.SemanticsAction.tap) ||
-            hasFlag(ui.SemanticsFlag.isButton));
+
+    final bool shouldUseTappableRole =
+      (hasAction(ui.SemanticsAction.tap) || hasFlag(ui.SemanticsFlag.isButton)) &&
+      // Text fields manage their own focus/tap interactions. We don't need the
+      // tappable role manager. It only confuses AT.
+      !isTextField;
+
+    _updateRole(Role.tappable, shouldUseTappableRole);
     _updateRole(Role.incrementable, isIncrementable);
     _updateRole(Role.scrollable,
         isVerticalScrollContainer || isHorizontalScrollContainer);
@@ -975,7 +1070,7 @@ class SemanticsObject {
     if (_previousChildrenInTraversalOrder == null ||
         _previousChildrenInTraversalOrder!.isEmpty) {
       _previousChildrenInTraversalOrder = _childrenInTraversalOrder;
-      for (int id in _previousChildrenInTraversalOrder!) {
+      for (final int id in _previousChildrenInTraversalOrder!) {
         final SemanticsObject child = owner.getOrCreateObject(id);
         containerElement!.append(child.element);
         owner._attachObject(parent: this, child: child);
@@ -1144,7 +1239,7 @@ class EngineSemanticsOwner {
     _instance = null;
   }
 
-  final Map<int?, SemanticsObject?> _semanticsTree = <int?, SemanticsObject?>{};
+  final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
 
   /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
   /// this frame.
@@ -1195,7 +1290,7 @@ class EngineSemanticsOwner {
   /// the one-time callbacks scheduled via the [addOneTimePostUpdateCallback]
   /// method.
   void _finalizeTree() {
-    for (SemanticsObject? object in _detachments) {
+    for (final SemanticsObject? object in _detachments) {
       final SemanticsObject? parent = _attachments[object!.id];
       if (parent == null) {
         // Was not reparented and is removed permanently from the tree.
@@ -1211,7 +1306,7 @@ class EngineSemanticsOwner {
     _attachments = <int?, SemanticsObject>{};
 
     if (_oneTimePostUpdateCallbacks.isNotEmpty) {
-      for (ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
+      for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
         callback();
       }
       _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
@@ -1221,8 +1316,8 @@ class EngineSemanticsOwner {
   /// Returns the entire semantics tree for testing.
   ///
   /// Works only in debug mode.
-  Map<int?, SemanticsObject?>? get debugSemanticsTree {
-    Map<int?, SemanticsObject?>? result;
+  Map<int, SemanticsObject>? get debugSemanticsTree {
+    Map<int, SemanticsObject>? result;
     assert(() {
       result = _semanticsTree;
       return true;
@@ -1233,6 +1328,7 @@ class EngineSemanticsOwner {
   /// The top-level DOM element of the semantics DOM element tree.
   html.Element? _rootSemanticsElement;
 
+  // ignore: prefer_function_declarations_over_variables
   TimestampFunction _now = () => DateTime.now();
 
   void debugOverrideTimestampFunction(TimestampFunction value) {
@@ -1279,13 +1375,7 @@ class EngineSemanticsOwner {
       _rootSemanticsElement = null;
       _gestureModeClock?.datetime = null;
     }
-    if (_semanticsEnabled != EnginePlatformDispatcher.instance.semanticsEnabled) {
-      EnginePlatformDispatcher.instance._configuration =
-        EnginePlatformDispatcher.instance._configuration.copyWith(semanticsEnabled: _semanticsEnabled);
-      if (EnginePlatformDispatcher.instance._onSemanticsEnabledChanged != null) {
-        EnginePlatformDispatcher.instance.invokeOnSemanticsEnabledChanged();
-      }
-    }
+    EnginePlatformDispatcher.instance.updateSemanticsEnabled(_semanticsEnabled);
   }
 
   /// Controls how pointer events and browser-detected gestures are treated by
@@ -1471,11 +1561,22 @@ class EngineSemanticsOwner {
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
     if (!_semanticsEnabled) {
-      return;
+      if (ui.debugEmulateFlutterTesterEnvironment) {
+        // Running Flutter widget tests in a fake environment. Don't enable
+        // engine semantics. Test semantics trees violate invariants in ways
+        // production implementation isn't built to handle. For example, tests
+        // routinely reset semantics node IDs, which is messing up the update
+        // process.
+        return;
+      } else {
+        // Running a real app. Auto-enable engine semantics.
+        semanticsHelper.dispose(); // placeholder no longer needed
+        semanticsEnabled = true;
+      }
     }
 
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
-    for (SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
+    for (final SemanticsNodeUpdate nodeUpdate in update._nodeUpdates!) {
       final SemanticsObject object = getOrCreateObject(nodeUpdate.id);
       object.updateWith(nodeUpdate);
     }
@@ -1496,7 +1597,7 @@ class EngineSemanticsOwner {
         // Ensure child ID list is consistent with the parent-child
         // relationship of the semantics tree.
         if (object!._childrenInTraversalOrder != null) {
-          for (int childId in object._childrenInTraversalOrder!) {
+          for (final int childId in object._childrenInTraversalOrder!) {
             final SemanticsObject? child = _semanticsTree[childId];
             if (child == null) {
               throw AssertionError('Child #$childId is missing in the tree.');
@@ -1516,7 +1617,7 @@ class EngineSemanticsOwner {
       });
 
       // Validate that all updates were applied
-      for (SemanticsNodeUpdate update in update._nodeUpdates!) {
+      for (final SemanticsNodeUpdate update in update._nodeUpdates!) {
         // Node was added to the tree.
         assert(_semanticsTree.containsKey(update.id));
       }

@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import '../../matchers.dart';
 
@@ -22,20 +20,20 @@ void main() {
 }
 
 void testMain() {
-  PersistedPlatformView view;
+  late PersistedPlatformView view;
 
   group('PersistedPlatformView', () {
     setUp(() async {
       platformViewRegistry.registerViewFactory(
         'test-0',
-        (viewId) => html.DivElement(),
+        (int viewId) => html.DivElement(),
       );
       platformViewRegistry.registerViewFactory(
         'test-1',
-        (viewId) => html.DivElement(),
+        (int viewId) => html.DivElement(),
       );
       // Ensure the views are created...
-      await Future.wait([
+      await Future.wait(<Future<void>>[
         _createPlatformView(0, 'test-0'),
         _createPlatformView(1, 'test-1'),
       ]);
@@ -44,7 +42,7 @@ void testMain() {
 
     group('update', () {
       test('throws assertion error if called with different viewIds', () {
-        final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(() {
           view.update(differentView);
         }, throwsAssertionError);
@@ -53,30 +51,27 @@ void testMain() {
 
     group('canUpdateAsMatch', () {
       test('returns true when viewId is the same', () {
-        final sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
+        final PersistedPlatformView sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(sameView), isTrue);
       });
 
       test('returns false when viewId is different', () {
-        final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(differentView), isFalse);
       });
 
       test('returns false when other view is not a PlatformView', () {
-        final anyView = PersistedOpacity(null, 1, Offset(0, 0))..build();
+        final PersistedOpacity anyView = PersistedOpacity(null, 1, const Offset(0, 0))..build();
         expect(view.canUpdateAsMatch(anyView), isFalse);
       });
     });
 
     group('createElement', () {
-      test('adds reset to stylesheet', () {
-        final element = view.createElement();
-        _assertShadowRootStylesheetContains(element, 'all: initial;');
-      });
+      test('creates slot element that can receive pointer events', () {
+        final html.Element element = view.createElement();
 
-      test('creates element transparent to "cursor" property', () {
-        final element = view.createElement();
-        _assertShadowRootStylesheetContains(element, 'cursor: inherit;');
+        expect(element.tagName, equalsIgnoringCase('flt-platform-view-slot'));
+        expect(element.style.pointerEvents, 'auto');
       });
     });
   });
@@ -84,7 +79,7 @@ void testMain() {
 
 // Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> _createPlatformView(int id, String viewType) {
-  final completer = Completer<void>();
+  final Completer<void> completer = Completer<void>();
   window.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
@@ -97,15 +92,4 @@ Future<void> _createPlatformView(int id, String viewType) {
     (dynamic _) => completer.complete(),
   );
   return completer.future;
-}
-
-void _assertShadowRootStylesheetContains(html.Element element, String rule) {
-  final shadow = element.shadowRoot;
-
-  expect(shadow, isNotNull);
-
-  final html.StyleElement style = shadow.children.first;
-
-  expect(style, isNotNull);
-  expect(style.innerHtml, contains(rule));
 }

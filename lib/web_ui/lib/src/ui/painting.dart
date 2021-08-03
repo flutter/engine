@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// For documentation see https://github.com/flutter/engine/blob/master/lib/ui/painting.dart
+// ignore_for_file: public_member_api_docs
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -33,7 +35,7 @@ Color _scaleAlpha(Color a, double factor) {
 }
 
 class Color {
-  const Color(int value) : this.value = value & 0xFFFFFFFF;
+  const Color(int value) : this.value = value & 0xFFFFFFFF;// ignore: unnecessary_this
   const Color.fromARGB(int a, int r, int g, int b)
       : value = (((a & 0xff) << 24) |
                 ((r & 0xff) << 16) |
@@ -278,7 +280,7 @@ abstract class Gradient extends Shader {
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
   ]) {
-    Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
+    final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
     return engine.useCanvasKit
         ? engine.CkGradientLinear(
         from, to, colors, colorStops, tileMode, matrix)
@@ -399,18 +401,23 @@ class ImageFilter {
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
     }
-    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY);
+    // TODO(ferhat): implement TileMode.
+    return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
-  ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
-    // TODO(flutter_web): add implementation.
-    throw UnimplementedError('ImageFilter.matrix not implemented for web platform.');
-    //    if (matrix4.length != 16)
-    //      throw ArgumentError('"matrix4" must have 16 entries.');
+  factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.low}) {
+    if (matrix4.length != 16)
+      throw ArgumentError('"matrix4" must have 16 entries.');
+    if (engine.useCanvasKit) {
+      return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
+    }
+    // TODO(yjbanov): implement FilterQuality.
+    return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
   }
 
+  // TODO(ferhat): add implementation and remove the "ignore".
+  // ignore: avoid_unused_constructor_parameters
   ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
-     // TODO(flutter_web): add implementation.
     throw UnimplementedError(
         'ImageFilter.compose not implemented for web platform.');
   }
@@ -455,7 +462,7 @@ Future<Codec> instantiateImageCodec(
   bool allowUpscaling = true,
 }) async {
   if (engine.useCanvasKit) {
-    // TODO: Implement targetWidth and targetHeight support.
+    // TODO(hterkelsen): Implement targetWidth and targetHeight support.
     return engine.skiaInstantiateImageCodec(list);
   } else {
     final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
@@ -589,12 +596,13 @@ void decodeImageFromPixels(
     return;
   }
 
-  void Function(Codec) callbacker = (Codec codec) {
+  void executeCallback(Codec codec) {
     codec.getNextFrame().then((FrameInfo frameInfo) {
       callback(frameInfo.image);
     });
-  };
-  _createBmp(pixels, width, height, rowBytes ?? width, format).then(callbacker);
+  }
+  _createBmp(pixels, width, height, rowBytes ?? width, format).then(
+      executeCallback);
 
 }
 
@@ -614,7 +622,7 @@ class Shadow {
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
   static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
+    return radius > 0 ? radius * 0.57735 + 0.5 : 0;
   }
 
   double get blurSigma => convertRadiusToSigma(blurRadius);
@@ -693,12 +701,9 @@ class Shadow {
 class ImageShader extends Shader {
   factory ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality);
-    }
-    throw UnsupportedError('ImageShader not implemented for web platform.');
-  }
+  }) => engine.useCanvasKit
+      ? engine.CkImageShader(image, tmx, tmy, matrix4, filterQuality)
+      : engine.EngineImageShader(image, tmx, tmy, matrix4, filterQuality);
 }
 
 class ImmutableBuffer {
@@ -711,6 +716,15 @@ class ImmutableBuffer {
 
   Uint8List? _list;
   final int length;
+
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _list == null;
+      return true;
+    }());
+    return disposed;
+  }
   void dispose() => _list = null;
 }
 
@@ -760,7 +774,7 @@ class ImageDescriptor {
       throw StateError('Object is disposed');
     }
     if (_width == null) {
-      return await instantiateImageCodec(
+      return instantiateImageCodec(
         _data!,
         targetWidth: targetWidth,
         targetHeight: targetHeight,
@@ -768,6 +782,6 @@ class ImageDescriptor {
       );
     }
 
-    return await _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
+    return _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }

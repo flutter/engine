@@ -2,33 +2,38 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 
-import 'exceptions.dart';
-
 /// Contains various environment variables, such as common file paths and command-line options.
 Environment get environment {
-  _environment ??= Environment();
-  return _environment;
+  return _environment ??= Environment();
 }
 
-Environment _environment;
+Environment? _environment;
 
 /// Contains various environment variables, such as common file paths and command-line options.
 class Environment {
+  /// Creates an environment deduced from the path of the main Dart script.
   factory Environment() {
-    final io.File self = io.File.fromUri(io.Platform.script);
-    final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
-    return _prepareEnvironmentFromEngineDir(self, engineSrcDir);
-  }
-
-  factory Environment.forIntegrationTests() {
-    final io.File self = io.File.fromUri(io.Platform.script);
-    final io.Directory engineSrcDir =
-        self.parent.parent.parent.parent.parent.parent;
-    return _prepareEnvironmentFromEngineDir(self, engineSrcDir);
+    final io.File script = io.File.fromUri(io.Platform.script);
+    io.Directory directory = script.parent;
+    bool foundEngineRepoRoot = false;
+    while (!foundEngineRepoRoot) {
+      foundEngineRepoRoot = directory
+        .listSync()
+        .whereType<io.File>()
+        .map((io.File file) => pathlib.basename(file.path))
+        .contains('DEPS');
+      final io.Directory parent = directory.parent;
+      if (parent.path == directory.path) {
+        throw Exception(
+          'Failed to locate the root of the engine repository starting from ${script.path}',
+        );
+      }
+      directory = parent;
+    }
+    return _prepareEnvironmentFromEngineDir(script, directory);
   }
 
   static Environment _prepareEnvironmentFromEngineDir(
@@ -43,10 +48,8 @@ class Environment {
         io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
-    final io.Directory integrationTestsDir = io.Directory(
-        pathlib.join(engineSrcDir.path, 'flutter', 'e2etests', 'web'));
 
-    for (io.Directory expectedDirectory in <io.Directory>[
+    for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
       outDir,
       hostDebugUnoptDir,
@@ -54,7 +57,7 @@ class Environment {
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
-        throw ToolException('$expectedDirectory does not exist.');
+        throw Exception('$expectedDirectory does not exist.');
       }
     }
 
@@ -63,7 +66,6 @@ class Environment {
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
-      integrationTestsDir: integrationTestsDir,
       outDir: outDir,
       hostDebugUnoptDir: hostDebugUnoptDir,
       dartSdkDir: dartSdkDir,
@@ -71,14 +73,13 @@ class Environment {
   }
 
   Environment._({
-    this.self,
-    this.webUiRootDir,
-    this.engineSrcDir,
-    this.engineToolsDir,
-    this.integrationTestsDir,
-    this.outDir,
-    this.hostDebugUnoptDir,
-    this.dartSdkDir,
+    required this.self,
+    required this.webUiRootDir,
+    required this.engineSrcDir,
+    required this.engineToolsDir,
+    required this.outDir,
+    required this.hostDebugUnoptDir,
+    required this.dartSdkDir,
   });
 
   /// The Dart script that's currently running.
@@ -92,9 +93,6 @@ class Environment {
 
   /// Path to the engine's "tools" directory.
   final io.Directory engineToolsDir;
-
-  /// Path to the web integration tests.
-  final io.Directory integrationTestsDir;
 
   /// Path to the engine's "out" directory.
   ///
@@ -120,6 +118,8 @@ class Environment {
   /// Path to where github.com/flutter/engine is checked out inside the engine workspace.
   io.Directory get flutterDirectory =>
       io.Directory(pathlib.join(engineSrcDir.path, 'flutter'));
+
+  /// Path to the "web_sdk" directory in the engine source tree.
   io.Directory get webSdkRootDir => io.Directory(pathlib.join(
         flutterDirectory.path,
         'web_sdk',

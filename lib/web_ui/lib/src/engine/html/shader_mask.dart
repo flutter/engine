@@ -2,7 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart' show NullTreeSanitizer;
+import '../browser_detection.dart';
+import '../dom_renderer.dart';
+import 'bitmap_canvas.dart';
+import 'path_to_svg_clip.dart';
+import 'shaders/shader.dart';
+import 'surface.dart';
 
 /// A surface that applies a shader to its children.
 ///
@@ -31,7 +41,6 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   html.Element? _shaderElement;
-  static int activeShaderMaskCount = 0;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -49,6 +58,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   @override
   void discard() {
     super.discard();
+    domRenderer.removeResource(_shaderElement);
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -56,17 +66,17 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  void preroll() {
-    ++activeShaderMaskCount;
-    super.preroll();
-    --activeShaderMaskCount;
+  void preroll(PrerollSurfaceContext prerollContext) {
+    ++prerollContext.activeShaderMaskCount;
+    super.preroll(prerollContext);
+    --prerollContext.activeShaderMaskCount;
   }
 
   @override
   html.Element createElement() {
-    html.Element element = defaultCreateElement('flt-shader-mask');
-    html.Element container = html.Element.tag('flt-mask-interior');
-    container.style..position = 'absolute';
+    final html.Element element = defaultCreateElement('flt-shader-mask');
+    final html.Element container = html.Element.tag('flt-mask-interior');
+    container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
     return element;
@@ -74,7 +84,7 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   void apply() {
-    _shaderElement?.remove();
+    domRenderer.removeResource(_shaderElement);
     _shaderElement = null;
     if (shader is ui.Gradient) {
       rootElement!.style
@@ -92,13 +102,13 @@ class PersistedShaderMask extends PersistedContainerSurface
       }
       return;
     }
-    // TODO: Implement _applyImageShader();
+    // TODO(ferhat): Implement _applyImageShader();
     throw Exception('Shader type not supported for ShaderMask');
   }
 
   void _applyGradientShader() {
     if (shader is EngineGradient) {
-      EngineGradient gradientShader = shader as EngineGradient;
+      final EngineGradient gradientShader = shader as EngineGradient;
       final String imageUrl =
           gradientShader.createImageBitmap(maskRect, 1, true) as String;
       ui.BlendMode blendModeTemp = blendMode;
@@ -145,17 +155,17 @@ class PersistedShaderMask extends PersistedContainerSurface
           break;
       }
 
-      String code = svgMaskFilterFromImageAndBlendMode(
+      final String code = svgMaskFilterFromImageAndBlendMode(
           imageUrl, blendModeTemp, maskRect.width, maskRect.height)!;
 
       _shaderElement =
-          html.Element.html(code, treeSanitizer: _NullTreeSanitizer());
+          html.Element.html(code, treeSanitizer: NullTreeSanitizer());
       if (isWebKit) {
-        _childContainer!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
+        _childContainer!.style.filter = 'url(#_fmf$_maskFilterIdCounter';
       } else {
-        rootElement!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
+        rootElement!.style.filter = 'url(#_fmf$_maskFilterIdCounter';
       }
-      rootElement!.append(_shaderElement!);
+      domRenderer.addResource(_shaderElement!);
     }
   }
 
@@ -220,19 +230,15 @@ String? svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.luminosity:
     case ui.BlendMode.multiply:
     case ui.BlendMode.screen:
-    case ui.BlendMode.overlay:
     case ui.BlendMode.darken:
     case ui.BlendMode.lighten:
-    case ui.BlendMode.colorDodge:
-    case ui.BlendMode.colorBurn:
     case ui.BlendMode.hardLight:
     case ui.BlendMode.softLight:
     case ui.BlendMode.difference:
     case ui.BlendMode.exclusion:
       svgFilter = _blendImageToSvg(
-          imageUrl, _stringForBlendMode(blendMode), width, height);
+          imageUrl, stringForBlendMode(blendMode), width, height);
       break;
-    case ui.BlendMode.src:
     case ui.BlendMode.dst:
     case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:

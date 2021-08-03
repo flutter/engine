@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -76,7 +75,7 @@ void testMain() {
       expectWords("Students' grades", <String>['Students', "'", ' ', 'grades']);
       expectWords(
         'Joe said: "I\'m here"',
-        <String>['Joe', ' ', 'said', ':', ' ', '"', "I\'m", ' ', 'here', '"'],
+        <String>['Joe', ' ', 'said', ':', ' ', '"', "I'm", ' ', 'here', '"'],
       );
     });
 
@@ -141,7 +140,7 @@ void expectWords(String text, List<String> expectedWords) {
   int strIndex = 0;
 
   // Forward word break lookup.
-  for (String word in expectedWords) {
+  for (final String word in expectedWords) {
     final int nextBreak = WordBreaker.nextBreakIndex(text, strIndex);
     expect(
       nextBreak, strIndex + word.length,
@@ -152,7 +151,7 @@ void expectWords(String text, List<String> expectedWords) {
 
   // Backward word break lookup.
   strIndex = text.length;
-  for (String word in expectedWords.reversed) {
+  for (final String word in expectedWords.reversed) {
     final int prevBreak = WordBreaker.prevBreakIndex(text, strIndex);
     expect(
       prevBreak, strIndex - word.length,

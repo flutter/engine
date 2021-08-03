@@ -11,11 +11,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver.OnPreDrawListener;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -28,6 +28,7 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.util.ViewUtils;
 import java.util.Arrays;
 
 /**
@@ -67,15 +68,17 @@ import java.util.Arrays;
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
+  private static final int FLUTTER_SPLASH_VIEW_FALLBACK_ID = 486947586;
 
   // The FlutterActivity or FlutterFragment that is delegating most of its calls
   // to this FlutterActivityAndFragmentDelegate.
   @NonNull private Host host;
   @Nullable private FlutterEngine flutterEngine;
-  @Nullable private FlutterSplashView flutterSplashView;
   @Nullable private FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
+  @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
+  private boolean isFlutterUiDisplayed;
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -83,11 +86,13 @@ import java.util.Arrays;
         @Override
         public void onFlutterUiDisplayed() {
           host.onFlutterUiDisplayed();
+          isFlutterUiDisplayed = true;
         }
 
         @Override
         public void onFlutterUiNoLongerDisplayed() {
           host.onFlutterUiNoLongerDisplayed();
+          isFlutterUiDisplayed = false;
         }
       };
 
@@ -102,8 +107,9 @@ import java.util.Arrays;
    * <p>No further method invocations may occur on this {@code FlutterActivityAndFragmentDelegate}
    * after invoking this method. If a method is invoked, an exception will occur.
    *
-   * <p>This method only clears out references. It does not destroy its {@link FlutterEngine}. The
-   * behavior that destroys a {@link FlutterEngine} can be found in {@link #onDetach()}.
+   * <p>This method only clears out references. It does not destroy its {@link
+   * io.flutter.embedding.engine.FlutterEngine}. The behavior that destroys a {@link
+   * io.flutter.embedding.engine.FlutterEngine} can be found in {@link #onDetach()}.
    */
   void release() {
     this.host = null;
@@ -113,8 +119,8 @@ import java.util.Arrays;
   }
 
   /**
-   * Returns the {@link FlutterEngine} that is owned by this delegate and its host {@code Activity}
-   * or {@code Fragment}.
+   * Returns the {@link io.flutter.embedding.engine.FlutterEngine} that is owned by this delegate
+   * and its host {@code Activity} or {@code Fragment}.
    */
   @Nullable
   /* package */ FlutterEngine getFlutterEngine() {
@@ -139,10 +145,11 @@ import java.util.Arrays;
    *
    * <ol>
    *   <li>Initializes the Flutter system.
-   *   <li>Obtains or creates a {@link FlutterEngine}.
+   *   <li>Obtains or creates a {@link io.flutter.embedding.engine.FlutterEngine}.
    *   <li>Creates and configures a {@link PlatformPlugin}.
-   *   <li>Attaches the {@link FlutterEngine} to the surrounding {@code Activity}, if desired.
-   *   <li>Configures the {@link FlutterEngine} via {@link
+   *   <li>Attaches the {@link io.flutter.embedding.engine.FlutterEngine} to the surrounding {@code
+   *       Activity}, if desired.
+   *   <li>Configures the {@link io.flutter.embedding.engine.FlutterEngine} via {@link
    *       Host#configureFlutterEngine(FlutterEngine)}.
    * </ol>
    */
@@ -196,14 +203,15 @@ import java.util.Arrays;
    *
    * <p>
    *
-   * <p>First, the {@code host} is asked if it would like to use a cached {@link FlutterEngine}, and
-   * if so, the cached {@link FlutterEngine} is retrieved.
+   * <p>First, the {@code host} is asked if it would like to use a cached {@link
+   * io.flutter.embedding.engine.FlutterEngine}, and if so, the cached {@link
+   * io.flutter.embedding.engine.FlutterEngine} is retrieved.
    *
-   * <p>Second, the {@code host} is given an opportunity to provide a {@link FlutterEngine} via
-   * {@link Host#provideFlutterEngine(Context)}.
+   * <p>Second, the {@code host} is given an opportunity to provide a {@link
+   * io.flutter.embedding.engine.FlutterEngine} via {@link Host#provideFlutterEngine(Context)}.
    *
-   * <p>If the {@code host} does not provide a {@link FlutterEngine}, then a new {@link
-   * FlutterEngine} is instantiated.
+   * <p>If the {@code host} does not provide a {@link io.flutter.embedding.engine.FlutterEngine},
+   * then a new {@link FlutterEngine} is instantiated.
    */
   @VisibleForTesting
   /* package */ void setupFlutterEngine() {
@@ -251,59 +259,83 @@ import java.util.Arrays;
    *
    * <p>{@code inflater} and {@code container} may be null when invoked from an {@code Activity}.
    *
+   * <p>{@code shouldDelayFirstAndroidViewDraw} determines whether to set up an {@link
+   * android.view.ViewTreeObserver.OnPreDrawListener}, which will defer the current drawing pass
+   * till after the Flutter UI has been displayed. This results in more accurate timings reported
+   * with Android tools, such as "Displayed" timing printed with `am start`.
+   *
+   * <p>Note that it should only be set to true when {@code Host#getRenderMode()} is {@code
+   * RenderMode.surface}. This parameter is also ignored, disabling the delay should the legacy
+   * {@code Host#provideSplashScreen()} be non-null. See <a
+   * href="https://flutter.dev/go/android-splash-migration">Android Splash Migration</a>.
+   *
    * <p>This method:
    *
    * <ol>
    *   <li>creates a new {@link FlutterView} in a {@code View} hierarchy
    *   <li>adds a {@link FlutterUiDisplayListener} to it
-   *   <li>attaches a {@link FlutterEngine} to the new {@link FlutterView}
+   *   <li>attaches a {@link io.flutter.embedding.engine.FlutterEngine} to the new {@link
+   *       FlutterView}
    *   <li>returns the new {@code View} hierarchy
    * </ol>
    */
   @NonNull
   View onCreateView(
-      LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+      LayoutInflater inflater,
+      @Nullable ViewGroup container,
+      @Nullable Bundle savedInstanceState,
+      int flutterViewId,
+      boolean shouldDelayFirstAndroidViewDraw) {
     Log.v(TAG, "Creating FlutterView.");
     ensureAlive();
 
     if (host.getRenderMode() == RenderMode.surface) {
       FlutterSurfaceView flutterSurfaceView =
           new FlutterSurfaceView(
-              host.getActivity(), host.getTransparencyMode() == TransparencyMode.transparent);
+              host.getContext(), host.getTransparencyMode() == TransparencyMode.transparent);
 
       // Allow our host to customize FlutterSurfaceView, if desired.
       host.onFlutterSurfaceViewCreated(flutterSurfaceView);
 
       // Create the FlutterView that owns the FlutterSurfaceView.
-      flutterView = new FlutterView(host.getActivity(), flutterSurfaceView);
+      flutterView = new FlutterView(host.getContext(), flutterSurfaceView);
     } else {
-      FlutterTextureView flutterTextureView = new FlutterTextureView(host.getActivity());
+      FlutterTextureView flutterTextureView = new FlutterTextureView(host.getContext());
+
+      flutterTextureView.setOpaque(host.getTransparencyMode() == TransparencyMode.opaque);
 
       // Allow our host to customize FlutterSurfaceView, if desired.
       host.onFlutterTextureViewCreated(flutterTextureView);
 
       // Create the FlutterView that owns the FlutterTextureView.
-      flutterView = new FlutterView(host.getActivity(), flutterTextureView);
+      flutterView = new FlutterView(host.getContext(), flutterTextureView);
     }
 
     // Add listener to be notified when Flutter renders its first frame.
     flutterView.addOnFirstFrameRenderedListener(flutterUiDisplayListener);
 
-    flutterSplashView = new FlutterSplashView(host.getContext());
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      flutterSplashView.setId(View.generateViewId());
-    } else {
-      // TODO(mattcarroll): Find a better solution to this ID. This is a random, static ID.
-      // It might conflict with other Views, and it means that only a single FlutterSplashView
-      // can exist in a View hierarchy at one time.
-      flutterSplashView.setId(486947586);
-    }
-    flutterSplashView.displayFlutterViewWithSplash(flutterView, host.provideSplashScreen());
-
     Log.v(TAG, "Attaching FlutterEngine to FlutterView.");
     flutterView.attachToFlutterEngine(flutterEngine);
+    flutterView.setId(flutterViewId);
 
-    return flutterSplashView;
+    SplashScreen splashScreen = host.provideSplashScreen();
+
+    if (splashScreen != null) {
+      Log.w(
+          TAG,
+          "A splash screen was provided to Flutter, but this is deprecated. See"
+              + " flutter.dev/go/android-splash-migration for migration steps.");
+      FlutterSplashView flutterSplashView = new FlutterSplashView(host.getContext());
+      flutterSplashView.setId(ViewUtils.generateViewId(FLUTTER_SPLASH_VIEW_FALLBACK_ID));
+      flutterSplashView.displayFlutterViewWithSplash(flutterView, splashScreen);
+
+      return flutterSplashView;
+    }
+
+    if (shouldDelayFirstAndroidViewDraw) {
+      delayFirstAndroidViewDraw(flutterView);
+    }
+    return flutterView;
   }
 
   void onRestoreInstanceState(@Nullable Bundle bundle) {
@@ -399,14 +431,49 @@ import java.util.Arrays;
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
       if (data != null && !data.getPath().isEmpty()) {
-        String pathAndQuery = data.getPath();
+        String fullRoute = data.getPath();
         if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-          pathAndQuery += "?" + data.getQuery();
+          fullRoute += "?" + data.getQuery();
         }
-        return pathAndQuery;
+        if (data.getFragment() != null && !data.getFragment().isEmpty()) {
+          fullRoute += "#" + data.getFragment();
+        }
+        return fullRoute;
       }
     }
     return null;
+  }
+
+  /**
+   * Delays the first drawing of the {@code flutterView} until the Flutter first has been displayed.
+   */
+  private void delayFirstAndroidViewDraw(FlutterView flutterView) {
+    if (host.getRenderMode() != RenderMode.surface) {
+      // Using a TextureView will cause a deadlock, where the underlying SurfaceTexture is never
+      // available since it will wait for drawing to be completed first. At the same time, the
+      // preDraw listener keeps returning false since the Flutter Engine waits for the
+      // SurfaceTexture to be available.
+      throw new IllegalArgumentException(
+          "Cannot delay the first Android view draw when the render mode is not set to"
+              + " `RenderMode.surface`.");
+    }
+
+    if (activePreDrawListener != null) {
+      flutterView.getViewTreeObserver().removeOnPreDrawListener(activePreDrawListener);
+    }
+
+    activePreDrawListener =
+        new OnPreDrawListener() {
+          @Override
+          public boolean onPreDraw() {
+            if (isFlutterUiDisplayed && activePreDrawListener != null) {
+              flutterView.getViewTreeObserver().removeOnPreDrawListener(this);
+              activePreDrawListener = null;
+            }
+            return isFlutterUiDisplayed;
+          }
+        };
+    flutterView.getViewTreeObserver().addOnPreDrawListener(activePreDrawListener);
   }
 
   /**
@@ -471,7 +538,8 @@ import java.util.Arrays;
    * <ol>
    *   <li>This method notifies the running Flutter app that it is "paused" as per the Flutter app
    *       lifecycle.
-   *   <li>Detaches this delegate's {@link FlutterEngine} from this delegate's {@link FlutterView}.
+   *   <li>Detaches this delegate's {@link io.flutter.embedding.engine.FlutterEngine} from this
+   *       delegate's {@link FlutterView}.
    * </ol>
    */
   void onStop() {
@@ -489,6 +557,10 @@ import java.util.Arrays;
     Log.v(TAG, "onDestroyView()");
     ensureAlive();
 
+    if (activePreDrawListener != null) {
+      flutterView.getViewTreeObserver().removeOnPreDrawListener(activePreDrawListener);
+      activePreDrawListener = null;
+    }
     flutterView.detachFromFlutterEngine();
     flutterView.removeOnFirstFrameRenderedListener(flutterUiDisplayListener);
   }
@@ -536,10 +608,10 @@ import java.util.Arrays;
    * <p>
    *
    * <ol>
-   *   <li>Detaches this delegate's {@link FlutterEngine} from its surrounding {@code Activity}, if
-   *       it was previously attached.
+   *   <li>Detaches this delegate's {@link io.flutter.embedding.engine.FlutterEngine} from its
+   *       surrounding {@code Activity}, if it was previously attached.
    *   <li>Destroys this delegate's {@link PlatformPlugin}.
-   *   <li>Destroys this delegate's {@link FlutterEngine} if {@link
+   *   <li>Destroys this delegate's {@link io.flutter.embedding.engine.FlutterEngine} if {@link
    *       Host#shouldDestroyEngineWithHost()} ()} returns true.
    * </ol>
    */
@@ -584,7 +656,7 @@ import java.util.Arrays;
   }
 
   /**
-   * Invoke this from {@link Activity#onBackPressed()}.
+   * Invoke this from {@link android.app.Activity#onBackPressed()}.
    *
    * <p>A {@code Fragment} host must have its containing {@code Activity} forward this call so that
    * the {@code Fragment} can then invoke this method.
@@ -602,8 +674,8 @@ import java.util.Arrays;
   }
 
   /**
-   * Invoke this from {@link Activity#onRequestPermissionsResult(int, String[], int[])} or {@code
-   * Fragment#onRequestPermissionsResult(int, String[], int[])}.
+   * Invoke this from {@link android.app.Activity#onRequestPermissionsResult(int, String[], int[])}
+   * or {@code Fragment#onRequestPermissionsResult(int, String[], int[])}.
    *
    * <p>This method forwards to interested Flutter plugins.
    */
@@ -699,7 +771,7 @@ import java.util.Arrays;
   }
 
   /**
-   * Invoke this from {@link Activity#onTrimMemory(int)}.
+   * Invoke this from {@link android.app.Activity#onTrimMemory(int)}.
    *
    * <p>A {@code Fragment} host must have its containing {@code Activity} forward this call so that
    * the {@code Fragment} can then invoke this method.
@@ -724,7 +796,7 @@ import java.util.Arrays;
   }
 
   /**
-   * Invoke this from {@link Activity#onLowMemory()}.
+   * Invoke this from {@link android.app.Activity#onLowMemory()}.
    *
    * <p>A {@code Fragment} host must have its containing {@code Activity} forward this call so that
    * the {@code Fragment} can then invoke this method.
@@ -759,7 +831,10 @@ import java.util.Arrays;
           FlutterEngineProvider,
           FlutterEngineConfigurator,
           PlatformPlugin.PlatformPluginDelegate {
-    /** Returns the {@link Context} that backs the host {@link Activity} or {@code Fragment}. */
+    /**
+     * Returns the {@link Context} that backs the host {@link android.app.Activity} or {@code
+     * Fragment}.
+     */
     @NonNull
     Context getContext();
 
@@ -768,13 +843,16 @@ import java.util.Arrays;
     boolean shouldHandleDeeplinking();
 
     /**
-     * Returns the host {@link Activity} or the {@code Activity} that is currently attached to the
-     * host {@code Fragment}.
+     * Returns the host {@link android.app.Activity} or the {@code Activity} that is currently
+     * attached to the host {@code Fragment}.
      */
     @Nullable
     Activity getActivity();
 
-    /** Returns the {@link Lifecycle} that backs the host {@link Activity} or {@code Fragment}. */
+    /**
+     * Returns the {@link Lifecycle} that backs the host {@link android.app.Activity} or {@code
+     * Fragment}.
+     */
     @NonNull
     Lifecycle getLifecycle();
 
@@ -783,33 +861,36 @@ import java.util.Arrays;
     FlutterShellArgs getFlutterShellArgs();
 
     /**
-     * Returns the ID of a statically cached {@link FlutterEngine} to use within this delegate's
-     * host, or {@code null} if this delegate's host does not want to use a cached {@link
-     * FlutterEngine}.
+     * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngine} to
+     * use within this delegate's host, or {@code null} if this delegate's host does not want to use
+     * a cached {@link FlutterEngine}.
      */
     @Nullable
     String getCachedEngineId();
 
     /**
-     * Returns true if the {@link FlutterEngine} used in this delegate should be destroyed when the
-     * host/delegate are destroyed.
+     * Returns true if the {@link io.flutter.embedding.engine.FlutterEngine} used in this delegate
+     * should be destroyed when the host/delegate are destroyed.
      *
      * <p>The default value is {@code true} in cases where {@code FlutterFragment} created its own
-     * {@link FlutterEngine}, and {@code false} in cases where a cached {@link FlutterEngine} was
-     * provided.
+     * {@link io.flutter.embedding.engine.FlutterEngine}, and {@code false} in cases where a cached
+     * {@link io.flutter.embedding.engine.FlutterEngine} was provided.
      */
     boolean shouldDestroyEngineWithHost();
 
     /**
-     * Callback called when the {@link FlutterEngine} has been attached to by another activity
-     * before this activity was destroyed.
+     * Callback called when the {@link io.flutter.embedding.engine.FlutterEngine} has been attached
+     * to by another activity before this activity was destroyed.
      *
      * <p>The expected behavior is for this activity to synchronously stop using the {@link
      * FlutterEngine} to avoid lifecycle crosstalk with the new activity.
      */
     void detachFromFlutterEngine();
 
-    /** Returns the Dart entrypoint that should run when a new {@link FlutterEngine} is created. */
+    /**
+     * Returns the Dart entrypoint that should run when a new {@link
+     * io.flutter.embedding.engine.FlutterEngine} is created.
+     */
     @NonNull
     String getDartEntrypointFunctionName();
 
@@ -839,9 +920,11 @@ import java.util.Arrays;
     SplashScreen provideSplashScreen();
 
     /**
-     * Returns the {@link FlutterEngine} that should be rendered to a {@link FlutterView}.
+     * Returns the {@link io.flutter.embedding.engine.FlutterEngine} that should be rendered to a
+     * {@link FlutterView}.
      *
-     * <p>If {@code null} is returned, a new {@link FlutterEngine} will be created automatically.
+     * <p>If {@code null} is returned, a new {@link io.flutter.embedding.engine.FlutterEngine} will
+     * be created automatically.
      */
     @Nullable
     FlutterEngine provideFlutterEngine(@NonNull Context context);
@@ -854,7 +937,10 @@ import java.util.Arrays;
     PlatformPlugin providePlatformPlugin(
         @Nullable Activity activity, @NonNull FlutterEngine flutterEngine);
 
-    /** Hook for the host to configure the {@link FlutterEngine} as desired. */
+    /**
+     * Hook for the host to configure the {@link io.flutter.embedding.engine.FlutterEngine} as
+     * desired.
+     */
     void configureFlutterEngine(@NonNull FlutterEngine flutterEngine);
 
     /**
@@ -864,8 +950,8 @@ import java.util.Arrays;
     void cleanUpFlutterEngine(@NonNull FlutterEngine flutterEngine);
 
     /**
-     * Returns true if the {@link FlutterEngine}'s plugin system should be connected to the host
-     * {@link Activity}, allowing plugins to interact with it.
+     * Returns true if the {@link io.flutter.embedding.engine.FlutterEngine}'s plugin system should
+     * be connected to the host {@link android.app.Activity}, allowing plugins to interact with it.
      */
     boolean shouldAttachEngineToActivity();
 

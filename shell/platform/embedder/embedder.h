@@ -210,6 +210,10 @@ typedef enum {
   kFlutterSemanticsFlagIsFocusable = 1 << 21,
   /// Whether the semantics node represents a link.
   kFlutterSemanticsFlagIsLink = 1 << 22,
+  /// Whether the semantics node represents a slider.
+  kFlutterSemanticsFlagIsSlider = 1 << 23,
+  /// Whether the semantics node represents a keyboard key.
+  kFlutterSemanticsFlagIsKeyboardKey = 1 << 24,
 } FlutterSemanticsFlag;
 
 typedef enum {
@@ -495,6 +499,13 @@ typedef struct {
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
   FlutterMetalTextureHandle texture;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it no longer needs this backing
+  /// store.
+  VoidCallback destruction_callback;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
@@ -561,6 +572,14 @@ typedef struct {
   size_t left;
   /// Vertical physical location of the top of the window on the screen.
   size_t top;
+  /// Top inset of window.
+  double physical_view_inset_top;
+  /// Right inset of window.
+  double physical_view_inset_right;
+  /// Bottom inset of window.
+  double physical_view_inset_bottom;
+  /// Left inset of window.
+  double physical_view_inset_left;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -674,6 +693,14 @@ typedef enum {
 ///    released.
 ///  * All events throughout a key press sequence shall have the same `physical`
 ///    and `logical`. Having different `character`s is allowed.
+///
+/// A `FlutterKeyEvent` with `physical` 0 and `logical` 0 is an empty event.
+/// This is the only case either `physical` or `logical` can be 0. An empty
+/// event must be sent if a key message should be converted to no
+/// `FlutterKeyEvent`s, for example, when a key down message is received for a
+/// key that has already been pressed according to the record. This is to ensure
+/// some `FlutterKeyEvent` arrives at the framework before raw key message.
+/// See https://github.com/flutter/flutter/issues/87230.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
@@ -687,11 +714,17 @@ typedef struct {
   ///
   /// For the full definition and list of pre-defined physical keys, see
   /// `PhysicalKeyboardKey` from the framework.
+  ///
+  /// The only case that `physical` might be 0 is when this is an empty event.
+  /// See `FlutterKeyEvent` for introduction.
   uint64_t physical;
   /// The key ID for the logical key of this event.
   ///
   /// For the full definition and a list of pre-defined logical keys, see
   /// `LogicalKeyboardKey` from the framework.
+  ///
+  /// The only case that `logical` might be 0 is when this is an empty event.
+  /// See `FlutterKeyEvent` for introduction.
   uint64_t logical;
   /// Null-terminated character input from the event. Can be null. Ignored for
   /// up events.
@@ -944,6 +977,17 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterSoftwareBackingStore;
 
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterMetalBackingStore).
+  size_t struct_size;
+  union {
+    // A Metal texture for Flutter to render into. Ownership is not transferred
+    // to Flutter; the texture is CFRetained on successfully being passed in and
+    // CFReleased when no longer used.
+    FlutterMetalTexture texture;
+  };
+} FlutterMetalBackingStore;
+
 typedef enum {
   /// Indicates that the Flutter application requested that an opacity be
   /// applied to the platform view.
@@ -1001,6 +1045,8 @@ typedef enum {
   kFlutterBackingStoreTypeOpenGL,
   /// Specified an software allocation for Flutter to render into using the CPU.
   kFlutterBackingStoreTypeSoftware,
+  /// Specifies a Metal backing store. This is backed by a Metal texture.
+  kFlutterBackingStoreTypeMetal,
 } FlutterBackingStoreType;
 
 typedef struct {
@@ -1020,6 +1066,8 @@ typedef struct {
     FlutterOpenGLBackingStore open_gl;
     /// The description of the software backing store.
     FlutterSoftwareBackingStore software;
+    // The description of the Metal backing store.
+    FlutterMetalBackingStore metal;
   };
 } FlutterBackingStore;
 

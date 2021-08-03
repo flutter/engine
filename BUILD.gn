@@ -6,6 +6,7 @@ import("//flutter/common/config.gni")
 import("//flutter/shell/platform/config.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
+import("//third_party/dart/build/dart/copy_tree.gni")
 
 # Whether to build the dartdevc sdk, libraries, and source files
 # required for the flutter web sdk.
@@ -21,16 +22,10 @@ config("config") {
     }
   }
 
-  # This define is transitional and will be removed after the embedder API
-  # transition is complete.
-  #
-  # TODO(bugs.fuchsia.dev/54041): Remove when no longer necessary.
-  if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
-    defines = [ "LEGACY_FUCHSIA_EMBEDDER" ]
-  }
+  defines = []
 
   if (is_debug) {
-    defines = [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
+    defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
   }
 }
 
@@ -38,6 +33,35 @@ config("export_dynamic_symbols") {
   if (is_linux || is_fuchsia) {
     inputs = [ "//flutter/common/exported_symbols.sym" ]
     ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  }
+}
+
+if (flutter_prebuilt_dart_sdk) {
+  copy_trees("_copy_trees") {
+    sources = [
+      {
+        target = "copy_dart_sdk"
+        visibility = [ ":dart_sdk" ]
+        source = target_prebuilt_dart_sdk
+        dest = "$root_out_dir/dart-sdk"
+        ignore_patterns = "{}"
+      },
+    ]
+  }
+}
+
+# Flutter SDK artifacts should only be built when either doing host builds, or
+# for cross-compiled desktop targets.
+_build_engine_artifacts =
+    current_toolchain == host_toolchain || (is_linux && !is_chromeos) || is_mac
+
+group("dart_sdk") {
+  if (_build_engine_artifacts) {
+    if (flutter_prebuilt_dart_sdk) {
+      public_deps = [ ":copy_dart_sdk" ]
+    } else {
+      public_deps = [ "//third_party/dart:create_sdk" ]
+    }
   }
 }
 
@@ -50,11 +74,6 @@ group("flutter") {
     "//flutter/sky",
   ]
 
-  # Flutter SDK artifacts should only be built when either doing host builds, or
-  # for cross-compiled desktop targets.
-  build_engine_artifacts =
-      current_toolchain == host_toolchain || (is_linux && !is_chromeos)
-
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
     public_deps += [
@@ -62,10 +81,10 @@ group("flutter") {
       "//flutter/lib/snapshot:kernel_platform_files",
     ]
 
-    if (build_engine_artifacts) {
+    if (_build_engine_artifacts) {
       public_deps += [
+        ":dart_sdk",
         "//flutter/flutter_frontend_server:frontend_server",
-        "//third_party/dart:create_sdk",
 
         # This must be listed explicitly for desktop cross-builds since
         # //flutter/lib/snapshot:generate_snapshot_bin will only build
@@ -79,7 +98,7 @@ group("flutter") {
     }
   }
 
-  if (build_engine_artifacts) {
+  if (_build_engine_artifacts) {
     public_deps += [
       "//flutter/shell/testing",
       "//flutter/tools/const_finder",
@@ -97,11 +116,22 @@ group("flutter") {
     ]
   }
 
+  if ((flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile") &&
+      (is_ios || is_android)) {
+    public_deps += [ "//flutter/testing/scenario_app" ]
+  }
+
+  if (is_android && flutter_runtime_mode == "profile" &&
+      current_cpu == "arm64") {
+    public_deps += [ "//flutter/testing/android_background_image" ]
+  }
+
   # Compile all unittests targets if enabled.
   if (enable_unittests) {
     public_deps += [
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
+      "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
@@ -109,6 +139,8 @@ group("flutter") {
       "//flutter/shell/platform/embedder:embedder_proctable_unittests",
       "//flutter/shell/platform/embedder:embedder_unittests",
       "//flutter/testing:testing_unittests",
+      "//flutter/testing/dart",
+      "//flutter/testing/smoke_test_failure",
       "//flutter/third_party/tonic/tests:tonic_unittests",
       "//flutter/third_party/txt:txt_unittests",
     ]

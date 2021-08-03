@@ -28,12 +28,6 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "flutter/flow/scene_update_context.h"  //nogncheck
-#include "lib/ui/scenic/cpp/resources.h"        //nogncheck
-#include "lib/ui/scenic/cpp/session.h"          //nogncheck
-#endif
-
 namespace flutter {
 
 namespace testing {
@@ -64,17 +58,13 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a platform view during Preroll.
   bool has_platform_view = false;
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  // True if, during the traversal so far, we have seen a child_scene_layer.
-  // Informs whether a layer needs to be system composited.
-  bool child_scene_layer_exists_below = false;
-#endif
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a texture layer during Preroll.
   bool has_texture_layer = false;
 };
 
 class PictureLayer;
+class DisplayListLayer;
 class PerformanceOverlayLayer;
 class TextureLayer;
 
@@ -85,7 +75,7 @@ class Layer {
   Layer();
   virtual ~Layer();
 
-  virtual void AssignOldLayer(Layer* old_layer) {
+  void AssignOldLayer(Layer* old_layer) {
     original_layer_id_ = old_layer->original_layer_id_;
   }
 
@@ -191,15 +181,9 @@ class Layer {
 
   virtual void Paint(PaintContext& context) const = 0;
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  // Updates the system composited scene.
-  virtual void UpdateScene(std::shared_ptr<SceneUpdateContext> context);
-  virtual void CheckForChildLayerBelow(PrerollContext* context);
-#endif
-
-  bool needs_system_composite() const { return needs_system_composite_; }
-  void set_needs_system_composite(bool value) {
-    needs_system_composite_ = value;
+  bool subtree_has_platform_view() const { return subtree_has_platform_view_; }
+  void set_subtree_has_platform_view(bool value) {
+    subtree_has_platform_view_ = value;
   }
 
   // Returns the paint bounds in the layer's local coordinate system
@@ -229,6 +213,16 @@ class Layer {
   // Determines if the Paint() method is necessary based on the properties
   // of the indicated PaintContext object.
   bool needs_painting(PaintContext& context) const {
+    if (subtree_has_platform_view_) {
+      // Workaround for the iOS embedder. The iOS embedder expects that
+      // if we preroll it, then we will later call its Paint() method.
+      // Now that we preroll all layers without any culling, we may
+      // call its Preroll() without calling its Paint(). For now, we
+      // will not perform paint culling on any subtree that has a
+      // platform view.
+      // See https://github.com/flutter/flutter/issues/81419
+      return true;
+    }
     // Workaround for Skia bug (quickReject does not reject empty bounds).
     // https://bugs.chromium.org/p/skia/issues/detail?id=10951
     if (paint_bounds_.isEmpty()) {
@@ -246,6 +240,9 @@ class Layer {
 #ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
   virtual const PictureLayer* as_picture_layer() const { return nullptr; }
+  virtual const DisplayListLayer* as_display_list_layer() const {
+    return nullptr;
+  }
   virtual const TextureLayer* as_texture_layer() const { return nullptr; }
   virtual const PerformanceOverlayLayer* as_performance_overlay_layer() const {
     return nullptr;
@@ -254,16 +251,11 @@ class Layer {
 
 #endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
- protected:
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  bool child_layer_exists_below_ = false;
-#endif
-
  private:
   SkRect paint_bounds_;
   uint64_t unique_id_;
   uint64_t original_layer_id_;
-  bool needs_system_composite_;
+  bool subtree_has_platform_view_;
 
   static uint64_t NextUniqueID();
 

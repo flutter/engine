@@ -1831,7 +1831,7 @@ class Image {
 }
 
 @pragma('vm:entry-point')
-class _Image extends NativeFieldWrapperClass2 {
+class _Image extends NativeFieldWrapperClass1 {
   // This class is created by the engine, and should not be instantiated
   // or extended directly.
   //
@@ -1953,7 +1953,7 @@ class FrameInfo {
 /// To obtain an instance of the [Codec] interface, see
 /// [instantiateImageCodec].
 @pragma('vm:entry-point')
-class Codec extends NativeFieldWrapperClass2 {
+class Codec extends NativeFieldWrapperClass1 {
   //
   // This class is created by the engine, and should not be instantiated
   // or extended directly.
@@ -2054,6 +2054,7 @@ Future<Codec> instantiateImageCodec(
       targetHeight = descriptor.height;
     }
   }
+  buffer.dispose();
   return descriptor.instantiateCodec(
     targetWidth: targetWidth,
     targetHeight: targetHeight,
@@ -2141,8 +2142,17 @@ void decodeImageFromPixels(
           targetWidth: targetWidth,
           targetHeight: targetHeight,
         )
-        .then((Codec codec) => codec.getNextFrame())
-        .then((FrameInfo frameInfo) => callback(frameInfo.image));
+        .then((Codec codec) {
+          final Future<FrameInfo> frameInfo = codec.getNextFrame();
+          codec.dispose();
+          return frameInfo;
+        })
+        .then((FrameInfo frameInfo) {
+          buffer.dispose();
+          descriptor.dispose();
+
+          return callback(frameInfo.image);
+        });
   });
 }
 
@@ -2228,11 +2238,25 @@ enum PathOperation {
 
 /// A handle for the framework to hold and retain an engine layer across frames.
 @pragma('vm:entry-point')
-class EngineLayer extends NativeFieldWrapperClass2 {
+class EngineLayer extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   @pragma('vm:entry-point')
   EngineLayer._();
+
+  /// Release the resources used by this object. The object is no longer usable
+  /// after this method is called.
+  ///
+  /// EngineLayers indirectly retain platform specific graphics resources. Some
+  /// of these resources, such as images, may be memory intensive. It is
+  /// important to dispose of EngineLayer objects that will no longer be used as
+  /// soon as possible to avoid retaining these resources until the next
+  /// garbage collection.
+  ///
+  /// Once this EngineLayer is disposed, it is no longer eligible for use as a
+  /// retained layer, and must not be passed as an `oldLayer` to any of the
+  /// [SceneBuilder] methods which accept that parameter.
+  void dispose() native 'EngineLayer_dispose';
 }
 
 /// A complex, one-dimensional subset of a plane.
@@ -2253,7 +2277,7 @@ class EngineLayer extends NativeFieldWrapperClass2 {
 /// Paths can be drawn on canvases using [Canvas.drawPath], and can
 /// used to create clip regions using [Canvas.clipPath].
 @pragma('vm:entry-point')
-class Path extends NativeFieldWrapperClass2 {
+class Path extends NativeFieldWrapperClass1 {
   /// Create a new empty [Path] object.
   @pragma('vm:entry-point')
   Path() { _constructor(); }
@@ -2471,8 +2495,7 @@ class Path extends NativeFieldWrapperClass2 {
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
-  /// Adds a new sub-path that consists of the given `path` offset by the given
-  /// `offset`.
+  /// Adds the sub-paths of `path`, offset by `offset`, to this path.
   ///
   /// If `matrix4` is specified, the path will be transformed by this matrix
   /// after the matrix is translated by the given offset. The matrix is a 4x4
@@ -2490,8 +2513,9 @@ class Path extends NativeFieldWrapperClass2 {
   void _addPath(Path path, double dx, double dy) native 'Path_addPath';
   void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
 
-  /// Adds the given path to this path by extending the current segment of this
-  /// path with the first segment of the given path.
+  /// Adds the sub-paths of `path`, offset by `offset`, to this path.
+  /// The current sub-path is extended with the first sub-path
+  /// of `path`, connecting them with a lineTo if necessary.
   ///
   /// If `matrix4` is specified, the path will be transformed by this matrix
   /// after the matrix is translated by the given `offset`.  The matrix is a 4x4
@@ -2804,7 +2828,7 @@ class PathMetric {
   String toString() => '$runtimeType{length: $length, isClosed: $isClosed, contourIndex:$contourIndex}';
 }
 
-class _PathMeasure extends NativeFieldWrapperClass2 {
+class _PathMeasure extends NativeFieldWrapperClass1 {
   _PathMeasure(Path path, bool forceClosed) {
     _constructor(path, forceClosed);
   }
@@ -3134,7 +3158,7 @@ class ColorFilter implements ImageFilter {
 /// ColorFilter, because we want ColorFilter to be const constructible and
 /// efficiently comparable, so that widgets can check for ColorFilter equality to
 /// avoid repainting.
-class _ColorFilter extends NativeFieldWrapperClass2 {
+class _ColorFilter extends NativeFieldWrapperClass1 {
   _ColorFilter.mode(this.creator)
     : assert(creator != null),
       assert(creator._type == ColorFilter._kTypeMode) {
@@ -3330,7 +3354,7 @@ class _ComposeImageFilter implements ImageFilter {
 /// This is a private class, rather than being the implementation of the public
 /// ImageFilter, because we want ImageFilter to be efficiently comparable, so that
 /// widgets can check for ImageFilter equality to avoid repainting.
-class _ImageFilter extends NativeFieldWrapperClass2 {
+class _ImageFilter extends NativeFieldWrapperClass1 {
   void _constructor() native 'ImageFilter_constructor';
 
   /// Creates an image filter that applies a Gaussian blur.
@@ -3383,7 +3407,7 @@ class _ImageFilter extends NativeFieldWrapperClass2 {
 
 /// Base class for objects such as [Gradient] and [ImageShader] which
 /// correspond to shaders as used by [Paint.shader].
-class Shader extends NativeFieldWrapperClass2 {
+class Shader extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   @pragma('vm:entry-point')
@@ -3432,6 +3456,7 @@ enum TileMode {
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_linear.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_sweep.png)
   clamp,
 
   /// Samples beyond the edge are repeated from the far end of the defined area.
@@ -3445,6 +3470,7 @@ enum TileMode {
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_linear.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_sweep.png)
   repeated,
 
   /// Samples beyond the edge are mirrored back and forth across the defined area.
@@ -3460,6 +3486,7 @@ enum TileMode {
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_linear.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_sweep.png)
   mirror,
 
   /// Samples beyond the edge are treated as transparent black.
@@ -3470,6 +3497,10 @@ enum TileMode {
   ///
   /// An image filter will substitute transparent black for any sample it must read from
   /// outside its source image.
+  ///
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_sweep.png)
   decal,
 }
 
@@ -3531,6 +3562,7 @@ class Gradient extends Shader {
   /// argument. For details, see the [TileMode] enum.
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_linear.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_linear.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_linear.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_linear.png)
   ///
@@ -3575,6 +3607,7 @@ class Gradient extends Shader {
   /// argument. For details, see the [TileMode] enum.
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_radial.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_radial.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_radial.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_radial.png)
   ///
@@ -3640,6 +3673,7 @@ class Gradient extends Shader {
   /// `tileMode` argument. For details, see the [TileMode] enum.
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_clamp_sweep.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_decal_sweep.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_mirror_sweep.png)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/tile_mode_repeated_sweep.png)
   ///
@@ -3728,7 +3762,7 @@ enum VertexMode {
 }
 
 /// A set of vertex data used by [Canvas.drawVertices].
-class Vertices extends NativeFieldWrapperClass2 {
+class Vertices extends NativeFieldWrapperClass1 {
   /// Creates a set of vertex data for use with [Canvas.drawVertices].
   ///
   /// The [mode] and [positions] parameters must not be null.
@@ -3873,7 +3907,7 @@ enum ClipOp {
 ///
 /// The current transform and clip can be saved and restored using the stack
 /// managed by the [save], [saveLayer], and [restore] methods.
-class Canvas extends NativeFieldWrapperClass2 {
+class Canvas extends NativeFieldWrapperClass1 {
   /// Creates a canvas for recording graphical operations into the
   /// given picture recorder.
   ///
@@ -4873,7 +4907,7 @@ class Canvas extends NativeFieldWrapperClass2 {
 /// the [SceneBuilder.addPicture] method. A [Picture] can also be
 /// drawn into a [Canvas], using the [Canvas.drawPicture] method.
 @pragma('vm:entry-point')
-class Picture extends NativeFieldWrapperClass2 {
+class Picture extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
@@ -4920,7 +4954,7 @@ class Picture extends NativeFieldWrapperClass2 {
 ///
 /// To begin recording, construct a [Canvas] to record the commands.
 /// To end recording, use the [PictureRecorder.endRecording] method.
-class PictureRecorder extends NativeFieldWrapperClass2 {
+class PictureRecorder extends NativeFieldWrapperClass1 {
   /// Creates a new idle PictureRecorder. To associate it with a
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
   /// [Canvas] constructor.
@@ -5010,7 +5044,7 @@ class Shadow {
   // See SkBlurMask::ConvertRadiusToSigma().
   // <https://github.com/google/skia/blob/bb5b77db51d2e149ee66db284903572a5aac09be/src/effects/SkBlurMask.cpp#L23>
   static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
+    return radius > 0 ? radius * 0.57735 + 0.5 : 0;
   }
 
   /// The [blurRadius] in sigmas instead of logical pixels.
@@ -5147,8 +5181,9 @@ class Shadow {
         shadowsData.setFloat32(_kYOffset + shadowOffset,
           shadow.offset.dy, _kFakeHostEndian);
 
+        final double blurSigma = Shadow.convertRadiusToSigma(shadow.blurRadius);
         shadowsData.setFloat32(_kBlurOffset + shadowOffset,
-          shadow.blurRadius, _kFakeHostEndian);
+          blurSigma, _kFakeHostEndian);
       }
     }
 
@@ -5160,7 +5195,10 @@ class Shadow {
 }
 
 /// A handle to a read-only byte buffer that is managed by the engine.
-class ImmutableBuffer extends NativeFieldWrapperClass2 {
+///
+/// The creator of this object is responsible for calling [dispose] when it is
+/// no longer needed.
+class ImmutableBuffer extends NativeFieldWrapperClass1 {
   ImmutableBuffer._(this.length);
 
   /// Creates a copy of the data from a [Uint8List] suitable for internal use
@@ -5176,16 +5214,46 @@ class ImmutableBuffer extends NativeFieldWrapperClass2 {
   /// The length, in bytes, of the underlying data.
   final int length;
 
+  bool _debugDisposed = false;
+
+  /// Whether [dispose] has been called.
+  ///
+  /// This must only be used when asserts are enabled. Otherwise, it will throw.
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _debugDisposed;
+      return true;
+    }());
+    return disposed;
+  }
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'ImmutableBuffer_dispose';
+  ///
+  /// The underlying memory allocated by this object will be retained beyond
+  /// this call if it is still needed by another object that has not been
+  /// disposed. For example, an [ImageDescriptor] that has not been disposed
+  /// may still retain a reference to the memory from this buffer even if it
+  /// has been disposed. Freeing that memory requires disposing all resources
+  /// that may still hold it.
+  void dispose() {
+    assert(() {
+      assert(!_debugDisposed);
+      _debugDisposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
+  void _dispose() native 'ImmutableBuffer_dispose';
 }
 
 /// A descriptor of data that can be turned into an [Image] via a [Codec].
 ///
 /// Use this class to determine the height, width, and byte size of image data
 /// before decoding it.
-class ImageDescriptor extends NativeFieldWrapperClass2 {
+class ImageDescriptor extends NativeFieldWrapperClass1 {
   ImageDescriptor._();
 
   /// Creates an image descriptor from encoded data in a supported format.

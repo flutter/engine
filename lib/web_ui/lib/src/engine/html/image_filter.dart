@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'shaders/shader.dart';
+import 'surface.dart';
 
 /// A surface that applies an [imageFilter] to its children.
 class PersistedImageFilter extends PersistedContainerSurface
@@ -18,7 +23,8 @@ class PersistedImageFilter extends PersistedContainerSurface
 
   @override
   void apply() {
-    rootElement!.style.filter = _imageFilterToCss(filter as EngineImageFilter);
+    rootElement!.style.filter = (filter as EngineImageFilter).filterAttribute;
+    rootElement!.style.transform = (filter as EngineImageFilter).transformAttribute;
   }
 
   @override

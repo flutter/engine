@@ -7,9 +7,12 @@ package io.flutter.embedding.engine;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.ColorSpace;
+import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
@@ -23,7 +26,6 @@ import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
-import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
@@ -31,6 +33,7 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,13 +80,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * flutterJNI.detachFromNativeAndReleaseResources();
  * }</pre>
  *
- * <p>To provide a visual, interactive surface for Flutter rendering and touch events, register a
- * {@link RenderSurface} with {@link #setRenderSurface(RenderSurface)}
- *
  * <p>To receive callbacks for certain events that occur on the native side, register listeners:
  *
  * <ol>
- *   <li>{@link #addEngineLifecycleListener(EngineLifecycleListener)}
+ *   <li>{@link #addEngineLifecycleListener(FlutterEngine.EngineLifecycleListener)}
  *   <li>{@link #addIsDisplayingFlutterUiListener(FlutterUiDisplayListener)}
  * </ol>
  *
@@ -411,6 +411,45 @@ public class FlutterJNI {
     flutterUiDisplayListeners.remove(listener);
   }
 
+  public static native void nativeImageHeaderCallback(
+      long imageGeneratorPointer, int width, int height);
+
+  /**
+   * Called by native as a fallback method of image decoding. There are other ways to decode images
+   * on lower API levels, they involve copying the native data _and_ do not support any additional
+   * formats, whereas ImageDecoder supports HEIF images. Unlike most other methods called from
+   * native, this method is expected to be called on a worker thread, since it only uses thread safe
+   * methods and may take multiple frames to complete.
+   */
+  @SuppressWarnings("unused")
+  @VisibleForTesting
+  @Nullable
+  public static Bitmap decodeImage(@NonNull ByteBuffer buffer, long imageGeneratorAddress) {
+    if (Build.VERSION.SDK_INT >= 28) {
+      ImageDecoder.Source source = ImageDecoder.createSource(buffer);
+      try {
+        return ImageDecoder.decodeBitmap(
+            source,
+            (decoder, info, src) -> {
+              // i.e. ARGB_8888
+              decoder.setTargetColorSpace(ColorSpace.get(ColorSpace.Named.SRGB));
+              // TODO(bdero): Switch to ALLOCATOR_HARDWARE for devices that have
+              // `AndroidBitmap_getHardwareBuffer` (API 30+) available once Skia supports
+              // `SkImage::MakeFromAHardwareBuffer` via dynamic lookups:
+              // https://skia-review.googlesource.com/c/skia/+/428960
+              decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
+
+              Size size = info.getSize();
+              nativeImageHeaderCallback(imageGeneratorAddress, size.getWidth(), size.getHeight());
+            });
+      } catch (IOException e) {
+        Log.e(TAG, "Failed to decode image", e);
+        return null;
+      }
+    }
+    return null;
+  }
+
   // Called by native to notify first Flutter frame rendered.
   @SuppressWarnings("unused")
   @VisibleForTesting
@@ -609,10 +648,13 @@ public class FlutterJNI {
    */
   @SuppressWarnings("unused")
   @UiThread
-  private void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings) {
+  private void updateSemantics(
+      @NonNull ByteBuffer buffer,
+      @NonNull String[] strings,
+      @NonNull ByteBuffer[] stringAttributeArgs) {
     ensureRunningOnMainThread();
     if (accessibilityDelegate != null) {
-      accessibilityDelegate.updateSemantics(buffer, strings);
+      accessibilityDelegate.updateSemantics(buffer, strings, stringAttributeArgs);
     }
     // TODO(mattcarroll): log dropped messages when in debug mode
     // (https://github.com/flutter/flutter/issues/25391)
@@ -719,7 +761,7 @@ public class FlutterJNI {
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
-   * #registerTexture(long, SurfaceTexture)} has a new frame available.
+   * #registerTexture(long, SurfaceTextureWrapper)} has a new frame available.
    *
    * <p>Invoking this method instructs Flutter to update its presentation of the given texture so
    * that the new frame is displayed.
@@ -734,7 +776,8 @@ public class FlutterJNI {
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
 
   /**
-   * Unregisters a texture that was registered with {@link #registerTexture(long, SurfaceTexture)}.
+   * Unregisters a texture that was registered with {@link #registerTexture(long,
+   * SurfaceTextureWrapper)}.
    */
   @UiThread
   public void unregisterTexture(long textureId) {
@@ -800,8 +843,8 @@ public class FlutterJNI {
    * will be dropped (ignored). Therefore, when using {@code FlutterJNI} to integrate a Flutter
    * context in an app, a {@link PlatformMessageHandler} must be registered for 2-way Java/Dart
    * communication to operate correctly. Moreover, the handler must be implemented such that
-   * fundamental platform messages are handled as expected. See {@link FlutterNativeView} for an
-   * example implementation.
+   * fundamental platform messages are handled as expected. See {@link
+   * io.flutter.view.FlutterNativeView} for an example implementation.
    */
   @UiThread
   public void setPlatformMessageHandler(@Nullable PlatformMessageHandler platformMessageHandler) {
@@ -814,7 +857,7 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @VisibleForTesting
   public void handlePlatformMessage(
-      @NonNull final String channel, byte[] message, final int replyId) {
+      @NonNull final String channel, ByteBuffer message, final int replyId) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handleMessageFromDart(channel, message, replyId);
     }
@@ -825,7 +868,7 @@ public class FlutterJNI {
   // Called by native to respond to a platform message that we sent.
   // TODO(mattcarroll): determine if reply is nonull or nullable
   @SuppressWarnings("unused")
-  private void handlePlatformMessageResponse(int replyId, byte[] reply) {
+  private void handlePlatformMessageResponse(int replyId, ByteBuffer reply) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handlePlatformMessageResponse(replyId, reply);
     }
@@ -902,8 +945,11 @@ public class FlutterJNI {
   // TODO(mattcarroll): differentiate between channel responses and platform responses.
   @UiThread
   public void invokePlatformMessageResponseCallback(
-      int responseId, @Nullable ByteBuffer message, int position) {
+      int responseId, @NonNull ByteBuffer message, int position) {
     ensureRunningOnMainThread();
+    if (!message.isDirect()) {
+      throw new IllegalArgumentException("Expected a direct ByteBuffer.");
+    }
     if (isAttached()) {
       nativeInvokePlatformMessageResponseCallback(
           nativeShellHolderId, responseId, message, position);
@@ -1253,7 +1299,10 @@ public class FlutterJNI {
      * <p>Implementers are expected to maintain an Android-side cache of Flutter's semantics tree.
      * This method provides updates from Flutter for the Android-side semantics tree cache.
      */
-    void updateSemantics(@NonNull ByteBuffer buffer, @NonNull String[] strings);
+    void updateSemantics(
+        @NonNull ByteBuffer buffer,
+        @NonNull String[] strings,
+        @NonNull ByteBuffer[] stringAttributeArgs);
   }
 
   public interface AsyncWaitForVsyncDelegate {

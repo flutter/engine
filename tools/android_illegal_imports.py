@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+#
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -17,7 +18,7 @@ def main():
   parser.add_argument('--files', type=str, required=True, nargs='+')
   args = parser.parse_args()
 
-  open(args.stamp, 'wa').close()
+  open(args.stamp, 'a').close()
 
   bad_files = []
 

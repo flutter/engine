@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
 
 html.Element? _logElement;
 late html.Element _logContainer;
@@ -115,7 +115,7 @@ Iterable<String> defaultStackFilter(Iterable<String> frames) {
   final RegExp packageParser = RegExp(r'^([^:]+):(.+)$');
   final List<String> result = <String>[];
   final List<String> skipped = <String>[];
-  for (String line in frames) {
+  for (final String line in frames) {
     final Match? match = stackParser.firstMatch(line);
     if (match != null) {
       assert(match.groupCount == 2);

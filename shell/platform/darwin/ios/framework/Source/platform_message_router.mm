@@ -15,19 +15,19 @@ PlatformMessageRouter::PlatformMessageRouter() = default;
 PlatformMessageRouter::~PlatformMessageRouter() = default;
 
 void PlatformMessageRouter::HandlePlatformMessage(
-    fml::RefPtr<flutter::PlatformMessage> message) const {
+    std::unique_ptr<flutter::PlatformMessage> message) const {
   fml::RefPtr<flutter::PlatformMessageResponse> completer = message->response();
   auto it = message_handlers_.find(message->channel());
   if (it != message_handlers_.end()) {
     FlutterBinaryMessageHandler handler = it->second;
     NSData* data = nil;
     if (message->hasData()) {
-      data = GetNSDataFromVector(message->data());
+      data = ConvertMappingToNSData(message->releaseData());
     }
     handler(data, ^(NSData* reply) {
       if (completer) {
         if (reply) {
-          completer->Complete(GetMappingFromNSData(reply));
+          completer->Complete(ConvertNSDataToMappingPtr(reply));
         } else {
           completer->CompleteEmpty();
         }

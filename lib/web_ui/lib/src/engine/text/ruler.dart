@@ -2,9 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
 
-String _buildCssFontString({
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import '../browser_detection.dart';
+import '../dom_renderer.dart';
+import '../util.dart';
+import 'measurement.dart';
+import 'paragraph.dart';
+
+String buildCssFontString({
   required ui.FontStyle? fontStyle,
   required ui.FontWeight? fontWeight,
   required double? fontSize,
@@ -101,7 +110,7 @@ class ParagraphGeometricStyle {
   ///
   /// See <https://developer.mozilla.org/en-US/docs/Web/CSS/font>.
   String get cssFontString {
-    return _cssFontString ??= _buildCssFontString(
+    return _cssFontString ??= buildCssFontString(
       fontStyle: fontStyle,
       fontWeight: fontWeight,
       fontSize: fontSize,
@@ -245,7 +254,7 @@ class TextDimensions {
   void updateText(DomParagraph from, ParagraphGeometricStyle style) {
     assert(from != null); // ignore: unnecessary_null_comparison
     assert(_element != null); // ignore: unnecessary_null_comparison
-    assert(from._debugHasSameRootStyle(style));
+    assert(from.debugHasSameRootStyle(style));
     assert(() {
       final bool wasEmptyOrPlainText = _element.childNodes.isEmpty ||
           (_element.childNodes.length == 1 &&
@@ -261,7 +270,7 @@ class TextDimensions {
     }());
 
     _invalidateBoundsCache();
-    final String? plainText = from._plainText;
+    final String? plainText = from.plainText;
     if (plainText != null) {
       // Plain text: just set the string. The paragraph's style is assumed to
       // match the style set on the `element`. Setting text as plain string is
@@ -278,7 +287,7 @@ class TextDimensions {
     } else {
       // Rich text: deeply copy contents. This is the slow case that should be
       // avoided if fast layout performance is desired.
-      final html.Element copy = from._paragraphElement.clone(true) as html.Element;
+      final html.Element copy = from.paragraphElement.clone(true) as html.Element;
       _element.nodes.addAll(copy.nodes);
     }
   }
@@ -319,7 +328,7 @@ class TextDimensions {
   void applyStyle(ParagraphGeometricStyle style) {
     final html.CssStyleDeclaration elementStyle = _element.style;
     elementStyle
-      ..direction = _textDirectionToCss(style.textDirection)
+      ..direction = textDirectionToCss(style.textDirection)
       ..textAlign = textAlignToCssValue(style.textAlign, style.textDirection)
       ..fontSize = style.fontSize != null ? '${style.fontSize!.floor()}px' : null
       ..fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)
@@ -675,7 +684,7 @@ class ParagraphRuler {
       }
       return true;
     }());
-    assert(paragraph._debugHasSameRootStyle(style));
+    assert(paragraph.debugHasSameRootStyle(style));
     _paragraph = paragraph;
   }
 
@@ -701,7 +710,7 @@ class ParagraphRuler {
     // which doesn't work. So we need to replace it with a whitespace. The
     // correct fix would be to do line height and baseline measurements and
     // cache them separately.
-    if (_paragraph!._plainText == '') {
+    if (_paragraph!.plainText == '') {
       singleLineDimensions.updateTextToSpace();
     } else {
       singleLineDimensions.updateText(_paragraph!, style);
@@ -739,14 +748,16 @@ class ParagraphRuler {
 
   List<ui.TextBox> measurePlaceholderBoxes() {
     assert(!_debugIsDisposed);
-    assert(_paragraph != null);
 
-    if (_paragraph!.placeholderCount == 0) {
+    final DomParagraph? paragraph = _paragraph;
+    assert(paragraph != null);
+
+    if (paragraph!.placeholderCount == 0) {
       return const <ui.TextBox>[];
     }
 
     final List<html.Element> placeholderElements =
-        constrainedDimensions._element.querySelectorAll('.$_placeholderClass');
+        constrainedDimensions._element.querySelectorAll('.$placeholderClass');
     final List<ui.TextBox> boxes = <ui.TextBox>[];
 
     for (final html.Element element in placeholderElements) {
@@ -756,7 +767,7 @@ class ParagraphRuler {
         rect.top as double,
         rect.right as double,
         rect.bottom as double,
-        _paragraph!._textDirection,
+        paragraph.textDirection,
       ));
     }
     return boxes;
@@ -778,7 +789,7 @@ class ParagraphRuler {
       final html.Node node = textNodes[i];
       // Check if offset is within client rect bounds of text node's
       // parent element.
-      final html.Element parent = node.parentNode as html.Element;
+      final html.Element parent = node.parentNode! as html.Element;
       final html.Rectangle<num> bounds = parent.getBoundingClientRect();
       final double dx = offset.dx;
       final double dy = offset.dy;
@@ -798,8 +809,8 @@ class ParagraphRuler {
     if (nodes.isEmpty) {
       return;
     }
-    final List<html.Node> childNodes = [];
-    for (html.Node node in nodes) {
+    final List<html.Node> childNodes = <html.Node>[];
+    for (final html.Node node in nodes) {
       if (node.nodeType == html.Node.TEXT_NODE) {
         textNodes.add(node);
       }
@@ -812,7 +823,7 @@ class ParagraphRuler {
     int position = 0;
     final List<html.Node> stack = nodes.reversed.toList();
     while (true) {
-      var node = stack.removeLast();
+      final html.Node node = stack.removeLast();
       stack.addAll(node.childNodes.reversed);
       if (node == endNode) {
         break;
@@ -842,7 +853,7 @@ class ParagraphRuler {
     //
     // We do not do this for plain text, because replacing plain text is more
     // expensive than paying the cost of the DOM mutation to clean it.
-    if (_paragraph!._plainText == null) {
+    if (_paragraph!.plainText == null) {
       domRenderer
         ..clearDom(singleLineDimensions._element)
         ..clearDom(minIntrinsicDimensions._element)
@@ -891,7 +902,7 @@ class ParagraphRuler {
         : style.maxLines! * lineHeight;
 
     html.Rectangle<num>? previousRect;
-    for (html.Rectangle<num> rect in clientRects) {
+    for (final html.Rectangle<num> rect in clientRects) {
       // If [rect] is an empty box on the same line as the previous box, don't
       // include it in the result.
       if (rect.top == previousRect?.top && rect.left == rect.right) {
@@ -953,7 +964,7 @@ class ParagraphRuler {
   static const int _constraintCacheSize = 8;
 
   void cacheMeasurement(DomParagraph paragraph, MeasurementResult? item) {
-    final String? plainText = paragraph._plainText;
+    final String? plainText = paragraph.plainText;
     final List<MeasurementResult?> constraintCache =
         _measurementCache[plainText] ??= <MeasurementResult?>[];
     constraintCache.add(item);
@@ -972,7 +983,7 @@ class ParagraphRuler {
 
   MeasurementResult? cacheLookup(
       DomParagraph paragraph, ui.ParagraphConstraints constraints) {
-    final String? plainText = paragraph._plainText;
+    final String? plainText = paragraph.plainText;
     if (plainText == null) {
       // Multi span paragraph, do not use cache item.
       return null;
@@ -986,8 +997,8 @@ class ParagraphRuler {
     for (int i = 0; i < len; i++) {
       final MeasurementResult item = constraintCache[i]!;
       if (item.constraintWidth == constraints.width &&
-          item.textAlign == paragraph._textAlign &&
-          item.textDirection == paragraph._textDirection) {
+          item.textAlign == paragraph.textAlign &&
+          item.textDirection == paragraph.textDirection) {
         return item;
       }
     }
@@ -1047,7 +1058,7 @@ class MeasurementResult {
   /// The text direction of the paragraph.
   final ui.TextDirection textDirection;
 
-  MeasurementResult(
+  const MeasurementResult(
     this.constraintWidth, {
     required this.isSingleLine,
     required this.width,
@@ -1071,6 +1082,6 @@ class MeasurementResult {
         assert(maxIntrinsicWidth != null), // ignore: unnecessary_null_comparison
         assert(alphabeticBaseline != null), // ignore: unnecessary_null_comparison
         assert(ideographicBaseline != null), // ignore: unnecessary_null_comparison
-        this.textAlign = textAlign ?? ui.TextAlign.start,
-        this.textDirection = textDirection ?? ui.TextDirection.ltr;
+        this.textAlign = textAlign ?? ui.TextAlign.start,// ignore: unnecessary_this
+        this.textDirection = textDirection ?? ui.TextDirection.ltr;// ignore: unnecessary_this
 }

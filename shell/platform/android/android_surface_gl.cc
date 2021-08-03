@@ -92,7 +92,9 @@ bool AndroidSurfaceGL::ResourceContextMakeCurrent() {
 
 bool AndroidSurfaceGL::ResourceContextClearCurrent() {
   FML_DCHECK(IsValid());
-  return GLContextPtr()->ClearCurrent();
+  EGLBoolean result = eglMakeCurrent(eglGetCurrentDisplay(), EGL_NO_SURFACE,
+                                     EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  return result == EGL_TRUE;
 }
 
 bool AndroidSurfaceGL::SetNativeWindow(
@@ -171,6 +173,18 @@ sk_sp<const GrGLInterface> AndroidSurfaceGL::GetGLInterface() const {
 
 AndroidContextGL* AndroidSurfaceGL::GLContextPtr() const {
   return reinterpret_cast<AndroidContextGL*>(android_context_.get());
+}
+
+std::unique_ptr<Surface> AndroidSurfaceGL::CreatePbufferSurface() {
+  onscreen_surface_ = GLContextPtr()->CreatePbufferSurface();
+  sk_sp<GrDirectContext> main_skia_context =
+      GLContextPtr()->GetMainSkiaContext();
+  if (!main_skia_context) {
+    main_skia_context = GPUSurfaceGL::MakeGLContext(this);
+    GLContextPtr()->SetMainSkiaContext(main_skia_context);
+  }
+
+  return std::make_unique<GPUSurfaceGL>(main_skia_context, this, true);
 }
 
 }  // namespace flutter

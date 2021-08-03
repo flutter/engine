@@ -57,7 +57,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
                void(const ViewportMetrics& metrics));
 
   MOCK_METHOD1(OnPlatformViewDispatchPlatformMessage,
-               void(fml::RefPtr<PlatformMessage> message));
+               void(std::unique_ptr<PlatformMessage> message));
 
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
@@ -69,7 +69,7 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,
                     SemanticsAction action,
-                    std::vector<uint8_t> args));
+                    fml::MallocMapping args));
 
   MOCK_METHOD1(OnPlatformViewSetSemanticsEnabled, void(bool enabled));
 
@@ -457,7 +457,6 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
       "--lazy_async_stacks",
-      "--no-causal_async_stacks",
   };
 #if !FLUTTER_RELEASE
   flags.push_back("--max_profile_depth 1");
@@ -524,6 +523,12 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
 
     fml::TimePoint last_phase_time;
     for (auto phase : FrameTiming::kPhases) {
+      // raster finish wall time doesn't use the same clock base
+      // as rest of the frame timings.
+      if (phase == FrameTiming::kRasterFinishWallTime) {
+        continue;
+      }
+
       ASSERT_TRUE(timings[i].Get(phase) >= start);
       ASSERT_TRUE(timings[i].Get(phase) <= finish);
 
@@ -534,8 +539,7 @@ static void CheckFrameTimings(const std::vector<FrameTiming>& timings,
   }
 }
 
-// TODO(43192): This test is disable because of flakiness.
-TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
+TEST_F(ShellTest, ReportTimingsIsCalled) {
   fml::TimePoint start = fml::TimePoint::Now();
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -551,6 +555,7 @@ TEST_F(ShellTest, DISABLED_ReportTimingsIsCalled) {
   auto nativeTimingCallback = [&reportLatch,
                                &timestamps](Dart_NativeArguments args) {
     Dart_Handle exception = nullptr;
+    ASSERT_EQ(timestamps.size(), 0ul);
     timestamps = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
         args, 0, exception);
     reportLatch.Signal();
@@ -672,7 +677,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -727,7 +732,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -779,7 +784,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -788,9 +793,9 @@ TEST_F(ShellTest,
 
   PumpOneFrame(shell.get(), 100, 100, builder);
 
-  auto result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
-  ASSERT_TRUE(result.ok());
+  auto result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
+  ASSERT_TRUE(result.ok()) << "Result: " << static_cast<int>(result.code())
+                           << ": " << result.message();
 
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
 
@@ -800,7 +805,6 @@ TEST_F(ShellTest,
   // Validate the platform view can be recreated and destroyed again
   ValidateShell(shell.get());
   ASSERT_TRUE(raster_thread_merger->IsEnabled());
-
   DestroyShell(std::move(shell));
 }
 
@@ -853,7 +857,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -928,7 +932,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1001,7 +1005,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1049,7 +1053,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1120,7 +1124,7 @@ TEST_F(ShellTest,
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1144,7 +1148,7 @@ TEST_F(ShellTest,
 #if defined(OS_FUCHSIA)
        DISABLED_SkipAndSubmitFrame
 #else
-       SkipAndSubmitFrame
+       DISABLED_SkipAndSubmitFrame
 #endif
 ) {
   auto settings = CreateSettingsForFixture();
@@ -1263,57 +1267,6 @@ TEST(SettingsTest, FrameTimingSetsAndGetsProperly) {
   }
 }
 
-#if FLUTTER_RELEASE
-TEST_F(ShellTest, ReportTimingsIsCalledLaterInReleaseMode) {
-#else
-TEST_F(ShellTest, ReportTimingsIsCalledSoonerInNonReleaseMode) {
-#endif
-  fml::TimePoint start = fml::TimePoint::Now();
-  auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings);
-
-  // Create the surface needed by rasterizer
-  PlatformViewNotifyCreated(shell.get());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  ASSERT_TRUE(configuration.IsValid());
-  configuration.SetEntrypoint("reportTimingsMain");
-
-  // Wait for 2 reports: the first one is the immediate callback of the first
-  // frame; the second one will exercise the batching logic.
-  fml::CountDownLatch reportLatch(2);
-  std::vector<int64_t> timestamps;
-  auto nativeTimingCallback = [&reportLatch,
-                               &timestamps](Dart_NativeArguments args) {
-    Dart_Handle exception = nullptr;
-    timestamps = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
-        args, 0, exception);
-    reportLatch.CountDown();
-  };
-  AddNativeCallback("NativeReportTimingsCallback",
-                    CREATE_NATIVE_ENTRY(nativeTimingCallback));
-  RunEngine(shell.get(), std::move(configuration));
-
-  PumpOneFrame(shell.get());
-  PumpOneFrame(shell.get());
-
-  reportLatch.Wait();
-  DestroyShell(std::move(shell));
-
-  fml::TimePoint finish = fml::TimePoint::Now();
-  fml::TimeDelta elapsed = finish - start;
-
-#if FLUTTER_RELEASE
-  // Our batch time is 1000ms. Hopefully the 800ms limit is relaxed enough to
-  // make it not too flaky.
-  ASSERT_TRUE(elapsed >= fml::TimeDelta::FromMilliseconds(800));
-#else
-  // Our batch time is 100ms. Hopefully the 500ms limit is relaxed enough to
-  // make it not too flaky.
-  ASSERT_TRUE(elapsed <= fml::TimeDelta::FromMilliseconds(500));
-#endif
-}
-
 TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -1329,6 +1282,7 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   auto nativeTimingCallback = [&reportLatch,
                                &timestamps](Dart_NativeArguments args) {
     Dart_Handle exception = nullptr;
+    ASSERT_EQ(timestamps.size(), 0ul);
     timestamps = tonic::DartConverter<std::vector<int64_t>>::FromArguments(
         args, 0, exception);
     reportLatch.Signal();
@@ -1392,8 +1346,7 @@ TEST_F(ShellTest, WaitForFirstFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok());
 
   DestroyShell(std::move(shell));
@@ -1411,8 +1364,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
@@ -1430,8 +1382,7 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(10));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
 
@@ -1450,11 +1401,10 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
-  fml::Status result =
-      shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+  fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
   ASSERT_TRUE(result.ok());
   for (int i = 0; i < 100; ++i) {
-    result = shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1));
+    result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
     ASSERT_TRUE(result.ok());
   }
 
@@ -1481,13 +1431,12 @@ TEST_F(ShellTest, WaitForFirstFrameInlined) {
   PumpOneFrame(shell.get());
   fml::AutoResetWaitableEvent event;
   task_runner->PostTask([&shell, &event] {
-    fml::Status result =
-        shell->WaitForFirstFrame(fml::TimeDelta::FromMilliseconds(1000));
+    fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Max());
     ASSERT_FALSE(result.ok());
     ASSERT_EQ(result.code(), fml::StatusCode::kFailedPrecondition);
     event.Signal();
   });
-  ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1000)));
+  ASSERT_FALSE(event.WaitWithTimeout(fml::TimeDelta::Max()));
 
   DestroyShell(std::move(shell), std::move(task_runners));
 }
@@ -1545,8 +1494,9 @@ TEST_F(ShellTest, SetResourceCacheSize) {
                                 "method": "Skia.setResourceCacheMaxBytes",
                                 "args": 10000
                               })json";
-  std::vector<uint8_t> data(request_json.begin(), request_json.end());
-  auto platform_message = fml::MakeRefCounted<PlatformMessage>(
+  auto data =
+      fml::MallocMapping::Copy(request_json.c_str(), request_json.length());
+  auto platform_message = std::make_unique<PlatformMessage>(
       "flutter/skia", std::move(data), nullptr);
   SendEnginePlatformMessage(shell.get(), std::move(platform_message));
   PumpOneFrame(shell.get());
@@ -1816,7 +1766,7 @@ TEST_F(ShellTest, Screenshot) {
                                SkPaint(SkColor4f::FromColor(SK_ColorRED)));
     auto sk_picture = recorder.finishRecordingAsPicture();
     fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-        this->GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+        this->GetCurrentTaskRunner(), fml::TimeDelta::Zero());
     auto picture_layer = std::make_shared<PictureLayer>(
         SkPoint::Make(10, 10),
         flutter::SkiaGPUObject<SkPicture>({sk_picture, queue}), false, false);
@@ -1867,10 +1817,7 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
       buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
 
   std::unique_ptr<fml::Mapping> mapping =
-      std::make_unique<fml::NonOwnedMapping>(
-          buffer, buffer_size, [](const uint8_t* buffer, size_t size) {
-            ::free(const_cast<uint8_t*>(buffer));
-          });
+      std::make_unique<fml::MallocMapping>(buffer, buffer_size);
 
   ASSERT_EQ(mapping->GetSize(), buffer_size);
 
@@ -1978,6 +1925,75 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   configuration.SetEntrypoint("canDecompressImageFromAsset");
   std::unique_ptr<Shell> shell = CreateShell(settings);
   ASSERT_NE(shell.get(), nullptr);
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+  DestroyShell(std::move(shell));
+}
+
+/// An image generator that always creates a 1x1 single-frame green image.
+class SinglePixelImageGenerator : public ImageGenerator {
+ public:
+  SinglePixelImageGenerator()
+      : info_(SkImageInfo::MakeN32(1, 1, SkAlphaType::kOpaque_SkAlphaType)){};
+  ~SinglePixelImageGenerator() = default;
+  const SkImageInfo& GetInfo() { return info_; }
+
+  unsigned int GetFrameCount() const { return 1; }
+
+  unsigned int GetPlayCount() const { return 1; }
+
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+    return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
+  }
+
+  SkISize GetScaledDimensions(float scale) {
+    return SkISize::Make(info_.width(), info_.height());
+  }
+
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 unsigned int frame_index,
+                 std::optional<unsigned int> prior_frame) {
+    assert(info.width() == 1);
+    assert(info.height() == 1);
+    assert(row_bytes == 4);
+
+    reinterpret_cast<uint32_t*>(pixels)[0] = 0x00ff00ff;
+    return true;
+  };
+
+ private:
+  SkImageInfo info_;
+};
+
+TEST_F(ShellTest, CanRegisterImageDecoders) {
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto width = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      auto height = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 1));
+                      ASSERT_EQ(width, 1);
+                      ASSERT_EQ(height, 1);
+                      latch.Signal();
+                    }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canRegisterImageDecoders");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
+        shell->RegisterImageDecoder(
+            [](sk_sp<SkData> buffer) {
+              return std::make_unique<SinglePixelImageGenerator>();
+            },
+            100);
+      });
+
   RunEngine(shell.get(), std::move(configuration));
   latch.Wait();
   DestroyShell(std::move(shell));
@@ -2106,7 +2122,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   // 1. Construct a picture and a picture layer to be raster cached.
   sk_sp<SkPicture> picture = MakeSizedPicture(10, 10);
   fml::RefPtr<SkiaUnrefQueue> queue = fml::MakeRefCounted<SkiaUnrefQueue>(
-      GetCurrentTaskRunner(), fml::TimeDelta::FromSeconds(0));
+      GetCurrentTaskRunner(), fml::TimeDelta::Zero());
   auto picture_layer = std::make_shared<PictureLayer>(
       SkPoint::Make(0, 0),
       flutter::SkiaGPUObject<SkPicture>({MakeSizedPicture(100, 100), queue}),
@@ -2169,7 +2185,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   document.Accept(writer);
   std::string expected_json =
       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400}";
+      "Bytes\":400,\"displayListBytes\":0}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
@@ -2543,10 +2559,12 @@ TEST_F(ShellTest, Spawn) {
         main_latch.Signal();
       }));
   // Fulfill native function for the second Shell's entrypoint.
+  fml::CountDownLatch second_latch(2);
   AddNativeCallback(
       // The Dart native function names aren't very consistent but this is just
       // the native function name of the second vm entrypoint in the fixture.
-      "NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {}));
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&](auto args) { second_latch.CountDown(); }));
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
@@ -2556,7 +2574,7 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration]() {
+      [this, &spawner = shell, &second_configuration, &second_latch]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
             std::move(second_configuration),
@@ -2599,6 +2617,11 @@ TEST_F(ShellTest, Spawn) {
               ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
                         spawn->GetIOManager()->GetResourceContext().get());
             });
+
+        // Before destroying the shell, wait for expectations of the spawned
+        // isolate to be met.
+        second_latch.Wait();
+
         DestroyShell(std::move(spawn));
       });
 
@@ -2837,6 +2860,39 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UserTagSetOnStartup) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  // Make sure the shell launch does not kick off the creation of the VM
+  // instance by already creating one upfront.
+  auto vm_settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(vm_settings);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  auto settings = vm_settings;
+  fml::AutoResetWaitableEvent isolate_create_latch;
+
+  // ensure that "AppStartUpTag" is set during isolate creation.
+  settings.root_isolate_create_callback = [&](const DartIsolate& isolate) {
+    Dart_Handle current_tag = Dart_GetCurrentUserTag();
+    Dart_Handle startup_tag = Dart_NewUserTag("AppStartUp");
+    EXPECT_TRUE(Dart_IdentityEquals(current_tag, startup_tag));
+
+    isolate_create_latch.Signal();
+  };
+
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+
+  RunEngine(shell.get(), std::move(configuration));
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  DestroyShell(std::move(shell));
+  isolate_create_latch.Wait();
 }
 
 }  // namespace testing

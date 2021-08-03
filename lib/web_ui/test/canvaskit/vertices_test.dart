@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -24,37 +23,37 @@ void testMain() {
       expect(vertices.createDefault(), isNotNull);
       expect(vertices.resurrect(), isNotNull);
 
-      final recorder = CkPictureRecorder();
-      final canvas = recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 100, 100));
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 100, 100));
       canvas.drawVertices(
         vertices,
         ui.BlendMode.srcOver,
-        ui.Paint(),
+        CkPaint(),
       );
       vertices.delete();
     });
-  // TODO: https://github.com/flutter/flutter/issues/60040
+  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 
-ui.Vertices _testVertices() {
+CkVertices _testVertices() {
   return ui.Vertices(
     ui.VertexMode.triangles,
-    <ui.Offset>[
+    const <ui.Offset>[
       ui.Offset(0, 0),
       ui.Offset(10, 10),
       ui.Offset(0, 20),
     ],
-    textureCoordinates: <ui.Offset>[
+    textureCoordinates: const <ui.Offset>[
       ui.Offset(0, 0),
       ui.Offset(10, 10),
       ui.Offset(0, 20),
     ],
-    colors: <ui.Color>[
+    colors: const <ui.Color>[
       ui.Color.fromRGBO(255, 0, 0, 1.0),
       ui.Color.fromRGBO(0, 255, 0, 1.0),
       ui.Color.fromRGBO(0, 0, 255, 1.0),
     ],
     indices: <int>[0, 1, 2],
-  );
+  ) as CkVertices;
 }

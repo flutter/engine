@@ -16,7 +16,6 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
-#include "third_party/skia/include/codec/SkCodec.h"
 
 namespace flutter {
 namespace testing {
@@ -145,6 +144,37 @@ TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
   latch.Wait();
 }
 
+/// An Image generator that pretends it can't recognize the data it was given.
+class UnknownImageGenerator : public ImageGenerator {
+ public:
+  UnknownImageGenerator() : info_(SkImageInfo::MakeUnknown()){};
+  ~UnknownImageGenerator() = default;
+  const SkImageInfo& GetInfo() { return info_; }
+
+  unsigned int GetFrameCount() const { return 1; }
+
+  unsigned int GetPlayCount() const { return 1; }
+
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+    return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
+  }
+
+  SkISize GetScaledDimensions(float scale) {
+    return SkISize::Make(info_.width(), info_.height());
+  }
+
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 unsigned int frame_index,
+                 std::optional<unsigned int> prior_frame) {
+    return false;
+  };
+
+ private:
+  SkImageInfo info_;
+};
+
 TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
   auto loop = fml::ConcurrentMessageLoop::Create();
   auto thread_task_runner = CreateNewThread();
@@ -165,12 +195,12 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
     ASSERT_FALSE(data);
 
     fml::RefPtr<ImageDescriptor> image_descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data),
-                                             std::unique_ptr<SkCodec>(nullptr));
+        fml::MakeRefCounted<ImageDescriptor>(
+            std::move(data), std::make_unique<UnknownImageGenerator>());
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_FALSE(image.get());
+      ASSERT_FALSE(image.skia_object());
       latch.Signal();
     };
     decoder.Decode(image_descriptor, 0, 0, callback);
@@ -205,15 +235,17 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-    ASSERT_TRUE(codec);
+    ImageGeneratorRegistry registry;
+    std::shared_ptr<ImageGenerator> generator =
+        registry.CreateCompatibleGenerator(data);
+    ASSERT_TRUE(generator);
 
-    auto descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+    auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+        std::move(data), std::move(generator));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_TRUE(image.get());
+      ASSERT_TRUE(image.skia_object());
       EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
@@ -260,16 +292,18 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-    ASSERT_TRUE(codec);
+    ImageGeneratorRegistry registry;
+    std::shared_ptr<ImageGenerator> generator =
+        registry.CreateCompatibleGenerator(data);
+    ASSERT_TRUE(generator);
 
-    auto descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+    auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+        std::move(data), std::move(generator));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_TRUE(image.get());
-      decoded_size = image.get()->dimensions();
+      ASSERT_TRUE(image.skia_object());
+      decoded_size = image.skia_object()->dimensions();
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
     image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
@@ -317,15 +351,17 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
 
-    std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-    ASSERT_TRUE(codec);
+    ImageGeneratorRegistry registry;
+    std::shared_ptr<ImageGenerator> generator =
+        registry.CreateCompatibleGenerator(data);
+    ASSERT_TRUE(generator);
 
-    auto descriptor =
-        fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+    auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+        std::move(data), std::move(generator));
 
     ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
       ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-      ASSERT_TRUE(image.get());
+      ASSERT_TRUE(image.skia_object());
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
     image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
@@ -390,16 +426,18 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
       ASSERT_TRUE(data);
       ASSERT_GE(data->size(), 0u);
 
-      std::unique_ptr<SkCodec> codec = SkCodec::MakeFromData(data);
-      ASSERT_TRUE(codec);
+      ImageGeneratorRegistry registry;
+      std::shared_ptr<ImageGenerator> generator =
+          registry.CreateCompatibleGenerator(data);
+      ASSERT_TRUE(generator);
 
-      auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
-                                                             std::move(codec));
+      auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+          std::move(data), std::move(generator));
 
       ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
         ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-        ASSERT_TRUE(image.get());
-        final_size = image.get()->dimensions();
+        ASSERT_TRUE(image.skia_object());
+        final_size = image.skia_object()->dimensions();
         latch.Signal();
       };
       image_decoder->Decode(descriptor, target_width, target_height, callback);
@@ -427,7 +465,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
   latch.Wait();
 }
 
-TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
+// TODO(https://github.com/flutter/flutter/issues/81232) - disabled due to
+// flakiness
+TEST_F(ImageDecoderFixtureTest, DISABLED_CanResizeWithoutDecode) {
   SkImageInfo info = {};
   size_t row_bytes;
   sk_sp<SkData> decompressed_data;
@@ -494,8 +534,8 @@ TEST_F(ImageDecoderFixtureTest, CanResizeWithoutDecode) {
 
       ImageDecoder::ImageResult callback = [&](SkiaGPUObject<SkImage> image) {
         ASSERT_TRUE(runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
-        ASSERT_TRUE(image.get());
-        final_size = image.get()->dimensions();
+        ASSERT_TRUE(image.skia_object());
+        final_size = image.skia_object()->dimensions();
         latch.Signal();
       };
       image_decoder->Decode(descriptor, target_width, target_height, callback);
@@ -533,16 +573,17 @@ TEST(ImageDecoderTest,
   ASSERT_TRUE(gif_mapping);
   ASSERT_TRUE(webp_mapping);
 
-  auto gif_codec = SkCodec::MakeFromData(gif_mapping);
-  auto webp_codec = SkCodec::MakeFromData(webp_mapping);
+  ImageGeneratorRegistry registry;
 
-  ASSERT_TRUE(gif_codec);
-  ASSERT_TRUE(webp_codec);
+  auto gif_generator = registry.CreateCompatibleGenerator(gif_mapping);
+  auto webp_generator = registry.CreateCompatibleGenerator(webp_mapping);
 
-  // Both fixtures have a loop count of 2 which should lead to the repeat count
-  // of 1
-  ASSERT_EQ(gif_codec->getRepetitionCount(), 1);
-  ASSERT_EQ(webp_codec->getRepetitionCount(), 1);
+  ASSERT_TRUE(gif_generator);
+  ASSERT_TRUE(webp_generator);
+
+  // Both fixtures have a loop count of 2.
+  ASSERT_EQ(gif_generator->GetPlayCount(), static_cast<unsigned int>(2));
+  ASSERT_EQ(webp_generator->GetPlayCount(), static_cast<unsigned int>(2));
 }
 
 TEST(ImageDecoderTest, VerifySimpleDecoding) {
@@ -551,10 +592,13 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
 
-  auto codec = SkCodec::MakeFromData(data);
-  ASSERT_TRUE(codec);
-  auto descriptor =
-      fml::MakeRefCounted<ImageDescriptor>(std::move(data), std::move(codec));
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> generator =
+      registry.CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
+
+  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
+                                                         std::move(generator));
 
   ASSERT_EQ(ImageFromCompressedData(descriptor.get(), 6, 2,
                                     fml::tracing::TraceFlow(""))
@@ -564,10 +608,13 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
   auto data = OpenFixtureAsSkData("Horizontal.jpg");
-  auto codec = SkCodec::MakeFromData(data);
-  ASSERT_TRUE(codec);
+
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> generator =
+      registry.CreateCompatibleGenerator(data);
+  ASSERT_TRUE(generator);
   auto descriptor =
-      fml::MakeRefCounted<ImageDescriptor>(data, std::move(codec));
+      fml::MakeRefCounted<ImageDescriptor>(data, std::move(generator));
 
   auto image = SkImage::MakeFromEncoded(data);
   ASSERT_TRUE(image != nullptr);
@@ -614,10 +661,10 @@ TEST_F(ImageDecoderFixtureTest,
 
   ASSERT_TRUE(gif_mapping);
 
-  auto gif_codec = std::shared_ptr<SkCodecImageGenerator>(
-      static_cast<SkCodecImageGenerator*>(
-          SkCodecImageGenerator::MakeFromEncodedCodec(gif_mapping).release()));
-  ASSERT_TRUE(gif_codec);
+  ImageGeneratorRegistry registry;
+  std::shared_ptr<ImageGenerator> gif_generator =
+      registry.CreateCompatibleGenerator(gif_mapping);
+  ASSERT_TRUE(gif_generator);
 
   TaskRunners runners(GetCurrentTestName(),         // label
                       CreateNewThread("platform"),  // platform
@@ -660,7 +707,7 @@ TEST_F(ImageDecoderFixtureTest,
         return false;
       }
 
-      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_codec));
+      codec = fml::MakeRefCounted<MultiFrameCodec>(std::move(gif_generator));
       codec->getNextFrame(closure);
       codec = nullptr;
       isolate_latch.Signal();

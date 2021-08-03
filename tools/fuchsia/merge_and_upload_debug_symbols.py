@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -83,7 +83,7 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   if upload and IsLinux() and not already_exists:
     command = [
         'cipd', 'create', '-pkg-def', cipd_yaml, '-ref', 'latest', '-tag',
-        tag,
+        tag, '-verification-timeout', '10m0s',
     ]
   else:
     command = [
@@ -167,7 +167,7 @@ def main():
   out_dir = args.out_dir
 
   if os.path.exists(out_dir):
-    print 'Directory: %s is not empty, deleting it.' % out_dir
+    print('Directory: %s is not empty, deleting it.' % out_dir)
     shutil.rmtree(out_dir)
   os.makedirs(out_dir)
 

@@ -60,7 +60,6 @@ static const char* kDartLanguageArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
-    "--no-causal_async_stacks",
     "--lazy_async_stacks",
     // clang-format on
 };
@@ -331,7 +330,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 #endif  // !OS_FUCHSIA
 
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#if !OS_IOS || TARGET_OS_SIMULATOR
+#if !OS_IOS && !OS_MACOSX
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
@@ -351,7 +350,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   PushBackAll(&args, kDartDisableIntegerDivisionArgs,
               fml::size(kDartDisableIntegerDivisionArgs));
 #endif  // TARGET_CPU_ARM
-#endif  // !OS_IOS || TARGET_OS_SIMULATOR
+#endif  // !OS_IOS && !OS_MACOSX
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {

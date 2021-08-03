@@ -34,12 +34,17 @@ bool EmbedderSurfaceMetal::IsValid() const {
   return valid_;
 }
 
-std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() {
+std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(ios(13.0)) {
+  if (@available(iOS 13.0, *)) {
+  } else {
+    return nullptr;
+  }
   if (!IsValid()) {
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceMetal>(this, main_context_);
+  const bool render_to_surface = !external_view_embedder_;
+  auto surface = std::make_unique<GPUSurfaceMetal>(this, main_context_, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;

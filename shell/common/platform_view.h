@@ -62,7 +62,7 @@ class PlatformView {
     ///             Metal, Vulkan) specific. This is usually a sign to the
     ///             rasterizer to set up and begin rendering to that surface.
     ///
-    /// @param[in]  surface  The surface
+    /// @param[in]  surface           The surface
     ///
     virtual void OnPlatformViewCreated(std::unique_ptr<Surface> surface) = 0;
 
@@ -114,7 +114,7 @@ class PlatformView {
     ///                      root isolate.
     ///
     virtual void OnPlatformViewDispatchPlatformMessage(
-        fml::RefPtr<PlatformMessage> message) = 0;
+        std::unique_ptr<PlatformMessage> message) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -157,7 +157,7 @@ class PlatformView {
     virtual void OnPlatformViewDispatchSemanticsAction(
         int32_t id,
         SemanticsAction action,
-        std::vector<uint8_t> args) = 0;
+        fml::MallocMapping args) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the embedder has expressed an
@@ -379,7 +379,7 @@ class PlatformView {
   ///
   /// @param[in]  message  The platform message to deliver to the root isolate.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Overridden by embedders to perform actions in response to
@@ -395,7 +395,7 @@ class PlatformView {
   ///
   /// @param[in]  message  The message
   ///
-  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message);
+  virtual void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to dispatch an accessibility action to a
@@ -408,7 +408,7 @@ class PlatformView {
   ///
   void DispatchSemanticsAction(int32_t id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedder to notify the running isolate hosted by the
@@ -796,6 +796,22 @@ class PlatformView {
       std::unique_ptr<AssetResolver> updated_asset_resolver,
       AssetResolver::AssetResolverType type);
 
+  //--------------------------------------------------------------------------
+  /// @brief      Creates an object that produces surfaces suitable for raster
+  ///             snapshotting. The rasterizer will request this surface if no
+  ///             on screen surface is currently available when an application
+  ///             requests a snapshot, e.g. if `Scene.toImage` or
+  ///             `Picture.toImage` are called while the application is in the
+  ///             background.
+  ///
+  ///             Not all backends support this kind of surface usage, and the
+  ///             default implementation returns nullptr. Platforms should
+  ///             override this if they can support GPU operations in the
+  ///             background and support GPU resource context usage.
+  ///
+  virtual std::unique_ptr<SnapshotSurfaceProducer>
+  CreateSnapshotSurfaceProducer();
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
@@ -804,8 +820,7 @@ class PlatformView {
   SkISize size_;
   fml::WeakPtrFactory<PlatformView> weak_factory_;
 
-  // Unlike all other methods on the platform view, this is called on the
-  // raster task runner.
+  // This is the only method called on the raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
  private:

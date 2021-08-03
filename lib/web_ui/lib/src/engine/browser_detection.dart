@@ -33,9 +33,9 @@ enum BrowserEngine {
 
 /// html webgl version qualifier constants.
 abstract class WebGLVersion {
-  // WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
+  /// WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
   static const int webgl1 = 1;
-  // WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
+  /// WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
   static const int webgl2 = 2;
 }
 
@@ -74,10 +74,13 @@ BrowserEngine _detectBrowserEngine() {
 ///    Note: SAMSUNG-SGH-I717
 ///    SPH/SCH are very old Palm models.
 bool _isSamsungBrowser(String agent) {
-  final RegExp exp = new RegExp(r"SAMSUNG|SGH-[I|N|T]|GT-[I|N]|SM-[A|N|P|T|Z]|SHV-E|SCH-[I|J|R|S]|SPH-L");
+  final RegExp exp = RegExp(r'SAMSUNG|SGH-[I|N|T]|GT-[I|N]|SM-[A|N|P|T|Z]|SHV-E|SCH-[I|J|R|S]|SPH-L');
   return exp.hasMatch(agent.toUpperCase());
 }
 
+/// Detects browser engine for a given vendor and agent string.
+///
+/// Used for testing this library.
 @visibleForTesting
 BrowserEngine detectBrowserEngineByVendorAgent(String vendor, String agent) {
   if (vendor == 'Google Inc.') {
@@ -131,7 +134,7 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-late final OperatingSystem _operatingSystem = _detectOperatingSystem();
+late final OperatingSystem _operatingSystem = detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
@@ -149,11 +152,24 @@ OperatingSystem get operatingSystem {
 /// This is intended to be used for testing and debugging only.
 OperatingSystem? debugOperatingSystemOverride;
 
-OperatingSystem _detectOperatingSystem() {
-  final String platform = html.window.navigator.platform!;
-  final String userAgent = html.window.navigator.userAgent;
+/// Detects operating system using platform and UA used for unit testing.
+@visibleForTesting
+OperatingSystem detectOperatingSystem({
+  String? overridePlatform,
+  String? overrideUserAgent,
+  int? overrideMaxTouchPoints,
+}) {
+  final String platform = overridePlatform ?? html.window.navigator.platform!;
+  final String userAgent = overrideUserAgent ?? html.window.navigator.userAgent;
 
   if (platform.startsWith('Mac')) {
+    // iDevices requesting a "desktop site" spoof their UA so it looks like a Mac.
+    // This checks if we're in a touch device, or on a real mac.
+    final int maxTouchPoints =
+        overrideMaxTouchPoints ?? html.window.navigator.maxTouchPoints ?? 0;
+    if (maxTouchPoints > 2) {
+      return OperatingSystem.iOs;
+    }
     return OperatingSystem.macOs;
   } else if (platform.toLowerCase().contains('iphone') ||
       platform.toLowerCase().contains('ipad') ||
@@ -177,7 +193,7 @@ OperatingSystem _detectOperatingSystem() {
 ///
 /// These devices tend to behave differently on many core issues such as events,
 /// screen readers, input devices.
-const Set<OperatingSystem> _desktopOperatingSystems = {
+const Set<OperatingSystem> _desktopOperatingSystems = <OperatingSystem>{
   OperatingSystem.macOs,
   OperatingSystem.linux,
   OperatingSystem.windows,
@@ -194,6 +210,14 @@ bool get isDesktop => _desktopOperatingSystems.contains(operatingSystem);
 /// See [_desktopOperatingSystems].
 /// See [isDesktop].
 bool get isMobile => !isDesktop;
+
+/// Whether the browser is running on macOS or iOS.
+///
+/// - See [operatingSystem].
+/// - See [OperatingSystem].
+bool get isMacOrIOS =>
+    operatingSystem == OperatingSystem.iOs ||
+    operatingSystem == OperatingSystem.macOs;
 
 int? _cachedWebGLVersion;
 

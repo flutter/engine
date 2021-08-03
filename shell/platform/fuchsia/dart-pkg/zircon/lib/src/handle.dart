@@ -8,7 +8,7 @@ part of zircon;
 // ignore_for_file: public_member_api_docs
 
 @pragma('vm:entry-point')
-class Handle extends NativeFieldWrapperClass2 {
+class Handle extends NativeFieldWrapperClass1 {
   // No public constructor - this can only be created from native code.
   @pragma('vm:entry-point')
   Handle._();
@@ -42,6 +42,8 @@ class Handle extends NativeFieldWrapperClass2 {
       native 'Handle_AsyncWait';
 
   Handle duplicate(int rights) native 'Handle_Duplicate';
+
+  Handle replace(int rights) native 'Handle_Replace';
 }
 
 @pragma('vm:entry-point')

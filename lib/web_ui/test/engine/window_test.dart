@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
-import 'dart:js_util' as js_util;
 import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/ui.dart' as ui;
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 const int kPhysicalKeyA = 0x00070004;
 const int kLogicalKeyA = 0x00000000061;
@@ -25,9 +24,9 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onTextScaleFactorChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -41,9 +40,9 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onPlatformBrightnessChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -57,9 +56,9 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onMetricsChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -73,9 +72,9 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onLocaleChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -89,41 +88,41 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.FrameCallback callback = (_) {
+      void callback(Duration _) {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onBeginFrame = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(window.onBeginFrame, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnBeginFrame(null);
+    EnginePlatformDispatcher.instance.invokeOnBeginFrame(Duration.zero);
   });
 
   test('onReportTimings preserves the zone', () {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.TimingsCallback callback = (_) {
+      void callback(List<dynamic> _) {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onReportTimings = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(window.onReportTimings, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnReportTimings(null);
+    EnginePlatformDispatcher.instance.invokeOnReportTimings(<ui.FrameTiming>[]);
   });
 
   test('onDrawFrame preserves the zone', () {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onDrawFrame = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -137,20 +136,20 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.PointerDataPacketCallback callback = (_) {
+      void callback(ui.PointerDataPacket _) {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onPointerDataPacket = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(window.onPointerDataPacket, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(null);
+    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(const ui.PointerDataPacket());
   });
 
   test('invokeOnKeyData returns normally when onKeyData is null', () {
-    final ui.KeyData keyData = ui.KeyData(
+    const  ui.KeyData keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -169,10 +168,10 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.KeyDataCallback onKeyData = (_) {
+      bool onKeyData(ui.KeyData _) {
         expect(Zone.current, innerZone);
         return false;
-      };
+      }
       window.onKeyData = onKeyData;
 
       // Test that the getter returns the exact same onKeyData, e.g. it doesn't
@@ -180,7 +179,7 @@ void testMain() {
       expect(window.onKeyData, same(onKeyData));
     });
 
-    final ui.KeyData keyData = ui.KeyData(
+    const  ui.KeyData keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -199,9 +198,9 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onSemanticsEnabledChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -215,25 +214,25 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.SemanticsActionCallback callback = (_, __, ___) {
+      void callback(int _, ui.SemanticsAction __, ByteData? ___) {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onSemanticsAction = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(window.onSemanticsAction, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(null, null, null);
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.VoidCallback callback = () {
+      void callback() {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onAccessibilityFeaturesChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -247,16 +246,18 @@ void testMain() {
     final Zone innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ui.PlatformMessageCallback callback = (_, __, ___) {
+      void callback(String _, ByteData? __, void Function(ByteData?)? ___) {
         expect(Zone.current, innerZone);
-      };
+      }
       window.onPlatformMessage = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(window.onPlatformMessage, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(null, null, null);
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('foo', null, (ByteData? data) {
+      // Not testing anything here.
+    });
   });
 
   test('sendPlatformMessage preserves the zone', () async {
@@ -269,7 +270,7 @@ void testMain() {
       window.sendPlatformMessage(
         'flutter/debug-echo',
         inputData,
-        (outputData) {
+        (ByteData? outputData) {
           expect(Zone.current, innerZone);
           completer.complete();
         },
@@ -287,7 +288,7 @@ void testMain() {
     window.sendPlatformMessage(
       'flutter/__unknown__channel__',
       null,
-      (outputData) {
+      (ByteData? outputData) {
         responded = true;
         expect(outputData, isNull);
       },
@@ -299,25 +300,23 @@ void testMain() {
 
   /// Regression test for https://github.com/flutter/flutter/issues/66128.
   test('setPreferredOrientation responds even if browser doesn\'t support api', () async {
-    final html.Screen screen = html.window.screen;
+    final html.Screen screen = html.window.screen!;
     js_util.setProperty(screen, 'orientation', null);
-    bool responded = false;
 
-    final Completer<void> completer = Completer<void>();
-    final ByteData inputData = JSONMethodCodec().encodeMethodCall(MethodCall(
+    final Completer<bool> completer = Completer<bool>();
+    final ByteData inputData = const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'SystemChrome.setPreferredOrientations',
-        <dynamic>[]));
+        <dynamic>[]))!;
 
     window.sendPlatformMessage(
       'flutter/platform',
           inputData,
-          (outputData) {
-        responded = true;
-        completer.complete();
+          (ByteData? outputData) {
+        completer.complete(true);
       },
     );
-    await completer.future;
-    expect(responded, true);
+
+    expect(await completer.future, isTrue);
   });
 
   test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
@@ -327,8 +326,7 @@ void testMain() {
       localeChangedCount += 1;
     };
 
-    // Cause DomRenderer to initialize itself.
-    domRenderer;
+    ensureDomRendererInitialized();
 
     // We populate the initial list of locales automatically (only test that we
     // got some locales; some contributors may be in different locales, so we
@@ -357,7 +355,7 @@ void testMain() {
       window.sendPlatformMessage(
         'flutter/service_worker',
         ByteData(0),
-        (outputData) { },
+        (ByteData? outputData) { },
       );
     });
 
