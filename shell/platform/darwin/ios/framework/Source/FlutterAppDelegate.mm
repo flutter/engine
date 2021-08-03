@@ -141,13 +141,8 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
   }
 }
 
-- (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
-    infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
-  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
-    return YES;
-  } else if (!IsDeepLinkingEnabled(infoPlistGetter())) {
+- (BOOL)openURL:(NSURL*)url infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
+  if (!IsDeepLinkingEnabled(infoPlistGetter())) {
     return NO;
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
@@ -181,12 +176,13 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [self application:application
-                   openURL:url
-                   options:options
-           infoPlistGetter:^NSDictionary*() {
-             return [[NSBundle mainBundle] infoDictionary];
-           }];
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  }
+  return [self openURL:url
+       infoPlistGetter:^NSDictionary*() {
+         return [[NSBundle mainBundle] infoDictionary];
+       }];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -229,9 +225,18 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray* __nullable restorableObjects))restorationHandler {
 #endif
-  return [_lifeCycleDelegate application:application
-                    continueUserActivity:userActivity
-                      restorationHandler:restorationHandler];
+  if ([_lifeCycleDelegate application:application
+                 continueUserActivity:userActivity
+                   restorationHandler:restorationHandler]) {
+    return YES;
+  }
+  if (userActivity.activityType == NSUserActivityTypeBrowsingWeb) {
+    return NO;
+  }
+  return [self openURL:userActivity.webpageURL
+       infoPlistGetter:^NSDictionary*() {
+         return [[NSBundle mainBundle] infoDictionary];
+       }];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController

@@ -7,9 +7,6 @@
 @interface FlutterAppDelegate (Test)
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
 
-- (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
-    infoPlistGetter:(NSDictionary* (^)())infoPlistGetter;
+- (BOOL)openURL:(NSURL*)url infoPlistGetter:(NSDictionary* (^)())infoPlistGetter;
 
 @end
