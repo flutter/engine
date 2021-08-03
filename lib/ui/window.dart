@@ -898,6 +898,9 @@ class GestureSettings {
 
   /// The number of physical pixels that the first and second tap of a double tap
   /// can drift apart to still be recognized as a double tap.
+  ///
+  /// If `null`, the framework's default double tap slop configuration should be used
+  /// instead.
   final double? physicalDoubleTapSlop;
 
   /// Create a new [GestureSetting]s object from an existing value, overwriting
@@ -925,5 +928,5 @@ class GestureSettings {
   int get hashCode => hashValues(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
-  String toString() => 'GestureSettings{physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop}';
+  String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
 }

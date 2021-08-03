@@ -10,16 +10,15 @@ void main() {
   test('GestureSettings has a reasonable toString', () {
     const GestureSettings gestureSettings = GestureSettings(physicalDoubleTapSlop: 2.0, physicalTouchSlop: 1.0);
 
-    expect(gestureSettings.toString(), 'GestureSettings{physicalTouchSlop: 1.0, physicalDoubleTapSlop: 2.0}');
+    expect(gestureSettings.toString(), 'GestureSettings(physicalTouchSlop: 1.0, physicalDoubleTapSlop: 2.0)');
   });
 
   test('GestureSettings has a correct equality', () {
     // don't refactor these to be const, that defeats the point!
-    double value = 2.0;
+    final double value = nonconst(2.0);
     final GestureSettings settingsA = GestureSettings(physicalDoubleTapSlop: value, physicalTouchSlop: 1.0);
     final GestureSettings settingsB = GestureSettings(physicalDoubleTapSlop: value, physicalTouchSlop: 3.0);
     final GestureSettings settingsC = GestureSettings(physicalDoubleTapSlop: value, physicalTouchSlop: 1.0);
-    value++;
 
     expect(settingsA, equals(settingsC));
     expect(settingsC, equals(settingsA));
@@ -52,3 +51,7 @@ void main() {
     expect(settings.physicalTouchSlop, null);
   });
 }
+
+// Prevent the linter from complaining about a const value so that
+// non-identical equality can be tested.
+T nonconst<T>(T value) => value;
