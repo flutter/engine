@@ -68,8 +68,8 @@ void Rasterizer::Setup(std::unique_ptr<Surface> surface) {
         delegate_.GetTaskRunners().GetPlatformTaskRunner()->GetTaskQueueId();
     const auto gpu_id =
         delegate_.GetTaskRunners().GetRasterTaskRunner()->GetTaskQueueId();
-    raster_thread_merger_ =
-        fml::MakeRefCounted<fml::RasterThreadMerger>(platform_id, gpu_id);
+    raster_thread_merger_ = fml::RasterThreadMerger::CreateOrShareThreadMerger(
+        delegate_.GetParentRasterThreadMerger(), platform_id, gpu_id);
   }
   if (raster_thread_merger_) {
     raster_thread_merger_->SetMergeUnmergeCallback([=]() {
@@ -704,6 +704,10 @@ void Rasterizer::SetExternalViewEmbedder(
 void Rasterizer::SetSnapshotSurfaceProducer(
     std::unique_ptr<SnapshotSurfaceProducer> producer) {
   snapshot_surface_producer_ = std::move(producer);
+}
+
+fml::RefPtr<fml::RasterThreadMerger> Rasterizer::GetRasterThreadMerger() {
+  return raster_thread_merger_;
 }
 
 void Rasterizer::FireNextFrameCallbackIfPresent() {

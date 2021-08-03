@@ -17,27 +17,16 @@ namespace fml {
 class MessageLoopImpl;
 class RasterThreadMerger;
 
-struct ThreadMergerKey {
-  TaskQueueId owner;
-  TaskQueueId subsumed;
-  bool operator<(const ThreadMergerKey& other) const {
-    if (owner == other.owner) {
-      return subsumed < other.subsumed;
-    } else {
-      return owner < other.owner;
-    }
-  }
-};
+typedef void* RasterThreadMergerId;
 
 class SharedThreadMerger
     : public fml::RefCountedThreadSafe<SharedThreadMerger> {
  public:
   SharedThreadMerger(TaskQueueId owner, TaskQueueId subsumed);
-  static SharedThreadMerger* GetSharedMerger(TaskQueueId owner,
-                                             TaskQueueId subsumed);
+
   // It's called by |RasterThreadMerger::RecordMergerCaller()|.
   // See the doc of |RasterThreadMerger::RecordMergerCaller()|.
-  void RecordMergerCaller(RasterThreadMerger* caller);
+  void RecordMergerCaller(RasterThreadMergerId caller);
 
   // It's called by |RasterThreadMerger::MergeWithLease()|.
   // See the doc of |RasterThreadMerger::MergeWithLease()|.
@@ -45,7 +34,7 @@ class SharedThreadMerger
 
   // It's called by |RasterThreadMerger::UnMergeNowIfLastOne()|.
   // See the doc of |RasterThreadMerger::UnMergeNowIfLastOne()|.
-  bool UnMergeNowIfLastOne(RasterThreadMerger* caller);
+  bool UnMergeNowIfLastOne(RasterThreadMergerId caller);
 
   // It's called by |RasterThreadMerger::ExtendLeaseTo()|.
   // See the doc of |RasterThreadMerger::ExtendLeaseTo()|.
@@ -70,13 +59,11 @@ class SharedThreadMerger
   /// The |RecordMergerCaller| method will record the caller
   /// into this merge_callers_ set, |UnMergeNowIfLastOne()|
   /// method will remove the caller from this merge_callers_.
-  std::set<fml::RasterThreadMerger*> merge_callers_;
+  std::set<RasterThreadMergerId> merge_callers_;
 
-  static std::mutex creation_mutex_;
-  // Guarded by creation_mutex_
-  static std::map<ThreadMergerKey, SharedThreadMerger*>
-      shared_merger_instances_;
   bool UnMergeNowUnSafe();
+
+  FML_DISALLOW_COPY_AND_ASSIGN(SharedThreadMerger);
 };
 
 }  // namespace fml

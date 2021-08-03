@@ -495,9 +495,10 @@ TEST(RasterThreadMerger, MultipleMergersCanMergeSameThreadPair) {
   fml::TaskQueueId qid1 = queue1.GetTaskQueueId();
   fml::TaskQueueId qid2 = queue2.GetTaskQueueId();
   const auto raster_thread_merger1_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(nullptr, qid1, qid2);
   const auto raster_thread_merger2_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(raster_thread_merger1_,
+                                                         qid1, qid2);
   const int kNumFramesMerged = 5;
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
@@ -532,9 +533,10 @@ TEST(RasterThreadMerger, TheLastCallerOfMultipleMergersCanUnmergeNow) {
   fml::TaskQueueId qid1 = queue1.GetTaskQueueId();
   fml::TaskQueueId qid2 = queue2.GetTaskQueueId();
   const auto raster_thread_merger1_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(nullptr, qid1, qid2);
   const auto raster_thread_merger2_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(raster_thread_merger1_,
+                                                         qid1, qid2);
   const int kNumFramesMerged = 5;
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
@@ -578,9 +580,10 @@ TEST(RasterThreadMerger,
   fml::TaskQueueId qid3 = queue3.GetTaskQueueId();
 
   const auto raster_thread_merger1_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(nullptr, qid1, qid2);
   const auto raster_thread_merger2_ =
-      fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid3);
+      fml::RasterThreadMerger::CreateOrShareThreadMerger(raster_thread_merger1_,
+                                                         qid1, qid3);
   const int kNumFramesMerged = 5;
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());

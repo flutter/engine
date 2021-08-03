@@ -12,14 +12,42 @@ namespace fml {
 
 RasterThreadMerger::RasterThreadMerger(fml::TaskQueueId platform_queue_id,
                                        fml::TaskQueueId gpu_queue_id)
+    : RasterThreadMerger(
+          MakeRefCounted<SharedThreadMerger>(platform_queue_id, gpu_queue_id),
+          platform_queue_id,
+          gpu_queue_id) {}
+
+RasterThreadMerger::RasterThreadMerger(
+    fml::RefPtr<fml::SharedThreadMerger> shared_merger,
+    fml::TaskQueueId platform_queue_id,
+    fml::TaskQueueId gpu_queue_id)
     : platform_queue_id_(platform_queue_id),
       gpu_queue_id_(gpu_queue_id),
-      shared_merger_(fml::SharedThreadMerger::GetSharedMerger(platform_queue_id,
-                                                              gpu_queue_id)),
+      shared_merger_(shared_merger),
       enabled_(true) {}
 
 void RasterThreadMerger::SetMergeUnmergeCallback(const fml::closure& callback) {
   merge_unmerge_callback_ = callback;
+}
+
+fml::RefPtr<fml::SharedThreadMerger>
+RasterThreadMerger::GetSharedRasterThreadMerger() const {
+  return shared_merger_;
+}
+
+fml::RefPtr<fml::RasterThreadMerger>
+RasterThreadMerger::CreateOrShareThreadMerger(
+    const fml::RefPtr<fml::RasterThreadMerger>& parent_merger,
+    TaskQueueId platform_id,
+    TaskQueueId raster_id) {
+  if (parent_merger && parent_merger->platform_queue_id_ == platform_id &&
+      parent_merger->gpu_queue_id_ == raster_id) {
+    auto shared_merger = parent_merger->GetSharedRasterThreadMerger();
+    return fml::MakeRefCounted<RasterThreadMerger>(shared_merger, platform_id,
+                                                   raster_id);
+  } else {
+    return fml::MakeRefCounted<RasterThreadMerger>(platform_id, raster_id);
+  }
 }
 
 void RasterThreadMerger::MergeWithLease(int lease_term) {

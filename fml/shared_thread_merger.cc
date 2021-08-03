@@ -10,27 +10,7 @@
 
 namespace fml {
 
-std::mutex SharedThreadMerger::creation_mutex_;
-
-// Guarded by creation_mutex_
-std::map<ThreadMergerKey, SharedThreadMerger*>
-    SharedThreadMerger::shared_merger_instances_;
-
 const int SharedThreadMerger::kLeaseNotSet = -1;
-
-SharedThreadMerger* SharedThreadMerger::GetSharedMerger(
-    fml::TaskQueueId owner,
-    fml::TaskQueueId subsumed) {
-  std::scoped_lock creation(creation_mutex_);
-  ThreadMergerKey key = {.owner = owner, .subsumed = subsumed};
-  auto iter = shared_merger_instances_.find(key);
-  if (iter != shared_merger_instances_.end()) {
-    return iter->second;
-  }
-  auto merger = new SharedThreadMerger(owner, subsumed);
-  shared_merger_instances_[key] = merger;
-  return merger;
-}
 
 SharedThreadMerger::SharedThreadMerger(fml::TaskQueueId owner,
                                        fml::TaskQueueId subsumed)
@@ -39,7 +19,7 @@ SharedThreadMerger::SharedThreadMerger(fml::TaskQueueId owner,
       task_queues_(fml::MessageLoopTaskQueues::GetInstance()),
       lease_term_(kLeaseNotSet) {}
 
-void SharedThreadMerger::RecordMergerCaller(RasterThreadMerger* caller) {
+void SharedThreadMerger::RecordMergerCaller(RasterThreadMergerId caller) {
   std::scoped_lock lock(mutex_);
   // Record current merge caller into callers set.
   merge_callers_.insert(caller);
@@ -66,7 +46,7 @@ bool SharedThreadMerger::UnMergeNowUnSafe() {
   return success;
 }
 
-bool SharedThreadMerger::UnMergeNowIfLastOne(RasterThreadMerger* caller) {
+bool SharedThreadMerger::UnMergeNowIfLastOne(RasterThreadMergerId caller) {
   std::scoped_lock lock(mutex_);
   merge_callers_.erase(caller);
   if (!merge_callers_.empty()) {

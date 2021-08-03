@@ -37,6 +37,16 @@ class RasterThreadMerger
   // When task queues are statically merged this method becomes no-op.
   void MergeWithLease(int lease_term);
 
+  // Gets the shared merger from current merger object
+  fml::RefPtr<fml::SharedThreadMerger> GetSharedRasterThreadMerger() const;
+
+  // Creates a new merger from parent, share the inside shared_merger member
+  // when the platform_queue_id and raster_queue_id are same.
+  static fml::RefPtr<fml::RasterThreadMerger> CreateOrShareThreadMerger(
+      const fml::RefPtr<fml::RasterThreadMerger>& parent_merger,
+      TaskQueueId platform_id,
+      TaskQueueId raster_id);
+
   // Un-merges the threads now if current caller is the last merge caller,
   // and it resets the lease term to 0, otherwise it will remove the caller
   // record and return. The multiple caller records were recorded by the
@@ -80,9 +90,6 @@ class RasterThreadMerger
   // Must run on the platform task runner.
   void WaitUntilMerged();
 
-  RasterThreadMerger(fml::TaskQueueId platform_queue_id,
-                     fml::TaskQueueId gpu_queue_id);
-
   // Returns true if the current thread owns rasterizing.
   // When the threads are merged, platform thread owns rasterizing.
   // When un-merged, raster thread owns rasterizing.
@@ -113,7 +120,14 @@ class RasterThreadMerger
  private:
   fml::TaskQueueId platform_queue_id_;
   fml::TaskQueueId gpu_queue_id_;
-  SharedThreadMerger* shared_merger_;
+
+  RasterThreadMerger(fml::TaskQueueId platform_queue_id,
+                     fml::TaskQueueId gpu_queue_id);
+  RasterThreadMerger(fml::RefPtr<fml::SharedThreadMerger> shared_merger,
+                     fml::TaskQueueId platform_queue_id,
+                     fml::TaskQueueId gpu_queue_id);
+
+  const fml::RefPtr<fml::SharedThreadMerger> shared_merger_;
   std::condition_variable merged_condition_;
   std::mutex mutex_;
   fml::closure merge_unmerge_callback_;
