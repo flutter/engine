@@ -266,6 +266,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         /** The user has opened a tooltip. */
         @Override
         public void onTooltip(@NonNull String message) {
+          // Tooltip open is no longer announced after API 28 and is handled by
+          // AccessibilityNodeInfo.setTooltipText instead.
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return;
+          }
           AccessibilityEvent e =
               obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
           e.getText().add(message);
@@ -824,8 +829,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setText(semanticsNode.getValueLabelHint());
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       CharSequence content = semanticsNode.getValueLabelHint();
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        if (semanticsNode.tooltip != null) {
+          content = content != null ? content : "";
+          content = content + "\n" + semanticsNode.tooltip;
+        }
+      }
       if (content != null) {
         result.setContentDescription(content);
+      }
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      if (semanticsNode.tooltip != null) {
+        result.setTooltipText(semanticsNode.tooltip);
       }
     }
 
@@ -2187,6 +2204,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private List<StringAttribute> decreasedValueAttributes;
     private String hint;
     private List<StringAttribute> hintAttributes;
+    private String tooltip;
 
     // The id of the sibling node that is before this node in traversal
     // order.
@@ -2389,6 +2407,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       hint = stringIndex == -1 ? null : strings[stringIndex];
 
       hintAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
+
+      stringIndex = buffer.getInt();
+      tooltip = stringIndex == -1 ? null : strings[stringIndex];
 
       textDirection = TextDirection.fromInt(buffer.getInt());
 
