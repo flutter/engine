@@ -399,6 +399,17 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
                                  (isBelowBottomOfLine && isFartherToRight))));
 }
 
+// Checks whether Scribble features are possibly available – meaning this is an iPad running iOS 14+
+static BOOL isScribbleAvailable() {
+  if (@available(iOS 14.0, *)) {
+    NSString* deviceModel = (NSString*)[UIDevice currentDevice].model;
+    if ([[deviceModel substringWithRange:NSMakeRange(0, 4)] isEqualToString:@"iPad"]) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
 #pragma mark - FlutterTextPosition
 
 @implementation FlutterTextPosition
@@ -850,9 +861,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 // Forward touches to the viewResponder to allow tapping inside the UITextField as normal
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
-  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
-    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
-  }
+  [self resetScribbleInteractionStatusIfEnding];
   [self.viewResponder touchesBegan:touches withEvent:event];
 }
 
@@ -995,14 +1004,12 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
-  NSLog(@"[scribble] scribbleInteractionWillBeginWriting");
   _scribbleInteractionStatus = FlutterScribbleInteractionStatusStarted;
   [_textInputDelegate flutterTextInputViewScribbleInteractionBegan:self];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
-  NSLog(@"[scribble] scribbleInteractionDidFinishWriting");
   _scribbleInteractionStatus = FlutterScribbleInteractionStatusEnding;
   [_textInputDelegate flutterTextInputViewScribbleInteractionFinished:self];
 }
@@ -1025,6 +1032,22 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
   // from changing focus by itself (the framework
   // focus will be out of sync if that happens).
   return _textInputClient != 0;
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+  // When scribble is available, the FlutterTextInputView will display the native toolbar unless
+  // these text editing actions are disabled
+  if (isScribbleAvailable() &&
+      (action == @selector(paste:) || action == @selector(cut:) || action == @selector(copy:) ||
+       action == @selector(select:) || action == @selector(selectAll:) ||
+       action == @selector(delete:) || action == @selector(makeTextWritingDirectionLeftToRight:) ||
+       action == @selector(makeTextWritingDirectionRightToLeft:) ||
+       action == @selector(toggleBoldface:) || action == @selector(toggleItalics:) ||
+       action == @selector(toggleUnderline:) || action == NSSelectorFromString(@"_define:") ||
+       action == NSSelectorFromString(@"_lookup:") || action == NSSelectorFromString(@"_share:"))) {
+    return NO;
+  }
+  return [super canPerformAction:action withSender:sender];
 }
 
 #pragma mark - UITextInput Overrides
@@ -1068,9 +1091,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
     }
   }
 
-  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
-    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
-  }
+  [self resetScribbleInteractionStatusIfEnding];
 }
 
 - (id)insertDictationResultPlaceholder {
@@ -1113,9 +1134,6 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
   [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
-  [self setSelectedTextRangeLocal:[FlutterTextRange
-                                      rangeWithNSRange:[self clampSelection:selectedRange
-                                                                    forText:self.text]]];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1252,7 +1270,6 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
     return nil;
   }
 
-  NSLog(@"positionFromPosition _scribbleInteractionStatus %@", @(_scribbleInteractionStatus));
   if (_scribbleInteractionStatus != FlutterScribbleInteractionStatusNone) {
     return [FlutterTextPosition positionWithIndex:newLocation];
   }
@@ -1425,6 +1442,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
   if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
       _scribbleFocusStatus == FlutterScribbleFocusStatusUnfocused) {
+    NSLog(@"showAutocorrectionPromptRectForStart:%@, end:%@", @(start), @(end));
     [_textInputDelegate flutterTextInputView:self
         showAutocorrectionPromptRectForStart:start
                                          end:end
@@ -1679,9 +1697,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
   }
 
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
-  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
-    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
-  }
+  [self resetScribbleInteractionStatusIfEnding];
   _selectionRects = copiedRects;
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
@@ -1703,9 +1719,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
-  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
-    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
-  }
+  [self resetScribbleInteractionStatusIfEnding];
 
   // When deleting Thai vowel, _selectedTextRange has location
   // but does not have length, so we have to manually set it.
@@ -1750,6 +1764,12 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
 - (BOOL)accessibilityElementsHidden {
   return !_accessibilityEnabled;
+}
+
+- (void)resetScribbleInteractionStatusIfEnding {
+  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
+    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
+  }
 }
 
 @end
@@ -1903,20 +1923,17 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   [_activeView setEditableTransform:dictionary[@"transform"]];
-  // This is necessary to set up where the scribble interactable element will be
-  if (@available(iOS 14.0, *)) {
-    NSString* deviceModel = (NSString*)[UIDevice currentDevice].model;
-    if ([[deviceModel substringWithRange:NSMakeRange(0, 4)] isEqualToString:@"iPad"]) {
-      int leftIndex = 12;
-      int topIndex = 13;
-      _activeView.frame =
-          CGRectMake([dictionary[@"transform"][leftIndex] intValue],
-                     [dictionary[@"transform"][topIndex] intValue], [dictionary[@"width"] intValue],
-                     [dictionary[@"height"] intValue]);
-      _inputHider.frame = [[[UIApplication sharedApplication] delegate] window].frame;
-      NSLog(@"[scribble] _inputHider.frame: %@", @(_inputHider.frame));
-      NSLog(@"[scribble] _activeView.frame: %@", @(_activeView.frame));
-    }
+  if (isScribbleAvailable()) {
+    // This is necessary to set up where the scribble interactable element will be
+    int leftIndex = 12;
+    int topIndex = 13;
+    _inputHider.frame =
+        CGRectMake([dictionary[@"transform"][leftIndex] intValue],
+                   [dictionary[@"transform"][topIndex] intValue], [dictionary[@"width"] intValue],
+                   [dictionary[@"height"] intValue]);
+    _activeView.frame =
+        CGRectMake(0, 0, [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
+    _activeView.tintColor = [UIColor clearColor];
   }
 }
 

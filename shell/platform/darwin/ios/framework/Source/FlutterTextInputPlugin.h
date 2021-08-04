@@ -138,6 +138,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, assign) id<FlutterViewResponder> viewResponder;
 @property(nonatomic) FlutterScribbleFocusStatus scribbleFocusStatus;
 @property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
+- (void)resetScribbleInteractionStatusIfEnding;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

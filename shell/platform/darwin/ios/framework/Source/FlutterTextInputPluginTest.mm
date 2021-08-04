@@ -247,6 +247,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqual(callCount, 1);
 
     [inputView scribbleInteractionDidFinishWriting:scribbleInteraction];
+    [inputView resetScribbleInteractionStatusIfEnding];
     [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
     // showAutocorrectionPromptRectForStart fires in response to firstRectForRange.
     XCTAssertEqual(callCount, 2);
@@ -481,6 +482,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqual(updateCount, 1);
 
     [inputView scribbleInteractionDidFinishWriting:scribbleInteraction];
+    [inputView resetScribbleInteractionStatusIfEnding];
     [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
     // updateEditingClient fires in response to setMarkedText.
     XCTAssertEqual(updateCount, 2);
