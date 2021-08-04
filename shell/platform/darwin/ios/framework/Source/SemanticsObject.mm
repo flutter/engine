@@ -405,12 +405,15 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     [child privateSetParent:nil];
   }
   [_children removeAllObjects];
-  [_children release];
   _children = nil;
-  _parent = nil;
   _container.get().semanticsObject = nil;
-  [_platformViewSemanticsContainer release];
   [super dealloc];
+
+  // Due to a bug in -[UIAccessibilityElementSuperCategory dealloc]
+  // that calls into self.children, delay releasing ivars until after `[super dealloc]`.
+  // https://github.com/flutter/flutter/issues/87247
+  [_children release];
+  [_platformViewSemanticsContainer release];
 }
 
 #pragma mark - Semantic object property accesser
