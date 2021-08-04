@@ -461,7 +461,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/mousecursor':
         const MethodCodec codec = StandardMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
-        final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
+        final Map<dynamic, dynamic> arguments = decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
             MouseCursor.instance!.activateSystemCursor(arguments.tryString('kind'));
