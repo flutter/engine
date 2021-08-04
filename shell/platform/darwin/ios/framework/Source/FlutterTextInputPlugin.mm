@@ -389,7 +389,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
   BOOL isCloserVertically = yDist < yDistOther - 1;
   BOOL isEqualVertically = isApproximatelyEqual(yDist, yDistOther, 1);
   BOOL isAboveBottomOfLine = point.y <= selectionRect.origin.y + selectionRect.size.height;
-  BOOL isCloserHorizontally = xDist < xDistOther;
+  BOOL isCloserHorizontally = xDist <= xDistOther;
   BOOL isBelowBottomOfLine = point.y > selectionRect.origin.y + selectionRect.size.height;
   BOOL isFartherToRight =
       selectionRect.origin.x + (checkRightBoundary ? selectionRect.size.width : 0) >
@@ -647,7 +647,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
   FlutterTextRange* _selectedTextRange;
   UIInputViewController* _inputViewController;
   CGRect _cachedFirstRect;
-  BOOL _scribbleInProgress;
+  FlutterScribbleInteractionStatus _scribbleInteractionStatus;
   BOOL _hasPlaceholder;
   // Whether to show the system keyboard when this view
   // becomes the first responder. Typically set to false
@@ -673,6 +673,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
     _selectedTextRange = [[FlutterTextRange alloc] initWithNSRange:NSMakeRange(0, 0)];
     _markedRect = kInvalidFirstRect;
     _cachedFirstRect = kInvalidFirstRect;
+    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
@@ -848,7 +849,10 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
 // Forward touches to the viewResponder to allow tapping inside the UITextField as normal
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  _scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+  _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
+  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
+    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
+  }
   [self.viewResponder touchesBegan:touches withEvent:event];
 }
 
@@ -992,14 +996,14 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
   NSLog(@"[scribble] scribbleInteractionWillBeginWriting");
-  _scribbleInProgress = YES;
+  _scribbleInteractionStatus = FlutterScribbleInteractionStatusStarted;
   [_textInputDelegate flutterTextInputViewScribbleInteractionBegan:self];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
   NSLog(@"[scribble] scribbleInteractionDidFinishWriting");
-  // _scribbleInProgress = NO;
+  _scribbleInteractionStatus = FlutterScribbleInteractionStatusEnding;
   [_textInputDelegate flutterTextInputViewScribbleInteractionFinished:self];
 }
 
@@ -1054,13 +1058,18 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
   [self setSelectedTextRangeLocal:selectedTextRange];
   [self updateEditingState];
-  if (_scribbleInProgress || _scribbleFocusStatus == FlutterScribbleStatusFocused) {
+  if (_scribbleInteractionStatus != FlutterScribbleInteractionStatusNone ||
+      _scribbleFocusStatus == FlutterScribbleFocusStatusFocused) {
     NSAssert([selectedTextRange isKindOfClass:[FlutterTextRange class]],
              @"Expected a FlutterTextRange for range (got %@).", [selectedTextRange class]);
     FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
     if (flutterTextRange.range.length > 0) {
       [_textInputDelegate flutterTextInputView:self showToolbar:_textInputClient];
     }
+  }
+
+  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
+    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
   }
 }
 
@@ -1173,8 +1182,8 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
 
-  NSLog(@"[scribble] setMarkedText - _scribbleInProgress %@", @(_scribbleInProgress));
-  if (_scribbleInProgress || _scribbleFocusStatus != FlutterScribbleStatusUnfocused) {
+  if (_scribbleInteractionStatus != FlutterScribbleInteractionStatusNone ||
+      _scribbleFocusStatus != FlutterScribbleFocusStatusUnfocused) {
     return;
   }
 
@@ -1227,18 +1236,10 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
-  NSLog(@"[scribble] decrementOffsetPosition %@ (%@)", @(position), @(_scribbleInProgress));
-  // if (_scribbleInProgress) {
-  // return MAX(0, position - 1);
-  // }
   return fml::RangeForCharacterAtIndex(self.text, MAX(0, position - 1)).location;
 }
 
 - (NSUInteger)incrementOffsetPosition:(NSUInteger)position {
-  NSLog(@"[scribble] incrementOffsetPosition %@ (%@)", @(position), @(_scribbleInProgress));
-  // if (_scribbleInProgress) {
-  // return MIN(position + 1, self.text.length);
-  // }
   NSRange charRange = fml::RangeForCharacterAtIndex(self.text, position);
   return MIN(position + charRange.length, self.text.length);
 }
@@ -1251,8 +1252,8 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
     return nil;
   }
 
-  NSLog(@"[scribble] positionFromPosition - _scribbleInProgress %@", @(_scribbleInProgress));
-  if (_scribbleInProgress) {
+  NSLog(@"positionFromPosition _scribbleInteractionStatus %@", @(_scribbleInteractionStatus));
+  if (_scribbleInteractionStatus != FlutterScribbleInteractionStatusNone) {
     return [FlutterTextPosition positionWithIndex:newLocation];
   }
 
@@ -1422,8 +1423,8 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
     return _cachedFirstRect;
   }
 
-  NSLog(@"[scribble] firstRectForRange - _scribbleInProgress %@", @(_scribbleInProgress));
-  if (!_scribbleInProgress && _scribbleFocusStatus == FlutterScribbleStatusUnfocused) {
+  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
+      _scribbleFocusStatus == FlutterScribbleFocusStatusUnfocused) {
     [_textInputDelegate flutterTextInputView:self
         showAutocorrectionPromptRectForStart:start
                                          end:end
@@ -1677,8 +1678,10 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
     }
   }
 
-  _scribbleFocusStatus = FlutterScribbleStatusUnfocused;
-  _scribbleInProgress = NO;
+  _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
+  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
+    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
+  }
   _selectionRects = copiedRects;
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
@@ -1699,8 +1702,10 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
-  _scribbleFocusStatus = FlutterScribbleStatusUnfocused;
-  _scribbleInProgress = NO;
+  _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
+  if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusEnding) {
+    _scribbleInteractionStatus = FlutterScribbleInteractionStatusNone;
+  }
 
   // When deleting Thai vowel, _selectedTextRange has location
   // but does not have length, so we have to manually set it.
@@ -2224,7 +2229,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 - (BOOL)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
                    isElementFocused:(UIScribbleElementIdentifier)elementIdentifier
     API_AVAILABLE(ios(14.0)) {
-  return _activeView.scribbleFocusStatus == FlutterScribbleStatusFocused;
+  return _activeView.scribbleFocusStatus == FlutterScribbleFocusStatusFocused;
 }
 
 - (void)indirectScribbleInteraction:(UIIndirectScribbleInteraction*)interaction
@@ -2232,13 +2237,13 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
                      referencePoint:(CGPoint)focusReferencePoint
                          completion:(void (^)(UIResponder<UITextInput>* focusedInput))completion
     API_AVAILABLE(ios(14.0)) {
-  _activeView.scribbleFocusStatus = FlutterScribbleStatusFocusing;
+  _activeView.scribbleFocusStatus = FlutterScribbleFocusStatusFocusing;
   [_indirectScribbleDelegate flutterTextInputPlugin:self
                                        focusElement:elementIdentifier
                                             atPoint:focusReferencePoint
                                              result:^(id _Nullable result) {
                                                _activeView.scribbleFocusStatus =
-                                                   FlutterScribbleStatusFocused;
+                                                   FlutterScribbleFocusStatusFocused;
                                                completion(_activeView);
                                              }];
 }

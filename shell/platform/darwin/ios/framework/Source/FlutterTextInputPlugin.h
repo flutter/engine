@@ -13,10 +13,16 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
-typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
-  FlutterScribbleStatusUnfocused,
-  FlutterScribbleStatusFocusing,
-  FlutterScribbleStatusFocused,
+typedef NS_ENUM(NSInteger, FlutterScribbleFocusStatus) {
+  FlutterScribbleFocusStatusUnfocused,
+  FlutterScribbleFocusStatusFocusing,
+  FlutterScribbleFocusStatusFocused,
+};
+
+typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
+  FlutterScribbleInteractionStatusNone,
+  FlutterScribbleInteractionStatusStarted,
+  FlutterScribbleInteractionStatusEnding,
 };
 
 @interface FlutterTextInputPlugin
@@ -130,7 +136,7 @@ FLUTTER_DARWIN_EXPORT
 
 // Scribble Support
 @property(nonatomic, assign) id<FlutterViewResponder> viewResponder;
-@property(nonatomic) FlutterScribbleStatus scribbleFocusStatus;
+@property(nonatomic) FlutterScribbleFocusStatus scribbleFocusStatus;
 @property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
 
 @end

@@ -251,19 +251,19 @@ FLUTTER_ASSERT_ARC
     // showAutocorrectionPromptRectForStart fires in response to firstRectForRange.
     XCTAssertEqual(callCount, 2);
 
-    inputView.scribbleFocusStatus = FlutterScribbleStatusFocusing;
+    inputView.scribbleFocusStatus = FlutterScribbleFocusStatusFocusing;
     [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
     // showAutocorrectionPromptRectForStart does not fire in response to firstRectForRange during a
     // scribble-initiated focus.
     XCTAssertEqual(callCount, 2);
 
-    inputView.scribbleFocusStatus = FlutterScribbleStatusFocused;
+    inputView.scribbleFocusStatus = FlutterScribbleFocusStatusFocused;
     [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
     // showAutocorrectionPromptRectForStart does not fire in response to firstRectForRange after a
     // scribble-initiated focus.
     XCTAssertEqual(callCount, 2);
 
-    inputView.scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+    inputView.scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
     [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
     // showAutocorrectionPromptRectForStart fires in response to firstRectForRange.
     XCTAssertEqual(callCount, 3);
@@ -485,19 +485,19 @@ FLUTTER_ASSERT_ARC
     // updateEditingClient fires in response to setMarkedText.
     XCTAssertEqual(updateCount, 2);
 
-    inputView.scribbleFocusStatus = FlutterScribbleStatusFocusing;
+    inputView.scribbleFocusStatus = FlutterScribbleFocusStatusFocusing;
     [inputView setMarkedText:@"during focus" selectedRange:NSMakeRange(1, 2)];
     // updateEditingClient does not fire in response to setMarkedText during a scribble-initiated
     // focus.
     XCTAssertEqual(updateCount, 2);
 
-    inputView.scribbleFocusStatus = FlutterScribbleStatusFocused;
+    inputView.scribbleFocusStatus = FlutterScribbleFocusStatusFocused;
     [inputView setMarkedText:@"after focus" selectedRange:NSMakeRange(2, 3)];
     // updateEditingClient does not fire in response to setMarkedText after a scribble-initiated
     // focus.
     XCTAssertEqual(updateCount, 2);
 
-    inputView.scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+    inputView.scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
     [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
     // updateEditingClient fires in response to setMarkedText.
     XCTAssertEqual(updateCount, 3);
