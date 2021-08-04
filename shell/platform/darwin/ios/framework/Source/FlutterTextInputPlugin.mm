@@ -355,29 +355,45 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return FlutterAutofillTypeNone;
 }
 
-static BOOL isPositionCloserToPoint(CGPoint point,
-                                    CGRect position,
-                                    CGRect otherPosition,
-                                    BOOL checkRightBoundary) {
-  CGPoint pointForPosition =
-      CGPointMake(position.origin.x + (checkRightBoundary ? position.size.width : 0),
-                  position.origin.y + position.size.height * 0.5);
-  float yDist = fabs(pointForPosition.y - point.y);
-  float xDist = fabs(pointForPosition.x - point.x);
+static BOOL isApproximatelyEqual(float x, float y, float delta) {
+  return x >= y - delta && x <= y + delta;
+}
 
-  CGPoint pointForOtherPosition =
-      CGPointMake(otherPosition.origin.x + (checkRightBoundary ? position.size.width : 0),
-                  otherPosition.origin.y + otherPosition.size.height * 0.5);
-  float yDistOther = fabs(pointForOtherPosition.y - point.y);
-  float xDistOther = fabs(pointForOtherPosition.x - point.x);
+// Checks whether point should be considered closer to selectionRect compared to
+// otherSelectionRect.
+//
+// If checkRightBoundary is set, the right-center point on selectionRect and
+// otherSelectionRect will be used instead of the left-center point.
+//
+// This uses special (empirically determined) logic for determining the closer rect,
+// rather than a simple distance calculation. First, the closer vertical distance is
+// determined. Within the closest y distance, if the point is above the bottom
+// of the closest rect, the x distance will be minimized; however, if the point is
+// below the bottom of the rect, the x value will be maximized.
+static BOOL isSelectionRectCloserToPoint(CGPoint point,
+                                         CGRect selectionRect,
+                                         CGRect otherSelectionRect,
+                                         BOOL checkRightBoundary) {
+  CGPoint pointForSelectionRect =
+      CGPointMake(selectionRect.origin.x + (checkRightBoundary ? selectionRect.size.width : 0),
+                  selectionRect.origin.y + selectionRect.size.height * 0.5);
+  float yDist = fabs(pointForSelectionRect.y - point.y);
+  float xDist = fabs(pointForSelectionRect.x - point.x);
+
+  CGPoint pointForOtherSelectionRect =
+      CGPointMake(otherSelectionRect.origin.x + (checkRightBoundary ? selectionRect.size.width : 0),
+                  otherSelectionRect.origin.y + otherSelectionRect.size.height * 0.5);
+  float yDistOther = fabs(pointForOtherSelectionRect.y - point.y);
+  float xDistOther = fabs(pointForOtherSelectionRect.x - point.x);
 
   BOOL isCloserVertically = yDist < yDistOther - 1;
-  BOOL isEqualVertically = yDist >= yDistOther - 1 && yDist <= yDistOther + 1;
-  BOOL isAboveBottomOfLine = point.y <= position.origin.y + position.size.height;
+  BOOL isEqualVertically = isApproximatelyEqual(yDist, yDistOther, 1);
+  BOOL isAboveBottomOfLine = point.y <= selectionRect.origin.y + selectionRect.size.height;
   BOOL isCloserHorizontally = xDist < xDistOther;
-  BOOL isBelowBottomOfLine = point.y > position.origin.y + position.size.height;
+  BOOL isBelowBottomOfLine = point.y > selectionRect.origin.y + selectionRect.size.height;
   BOOL isFartherToRight =
-      position.origin.x + (checkRightBoundary ? position.size.width : 0) > otherPosition.origin.x;
+      selectionRect.origin.x + (checkRightBoundary ? selectionRect.size.width : 0) >
+      otherSelectionRect.origin.x;
   return (isCloserVertically ||
           (isEqualVertically && ((isAboveBottomOfLine && isCloserHorizontally) ||
                                  (isBelowBottomOfLine && isFartherToRight))));
@@ -872,7 +888,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     for (UIPress* press in presses) {
       [_textInputDelegate
           flutterTextInputView:self
-              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                                 withEvent:event] autorelease]
                     nextAction:^() {
                       [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
                     }];
@@ -888,7 +905,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     for (UIPress* press in presses) {
       [_textInputDelegate
           flutterTextInputView:self
-              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                                 withEvent:event] autorelease]
                     nextAction:^() {
                       [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
                     }];
@@ -904,7 +922,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     for (UIPress* press in presses) {
       [_textInputDelegate
           flutterTextInputView:self
-              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                                 withEvent:event] autorelease]
                     nextAction:^() {
                       [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
                     }];
@@ -920,7 +939,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     for (UIPress* press in presses) {
       [_textInputDelegate
           flutterTextInputView:self
-              handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                                 withEvent:event] autorelease]
                     nextAction:^() {
                       [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
                     }];
@@ -971,13 +991,15 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (void)scribbleInteractionWillBeginWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
+  NSLog(@"[scribble] scribbleInteractionWillBeginWriting");
   _scribbleInProgress = YES;
   [_textInputDelegate flutterTextInputViewScribbleInteractionBegan:self];
 }
 
 - (void)scribbleInteractionDidFinishWriting:(UIScribbleInteraction*)interaction
     API_AVAILABLE(ios(14.0)) {
-  _scribbleInProgress = NO;
+  NSLog(@"[scribble] scribbleInteractionDidFinishWriting");
+  // _scribbleInProgress = NO;
   [_textInputDelegate flutterTextInputViewScribbleInteractionFinished:self];
 }
 
@@ -1151,8 +1173,10 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
 
-  if (_scribbleInProgress || _scribbleFocusStatus != FlutterScribbleStatusUnfocused)
+  NSLog(@"[scribble] setMarkedText - _scribbleInProgress %@", @(_scribbleInProgress));
+  if (_scribbleInProgress || _scribbleFocusStatus != FlutterScribbleStatusUnfocused) {
     return;
+  }
 
   if (markedText == nil)
     markedText = @"";
@@ -1203,11 +1227,20 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 }
 
 - (NSUInteger)decrementOffsetPosition:(NSUInteger)position {
-  return MAX(0, position - 1);
+  NSLog(@"[scribble] decrementOffsetPosition %@ (%@)", @(position), @(_scribbleInProgress));
+  // if (_scribbleInProgress) {
+  // return MAX(0, position - 1);
+  // }
+  return fml::RangeForCharacterAtIndex(self.text, MAX(0, position - 1)).location;
 }
 
 - (NSUInteger)incrementOffsetPosition:(NSUInteger)position {
-  return MIN(position + 1, self.text.length);
+  NSLog(@"[scribble] incrementOffsetPosition %@ (%@)", @(position), @(_scribbleInProgress));
+  // if (_scribbleInProgress) {
+  // return MIN(position + 1, self.text.length);
+  // }
+  NSRange charRange = fml::RangeForCharacterAtIndex(self.text, position);
+  return MIN(position + charRange.length, self.text.length);
 }
 
 - (UITextPosition*)positionFromPosition:(UITextPosition*)position offset:(NSInteger)offset {
@@ -1218,6 +1251,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     return nil;
   }
 
+  NSLog(@"[scribble] positionFromPosition - _scribbleInProgress %@", @(_scribbleInProgress));
   if (_scribbleInProgress) {
     return [FlutterTextPosition positionWithIndex:newLocation];
   }
@@ -1388,6 +1422,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     return _cachedFirstRect;
   }
 
+  NSLog(@"[scribble] firstRectForRange - _scribbleInProgress %@", @(_scribbleInProgress));
   if (!_scribbleInProgress && _scribbleFocusStatus == FlutterScribbleStatusUnfocused) {
     [_textInputDelegate flutterTextInputView:self
         showAutocorrectionPromptRectForStart:start
@@ -1495,7 +1530,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     NSUInteger position = _selectionRects[i].position;
     if (position >= start && position <= end) {
       BOOL isFirst = _closestIndex == 0;
-      if (isFirst || isPositionCloserToPoint(point, _selectionRects[i].rect, _closestRect, NO)) {
+      if (isFirst || isSelectionRectCloserToPoint(point, _selectionRects[i].rect, _closestRect,
+                                                  /*checkRightBoundary=*/NO)) {
         _closestIndex = i;
         _closestRect = _selectionRects[i].rect;
         _closestPosition = position;
@@ -1510,7 +1546,8 @@ static BOOL isPositionCloserToPoint(CGPoint point,
     NSUInteger i = [_selectionRects count] - 1;
     NSUInteger position = _selectionRects[i].position + 1;
     if (position <= end) {
-      if (isPositionCloserToPoint(point, _selectionRects[i].rect, _closestRect, YES)) {
+      if (isSelectionRectCloserToPoint(point, _selectionRects[i].rect, _closestRect,
+                                       /*checkRightBoundary=*/YES)) {
         _closestIndex = [_selectionRects count];
         _closestPosition = position;
       }
@@ -1641,6 +1678,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
   }
 
   _scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+  _scribbleInProgress = NO;
   _selectionRects = copiedRects;
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
@@ -1662,6 +1700,7 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 - (void)deleteBackward {
   _selectionAffinity = _kTextAffinityDownstream;
   _scribbleFocusStatus = FlutterScribbleStatusUnfocused;
+  _scribbleInProgress = NO;
 
   // When deleting Thai vowel, _selectedTextRange has location
   // but does not have length, so we have to manually set it.
@@ -1859,13 +1898,21 @@ static BOOL isPositionCloserToPoint(CGPoint point,
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   [_activeView setEditableTransform:dictionary[@"transform"]];
-  // TODO(fbcouch): only do this on iPadOS?
   // This is necessary to set up where the scribble interactable element will be
-  int leftIndex = 12;
-  int topIndex = 13;
-  _activeView.frame = CGRectMake([dictionary[@"transform"][leftIndex] intValue],
-                                 [dictionary[@"transform"][topIndex] intValue],
-                                 [dictionary[@"width"] intValue], [dictionary[@"height"] intValue]);
+  if (@available(iOS 14.0, *)) {
+    NSString* deviceModel = (NSString*)[UIDevice currentDevice].model;
+    if ([[deviceModel substringWithRange:NSMakeRange(0, 4)] isEqualToString:@"iPad"]) {
+      int leftIndex = 12;
+      int topIndex = 13;
+      _activeView.frame =
+          CGRectMake([dictionary[@"transform"][leftIndex] intValue],
+                     [dictionary[@"transform"][topIndex] intValue], [dictionary[@"width"] intValue],
+                     [dictionary[@"height"] intValue]);
+      _inputHider.frame = [[[UIApplication sharedApplication] delegate] window].frame;
+      NSLog(@"[scribble] _inputHider.frame: %@", @(_inputHider.frame));
+      NSLog(@"[scribble] _activeView.frame: %@", @(_activeView.frame));
+    }
+  }
 }
 
 - (void)updateMarkedRect:(NSDictionary*)dictionary {

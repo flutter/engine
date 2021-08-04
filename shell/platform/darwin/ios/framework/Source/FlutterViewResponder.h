@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 @protocol FlutterViewResponder <NSObject>
 
 @property(nonatomic, strong) UIView* view;
@@ -18,5 +19,6 @@
 - (void)touchesEstimatedPropertiesUpdated:(NSSet*)touches;
 
 @end
+NS_ASSUME_NONNULL_END
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWRESPONDER_H_

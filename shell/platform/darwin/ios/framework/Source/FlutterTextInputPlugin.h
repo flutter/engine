@@ -24,8 +24,7 @@ typedef NS_ENUM(NSInteger, FlutterScribbleStatus) {
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
-// @property(nonatomic, readonly) id<FlutterViewResponder> viewResponder;
-@property(nonatomic, assign)
+@property(nonatomic, strong)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
 

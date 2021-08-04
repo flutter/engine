@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 @class FlutterTextInputPlugin;
 
 @protocol FlutterIndirectScribbleDelegate <NSObject>
@@ -18,5 +19,6 @@
          requestElementsInRect:(CGRect)rect
                         result:(FlutterResult)callback;
 @end
+NS_ASSUME_NONNULL_END
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERINDIRECTSCRIBBLEDELEGATE_H_
