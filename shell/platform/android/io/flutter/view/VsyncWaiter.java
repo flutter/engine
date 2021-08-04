@@ -12,6 +12,7 @@ import io.flutter.embedding.engine.FlutterJNI;
 // TODO(mattcarroll): add javadoc.
 public class VsyncWaiter {
   private static VsyncWaiter instance;
+  private float lastFps;
 
   @NonNull
   public static VsyncWaiter getInstance(@NonNull WindowManager windowManager) {
@@ -33,6 +34,10 @@ public class VsyncWaiter {
                     @Override
                     public void doFrame(long frameTimeNanos) {
                       float fps = windowManager.getDefaultDisplay().getRefreshRate();
+                      if (fps != lastFps) [
+                        lastFps = fps;
+                        FlutterJNI.setRefreshRateFPS(fps);
+                      ]
                       long refreshPeriodNanos = (long) (1000000000.0 / fps);
                       FlutterJNI.nativeOnVsync(
                           frameTimeNanos, frameTimeNanos + refreshPeriodNanos, cookie);
@@ -48,7 +53,7 @@ public class VsyncWaiter {
   public void init() {
     FlutterJNI.setAsyncWaitForVsyncDelegate(asyncWaitForVsyncDelegate);
 
-    // TODO(mattcarroll): look into moving FPS reporting to a plugin
+    lastFps = fps;
     float fps = windowManager.getDefaultDisplay().getRefreshRate();
     FlutterJNI.setRefreshRateFPS(fps);
   }

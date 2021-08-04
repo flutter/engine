@@ -214,15 +214,8 @@ public class FlutterJNI {
   }
 
   public static void setRefreshRateFPS(float refreshRateFPS) {
-    if (FlutterJNI.setRefreshRateFPSCalled) {
-      Log.w(TAG, "FlutterJNI.setRefreshRateFPS called more than once");
-    }
-
     FlutterJNI.refreshRateFPS = refreshRateFPS;
-    FlutterJNI.setRefreshRateFPSCalled = true;
   }
-
-  private static boolean setRefreshRateFPSCalled = false;
 
   // TODO(mattcarroll): add javadocs
   public static void setAsyncWaitForVsyncDelegate(@Nullable AsyncWaitForVsyncDelegate delegate) {
