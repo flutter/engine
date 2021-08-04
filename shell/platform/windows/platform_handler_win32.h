@@ -27,6 +27,9 @@ class PlatformHandlerWin32 : public PlatformHandler {
   // |PlatformHandler|
   void GetPlainText(std::unique_ptr<MethodResult<rapidjson::Document>> result,
                     std::string_view key) override;
+ protected:
+  // |PlatformHandler|
+  void HasStrings(std::unique_ptr<MethodResult<rapidjson::Document>> result) override;
 
   // |PlatformHandler|
   void SetPlainText(
