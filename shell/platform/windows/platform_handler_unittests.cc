@@ -22,6 +22,7 @@ using ::testing::_;
 static constexpr char kChannelName[] = "flutter/platform";
 
 static constexpr char kGetClipboardDataMethod[] = "Clipboard.getData";
+static constexpr char kHasStringsClipboardMethod[] = "Clipboard.hasStrings";
 static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 
 static constexpr char kTextPlainFormat[] = "text/plain";
@@ -90,6 +91,52 @@ TEST(PlatformHandler, RejectsGettingUnknownTypes) {
   args->PushBack("madeup/contenttype", allocator);
   auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
       MethodCall<rapidjson::Document>(kGetClipboardDataMethod,
+                                      std::move(args)));
+
+  MockMethodResult result;
+  // Requsting an unknow content type is an error.
+  EXPECT_CALL(result, ErrorInternal(_, _, _));
+  EXPECT_TRUE(messenger.SimulateEngineMessage(
+      kChannelName, encoded->data(), encoded->size(),
+      [&](const uint8_t* reply, size_t reply_size) {
+        JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
+            reply, reply_size, &result);
+      }));
+}
+
+TEST(PlatformHandler, HasStringsCallsThrough) {
+  TestBinaryMessenger messenger;
+  TestPlatformHandler platform_handler(&messenger);
+
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack(kTextPlainFormat, allocator);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
+                                      std::move(args)));
+
+  // Set up a handler to call a response on |result| so that it doesn't log
+  // on destruction about leaking.
+  ON_CALL(platform_handler, HasStrings)
+      .WillByDefault(
+          [](std::unique_ptr<MethodResult<rapidjson::Document>> result,
+             auto key) { result->NotImplemented(); });
+
+  EXPECT_CALL(platform_handler, HasStrings(_, ::testing::StrEq("text")));
+  EXPECT_TRUE(messenger.SimulateEngineMessage(
+      kChannelName, encoded->data(), encoded->size(),
+      [](const uint8_t* reply, size_t reply_size) {}));
+}
+
+TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
+  TestBinaryMessenger messenger;
+  TestPlatformHandler platform_handler(&messenger);
+
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack("madeup/contenttype", allocator);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
                                       std::move(args)));
 
   MockMethodResult result;
