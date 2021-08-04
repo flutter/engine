@@ -34,10 +34,10 @@ public class VsyncWaiter {
                     @Override
                     public void doFrame(long frameTimeNanos) {
                       float fps = windowManager.getDefaultDisplay().getRefreshRate();
-                      if (fps != lastFps) [
+                      if (fps != lastFps) {
                         lastFps = fps;
                         FlutterJNI.setRefreshRateFPS(fps);
-                      ]
+                      }
                       long refreshPeriodNanos = (long) (1000000000.0 / fps);
                       FlutterJNI.nativeOnVsync(
                           frameTimeNanos, frameTimeNanos + refreshPeriodNanos, cookie);
