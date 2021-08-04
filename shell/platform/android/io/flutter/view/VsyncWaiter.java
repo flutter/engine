@@ -53,8 +53,8 @@ public class VsyncWaiter {
   public void init() {
     FlutterJNI.setAsyncWaitForVsyncDelegate(asyncWaitForVsyncDelegate);
 
-    lastFps = fps;
     float fps = windowManager.getDefaultDisplay().getRefreshRate();
+    lastFps = fps;
     FlutterJNI.setRefreshRateFPS(fps);
   }
 }
