@@ -172,6 +172,22 @@ void WindowWin32::UpdateCursorRect(const Rect& rect) {
   text_input_manager_.UpdateCaretRect(rect);
 }
 
+static uint16_t ResolveKeyCode(uint16_t original, bool extended, uint8_t scancode) {
+  switch (original) {
+    case VK_SHIFT:
+    case VK_LSHIFT:
+      return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);;
+    case VK_MENU:
+    case VK_LMENU:
+      return extended ? VK_RMENU : VK_LMENU;
+    case VK_CONTROL:
+    case VK_LCONTROL:
+      return extended ? VK_RCONTROL : VK_LCONTROL;
+    default:
+      return original;
+  }
+}
+
 LRESULT
 WindowWin32::HandleMessage(UINT const message,
                            WPARAM const wparam,
@@ -383,9 +399,7 @@ WindowWin32::HandleMessage(UINT const message,
       const unsigned int scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
-      if (keyCode == VK_SHIFT || keyCode == VK_MENU || keyCode == VK_CONTROL) {
-        keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
-      }
+      keyCode = ResolveKeyCode(keyCode, extended, scancode);
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
       if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
