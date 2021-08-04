@@ -244,9 +244,8 @@ void PlatformHandlerWin32::HasStrings(
   rapidjson::Document document;
   document.SetObject();
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-  document.AddMember(
-      rapidjson::Value(kValueKey, allocator),
-      rapidjson::Value(clipboard.HasString()), allocator);
+  document.AddMember(rapidjson::Value(kValueKey, allocator),
+                     rapidjson::Value(clipboard.HasString()), allocator);
   result->Success(document);
 }
 
