@@ -16,7 +16,7 @@ void testMain() {
         GestureSettings(physicalDoubleTapSlop: 2.0, physicalTouchSlop: 1.0);
 
     expect(gestureSettings.toString(),
-        'GestureSettings(physicalTouchSlop: 1.0, physicalDoubleTapSlop: 2.0)');
+        'GestureSettings(physicalTouchSlop: 1, physicalDoubleTapSlop: 2)');
   });
 
   test('GestureSettings has a correct equality', () {
