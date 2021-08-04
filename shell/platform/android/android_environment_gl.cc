@@ -24,7 +24,7 @@ AndroidEnvironmentGL::AndroidEnvironmentGL()
 }
 
 AndroidEnvironmentGL::~AndroidEnvironmentGL() {
-  // Diconnect the display if valid.
+  // Disconnect the display if valid.
   if (display_ != EGL_NO_DISPLAY) {
     eglTerminate(display_);
   }
