@@ -580,6 +580,14 @@ extension JsonExtensions on Map<dynamic, dynamic> {
     return this[propertyName] as Map<String, dynamic>?;
   }
 
+  Map<dynamic, dynamic> readDynamicJson(String propertyName) {
+    return this[propertyName] as Map<dynamic, dynamic>;
+  }
+
+  Map<dynamic, dynamic>? tryDynamicJson(String propertyName) {
+    return this[propertyName] as Map<dynamic, dynamic>?;
+  }
+
   List<dynamic> readList(String propertyName) {
     return this[propertyName] as List<dynamic>;
   }
