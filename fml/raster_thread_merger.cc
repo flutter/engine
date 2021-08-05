@@ -65,7 +65,7 @@ void RasterThreadMerger::MergeWithLease(int lease_term) {
     return;
   }
 
-  bool success = shared_merger_->MergeWithLease(lease_term);
+  bool success = shared_merger_->MergeWithLease(this, lease_term);
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();
   }
@@ -106,7 +106,10 @@ void RasterThreadMerger::ExtendLeaseTo(int lease_term) {
     return;
   }
   std::scoped_lock lock(mutex_);
-  shared_merger_->ExtendLeaseTo(lease_term);
+  if (!IsEnabledUnSafe()) {
+    return;
+  }
+  shared_merger_->ExtendLeaseTo(this, lease_term);
 }
 
 bool RasterThreadMerger::IsMerged() {
@@ -161,7 +164,7 @@ RasterThreadStatus RasterThreadMerger::DecrementLease() {
   if (!IsEnabledUnSafe()) {
     return RasterThreadStatus::kRemainsMerged;
   }
-  bool unmerged_after_decrement = shared_merger_->DecrementLease();
+  bool unmerged_after_decrement = shared_merger_->DecrementLease(this);
   if (unmerged_after_decrement) {
     if (merge_unmerge_callback_ != nullptr) {
       merge_unmerge_callback_();
@@ -170,11 +173,6 @@ RasterThreadStatus RasterThreadMerger::DecrementLease() {
   }
 
   return RasterThreadStatus::kRemainsMerged;
-}
-
-void RasterThreadMerger::RecordMergeCaller() {
-  std::scoped_lock lock(mutex_);
-  shared_merger_->RecordMergerCaller(this);
 }
 
 }  // namespace fml

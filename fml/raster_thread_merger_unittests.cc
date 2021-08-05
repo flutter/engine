@@ -503,24 +503,32 @@ TEST(RasterThreadMerger, MultipleMergersCanMergeSameThreadPair) {
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
 
-  // Merge using the second merger
-  raster_thread_merger2_->MergeWithLease(kNumFramesMerged);
+  // Merge using the first merger
+  raster_thread_merger1_->MergeWithLease(kNumFramesMerged);
+
+  ASSERT_TRUE(raster_thread_merger1_->IsMerged());
+  ASSERT_TRUE(raster_thread_merger2_->IsMerged());
 
   // let there be one more turn till the leases expire.
   for (int i = 0; i < kNumFramesMerged - 1; i++) {
-    // Check merge state using the first merger
+    // Check merge state using the two merger
     ASSERT_TRUE(raster_thread_merger1_->IsMerged());
+    ASSERT_TRUE(raster_thread_merger2_->IsMerged());
     raster_thread_merger1_->DecrementLease();
   }
 
-  // extend the lease once using the first merger
+  ASSERT_TRUE(raster_thread_merger1_->IsMerged());
+  ASSERT_TRUE(raster_thread_merger2_->IsMerged());
+
+  // extend the lease once with the first merger
   raster_thread_merger1_->ExtendLeaseTo(kNumFramesMerged);
 
   // we will NOT last for 1 extra turn, we just set it.
   for (int i = 0; i < kNumFramesMerged; i++) {
-    // Check merge state using the second merger
+    // Check merge state using the two merger
+    ASSERT_TRUE(raster_thread_merger1_->IsMerged());
     ASSERT_TRUE(raster_thread_merger2_->IsMerged());
-    raster_thread_merger2_->DecrementLease();
+    raster_thread_merger1_->DecrementLease();
   }
 
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
@@ -541,19 +549,12 @@ TEST(RasterThreadMerger, TheLastCallerOfMultipleMergersCanUnmergeNow) {
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
 
-  // Recording mergers themselves is needed.
-  raster_thread_merger1_->RecordMergeCaller();
-  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
-  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
-  raster_thread_merger2_->RecordMergeCaller();
-  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
-  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
-
   // Merge using the mergers
   raster_thread_merger1_->MergeWithLease(kNumFramesMerged);
   ASSERT_TRUE(raster_thread_merger1_->IsMerged());
   ASSERT_TRUE(raster_thread_merger2_->IsMerged());
-  raster_thread_merger2_->MergeWithLease(kNumFramesMerged);
+  // Extend the second merger's lease
+  raster_thread_merger2_->ExtendLeaseTo(kNumFramesMerged);
   ASSERT_TRUE(raster_thread_merger1_->IsMerged());
   ASSERT_TRUE(raster_thread_merger2_->IsMerged());
 
@@ -609,14 +610,6 @@ TEST(RasterThreadMerger,
     raster_thread_merger2_->DecrementLease();
   }
 
-  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
-  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
-
-  // test caller records are separated below
-  raster_thread_merger1_->RecordMergeCaller();
-  ASSERT_FALSE(raster_thread_merger1_->IsMerged());
-  ASSERT_FALSE(raster_thread_merger2_->IsMerged());
-  raster_thread_merger2_->RecordMergeCaller();
   ASSERT_FALSE(raster_thread_merger1_->IsMerged());
   ASSERT_FALSE(raster_thread_merger2_->IsMerged());
 

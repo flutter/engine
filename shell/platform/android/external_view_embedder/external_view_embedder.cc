@@ -216,8 +216,6 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
   if (!FrameHasPlatformLayers()) {
     return PostPrerollResult::kSuccess;
   }
-  // Record merger firstly when frame has platform layers
-  raster_thread_merger->RecordMergeCaller();
   if (!raster_thread_merger->IsMerged()) {
     // The raster thread merger may be disabled if the rasterizer is being
     // created or teared down.

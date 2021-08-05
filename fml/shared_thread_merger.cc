@@ -10,22 +10,14 @@
 
 namespace fml {
 
-const int SharedThreadMerger::kLeaseNotSet = -1;
-
 SharedThreadMerger::SharedThreadMerger(fml::TaskQueueId owner,
                                        fml::TaskQueueId subsumed)
     : owner_(owner),
       subsumed_(subsumed),
-      task_queues_(fml::MessageLoopTaskQueues::GetInstance()),
-      lease_term_(kLeaseNotSet) {}
+      task_queues_(fml::MessageLoopTaskQueues::GetInstance()) {}
 
-void SharedThreadMerger::RecordMergerCaller(RasterThreadMergerId caller) {
-  std::scoped_lock lock(mutex_);
-  // Record current merge caller into callers set.
-  merge_callers_.insert(caller);
-}
-
-bool SharedThreadMerger::MergeWithLease(int lease_term) {
+bool SharedThreadMerger::MergeWithLease(RasterThreadMergerId caller,
+                                        int lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(mutex_);
   if (IsMergedUnSafe()) {
@@ -33,14 +25,15 @@ bool SharedThreadMerger::MergeWithLease(int lease_term) {
   }
   bool success = task_queues_->Merge(owner_, subsumed_);
   FML_CHECK(success) << "Unable to merge the raster and platform threads.";
-
-  lease_term_ = lease_term;
+  // Save the lease term
+  lease_term_by_caller_[caller] = lease_term;
   return success;
 }
 
 bool SharedThreadMerger::UnMergeNowUnSafe() {
-  FML_CHECK(lease_term_ == 0)
-      << "lease_term_ must be 0 state before calling UnMergeNowUnSafe()";
+  FML_CHECK(IsAllLeaseTermsZeroUnSafe())
+      << "all lease term records must be zero before calling "
+         "UnMergeNowUnSafe()";
   bool success = task_queues_->Unmerge(owner_, subsumed_);
   FML_CHECK(success) << "Unable to un-merge the raster and platform threads.";
   return success;
@@ -48,22 +41,25 @@ bool SharedThreadMerger::UnMergeNowUnSafe() {
 
 bool SharedThreadMerger::UnMergeNowIfLastOne(RasterThreadMergerId caller) {
   std::scoped_lock lock(mutex_);
-  merge_callers_.erase(caller);
-  if (!merge_callers_.empty()) {
+  lease_term_by_caller_.erase(caller);
+  if (!lease_term_by_caller_.empty()) {
     return true;
   }
-  FML_CHECK(IsMergedUnSafe())
-      << "UnMergeNowIfLastOne() must be called only when threads are merged";
-  lease_term_ = 0;  // mark need unmerge now
   return UnMergeNowUnSafe();
 }
 
-bool SharedThreadMerger::DecrementLease() {
+bool SharedThreadMerger::DecrementLease(RasterThreadMergerId caller) {
   std::scoped_lock lock(mutex_);
-  FML_DCHECK(lease_term_ > 0)
-      << "lease_term should always be positive when merged.";
-  lease_term_--;
-  if (lease_term_ == 0) {
+  auto entry = lease_term_by_caller_.find(caller);
+  bool exist = entry != lease_term_by_caller_.end();
+  if (exist) {
+    std::atomic_int& lease_term_ref = entry->second;
+    FML_CHECK(lease_term_ref > 0)
+        << "lease_term should always be positive when merged, lease_term="
+        << lease_term_ref;
+    lease_term_ref--;
+  }
+  if (IsAllLeaseTermsZeroUnSafe()) {
     // Unmerge now because lease_term_ decreased to zero.
     UnMergeNowUnSafe();
     return true;
@@ -71,18 +67,22 @@ bool SharedThreadMerger::DecrementLease() {
   return false;
 }
 
-void SharedThreadMerger::ExtendLeaseTo(int lease_term) {
+void SharedThreadMerger::ExtendLeaseTo(RasterThreadMergerId caller,
+                                       int lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(mutex_);
   FML_DCHECK(IsMergedUnSafe())
       << "should be merged state when calling this method";
-  if (lease_term_ != kLeaseNotSet && lease_term > lease_term_) {
-    lease_term_ = lease_term;
-  }
+  lease_term_by_caller_[caller] = lease_term;
 }
 
 bool SharedThreadMerger::IsMergedUnSafe() const {
-  return lease_term_ > 0;
+  return !IsAllLeaseTermsZeroUnSafe();
+}
+
+bool SharedThreadMerger::IsAllLeaseTermsZeroUnSafe() const {
+  return std::all_of(lease_term_by_caller_.begin(), lease_term_by_caller_.end(),
+                     [&](const auto& item) { return item.second == 0; });
 }
 
 }  // namespace fml
