@@ -25,9 +25,9 @@ FLUTTER_ASSERT_ARC
   FlutterMethodChannel* navigationChannel = OCMClassMock([FlutterMethodChannel class]);
   OCMStub([engine navigationChannel]).andReturn(navigationChannel);
   OCMStub([viewController engine]).andReturn(engine);
-  // Set blockArg to a strong local to retain to end of scope.
-  id blockArg = [OCMArg invokeBlockWithArgs:@NO, nil];
-  OCMStub([engine waitForFirstFrame:3.0 callback:blockArg]);
+  // Set blockNoInvoker to a strong local to retain to end of scope.
+  id blockNoInvoker = [OCMArg invokeBlockWithArgs:@NO, nil];
+  OCMStub([engine waitForFirstFrame:3.0 callback:blockNoInvoker]);
   appDelegate.rootFlutterViewControllerGetter = ^{
     return viewController;
   };
@@ -50,9 +50,9 @@ FLUTTER_ASSERT_ARC
   FlutterMethodChannel* navigationChannel = OCMClassMock([FlutterMethodChannel class]);
   OCMStub([engine navigationChannel]).andReturn(navigationChannel);
   OCMStub([viewController engine]).andReturn(engine);
-  // Set blockArg to a strong local to retain to end of scope.
-  id blockArg = [OCMArg invokeBlockWithArgs:@NO, nil];
-  OCMStub([engine waitForFirstFrame:3.0 callback:blockArg]);
+  // Set blockNoInvoker to a strong local to retain to end of scope.
+  id blockNoInvoker = [OCMArg invokeBlockWithArgs:@NO, nil];
+  OCMStub([engine waitForFirstFrame:3.0 callback:blockNoInvoker]);
   appDelegate.rootFlutterViewControllerGetter = ^{
     return viewController;
   };
@@ -76,9 +76,9 @@ FLUTTER_ASSERT_ARC
   FlutterMethodChannel* navigationChannel = OCMClassMock([FlutterMethodChannel class]);
   OCMStub([engine navigationChannel]).andReturn(navigationChannel);
   OCMStub([viewController engine]).andReturn(engine);
-  // Set blockArg to a strong local to retain to end of scope.
-  id blockArg = [OCMArg invokeBlockWithArgs:@NO, nil];
-  OCMStub([engine waitForFirstFrame:3.0 callback:blockArg]);
+  // Set blockNoInvoker to a strong local to retain to end of scope.
+  id blockNoInvoker = [OCMArg invokeBlockWithArgs:@NO, nil];
+  OCMStub([engine waitForFirstFrame:3.0 callback:blockNoInvoker]);
   appDelegate.rootFlutterViewControllerGetter = ^{
     return viewController;
   };
