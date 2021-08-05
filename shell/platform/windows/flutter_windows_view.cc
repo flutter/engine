@@ -64,7 +64,8 @@ void FlutterWindowsView::SetEngine(
   flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state =
       GetKeyState;
 #endif
-  RegisterKeyboardHandlers(internal_plugin_messenger, dispatch_event, get_key_state);
+  RegisterKeyboardHandlers(internal_plugin_messenger, dispatch_event,
+                           get_key_state);
   platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<flutter::CursorHandler>(
       internal_plugin_messenger, binding_handler_.get());

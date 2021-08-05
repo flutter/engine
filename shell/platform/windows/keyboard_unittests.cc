@@ -4,8 +4,8 @@
 
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.h"
+#include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
@@ -56,7 +56,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   typedef std::function<void(const std::u16string& text)> U16StringHandler;
 
   MockFlutterWindowWin32(U16StringHandler on_text)
-    : FlutterWindowWin32(800, 600), on_text_(std::move(on_text)) {
+      : FlutterWindowWin32(800, 600), on_text_(std::move(on_text)) {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindowWin32::GetDpiScale()));
   }
@@ -76,9 +76,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
     return HandleMessage(message, wparam, lparam);
   }
 
-  void OnText(const std::u16string& text) override {
-    on_text_(text);
-  }
+  void OnText(const std::u16string& text) override { on_text_(text); }
 
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
@@ -119,8 +117,10 @@ class TestKeystate {
 class TestFlutterWindowsView : public FlutterWindowsView {
  public:
   TestFlutterWindowsView()
-        // The WindowBindingHandler is used for window size and such, and doesn't affect keyboard.
-      : FlutterWindowsView(std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
+      // The WindowBindingHandler is used for window size and such, and doesn't
+      // affect keyboard.
+      : FlutterWindowsView(
+            std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
         is_printable(true) {}
 
   void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
@@ -139,11 +139,12 @@ class TestFlutterWindowsView : public FlutterWindowsView {
       BinaryMessenger* messenger,
       KeyboardKeyHandler::EventDispatcher dispatch_event,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
-    FlutterWindowsView::RegisterKeyboardHandlers(messenger,
-      [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
-        return this->SendInput(cInputs, pInputs, cbSize);
-      },
-      key_state_.Getter());
+    FlutterWindowsView::RegisterKeyboardHandlers(
+        messenger,
+        [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
+          return this->SendInput(cInputs, pInputs, cbSize);
+        },
+        key_state_.Getter());
   }
 
  private:
@@ -196,7 +197,8 @@ static std::vector<KeyCall> key_calls;
 
 void clear_key_calls() {
   for (KeyCall& key_call : key_calls) {
-    if (key_call.type == kKeyCallOnKey && key_call.key_event.character != nullptr) {
+    if (key_call.type == kKeyCallOnKey &&
+        key_call.key_event.character != nullptr) {
       delete[] key_call.key_event.character;
     }
   }
@@ -251,10 +253,12 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
       [](FLUTTER_API_SYMBOL(FlutterEngine) engine, const FlutterKeyEvent* event,
          FlutterKeyEventCallback callback, void* user_data) {
         FlutterKeyEvent clone_event = *event;
-        clone_event.character = event->character == nullptr ? nullptr : clone_string(event->character);
+        clone_event.character = event->character == nullptr
+                                    ? nullptr
+                                    : clone_string(event->character);
         key_calls.push_back(KeyCall{
-          .type = kKeyCallOnKey,
-          .key_event = clone_event,
+            .type = kKeyCallOnKey,
+            .key_event = clone_event,
         });
         if (callback != nullptr) {
           callback(test_response, user_data);
@@ -309,18 +313,16 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
 class KeyboardTester {
  public:
-  explicit KeyboardTester()
-  {
+  explicit KeyboardTester() {
     view_ = std::make_unique<TestFlutterWindowsView>();
     view_->SetEngine(std::move(GetTestEngine()));
     window_ = std::make_unique<MockFlutterWindowWin32>(
-      [](const std::u16string& text) {
-        key_calls.push_back(KeyCall{
-          .type = kKeyCallOnText,
-          .text = text,
+        [](const std::u16string& text) {
+          key_calls.push_back(KeyCall{
+              .type = kKeyCallOnText,
+              .text = text,
+          });
         });
-      }
-    );
     window_->SetView(view_.get());
   }
 
@@ -356,27 +358,31 @@ constexpr bool kWasUp = false;
 constexpr bool kSynthesized = true;
 constexpr bool kNotSynthesized = false;
 
-}
+}  // namespace
 
 #define EXPECT_CALL_IS_EVENT(_key_call, ...) \
-  EXPECT_EQ(_key_call.type, kKeyCallOnKey); \
+  EXPECT_EQ(_key_call.type, kKeyCallOnKey);  \
   EXPECT_EVENT_EQUALS(_key_call.key_event, __VA_ARGS__);
 
 TEST(KeyboardTest, LowerCaseA) {
   KeyboardTester tester;
 
-  tester.Responding(true)
-    .InjectWindowMessage(WM_KEYDOWN, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp));
+  tester.Responding(true).InjectWindowMessage(
+      WM_KEYDOWN, kVirtualKeyA,
+      CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp));
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA, kLogicalKeyA, "A", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "A", kNotSynthesized);
   clear_key_calls();
 
-  tester.Responding(true)
-    .InjectWindowMessage(WM_KEYUP, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasDown));
+  tester.Responding(true).InjectWindowMessage(
+      WM_KEYUP, kVirtualKeyA,
+      CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasDown));
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA, kLogicalKeyA, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
 }
 

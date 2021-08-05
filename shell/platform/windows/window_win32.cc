@@ -172,11 +172,14 @@ void WindowWin32::UpdateCursorRect(const Rect& rect) {
   text_input_manager_.UpdateCaretRect(rect);
 }
 
-static uint16_t ResolveKeyCode(uint16_t original, bool extended, uint8_t scancode) {
+static uint16_t ResolveKeyCode(uint16_t original,
+                               bool extended,
+                               uint8_t scancode) {
   switch (original) {
     case VK_SHIFT:
     case VK_LSHIFT:
-      return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);;
+      return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
+      ;
     case VK_MENU:
     case VK_LMENU:
       return extended ? VK_RMENU : VK_LMENU;
@@ -351,7 +354,8 @@ WindowWin32::HandleMessage(UINT const message,
       // Key presses that generate a non-surrogate should be sent from
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
-      if (keycode_for_char_message_ != 0 && (IS_HIGH_SURROGATE(character) || IS_LOW_SURROGATE(character))) {
+      if (keycode_for_char_message_ != 0 &&
+          (IS_HIGH_SURROGATE(character) || IS_LOW_SURROGATE(character))) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;

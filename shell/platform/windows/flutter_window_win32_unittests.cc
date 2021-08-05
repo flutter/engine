@@ -218,7 +218,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   void RegisterKeyboardHandlers(
       flutter::BinaryMessenger* messenger,
       flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,
-      flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
+      flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state)
+      override {
     auto spy_key_event_handler = std::make_unique<SpyKeyboardKeyHandler>(
         messenger, [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
           return this->SendInput(cInputs, pInputs, cbSize);
