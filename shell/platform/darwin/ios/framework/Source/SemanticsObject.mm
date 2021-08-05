@@ -372,6 +372,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
+  BOOL _inDealloc;
 }
 
 #pragma mark - Override base class designated initializers
@@ -399,6 +400,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     _bridge = bridge;
     _uid = uid;
     _children = [[NSMutableArray alloc] init];
+    _inDealloc = NO;
   }
 
   return self;
@@ -409,15 +411,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     [child privateSetParent:nil];
   }
   [_children removeAllObjects];
-  _children = nil;
-  _container.get().semanticsObject = nil;
-  [super dealloc];
-
-  // Due to a bug in -[UIAccessibilityElementSuperCategory dealloc]
-  // that calls into self.children, delay releasing ivars until after `[super dealloc]`.
-  // https://github.com/flutter/flutter/issues/87247
   [_children release];
+  _parent = nil;
+  _container.get().semanticsObject = nil;
   [_platformViewSemanticsContainer release];
+  _inDealloc = YES;
+  [super dealloc];
 }
 
 #pragma mark - Semantic object property accesser
@@ -437,11 +436,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   if (_node.IsPlatformViewNode()) {
     return YES;
   }
-  if (_children) {
-    return [self.children count] != 0;
-  } else {
-    return NO;
-  }
+  return [self.children count] != 0;
 }
 
 #pragma mark - Semantic object method
@@ -694,6 +689,14 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (id)accessibilityContainer {
+  if (_inDealloc) {
+    // In iOS9, `accessibilityContainer` will be called by `[UIAccessibilityElementSuperCategory
+    // dealloc]` during `[super dealloc]`. And will crash when accessing `_children` which has
+    // called `[_children release]` in `[SemanticsObject dealloc]`.
+    // https://github.com/flutter/flutter/issues/87247
+    return nil;
+  }
+
   if (![self isAccessibilityBridgeAlive]) {
     return nil;
   }
