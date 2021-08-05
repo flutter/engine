@@ -198,6 +198,8 @@ class WindowWin32 {
   // message.
   bool handled_for_char_message_ = false;
 
+  bool ignore_next_event = false;
+
   // Manages IME state.
   TextInputManagerWin32 text_input_manager_;
 };

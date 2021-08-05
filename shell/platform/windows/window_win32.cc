@@ -329,6 +329,9 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_SYSDEADCHAR:
     case WM_CHAR:
     case WM_SYSCHAR: {
+      if (ignore_next_event) {
+        break;
+      }
       static wchar_t s_pending_high_surrogate = 0;
 
       wchar_t character = static_cast<wchar_t>(wparam);
@@ -405,6 +408,8 @@ WindowWin32::HandleMessage(UINT const message,
       if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
         handled_for_char_message_ = true;
         return 0;
+      } else {
+        ignore_next_event = true;
       }
       break;
   }
