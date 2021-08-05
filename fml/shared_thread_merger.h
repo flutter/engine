@@ -45,7 +45,6 @@ class SharedThreadMerger
   bool DecrementLease(RasterThreadMergerId caller);
 
  private:
-  static const int kLeaseNotSet;
   fml::TaskQueueId owner_;
   fml::TaskQueueId subsumed_;
   fml::RefPtr<fml::MessageLoopTaskQueues> task_queues_;
