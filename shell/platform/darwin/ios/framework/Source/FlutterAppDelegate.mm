@@ -132,17 +132,11 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   }
 }
 
-static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
-  NSNumber* isEnabled = [infoDictionary objectForKey:@"FlutterDeepLinkingEnabled"];
-  if (isEnabled) {
-    return [isEnabled boolValue];
-  } else {
-    return NO;
-  }
-}
-
-- (BOOL)openURL:(NSURL*)url infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
-  if (!IsDeepLinkingEnabled(infoPlistGetter())) {
+- (BOOL)openURL:(NSURL*)url {
+  NSNumber* isDeepLinkingEnabled =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"];
+  if (!isDeepLinkingEnabled.boolValue) {
+    // Not set or NO.
     return NO;
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
@@ -179,10 +173,7 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   }
-  return [self openURL:url
-       infoPlistGetter:^NSDictionary*() {
-         return [[NSBundle mainBundle] infoDictionary];
-       }];
+  return [self openURL:url];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -233,10 +224,7 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
   if (userActivity.activityType == NSUserActivityTypeBrowsingWeb) {
     return NO;
   }
-  return [self openURL:userActivity.webpageURL
-       infoPlistGetter:^NSDictionary*() {
-         return [[NSBundle mainBundle] infoDictionary];
-       }];
+  return [self openURL:userActivity.webpageURL];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
