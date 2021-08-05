@@ -221,9 +221,6 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
                    restorationHandler:restorationHandler]) {
     return YES;
   }
-  if (userActivity.activityType == NSUserActivityTypeBrowsingWeb) {
-    return NO;
-  }
   return [self openURL:userActivity.webpageURL];
 }
 

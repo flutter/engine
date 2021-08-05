@@ -123,22 +123,6 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Deep linking
 
-- (void)testUniversalLinkWebBrowserUrl {
-  OCMStub([self.mockMainBundle objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"])
-      .andReturn(@YES);
-
-  NSUserActivity* userActivity =
-      [[NSUserActivity alloc] initWithActivityType:NSUserActivityTypeBrowsingWeb];
-  userActivity.webpageURL = [NSURL URLWithString:@"http://myApp/custom/route?query=test"];
-  BOOL result = [self.appDelegate
-               application:[UIApplication sharedApplication]
-      continueUserActivity:userActivity
-        restorationHandler:^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
-        }];
-  XCTAssertFalse(result);
-  OCMReject([self.mockNavigationChannel invokeMethod:OCMOCK_ANY arguments:OCMOCK_ANY]);
-}
-
 - (void)testUniversalLinkPushRoute {
   OCMStub([self.mockMainBundle objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"])
       .andReturn(@YES);
