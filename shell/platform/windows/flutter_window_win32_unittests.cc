@@ -30,8 +30,8 @@ namespace {
 // Creates a valid Windows LPARAM for WM_KEYDOWN and WM_CHAR from parameters
 // given.
 static LPARAM CreateKeyEventLparam(USHORT scancode,
-                                   bool extended = false,
-                                   bool was_down = 1,
+                                   bool extended,
+                                   bool was_down,
                                    USHORT repeat_count = 1,
                                    bool context_code = 0,
                                    bool transition_state = 1) {
@@ -215,7 +215,10 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   }
 
  protected:
-  void RegisterKeyboardHandlers(flutter::BinaryMessenger* messenger) override {
+  void RegisterKeyboardHandlers(
+      flutter::BinaryMessenger* messenger,
+      flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,
+      flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
     auto spy_key_event_handler = std::make_unique<SpyKeyboardKeyHandler>(
         messenger, [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
           return this->SendInput(cInputs, pInputs, cbSize);
@@ -235,8 +238,9 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     const KEYBDINPUT kbdinput = pInputs->ki;
     const UINT message =
         (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
+    const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
     const LPARAM lparam = CreateKeyEventLparam(
-        kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY);
+        kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
     // Windows would normally fill in the virtual key code for us, so we
     // simulate it for the test with the key we know is in the test. The
     // KBDINPUT we're passed doesn't have it filled in (on purpose, so that
@@ -345,8 +349,7 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
   TestFlutterWindowsView flutter_windows_view(
       std::move(window_binding_handler), virtual_key, false /* is_printable */);
   win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code, false /* extended */,
-                                       false /* PrevState */);
+  LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
 
   // Test an event not handled by the framework
   {
@@ -393,7 +396,7 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
 // Tests key event propagation of printable character key down events. These
 // differ from non-printable characters in that they follow a different code
 // path in the WndProc (HandleMessage), producing a follow-on WM_CHAR event.
-TEST(FlutterWindowWin32Test, CharKeyDownPropagationNotHandled) {
+TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
   // ::testing::InSequence in_sequence;
 
   constexpr WPARAM virtual_key = 65;  // The "A" key, which produces a character
@@ -406,69 +409,54 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagationNotHandled) {
   TestFlutterWindowsView flutter_windows_view(
       std::move(window_binding_handler), virtual_key, true /* is_printable */);
   win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code, false /* extended */,
-                                       true /* PrevState */);
-
-  test_response = false;
+  LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
   flutter_windows_view.SetEngine(std::move(GetTestEngine()));
-  EXPECT_CALL(*flutter_windows_view.key_event_handler,
-              KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                            false, true))
-      .Times(2)
-      .RetiresOnSaturation();
-  EXPECT_CALL(*flutter_windows_view.text_input_plugin,
-              KeyboardHook(_, _, _, _, _, _, _))
-      .Times(1)
-      .RetiresOnSaturation();
-  EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
-      .Times(1)
-      .RetiresOnSaturation();
-  EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
-      .Times(1)
-      .RetiresOnSaturation();
-  EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-            0);
-  EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
-  flutter_windows_view.InjectPendingEvents(&win32window);
-}
 
-// Tests key event propagation of printable character key down events. These
-// differ from non-printable characters in that they follow a different code
-// path in the WndProc (HandleMessage), producing a follow-on WM_CHAR event.
-TEST(FlutterWindowWin32Test, CharKeyDownPropagationHandled) {
-  // ::testing::InSequence in_sequence;
+  // Test an event not handled by the framework
+  {
+    test_response = false;
+    EXPECT_CALL(*flutter_windows_view.key_event_handler,
+                KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
+                             false, false))
+        .Times(2)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*flutter_windows_view.text_input_plugin,
+                KeyboardHook(_, _, _, _, _, _, _))
+        .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
+        .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
+        .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
+              0);
+    EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
+    flutter_windows_view.InjectPendingEvents(&win32window);
+  }
 
-  constexpr WPARAM virtual_key = 65;  // The "A" key, which produces a character
-  constexpr WPARAM scan_code = 30;
-  constexpr char32_t character = 65;
-
-  MockFlutterWindowWin32 win32window;
-  auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  TestFlutterWindowsView flutter_windows_view(
-      std::move(window_binding_handler), virtual_key, true /* is_printable */);
-  win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code, false /* extended */,
-                                       true /* PrevState */);
-
-  test_response = true;
-  flutter_windows_view.SetEngine(std::move(GetTestEngine()));
-  EXPECT_CALL(*flutter_windows_view.key_event_handler,
-              KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                            false /* is_printable */, true))
-      .Times(1)
-      .RetiresOnSaturation();
-  EXPECT_CALL(*flutter_windows_view.text_input_plugin,
-              KeyboardHook(_, _, _, _, _, _, _))
-      .Times(0);
-  EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
-      .Times(0);
-  EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
-      .Times(0);
-  EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-            0);
-  EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
-  flutter_windows_view.InjectPendingEvents(&win32window);
+  // Test an event handled by the framework
+  {
+    test_response = true;
+    EXPECT_CALL(*flutter_windows_view.key_event_handler,
+                KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
+                             false, false))
+        .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*flutter_windows_view.text_input_plugin,
+                KeyboardHook(_, _, _, _, _, _, _))
+        .Times(0);
+    EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
+        .Times(1)
+        .RetiresOnSaturation();
+    EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
+        .Times(0);
+    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
+              0);
+    EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
+    flutter_windows_view.InjectPendingEvents(&win32window);
+  }
 }
 
 // Tests key event propagation of modifier key down events. This are different
@@ -485,7 +473,7 @@ TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
   TestFlutterWindowsView flutter_windows_view(
       std::move(window_binding_handler), virtual_key, false /* is_printable */);
   win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code);
+  LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
 
   // Test an event not handled by the framework
   {
@@ -493,7 +481,7 @@ TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
     flutter_windows_view.SetEngine(std::move(GetTestEngine()));
     EXPECT_CALL(*flutter_windows_view.key_event_handler,
                 KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                             false /* extended */, true))
+                             false /* extended */, false))
         .Times(2)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
@@ -514,7 +502,7 @@ TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
     test_response = true;
     EXPECT_CALL(*flutter_windows_view.key_event_handler,
                 KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                             false /* extended */, true))
+                             false /* extended */, false))
         .Times(1)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,

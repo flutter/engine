@@ -375,7 +375,7 @@ WindowWin32::HandleMessage(UINT const message,
       // - Lead surrogates, which like dead keys will be send once combined.
       // - ASCII control characters, which are sent as WM_CHAR events for all
       //   control key shortcuts.
-      if (!handled_for_char_message_ && message == WM_CHAR && s_pending_high_surrogate == 0 &&
+      if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
           character >= u' ') {
         OnText(text);
       }

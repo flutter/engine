@@ -235,7 +235,7 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   // return true at this time, preventing this event from affecting
   // others.
 
-  return true;
+  return !is_deadchar;
 }
 
 bool KeyboardKeyHandler::RemoveRedispatchedEvent(const PendingEvent& incoming) {
