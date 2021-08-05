@@ -30,8 +30,8 @@ Future<void> testMain() async {
           ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
           throwsA(const TypeMatcher<Exception>()));
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
@@ -41,13 +41,13 @@ Future<void> testMain() async {
       final html.HttpRequest response = await html.HttpRequest.request(
           _testFontUrl,
           responseType: 'arraybuffer');
-      await ui.loadFontFromList(Uint8List.view(response.response),
+      await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
 
       expect(_containsFontFamily('Blehm'), isTrue);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
@@ -73,7 +73,7 @@ Future<void> testMain() async {
       final html.HttpRequest response = await html.HttpRequest.request(
           _testFontUrl,
           responseType: 'arraybuffer');
-      await ui.loadFontFromList(Uint8List.view(response.response),
+      await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
 
       // Verifies the font is loaded, and the cache is cleaned.
@@ -81,8 +81,8 @@ Future<void> testMain() async {
       expect(TextMeasurementService.rulerManager!.rulers.length, 0);
       expect(Spanometer.rulers.length, 0);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
@@ -101,7 +101,7 @@ Future<void> testMain() async {
       final html.HttpRequest response = await html.HttpRequest.request(
           _testFontUrl,
           responseType: 'arraybuffer');
-      await ui.loadFontFromList(Uint8List.view(response.response),
+      await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
       final Completer<void> completer = Completer<void>();
       html.window.requestAnimationFrame( (_) { completer.complete(); } );
@@ -110,8 +110,8 @@ Future<void> testMain() async {
       expect(actualName, 'flutter/system');
       expect(message, '{"type":"fontsChange"}');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/56702
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50770
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
+        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
   });

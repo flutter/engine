@@ -458,7 +458,7 @@ class CkStrutStyle implements ui.StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    //TODO(LongCatIsLooong): implement leadingDistribution.
+    // TODO(mdebbar): implement leadingDistribution.
     ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
     ui.FontWeight? fontWeight,
@@ -725,7 +725,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     final List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
-      final List<double> rect = skRects[i];
+      final List<double> rect = skRects[i] as List<double>;
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],

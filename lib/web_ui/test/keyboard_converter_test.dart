@@ -51,7 +51,7 @@ void testMain() {
       return key.type == ui.KeyEventType.down;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     converter.handleEvent(keyDownEvent('KeyA', 'a')
       ..timeStamp = 1
@@ -115,7 +115,7 @@ void testMain() {
       return key.type == ui.KeyEventType.down;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
@@ -356,7 +356,7 @@ void testMain() {
       return true;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
@@ -369,9 +369,12 @@ void testMain() {
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
-    expect(keyDataList, isEmpty);
-    expect(preventedDefault, isFalse);
+    expect(keyDataList, hasLength(1));
+    expect(keyDataList[0].physical, 0);
+    expect(keyDataList[0].logical, 0);
+    expect(preventedDefault, isTrue);
 
+    keyDataList.clear();
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
@@ -392,14 +395,16 @@ void testMain() {
       return true;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
     converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight)
       ..onPreventDefault = onPreventDefault
     );
-    expect(keyDataList, isEmpty);
-    expect(preventedDefault, isFalse);
+    expect(keyDataList, hasLength(1));
+    expect(keyDataList[0].physical, 0);
+    expect(keyDataList[0].logical, 0);
+    expect(preventedDefault, isTrue);
   });
 
   test('Conflict from multiple keyboards do not crash', () {
@@ -447,7 +452,7 @@ void testMain() {
       return true;
     }, onMacOs: true);
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock')

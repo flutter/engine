@@ -42,7 +42,7 @@ Future<void> testMain() async {
     builder.pop();
     html.document.body!.append(builder.build().webOnlyRootElement!);
 
-    // TODO: update golden for this test after canvas sandwich detection is
+    // TODO(ferhat): update golden for this test after canvas sandwich detection is
     // added to RecordingCanvas.
     await matchGoldenFile('color_filter_blendMode_color.png', region: region,
         maxDiffRatePercent: 12.0);
@@ -189,6 +189,6 @@ HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
   final html.ImageElement imageElement = html.ImageElement();
-  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]) as String;
   return HtmlImage(imageElement, width, height);
 }

@@ -1,4 +1,4 @@
-Signature: 54b83f5f0d06d2dc0664aafbd16d5b48
+Signature: 2cb777cb5049b3291fa8c1b0053300cd
 
 UNUSED LICENSES:
 
@@ -2987,6 +2987,8 @@ FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.cpp
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.h
+FILE: ../../../third_party/skia/src/gpu/SurfaceFillContext.cpp
+FILE: ../../../third_party/skia/src/gpu/SurfaceFillContext.h
 FILE: ../../../third_party/skia/src/gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/glx/GrGLMakeNativeInterface_glx.cpp
 FILE: ../../../third_party/skia/src/gpu/v2/Device.cpp
@@ -3683,8 +3685,6 @@ FILE: ../../../third_party/skia/src/gpu/GrStagingBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStagingBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/GrStencilMaskHelper.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStencilMaskHelper.h
-FILE: ../../../third_party/skia/src/gpu/GrSurfaceFillContext.cpp
-FILE: ../../../third_party/skia/src/gpu/GrSurfaceFillContext.h
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/GrUniformDataManager.h
 FILE: ../../../third_party/skia/src/gpu/GrUtil.cpp
@@ -3741,6 +3741,8 @@ FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrShape.h
 FILE: ../../../third_party/skia/src/gpu/gl/webgl/GrGLMakeNativeInterface_webgl.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLUniformHandler.cpp
+FILE: ../../../third_party/skia/src/gpu/v1/SurfaceFillContext_v1.cpp
+FILE: ../../../third_party/skia/src/gpu/v1/SurfaceFillContext_v1.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkMSAALoadManager.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkMSAALoadManager.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkManagedResource.h
@@ -4020,6 +4022,7 @@ FILE: ../../../third_party/skia/gm/aarecteffect.cpp
 FILE: ../../../third_party/skia/gm/colorspace.cpp
 FILE: ../../../third_party/skia/gm/drawglyphs.cpp
 FILE: ../../../third_party/skia/gm/largeclippedpath.cpp
+FILE: ../../../third_party/skia/gm/skbug_12212.cpp
 FILE: ../../../third_party/skia/include/private/GrMtlTypesPriv.h
 FILE: ../../../third_party/skia/include/utils/SkOrderedFontMgr.h
 FILE: ../../../third_party/skia/infra/bots/task_drivers/recreate_skps/recreate_skps.go

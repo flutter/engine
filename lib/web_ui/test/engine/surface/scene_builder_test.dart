@@ -188,7 +188,7 @@ void testMain() {
       expect(picture.buildCount, 1);
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 2);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
+    }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
         skip: browserEngine == BrowserEngine.firefox);
   });
 
@@ -918,6 +918,6 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
   final html.ImageElement imageElement = html.ImageElement();
-  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]) as String;
   return HtmlImage(imageElement, width, height);
 }

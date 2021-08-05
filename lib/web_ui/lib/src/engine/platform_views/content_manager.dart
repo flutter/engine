@@ -117,7 +117,7 @@ class PlatformViewManager {
       if (factoryFunction is ParameterizedPlatformViewFactory) {
         content = factoryFunction(viewId, params: params);
       } else {
-        content = factoryFunction(viewId);
+        content = (factoryFunction as PlatformViewFactory).call(viewId);
       }
 
       _ensureContentCorrectlySized(content, viewType);
@@ -191,9 +191,7 @@ class PlatformViewManager {
   /// Returns the set of know view ids, so they can be cleaned up.
   Set<int> debugClear() {
     final Set<int> result = _contents.keys.toSet();
-    for (final int viewId in result) {
-      clearPlatformView(viewId);
-    }
+    result.forEach(clearPlatformView);
     _factories.clear();
     _contents.clear();
     return result;
