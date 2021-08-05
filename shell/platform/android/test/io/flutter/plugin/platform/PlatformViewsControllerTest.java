@@ -293,6 +293,56 @@ public class PlatformViewsControllerTest {
 
   @Test
   @Config(shadows = {ShadowFlutterJNI.class})
+  public void onDetachedFromJNI_clearsPlatformViewContext() {
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    int platformViewId = 0;
+    assertNull(platformViewsController.getPlatformViewById(platformViewId));
+
+    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    PlatformView platformView = mock(PlatformView.class);
+    when(platformView.getView()).thenReturn(null);
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+
+    FlutterJNI jni = new FlutterJNI();
+    attach(jni, platformViewsController);
+
+    // Simulate create call from the framework.
+    createPlatformView(jni, platformViewsController, platformViewId, "testType");
+
+    assertFalse(platformViewsController.contextToPlatformView.isEmpty());
+    platformViewsController.onDetachedFromJNI();
+    assertTrue(platformViewsController.contextToPlatformView.isEmpty());
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class})
+  public void onPreEngineRestart_clearsPlatformViewContext() {
+    PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    int platformViewId = 0;
+    assertNull(platformViewsController.getPlatformViewById(platformViewId));
+
+    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    PlatformView platformView = mock(PlatformView.class);
+    when(platformView.getView()).thenReturn(null);
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+
+    FlutterJNI jni = new FlutterJNI();
+    attach(jni, platformViewsController);
+
+    // Simulate create call from the framework.
+    createPlatformView(jni, platformViewsController, platformViewId, "testType");
+
+    assertFalse(platformViewsController.contextToPlatformView.isEmpty());
+    platformViewsController.onDetachedFromJNI();
+    assertTrue(platformViewsController.contextToPlatformView.isEmpty());
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterJNI.class})
   public void createPlatformViewMessage__throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
