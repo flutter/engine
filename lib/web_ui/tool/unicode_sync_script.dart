@@ -119,9 +119,9 @@ final String lineBreakCodegen =
 Future<void> main(List<String> arguments) async {
   final ArgResults result = argParser.parse(arguments);
   final PropertiesSyncer syncer = getSyncer(
-    result['words'],
-    result['lines'],
-    result['dry'],
+    result['words'] as String?,
+    result['lines'] as String?,
+    result['dry'] as bool,
   );
 
   syncer.perform();
@@ -479,7 +479,7 @@ void verifyNoOverlappingRanges(List<UnicodeRange> data) {
 
 List<String> extractHeader(List<String> lines) {
   final List<String> headerLines = <String>[];
-  for (String line in lines) {
+  for (final String line in lines) {
     if (line.trim() == '#' || line.trim().isEmpty) {
       break;
     }

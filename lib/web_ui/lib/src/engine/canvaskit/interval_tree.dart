@@ -22,7 +22,7 @@ class IntervalTree<T> {
     // Get a list of all the ranges ordered by start index.
     final List<IntervalTreeNode<T>> intervals = <IntervalTreeNode<T>>[];
     rangesMap.forEach((T key, List<CodeunitRange> rangeList) {
-      for (CodeunitRange range in rangeList) {
+      for (final CodeunitRange range in rangeList) {
         intervals.add(IntervalTreeNode<T>(key, range.start, range.end));
       }
     });
@@ -127,7 +127,7 @@ class IntervalTreeNode<T> {
       // Don't bother checking intervals.
       return false;
     }
-    if (this.containsShallow(x)) {
+    if (containsShallow(x)) {
       return true;
     }
     if (left?.containsDeep(x) == true) {
@@ -146,7 +146,7 @@ class IntervalTreeNode<T> {
       return;
     }
     left?.searchForPoint(x, result);
-    if (this.containsShallow(x)) {
+    if (containsShallow(x)) {
       result.add(value);
     }
     if (x < low) {

@@ -88,7 +88,7 @@ class BrowserPlatform extends PlatformPlugin {
   /// Handles taking screenshots during tests.
   ///
   /// Implementation will differ depending on the browser.
-  ScreenshotManager? _screenshotManager;
+  final ScreenshotManager? _screenshotManager;
 
   /// Whether [close] has been called.
   bool get _closed => _closeMemo.hasRun;
@@ -107,9 +107,9 @@ class BrowserPlatform extends PlatformPlugin {
     required String faviconPath,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
-  }) {
+  }) : _screenshotManager = browserEnvironment.getScreenshotManager() {
     // The cascade of request handlers.
-    shelf.Cascade cascade = shelf.Cascade()
+    final shelf.Cascade cascade = shelf.Cascade()
         // The web socket that carries the test channels for running tests and
         // reporting restuls. See [_browserManagerFor] and [BrowserManager.start]
         // for details on how the channels are established.
@@ -148,12 +148,8 @@ class BrowserPlatform extends PlatformPlugin {
 
         // Serves absolute package URLs (i.e. not /packages/* but /Users/user/*/hosted/pub.dartlang.org/*).
         // This handler goes last, after all more specific handlers failed to handle the request.
-        .add(_createAbsolutePackageUrlHandler());
-
-    _screenshotManager = browserEnvironment.getScreenshotManager();
-    if (_screenshotManager != null) {
-      cascade = cascade.add(_screeshotHandler);
-    }
+        .add(_createAbsolutePackageUrlHandler())
+        .add(_screeshotHandler);
 
     server.mount(cascade.handler);
   }
@@ -242,6 +238,15 @@ class BrowserPlatform extends PlatformPlugin {
     final Map<String, dynamic> requestData =
         json.decode(payload) as Map<String, dynamic>;
     final String filename = requestData['filename'] as String;
+
+    if (_screenshotManager == null) {
+      print(
+        'INFO: Skipping screenshot check for $filename. Current browser/OS '
+        'combination does not support screenshots.',
+      );
+      return shelf.Response.ok(json.encode('OK'));
+    }
+
     final bool write = requestData['write'] as bool;
     final double maxDiffRate = requestData.containsKey('maxdiffrate')
         ? (requestData['maxdiffrate'] as num)
@@ -614,8 +619,8 @@ class BrowserManager {
     //
     // Start this canceled because we don't want it to start ticking until we
     // get some response from the iframe.
-    _timer = RestartableTimer(Duration(seconds: 3), () {
-      for (RunnerSuiteController controller in _controllers) {
+    _timer = RestartableTimer(const Duration(seconds: 3), () {
+      for (final RunnerSuiteController controller in _controllers) {
         controller.setDebugging(true);
       }
     })
@@ -629,7 +634,7 @@ class BrowserManager {
         if (!_closed) {
           _timer.reset();
         }
-        for (RunnerSuiteController controller in _controllers) {
+        for (final RunnerSuiteController controller in _controllers) {
           controller.setDebugging(false);
         }
 

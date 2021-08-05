@@ -88,7 +88,7 @@ void testMain() {
 
     test('addRect', () {
       final Path path = Path();
-      path.addRect(Rect.fromLTRB(20, 30, 220, 130));
+      path.addRect(const Rect.fromLTRB(20, 30, 220, 130));
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 600.0));
@@ -96,7 +96,7 @@ void testMain() {
 
     test('addRRect with zero radius', () {
       final Path path = Path();
-      path.addRRect(RRect.fromLTRBR(20, 30, 220, 130, Radius.circular(0)));
+      path.addRRect(RRect.fromLTRBR(20, 30, 220, 130, const Radius.circular(0)));
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 600.0));
@@ -104,7 +104,7 @@ void testMain() {
 
     test('addRRect with elliptical radius', () {
       final Path path = Path();
-      path.addRRect(RRect.fromLTRBR(20, 30, 220, 130, Radius.elliptical(8, 4)));
+      path.addRRect(RRect.fromLTRBR(20, 30, 220, 130, const Radius.elliptical(8, 4)));
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 590.408));
@@ -117,15 +117,15 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 90.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -146,15 +146,15 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 180.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -175,15 +175,15 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 270.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -204,15 +204,15 @@ void testMain() {
       const double cy = 100;
       const double startAngle = 0.0;
       const double endAngle = 270.0;
-      final double startRad = startAngle * math.pi / 180.0;
-      final double endRad = endAngle * math.pi / 180.0;
+      const double startRad = startAngle * math.pi / 180.0;
+      const double endRad = endAngle * math.pi / 180.0;
 
       final double startX = cx + (rx * math.cos(startRad));
       final double startY = cy + (ry * math.sin(startRad));
       final double endX = cx + (rx * math.cos(endRad));
       final double endY = cy + (ry * math.sin(endRad));
 
-      final bool clockwise = endAngle > startAngle;
+      const bool clockwise = endAngle > startAngle;
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
       final Path path = Path()
         ..moveTo(startX, startY)
@@ -230,7 +230,7 @@ void testMain() {
 
 List<double> computeLengths(PathMetrics pathMetrics) {
   final List<double> lengths = <double>[];
-  for (PathMetric metric in pathMetrics) {
+  for (final PathMetric metric in pathMetrics) {
     lengths.add(metric.length);
   }
   return lengths;

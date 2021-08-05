@@ -10,7 +10,11 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
+import '../../common.dart';
 import '../screenshot.dart';
+
+// TODO(yjbanov): unskip Firefox tests when Firefox implements WebGL in headless mode.
+// https://github.com/flutter/flutter/issues/86623
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -68,7 +72,7 @@ Future<void> testMain() async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, screenWidth, screenHeight));
     //Rect shaderRect = const Rect.fromLTRB(20, 20, 100, 100);
-    final Rect shaderRect = const Rect.fromLTRB(0, 0, 100, 100);
+    const Rect shaderRect = Rect.fromLTRB(0, 0, 100, 100);
     final SurfacePaint paint = Paint() as SurfacePaint;
     paint.shader =
         ImageShader(testImage, tmx, tmy, Matrix4.identity().toFloat64()
@@ -109,18 +113,19 @@ Future<void> testMain() async {
     await testImageShader(
         TileMode.clamp, TileMode.repeated, 'image_shader_clamp_horiz',
         maxDiffRatePercent: 13.0);
-  });
+  }, skip: isFirefox);
 
   test('Should draw with vertical clamp imageshader.', () async {
     await testImageShader(
         TileMode.repeated, TileMode.clamp, 'image_shader_clamp_vertical',
         maxDiffRatePercent: 1.0);
-  });
+  }, skip: isFirefox);
+
   test('Should draw with clamp imageshader.', () async {
     await testImageShader(
         TileMode.clamp, TileMode.clamp, 'image_shader_clamp',
         maxDiffRatePercent: 1.0);
-  });
+  }, skip: isFirefox);
 }
 
 HtmlImage createTestImage() {
@@ -140,6 +145,6 @@ HtmlImage createTestImage() {
   ctx.fillRect(width2, width2, width2, width2);
   ctx.fill();
   final html.ImageElement imageElement = html.ImageElement();
-  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]) as String;
   return HtmlImage(imageElement, width, height);
 }

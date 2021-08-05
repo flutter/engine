@@ -106,7 +106,7 @@ class Profiler {
     _checkBenchmarkMode();
 
     final OnBenchmark? onBenchmark =
-        js_util.getProperty(html.window, '_flutter_internal_on_benchmark');
+        js_util.getProperty(html.window, '_flutter_internal_on_benchmark') as OnBenchmark?;
     if (onBenchmark != null) {
       onBenchmark(name, value);
     }
@@ -298,7 +298,7 @@ class Instrumentation {
           ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
             return a.key.compareTo(b.key);
           });
-        for (MapEntry<String, int> entry in entries) {
+        for (final MapEntry<String, int> entry in entries) {
           message.writeln('  ${entry.key}: ${entry.value}');
         }
         print(message);

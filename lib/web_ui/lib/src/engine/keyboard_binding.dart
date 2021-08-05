@@ -76,6 +76,15 @@ const int _kDeadKeyShift = 0x20000000;
 const int _kDeadKeyAlt = 0x40000000;
 const int _kDeadKeyMeta = 0x80000000;
 
+const ui.KeyData _emptyKeyData = ui.KeyData(
+  type: ui.KeyEventType.down,
+  timeStamp: Duration.zero,
+  logical: 0,
+  physical: 0,
+  character: null,
+  synthesized: false,
+);
+
 typedef DispatchKeyData = bool Function(ui.KeyData data);
 
 /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
@@ -110,14 +119,16 @@ class KeyboardBinding {
   final Map<String, html.EventListener> _listeners = <String, html.EventListener>{};
 
   void _addEventListener(String eventName, html.EventListener handler) {
-    final html.EventListener loggedHandler = (html.Event event) {
+    html.EventListener? loggedHandler(html.Event event) {
       if (_debugLogKeyEvents) {
         print(event.type);
       }
       if (EngineSemanticsOwner.instance.receiveGlobalEvent(event)) {
-        return handler(event);
+        return handler(event) as html.EventListener?;
       }
-    };
+      return null;
+    }
+
     assert(!_listeners.containsKey(eventName));
     _listeners[eventName] = loggedHandler;
     html.window.addEventListener(eventName, loggedHandler, true);
@@ -400,6 +411,8 @@ class KeyboardConverter {
           // a currently pressed one, usually indicating multiple keyboards are
           // pressing keys with the same physical key, or the up event was lost
           // during a loss of focus. The down event is ignored.
+          dispatchKeyData(_emptyKeyData);
+          event.preventDefault();
           return;
         }
       } else {
@@ -412,6 +425,8 @@ class KeyboardConverter {
       if (lastLogicalRecord == null) {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
+        dispatchKeyData(_emptyKeyData);
+        event.preventDefault();
         return;
       }
 

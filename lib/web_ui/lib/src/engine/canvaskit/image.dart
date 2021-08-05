@@ -33,6 +33,7 @@ class ImageCodecException implements Exception {
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
 typedef HttpRequestFactory = html.HttpRequest Function();
+// ignore: prefer_function_declarations_over_variables
 HttpRequestFactory httpRequestFactory = () => html.HttpRequest();
 void debugRestoreHttpRequestFactory() {
   httpRequestFactory = () => html.HttpRequest();
@@ -79,7 +80,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
 
     try {
       final Uint8List list =
-          Uint8List.view((request.response as ByteBuffer));
+          Uint8List.view(request.response as ByteBuffer);
       final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list, url);
       completer.complete(codec);
     } catch (error, stackTrace) {

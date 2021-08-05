@@ -34,8 +34,11 @@ class SurfaceVertices implements ui.Vertices {
     List<int>? indices,
   })  : assert(mode != null), // ignore: unnecessary_null_comparison
         assert(positions != null), // ignore: unnecessary_null_comparison
+        // ignore: unnecessary_this
         this.colors = colors != null ? _int32ListFromColors(colors) : null,
+        // ignore: unnecessary_this
         this.indices = indices != null ? Uint16List.fromList(indices) : null,
+        // ignore: unnecessary_this
         this.positions = offsetListToFloat32List(positions) {
     initWebGl();
   }
@@ -220,7 +223,7 @@ class _WebGlRenderer implements GlRenderer {
 
       // Buffer kBGRA_8888.
       if (vertices.colors == null) {
-        final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+        final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
         final Uint32List vertexColors = Uint32List(vertexCount);
         for (int i = 0; i < vertexCount; i++) {
           vertexColors[i] = color.value;

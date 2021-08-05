@@ -162,7 +162,7 @@ class SurfacePath implements ui.Path {
   }
 
   void _debugValidate() {
-    // TODO.
+    assert(pathRef.isValid);
   }
 
   /// Return true if path is a single line and returns points in out.
@@ -413,7 +413,7 @@ class SurfacePath implements ui.Path {
     _resetAfterEdit();
     // SkAutoDisableDirectionCheck.
     _firstDirection = finalDirection;
-    // TODO: optimize by setting pathRef bounds if bounds are already computed.
+    // TODO(ferhat): optimize by setting pathRef bounds if bounds are already computed.
   }
 
   /// If the `forceMoveTo` argument is false, adds a straight line
@@ -612,7 +612,7 @@ class SurfacePath implements ui.Path {
     final double scaleY = rect.height / 2;
     final double centerX = rect.center.dx;
     final double centerY = rect.center.dy;
-    for (Conic conic in conics) {
+    for (final Conic conic in conics) {
       double x = conic.p0x;
       double y = ccw ? -conic.p0y : conic.p0y;
       conic.p0x = (cosStart * x - sinStart * y) * scaleX + centerX;
@@ -809,7 +809,7 @@ class SurfacePath implements ui.Path {
     // to start outside their marks. A round rect may lose convexity as a
     // result. If the input values are on integers, place the conic on
     // integers as well.
-    final bool expectIntegers = SPath.nearlyEqual((math.pi / 2 - thetaWidth.abs()), 0) &&
+    final bool expectIntegers = SPath.nearlyEqual(math.pi / 2 - thetaWidth.abs(), 0) &&
         SPath.isInteger(rx) &&
         SPath.isInteger(ry) &&
         SPath.isInteger(x) &&
@@ -902,7 +902,7 @@ class SurfacePath implements ui.Path {
     assert(direction != SPathDirection.kUnknown);
     final bool isOval = _hasOnlyMoveTos();
 
-    final double weight = SPath.scalarRoot2Over2;
+    const double weight = SPath.scalarRoot2Over2;
     final double left = oval.left;
     final double right = oval.right;
     final double centerX = (left + right) / 2.0;
@@ -1018,7 +1018,7 @@ class SurfacePath implements ui.Path {
       // degenerate(oval) => line points are collapsing.
       _addOval(bounds, direction, startIndex ~/ 2);
     } else {
-      final double weight = SPath.scalarRoot2Over2;
+      const double weight = SPath.scalarRoot2Over2;
       final double left = bounds.left;
       final double right = bounds.right;
       final double top = bounds.top;
@@ -1175,7 +1175,7 @@ class SurfacePath implements ui.Path {
       } else {
         final double x = offsetX + points[p];
         final double y = offsetY + points[p + 1];
-        points[p] = (matrix4[0] * (x)) + (matrix4[4] * y) + matrix4[12];
+        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + matrix4[12];
         points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + matrix4[13];
       }
     }
@@ -1270,7 +1270,7 @@ class SurfacePath implements ui.Path {
         final int last = tangents.length - 1;
         final ui.Offset tangent = tangents[last];
         if (SPath.nearlyEqual(lengthSquaredOffset(tangent), 0)) {
-          tangents.remove(last);
+          tangents.removeAt(last);
         } else {
           for (int index = 0; index < last; ++index) {
             final ui.Offset test = tangents[index];
@@ -1320,7 +1320,7 @@ class SurfacePath implements ui.Path {
       points[i] = transformedX;
       points[i + 1] = transformedY;
     }
-    // TODO: optimize for axis aligned or scale/translate type transforms.
+    // TODO(ferhat): optimize for axis aligned or scale/translate type transforms.
     _convexityType = SPathConvexityType.kUnknown;
   }
 
@@ -1432,7 +1432,7 @@ class SurfacePath implements ui.Path {
       }
     }
 
-    if (this._firstDirection == SPathDirection.kUnknown) {
+    if (_firstDirection == SPathDirection.kUnknown) {
       if (state.firstDirection == SPathDirection.kUnknown &&
           !pathRef.getBounds().isEmpty) {
         return _setComputedConvexity(state.reversals < 3
@@ -1540,7 +1540,7 @@ class SurfacePath implements ui.Path {
   /// as if they had been closed, even if they were not explicitly closed.
   @override
   SurfacePathMetrics computeMetrics({bool forceClosed = false}) {
-    return SurfacePathMetrics(this.pathRef, forceClosed);
+    return SurfacePathMetrics(pathRef, forceClosed);
   }
 
   /// Detects if path is rounded rectangle.

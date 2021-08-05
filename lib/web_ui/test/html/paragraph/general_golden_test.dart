@@ -180,9 +180,9 @@ Future<void> testMain() async {
       canvas.restore();
     }
 
-    drawParagraphAt(Offset(50.0, 0.0), TextAlign.left);
-    drawParagraphAt(Offset(150.0, 0.0), TextAlign.center);
-    drawParagraphAt(Offset(250.0, 0.0), TextAlign.right);
+    drawParagraphAt(const Offset(50.0, 0.0), TextAlign.left);
+    drawParagraphAt(const Offset(150.0, 0.0), TextAlign.center);
+    drawParagraphAt(const Offset(250.0, 0.0), TextAlign.right);
   }
 
   test('alignment and transform', () {
@@ -234,7 +234,7 @@ Future<void> testMain() async {
     html.document.body!.style.fontSize = '100px';
 
     final DomCanvas canvas = DomCanvas(domRenderer.createElement('flt-picture'));
-    Offset offset = Offset(10.0, 10.0);
+    Offset offset = const Offset(10.0, 10.0);
 
     final CanvasParagraph paragraph = rich(
       EngineParagraphStyle(fontFamily: 'Roboto'),
@@ -270,7 +270,7 @@ Future<void> testMain() async {
     // Draw a rect in the placeholder.
     // Leave some padding around the placeholder to make the black paragraph
     // background visible.
-    final double padding = 5;
+    const double padding = 5;
     final TextBox placeholderBox = paragraph2.getBoxesForPlaceholders().single;
     canvas.drawRect(
       placeholderBox.toRect().shift(offset).deflate(padding),
@@ -350,7 +350,7 @@ Future<void> testMain() async {
     final CanvasParagraph paragraph = rich(
       EngineParagraphStyle(fontFamily: 'Roboto'),
       (CanvasParagraphBuilder builder) {
-        for (TextDecorationStyle decorationStyle in decorationStyles) {
+        for (final TextDecorationStyle decorationStyle in decorationStyles) {
           builder.pushStyle(EngineTextStyle.only(
             color: const Color.fromRGBO(50, 50, 255, 1.0),
             decoration: TextDecoration.underline,
@@ -371,14 +371,14 @@ Future<void> testMain() async {
   });
 
   void testFontFeatures(EngineCanvas canvas) {
-    final String text = 'Aa Bb Dd Ee Ff Difficult';
-    final FontFeature enableSmallCaps = FontFeature('smcp');
-    final FontFeature disableSmallCaps = FontFeature('smcp', 0);
+    const String text = 'Aa Bb Dd Ee Ff Difficult';
+    const FontFeature enableSmallCaps = FontFeature('smcp');
+    const FontFeature disableSmallCaps = FontFeature('smcp', 0);
 
-    final String numeric = '123.4560';
-    final FontFeature enableOnum = FontFeature('onum');
+    const String numeric = '123.4560';
+    const FontFeature enableOnum = FontFeature('onum');
 
-    final FontFeature disableLigatures = FontFeature('liga', 0);
+    const FontFeature disableLigatures = FontFeature('liga', 0);
 
     final CanvasParagraph paragraph = rich(
       EngineParagraphStyle(fontFamily: 'Roboto'),

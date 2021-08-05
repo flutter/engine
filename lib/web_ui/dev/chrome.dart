@@ -14,6 +14,7 @@ import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
 import 'browser.dart';
+import 'browser_lock.dart';
 import 'chrome_installer.dart';
 import 'common.dart';
 import 'environment.dart';
@@ -35,7 +36,12 @@ class ChromeEnvironment implements BrowserEnvironment {
 
   @override
   ScreenshotManager? getScreenshotManager() {
-    return ChromeScreenshotManager();
+    // Always compare screenshots when running tests locally. On CI only compare
+    // on Linux.
+    if (Platform.isLinux || !isLuci) {
+      return ChromeScreenshotManager();
+    }
+    return null;
   }
 
   @override
@@ -59,7 +65,7 @@ class Chrome extends Browser {
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Chrome(Uri url, {bool debug = false}) {
-    final String version = ChromeArgParser.instance.version;
+    final String version = browserLock.chromeLock.versionForCurrentPlatform;
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
       final BrowserInstallation installation = await getOrInstallChrome(
@@ -112,7 +118,7 @@ class Chrome extends Browser {
     }, remoteDebuggerCompleter.future);
   }
 
-  Chrome._(Future<Process> startBrowser(), this.remoteDebuggerUrl)
+  Chrome._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
       : super(startBrowser);
 }
 
@@ -157,8 +163,9 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
       })
       .firstWhere((String line) => line.startsWith('DevTools listening'), orElse: () {
         if (hitGlibcBug) {
-          final String message = 'Encountered glibc bug https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
-            'Will try launching browser again.';
+          const String message = 'Encountered glibc bug '
+              'https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
+              'Will try launching browser again.';
           print(message);
           return message;
         }
@@ -207,7 +214,7 @@ Future<Uri> getRemoteDebuggerUrl(Uri base) async {
 /// [ScreenshotManager] implementation for Chrome.
 ///
 /// This manager can be used for both macOS and Linux.
-// TODO: https://github.com/flutter/flutter/issues/65673
+// TODO(yjbanov): extends tests to Window, https://github.com/flutter/flutter/issues/65673
 class ChromeScreenshotManager extends ScreenshotManager {
   @override
   String get filenameSuffix => '';

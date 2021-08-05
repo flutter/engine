@@ -106,7 +106,7 @@ double _rectDistance(Rect a, Rect b) {
 }
 
 double _sizeDistance(Size a, Size b) {
-  final Offset delta = (b - a) as Offset;
+  final Offset delta = (b - a) as Offset; // ignore: unnecessary_parenthesis
   return delta.distance;
 }
 
@@ -303,6 +303,9 @@ String canonicalizeHtml(String htmlContent,
 
     if (mode != HtmlComparisonMode.noAttributes) {
       original.attributes.forEach((dynamic name, String value) {
+        if (name is! String) {
+          throw '"$name" should be String but was ${name.runtimeType}.';
+        }
         if (name == 'style') {
           return;
         }
@@ -378,7 +381,7 @@ String canonicalizeHtml(String htmlContent,
           'is $mode. The HTML was:\n\n$htmlContent');
     }
 
-    for (html_package.Node child in original.nodes) {
+    for (final html_package.Node child in original.nodes) {
       if (child is html_package.Text && child.text.trim().isEmpty) {
         continue;
       }
@@ -398,7 +401,7 @@ String canonicalizeHtml(String htmlContent,
 
   final html_package.DocumentFragment cleanDom =
       html_package.DocumentFragment();
-  for (html_package.Element child in originalDom.children) {
+  for (final html_package.Element child in originalDom.children) {
     cleanDom.append(_cleanup(child));
   }
 

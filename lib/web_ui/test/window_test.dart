@@ -41,7 +41,7 @@ void testMain() {
 
   test('window.defaultRouteName should not change', () async {
     final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/initial'),
+      const TestHistoryEntry('initial state', null, '/initial'),
     );
     await window.debugInitializeHistory(strategy, useSingle: true);
     expect(window.defaultRouteName, '/initial');
@@ -59,7 +59,7 @@ void testMain() {
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
       // The URL here does not set the PlatformDispatcher's defaultRouteName,
       // since it got cached as soon as we read it above.
-      TestHistoryEntry('initial state', null, '/not-really-inital/THIS_IS_IGNORED'),
+      const TestHistoryEntry('initial state', null, '/not-really-inital/THIS_IS_IGNORED'),
     ), useSingle: true);
     // Reading it multiple times should return the same value.
     expect(window.defaultRouteName, '/initial');
@@ -68,7 +68,7 @@ void testMain() {
     final Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeUpdated',
         <String, dynamic>{'routeName': '/bar'},
       )),
@@ -85,7 +85,7 @@ void testMain() {
   test('can switch history mode', () async {
     Completer<void> callback;
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/initial'),
+      const TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
 
@@ -93,7 +93,7 @@ void testMain() {
       callback = Completer<void>();
       window.sendPlatformMessage(
         'flutter/navigation',
-        JSONMethodCodec().encodeMethodCall(MethodCall(method, arguments)),
+        const JSONMethodCodec().encodeMethodCall(MethodCall(method, arguments)),
         (_) { callback.complete(); },
       );
       await callback.future;
@@ -116,7 +116,7 @@ void testMain() {
       () async {
     expect(() async {
       await window.handleNavigationMessage(
-        JSONMethodCodec().encodeMethodCall(MethodCall(
+        const JSONMethodCodec().encodeMethodCall(const MethodCall(
           'routeUpdated',
           null, // boom
         ))
@@ -125,7 +125,7 @@ void testMain() {
 
     expect(() async {
       await window.handleNavigationMessage(
-        JSONMethodCodec().encodeMethodCall(MethodCall(
+        const JSONMethodCodec().encodeMethodCall(const MethodCall(
           'routeInformationUpdated',
           null, // boom
         ))
@@ -136,12 +136,12 @@ void testMain() {
   test('handleNavigationMessage execute request in order.', () async {
     // Start with multi entries.
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/initial'),
+      const TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
     final List<String> executionOrder = <String>[];
     window.handleNavigationMessage(
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectSingleEntryHistory',
         null,
       ))
@@ -149,7 +149,7 @@ void testMain() {
       executionOrder.add('1');
     });
     window.handleNavigationMessage(
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectMultiEntryHistory',
         null,
       ))
@@ -157,7 +157,7 @@ void testMain() {
       executionOrder.add('2');
     });
     window.handleNavigationMessage(
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+        const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'selectSingleEntryHistory',
         null,
       ))
@@ -165,8 +165,9 @@ void testMain() {
       executionOrder.add('3');
     });
     await window.handleNavigationMessage(
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+        const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{
           'location': '/baz',
           'state': null,
@@ -187,7 +188,7 @@ void testMain() {
   test('should not throw when using nav1 and nav2 together',
       () async {
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/initial'),
+      const TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
 
@@ -195,8 +196,9 @@ void testMain() {
     Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{'routeName': '/bar'},
       )),
       (_) { callback.complete(); },
@@ -209,8 +211,9 @@ void testMain() {
     callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{
           'location': '/baz',
           'state': null,
@@ -224,8 +227,9 @@ void testMain() {
 
     // they can be interleaved safely
     await window.handleNavigationMessage(
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+        const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{'routeName': '/foo'},
       ))
     );
@@ -236,15 +240,16 @@ void testMain() {
   test('can replace in MultiEntriesBrowserHistory',
       () async {
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/initial'),
+      const TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: false);
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
 
     Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{
           'location': '/baz',
           'state': '/state',
@@ -259,8 +264,9 @@ void testMain() {
     callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{
           'location': '/baz',
           'state': '/state1',
@@ -276,8 +282,9 @@ void testMain() {
     callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{
           'location': '/foo',
           'state': '/foostate1',
@@ -305,8 +312,9 @@ void testMain() {
     final Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{'routeName': '/bar'},
       )),
       (_) { callback.complete(); },
@@ -330,8 +338,9 @@ void testMain() {
     final Completer<void> callback = Completer<void>();
     window.sendPlatformMessage(
       'flutter/navigation',
-      JSONMethodCodec().encodeMethodCall(MethodCall(
+      const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
+        // ignore: prefer_const_literals_to_create_immutables
         <String, dynamic>{
           'location': '/baz',
           'state': null,
@@ -371,7 +380,7 @@ void testMain() {
 
   test('cannot set url strategy after it is initialized', () async {
     final TestUrlStrategy testStrategy = TestUrlStrategy.fromEntry(
-      TestHistoryEntry('initial state', null, '/'),
+      const TestHistoryEntry('initial state', null, '/'),
     );
     await window.debugInitializeHistory(testStrategy, useSingle: true);
 

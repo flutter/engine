@@ -427,7 +427,7 @@ class CkTextStyle implements ui.TextStyle {
 
     if (shadows != null) {
       final List<SkTextShadow> ckShadows = <SkTextShadow>[];
-      for (ui.Shadow shadow in shadows) {
+      for (final ui.Shadow shadow in shadows) {
         final SkTextShadow ckShadow = SkTextShadow();
         ckShadow.color = makeFreshSkColor(shadow.color);
         ckShadow.offset = toSkPoint(shadow.offset);
@@ -439,7 +439,7 @@ class CkTextStyle implements ui.TextStyle {
 
     if (fontFeatures != null) {
       final List<SkFontFeature> skFontFeatures = <SkFontFeature>[];
-      for (ui.FontFeature fontFeature in fontFeatures) {
+      for (final ui.FontFeature fontFeature in fontFeatures) {
         final SkFontFeature skFontFeature = SkFontFeature();
         skFontFeature.name = fontFeature.feature;
         skFontFeature.value = fontFeature.value;
@@ -458,7 +458,7 @@ class CkStrutStyle implements ui.StrutStyle {
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    //TODO(LongCatIsLooong): implement leadingDistribution.
+    // TODO(mdebbar): implement leadingDistribution.
     ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
     ui.FontWeight? fontWeight,
@@ -574,7 +574,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     bool didRebuildSkiaObject = false;
     if (paragraph == null) {
       final CkParagraphBuilder builder = CkParagraphBuilder(_paragraphStyle);
-      for (_ParagraphCommand command in _paragraphCommands) {
+      for (final _ParagraphCommand command in _paragraphCommands) {
         switch (command.type) {
           case _ParagraphCommandType.addText:
             builder.addText(command.text!);
@@ -725,7 +725,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     final List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
-      final List<double> rect = skRects[i];
+      final List<double> rect = skRects[i] as List<double>;
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],
@@ -778,7 +778,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         return ui.TextRange(start: metric.startIndex, end: metric.endIndex);
       }
     }
-    return ui.TextRange(start: -1, end: -1);
+    return const ui.TextRange(start: -1, end: -1);
   }
 
   @override

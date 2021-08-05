@@ -309,8 +309,12 @@ class PathRef {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return equals(other as PathRef);
+    return other is PathRef && equals(other);
   }
+
+  @override
+  int get hashCode => ui.hashValues(fSegmentMask,
+      fPoints, _conicWeights, _fVerbs);
 
   bool equals(PathRef ref) {
     // We explicitly check fSegmentMask as a quick-reject. We could skip it,
@@ -583,7 +587,7 @@ class PathRef {
         maxX = math.max(maxX, x);
         maxY = math.max(maxY, y);
       }
-      final bool allFinite = (accum * 0 == 0);
+      final bool allFinite = accum * 0 == 0;
       if (allFinite) {
         fBounds = ui.Rect.fromLTRB(minX, minY, maxX, maxY);
         fIsFinite = true;
@@ -651,13 +655,13 @@ class PathRef {
         break;
       case SPath.kDoneVerb:
         if (assertionsEnabled) {
-          throw Exception("growForVerb called for kDone");
+          throw Exception('growForVerb called for kDone');
         }
         pCnt = 0;
         break;
       default:
         if (assertionsEnabled) {
-          throw Exception("default is not reached");
+          throw Exception('default is not reached');
         }
         pCnt = 0;
         break;
@@ -718,13 +722,13 @@ class PathRef {
         break;
       case SPath.kDoneVerb:
         if (assertionsEnabled) {
-          throw Exception("growForVerb called for kDone");
+          throw Exception('growForVerb called for kDone');
         }
         pCnt = 0;
         break;
       default:
         if (assertionsEnabled) {
-          throw Exception("default is not reached");
+          throw Exception('default is not reached');
         }
         pCnt = 0;
         break;
@@ -872,7 +876,7 @@ class PathRef {
       for (int i = 0; i < len; i += 2) {
         final double pointX = fPoints[i];
         final double pointY = fPoints[i + 1];
-        final double tolerance = 0.0001;
+        const double tolerance = 0.0001;
         final bool pointIsFinite = pointX.isFinite && pointY.isFinite;
         if (pointIsFinite &&
             (pointX + tolerance < boundsLeft ||

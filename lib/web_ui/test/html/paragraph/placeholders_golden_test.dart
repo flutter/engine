@@ -27,7 +27,7 @@ Future<void> testMain() async {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
 
     Offset offset = Offset.zero;
-    for (PlaceholderAlignment placeholderAlignment in PlaceholderAlignment.values) {
+    for (final PlaceholderAlignment placeholderAlignment in PlaceholderAlignment.values) {
       final CanvasParagraph paragraph = rich(
         EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 14.0),
         (CanvasParagraphBuilder builder) {
@@ -67,7 +67,7 @@ Future<void> testMain() async {
     ];
 
     Offset offset = Offset.zero;
-    for (TextAlign align in aligns) {
+    for (final TextAlign align in aligns) {
       final CanvasParagraph paragraph = rich(
         EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 14.0, textAlign: align),
         (CanvasParagraphBuilder builder) {
@@ -101,7 +101,7 @@ Future<void> testMain() async {
     ];
 
     Offset offset = Offset.zero;
-    for (TextAlign align in aligns) {
+    for (final TextAlign align in aligns) {
       final CanvasParagraph paragraph = rich(
         EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 14.0, textAlign: align),
         (CanvasParagraphBuilder builder) {
@@ -129,7 +129,7 @@ Future<void> testMain() async {
     const Rect bounds = Rect.fromLTWH(0, 0, 420, 300);
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    Offset offset = Offset(10, 10);
+    Offset offset = const Offset(10, 10);
 
     // First paragraph with a placeholder at the beginning.
     final CanvasParagraph paragraph1 = rich(

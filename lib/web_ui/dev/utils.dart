@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:convert' show utf8, LineSplitter;
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
@@ -31,6 +30,9 @@ class FilePath {
   bool operator ==(Object other) {
     return other is FilePath && other._absolutePath == _absolutePath;
   }
+
+  @override
+  int get hashCode => _absolutePath.hashCode;
 
   @override
   String toString() => _absolutePath;
@@ -251,15 +253,18 @@ Future<void> runFlutter(
   );
 
   if (exitCode != 0) {
-    throw ToolException('ERROR: Failed to run $executable with '
-        'arguments ${arguments.toString()}. Exited with exit code $exitCode');
+    throw ToolExit(
+      'ERROR: Failed to run $executable with '
+      'arguments ${arguments.toString()}. Exited with exit code $exitCode',
+      exitCode: exitCode,
+    );
   }
 }
 
 /// An exception related to an attempt to spawn a sub-process.
 @immutable
 class ProcessException implements Exception {
-  ProcessException({
+  const ProcessException({
     required this.description,
     required this.executable,
     required this.arguments,
@@ -296,59 +301,11 @@ class ProcessException implements Exception {
 /// Adds utility methods
 mixin ArgUtils<T> on Command<T> {
   /// Extracts a boolean argument from [argResults].
-  bool? boolArg(String name) => argResults?[name] as bool?;
+  bool boolArg(String name) => argResults![name] as bool;
 
   /// Extracts a string argument from [argResults].
-  String? stringArg(String name) => argResults?[name] as String?;
-
-  /// Extracts a integer argument from [argResults].
-  ///
-  /// If the argument value cannot be parsed as [int] throws an [ArgumentError].
-  int? intArg(String name) {
-    final String? rawValue = stringArg(name);
-    if (rawValue == null) {
-      return null;
-    }
-    final int? value = int.tryParse(rawValue);
-    if (value == null) {
-      throw ArgumentError(
-        'Argument $name should be an integer value but was "$rawValue"',
-      );
-    }
-    return value;
-  }
+  String stringArg(String name) => argResults![name] as String;
 }
-
-/// Parses additional options that can be used for all tests.
-class GeneralTestsArgumentParser {
-  static final GeneralTestsArgumentParser _singletonInstance =
-      GeneralTestsArgumentParser._();
-
-  /// The [GeneralTestsArgumentParser] singleton.
-  static GeneralTestsArgumentParser get instance => _singletonInstance;
-
-  GeneralTestsArgumentParser._();
-
-  /// If target name is provided integration tests can run that one test
-  /// instead of running all the tests.
-  bool verbose = false;
-
-  void populateOptions(ArgParser argParser) {
-    argParser
-      ..addFlag(
-        'verbose',
-        defaultsTo: false,
-        help: 'Flag to indicate extra logs should also be printed.',
-      );
-  }
-
-  /// Populate results of the arguments passed.
-  void parseOptions(ArgResults argResults) {
-    verbose = argResults['verbose'] as bool;
-  }
-}
-
-bool get isVerboseLoggingEnabled => GeneralTestsArgumentParser.instance.verbose;
 
 /// There might be proccesses started during the tests.
 ///
@@ -373,13 +330,13 @@ final List<AsyncCallback> cleanupCallbacks = <AsyncCallback>[];
 Future<void> cleanup() async {
   // Cleanup remaining processes if any.
   if (processesToCleanUp.isNotEmpty) {
-    for (io.Process process in processesToCleanUp) {
+    for (final io.Process process in processesToCleanUp) {
       process.kill();
     }
   }
   // Delete temporary directories.
   if (temporaryDirectories.isNotEmpty) {
-    for (io.Directory directory in temporaryDirectories) {
+    for (final io.Directory directory in temporaryDirectories) {
       if (!directory.existsSync()) {
         directory.deleteSync(recursive: true);
       }
@@ -389,4 +346,15 @@ Future<void> cleanup() async {
   for (final AsyncCallback callback in cleanupCallbacks) {
     await callback();
   }
+}
+
+/// Scans the test/ directory for test files and returns them.
+List<FilePath> findAllTests() {
+  return environment.webUiTestDir
+      .listSync(recursive: true)
+      .whereType<io.File>()
+      .where((io.File f) => f.path.endsWith('_test.dart'))
+      .map<FilePath>((io.File f) => FilePath.fromWebUi(
+          path.relative(f.path, from: environment.webUiRootDir.path)))
+      .toList();
 }

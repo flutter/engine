@@ -21,8 +21,8 @@ Future<void> testMain() async {
   test('screenshot test reports success', () async {
     html.document.body!.style.fontFamily = 'Roboto';
     html.document.body!.innerHtml = 'Hello world!';
-    // TODO: https://github.com/flutter/flutter/issues/74702 , reduce webkit percentage.
-    await matchGoldenFile('__local__/smoke_test.png', region: Rect.fromLTWH(0, 0, 320, 200),
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/74702 , reduce webkit percentage.
+    await matchGoldenFile('__local__/smoke_test.png', region: const Rect.fromLTWH(0, 0, 320, 200),
       maxDiffRatePercent: browserEngine == BrowserEngine.webkit ? 3.0 : 0.28);
   });
 }

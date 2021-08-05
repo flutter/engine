@@ -313,7 +313,7 @@ Future<void> testMain() async {
       const Rect.fromLTRB(textLeft, textTop, textLeft + widthConstraint, 21.0),
     );
     await _checkScreenshot(rc, 'draw_paragraph');
-  },  // TODO: https://github.com/flutter/flutter/issues/65789
+  },  // TODO(mdebbar): https://github.com/flutter/flutter/issues/65789
       skip: browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs);
 
@@ -332,7 +332,7 @@ Future<void> testMain() async {
       const Rect.fromLTRB(textLeft, textTop, textLeft + widthConstraint, 35.0),
     );
     await _checkScreenshot(rc, 'draw_paragraph_multi_line');
-  },  // TODO: https://github.com/flutter/flutter/issues/65789
+  },  // TODO(mdebbar): https://github.com/flutter/flutter/issues/65789
       skip: browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs);
 
@@ -514,7 +514,7 @@ Future<void> testMain() async {
     rc.translate(50.0, 100.0);
     final Path path = Path();
     // Draw a vertical small line (caret).
-    path.addPolygon(<Offset>[Offset(0, 10), Offset(20,5), Offset(50,10)],
+    path.addPolygon(const <Offset>[Offset(0, 10), Offset(20,5), Offset(50,10)],
         false);
     path.lineTo(60, 80);
     path.lineTo(0, 80);
@@ -549,14 +549,14 @@ Future<void> testMain() async {
       },
       (RecordingCanvas canvas, SurfacePaint paint) {
         canvas.drawRRect(
-          RRect.fromLTRBR(0.0, 0.0, 20.0, 20.0, Radius.circular(7.0)),
+          RRect.fromLTRBR(0.0, 0.0, 20.0, 20.0, const Radius.circular(7.0)),
           paint,
         );
       },
       (RecordingCanvas canvas, SurfacePaint paint) {
         canvas.drawDRRect(
-          RRect.fromLTRBR(0.0, 0.0, 20.0, 20.0, Radius.circular(5.0)),
-          RRect.fromLTRBR(4.0, 4.0, 16.0, 16.0, Radius.circular(5.0)),
+          RRect.fromLTRBR(0.0, 0.0, 20.0, 20.0, const Radius.circular(5.0)),
+          RRect.fromLTRBR(4.0, 4.0, 16.0, 16.0, const Radius.circular(5.0)),
           paint,
         );
       },

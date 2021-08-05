@@ -115,12 +115,12 @@ class DomRenderer {
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
   bool get windowHasFocus =>
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) ?? false;
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) as bool;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState =
-        js_util.getProperty(html.window, _staleHotRestartStore);
+        js_util.getProperty(html.window, _staleHotRestartStore) as List<html.Element?>?;
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <html.Element?>[];
       js_util.setProperty(
@@ -140,7 +140,7 @@ class DomRenderer {
 
   void _clearOnHotRestart() {
     if (_staleHotRestartState!.isNotEmpty) {
-      for (html.Element? element in _staleHotRestartState!) {
+      for (final html.Element? element in _staleHotRestartState!) {
         element?.remove();
       }
       _staleHotRestartState!.clear();
@@ -238,7 +238,10 @@ class DomRenderer {
 
   static void setElementTransform(html.Element element, String transformValue) {
     js_util.setProperty(
-        js_util.getProperty(element, 'style'), 'transform', transformValue);
+      js_util.getProperty(element, 'style') as Object,
+      'transform',
+      transformValue,
+    );
   }
 
   void setText(html.Element element, String text) {
@@ -324,11 +327,11 @@ class DomRenderer {
     setElementStyle(bodyElement, 'font', defaultCssFont);
     setElementStyle(bodyElement, 'color', 'red');
 
-    // TODO(flutter_web): Disable spellcheck until changes in the framework and
+    // TODO(mdebbar): Disable spellcheck until changes in the framework and
     // engine are complete.
     bodyElement.spellcheck = false;
 
-    for (html.Element viewportMeta
+    for (final html.Element viewportMeta
         in html.document.head!.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {
         // Filter out the meta tag that we ourselves placed on the page. This is
@@ -571,7 +574,7 @@ class DomRenderer {
           return Future<bool>.value(true);
         } else {
           final String? lockType =
-              _deviceOrientationToLockType(orientations.first);
+              _deviceOrientationToLockType(orientations.first as String?);
           if (lockType != null) {
             final Completer<bool> completer = Completer<bool>();
             try {
@@ -613,7 +616,7 @@ class DomRenderer {
   /// The element corresponding to the only child of the root surface.
   html.Element? get _rootApplicationElement {
     final html.Element lastElement = rootElement.children.last;
-    for (html.Element child in lastElement.children) {
+    for (final html.Element child in lastElement.children) {
       if (child.tagName == 'FLT-SCENE') {
         return child;
       }

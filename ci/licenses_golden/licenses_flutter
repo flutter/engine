@@ -292,12 +292,17 @@ FILE: ../../../flutter/fml/thread_local.cc
 FILE: ../../../flutter/fml/thread_local.h
 FILE: ../../../flutter/fml/thread_local_unittests.cc
 FILE: ../../../flutter/fml/thread_unittests.cc
+FILE: ../../../flutter/fml/time/chrono_timestamp_provider.cc
+FILE: ../../../flutter/fml/time/chrono_timestamp_provider.h
+FILE: ../../../flutter/fml/time/dart_timestamp_provider.cc
+FILE: ../../../flutter/fml/time/dart_timestamp_provider.h
 FILE: ../../../flutter/fml/time/time_delta.h
 FILE: ../../../flutter/fml/time/time_delta_unittest.cc
 FILE: ../../../flutter/fml/time/time_point.cc
 FILE: ../../../flutter/fml/time/time_point.h
 FILE: ../../../flutter/fml/time/time_point_unittest.cc
 FILE: ../../../flutter/fml/time/time_unittest.cc
+FILE: ../../../flutter/fml/time/timestamp_provider.h
 FILE: ../../../flutter/fml/trace_event.cc
 FILE: ../../../flutter/fml/trace_event.h
 FILE: ../../../flutter/fml/unique_fd.cc
@@ -730,6 +735,7 @@ FILE: ../../../flutter/shell/common/skp_shader_warmup_unittests.cc
 FILE: ../../../flutter/shell/common/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
+FILE: ../../../flutter/shell/common/switches_unittests.cc
 FILE: ../../../flutter/shell/common/thread_host.cc
 FILE: ../../../flutter/shell/common/thread_host.h
 FILE: ../../../flutter/shell/common/vsync_waiter.cc

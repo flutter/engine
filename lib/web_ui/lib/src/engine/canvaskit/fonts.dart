@@ -43,14 +43,14 @@ class SkiaFontCollection {
     fontProvider = canvasKit.TypefaceFontProvider.Make();
     familyToFontMap.clear();
 
-    for (RegisteredFont font in _registeredFonts) {
+    for (final RegisteredFont font in _registeredFonts) {
       fontProvider!.registerFont(font.bytes, font.family);
       familyToFontMap
           .putIfAbsent(font.family, () => <SkFont>[])
           .add(SkFont(font.typeface));
     }
 
-    for (RegisteredFont font
+    for (final RegisteredFont font
         in FontFallbackData.instance.registeredFallbackFonts) {
       fontProvider!.registerFont(font.bytes, font.family);
       familyToFontMap
@@ -66,7 +66,7 @@ class SkiaFontCollection {
       return;
     }
     final List<RegisteredFont?> loadedFonts = await Future.wait(_unloadedFonts);
-    for (RegisteredFont? font in loadedFonts) {
+    for (final RegisteredFont? font in loadedFonts) {
       if (font != null) {
         _registeredFonts.add(font);
       }
@@ -109,7 +109,7 @@ class SkiaFontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -117,18 +117,18 @@ class SkiaFontCollection {
 
     bool registeredRoboto = false;
 
-    for (Map<String, dynamic> fontFamily
+    for (final Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily['family']!;
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+      final String family = fontFamily.readString('family');
+      final List<dynamic> fontAssets = fontFamily.readList('fonts');
 
       if (family == 'Roboto') {
         registeredRoboto = true;
       }
 
-      for (dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+      for (final dynamic fontAssetItem in fontAssets) {
+        final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
+        final String asset = fontAsset.readString('asset');
         _unloadedFonts
             .add(_registerFont(assetManager.getAssetUrl(asset), family));
       }
@@ -151,7 +151,7 @@ class SkiaFontCollection {
   Future<RegisteredFont?> _registerFont(String url, String family) async {
     ByteBuffer buffer;
     try {
-      buffer = await html.window.fetch(url).then(_getArrayBuffer);
+      buffer = await httpFetch(url).then(_getArrayBuffer);
     } catch (e) {
       printWarning('Failed to load font $family at $url');
       printWarning(e.toString());
@@ -178,8 +178,7 @@ class SkiaFontCollection {
     return actualFamily;
   }
 
-  Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
-    // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
+  Future<ByteBuffer> _getArrayBuffer(html.Body fetchResult) {
     return fetchResult
         .arrayBuffer()
         .then<ByteBuffer>((dynamic x) => x as ByteBuffer);

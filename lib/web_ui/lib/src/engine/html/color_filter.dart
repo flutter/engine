@@ -29,6 +29,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   /// introduced by the [rootElement] translation.
   html.Element? _childContainer;
 
+  /// Color filter to apply to this surface.
   final ui.ColorFilter filter;
   html.Element? _filterElement;
   bool containerVisible = true;
@@ -220,11 +221,8 @@ String? svgFilterFromBlendMode(
     case ui.BlendMode.luminosity:
     case ui.BlendMode.multiply:
     case ui.BlendMode.screen:
-    case ui.BlendMode.overlay:
     case ui.BlendMode.darken:
     case ui.BlendMode.lighten:
-    case ui.BlendMode.colorDodge:
-    case ui.BlendMode.colorBurn:
     case ui.BlendMode.hardLight:
     case ui.BlendMode.softLight:
     case ui.BlendMode.difference:

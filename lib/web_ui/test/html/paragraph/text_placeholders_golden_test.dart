@@ -15,7 +15,7 @@ void main() {
 }
 
 /// Whether we are running on iOS Safari.
-// TODO: https://github.com/flutter/flutter/issues/66656
+// TODO(mdebbar): https://github.com/flutter/flutter/issues/66656
 bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs;
 
@@ -28,11 +28,11 @@ Future<void> testMain() async {
   setUpStableTestFonts();
 
   testEachCanvas('draws paragraphs with placeholders', (EngineCanvas canvas) {
-    final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
+    const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
     final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
 
     Offset offset = Offset.zero;
-    for (PlaceholderAlignment placeholderAlignment
+    for (final PlaceholderAlignment placeholderAlignment
         in PlaceholderAlignment.values) {
       _paintTextWithPlaceholder(
         recordingCanvas,
@@ -51,7 +51,7 @@ Future<void> testMain() async {
   });
 
   testEachCanvas('text alignment and placeholders', (EngineCanvas canvas) {
-    final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
+    const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
     final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
 
     Offset offset = Offset.zero;
@@ -135,5 +135,5 @@ Paragraph _createParagraphWithPlaceholder(
   );
   builder.pushStyle(TextStyle(color: blue, fontFamily: 'Roboto', fontSize: 14));
   builder.addText(after);
-  return builder.build()..layout(ParagraphConstraints(width: 200.0));
+  return builder.build()..layout(const ParagraphConstraints(width: 200.0));
 }

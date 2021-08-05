@@ -204,9 +204,9 @@ abstract class _BaseAdapter {
     html.EventListener handler, {
     bool acceptOutsideGlasspane = false,
   }) {
-    final html.EventListener loggedHandler = (html.Event event) {
+    html.EventListener? loggedHandler(html.Event event) {
       if (!acceptOutsideGlasspane && !glassPaneElement.contains(event.target as html.Node?)) {
-        return;
+        return null;
       }
 
       if (_debugLogPointerEvents) {
@@ -224,7 +224,7 @@ abstract class _BaseAdapter {
       if (EngineSemanticsOwner.instance.receiveGlobalEvent(event)) {
         handler(event);
       }
-    };
+    }
     _listeners[eventName] = loggedHandler;
     // We have to attach the event listener on the window instead of the
     // glasspane element. That's because "up" events that occur outside the
@@ -293,7 +293,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(html.EventListener handler) {
-    final dynamic eventOptions = js_util.newObject();
+    final Object eventOptions = js_util.newObject() as Object;
     final html.EventListener jsHandler = js.allowInterop((html.Event event) => handler(event));
     _BaseAdapter._nativeListeners['wheel'] = jsHandler;
     js_util.setProperty(eventOptions, 'passive', false);
@@ -682,7 +682,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener('touchstart', (html.TouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (!nowPressed) {
           _pressTouch(touch.identifier!);
@@ -702,7 +702,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _convertEventToPointerData(
@@ -723,7 +723,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _unpressTouch(touch.identifier!);
@@ -742,7 +742,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener('touchcancel', (html.TouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (html.Touch touch in event.changedTouches!) {
+      for (final html.Touch touch in event.changedTouches!) {
         final bool nowPressed = _isTouchPressed(touch.identifier!);
         if (nowPressed) {
           _unpressTouch(touch.identifier!);

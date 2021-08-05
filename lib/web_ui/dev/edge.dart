@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:test_api/src/backend/runtime.dart';
 
 import 'browser.dart';
+import 'browser_lock.dart';
 import 'common.dart';
 import 'edge_installation.dart';
 
@@ -47,12 +48,9 @@ class Edge extends Browser {
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Edge(Uri url) {
-    final String version = EdgeArgParser.instance.version;
-
     return Edge._(() async {
-      // TODO(nurhan): Configure info log for LUCI.
       final BrowserInstallation installation = await getEdgeInstallation(
-        version,
+        browserLock.edgeLock.launcherVersion,
         infoLog: DevNull(),
       );
 
@@ -72,5 +70,5 @@ class Edge extends Browser {
     });
   }
 
-  Edge._(Future<Process> startBrowser()) : super(startBrowser);
+  Edge._(Future<Process> Function() startBrowser) : super(startBrowser);
 }

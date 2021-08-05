@@ -88,9 +88,9 @@ const String canvasKitBaseUrl = String.fromEnvironment(
   'FLUTTER_WEB_CANVASKIT_URL',
   defaultValue: 'https://unpkg.com/canvaskit-wasm@0.28.1/bin/',
 );
-final String canvasKitBuildUrl =
+const String canvasKitBuildUrl =
     canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
-final String canvasKitJavaScriptBindingsUrl =
+const String canvasKitJavaScriptBindingsUrl =
     canvasKitBuildUrl + 'canvaskit.js';
 String canvasKitWasmModuleUrl(String file) => _currentCanvasKitBase! + file;
 
@@ -179,7 +179,7 @@ void _startDownloadingCanvasKit(String? canvasKitBase) {
 
     // First check if `exports` and `module` are already defined. If so, then
     // CommonJS is being used, and we shouldn't have any problems.
-    final js.JsFunction objectConstructor = js.context['Object'];
+    final js.JsFunction objectConstructor = js.context['Object'] as js.JsFunction;
     if (js.context['exports'] == null) {
       final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
         'get': js.allowInterop(() {

@@ -101,14 +101,14 @@ class HtmlViewEmbedder {
         // Only initialize the picture recorder for the backup surface once.
         final CkPictureRecorder pictureRecorder = CkPictureRecorder();
         pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-        pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+        pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
         _backupPictureRecorder = pictureRecorder;
       }
       _pictureRecorders[viewId] = _backupPictureRecorder!;
     } else {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
       _pictureRecorders[viewId] = pictureRecorder;
     }
     _compositionOrder.add(viewId);
@@ -218,12 +218,12 @@ class HtmlViewEmbedder {
           _svgPathDefs!.querySelector('#sk_path_defs')!;
       final List<html.Element> nodesToRemove = <html.Element>[];
       final Set<String> oldDefs = _svgClipDefs[viewId]!;
-      for (html.Element child in clipDefs.children) {
+      for (final html.Element child in clipDefs.children) {
         if (oldDefs.contains(child.id)) {
           nodesToRemove.add(child);
         }
       }
-      for (html.Element node in nodesToRemove) {
+      for (final html.Element node in nodesToRemove) {
         node.remove();
       }
       _svgClipDefs[viewId]!.clear();
@@ -516,8 +516,8 @@ class ViewClipChain {
   int _clipCount = -1;
 
   ViewClipChain({required html.Element view})
-      : this._root = view,
-        this._slot = view;
+      : _root = view,
+        _slot = view;
 
   html.Element get root => _root;
   html.Element get slot => _slot;

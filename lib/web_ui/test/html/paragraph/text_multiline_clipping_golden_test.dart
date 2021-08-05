@@ -25,7 +25,7 @@ Future<void> testMain() async {
   setUpStableTestFonts();
 
   void paintTest(EngineCanvas canvas, PaintTest painter) {
-    final Rect screenRect = const Rect.fromLTWH(0, 0, 600, 600);
+    const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
     final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
     painter(recordingCanvas);
     recordingCanvas.endRecording();
@@ -89,7 +89,7 @@ Future<void> testMain() async {
     (EngineCanvas canvas) {
       // [DomCanvas] doesn't support clip commands.
       if (canvas is! DomCanvas) {
-        // TODO(flutter_web): https://github.com/flutter/flutter/issues/35086
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/35086
         // This produces the wrong result when using [BitmapCanvas] but without
         // the new experimental canvas mode.
         paintTest(canvas, paintTextWithClipStack);

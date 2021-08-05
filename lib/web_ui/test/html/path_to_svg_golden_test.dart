@@ -23,7 +23,7 @@ enum PaintMode {
 }
 
 Future<void> testMain() async {
-  final Rect region =
+  const Rect region =
       Rect.fromLTWH(8, 8, 600, 400); // Compensate for old scuba tester padding
 
   Future<void> testPath(Path path, String scubaFileName,
@@ -124,7 +124,7 @@ Future<void> testMain() async {
           largeArc: true, clockwise: true, distance: -20)
     ];
     int sampleIndex = 0;
-    for (ArcSample sample in arcs) {
+    for (final ArcSample sample in arcs) {
       ++sampleIndex;
       final Path path = sample.createPath();
       await testPath(path, 'svg_arc_$sampleIndex');
