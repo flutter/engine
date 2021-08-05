@@ -59,7 +59,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private View flutterView;
 
   // The texture registry maintaining the textures into which the embedded views will be rendered.
-  private TextureRegistry textureRegistry;
+  @Nullable private TextureRegistry textureRegistry;
 
   @Nullable private TextInputPlugin textInputPlugin;
 
