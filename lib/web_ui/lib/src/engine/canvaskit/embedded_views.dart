@@ -373,7 +373,6 @@ class HtmlViewEmbedder {
         frame.submit();
       }
     }
-    _pictureRecorders.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
@@ -394,6 +393,7 @@ class HtmlViewEmbedder {
         }
       }
 
+      _releaseOverlays();
       unusedViews.remove(viewId);
       final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
       final html.Element overlay = _overlays[viewId]!.htmlElement;
@@ -424,12 +424,18 @@ class HtmlViewEmbedder {
       final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
       clipChain?.root.remove();
       // More cleanup
-      _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
       _viewsToRecomposite.remove(viewId);
       _cleanUpClipDefs(viewId);
       _svgClipDefs.remove(viewId);
     }
+  }
+
+  void _releaseOverlays() {
+    _pictureRecorders.clear();
+    _overlays.clear();
+    _viewsUsingBackupSurface.clear();
+    SurfaceFactory.instance.releaseSurfaces();
   }
 
   void _releaseOverlay(int viewId) {

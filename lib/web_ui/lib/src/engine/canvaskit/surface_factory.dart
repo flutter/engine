@@ -81,6 +81,46 @@ class SurfaceFactory {
     }
   }
 
+  /// Releases all surfaces so they can be reused in the next frame.
+  ///
+  /// If a released surface is in the DOM, it is not removed. This allows the
+  /// engine to release the surfaces at the end of the frame so they are ready
+  /// to be used in the next frame, but still used for painting in the current
+  /// frame.
+  void releaseSurfaces() {
+    _cache.addAll(_liveSurfaces);
+    _liveSurfaces.clear();
+  }
+
+  /// Removes all surfaces except the base surface from the DOM.
+  ///
+  /// This is called at the beginning of the frame to prepare for painting into
+  /// the new surfaces.
+  void removeSurfacesFromDom() {
+    assert(
+        _liveSurfaces.isEmpty,
+        'removeSurfacesFromDom should only be called at the '
+        'beginning of a frame');
+    for (final Surface surface in _cache) {
+      if (_isInDom(surface)) {
+        _removeFromDom(surface);
+      }
+    }
+    if (_isInDom(backupSurface)) {
+      _removeFromDom(backupSurface);
+    }
+  }
+
+  // Returns [true] if this [surface] is in the DOM.
+  static bool _isInDom(Surface surface) {
+    return surface.htmlElement.parent != null;
+  }
+
+  // Removes [surface] from the DOM.
+  void _removeFromDom(Surface surface) {
+    surface.htmlElement.remove();
+  }
+
   /// Signals that a surface is no longer being used. It can be reused.
   void releaseSurface(Surface surface) {
     assert(surface != baseSurface, 'Attempting to release the base surface');
