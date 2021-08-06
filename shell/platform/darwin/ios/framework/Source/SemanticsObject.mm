@@ -400,7 +400,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     _bridge = bridge;
     _uid = uid;
     _children = [[NSMutableArray alloc] init];
-    _inDealloc = NO;
   }
 
   return self;
