@@ -159,7 +159,7 @@ class WindowWin32 {
   UINT GetCurrentHeight();
 
  protected:
-  LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+  virtual LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
  private:
   // Release OS resources associated with window.

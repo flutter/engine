@@ -261,7 +261,8 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
       if (event.unreplied == 0) {
         std::unique_ptr<PendingEvent> event_ptr = std::move(*iter);
         pending_responds_.erase(iter);
-        if (!event_ptr->any_handled) {
+        const bool should_redispatch = !event_ptr->any_handled;
+        if (should_redispatch) {
           RedispatchEvent(std::move(event_ptr));
         }
       }

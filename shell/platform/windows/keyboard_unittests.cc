@@ -51,6 +51,8 @@ static LPARAM CreateKeyEventLparam(USHORT scancode,
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
 
+constexpr LRESULT kDefaultWindowProcBehavior = 0xDEADC0DE;
+
 class MockFlutterWindowWin32 : public FlutterWindowWin32 {
  public:
   typedef std::function<void(const std::u16string& text)> U16StringHandler;
@@ -69,6 +71,13 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi() { return GetCurrentDPI(); }
 
+  LRESULT DefaultWindowProc(HWND hWnd,
+                            UINT Msg,
+                            WPARAM wParam,
+                            LPARAM lParam) override {
+    return kDefaultWindowProcBehavior;
+  }
+
   // Simulates a WindowProc message from the OS.
   LRESULT InjectWindowMessage(UINT const message,
                               WPARAM const wparam,
@@ -86,7 +95,6 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD0(OnPointerLeave, void());
   MOCK_METHOD0(OnSetCursor, void());
   MOCK_METHOD2(OnScroll, void(double, double));
-  MOCK_METHOD4(DefaultWindowProc, LRESULT(HWND, UINT, WPARAM, LPARAM));
   MOCK_METHOD0(GetDpiScale, float());
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
@@ -126,8 +134,10 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
     while (pending_responds_.size() > 0) {
       SimulatedEvent event = pending_responds_.front();
-      win32window->InjectWindowMessage(event.message, event.wparam,
-                                       event.lparam);
+      EXPECT_EQ(
+          win32window->InjectWindowMessage(event.message, event.wparam,
+                                          event.lparam),
+          kDefaultWindowProcBehavior);
       pending_responds_.pop_front();
     }
   }
@@ -178,8 +188,6 @@ struct TestResponseHandle {
   void* user_data;
 };
 
-static bool test_response = false;
-
 typedef enum {
   kKeyCallOnKey,
   kKeyCallOnText,
@@ -205,11 +213,63 @@ void clear_key_calls() {
   key_calls.clear();
 }
 
+std::unique_ptr<FlutterWindowsEngine> GetTestEngine();
+
+class KeyboardTester {
+ public:
+  explicit KeyboardTester() {
+    view_ = std::make_unique<TestFlutterWindowsView>();
+    view_->SetEngine(std::move(GetTestEngine()));
+    window_ = std::make_unique<MockFlutterWindowWin32>(
+        [](const std::u16string& text) {
+          key_calls.push_back(KeyCall{
+              .type = kKeyCallOnText,
+              .text = text,
+          });
+        });
+    window_->SetView(view_.get());
+  }
+
+  void Responding(bool response) {
+    test_response = response;
+  }
+
+  void NextMessageShouldDefault() {
+    next_event_should_default_ = true;
+  }
+
+  void InjectWindowMessage(UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam) {
+    LRESULT expected_result = next_event_should_default_ ?
+        kDefaultWindowProcBehavior : 0;
+    EXPECT_EQ(
+      window_->InjectWindowMessage(message, wparam, lparam),
+      expected_result);
+    next_event_should_default_ = false;
+  }
+
+  void InjectPendingEvents() {
+    view_->InjectPendingEvents(window_.get());
+  }
+
+  static bool test_response;
+
+ private:
+  std::unique_ptr<TestFlutterWindowsView> view_;
+  std::unique_ptr<MockFlutterWindowWin32> window_;
+
+  bool next_event_should_default_ = false;
+};
+
+
+bool KeyboardTester::test_response = false;
+
 std::unique_ptr<std::vector<uint8_t>> keyHandlingResponse(bool handled) {
   rapidjson::Document document;
   auto& allocator = document.GetAllocator();
   document.SetObject();
-  document.AddMember("handled", test_response, allocator);
+  document.AddMember("handled", KeyboardTester::test_response, allocator);
   return flutter::JsonMessageCodec::GetInstance().EncodeMessage(document);
 }
 
@@ -261,7 +321,7 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
             .key_event = clone_event,
         });
         if (callback != nullptr) {
-          callback(test_response, user_data);
+          callback(KeyboardTester::test_response, user_data);
         }
         return kSuccess;
       };
@@ -311,37 +371,6 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   return engine;
 }
 
-class KeyboardTester {
- public:
-  explicit KeyboardTester() {
-    view_ = std::make_unique<TestFlutterWindowsView>();
-    view_->SetEngine(std::move(GetTestEngine()));
-    window_ = std::make_unique<MockFlutterWindowWin32>(
-        [](const std::u16string& text) {
-          key_calls.push_back(KeyCall{
-              .type = kKeyCallOnText,
-              .text = text,
-          });
-        });
-    window_->SetView(view_.get());
-  }
-
-  KeyboardTester& Responding(bool response) {
-    test_response = response;
-    return *this;
-  }
-
-  LRESULT InjectWindowMessage(UINT const message,
-                              WPARAM const wparam,
-                              LPARAM const lparam) {
-    return window_->InjectWindowMessage(message, wparam, lparam);
-  }
-
- private:
-  std::unique_ptr<TestFlutterWindowsView> view_;
-  std::unique_ptr<MockFlutterWindowWin32> window_;
-};
-
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
@@ -366,9 +395,16 @@ constexpr bool kNotSynthesized = false;
 
 TEST(KeyboardTest, LowerCaseA) {
   KeyboardTester tester;
+  tester.Responding(true);
 
-  tester.Responding(true).InjectWindowMessage(
+  // US Keyboard layout
+
+  // Press A
+  tester.InjectWindowMessage(
       WM_KEYDOWN, kVirtualKeyA,
+      CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp));
+  tester.InjectWindowMessage(
+      WM_CHAR, kVirtualKeyA,
       CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp));
 
   EXPECT_EQ(key_calls.size(), 1);
@@ -376,7 +412,11 @@ TEST(KeyboardTest, LowerCaseA) {
                        kLogicalKeyA, "A", kNotSynthesized);
   clear_key_calls();
 
-  tester.Responding(true).InjectWindowMessage(
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release A
+  tester.InjectWindowMessage(
       WM_KEYUP, kVirtualKeyA,
       CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasDown));
 
@@ -384,6 +424,9 @@ TEST(KeyboardTest, LowerCaseA) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
 }
 
 }  // namespace testing
