@@ -187,7 +187,6 @@ void testMain() {
 
   test('should not throw when using nav1 and nav2 together',
       () async {
-    // Regression test https://github.com/flutter/flutter/issues/87823.
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
       const TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: false);
@@ -240,6 +239,7 @@ void testMain() {
 
   test('should not throw when state is complex json object',
       () async {
+    // Regression test https://github.com/flutter/flutter/issues/87823.
     await window.debugInitializeHistory(TestUrlStrategy.fromEntry(
       const TestHistoryEntry('initial state', null, '/initial'),
     ), useSingle: false);
