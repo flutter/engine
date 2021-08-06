@@ -107,7 +107,7 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
 
   const auto now = ChronoTicksSinceEpoch();
   int expected_value = 1;
-  for (;;) {
+  while (true) {
     fml::closure invocation = task_queue->GetNextTaskToRun(queue_id, now);
     if (!invocation) {
       break;
@@ -147,7 +147,7 @@ TEST(MessageLoopTaskQueue, RegisterTasksOnMergedQueuesPreserveTaskOrdering) {
   // "test_val = 0" in raster1_queue
   // "test_val = 1" in platform_queue
   // "test_val = 2" in raster2_queue
-  for (;;) {
+  while (true) {
     fml::closure invocation = task_queue->GetNextTaskToRun(platform_queue, now);
     if (!invocation) {
       break;

@@ -149,7 +149,7 @@ std::unique_ptr<Shell> Shell::Create(
   }
   return CreateWithSnapshot(std::move(platform_data),            //
                             std::move(task_runners),             //
-                            nullptr,                             //
+                            /*parent_merger=*/nullptr,           //
                             std::move(settings),                 //
                             std::move(vm),                       //
                             std::move(isolate_snapshot),         //

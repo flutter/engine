@@ -14,34 +14,36 @@
 
 namespace fml {
 
-class MessageLoopImpl;
 class RasterThreadMerger;
 
 typedef void* RasterThreadMergerId;
 
+/// Instance of this class is shared between multiple |RasterThreadMerger|
+/// instances, Most of the callings from |RasterThreadMerger| will be redirected
+/// to this class with one more caller parameter.
 class SharedThreadMerger
     : public fml::RefCountedThreadSafe<SharedThreadMerger> {
  public:
   SharedThreadMerger(TaskQueueId owner, TaskQueueId subsumed);
 
-  // It's called by |RasterThreadMerger::MergeWithLease()|.
-  // See the doc of |RasterThreadMerger::MergeWithLease()|.
-  bool MergeWithLease(RasterThreadMergerId caller, int lease_term);
+  // It's called by |RasterThreadMerger::MergeWithLease|.
+  // See the doc of |RasterThreadMerger::MergeWithLease|.
+  bool MergeWithLease(RasterThreadMergerId caller, size_t lease_term);
 
-  // It's called by |RasterThreadMerger::UnMergeNowIfLastOne()|.
-  // See the doc of |RasterThreadMerger::UnMergeNowIfLastOne()|.
+  // It's called by |RasterThreadMerger::UnMergeNowIfLastOne|.
+  // See the doc of |RasterThreadMerger::UnMergeNowIfLastOne|.
   bool UnMergeNowIfLastOne(RasterThreadMergerId caller);
 
-  // It's called by |RasterThreadMerger::ExtendLeaseTo()|.
-  // See the doc of |RasterThreadMerger::ExtendLeaseTo()|.
-  void ExtendLeaseTo(RasterThreadMergerId caller, int lease_term);
+  // It's called by |RasterThreadMerger::ExtendLeaseTo|.
+  // See the doc of |RasterThreadMerger::ExtendLeaseTo|.
+  void ExtendLeaseTo(RasterThreadMergerId caller, size_t lease_term);
 
-  // It's called by |RasterThreadMerger::IsMergedUnSafe()|.
-  // See the doc of |RasterThreadMerger::IsMergedUnSafe()|.
+  // It's called by |RasterThreadMerger::IsMergedUnSafe|.
+  // See the doc of |RasterThreadMerger::IsMergedUnSafe|.
   bool IsMergedUnSafe() const;
 
-  // It's called by |RasterThreadMerger::DecrementLease()|.
-  // See the doc of |RasterThreadMerger::DecrementLease()|.
+  // It's called by |RasterThreadMerger::DecrementLease|.
+  // See the doc of |RasterThreadMerger::DecrementLease|.
   bool DecrementLease(RasterThreadMergerId caller);
 
  private:
@@ -51,9 +53,9 @@ class SharedThreadMerger
   std::mutex mutex_;
 
   /// The |MergeWithLease| or |ExtendLeaseTo| method will record the caller
-  /// into this lease_term_by_caller_ map, |UnMergeNowIfLastOne()|
+  /// into this lease_term_by_caller_ map, |UnMergeNowIfLastOne|
   /// method will remove the caller from this lease_term_by_caller_.
-  std::map<RasterThreadMergerId, std::atomic_int> lease_term_by_caller_;
+  std::map<RasterThreadMergerId, std::atomic_size_t> lease_term_by_caller_;
 
   bool IsAllLeaseTermsZeroUnSafe() const;
 

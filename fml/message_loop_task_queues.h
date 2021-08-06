@@ -35,12 +35,12 @@ class TaskQueueEntry {
   TaskObservers task_observers;
   std::unique_ptr<TaskSource> task_source;
 
-  // Set of TaskQueueIds and in-turn the TaskQueues owned by this TaskQueue. If
-  // the set is empty, this TaskQueue does not own any other TaskQueues.
+  /// Set of the TaskQueueIds which is owned by this TaskQueue. If the set is
+  /// empty, this TaskQueue does not own any other TaskQueues.
   std::set<TaskQueueId> owner_of;
 
-  // Identifies the TaskQueue that subsumes this TaskQueue. If it is _kUnmerged,
-  // it indiacates that this TaskQueue is not owned by any other TaskQueue.
+  /// Identifies the TaskQueue that subsumes this TaskQueue. If it is _kUnmerged
+  /// it indicates that this TaskQueue is not owned by any other TaskQueue.
   TaskQueueId subsumed_by;
 
   TaskQueueId created_for;

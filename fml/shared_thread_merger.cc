@@ -17,7 +17,7 @@ SharedThreadMerger::SharedThreadMerger(fml::TaskQueueId owner,
       task_queues_(fml::MessageLoopTaskQueues::GetInstance()) {}
 
 bool SharedThreadMerger::MergeWithLease(RasterThreadMergerId caller,
-                                        int lease_term) {
+                                        size_t lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(mutex_);
   if (IsMergedUnSafe()) {
@@ -53,11 +53,16 @@ bool SharedThreadMerger::DecrementLease(RasterThreadMergerId caller) {
   auto entry = lease_term_by_caller_.find(caller);
   bool exist = entry != lease_term_by_caller_.end();
   if (exist) {
-    std::atomic_int& lease_term_ref = entry->second;
+    std::atomic_size_t& lease_term_ref = entry->second;
     FML_CHECK(lease_term_ref > 0)
         << "lease_term should always be positive when merged, lease_term="
         << lease_term_ref;
     lease_term_ref--;
+  } else {
+    FML_LOG(WARNING) << "The caller does not exist when calling "
+                        "DecrementLease(), ignored. This may happens after "
+                        "caller is erased in UnMergeNowIfLastOne(). caller="
+                     << caller;
   }
   if (IsAllLeaseTermsZeroUnSafe()) {
     // Unmerge now because lease_term_ decreased to zero.
@@ -68,7 +73,7 @@ bool SharedThreadMerger::DecrementLease(RasterThreadMergerId caller) {
 }
 
 void SharedThreadMerger::ExtendLeaseTo(RasterThreadMergerId caller,
-                                       int lease_term) {
+                                       size_t lease_term) {
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
   std::scoped_lock lock(mutex_);
   FML_DCHECK(IsMergedUnSafe())

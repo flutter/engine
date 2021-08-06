@@ -25,7 +25,7 @@ fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::instance_;
 
 namespace {
 
-// iOS prior to version 9 prevents c++11 thread_local and __thread specefier,
+// iOS prior to version 9 prevents c++11 thread_local and __thread specifier,
 // having us resort to boxed enum containers.
 class TaskSourceGradeHolder {
  public:
@@ -361,12 +361,10 @@ bool MessageLoopTaskQueues::HasPendingTasksUnlocked(
   }
 
   auto& subsumed_set = entry->owner_of;
-  for (auto& subsumed : subsumed_set) {
-    if (!queue_entries_.at(subsumed)->task_source->IsEmpty()) {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(
+      subsumed_set.begin(), subsumed_set.end(), [&](const auto& subsumed) {
+        return !queue_entries_.at(subsumed)->task_source->IsEmpty();
+      });
 }
 
 fml::TimePoint MessageLoopTaskQueues::GetNextWakeTimeUnlocked(
@@ -386,14 +384,15 @@ TaskSource::TopTask MessageLoopTaskQueues::PeekNextTaskUnlocked(
   // Use optional for the memory of TopTask object.
   std::optional<TaskSource::TopTask> top_task;
 
-  auto top_task_updater = [&top_task](const TaskSource* source) {
-    if (source && !source->IsEmpty()) {
-      auto other_task = source->Top();
-      if (!top_task.has_value() || top_task->task > other_task.task) {
-        top_task.emplace(other_task);
-      }
-    }
-  };
+  std::function<void(const TaskSource*)> top_task_updater =
+      [&top_task](const TaskSource* source) {
+        if (source && !source->IsEmpty()) {
+          TaskSource::TopTask other_task = source->Top();
+          if (!top_task.has_value() || top_task->task > other_task.task) {
+            top_task.emplace(other_task);
+          }
+        }
+      };
 
   TaskSource* owner_tasks = entry->task_source.get();
   top_task_updater(owner_tasks);

@@ -23,6 +23,11 @@ enum class RasterThreadStatus {
   kUnmergedNow
 };
 
+/// This class is a client and proxy between the rasterizer and
+/// |SharedThreadMerger|. The multiple |RasterThreadMerger| instances with same
+/// owner_queue_id and same subsumed_queue_id share the same
+/// |SharedThreadMerger| instance. Whether they share the same inner instance is
+/// determined by |RasterThreadMerger::CreateOrShareThreadMerger| method.
 class RasterThreadMerger
     : public fml::RefCountedThreadSafe<RasterThreadMerger> {
  public:
@@ -35,13 +40,14 @@ class RasterThreadMerger
   //
   // If the task queues are the same, we consider them statically merged.
   // When task queues are statically merged this method becomes no-op.
-  void MergeWithLease(int lease_term);
+  void MergeWithLease(size_t lease_term);
 
   // Gets the shared merger from current merger object
-  fml::RefPtr<fml::SharedThreadMerger> GetSharedRasterThreadMerger() const;
+  const fml::RefPtr<SharedThreadMerger>& GetSharedRasterThreadMerger() const;
 
-  // Creates a new merger from parent, share the inside shared_merger member
-  // when the platform_queue_id and raster_queue_id are same.
+  /// Creates a new merger from parent, share the inside shared_merger member
+  /// when the platform_queue_id and raster_queue_id are same, otherwise create
+  /// a new shared_merger instance
   static fml::RefPtr<fml::RasterThreadMerger> CreateOrShareThreadMerger(
       const fml::RefPtr<fml::RasterThreadMerger>& parent_merger,
       TaskQueueId platform_id,
@@ -61,7 +67,7 @@ class RasterThreadMerger
 
   // If the task queues are the same, we consider them statically merged.
   // When task queues are statically merged this method becomes no-op.
-  void ExtendLeaseTo(int lease_term);
+  void ExtendLeaseTo(size_t lease_term);
 
   // Returns |RasterThreadStatus::kUnmergedNow| if this call resulted in
   // splitting the raster and platform threads. Reduces the lease term by 1.
