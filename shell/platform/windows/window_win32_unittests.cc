@@ -97,7 +97,7 @@ TEST(MockWin32Window, KeyDownWithCtrl) {
 
   // Expect OnKey, but not OnText, because Control + Key is not followed by
   // WM_CHAR
-  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 0, false, true)).Times(1);
+  EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 'A', false, true)).Times(1);
   EXPECT_CALL(window, OnText(_)).Times(0);
 
   window.InjectWindowMessage(WM_KEYDOWN, 65, lparam);

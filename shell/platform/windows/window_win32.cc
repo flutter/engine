@@ -179,7 +179,6 @@ static uint16_t ResolveKeyCode(uint16_t original,
     case VK_SHIFT:
     case VK_LSHIFT:
       return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
-      ;
     case VK_MENU:
     case VK_LMENU:
       return extended ? VK_RMENU : VK_LMENU;
@@ -348,7 +347,7 @@ WindowWin32::HandleMessage(UINT const message,
         s_pending_high_surrogate = 0;
       }
 
-      // Key presses that generate a non-surrogate should be sent from
+      // All key presses that generate a character should be sent from
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
       if (keycode_for_char_message_ != 0) {
@@ -399,10 +398,10 @@ WindowWin32::HandleMessage(UINT const message,
       if (character > 0 && is_keydown_message && GetKeyState(VK_CONTROL) >= 0 &&
           GetKeyState(VK_LWIN) >= 0 && GetKeyState(VK_RWIN) >= 0) {
         keycode_for_char_message_ = wparam;
-        break;
+        return 0;
       }
       unsigned int keyCode(wparam);
-      const unsigned int scancode = (lparam >> 16) & 0xff;
+      const uint8_t scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
       keyCode = ResolveKeyCode(keyCode, extended, scancode);

@@ -366,7 +366,7 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
         .Times(1)
         .RetiresOnSaturation();
     EXPECT_CALL(win32window, DefaultWindowProc(_, _, _, _))
-        .Times(0)
+        .Times(1)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
         .Times(0);
@@ -459,12 +459,12 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
   }
 }
 
-// Tests key event propagation of modifier key down events. This are different
+// Tests key event propagation of modifier key down events. This is different
 // from non-printable events in that they call MapVirtualKey, resulting in a
 // slightly different code path.
 TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
   constexpr WPARAM virtual_key = VK_LSHIFT;
-  constexpr WPARAM scan_code = 20;
+  constexpr WPARAM scan_code = 0x2a;
   constexpr char32_t character = 0;
   MockFlutterWindowWin32 win32window;
   std::deque<SimulatedEvent> pending_events;
