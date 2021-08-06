@@ -651,6 +651,10 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   SemanticsObject* parent = [[SemanticsObject alloc] initWithBridge:bridge uid:0];
   SemanticsObject* child = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
   parent.children = @[ child ];
+  // In some iOS 9 physical devices it will crash when access released properties during
+  // `[super dealloc]` and this test will no pass
+  // https://github.com/flutter/flutter/issues/66032
+  // https://github.com/flutter/engine/pull/27786
   __weak SemanticsObject* weakObject = parent;
   parent = nil;
   XCTAssertNil(weakObject);
