@@ -1,0 +1,31 @@
+name: web_ui_dev
+publish_to: none
+
+# Keep the SDK version range in sync with pubspecs under web_sdk
+environment:
+  sdk: ">=2.12.0-0 <3.0.0"
+
+dependencies:
+  meta: 1.3.0
+  archive: 3.1.2
+  http: 0.13.0
+  http_multi_server: 3.0.1
+  image: 3.0.1
+  path: 1.8.0
+  shelf: 1.2.0
+  shelf_packages_handler: 3.0.0
+  shelf_static: 1.1.0
+  shelf_web_socket: 1.0.1
+  test_api: 0.4.2
+  test_core: 0.4.0
+  yaml: 3.0.0
+  watcher: 1.0.0
+  webkit_inspection_protocol: 1.0.0
+  web_socket_channel: 2.1.0
+  web_test_utils:
+    path: ../../../web_sdk/web_test_utils
+  simulators:
+    git:
+      url: git://github.com/flutter/web_installers.git
+      path: packages/simulators/
+      ref: 4a7b0a2c84b8993bf4d19030218de38c18838c26

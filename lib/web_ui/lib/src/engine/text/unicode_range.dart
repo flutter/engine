@@ -229,7 +229,7 @@ List<UnicodeRange<P>> _unpackProperties<P>(
 
 int _getEnumIndexFromPackedValue(int charCode) {
   // This has to stay in sync with [EnumValue.serialized] in
-  // `tool/unicode_sync_script.dart`.
+  // `dev/unicode_sync_script.dart`.
 
   assert((charCode >= kChar_A && charCode <= kChar_Z) ||
       (charCode >= kChar_a && charCode <= kChar_z));

@@ -53,17 +53,18 @@ IF %needsHostDebugUnoptRebuild%==1 (
   CALL python %GN% --unoptimized --full-dart-sdk
   CALL ninja -C %HOST_DEBUG_UNOPT_DIR%)
 
-cd %WEB_UI_DIR%
 IF NOT EXIST "%SNAPSHOT_PATH%" (
   ECHO Precompiling felt snapshot
+  cd %DEV_DIR%
   CALL %PUB_BIN% get
-  %DART_BIN% --snapshot="%SNAPSHOT_PATH%" --packages="%WEB_UI_DIR%\.packages" %FELT_PATH%
+  %DART_BIN% --snapshot="%SNAPSHOT_PATH%" --packages="%DEV_DIR%\.packages" %FELT_PATH%
 )
 
+cd %WEB_UI_DIR%
 IF %1==test (
-  %DART_SDK_DIR%\bin\dart --packages="%WEB_UI_DIR%\.packages" "%SNAPSHOT_PATH%" %* --browser=chrome
+  %DART_SDK_DIR%\bin\dart --packages="%DEV_DIR%\.packages" "%SNAPSHOT_PATH%" %* --browser=chrome
 ) ELSE (
-  %DART_SDK_DIR%\bin\dart --packages="%WEB_UI_DIR%\.packages" "%SNAPSHOT_PATH%" %*
+  %DART_SDK_DIR%\bin\dart --packages="%DEV_DIR%\.packages" "%SNAPSHOT_PATH%" %*
 )
 
 EXIT /B %ERRORLEVEL%
