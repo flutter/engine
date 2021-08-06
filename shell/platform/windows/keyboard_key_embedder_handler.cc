@@ -267,10 +267,10 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = get_key_state_(virtual_key);
 
     // Check toggling state first, because it might alter pressing state.
     if (key_info.check_toggled) {
+      SHORT state = get_key_state_(virtual_key);
       bool should_toggled = state & kStateMaskToggled;
       if (virtual_key == toggle_virtual_key) {
         key_info.toggled_on = !key_info.toggled_on;
@@ -312,8 +312,8 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = get_key_state_(virtual_key);
     if (key_info.check_pressed) {
+      SHORT state = get_key_state_(virtual_key);
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
       bool should_pressed = state & kStateMaskPressed;

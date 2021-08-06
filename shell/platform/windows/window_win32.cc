@@ -172,6 +172,25 @@ void WindowWin32::UpdateCursorRect(const Rect& rect) {
   text_input_manager_.UpdateCaretRect(rect);
 }
 
+static uint16_t ResolveKeyCode(uint16_t original,
+                               bool extended,
+                               uint8_t scancode) {
+  switch (original) {
+    case VK_SHIFT:
+    case VK_LSHIFT:
+      return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
+      ;
+    case VK_MENU:
+    case VK_LMENU:
+      return extended ? VK_RMENU : VK_LMENU;
+    case VK_CONTROL:
+    case VK_LCONTROL:
+      return extended ? VK_RCONTROL : VK_LCONTROL;
+    default:
+      return original;
+  }
+}
+
 LRESULT
 WindowWin32::HandleMessage(UINT const message,
                            WPARAM const wparam,
@@ -313,6 +332,9 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_SYSDEADCHAR:
     case WM_CHAR:
     case WM_SYSCHAR: {
+      if (ignore_next_event) {
+        break;
+      }
       static wchar_t s_pending_high_surrogate = 0;
 
       wchar_t character = static_cast<wchar_t>(wparam);
@@ -329,10 +351,11 @@ WindowWin32::HandleMessage(UINT const message,
         s_pending_high_surrogate = 0;
       }
 
-      // All key presses that generate a character should be sent from
+      // Key presses that generate a non-surrogate should be sent from
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
-      if (keycode_for_char_message_ != 0) {
+      if (keycode_for_char_message_ != 0 &&
+          (IS_HIGH_SURROGATE(character) || IS_LOW_SURROGATE(character))) {
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
@@ -366,19 +389,16 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
+      handled_for_char_message_ = false;
       const bool is_keydown_message =
           (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
-      // Check if this key produces a character. If so, the key press should
-      // be sent with the character produced at WM_CHAR. Store the produced
+      // Check if this key produces a surrogate. If so, the key press should
+      // be resolved with the character produced at WM_CHAR. Store the produced
       // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
-      //
-      // Messages with Control or Win modifiers down are never considered as
-      // character messages. This allows key combinations such as "CTRL + Digit"
-      // to properly produce key down events even though `MapVirtualKey` returns
-      // a valid character. See https://github.com/flutter/flutter/issues/85587.
       unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-      if (character > 0 && is_keydown_message && GetKeyState(VK_CONTROL) >= 0 &&
-          GetKeyState(VK_LWIN) >= 0 && GetKeyState(VK_RWIN) >= 0) {
+      keycode_for_char_message_ = 0;
+      if (character > 0 && is_keydown_message &&
+          (IS_HIGH_SURROGATE(character) || IS_LOW_SURROGATE(character))) {
         keycode_for_char_message_ = wparam;
         break;
       }
@@ -386,13 +406,14 @@ WindowWin32::HandleMessage(UINT const message,
       const unsigned int scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
-      if (keyCode == VK_SHIFT || keyCode == VK_MENU || keyCode == VK_CONTROL) {
-        keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
-      }
+      keyCode = ResolveKeyCode(keyCode, extended, scancode);
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
-      if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
+      if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
+        handled_for_char_message_ = true;
         return 0;
+      } else {
+        ignore_next_event = true;
       }
       break;
   }
