@@ -332,9 +332,6 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_SYSDEADCHAR:
     case WM_CHAR:
     case WM_SYSCHAR: {
-      if (ignore_next_event) {
-        break;
-      }
       static wchar_t s_pending_high_surrogate = 0;
 
       wchar_t character = static_cast<wchar_t>(wparam);
@@ -389,7 +386,6 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
-      handled_for_char_message_ = false;
       const bool is_keydown_message =
           (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
       // Check if this key produces a surrogate. If so, the key press should
@@ -410,10 +406,7 @@ WindowWin32::HandleMessage(UINT const message,
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
       if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
-        handled_for_char_message_ = true;
         return 0;
-      } else {
-        ignore_next_event = true;
       }
       break;
   }
