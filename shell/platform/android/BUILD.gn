@@ -335,13 +335,24 @@ action("flutter_shell_java") {
         _rebased_lambda_jar,
       ] + rebase_path(embedding_dependencies_jars, root_build_dir)
 
+  if (host_os == "mac") {
+    _javacbin =
+        rebase_path("//third_party/java/openjdk/Contents/Home/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/Contents/Home/bin/jar")
+  } else {
+    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar")
+  }
+
   args = [
     "--depfile=$_rebased_depfile",
     "--jar-path=$_rebased_jar_path",
     "--jar-source-path=$_rebased_source_jar_path",
     "--jar-source-base-dir=$_rebased_current_path",
     "--classpath=$_rebased_classpath",
-    "--bootclasspath=$_rebased_android_sdk_jar",
+    "--java-version=11",
+    "--jar-bin=$_jarbin",
+    "--javac-bin=$_javacbin",
   ]
 
   args += rebase_path(sources, root_build_dir)
@@ -550,6 +561,15 @@ action("robolectric_tests") {
   _rebased_srcjars = rebase_path(_jar_dependencies, root_build_dir)
   _rebased_additional_files = rebase_path(additional_jar_files, root_build_dir)
 
+  if (host_os == "mac") {
+    _javacbin =
+        rebase_path("//third_party/java/openjdk/Contents/Home/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/Contents/Home/bin/jar")
+  } else {
+    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar")
+  }
+
   args = [
     "--depfile=$_rebased_depfile",
     "--jar-path=$_rebased_jar_path",
@@ -557,6 +577,9 @@ action("robolectric_tests") {
     "--jar-source-base-dir=$_rebased_current_path",
     "--java-srcjars=$_rebased_srcjars",
     "--additional-jar-files=$_rebased_additional_files",
+    "--java-version=11",
+    "--jar-bin=$_jarbin",
+    "--javac-bin=$_javacbin",
   ]
 
   args += rebase_path(sources, root_build_dir)

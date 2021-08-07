@@ -535,6 +535,17 @@ deps = {
      'dep_type': 'cipd',
    },
 
+  'src/third_party/java/openjdk': {
+     'packages': [
+       {
+        'package': 'flutter/java/openjdk/${{platform}}',
+        'version': 'version:11'
+       }
+     ],
+     'condition': 'download_android_deps',
+     'dep_type': 'cipd',
+   },
+
   'src/flutter/third_party/gn': {
     'packages': [
       {
