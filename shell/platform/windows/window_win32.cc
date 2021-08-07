@@ -405,23 +405,24 @@ WindowWin32::HandleMessage(UINT const message,
                                   next_message.message == WM_CHAR ||
                                   next_message.message == WM_SYSCHAR);
       }
-      keycode_for_char_message_ = wparam;
-      return 0;
+      if (character > 0 && is_keydown_message && has_wm_char) {
+        keycode_for_char_message_ = wparam;
+        return 0;
+      }
+      unsigned int keyCode(wparam);
+      const uint8_t scancode = (lparam >> 16) & 0xff;
+      const bool extended = ((lparam >> 24) & 0x01) == 0x01;
+      // If the key is a modifier, get its side.
+      keyCode = ResolveKeyCode(keyCode, extended, scancode);
+      const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
+      const bool was_down = lparam & 0x40000000;
+      if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
+        return 0;
+      }
+      break;
   }
-  unsigned int keyCode(wparam);
-  const uint8_t scancode = (lparam >> 16) & 0xff;
-  const bool extended = ((lparam >> 24) & 0x01) == 0x01;
-  // If the key is a modifier, get its side.
-  keyCode = ResolveKeyCode(keyCode, extended, scancode);
-  const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
-  const bool was_down = lparam & 0x40000000;
-  if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
-    return 0;
-  }
-  break;
-}
 
-return Win32DefWindowProc(window_handle_, message, wparam, result_lparam);
+  return Win32DefWindowProc(window_handle_, message, wparam, result_lparam);
 }
 
 UINT WindowWin32::GetCurrentDPI() {
