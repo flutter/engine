@@ -1134,6 +1134,9 @@ static BOOL isScribbleAvailable() {
 
   [self.text replaceCharactersInRange:[self clampSelection:range forText:self.text]
                            withString:text];
+  [self setSelectedTextRangeLocal:[FlutterTextRange
+                                      rangeWithNSRange:[self clampSelection:selectedRange
+                                                                    forText:self.text]]];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
