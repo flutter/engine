@@ -20,6 +20,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
@@ -38,6 +39,8 @@ import java.nio.ByteBuffer;
  */
 @TargetApi(19)
 public class FlutterImageView extends View implements RenderSurface {
+  private static final String TAG = "FlutterImageView";
+
   @NonNull private ImageReader imageReader;
   @Nullable private Image currentImage;
   @Nullable private Bitmap currentBitmap;
@@ -89,6 +92,14 @@ public class FlutterImageView extends View implements RenderSurface {
   @TargetApi(19)
   @NonNull
   private static ImageReader createImageReader(int width, int height) {
+    if (width <= 0) {
+      Log.w(TAG, "ImageReader dimensions must > 0, but given width=" + width + ", set width=1");
+      width = 1;
+    }
+    if (height <= 0) {
+      Log.w(TAG, "ImageReader dimensions must > 0, but given height=" + height + ", set height=1");
+      height = 1;
+    }
     if (android.os.Build.VERSION.SDK_INT >= 29) {
       return ImageReader.newInstance(
           width,
