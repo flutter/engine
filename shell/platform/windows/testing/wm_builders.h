@@ -46,7 +46,6 @@ typedef enum {
   kBeingPressed = 1,
 } WmFieldTransitionState;
 
-
 // WM_KEYDOWN messages.
 //
 // See https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown.
@@ -65,11 +64,12 @@ typedef struct {
 
   uint16_t repeat_count = 1;
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck, HWND hWnd = NULL);
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
+                     HWND hWnd = NULL);
 } WmKeyDownInfo;
 
-// Win32Message BuildMessage(WmKeyDownInfo info, LRESULT expected_result = kWmResultDontCheck, HWND hWnd = NULL);
-
+// Win32Message BuildMessage(WmKeyDownInfo info, LRESULT expected_result =
+// kWmResultDontCheck, HWND hWnd = NULL);
 
 // WM_KEYUP  messages.
 //
@@ -89,9 +89,9 @@ typedef struct {
 
   // uint16_t repeat_count;  // Always 1.
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck, HWND hWnd = NULL);
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
+                     HWND hWnd = NULL);
 } WmKeyUpInfo;
-
 
 // WM_CHAR  messages.
 //
@@ -111,7 +111,8 @@ typedef struct {
 
   uint16_t repeat_count = 1;
 
-  Win32Message Build(LRESULT expected_result = kWmResultDontCheck, HWND hWnd = NULL);
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
+                     HWND hWnd = NULL);
 } WmCharInfo;
 
 }  // namespace testing

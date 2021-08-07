@@ -8,47 +8,39 @@ namespace flutter {
 namespace testing {
 
 Win32Message WmKeyDownInfo::Build(LRESULT expected_result, HWND hWnd) {
-  uint32_t lParam = (repeat_count << 0) |
-                    (scan_code << 16) |
-                    (extended << 24) |
+  uint32_t lParam = (repeat_count << 0) | (scan_code << 16) | (extended << 24) |
                     (prev_state << 30);
   return Win32Message{
-    .message = WM_KEYDOWN,
-    .wParam = key,
-    .lParam = lParam,
-    .expected_result = expected_result,
-    .hWnd = hWnd,
+      .message = WM_KEYDOWN,
+      .wParam = key,
+      .lParam = lParam,
+      .expected_result = expected_result,
+      .hWnd = hWnd,
   };
 }
 
 Win32Message WmKeyUpInfo::Build(LRESULT expected_result, HWND hWnd) {
-  uint32_t lParam = (1 /* repeat_count */ << 0) |
-                    (scan_code << 16) |
-                    (extended << 24) |
-                    (1 /* prev_state */ << 30) |
+  uint32_t lParam = (1 /* repeat_count */ << 0) | (scan_code << 16) |
+                    (extended << 24) | (1 /* prev_state */ << 30) |
                     (1 /* transition */ << 31);
   return Win32Message{
-    .message = WM_KEYUP,
-    .wParam = key,
-    .lParam = lParam,
-    .expected_result = expected_result,
-    .hWnd = hWnd,
+      .message = WM_KEYUP,
+      .wParam = key,
+      .lParam = lParam,
+      .expected_result = expected_result,
+      .hWnd = hWnd,
   };
 }
 
 Win32Message WmCharInfo::Build(LRESULT expected_result, HWND hWnd) {
-  uint32_t lParam = (repeat_count << 0) |
-                    (scan_code << 16) |
-                    (extended << 24) |
-                    (context << 30) |
-                    (prev_state << 30) |
-                    (transition << 31);
+  uint32_t lParam = (repeat_count << 0) | (scan_code << 16) | (extended << 24) |
+                    (context << 30) | (prev_state << 30) | (transition << 31);
   return Win32Message{
-    .message = WM_CHAR,
-    .wParam = char_code,
-    .lParam = lParam,
-    .expected_result = expected_result,
-    .hWnd = hWnd,
+      .message = WM_CHAR,
+      .wParam = char_code,
+      .lParam = lParam,
+      .expected_result = expected_result,
+      .hWnd = hWnd,
   };
 }
 

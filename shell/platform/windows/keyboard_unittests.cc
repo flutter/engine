@@ -19,8 +19,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <functional>
 #include <rapidjson/document.h>
+#include <functional>
 #include <vector>
 
 using testing::_;
@@ -47,7 +47,8 @@ static LPARAM CreateKeyEventLparam(USHORT scancode,
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
 
-class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueue {
+class MockFlutterWindowWin32 : public FlutterWindowWin32,
+                               public MockMessageQueue {
  public:
   typedef std::function<void(const std::u16string& text)> U16StringHandler;
 
@@ -66,9 +67,9 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueu
   UINT GetDpi() { return GetCurrentDPI(); }
 
   LRESULT Win32DefWindowProc(HWND hWnd,
-                            UINT Msg,
-                            WPARAM wParam,
-                            LPARAM lParam) override {
+                             UINT Msg,
+                             WPARAM wParam,
+                             LPARAM lParam) override {
     return kWmResultDefault;
   }
 
@@ -93,8 +94,13 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueu
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
 
-  virtual BOOL Win32PeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) override {
-    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg,
+                                HWND hWnd,
+                                UINT wMsgFilterMin,
+                                UINT wMsgFilterMax,
+                                UINT wRemoveMsg) override {
+    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin,
+                                              wMsgFilterMax, wRemoveMsg);
   }
 
  private:
@@ -139,7 +145,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   bool is_printable;
 
   void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
-    win32window->InjectMessageList(pending_responds_.size(), pending_responds_.data());
+    win32window->InjectMessageList(pending_responds_.size(),
+                                   pending_responds_.data());
     pending_responds_.clear();
   }
 
@@ -166,9 +173,11 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
     const LPARAM lparam = CreateKeyEventLparam(
         kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
-    pending_responds_.push_back(Win32Message{message, kbdinput.wVk, lparam, kWmResultDefault});
+    pending_responds_.push_back(
+        Win32Message{message, kbdinput.wVk, lparam, kWmResultDefault});
     if (is_printable && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(Win32Message{WM_CHAR, kbdinput.wVk, lparam, kWmResultDefault});
+      pending_responds_.push_back(
+          Win32Message{WM_CHAR, kbdinput.wVk, lparam, kWmResultDefault});
     }
     return 1;
   }
@@ -228,13 +237,9 @@ class KeyboardTester {
     window_->SetView(view_.get());
   }
 
-  void Responding(bool response) {
-    test_response = response;
-  }
+  void Responding(bool response) { test_response = response; }
 
-  void NextMessageShouldDefault() {
-    next_event_should_default_ = true;
-  }
+  void NextMessageShouldDefault() { next_event_should_default_ = true; }
 
   void InjectMessages(int count, Win32Message message1, ...) {
     Win32Message messages[count];
@@ -248,9 +253,7 @@ class KeyboardTester {
     window_->InjectMessageList(count, messages);
   }
 
-  void InjectPendingEvents() {
-    view_->InjectPendingEvents(window_.get());
-  }
+  void InjectPendingEvents() { view_->InjectPendingEvents(window_.get()); }
 
   static bool test_response;
 
@@ -260,7 +263,6 @@ class KeyboardTester {
 
   bool next_event_should_default_ = false;
 };
-
 
 bool KeyboardTester::test_response = false;
 
@@ -395,10 +397,12 @@ TEST(KeyboardTest, LowerCaseA) {
   // US Keyboard layout
 
   // Press A
-  tester.InjectMessages(2,
-    WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(kWmResultZero),
-    WmCharInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(kWmResultZero)
-  );
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
@@ -409,9 +413,9 @@ TEST(KeyboardTest, LowerCaseA) {
   EXPECT_EQ(key_calls.size(), 0);
 
   // Release A
-  tester.InjectMessages(1,
-    WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(kWmResultZero)
-  );
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+             kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,

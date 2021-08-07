@@ -8,9 +8,9 @@
 #include <windowsx.h>
 #include <list>
 
-#include "flutter/shell/platform/windows/window_win32.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/testing/wm_builders.h"
+#include "flutter/shell/platform/windows/window_win32.h"
 #include "gmock/gmock.h"
 
 namespace flutter {
@@ -37,8 +37,7 @@ class MockMessageQueue {
 };
 
 /// Mock for the |WindowWin32| base class.
-class MockWin32Window : public WindowWin32,
-                        public MockMessageQueue {
+class MockWin32Window : public WindowWin32, public MockMessageQueue {
  public:
   MockWin32Window();
   virtual ~MockWin32Window();

@@ -26,7 +26,7 @@ std::string _print_character(const char* s) {
   }
   return std::string("\"") + s + "\"";
 }
-} // namespace
+}  // namespace
 
 #define _RETURN_IF_NOT_EQUALS(val1, val2)                                     \
   if ((val1) != (val2)) {                                                     \
@@ -53,7 +53,6 @@ std::string _print_character(const char* s) {
   _RETURN_IF_NOT_EQUALS(event.synthesized, expected.synthesized);
   return ::testing::AssertionSuccess();
 }
-
 
 }  // namespace testing
 }  // namespace flutter

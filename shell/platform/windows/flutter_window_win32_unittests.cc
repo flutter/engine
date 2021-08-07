@@ -116,7 +116,8 @@ class SpyTextInputPlugin : public KeyboardHandlerBase,
   std::unique_ptr<TextInputPlugin> real_implementation_;
 };
 
-class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueue {
+class MockFlutterWindowWin32 : public FlutterWindowWin32,
+                               public MockMessageQueue {
  public:
   MockFlutterWindowWin32() : FlutterWindowWin32(800, 600) {
     ON_CALL(*this, GetDpiScale())
@@ -163,8 +164,13 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueu
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
 
  protected:
-  virtual BOOL Win32PeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) override {
-    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg,
+                                HWND hWnd,
+                                UINT wMsgFilterMin,
+                                UINT wMsgFilterMax,
+                                UINT wRemoveMsg) override {
+    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin,
+                                              wMsgFilterMax, wRemoveMsg);
   }
 
   LRESULT Win32DefWindowProc(HWND hWnd,
@@ -230,7 +236,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyTextInputPlugin* text_input_plugin;
 
   void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
-    win32window->InjectMessageList(pending_responds_.size(), pending_responds_.data());
+    win32window->InjectMessageList(pending_responds_.size(),
+                                   pending_responds_.data());
     pending_responds_.clear();
   }
 
@@ -271,9 +278,11 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     // messages for now, because making them work takes non-trivial rework
     // to our current structure. https://github.com/flutter/flutter/issues/87843
     // If this is resolved, change them to kWmResultDefault.
-    pending_responds_.push_back(Win32Message{message, virtual_key_, lparam, kWmResultDontCheck});
+    pending_responds_.push_back(
+        Win32Message{message, virtual_key_, lparam, kWmResultDontCheck});
     if (is_printable_ && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(Win32Message{WM_CHAR, virtual_key_, lparam, kWmResultDontCheck});
+      pending_responds_.push_back(
+          Win32Message{WM_CHAR, virtual_key_, lparam, kWmResultDontCheck});
     }
     return 1;
   }
@@ -392,7 +401,8 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
         .Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(0);
-    win32window.InjectMessages(1, Win32Message{WM_KEYDOWN, virtual_key, lparam});
+    win32window.InjectMessages(1,
+                               Win32Message{WM_KEYDOWN, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 
@@ -407,7 +417,8 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
                 KeyboardHook(_, _, _, _, _, _, _))
         .Times(0);
-    win32window.InjectMessages(1, Win32Message{WM_KEYDOWN, virtual_key, lparam});
+    win32window.InjectMessages(1,
+                               Win32Message{WM_KEYDOWN, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 }
@@ -449,10 +460,8 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(1)
         .RetiresOnSaturation();
-    win32window.InjectMessages(2,
-      Win32Message{WM_KEYDOWN, virtual_key, lparam},
-      Win32Message{WM_CHAR, virtual_key, lparam}
-    );
+    win32window.InjectMessages(2, Win32Message{WM_KEYDOWN, virtual_key, lparam},
+                               Win32Message{WM_CHAR, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 
@@ -471,10 +480,8 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
         .Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(0);
-    win32window.InjectMessages(2,
-      Win32Message{WM_KEYDOWN, virtual_key, lparam},
-      Win32Message{WM_CHAR, virtual_key, lparam}
-    );
+    win32window.InjectMessages(2, Win32Message{WM_KEYDOWN, virtual_key, lparam},
+                               Win32Message{WM_CHAR, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 }

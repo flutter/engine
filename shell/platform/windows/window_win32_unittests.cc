@@ -77,9 +77,8 @@ TEST(MockWin32Window, KeyDownPrintable) {
 
   EXPECT_CALL(window, OnKey(65, 30, WM_KEYDOWN, 65, false, false)).Times(1);
   EXPECT_CALL(window, OnText(_)).Times(1);
-  Win32Message messages[] = {
-    {WM_KEYDOWN, 65, lparam, kWmResultDontCheck},
-    {WM_CHAR, 65, lparam, kWmResultDontCheck}};
+  Win32Message messages[] = {{WM_KEYDOWN, 65, lparam, kWmResultDontCheck},
+                             {WM_CHAR, 65, lparam, kWmResultDontCheck}};
   window.InjectMessageList(2, messages);
 }
 
@@ -120,9 +119,8 @@ TEST(MockWin32Window, KeyDownWithCtrlToggled) {
   EXPECT_CALL(window, OnText(_)).Times(1);
 
   // send a "A" key down event.
-  Win32Message messages[] = {
-    {WM_KEYDOWN, 65, lparam, kWmResultDontCheck},
-    {WM_CHAR, 65, lparam, kWmResultDontCheck}};
+  Win32Message messages[] = {{WM_KEYDOWN, 65, lparam, kWmResultDontCheck},
+                             {WM_CHAR, 65, lparam, kWmResultDontCheck}};
   window.InjectMessageList(2, messages);
 
   memset(keyboard_state, 0, 256);
