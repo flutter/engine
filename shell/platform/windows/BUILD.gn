@@ -252,6 +252,8 @@ executable("flutter_windows_unittests") {
       "testing/mock_window_win32.h",
       "testing/test_keyboard.cc",
       "testing/test_keyboard.h",
+      "testing/wm_builders.cc",
+      "testing/wm_builders.h",
       "text_input_plugin_unittest.cc",
       "window_proc_delegate_manager_win32_unittests.cc",
       "window_win32_unittests.cc",

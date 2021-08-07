@@ -41,7 +41,7 @@ static LPARAM CreateKeyEventLparam(USHORT scancode,
                                    bool was_down,
                                    USHORT repeat_count = 1,
                                    bool context_code = 0,
-                                   bool transition_state = 1) {
+                                   bool transition_state = 0) {
   return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
           (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
@@ -69,7 +69,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueu
                             UINT Msg,
                             WPARAM wParam,
                             LPARAM lParam) override {
-    return kMockDefaultResult;
+    return kWmResultDefault;
   }
 
   // Simulates a WindowProc message from the OS.
@@ -166,9 +166,9 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
     const LPARAM lparam = CreateKeyEventLparam(
         kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
-    pending_responds_.push_back(Win32Message{message, kbdinput.wVk, lparam, kMockDefaultResult});
+    pending_responds_.push_back(Win32Message{message, kbdinput.wVk, lparam, kWmResultDefault});
     if (is_printable && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(Win32Message{WM_CHAR, kbdinput.wVk, lparam, kMockDefaultResult});
+      pending_responds_.push_back(Win32Message{WM_CHAR, kbdinput.wVk, lparam, kWmResultDefault});
     }
     return 1;
   }
@@ -379,10 +379,6 @@ constexpr uint64_t kScanCodeKeyA = 0x1e;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
 
-constexpr bool kExtended = true;
-constexpr bool kNotExtended = false;
-constexpr bool kWasDown = true;
-constexpr bool kWasUp = false;
 constexpr bool kSynthesized = true;
 constexpr bool kNotSynthesized = false;
 
@@ -400,8 +396,8 @@ TEST(KeyboardTest, LowerCaseA) {
 
   // Press A
   tester.InjectMessages(2,
-    Win32Message{WM_KEYDOWN, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp)},
-    Win32Message{WM_CHAR, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp)}
+    WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(kWmResultZero),
+    WmCharInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(kWmResultZero)
   );
 
   EXPECT_EQ(key_calls.size(), 1);
@@ -414,7 +410,8 @@ TEST(KeyboardTest, LowerCaseA) {
 
   // Release A
   tester.InjectMessages(1,
-    Win32Message{WM_KEYUP, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasDown)});
+    WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(kWmResultZero)
+  );
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,

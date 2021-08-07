@@ -10,23 +10,11 @@
 
 #include "flutter/shell/platform/windows/window_win32.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
+#include "flutter/shell/platform/windows/testing/wm_builders.h"
 #include "gmock/gmock.h"
 
 namespace flutter {
 namespace testing {
-
-constexpr LRESULT kMockDefaultResult = 0xDEADC0DE;
-constexpr LRESULT kMockDontCheckResult = 0xFFFF1234;
-
-// A struc to hold simulated events that will be delivered after the framework
-// response is handled.
-struct Win32Message {
-  UINT message;
-  WPARAM wparam;
-  LPARAM lparam;
-  LRESULT expected_result;
-  HWND hWnd;
-};
 
 class MockMessageQueue {
  public:

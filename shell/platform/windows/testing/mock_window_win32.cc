@@ -16,8 +16,8 @@ void MockMessageQueue::InjectMessageList(int count, const Win32Message* messages
   while (!_pending_messages.empty()) {
     Win32Message message = _pending_messages.front();
     _pending_messages.pop_front();
-    LRESULT result = Win32SendMessage(message.hWnd, message.message, message.wparam, message.lparam);
-    if (message.expected_result != kMockDontCheckResult) {
+    LRESULT result = Win32SendMessage(message.hWnd, message.message, message.wParam, message.lParam);
+    if (message.expected_result != kWmResultDontCheck) {
       EXPECT_EQ(result, message.expected_result);
     }
   }
@@ -34,8 +34,8 @@ BOOL MockMessageQueue::Win32PeekMessage(LPMSG lpMsg,
     if (iter->message >= wMsgFilterMin && iter->message <= wMsgFilterMax) {
       *lpMsg = MSG{
         .message = iter->message,
-        .wParam = iter->wparam,
-        .lParam = iter->lparam,
+        .wParam = iter->wParam,
+        .lParam = iter->lParam,
       };
       if ((wRemoveMsg & PM_REMOVE) == PM_REMOVE) {
         _pending_messages.erase(iter);
@@ -58,7 +58,7 @@ LRESULT MockWin32Window::Win32DefWindowProc(HWND hWnd,
                                             UINT Msg,
                                             WPARAM wParam,
                                             LPARAM lParam) {
-  return kMockDefaultResult;
+  return kWmResultDefault;
 }
 
 LRESULT MockWin32Window::InjectWindowMessage(UINT const message,

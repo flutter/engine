@@ -171,7 +171,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueu
                              UINT Msg,
                              WPARAM wParam,
                              LPARAM lParam) override {
-    return kMockDefaultResult;
+    return kWmResultDefault;
   }
 
  private:
@@ -270,10 +270,10 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     // TODO(dkwingsmt): Don't check the message results for redispatched
     // messages for now, because making them work takes non-trivial rework
     // to our current structure. https://github.com/flutter/flutter/issues/87843
-    // If this is resolved, change them to kMockDefaultResult.
-    pending_responds_.push_back(Win32Message{message, virtual_key_, lparam, kMockDontCheckResult});
+    // If this is resolved, change them to kWmResultDefault.
+    pending_responds_.push_back(Win32Message{message, virtual_key_, lparam, kWmResultDontCheck});
     if (is_printable_ && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(Win32Message{WM_CHAR, virtual_key_, lparam, kMockDontCheckResult});
+      pending_responds_.push_back(Win32Message{WM_CHAR, virtual_key_, lparam, kWmResultDontCheck});
     }
     return 1;
   }
