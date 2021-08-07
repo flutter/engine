@@ -378,7 +378,7 @@ WindowWin32::HandleMessage(UINT const message,
           character >= u' ') {
         OnText(text);
       }
-      break;
+      return 0;
     }
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
@@ -395,8 +395,16 @@ WindowWin32::HandleMessage(UINT const message,
       // to properly produce key down events even though `MapVirtualKey` returns
       // a valid character. See https://github.com/flutter/flutter/issues/85587.
       unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-      if (character > 0 && is_keydown_message && GetKeyState(VK_CONTROL) >= 0 &&
-          GetKeyState(VK_LWIN) >= 0 && GetKeyState(VK_RWIN) >= 0) {
+      bool has_wm_char;
+      {
+        MSG next_message;
+        BOOL has_msg = Win32PeekMessage(&next_message, window_handle_, WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE);
+        has_wm_char = has_msg && (
+                      next_message.message == WM_DEADCHAR ||
+                      next_message.message == WM_SYSDEADCHAR ||
+                      next_message.message == WM_CHAR ||
+                      next_message.message == WM_SYSCHAR);
+      }
         keycode_for_char_message_ = wparam;
         return 0;
       }
@@ -413,7 +421,7 @@ WindowWin32::HandleMessage(UINT const message,
       break;
   }
 
-  return DefaultWindowProc(window_handle_, message, wparam, result_lparam);
+  return Win32DefWindowProc(window_handle_, message, wparam, result_lparam);
 }
 
 UINT WindowWin32::GetCurrentDPI() {
@@ -452,11 +460,19 @@ WindowWin32* WindowWin32::GetThisFromHandle(HWND const window) noexcept {
       GetWindowLongPtr(window, GWLP_USERDATA));
 }
 
-LRESULT WindowWin32::DefaultWindowProc(HWND hWnd,
+LRESULT WindowWin32::Win32DefWindowProc(HWND hWnd,
                                        UINT Msg,
                                        WPARAM wParam,
                                        LPARAM lParam) {
   return DefWindowProc(hWnd, Msg, wParam, lParam);
+}
+
+BOOL WindowWin32::Win32PeekMessage(LPMSG lpMsg,
+                                   HWND hWnd,
+                                   UINT wMsgFilterMin,
+                                   UINT wMsgFilterMax,
+                                   UINT wRemoveMsg) {
+  return PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
 }
 
 }  // namespace flutter

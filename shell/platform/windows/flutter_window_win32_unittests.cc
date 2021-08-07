@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_window_win32_test.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
+#include "flutter/shell/platform/windows/testing/mock_window_win32.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
@@ -39,14 +40,6 @@ static LPARAM CreateKeyEventLparam(USHORT scancode,
           (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
-
-// A struc to hold simulated events that will be delivered after the framework
-// response is handled.
-struct SimulatedEvent {
-  UINT message;
-  WPARAM wparam;
-  LPARAM lparam;
-};
 
 // A key event handler that can be spied on while it forwards calls to the real
 // key event handler.
@@ -123,7 +116,7 @@ class SpyTextInputPlugin : public KeyboardHandlerBase,
   std::unique_ptr<TextInputPlugin> real_implementation_;
 };
 
-class MockFlutterWindowWin32 : public FlutterWindowWin32 {
+class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueue {
  public:
   MockFlutterWindowWin32() : FlutterWindowWin32(800, 600) {
     ON_CALL(*this, GetDpiScale())
@@ -142,7 +135,19 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   LRESULT InjectWindowMessage(UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) {
-    return HandleMessage(message, wparam, lparam);
+    return Win32SendMessage(NULL, message, wparam, lparam);
+  }
+
+  void InjectMessages(int count, Win32Message message1, ...) {
+    Win32Message messages[count];
+    messages[0] = message1;
+    va_list args;
+    va_start(args, message1);
+    for (int i = 1; i < count; i += 1) {
+      messages[i] = va_arg(args, Win32Message);
+    }
+    va_end(args);
+    InjectMessageList(count, messages);
   }
 
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
@@ -153,10 +158,29 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD0(OnPointerLeave, void());
   MOCK_METHOD0(OnSetCursor, void());
   MOCK_METHOD2(OnScroll, void(double, double));
-  MOCK_METHOD4(DefaultWindowProc, LRESULT(HWND, UINT, WPARAM, LPARAM));
   MOCK_METHOD0(GetDpiScale, float());
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
+
+ protected:
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) override {
+    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+  }
+
+  LRESULT Win32DefWindowProc(HWND hWnd,
+                             UINT Msg,
+                             WPARAM wParam,
+                             LPARAM lParam) override {
+    return kMockDefaultResult;
+  }
+
+ private:
+  LRESULT Win32SendMessage(HWND hWnd,
+                           UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam) override {
+    return HandleMessage(message, wparam, lparam);
+  }
 };
 
 class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
@@ -206,12 +230,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyTextInputPlugin* text_input_plugin;
 
   void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
-    while (pending_responds_.size() > 0) {
-      SimulatedEvent event = pending_responds_.front();
-      win32window->InjectWindowMessage(event.message, event.wparam,
-                                       event.lparam);
-      pending_responds_.pop_front();
-    }
+    win32window->InjectMessageList(pending_responds_.size(), pending_responds_.data());
+    pending_responds_.clear();
   }
 
  protected:
@@ -246,15 +266,19 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     // simulate it for the test with the key we know is in the test. The
     // KBDINPUT we're passed doesn't have it filled in (on purpose, so that
     // Windows will fill it in).
-    pending_responds_.push_back(SimulatedEvent{message, virtual_key_, lparam});
+    //
+    // TODO(dkwingsmt): Don't check the message results for redispatched
+    // messages for now, because making them work takes non-trivial rework
+    // to our current structure. https://github.com/flutter/flutter/issues/87843
+    // If this is resolved, change them to kMockDefaultResult.
+    pending_responds_.push_back(Win32Message{message, virtual_key_, lparam, kMockDontCheckResult});
     if (is_printable_ && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(
-          SimulatedEvent{WM_CHAR, virtual_key_, lparam});
+      pending_responds_.push_back(Win32Message{WM_CHAR, virtual_key_, lparam, kMockDontCheckResult});
     }
     return 1;
   }
 
-  std::deque<SimulatedEvent> pending_responds_;
+  std::vector<Win32Message> pending_responds_;
   WPARAM virtual_key_;
   bool is_printable_;
 };
@@ -344,7 +368,6 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
   constexpr WPARAM scan_code = 10;
   constexpr char32_t character = 0;
   MockFlutterWindowWin32 win32window;
-  std::deque<SimulatedEvent> pending_events;
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   TestFlutterWindowsView flutter_windows_view(
@@ -365,15 +388,11 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
                 KeyboardHook(_, _, _, _, _, _, _))
         .Times(1)
         .RetiresOnSaturation();
-    EXPECT_CALL(win32window, DefaultWindowProc(_, _, _, _))
-        .Times(1)
-        .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
         .Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
+    win32window.InjectMessages(1, Win32Message{WM_KEYDOWN, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 
@@ -388,8 +407,7 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
                 KeyboardHook(_, _, _, _, _, _, _))
         .Times(0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
+    win32window.InjectMessages(1, Win32Message{WM_KEYDOWN, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 }
@@ -431,9 +449,10 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(1)
         .RetiresOnSaturation();
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
+    win32window.InjectMessages(2,
+      Win32Message{WM_KEYDOWN, virtual_key, lparam},
+      Win32Message{WM_CHAR, virtual_key, lparam}
+    );
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 
@@ -452,9 +471,10 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
         .Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
+    win32window.InjectMessages(2,
+      Win32Message{WM_KEYDOWN, virtual_key, lparam},
+      Win32Message{WM_CHAR, virtual_key, lparam}
+    );
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 }
@@ -467,7 +487,6 @@ TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
   constexpr WPARAM scan_code = 0x2a;
   constexpr char32_t character = 0;
   MockFlutterWindowWin32 win32window;
-  std::deque<SimulatedEvent> pending_events;
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   TestFlutterWindowsView flutter_windows_view(

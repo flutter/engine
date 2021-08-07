@@ -159,7 +159,16 @@ class WindowWin32 {
   UINT GetCurrentHeight();
 
  protected:
-  virtual LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+  // Win32's DefWindowProc.
+  //
+  // Used as the fallback behavior of HandleMessage. Exposed for dependency
+  // injection.
+  virtual LRESULT Win32DefWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
+  // Win32's PeekMessage.
+  //
+  // Used to process key messages. Exposed for dependency injection.
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
 
  private:
   // Release OS resources associated with window.

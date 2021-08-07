@@ -13,13 +13,15 @@
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_window_win32_test.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
+#include "flutter/shell/platform/windows/testing/mock_window_win32.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <rapidjson/document.h>
 #include <functional>
+#include <rapidjson/document.h>
+#include <vector>
 
 using testing::_;
 using testing::Invoke;
@@ -34,12 +36,6 @@ namespace {
 constexpr SHORT kStateMaskToggled = 0x01;
 constexpr SHORT kStateMaskPressed = 0x80;
 
-struct SimulatedEvent {
-  UINT message;
-  WPARAM wparam;
-  LPARAM lparam;
-};
-
 static LPARAM CreateKeyEventLparam(USHORT scancode,
                                    bool extended,
                                    bool was_down,
@@ -51,9 +47,7 @@ static LPARAM CreateKeyEventLparam(USHORT scancode,
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
 }
 
-constexpr LRESULT kDefaultWindowProcBehavior = 0xDEADC0DE;
-
-class MockFlutterWindowWin32 : public FlutterWindowWin32 {
+class MockFlutterWindowWin32 : public FlutterWindowWin32, public MockMessageQueue {
  public:
   typedef std::function<void(const std::u16string& text)> U16StringHandler;
 
@@ -71,18 +65,18 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   // Wrapper for GetCurrentDPI() which is a protected method.
   UINT GetDpi() { return GetCurrentDPI(); }
 
-  LRESULT DefaultWindowProc(HWND hWnd,
+  LRESULT Win32DefWindowProc(HWND hWnd,
                             UINT Msg,
                             WPARAM wParam,
                             LPARAM lParam) override {
-    return kDefaultWindowProcBehavior;
+    return kMockDefaultResult;
   }
 
   // Simulates a WindowProc message from the OS.
   LRESULT InjectWindowMessage(UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) {
-    return HandleMessage(message, wparam, lparam);
+    return Win32SendMessage(NULL, message, wparam, lparam);
   }
 
   void OnText(const std::u16string& text) override { on_text_(text); }
@@ -99,8 +93,19 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
 
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg) override {
+    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+  }
+
  private:
   U16StringHandler on_text_;
+
+  LRESULT Win32SendMessage(HWND hWnd,
+                           UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam) override {
+    return HandleMessage(message, wparam, lparam);
+  }
 };
 
 class TestKeystate {
@@ -131,18 +136,12 @@ class TestFlutterWindowsView : public FlutterWindowsView {
             std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
         is_printable(true) {}
 
-  void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
-    while (pending_responds_.size() > 0) {
-      SimulatedEvent event = pending_responds_.front();
-      EXPECT_EQ(
-          win32window->InjectWindowMessage(event.message, event.wparam,
-                                          event.lparam),
-          kDefaultWindowProcBehavior);
-      pending_responds_.pop_front();
-    }
-  }
-
   bool is_printable;
+
+  void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
+    win32window->InjectMessageList(pending_responds_.size(), pending_responds_.data());
+    pending_responds_.clear();
+  }
 
  protected:
   void RegisterKeyboardHandlers(
@@ -167,15 +166,14 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
     const LPARAM lparam = CreateKeyEventLparam(
         kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
-    pending_responds_.push_back(SimulatedEvent{message, kbdinput.wVk, lparam});
+    pending_responds_.push_back(Win32Message{message, kbdinput.wVk, lparam, kMockDefaultResult});
     if (is_printable && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(
-          SimulatedEvent{WM_CHAR, kbdinput.wVk, lparam});
+      pending_responds_.push_back(Win32Message{WM_CHAR, kbdinput.wVk, lparam, kMockDefaultResult});
     }
     return 1;
   }
 
-  std::deque<SimulatedEvent> pending_responds_;
+  std::vector<Win32Message> pending_responds_;
   TestKeystate key_state_;
 };
 
@@ -238,15 +236,16 @@ class KeyboardTester {
     next_event_should_default_ = true;
   }
 
-  void InjectWindowMessage(UINT const message,
-                           WPARAM const wparam,
-                           LPARAM const lparam) {
-    LRESULT expected_result = next_event_should_default_ ?
-        kDefaultWindowProcBehavior : 0;
-    EXPECT_EQ(
-      window_->InjectWindowMessage(message, wparam, lparam),
-      expected_result);
-    next_event_should_default_ = false;
+  void InjectMessages(int count, Win32Message message1, ...) {
+    Win32Message messages[count];
+    messages[0] = message1;
+    va_list args;
+    va_start(args, message1);
+    for (int i = 1; i < count; i += 1) {
+      messages[i] = va_arg(args, Win32Message);
+    }
+    va_end(args);
+    window_->InjectMessageList(count, messages);
   }
 
   void InjectPendingEvents() {
@@ -400,12 +399,10 @@ TEST(KeyboardTest, LowerCaseA) {
   // US Keyboard layout
 
   // Press A
-  tester.InjectWindowMessage(
-      WM_KEYDOWN, kVirtualKeyA,
-      CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp));
-  tester.InjectWindowMessage(
-      WM_CHAR, kVirtualKeyA,
-      CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp));
+  tester.InjectMessages(2,
+    Win32Message{WM_KEYDOWN, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp)},
+    Win32Message{WM_CHAR, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasUp)}
+  );
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
@@ -416,9 +413,8 @@ TEST(KeyboardTest, LowerCaseA) {
   EXPECT_EQ(key_calls.size(), 0);
 
   // Release A
-  tester.InjectWindowMessage(
-      WM_KEYUP, kVirtualKeyA,
-      CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasDown));
+  tester.InjectMessages(1,
+    Win32Message{WM_KEYUP, kVirtualKeyA, CreateKeyEventLparam(kScanCodeKeyA, kNotExtended, kWasDown)});
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,

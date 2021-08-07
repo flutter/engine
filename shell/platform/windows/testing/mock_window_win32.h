@@ -6,15 +6,51 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 
 #include <windowsx.h>
+#include <list>
 
 #include "flutter/shell/platform/windows/window_win32.h"
+#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "gmock/gmock.h"
 
 namespace flutter {
 namespace testing {
 
+constexpr LRESULT kMockDefaultResult = 0xDEADC0DE;
+constexpr LRESULT kMockDontCheckResult = 0xFFFF1234;
+
+// A struc to hold simulated events that will be delivered after the framework
+// response is handled.
+struct Win32Message {
+  UINT message;
+  WPARAM wparam;
+  LPARAM lparam;
+  LRESULT expected_result;
+  HWND hWnd;
+};
+
+class MockMessageQueue {
+ public:
+  // Simulates a WindowProc message from the OS.
+  void InjectMessageList(int count, const Win32Message* messages);
+
+  BOOL Win32PeekMessage(LPMSG lpMsg,
+                        HWND hWnd,
+                        UINT wMsgFilterMin,
+                        UINT wMsgFilterMax,
+                        UINT wRemoveMsg);
+
+ protected:
+  virtual LRESULT Win32SendMessage(HWND hWnd,
+                                   UINT const message,
+                                   WPARAM const wparam,
+                                   LPARAM const lparam) = 0;
+
+  std::list<Win32Message> _pending_messages;
+};
+
 /// Mock for the |WindowWin32| base class.
-class MockWin32Window : public WindowWin32 {
+class MockWin32Window : public WindowWin32,
+                        public MockMessageQueue {
  public:
   MockWin32Window();
   virtual ~MockWin32Window();
@@ -31,6 +67,8 @@ class MockWin32Window : public WindowWin32 {
                               WPARAM const wparam,
                               LPARAM const lparam);
 
+  LRESULT Win32DefWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
   MOCK_METHOD2(OnPointerMove, void(double, double));
@@ -45,7 +83,12 @@ class MockWin32Window : public WindowWin32 {
   MOCK_METHOD0(OnComposeCommit, void());
   MOCK_METHOD0(OnComposeEnd, void());
   MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
-  MOCK_METHOD4(DefaultWindowProc, LRESULT(HWND, UINT, WPARAM, LPARAM));
+
+ protected:
+  LRESULT Win32SendMessage(HWND hWnd,
+                           UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam) override;
 };
 
 }  // namespace testing
