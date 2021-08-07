@@ -123,6 +123,7 @@ bool FlutterWindowWinUWP::IsVisible() {
   // Visible() from raster thread. For now assume window is always visible.
   // Possible solution would be to register a VisibilityChanged handler and
   // store the visiblity state in a variable. TODO(knopp)
+  // https://github.com/flutter/flutter/issues/87870
   return true;
 }
 
