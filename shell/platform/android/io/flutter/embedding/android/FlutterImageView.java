@@ -46,6 +46,10 @@ public class FlutterImageView extends View implements RenderSurface {
   @Nullable private Bitmap currentBitmap;
   @Nullable private FlutterRenderer flutterRenderer;
 
+  public ImageReader getImageReader() {
+    return imageReader;
+  }
+
   public enum SurfaceKind {
     /** Displays the background canvas. */
     background,
