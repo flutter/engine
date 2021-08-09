@@ -83,7 +83,13 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
           if (isAttachedToFlutterRenderer) {
             disconnectSurfaceFromRenderer();
           }
-
+          
+          // Definitively release the surface to avoid leaked closeables, just in case
+          if (renderSurface != null) {
+            renderSurface.release();
+            renderSurface = null;
+          }
+          
           // Return true to indicate that no further painting will take place
           // within this SurfaceTexture.
           return true;
@@ -192,7 +198,12 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
       throw new IllegalStateException(
           "connectSurfaceToRenderer() should only be called when flutterRenderer and getSurfaceTexture() are non-null.");
     }
-
+    
+    if (renderSurface != null) {
+      renderSurface.release();
+      renderSurface = null;
+    }
+    
     renderSurface = new Surface(getSurfaceTexture());
     flutterRenderer.startRenderingToSurface(renderSurface);
   }
