@@ -397,12 +397,14 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 }
 
 constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeDigit1 = 0x02;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
 constexpr uint64_t kScanCodeControl = 0x1d;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 // constexpr uint64_t kScanCodeShiftRight = 0x36;
 
+constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
 
 constexpr bool kSynthesized = true;
@@ -636,7 +638,74 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
+}
 
+// Press Ctrl-1. This is special because it yields no WM_CHAR for the 1.
+TEST(KeyboardTest, CtrlLeftDigit1) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press ControlLeft
+  tester.SetKeyState(VK_LCONTROL, true, true);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalControlLeft,
+                       kLogicalControlLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Press 1
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{kVirtualDigit1, kScanCodeDigit1, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
+                       kLogicalDigit1, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents(0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release 1
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualDigit1, kScanCodeDigit1, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit1,
+                       kLogicalDigit1, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release ControlLeft
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_CONTROL, kScanCodeControl, kNotExtended}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalControlLeft,
+                       kLogicalControlLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
 }
 
 }  // namespace testing

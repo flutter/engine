@@ -426,7 +426,7 @@ WindowWin32::HandleMessage(UINT const message,
       keyCode = ResolveKeyCode(keyCode, extended, scancode);
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
-      if (OnKey(keyCode, scancode, action, character, extended, was_down)) {
+      if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
         return 0;
       }
       break;
