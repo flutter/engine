@@ -582,7 +582,6 @@ action("robolectric_tests") {
     "--jar-source-base-dir=$_rebased_current_path",
     "--java-srcjars=$_rebased_srcjars",
     "--additional-jar-files=$_rebased_additional_files",
-    "--java-version=11",
     "--jar-bin=$_jarbin",
     "--javac-bin=$_javacbin",
   ]
