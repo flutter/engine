@@ -708,5 +708,44 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
   clear_key_calls();
 }
 
+// Press 1 on a French keyboard. This is special because it yields a WM_CHAR with char_code '&'.
+TEST(KeyboardTest, Digit1OnFrenchLayout) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // French Keyboard layout
+
+  // Press 1
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualDigit1, kScanCodeDigit1, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'&', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
+                       kLogicalDigit1, "&", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents('&');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"&");
+  clear_key_calls();
+
+  // Release 1
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualDigit1, kScanCodeDigit1, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit1,
+                       kLogicalDigit1, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
 }  // namespace testing
 }  // namespace flutter
