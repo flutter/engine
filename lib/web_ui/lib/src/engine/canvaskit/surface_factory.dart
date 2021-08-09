@@ -97,10 +97,6 @@ class SurfaceFactory {
   /// This is called at the beginning of the frame to prepare for painting into
   /// the new surfaces.
   void removeSurfacesFromDom() {
-    assert(
-        _liveSurfaces.isEmpty,
-        'removeSurfacesFromDom should only be called at the '
-        'beginning of a frame');
     for (final Surface surface in _cache) {
       if (_isInDom(surface)) {
         _removeFromDom(surface);
