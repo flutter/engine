@@ -115,6 +115,25 @@ typedef struct {
                      HWND hWnd = NULL);
 } WmCharInfo;
 
+typedef struct {
+  uint32_t key;
+
+  uint8_t scan_code;
+
+  WmFieldExtended extended;
+
+  // WmFieldPrevState prev_state; // Always 1.
+
+  // WmFieldTransitionState transition; // Always 1.
+
+  WmFieldContext context;
+
+  // uint16_t repeat_count;  // Always 1.
+
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
+                     HWND hWnd = NULL);
+} WmSysKeyUpInfo;
+
 }  // namespace testing
 }  // namespace flutter
 

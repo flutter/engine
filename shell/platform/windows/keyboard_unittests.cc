@@ -397,15 +397,18 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 }
 
 constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeKeyQ = 0x10;
 constexpr uint64_t kScanCodeDigit1 = 0x02;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
 constexpr uint64_t kScanCodeControl = 0x1d;
+constexpr uint64_t kScanCodeAlt= 0x38;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 // constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
+constexpr uint64_t kVirtualKeyQ = 0x51;
 
 constexpr bool kSynthesized = true;
 constexpr bool kNotSynthesized = false;
@@ -708,7 +711,8 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
   clear_key_calls();
 }
 
-// Press 1 on a French keyboard. This is special because it yields a WM_CHAR with char_code '&'.
+// Press 1 on a French keyboard. This is special because it yields WM_CHAR
+// with char_code '&'.
 TEST(KeyboardTest, Digit1OnFrenchLayout) {
   KeyboardTester tester;
   tester.Responding(false);
@@ -745,6 +749,83 @@ TEST(KeyboardTest, Digit1OnFrenchLayout) {
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+}
+
+// This tests AltGr-Q on a German keyboard, which should print '@'.
+TEST(KeyboardTest, AltGrKeyQOnGermanLayout) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // German Keyboard layout
+
+  // Press AltGr, which Win32 precedes with a ContrlLeft down.
+  tester.SetKeyState(VK_LCONTROL, true, true);
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalControlLeft,
+                       kLogicalControlLeft, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Press Q
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyQ, kScanCodeKeyQ, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'@', kScanCodeKeyQ, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyQ,
+                       kLogicalKeyQ, "@", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents('@');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"@");
+  clear_key_calls();
+
+  // Release Q
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyQ, kScanCodeKeyQ, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyQ,
+                       kLogicalKeyQ, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead Flutter will
+  // dispatch one.
+  tester.InjectMessages(
+      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.SetKeyState(VK_LCONTROL, false, false);
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalControlLeft,
+                       kLogicalControlLeft, "", kNotSynthesized);
+  clear_key_calls();
 }
 
 }  // namespace testing
