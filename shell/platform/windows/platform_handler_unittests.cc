@@ -36,13 +36,16 @@ class TestPlatformHandler : public PlatformHandler {
 
   virtual ~TestPlatformHandler() {}
 
+
   // |PlatformHandler|
   MOCK_METHOD2(GetPlainText,
-               void(std::unique_ptr<MethodResult<rapidjson::Document>>,
-                    const char*));
+               void(std::unique_ptr<MethodResult<rapidjson::Document>> result,
+                    std::string_view key));
+  MOCK_METHOD1(HasStrings,
+               void(std::unique_ptr<MethodResult<rapidjson::Document>> result));
   MOCK_METHOD2(SetPlainText,
-               void(const std::string&,
-                    std::unique_ptr<MethodResult<rapidjson::Document>>));
+               void(const std::string& text,
+                    std::unique_ptr<MethodResult<rapidjson::Document>> result));
 };
 
 // Mock result to inspect results of PlatformHandler calls.
@@ -119,10 +122,11 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
   // on destruction about leaking.
   ON_CALL(platform_handler, HasStrings)
       .WillByDefault(
-          [](std::unique_ptr<MethodResult<rapidjson::Document>> result,
-             auto key) { result->NotImplemented(); });
+          [](std::unique_ptr<MethodResult<rapidjson::Document>> result) {
+             result->NotImplemented();
+           });
 
-  EXPECT_CALL(platform_handler, HasStrings(_, ::testing::StrEq("text")));
+  EXPECT_CALL(platform_handler, HasStrings(_));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
       kChannelName, encoded->data(), encoded->size(),
       [](const uint8_t* reply, size_t reply_size) {}));
