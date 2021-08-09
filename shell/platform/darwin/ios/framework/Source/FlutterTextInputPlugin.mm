@@ -721,6 +721,16 @@ static BOOL isScribbleAvailable() {
   return self;
 }
 
+// Prevent UITextInteraction gesture detectors from showing autocomplete
+// popups on tap or double tap.
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer*)gestureRecognizer {
+  if ([NSStringFromClass([gestureRecognizer class])
+          isEqual:@"PKTextInputDrawingGestureRecognizer"]) {
+    return YES;
+  }
+  return NO;
+}
+
 - (void)configureWithDictionary:(NSDictionary*)configuration {
   NSAssert(!_decommissioned, @"Attempt to reuse a decommissioned view, for %@", configuration);
   NSDictionary* inputType = configuration[kKeyboardType];
@@ -774,6 +784,19 @@ static BOOL isScribbleAvailable() {
 
 - (UITextContentType)textContentType {
   return _textContentType;
+}
+
+// Prevent UITextInteraction from showing selection handles or highlights.
+- (UIColor*)insertionPointColor {
+  return [UIColor clearColor];
+}
+
+- (UIColor*)selectionBarColor {
+  return [UIColor clearColor];
+}
+
+- (UIColor*)selectionHighlightColor {
+  return [UIColor clearColor];
 }
 
 - (UIInputViewController*)inputViewController {
@@ -1075,6 +1098,12 @@ static BOOL isScribbleAvailable() {
       _selectedTextRange = [selectedTextRange copy];
     }
     [oldSelectedRange release];
+  }
+  // This is required to remove the UITextSelectionView that the UITextInteraction
+  // adds (seemingly multiple times) that leaves a grey box after replacing a selection,
+  // for example when hitting backspace or using Scribble to delete text.
+  for (NSUInteger i = 0; i < [self.subviews count]; i++) {
+    [self.subviews[i] removeFromSuperview];
   }
 }
 
@@ -1445,7 +1474,6 @@ static BOOL isScribbleAvailable() {
 
   if (_scribbleInteractionStatus == FlutterScribbleInteractionStatusNone &&
       _scribbleFocusStatus == FlutterScribbleFocusStatusUnfocused) {
-    NSLog(@"showAutocorrectionPromptRectForStart:%@, end:%@", @(start), @(end));
     [_textInputDelegate flutterTextInputView:self
         showAutocorrectionPromptRectForStart:start
                                          end:end
