@@ -925,7 +925,6 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
             entry.name != 'javatests' &&
-            entry.name != 'jmods' &&      // jmods are binary files provided by Open JDK.
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_support' &&
@@ -1831,6 +1830,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'spirv_headers' // only used on hosts for tests
         && entry.name != 'spirv_cross' // only used on hosts for tests
         && entry.name != 'ocmock' // only used for tests
+        && entry.name != 'java'// only used for Android builds
         && super.shouldRecurse(entry);
   }
 
