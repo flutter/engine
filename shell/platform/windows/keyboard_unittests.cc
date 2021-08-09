@@ -399,7 +399,7 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
-// constexpr uint64_t kScanCodeControl = 0x1d;
+constexpr uint64_t kScanCodeControl = 0x1d;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 // constexpr uint64_t kScanCodeShiftRight = 0x36;
 
@@ -495,6 +495,8 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
   EXPECT_EQ(key_calls.size(), 0);
 }
 
+// Press Shift-A. This is special because Win32 gives 'A' as character for the
+// KeyA press.
 TEST(KeyboardTest, ShiftLeftKeyA) {
   KeyboardTester tester;
   tester.Responding(false);
@@ -563,6 +565,78 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+}
+
+// Press Ctrl-A. This is special because Win32 gives 0x01 as character for the
+// KeyA press.
+TEST(KeyboardTest, CtrlLeftKeyA) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press ControlLeft
+  tester.SetKeyState(VK_LCONTROL, true, true);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalControlLeft,
+                       kLogicalControlLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{0x01, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents(0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release A
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release ControlLeft
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_CONTROL, kScanCodeControl, kNotExtended}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalControlLeft,
+                       kLogicalControlLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
 }
 
 }  // namespace testing

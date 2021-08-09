@@ -190,6 +190,12 @@ static uint16_t ResolveKeyCode(uint16_t original,
   }
 }
 
+static bool IsPrintable(uint32_t c) {
+  constexpr char32_t min_printable = ' ';
+  constexpr char32_t del = 0x7F;
+  return c >= min_printable && c != del;
+}
+
 LRESULT
 WindowWin32::HandleMessage(UINT const message,
                            WPARAM const wparam,
@@ -354,8 +360,12 @@ WindowWin32::HandleMessage(UINT const message,
         const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
+        // Certain key combinations yield control characters as WM_CHAR's
+        // lParam. For example, 0x01 for Ctrl-A. Filter these characters.
+        // See https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
+        const char32_t event_character = IsPrintable(code_point) ? code_point : 0;
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
-                             code_point, extended, was_down);
+                             event_character, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
@@ -375,7 +385,7 @@ WindowWin32::HandleMessage(UINT const message,
       // - ASCII control characters, which are sent as WM_CHAR events for all
       //   control key shortcuts.
       if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
-          character >= u' ') {
+          IsPrintable(character)) {
         OnText(text);
       }
       return 0;
