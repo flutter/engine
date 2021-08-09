@@ -131,6 +131,12 @@ class TestKeystate {
   std::map<int, SHORT> state_;
 };
 
+typedef struct {
+  UINT cInputs;
+  KEYBDINPUT kbdinput;
+  int cbSize;
+} SendInputInfo;
+
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
 // to register the keyboard hook handlers that can be spied upon.
 class TestFlutterWindowsView : public FlutterWindowsView {
@@ -140,13 +146,33 @@ class TestFlutterWindowsView : public FlutterWindowsView {
       // affect keyboard.
       : FlutterWindowsView(
             std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
-        is_printable(true) {}
+        redispatch_char(0) {}
 
-  bool is_printable;
+  uint32_t redispatch_char;
 
-  void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
-    win32window->InjectMessageList(pending_responds_.size(),
-                                   pending_responds_.data());
+  void InjectPendingEvents(MockFlutterWindowWin32* win32window, uint32_t redispatch_char) {
+    std::vector<Win32Message> messages;
+    for (const SendInputInfo& input : pending_responds_) {
+      const KEYBDINPUT kbdinput = input.kbdinput;
+      const UINT message =
+          (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
+      const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
+      const LPARAM lparam = CreateKeyEventLparam(
+          kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
+      // TODO(dkwingsmt): Don't check the message results for redispatched
+      // messages for now, because making them work takes non-trivial rework
+      // to our current structure. https://github.com/flutter/flutter/issues/87843
+      // If this is resolved, change them to kWmResultDefault.
+      messages.push_back(
+          Win32Message{message, kbdinput.wVk, lparam, kWmResultDontCheck});
+      if (redispatch_char != 0 && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
+        messages.push_back(
+            Win32Message{WM_CHAR, redispatch_char, lparam, kWmResultDontCheck});
+      }
+    }
+
+    win32window->InjectMessageList(messages.size(),
+                                   messages.data());
     pending_responds_.clear();
   }
 
@@ -165,24 +191,11 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
  private:
   UINT SendInput(UINT cInputs, LPINPUT pInputs, int cbSize) {
-    // Simulate the event loop by just sending the event sent to
-    // "SendInput" directly to the window.
-    const KEYBDINPUT kbdinput = pInputs->ki;
-    const UINT message =
-        (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
-    const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
-    const LPARAM lparam = CreateKeyEventLparam(
-        kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
-    pending_responds_.push_back(
-        Win32Message{message, kbdinput.wVk, lparam, kWmResultDefault});
-    if (is_printable && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-      pending_responds_.push_back(
-          Win32Message{WM_CHAR, kbdinput.wVk, lparam, kWmResultDefault});
-    }
+    pending_responds_.push_back({cInputs, pInputs->ki, cbSize});
     return 1;
   }
 
-  std::vector<Win32Message> pending_responds_;
+  std::vector<SendInputInfo> pending_responds_;
   TestKeystate key_state_;
 };
 
@@ -239,8 +252,6 @@ class KeyboardTester {
 
   void Responding(bool response) { test_response = response; }
 
-  void NextMessageShouldDefault() { next_event_should_default_ = true; }
-
   void InjectMessages(int count, Win32Message message1, ...) {
     Win32Message messages[count];
     messages[0] = message1;
@@ -253,15 +264,15 @@ class KeyboardTester {
     window_->InjectMessageList(count, messages);
   }
 
-  void InjectPendingEvents() { view_->InjectPendingEvents(window_.get()); }
+  void InjectPendingEvents(uint32_t redispatch_char = 0) {
+    view_->InjectPendingEvents(window_.get(), redispatch_char);
+  }
 
   static bool test_response;
 
  private:
   std::unique_ptr<TestFlutterWindowsView> view_;
   std::unique_ptr<MockFlutterWindowWin32> window_;
-
-  bool next_event_should_default_ = false;
 };
 
 bool KeyboardTester::test_response = false;
@@ -386,11 +397,18 @@ constexpr bool kNotSynthesized = false;
 
 }  // namespace
 
+// Define compound `expect` in macros. If they're defined in functions, the
+// stacktrace wouldn't print where the function is called in the unit tests.
+
 #define EXPECT_CALL_IS_EVENT(_key_call, ...) \
   EXPECT_EQ(_key_call.type, kKeyCallOnKey);  \
   EXPECT_EVENT_EQUALS(_key_call.key_event, __VA_ARGS__);
 
-TEST(KeyboardTest, LowerCaseA) {
+#define EXPECT_CALL_IS_TEXT(_key_call, u16_string) \
+  EXPECT_EQ(_key_call.type, kKeyCallOnText);  \
+  EXPECT_EQ(_key_call.text, u16_string);
+
+TEST(KeyboardTest, LowerCaseAHandled) {
   KeyboardTester tester;
   tester.Responding(true);
 
@@ -401,16 +419,54 @@ TEST(KeyboardTest, LowerCaseA) {
       2,
       WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero),
-      WmCharInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
-                       kLogicalKeyA, "A", kNotSynthesized);
+                       kLogicalKeyA, "a", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents('a');
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release A
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, LowerCaseAUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "a", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents('a');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
 
   // Release A
   tester.InjectMessages(
