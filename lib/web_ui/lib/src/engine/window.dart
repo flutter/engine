@@ -13,7 +13,6 @@ import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart' show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'navigation/history.dart';
 import 'navigation/js_url_strategy.dart';
@@ -42,34 +41,6 @@ set customUrlStrategy(UrlStrategy? strategy) {
   _customUrlStrategy = strategy;
 }
 
-@JS('window.flutterHistoryMode')
-external set _windowFlutterHistoryMode(_HistoryMode? mode);
-
-@JS('window.flutterHistoryMode')
-external _HistoryMode? get _windowFlutterHistoryMode;
-
-/// Indicates the mode that the browser history is being managed in.
-enum _HistoryMode {
-  /// The browser history is managed by [MultiEntriesBrowserHistory] which
-  /// pushes multiple history entries in the browser history list.
-  multiEntry,
-
-  /// The browser history is managed by [SingleEntryBrowserHistory] which keeps
-  /// updating a single history entry instead of pushing new ones.
-  singleEntry,
-}
-
-BrowserHistory _createDefaultBrowserHistory(UrlStrategy? urlStrategy) {
-  switch (_windowFlutterHistoryMode) {
-    case _HistoryMode.singleEntry:
-      return SingleEntryBrowserHistory(urlStrategy: urlStrategy);
-
-    case _HistoryMode.multiEntry:
-    default:
-      return MultiEntriesBrowserHistory(urlStrategy: urlStrategy);
-  }
-}
-
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   EngineFlutterWindow(this._windowId, this.platformDispatcher) {
@@ -78,16 +49,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     engineDispatcher.windows[_windowId] = this;
     engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
-      _browserHistory = _createDefaultBrowserHistory(_customUrlStrategy);
+      _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
-    registerHotRestartListener(() {
-      // Remember which history mode was being used when hot restart happened.
-      if (_browserHistory is MultiEntriesBrowserHistory) {
-        _windowFlutterHistoryMode = _HistoryMode.multiEntry;
-      } else if (_browserHistory is SingleEntryBrowserHistory) {
-        _windowFlutterHistoryMode = _HistoryMode.singleEntry;
-      }
-    });
   }
 
   final Object _windowId;
@@ -99,7 +62,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   /// button, etc.
   BrowserHistory get browserHistory {
     return _browserHistory ??=
-        _createDefaultBrowserHistory(_urlStrategyForInitialization);
+        createHistoryForExistingState(_urlStrategyForInitialization);
   }
 
   UrlStrategy? get _urlStrategyForInitialization {
@@ -114,56 +77,50 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
 
   Future<void> _useSingleEntryBrowserHistory() async {
+    // Recreate the browser history mode that's appropriate for the existing
+    // history state.
+    //
+    // If it happens to be a single-entry one, then there's nothing further to do.
+    //
+    // But if it's a multi-entry one, it will be torn down below and replaced
+    // with a single-entry history.
+    //
+    // See: https://github.com/flutter/flutter/issues/79241
+    _browserHistory ??=
+        createHistoryForExistingState(_urlStrategyForInitialization);
+
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
     }
 
-    // If the app was running in the other mode (multi entry), let's re-create
-    // it, then ask it to tear down.
-    //
-    // This happens on hot restart. We don't want to tear down the browser
-    // history on hot restart. Instead, we let it be, and if the app starts with
-    // the same history mode, we start from there without tearing down anything.
-    //
-    // See: https://github.com/flutter/flutter/issues/79241
-    if (_windowFlutterHistoryMode == _HistoryMode.multiEntry) {
-      _browserHistory = _createDefaultBrowserHistory(_urlStrategyForInitialization);
-    }
-
-    final UrlStrategy? strategy;
-    if (_browserHistory == null) {
-      strategy = _urlStrategyForInitialization;
-    } else {
-      strategy = _browserHistory?.urlStrategy;
-      await _browserHistory?.tearDown();
-    }
+    // At this point, we know that `_browserHistory` is a non-null
+    // `MultiEntriesBrowserHistory` instance.
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
     _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
   }
 
   Future<void> _useMultiEntryBrowserHistory() async {
+    // Recreate the browser history mode that's appropriate for the existing
+    // history state.
+    //
+    // If it happens to be a multi-entry one, then there's nothing further to do.
+    //
+    // But if it's a single-entry one, it will be torn down below and replaced
+    // with a multi-entry history.
+    //
+    // See: https://github.com/flutter/flutter/issues/79241
+    _browserHistory ??=
+        createHistoryForExistingState(_urlStrategyForInitialization);
+
     if (_browserHistory is MultiEntriesBrowserHistory) {
       return;
     }
 
-    // If the app was running in the other mode (single entry), let's re-create
-    // it, then ask it to tear down.
-    //
-    // This happens on hot restart. We don't want to tear down the browser
-    // history on hot restart. Instead, we let it be, and if the app starts with
-    // the same history mode, we start from there without tearing down anything.
-    //
-    // See: https://github.com/flutter/flutter/issues/79241
-    if (_windowFlutterHistoryMode == _HistoryMode.singleEntry) {
-      _browserHistory = _createDefaultBrowserHistory(_urlStrategyForInitialization);
-    }
-
-    final UrlStrategy? strategy;
-    if (_browserHistory == null) {
-      strategy = _urlStrategyForInitialization;
-    } else {
-      strategy = _browserHistory?.urlStrategy;
-      await _browserHistory?.tearDown();
-    }
+    // At this point, we know that `_browserHistory` is a non-null
+    // `SingleEntryBrowserHistory` instance.
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
     _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
   }
 
