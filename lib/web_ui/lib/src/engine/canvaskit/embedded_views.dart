@@ -378,6 +378,7 @@ class HtmlViewEmbedder {
       return;
     }
 
+    SurfaceFactory.instance.removeSurfacesFromDom();
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
@@ -393,7 +394,6 @@ class HtmlViewEmbedder {
         }
       }
 
-      _releaseOverlays();
       unusedViews.remove(viewId);
       final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
       final html.Element overlay = _overlays[viewId]!.htmlElement;
@@ -403,10 +403,14 @@ class HtmlViewEmbedder {
       skiaSceneHost!.append(overlay);
       _activeCompositionOrder.add(viewId);
     }
+    if (_didPaintBackupSurface) {
+      skiaSceneHost!.append(SurfaceFactory.instance.backupSurface.htmlElement);
+    }
 
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
+    _releaseOverlays();
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
