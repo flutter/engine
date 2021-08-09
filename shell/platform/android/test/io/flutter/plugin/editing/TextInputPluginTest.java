@@ -151,6 +151,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -195,6 +196,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
@@ -284,6 +286,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -320,6 +323,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -366,6 +370,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
@@ -424,8 +429,6 @@ public class TextInputPluginTest {
     assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -1, -9));
     assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -9, -9));
     assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 2, 1));
-    // A collapsed composing range is invalid.
-    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 1, 1));
 
     // Valid values (does not throw):
     // Nothing selected/composing:
@@ -443,6 +446,13 @@ public class TextInputPluginTest {
     state = new TextEditState("REEEE", 4, 2, -1, -1);
     assertEquals(4, state.selectionStart);
     assertEquals(2, state.selectionEnd);
+    // A collapsed selection and composing range.
+    state = new TextEditState("text", 0, 0, 0, 0);
+    assertEquals("text", state.text);
+    assertEquals(0, state.selectionStart);
+    assertEquals(0, state.selectionEnd);
+    assertEquals(0, state.composingStart);
+    assertEquals(0, state.composingEnd);
   }
 
   @Test
@@ -461,6 +471,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -503,6 +514,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
@@ -582,6 +594,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
@@ -617,6 +630,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.NONE, false, false),
             null,
@@ -645,6 +659,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.NONE, false, false),
@@ -682,6 +697,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -692,6 +708,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -705,6 +722,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -753,6 +771,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -805,6 +824,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -815,6 +835,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -829,6 +850,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -871,6 +893,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -926,6 +949,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -936,6 +960,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -948,6 +973,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -1011,6 +1037,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -1021,6 +1048,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -1033,6 +1061,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,

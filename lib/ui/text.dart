@@ -150,7 +150,7 @@ class FontWeight {
 ///               style: TextStyle(
 ///                   fontFamily: 'Cardo',
 ///                   fontSize: 24,
-///                   fontFeatures: const <FontFeature>[FontFeature.oldstyleFigures()])),
+///                   fontFeatures: <FontFeature>[FontFeature.oldstyleFigures()])),
 ///           const Spacer(),
 ///           const Divider(),
 ///           const Spacer(),
@@ -472,7 +472,7 @@ class FontFeature {
   ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_ae#cv01-cv99>
   factory FontFeature.characterVariant(int value) {
     assert(value >= 1);
-    assert(value <= 20);
+    assert(value <= 99);
     return FontFeature('cv${value.toString().padLeft(2, "0")}');
   }
 
@@ -761,7 +761,7 @@ class FontFeature {
   ///   // The Noto family of fonts can be downloaded from Google Fonts (https://www.google.com/fonts).
   ///   return const Text(
   ///     '次 化 刃 直 入 令',
-  ///     locale: const Locale('zh', 'CN'), // or Locale('ja'), Locale('ko'), Locale('zh', 'TW'), etc
+  ///     locale: Locale('zh', 'CN'), // or Locale('ja'), Locale('ko'), Locale('zh', 'TW'), etc
   ///     style: TextStyle(
   ///       fontFamily: 'Noto Sans',
   ///     ),

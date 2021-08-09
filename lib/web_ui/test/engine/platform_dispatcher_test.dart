@@ -7,11 +7,10 @@ import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -24,7 +23,7 @@ void testMain() {
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/skia',
-        codec.encodeMethodCall(MethodCall(
+        codec.encodeMethodCall(const MethodCall(
           'Skia.setResourceCacheMaxBytes',
           512 * 1000 * 1000,
         )),
@@ -44,7 +43,7 @@ void testMain() {
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
-        codec.encodeMethodCall(MethodCall(
+        codec.encodeMethodCall(const MethodCall(
           'HapticFeedback.vibrate',
         )),
         completer.complete,
@@ -68,7 +67,7 @@ void testMain() {
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
-        codec.encodeMethodCall(MethodCall(
+        codec.encodeMethodCall(const MethodCall(
           'Clipboard.getData',
         )),
         completer.complete,

@@ -12,12 +12,12 @@ void main() {
 }
 
 void testMain() {
-  final String mat2Sample = 'mat2(1.1, 2.1, 1.2, 2.2)';
-  final String mat3Sample = 'mat3(1.1, 2.1, 3.1, // first column (not row!)\n'
+  const String mat2Sample = 'mat2(1.1, 2.1, 1.2, 2.2)';
+  const String mat3Sample = 'mat3(1.1, 2.1, 3.1, // first column (not row!)\n'
       '1.2, 2.2, 3.2, // second column\n'
       '1.3, 2.3, 3.3  // third column\n'
       ')';
-  final String mat4Sample = 'mat3(1.1, 2.1, 3.1, 4.1,\n'
+  const String mat4Sample = 'mat3(1.1, 2.1, 3.1, 4.1,\n'
       '1.2, 2.2, 3.2, 4.2,\n'
       '1.3, 2.3, 3.3, 4.3,\n'
       '1.4, 2.4, 3.4, 4.4,\n'
@@ -61,9 +61,9 @@ void testMain() {
           'const vec3 c_10 = vec3(1.0, 2.0, 3.0);\n'
           'const vec4 c_11 = vec4(1.0, 2.0, 3.0, 4.0);\n'
           'const mat2 c_12 = $mat2Sample;\n'
-          'const mat2 transform1 = ${mat2Sample};\n'
-          'const mat3 c_13 = ${mat3Sample};\n'
-          'const mat4 c_14 = ${mat4Sample};\n');
+          'const mat2 transform1 = $mat2Sample;\n'
+          'const mat3 c_13 = $mat3Sample;\n'
+          'const mat4 c_14 = $mat4Sample;\n');
     });
 
     test('Constant declaration WebGL2', () {
@@ -100,9 +100,9 @@ void testMain() {
           'const vec3 c_10 = vec3(1.0, 2.0, 3.0);\n'
           'const vec4 c_11 = vec4(1.0, 2.0, 3.0, 4.0);\n'
           'const mat2 c_12 = $mat2Sample;\n'
-          'const mat2 transform2 = ${mat2Sample};\n'
-          'const mat3 c_13 = ${mat3Sample};\n'
-          'const mat4 c_14 = ${mat4Sample};\n');
+          'const mat2 transform2 = $mat2Sample;\n'
+          'const mat3 c_13 = $mat3Sample;\n'
+          'const mat4 c_14 = $mat4Sample;\n');
     });
 
     test('Attribute declaration WebGL1', () {

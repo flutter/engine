@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import '../../util.dart';
 import 'path_utils.dart';
@@ -163,7 +163,7 @@ double? chopMonoAtY(Float32List _buffer, int bufferStartPos, double y) {
   }
 
   // Bisection / linear convergance.
-  final double tolerance = 1.0 / 65536;
+  const double tolerance = 1.0 / 65536;
   do {
     final double tMid = (tPos + tNeg) / 2.0;
     final double y01 = ycrv0 + (ycrv1 - ycrv0) * tMid;
@@ -180,7 +180,7 @@ double? chopMonoAtY(Float32List _buffer, int bufferStartPos, double y) {
     } else {
       tPos = tMid;
     }
-  } while (((tPos - tNeg).abs() > tolerance));
+  } while ((tPos - tNeg).abs() > tolerance);
   return (tNeg + tPos) / 2;
 }
 

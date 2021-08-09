@@ -21,11 +21,12 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
-#include "default_session_connection.h"
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_external_view_embedder.h"
+#include "gfx_session_connection.h"
 #include "isolate_configurator.h"
 #include "vulkan_surface_producer.h"
 
@@ -43,6 +44,8 @@ class Engine final {
    public:
     virtual void OnEngineTerminate(const Engine* holder) = 0;
   };
+
+  static flutter::ThreadHost CreateThreadHost(const std::string& name_prefix);
 
   Engine(Delegate& delegate,
          std::string thread_label,
@@ -68,9 +71,9 @@ class Engine final {
   Delegate& delegate_;
 
   const std::string thread_label_;
-  std::array<fml::Thread, 3> threads_;
+  flutter::ThreadHost thread_host_;
 
-  std::shared_ptr<DefaultSessionConnection> session_connection_;
+  std::shared_ptr<GfxSessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
   std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
 

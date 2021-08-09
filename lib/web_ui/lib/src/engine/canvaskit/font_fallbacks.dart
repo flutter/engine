@@ -49,14 +49,15 @@ class FontFallbackData {
     final Map<NotoFont, List<CodeunitRange>> ranges =
         <NotoFont, List<CodeunitRange>>{};
 
-    for (NotoFont font in _notoFonts) {
+    for (final NotoFont font in _notoFonts) {
       // TODO(yjbanov): instead of mutating the font tree during reset, it's
       //                better to construct an immutable tree of resolved fonts
       //                pointing back to the original NotoFont objects. Then
       //                resetting the tree would be a matter of reconstructing
       //                the new resolved tree.
       font.reset();
-      for (CodeunitRange range in font.approximateUnicodeRanges) {
+      // ignore: prefer_foreach
+      for (final CodeunitRange range in font.approximateUnicodeRanges) {
         ranges.putIfAbsent(font, () => <CodeunitRange>[]).add(range);
       }
     }
@@ -119,7 +120,7 @@ class FontFallbackData {
     final List<int> codeUnits = runesToCheck.toList();
 
     final List<SkFont> fonts = <SkFont>[];
-    for (String font in fontFamilies) {
+    for (final String font in fontFamilies) {
       final List<SkFont>? typefacesForFamily =
           skiaFontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
@@ -129,7 +130,7 @@ class FontFallbackData {
     final List<bool> codeUnitsSupported =
         List<bool>.filled(codeUnits.length, false);
     final String testString = String.fromCharCodes(codeUnits);
-    for (SkFont font in fonts) {
+    for (final SkFont font in fonts) {
       final Uint8List glyphs = font.getGlyphIDs(testString);
       assert(glyphs.length == codeUnitsSupported.length);
       for (int i = 0; i < glyphs.length; i++) {
@@ -172,7 +173,7 @@ class FontFallbackData {
         List<bool>.filled(codeUnits.length, false);
     final String testString = String.fromCharCodes(codeUnits);
 
-    for (String font in globalFontFallbacks) {
+    for (final String font in globalFontFallbacks) {
       final List<SkFont>? fontsForFamily =
           skiaFontCollection.familyToFontMap[font];
       if (fontsForFamily == null) {
@@ -180,7 +181,7 @@ class FontFallbackData {
             'cannot retrieve the typeface for it.');
         continue;
       }
-      for (SkFont font in fontsForFamily) {
+      for (final SkFont font in fontsForFamily) {
         final Uint8List glyphs = font.getGlyphIDs(testString);
         assert(glyphs.length == codeUnitsSupported.length);
         for (int i = 0; i < glyphs.length; i++) {
@@ -196,7 +197,7 @@ class FontFallbackData {
       // Once we've checked every typeface for this family, check to see if
       // every code unit has been covered in order to avoid unnecessary checks.
       bool keepGoing = false;
-      for (bool supported in codeUnitsSupported) {
+      for (final bool supported in codeUnitsSupported) {
         if (!supported) {
           keepGoing = true;
           break;
@@ -253,7 +254,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   Set<NotoFont> fonts = <NotoFont>{};
   final Set<int> coveredCodeUnits = <int>{};
   final Set<int> missingCodeUnits = <int>{};
-  for (int codeUnit in codeUnits) {
+  for (final int codeUnit in codeUnits) {
     final List<NotoFont> fontsForUnit = data.notoTree.intersections(codeUnit);
     fonts.addAll(fontsForUnit);
     if (fontsForUnit.isNotEmpty) {
@@ -263,7 +264,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
     }
   }
 
-  for (NotoFont font in fonts) {
+  for (final NotoFont font in fonts) {
     await font.ensureResolved();
   }
 
@@ -273,8 +274,8 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
   fonts = findMinimumFontsForCodeUnits(unmatchedCodeUnits, fonts);
 
   final Set<_ResolvedNotoSubset> resolvedFonts = <_ResolvedNotoSubset>{};
-  for (int codeUnit in coveredCodeUnits) {
-    for (NotoFont font in fonts) {
+  for (final int codeUnit in coveredCodeUnits) {
+    for (final NotoFont font in fonts) {
       if (font.resolvedFont == null) {
         // We failed to resolve the font earlier.
         continue;
@@ -282,10 +283,7 @@ Future<void> findFontsForMissingCodeunits(List<int> codeUnits) async {
       resolvedFonts.addAll(font.resolvedFont!.tree.intersections(codeUnit));
     }
   }
-
-  for (_ResolvedNotoSubset resolvedFont in resolvedFonts) {
-    notoDownloadQueue.add(resolvedFont);
-  }
+  resolvedFonts.forEach(notoDownloadQueue.add);
 
   // We looked through the Noto font tree and didn't find any font families
   // covering some code units, or we did find a font family, but when we
@@ -401,8 +399,9 @@ _ResolvedNotoFont? _makeResolvedNotoFontFromCss(String css, String name) {
 
   final Map<_ResolvedNotoSubset, List<CodeunitRange>> rangesMap =
       <_ResolvedNotoSubset, List<CodeunitRange>>{};
-  for (_ResolvedNotoSubset subset in subsets) {
-    for (CodeunitRange range in subset.ranges) {
+  for (final _ResolvedNotoSubset subset in subsets) {
+    // ignore: prefer_foreach
+    for (final CodeunitRange range in subset.ranges) {
       rangesMap.putIfAbsent(subset, () => <CodeunitRange>[]).add(range);
     }
   }
@@ -493,9 +492,9 @@ Set<NotoFont> findMinimumFontsForCodeUnits(
   while (codeUnits.isNotEmpty) {
     int maxCodeUnitsCovered = 0;
     bestFonts.clear();
-    for (NotoFont font in fonts) {
+    for (final NotoFont font in fonts) {
       int codeUnitsCovered = 0;
-      for (int codeUnit in codeUnits) {
+      for (final int codeUnit in codeUnits) {
         if (font.resolvedFont?.tree.containsDeep(codeUnit) == true) {
           codeUnitsCovered++;
         }
@@ -629,29 +628,29 @@ class _ResolvedNotoSubset {
 }
 
 NotoFont _notoSansSC = NotoFont('Noto Sans SC', <CodeunitRange>[
-  CodeunitRange(12288, 12591),
-  CodeunitRange(12800, 13311),
-  CodeunitRange(19968, 40959),
-  CodeunitRange(65072, 65135),
-  CodeunitRange(65280, 65519),
+  const CodeunitRange(12288, 12591),
+  const CodeunitRange(12800, 13311),
+  const CodeunitRange(19968, 40959),
+  const CodeunitRange(65072, 65135),
+  const CodeunitRange(65280, 65519),
 ]);
 
 NotoFont _notoSansTC = NotoFont('Noto Sans TC', <CodeunitRange>[
-  CodeunitRange(12288, 12351),
-  CodeunitRange(12549, 12585),
-  CodeunitRange(19968, 40959),
+  const CodeunitRange(12288, 12351),
+  const CodeunitRange(12549, 12585),
+  const CodeunitRange(19968, 40959),
 ]);
 
 NotoFont _notoSansHK = NotoFont('Noto Sans HK', <CodeunitRange>[
-  CodeunitRange(12288, 12351),
-  CodeunitRange(12549, 12585),
-  CodeunitRange(19968, 40959),
+  const CodeunitRange(12288, 12351),
+  const CodeunitRange(12549, 12585),
+  const CodeunitRange(19968, 40959),
 ]);
 
 NotoFont _notoSansJP = NotoFont('Noto Sans JP', <CodeunitRange>[
-  CodeunitRange(12288, 12543),
-  CodeunitRange(19968, 40959),
-  CodeunitRange(65280, 65519),
+  const CodeunitRange(12288, 12543),
+  const CodeunitRange(19968, 40959),
+  const CodeunitRange(65280, 65519),
 ]);
 
 List<NotoFont> _cjkFonts = <NotoFont>[
@@ -667,181 +666,181 @@ List<NotoFont> _notoFonts = <NotoFont>[
   _notoSansHK,
   _notoSansJP,
   NotoFont('Noto Naskh Arabic UI', <CodeunitRange>[
-    CodeunitRange(1536, 1791),
-    CodeunitRange(8204, 8206),
-    CodeunitRange(8208, 8209),
-    CodeunitRange(8271, 8271),
-    CodeunitRange(11841, 11841),
-    CodeunitRange(64336, 65023),
-    CodeunitRange(65132, 65276),
+    const CodeunitRange(1536, 1791),
+    const CodeunitRange(8204, 8206),
+    const CodeunitRange(8208, 8209),
+    const CodeunitRange(8271, 8271),
+    const CodeunitRange(11841, 11841),
+    const CodeunitRange(64336, 65023),
+    const CodeunitRange(65132, 65276),
   ]),
   NotoFont('Noto Sans Armenian', <CodeunitRange>[
-    CodeunitRange(1328, 1424),
-    CodeunitRange(64275, 64279),
+    const CodeunitRange(1328, 1424),
+    const CodeunitRange(64275, 64279),
   ]),
   NotoFont('Noto Sans Bengali UI', <CodeunitRange>[
-    CodeunitRange(2404, 2405),
-    CodeunitRange(2433, 2555),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(2433, 2555),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Myanmar UI', <CodeunitRange>[
-    CodeunitRange(4096, 4255),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(4096, 4255),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Egyptian Hieroglyphs', <CodeunitRange>[
-    CodeunitRange(77824, 78894),
+    const CodeunitRange(77824, 78894),
   ]),
   NotoFont('Noto Sans Ethiopic', <CodeunitRange>[
-    CodeunitRange(4608, 5017),
-    CodeunitRange(11648, 11742),
-    CodeunitRange(43777, 43822),
+    const CodeunitRange(4608, 5017),
+    const CodeunitRange(11648, 11742),
+    const CodeunitRange(43777, 43822),
   ]),
   NotoFont('Noto Sans Georgian', <CodeunitRange>[
-    CodeunitRange(1417, 1417),
-    CodeunitRange(4256, 4351),
-    CodeunitRange(11520, 11567),
+    const CodeunitRange(1417, 1417),
+    const CodeunitRange(4256, 4351),
+    const CodeunitRange(11520, 11567),
   ]),
   NotoFont('Noto Sans Gujarati UI', <CodeunitRange>[
-    CodeunitRange(2404, 2405),
-    CodeunitRange(2688, 2815),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
-    CodeunitRange(43056, 43065),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(2688, 2815),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
+    const CodeunitRange(43056, 43065),
   ]),
   NotoFont('Noto Sans Gurmukhi UI', <CodeunitRange>[
-    CodeunitRange(2404, 2405),
-    CodeunitRange(2561, 2677),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
-    CodeunitRange(9772, 9772),
-    CodeunitRange(43056, 43065),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(2561, 2677),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
+    const CodeunitRange(9772, 9772),
+    const CodeunitRange(43056, 43065),
   ]),
   NotoFont('Noto Sans Hebrew', <CodeunitRange>[
-    CodeunitRange(1424, 1535),
-    CodeunitRange(8362, 8362),
-    CodeunitRange(9676, 9676),
-    CodeunitRange(64285, 64335),
+    const CodeunitRange(1424, 1535),
+    const CodeunitRange(8362, 8362),
+    const CodeunitRange(9676, 9676),
+    const CodeunitRange(64285, 64335),
   ]),
   NotoFont('Noto Sans Devanagari UI', <CodeunitRange>[
-    CodeunitRange(2304, 2431),
-    CodeunitRange(7376, 7414),
-    CodeunitRange(7416, 7417),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8360, 8360),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
-    CodeunitRange(43056, 43065),
-    CodeunitRange(43232, 43259),
+    const CodeunitRange(2304, 2431),
+    const CodeunitRange(7376, 7414),
+    const CodeunitRange(7416, 7417),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8360, 8360),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
+    const CodeunitRange(43056, 43065),
+    const CodeunitRange(43232, 43259),
   ]),
   NotoFont('Noto Sans Kannada UI', <CodeunitRange>[
-    CodeunitRange(2404, 2405),
-    CodeunitRange(3202, 3314),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(3202, 3314),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Khmer UI', <CodeunitRange>[
-    CodeunitRange(6016, 6143),
-    CodeunitRange(8204, 8204),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(6016, 6143),
+    const CodeunitRange(8204, 8204),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans KR', <CodeunitRange>[
-    CodeunitRange(12593, 12686),
-    CodeunitRange(12800, 12828),
-    CodeunitRange(12896, 12923),
-    CodeunitRange(44032, 55215),
+    const CodeunitRange(12593, 12686),
+    const CodeunitRange(12800, 12828),
+    const CodeunitRange(12896, 12923),
+    const CodeunitRange(44032, 55215),
   ]),
   NotoFont('Noto Sans Lao UI', <CodeunitRange>[
-    CodeunitRange(3713, 3807),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(3713, 3807),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Malayalam UI', <CodeunitRange>[
-    CodeunitRange(775, 775),
-    CodeunitRange(803, 803),
-    CodeunitRange(2404, 2405),
-    CodeunitRange(3330, 3455),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(775, 775),
+    const CodeunitRange(803, 803),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(3330, 3455),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Sinhala', <CodeunitRange>[
-    CodeunitRange(2404, 2405),
-    CodeunitRange(3458, 3572),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(3458, 3572),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Tamil UI', <CodeunitRange>[
-    CodeunitRange(2404, 2405),
-    CodeunitRange(2946, 3066),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(8377, 8377),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(2946, 3066),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(8377, 8377),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Telugu UI', <CodeunitRange>[
-    CodeunitRange(2385, 2386),
-    CodeunitRange(2404, 2405),
-    CodeunitRange(3072, 3199),
-    CodeunitRange(7386, 7386),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(2385, 2386),
+    const CodeunitRange(2404, 2405),
+    const CodeunitRange(3072, 3199),
+    const CodeunitRange(7386, 7386),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans Thai UI', <CodeunitRange>[
-    CodeunitRange(3585, 3675),
-    CodeunitRange(8204, 8205),
-    CodeunitRange(9676, 9676),
+    const CodeunitRange(3585, 3675),
+    const CodeunitRange(8204, 8205),
+    const CodeunitRange(9676, 9676),
   ]),
   NotoFont('Noto Sans', <CodeunitRange>[
-    CodeunitRange(0, 255),
-    CodeunitRange(305, 305),
-    CodeunitRange(338, 339),
-    CodeunitRange(699, 700),
-    CodeunitRange(710, 710),
-    CodeunitRange(730, 730),
-    CodeunitRange(732, 732),
-    CodeunitRange(8192, 8303),
-    CodeunitRange(8308, 8308),
-    CodeunitRange(8364, 8364),
-    CodeunitRange(8482, 8482),
-    CodeunitRange(8593, 8593),
-    CodeunitRange(8595, 8595),
-    CodeunitRange(8722, 8722),
-    CodeunitRange(8725, 8725),
-    CodeunitRange(65279, 65279),
-    CodeunitRange(65533, 65533),
-    CodeunitRange(1024, 1119),
-    CodeunitRange(1168, 1169),
-    CodeunitRange(1200, 1201),
-    CodeunitRange(8470, 8470),
-    CodeunitRange(1120, 1327),
-    CodeunitRange(7296, 7304),
-    CodeunitRange(8372, 8372),
-    CodeunitRange(11744, 11775),
-    CodeunitRange(42560, 42655),
-    CodeunitRange(65070, 65071),
-    CodeunitRange(880, 1023),
-    CodeunitRange(7936, 8191),
-    CodeunitRange(256, 591),
-    CodeunitRange(601, 601),
-    CodeunitRange(7680, 7935),
-    CodeunitRange(8224, 8224),
-    CodeunitRange(8352, 8363),
-    CodeunitRange(8365, 8399),
-    CodeunitRange(8467, 8467),
-    CodeunitRange(11360, 11391),
-    CodeunitRange(42784, 43007),
-    CodeunitRange(258, 259),
-    CodeunitRange(272, 273),
-    CodeunitRange(296, 297),
-    CodeunitRange(360, 361),
-    CodeunitRange(416, 417),
-    CodeunitRange(431, 432),
-    CodeunitRange(7840, 7929),
-    CodeunitRange(8363, 8363),
+    const CodeunitRange(0, 255),
+    const CodeunitRange(305, 305),
+    const CodeunitRange(338, 339),
+    const CodeunitRange(699, 700),
+    const CodeunitRange(710, 710),
+    const CodeunitRange(730, 730),
+    const CodeunitRange(732, 732),
+    const CodeunitRange(8192, 8303),
+    const CodeunitRange(8308, 8308),
+    const CodeunitRange(8364, 8364),
+    const CodeunitRange(8482, 8482),
+    const CodeunitRange(8593, 8593),
+    const CodeunitRange(8595, 8595),
+    const CodeunitRange(8722, 8722),
+    const CodeunitRange(8725, 8725),
+    const CodeunitRange(65279, 65279),
+    const CodeunitRange(65533, 65533),
+    const CodeunitRange(1024, 1119),
+    const CodeunitRange(1168, 1169),
+    const CodeunitRange(1200, 1201),
+    const CodeunitRange(8470, 8470),
+    const CodeunitRange(1120, 1327),
+    const CodeunitRange(7296, 7304),
+    const CodeunitRange(8372, 8372),
+    const CodeunitRange(11744, 11775),
+    const CodeunitRange(42560, 42655),
+    const CodeunitRange(65070, 65071),
+    const CodeunitRange(880, 1023),
+    const CodeunitRange(7936, 8191),
+    const CodeunitRange(256, 591),
+    const CodeunitRange(601, 601),
+    const CodeunitRange(7680, 7935),
+    const CodeunitRange(8224, 8224),
+    const CodeunitRange(8352, 8363),
+    const CodeunitRange(8365, 8399),
+    const CodeunitRange(8467, 8467),
+    const CodeunitRange(11360, 11391),
+    const CodeunitRange(42784, 43007),
+    const CodeunitRange(258, 259),
+    const CodeunitRange(272, 273),
+    const CodeunitRange(296, 297),
+    const CodeunitRange(360, 361),
+    const CodeunitRange(416, 417),
+    const CodeunitRange(431, 432),
+    const CodeunitRange(7840, 7929),
+    const CodeunitRange(8363, 8363),
   ]),
 ];
 
@@ -891,7 +890,7 @@ class FallbackFontDownloadQueue {
   Future<void> startDownloads() async {
     final Map<String, Future<void>> downloads = <String, Future<void>>{};
     final Map<String, Uint8List> downloadedData = <String, Uint8List>{};
-    for (_ResolvedNotoSubset subset in pendingSubsets.values) {
+    for (final _ResolvedNotoSubset subset in pendingSubsets.values) {
       downloads[subset.url] = Future<void>(() async {
         ByteBuffer buffer;
         try {
@@ -915,7 +914,7 @@ class FallbackFontDownloadQueue {
     // visual differences between app reloads.
     final List<String> downloadOrder =
         (downloadedData.keys.toList()..sort()).reversed.toList();
-    for (String url in downloadOrder) {
+    for (final String url in downloadOrder) {
       final _ResolvedNotoSubset subset = pendingSubsets.remove(url)!;
       final Uint8List bytes = downloadedData[url]!;
       FontFallbackData.instance.registerFallbackFont(subset.family, bytes);
@@ -970,8 +969,8 @@ class NotoDownloader {
     if (assertionsEnabled) {
       _debugActiveDownloadCount += 1;
     }
-    final Future<ByteBuffer> result = html.window.fetch(url).then(
-        (dynamic fetchResult) => fetchResult
+    final Future<ByteBuffer> result = httpFetch(url).then(
+        (html.Body fetchResult) => fetchResult
             .arrayBuffer()
             .then<ByteBuffer>((dynamic x) => x as ByteBuffer));
     if (assertionsEnabled) {
@@ -989,8 +988,8 @@ class NotoDownloader {
     if (assertionsEnabled) {
       _debugActiveDownloadCount += 1;
     }
-    final Future<String> result = html.window.fetch(url).then(
-        (dynamic response) =>
+    final Future<String> result = httpFetch(url).then(
+        (html.Body response) =>
             response.text().then<String>((dynamic x) => x as String));
     if (assertionsEnabled) {
       result.whenComplete(() {

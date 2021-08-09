@@ -97,7 +97,7 @@ abstract class Browser {
   /// which asynchronously returns the browser process. Any errors in
   /// [startBrowser] (even those raised asynchronously after it returns) are
   /// piped to [onExit] and will cause the browser to be killed.
-  Browser(Future<Process> startBrowser()) {
+  Browser(Future<Process> Function() startBrowser) {
     // Don't return a Future here because there's no need for the caller to wait
     // for the process to actually start. They should just wait for the HTTP
     // request instead.
@@ -130,7 +130,7 @@ abstract class Browser {
       // resolve the ambiguity is to wait a brief amount of time and see if this
       // browser is actually closed.
       if (!_closed && exitCode < 0) {
-        await Future<void>.delayed(Duration(milliseconds: 200));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
       }
 
       if (!_closed && exitCode != 0) {
@@ -153,9 +153,8 @@ abstract class Browser {
       // Make sure the process dies even if the error wasn't fatal.
       _process.then((Process process) => process.kill());
 
-      if (stackTrace == null) {
-        stackTrace = Trace.current();
-      }
+      stackTrace ??= Trace.current();
+
       if (_onExitCompleter.isCompleted) {
         return;
       }
@@ -176,7 +175,7 @@ abstract class Browser {
     // If we don't manually close the stream the test runner can hang.
     // For example this happens with Chrome Headless.
     // See SDK issue: https://github.com/dart-lang/sdk/issues/31264
-    for (StreamSubscription<void> stream in _ioSubscriptions) {
+    for (final StreamSubscription<void> stream in _ioSubscriptions) {
       unawaited(stream.cancel());
     }
 

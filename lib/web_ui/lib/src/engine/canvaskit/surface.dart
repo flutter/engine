@@ -117,6 +117,7 @@ class Surface {
     if (surface.context != null) {
       canvasKit.setCurrentContext(surface.context!);
     }
+    // ignore: prefer_function_declarations_over_variables
     final SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, CkCanvas canvas) {
       return _presentSurface();
@@ -219,7 +220,7 @@ class Surface {
     final int surfaceHeight = _currentSurfaceSize!.height.ceil();
     final double offset =
         (_pixelHeight - surfaceHeight) / window.devicePixelRatio;
-    htmlCanvas!.style..transform = 'translate(0, -${offset}px)';
+    htmlCanvas!.style.transform = 'translate(0, -${offset}px)';
   }
 
   void _contextRestoredListener(html.Event event) {
@@ -235,7 +236,7 @@ class Surface {
   }
 
   void _contextLostListener(html.Event event) {
-    assert(event.target == this.htmlCanvas,
+    assert(event.target == htmlCanvas,
         'Received a context lost event for a disposed canvas');
     final SurfaceFactory factory = SurfaceFactory.instance;
     _contextLost = true;

@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/ui.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/ui.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -46,7 +45,7 @@ void testMain() {
   test('two colors are only == if they have the same runtime type', () {
     expect(const Color(123), equals(const Color(123)));
     expect(const Color(123),
-        equals(Color(123)));
+        equals(const Color(123)));
     expect(const Color(123), isNot(equals(const Color(321))));
     expect(const Color(123), isNot(equals(const NotAColor(123))));
     expect(const NotAColor(123), isNot(equals(const Color(123))));
@@ -138,14 +137,14 @@ void testMain() {
   // Regression test for https://github.com/flutter/flutter/issues/41257
   // CupertinoDynamicColor was overriding base class and calling super(0).
   test('subclass of Color can override value', () {
-    final DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
+    const DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
     expect(color.value, 0xF0E0D0C0);
     // Call base class member, make sure it uses overridden value.
     expect(color.red, 0xE0);
   });
 
   test('Paint converts Color subclasses to plain Color', () {
-    final DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
+    const DynamicColorClass color = DynamicColorClass(0xF0E0D0C0);
     final Paint paint = Paint()..color = color;
     expect(paint.color.runtimeType, Color);
   });
@@ -156,5 +155,6 @@ class DynamicColorClass extends Color {
 
   final int _newValue;
 
+  @override
   int get value => _newValue;
 }

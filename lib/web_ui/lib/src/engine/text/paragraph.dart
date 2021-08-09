@@ -83,12 +83,9 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.baseline,
     required this.ascent,
     required this.descent,
-    // Didn't use `this.boxes` because we want it to be non-null in this
-    // constructor.
-    required List<RangeBox> boxes,
+    required this.boxes,
   })  : displayText = null,
-        unscaledAscent = double.infinity,
-        this.boxes = boxes;
+        unscaledAscent = double.infinity;
 
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
@@ -324,7 +321,7 @@ class DomParagraph implements EngineParagraph {
   double get longestLine {
     if (_hasLineMetrics) {
       double maxWidth = 0.0;
-      for (ui.LineMetrics metrics in _measurementResult!.lines!) {
+      for (final ui.LineMetrics metrics in _measurementResult!.lines!) {
         if (maxWidth < metrics.width) {
           maxWidth = metrics.width;
         }
@@ -421,6 +418,7 @@ class DomParagraph implements EngineParagraph {
     }
   }
 
+  @override
   bool get hasArbitraryPaint => _geometricStyle.ellipsis != null;
 
   @override
@@ -507,7 +505,7 @@ class DomParagraph implements EngineParagraph {
 
     final ParagraphGeometricStyle style = _geometricStyle;
 
-    // TODO(flutter_web): https://github.com/flutter/flutter/issues/33223
+    // TODO(mdebbar): https://github.com/flutter/flutter/issues/33223
     if (style.ellipsis != null &&
         (style.maxLines == null || style.maxLines == 1)) {
       paragraphStyle
@@ -533,6 +531,7 @@ class DomParagraph implements EngineParagraph {
   /// - Paragraphs that contain decorations.
   /// - Paragraphs that have a non-null word-spacing.
   /// - Paragraphs with a background.
+  @override
   bool get drawOnCanvas {
     if (!_hasLineMetrics) {
       return false;
@@ -552,6 +551,7 @@ class DomParagraph implements EngineParagraph {
   }
 
   /// Whether this paragraph has been laid out.
+  @override
   bool get isLaidOut => _measurementResult != null;
 
   /// Asserts that the properties used to measure paragraph layout are the same
@@ -683,7 +683,7 @@ class DomParagraph implements EngineParagraph {
 
     // [offset] is above all the lines.
     if (offset.dy < 0) {
-      return ui.TextPosition(
+      return const ui.TextPosition(
         offset: 0,
         affinity: ui.TextAffinity.downstream,
       );
@@ -828,7 +828,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     this.ellipsis,
     this.locale,
   })  : _textHeightBehavior = textHeightBehavior,
-        // TODO(b/128317744): add support for strut style.
+        // TODO(mdebbar): add support for strut style., b/128317744
         _strutStyle = strutStyle as EngineStrutStyle?;
 
   final ui.TextAlign? textAlign;
@@ -1237,7 +1237,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
   /// Creates a [DomParagraphBuilder] object, which is used to create a
   /// [DomParagraph].
   DomParagraphBuilder(EngineParagraphStyle style) : _paragraphStyle = style {
-    // TODO(b/128317744): Implement support for strut font families.
+    // TODO(mdebbar): Implement support for strut font families, b/128317744
     List<String?> strutFontFamilies;
     if (style._strutStyle != null) {
       strutFontFamilies = <String?>[];
@@ -1372,7 +1372,7 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
     // entirely. Occasionally there will be one [pushStyle], which causes this
     // loop to run once then move on to aggregating text.
     while (i < _ops.length && _ops[i] is EngineTextStyle) {
-      final EngineTextStyle style = _ops[i];
+      final EngineTextStyle style = _ops[i] as EngineTextStyle;
       if (style.color != null) {
         color = style.color!;
       }
@@ -1554,8 +1554,8 @@ class DomParagraphBuilder implements ui.ParagraphBuilder {
 
   /// Builds a [Paragraph] as rich text.
   EngineParagraph _buildRichText() {
-    final List<dynamic> elementStack = <dynamic>[];
-    dynamic currentElement() =>
+    final List<html.Element> elementStack = <html.Element>[];
+    html.Element currentElement() =>
         elementStack.isNotEmpty ? elementStack.last : _paragraphElement;
 
     for (int i = 0; i < _ops.length; i++) {
@@ -1845,7 +1845,7 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
   // Shadows are applied front-to-back with first shadow on top.
   // Color is optional. offsetx,y are required. blur-radius is optional as well
   // and defaults to 0.
-  final StringBuffer sb = new StringBuffer();
+  final StringBuffer sb = StringBuffer();
   final int len = shadows.length;
   for (int i = 0; i < len; i++) {
     if (i != 0) {
@@ -1863,7 +1863,7 @@ String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
 
   // For more details, see:
   // * https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings
-  final StringBuffer sb = new StringBuffer();
+  final StringBuffer sb = StringBuffer();
   final int len = fontFeatures.length;
   for (int i = 0; i < len; i++) {
     if (i != 0) {

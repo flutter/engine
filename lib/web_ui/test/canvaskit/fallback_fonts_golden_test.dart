@@ -6,11 +6,12 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart' as ui;
-import 'package:ui/src/engine.dart';
-
-import 'package:test/test.dart';
 import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
+
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+
 import 'package:web_engine_tester/golden_tester.dart';
 
 import 'common.dart';
@@ -19,7 +20,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 100, 50);
+const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 50);
 
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {ui.Rect region = kDefaultRegion, bool write = false}) async {
@@ -95,14 +96,14 @@ void testMain() {
       pb.addText('مرحبا');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_arabic.png', recorder.endRecording());
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      // TODO: https://github.com/flutter/flutter/issues/71520
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
     test('will put the Noto Emoji font before other fallback fonts in the list',
@@ -152,7 +153,7 @@ void testMain() {
       pb.addText('Hello 😊 مرحبا');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
@@ -202,14 +203,14 @@ void testMain() {
       pb.addText('Hello 😊');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_emoji.png', recorder.endRecording());
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      // TODO: https://github.com/flutter/flutter/issues/71520
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
@@ -283,9 +284,9 @@ void testMain() {
       final Set<int> supportedUniqueCodeUnits = <int>{};
       final IntervalTree<NotoFont> notoTree =
           FontFallbackData.instance.notoTree;
-      for (NotoFont font in notoTree.root.enumerateAllElements()) {
+      for (final NotoFont font in notoTree.root.enumerateAllElements()) {
         testedFonts.add(font.name);
-        for (CodeunitRange range in font.approximateUnicodeRanges) {
+        for (final CodeunitRange range in font.approximateUnicodeRanges) {
           for (int codeUnit = range.start;
               codeUnit < range.end;
               codeUnit += 1) {
@@ -342,7 +343,7 @@ void testMain() {
           codeUnits.add(supportedCodeUnits[i]);
         }
         final Set<NotoFont> fonts = <NotoFont>{};
-        for (int codeUnit in codeUnits) {
+        for (final int codeUnit in codeUnits) {
           final List<NotoFont> fontsForUnit = notoTree.intersections(codeUnit);
 
           // All code units are extracted from the same tree, so there must
@@ -363,7 +364,7 @@ void testMain() {
         }
       }
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 

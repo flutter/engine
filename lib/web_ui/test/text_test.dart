@@ -7,8 +7,8 @@ import 'dart:html';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/ui.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 import 'matchers.dart';
 
@@ -16,7 +16,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
   await webOnlyInitializeTestDomRenderer();
@@ -32,7 +32,7 @@ void testMain() async {
   });
 
   test('predictably lays out a single-line paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -58,7 +58,7 @@ void testMain() async {
   });
 
   test('predictably lays out a multi-line paragraph', () {
-    for (double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
       final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
@@ -326,7 +326,7 @@ void testMain() async {
     */
 
     final DomParagraph paragraph = builder.build() as DomParagraph;
-    paragraph.layout(ParagraphConstraints(width: 800));
+    paragraph.layout(const ParagraphConstraints(width: 800));
 
     // Reference the offsets with the output of `Display arrangement`.
     const int offset010 = text00.length;
@@ -334,22 +334,22 @@ void testMain() async {
     const int offset04 = offset030 + text030.length;
     const int offset050 = offset04 + text04.length;
     // Tap text010.
-    expect(paragraph.getPositionForOffset(Offset(700, 10)).offset, offset010);
+    expect(paragraph.getPositionForOffset(const Offset(700, 10)).offset, offset010);
     // Tap text030
-    expect(paragraph.getPositionForOffset(Offset(600, 30)).offset, offset030);
+    expect(paragraph.getPositionForOffset(const Offset(600, 30)).offset, offset030);
     // Tap text050
-    expect(paragraph.getPositionForOffset(Offset(220, 70)).offset, offset050);
+    expect(paragraph.getPositionForOffset(const Offset(220, 70)).offset, offset050);
     // Tap the left neighbor of text050
-    expect(paragraph.getPositionForOffset(Offset(199, 70)).offset, offset04);
+    expect(paragraph.getPositionForOffset(const Offset(199, 70)).offset, offset04);
     // Tap the right neighbor of text050. No matter who the right neighbor of
     // text0505 is, it must not be text050 itself.
-    expect(paragraph.getPositionForOffset(Offset(360, 70)).offset,
+    expect(paragraph.getPositionForOffset(const Offset(360, 70)).offset,
         isNot(offset050));
     // Tap the neighbor above text050
-    expect(paragraph.getPositionForOffset(Offset(220, 59)).offset, offset04);
+    expect(paragraph.getPositionForOffset(const Offset(220, 59)).offset, offset04);
     // Tap the neighbor below text050. No matter who the neighbor above text050,
     // it must not be text050 itself.
-    expect(paragraph.getPositionForOffset(Offset(220, 80)).offset,
+    expect(paragraph.getPositionForOffset(const Offset(220, 80)).offset,
         isNot(offset050));
   });
 
@@ -379,10 +379,10 @@ void testMain() async {
     // The nested span here should not set it's family to default sans-serif.
     expect(spans[1].style.fontFamily, 'Ahem, $fallback, sans-serif');
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge));
+      // TODO(mdebbar): https://github.com/flutter/flutter/issues/50771
+      // TODO(mdebbar): https://github.com/flutter/flutter/issues/46638
+      skip: browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.edge);
 
   test('adds Arial and sans-serif as fallback fonts', () {
     // Set this to false so it doesn't default to 'Ahem' font.
@@ -401,10 +401,10 @@ void testMain() async {
 
     debugEmulateFlutterTesterEnvironment = true;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      skip: (browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge));
+      // TODO(mdebbar): https://github.com/flutter/flutter/issues/50771
+      // TODO(mdebbar): https://github.com/flutter/flutter/issues/46638
+      skip: browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.edge);
 
   test('does not add fallback fonts to generic families', () {
     // Set this to false so it doesn't default to 'Ahem' font.
@@ -440,7 +440,7 @@ void testMain() async {
 
     debugEmulateFlutterTesterEnvironment = true;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50771
+      // TODO(mdebbar): https://github.com/flutter/flutter/issues/50771
       skip: browserEngine == BrowserEngine.edge);
 
   group('TextRange', () {

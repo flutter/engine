@@ -30,7 +30,7 @@ class Environment {
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
 
-    for (io.Directory expectedDirectory in <io.Directory>[
+    for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
       outDir,
       hostDebugUnoptDir,
@@ -38,7 +38,7 @@ class Environment {
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
-        throw ToolException('$expectedDirectory does not exist.');
+        throw ToolExit('$expectedDirectory does not exist.');
       }
     }
 

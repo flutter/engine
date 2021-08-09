@@ -8,17 +8,17 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../../browser_detection.dart';
+import '../../util.dart';
+import '../../validators.dart';
+import '../../vector_math.dart';
+import '../offscreen_canvas.dart';
+import '../path/path_utils.dart';
+import '../render_vertices.dart';
 import 'normalized_gradient.dart';
 import 'shader_builder.dart';
 import 'vertex_shaders.dart';
 import 'webgl_context.dart';
-import '../offscreen_canvas.dart';
-import '../path/path_utils.dart';
-import '../render_vertices.dart';
-import '../../browser_detection.dart';
-import '../../validators.dart';
-import '../../vector_math.dart';
-import '../../util.dart';
 
 const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
 const double kFltEpsilonSquared = 1.19209290E-07 * 1.19209290E-07;
@@ -135,7 +135,7 @@ class GradientSweep extends EngineGradient {
 
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
-    method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
+    method.addStatement('${fragColor.name} = $probeName * scale + bias;');
 
     final String shader = builder.build();
     return shader;
@@ -162,7 +162,7 @@ class GradientLinear extends EngineGradient {
         assert(offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix == null ? null : FastMatrix32(matrix),
+        matrix4 = matrix == null ? null : FastMatrix32(matrix),
         super._() {
     if (assertionsEnabled) {
       validateColorStops(colors, colorStops);
@@ -237,7 +237,17 @@ class GradientLinear extends EngineGradient {
         _createLinearFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 
+    /// When creating an image to apply to a dom element, render
+    /// contents at 0,0 and adjust gradient vector for shaderBounds.
+    final bool translateToOrigin = createDataUrl;
+
+    if (translateToOrigin) {
+      shaderBounds = shaderBounds.translate(-shaderBounds.left, -shaderBounds.top);
+    }
+
     // Setup from/to uniforms.
+    //
+    // From/to is relative to shaderBounds.
     //
     // To compute t value between 0..1 for any point on the screen,
     // we need to use from,to point pair to construct a matrix that will
@@ -270,7 +280,7 @@ class GradientLinear extends EngineGradient {
         ? (shaderBounds.height / 2)
         : (fromY + toY) / 2.0 - shaderBounds.top;
 
-    final Matrix4 translateToOrigin =
+    final Matrix4 originTranslation =
         Matrix4.translationValues(-originX, -originY, 0);
     // Rotate around Z axis.
     final Matrix4 rotationZ = Matrix4.identity();
@@ -306,7 +316,7 @@ class GradientLinear extends EngineGradient {
     }
 
     gradientTransform.multiply(rotationZ);
-    gradientTransform.multiply(translateToOrigin);
+    gradientTransform.multiply(originTranslation);
     // Setup gradient uniforms for t search.
     normalizedGradient.setupUniforms(gl, glProgram);
     // Setup matrix transform uniform.
@@ -364,7 +374,7 @@ class GradientLinear extends EngineGradient {
     method.addStatement('float st = localCoord.x;');
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
-    method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
+    method.addStatement('${fragColor.name} = $probeName * scale + bias;');
     final String shader = builder.build();
     return shader;
   }
@@ -406,7 +416,7 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
   method.addStatement('vec4 scale;');
   // Write uniforms for each threshold, bias and scale.
   for (int i = 0; i < (gradient.thresholdCount - 1) ~/ 4 + 1; i++) {
-    builder.addUniform(ShaderType.kVec4, name: 'threshold_${i}');
+    builder.addUniform(ShaderType.kVec4, name: 'threshold_$i');
   }
   for (int i = 0; i < gradient.thresholdCount; i++) {
     builder.addUniform(ShaderType.kVec4, name: 'bias_$i');
@@ -448,7 +458,7 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
 class GradientRadial extends EngineGradient {
   GradientRadial(this.center, this.radius, this.colors, this.colorStops,
       this.tileMode, this.matrix4)
-      : super._() {}
+      : super._();
 
   final ui.Offset center;
   final double radius;
@@ -568,13 +578,13 @@ class GradientRadial extends EngineGradient {
         'float st = abs(dist / u_radius);');
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
-    method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
+    method.addStatement('${fragColor.name} = $probeName * scale + bias;');
     final String shader = builder.build();
     return shader;
   }
 }
 
-/// TODO: Implement focal https://github.com/flutter/flutter/issues/76643.
+// TODO(ferhat): Implement focal https://github.com/flutter/flutter/issues/76643.
 class GradientConical extends GradientRadial {
   GradientConical(
       this.focal,
@@ -654,7 +664,7 @@ class GradientConical extends GradientRadial {
     }
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
-    method.addStatement('${fragColor.name} = ${probeName} * scale + bias;');
+    method.addStatement('${fragColor.name} = $probeName * scale + bias;');
     return builder.build();
   }
 }
@@ -687,7 +697,8 @@ class _BlurEngineImageFilter extends EngineImageFilter {
   final double sigmaY;
   final ui.TileMode tileMode;
 
-  // TODO(flutter_web): implement TileMode.
+  // TODO(ferhat): implement TileMode.
+  @override
   String get filterAttribute => blurSigmasToCssString(sigmaX, sigmaY);
 
   @override
@@ -717,7 +728,8 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
   final Float64List webMatrix;
   final ui.FilterQuality filterQuality;
 
-  // TODO(flutter_web): implement FilterQuality.
+  // TODO(yjbanov): implement FilterQuality.
+  @override
   String get transformAttribute => float64ListToCssTransform(webMatrix);
 
   @override

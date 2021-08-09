@@ -76,7 +76,7 @@ class PersistedShaderMask extends PersistedContainerSurface
   html.Element createElement() {
     final html.Element element = defaultCreateElement('flt-shader-mask');
     final html.Element container = html.Element.tag('flt-mask-interior');
-    container.style..position = 'absolute';
+    container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
     return element;
@@ -102,7 +102,7 @@ class PersistedShaderMask extends PersistedContainerSurface
       }
       return;
     }
-    // TODO: Implement _applyImageShader();
+    // TODO(ferhat): Implement _applyImageShader();
     throw Exception('Shader type not supported for ShaderMask');
   }
 
@@ -161,9 +161,9 @@ class PersistedShaderMask extends PersistedContainerSurface
       _shaderElement =
           html.Element.html(code, treeSanitizer: NullTreeSanitizer());
       if (isWebKit) {
-        _childContainer!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
+        _childContainer!.style.filter = 'url(#_fmf$_maskFilterIdCounter';
       } else {
-        rootElement!.style.filter = 'url(#_fmf${_maskFilterIdCounter}';
+        rootElement!.style.filter = 'url(#_fmf$_maskFilterIdCounter';
       }
       domRenderer.addResource(_shaderElement!);
     }
@@ -230,11 +230,8 @@ String? svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.luminosity:
     case ui.BlendMode.multiply:
     case ui.BlendMode.screen:
-    case ui.BlendMode.overlay:
     case ui.BlendMode.darken:
     case ui.BlendMode.lighten:
-    case ui.BlendMode.colorDodge:
-    case ui.BlendMode.colorBurn:
     case ui.BlendMode.hardLight:
     case ui.BlendMode.softLight:
     case ui.BlendMode.difference:
@@ -242,7 +239,6 @@ String? svgMaskFilterFromImageAndBlendMode(
       svgFilter = _blendImageToSvg(
           imageUrl, stringForBlendMode(blendMode), width, height);
       break;
-    case ui.BlendMode.src:
     case ui.BlendMode.dst:
     case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:

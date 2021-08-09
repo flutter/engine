@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import 'dart:collection' show IterableBase;
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
@@ -287,8 +287,7 @@ class _PathContourMeasure {
     double distance = 0.0;
     bool haveSeenMoveTo = false;
 
-    final Function lineToHandler =
-        (double fromX, double fromY, double x, double y) {
+    void lineToHandler(double fromX, double fromY, double x, double y) {
       final double dx = fromX - x;
       final double dy = fromY - y;
       final double prevDistance = distance;
@@ -301,7 +300,8 @@ class _PathContourMeasure {
           _PathSegment(SPath.kLineVerb, distance, <double>[fromX, fromY, x, y]),
         );
       }
-    };
+    }
+
     int verb = 0;
     final Float32List points = Float32List(PathRefIterator.kMaxBufferSize);
     do {
@@ -551,6 +551,7 @@ class SurfacePathMetric implements ui.PathMetric {
   /// have been implied when using methods like [Path.addRect]) or if
   /// `forceClosed` was specified as true in the call to [Path.computeMetrics].
   /// Returns false otherwise.
+  @override
   final bool isClosed;
 
   /// The zero-based index of the contour.
@@ -565,6 +566,7 @@ class SurfacePathMetric implements ui.PathMetric {
   /// the contours of the path at the time the path's metrics were computed. If
   /// additional contours were added or existing contours updated, this metric
   /// will be invalid for the current state of the path.
+  @override
   final int contourIndex;
 
   final _SurfacePathMeasure _measure;
@@ -588,6 +590,7 @@ class SurfacePathMetric implements ui.PathMetric {
   ///
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  @override
   ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return _measure.extractPath(contourIndex, start, end,
         startWithMoveTo: startWithMoveTo);
@@ -601,7 +604,7 @@ class SurfacePathMetric implements ui.PathMetric {
 ui.Offset _normalizeSlope(double dx, double dy) {
   final double length = math.sqrt(dx * dx + dy * dy);
   return length < kEpsilon
-      ? ui.Offset(0.0, 0.0)
+      ? const ui.Offset(0.0, 0.0)
       : ui.Offset(dx / length, dy / length);
 }
 
