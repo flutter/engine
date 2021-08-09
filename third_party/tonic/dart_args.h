@@ -5,6 +5,8 @@
 #ifndef LIB_TONIC_DART_ARGS_H_
 #define LIB_TONIC_DART_ARGS_H_
 
+#include <iostream>
+#include <sstream>
 #include <type_traits>
 #include <utility>
 
@@ -101,6 +103,8 @@ void DartReturn(T result, Dart_NativeArguments args) {
 template <typename IndicesType, typename T>
 class DartDispatcher {};
 
+// Match functions on the form:
+// `void f(ArgTypes...)`
 template <size_t... indices, typename... ArgTypes>
 struct DartDispatcher<IndicesHolder<indices...>, void (*)(ArgTypes...)>
     : public DartArgHolder<indices, ArgTypes>... {
@@ -116,6 +120,8 @@ struct DartDispatcher<IndicesHolder<indices...>, void (*)(ArgTypes...)>
   }
 };
 
+// Match functions on the form:
+// `ResultType f(ArgTypes...)`
 template <size_t... indices, typename ResultType, typename... ArgTypes>
 struct DartDispatcher<IndicesHolder<indices...>, ResultType (*)(ArgTypes...)>
     : public DartArgHolder<indices, ArgTypes>... {
@@ -137,6 +143,8 @@ struct DartDispatcher<IndicesHolder<indices...>, ResultType (*)(ArgTypes...)>
   }
 };
 
+// Match instance methods on the form:
+// `void C::m(ArgTypes...)`
 template <size_t... indices, typename C, typename... ArgTypes>
 struct DartDispatcher<IndicesHolder<indices...>, void (C::*)(ArgTypes...)>
     : public DartArgHolder<indices, ArgTypes>... {
@@ -153,6 +161,8 @@ struct DartDispatcher<IndicesHolder<indices...>, void (C::*)(ArgTypes...)>
   }
 };
 
+// Match instance methods on the form:
+// `ReturnType (C::m)(ArgTypes...) const`
 template <size_t... indices,
           typename C,
           typename ReturnType,
@@ -174,6 +184,8 @@ struct DartDispatcher<IndicesHolder<indices...>,
   }
 };
 
+// Match instance methods on the form:
+// `ReturnType (C::m)(ArgTypes...)`
 template <size_t... indices,
           typename C,
           typename ResultType,
@@ -237,6 +249,292 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
 
   wrappable->AssociateWithDartWrapper(wrapper);
 }
+
+// Template voodoo to automatically setup static entry points for FFI Native
+// functions.
+// Entry points for instance methods take the instance as the first argument and
+// call the given method with the remaining arguments.
+// Arguments will automatically get converted to and from their FFI
+// representations with the DartConverter templates.
+template <typename Object, typename Signature, Signature Method>
+struct FfiDispatcher;
+
+// Recursively add the FFI representation of arguments to the stream,
+// serialising them into a comma separated list.
+template <typename Arg, typename... Args>
+void WriteFfiArguments(std::ostringstream* stream) {
+  *stream << tonic::DartConverter<typename std::remove_const<
+      typename std::remove_reference<Arg>::type>::type>::GetFfiRepresentation();
+  if constexpr (sizeof...(Args) > 0) {
+    *stream << ", ";
+    WriteFfiArguments<Args...>(stream);
+  }
+}
+
+// Recursively add the Dart representation of arguments to the stream,
+// serialising them into a comma separated list.
+template <typename Arg, typename... Args>
+void WriteDartArguments(std::ostringstream* stream) {
+  *stream << tonic::DartConverter<
+      typename std::remove_const<typename std::remove_reference<Arg>::type>::
+          type>::GetDartRepresentation();
+  if constexpr (sizeof...(Args) > 0) {
+    *stream << ", ";
+    WriteDartArguments<Args...>(stream);
+  }
+}
+
+// Recursively and together whether each argument is allowed in a leaf call.
+template <typename Arg, typename... Args>
+bool AllowedInLeafCall() {
+  bool result = tonic::DartConverter<typename std::remove_const<
+      typename std::remove_reference<Arg>::type>::type>::AllowedInLeafCall();
+  if constexpr (sizeof...(Args) > 0) {
+    result &= AllowedInLeafCall<Args...>();
+  }
+  return result;
+}
+
+// Match `Return Function(...)`.
+template <typename Return, typename... Args, Return (*Function)(Args...)>
+struct FfiDispatcher<void, Return (*)(Args...), Function> {
+  using FfiReturn = typename DartConverter<Return>::FfiType;
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static FfiReturn Call(
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ function, forwarding converted native arguments.
+    return DartConverter<Return>::ToFfi(Function(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...));
+  }
+
+  static bool AllowedAsLeafCalls() {
+    if constexpr (sizeof...(Args) > 0) {
+      return AllowedInLeafCall<Return>() && AllowedInLeafCall<Args...>();
+    }
+    return AllowedInLeafCall<Return>();
+  }
+
+  static const char* GetReturnFfiRepresentation() {
+    return tonic::DartConverter<Return>::GetFfiRepresentation();
+  }
+
+  static const char* GetReturnDartRepresentation() {
+    return tonic::DartConverter<Return>::GetDartRepresentation();
+  }
+
+  static void WriteFfiArguments(std::ostringstream* stream) {
+    if constexpr (sizeof...(Args) > 0) {
+      ::tonic::WriteFfiArguments<Args...>(stream);
+    }
+  }
+
+  static void WriteDartArguments(std::ostringstream* stream) {
+    if constexpr (sizeof...(Args) > 0) {
+      ::tonic::WriteDartArguments<Args...>(stream);
+    }
+  }
+};
+
+// Match `Return Object::Method(...)`.
+template <typename Object,
+          typename Return,
+          typename... Args,
+          Return (Object::*Method)(Args...)>
+struct FfiDispatcher<Object, Return (Object::*)(Args...), Method> {
+  using FfiReturn = typename DartConverter<Return>::FfiType;
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static FfiReturn Call(
+      Object* obj,
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ method on obj, forwarding converted native arguments.
+    return DartConverter<Return>::ToFfi((obj->*Method)(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...));
+  }
+
+  static bool AllowedAsLeafCalls() {
+    if constexpr (sizeof...(Args) > 0) {
+      return AllowedInLeafCall<Return>() && AllowedInLeafCall<Args...>();
+    }
+    return AllowedInLeafCall<Return>();
+  }
+
+  static const char* GetReturnFfiRepresentation() {
+    return tonic::DartConverter<Return>::GetFfiRepresentation();
+  }
+
+  static const char* GetReturnDartRepresentation() {
+    return tonic::DartConverter<Return>::GetDartRepresentation();
+  }
+
+  static void WriteFfiArguments(std::ostringstream* stream) {
+    *stream << tonic::DartConverter<DartWrappable*>::GetFfiRepresentation();
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      ::tonic::WriteFfiArguments<Args...>(stream);
+    }
+  }
+
+  static void WriteDartArguments(std::ostringstream* stream) {
+    *stream << tonic::DartConverter<DartWrappable*>::GetDartRepresentation();
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      ::tonic::WriteDartArguments<Args...>(stream);
+    }
+  }
+};
+
+// Match `Return Object::Method(...) const`.
+template <typename Object,
+          typename Return,
+          typename... Args,
+          Return (Object::*Method)(Args...) const>
+struct FfiDispatcher<Object, Return (Object::*)(Args...) const, Method> {
+  using FfiReturn = typename DartConverter<Return>::FfiType;
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static FfiReturn Call(
+      Object* obj,
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ method on obj, forwarding converted native arguments.
+    return DartConverter<Return>::ToFfi((obj->*Method)(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...));
+  }
+
+  static bool AllowedAsLeafCalls() {
+    if constexpr (sizeof...(Args) > 0) {
+      return AllowedInLeafCall<Return>() && AllowedInLeafCall<Args...>();
+    }
+    return AllowedInLeafCall<Return>();
+  }
+
+  static const char* GetReturnFfiRepresentation() {
+    return tonic::DartConverter<Return>::GetFfiRepresentation();
+  }
+
+  static const char* GetReturnDartRepresentation() {
+    return tonic::DartConverter<Return>::GetDartRepresentation();
+  }
+
+  static void WriteFfiArguments(std::ostringstream* stream) {
+    *stream << tonic::DartConverter<DartWrappable*>::GetFfiRepresentation();
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      ::tonic::WriteFfiArguments<Args...>(stream);
+    }
+  }
+
+  static void WriteDartArguments(std::ostringstream* stream) {
+    *stream << tonic::DartConverter<DartWrappable*>::GetDartRepresentation();
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      ::tonic::WriteDartArguments<Args...>(stream);
+    }
+  }
+};
+
+// `void` specialisation since we can't declare `ToFfi` to take void rvalues.
+// Match `void Function(...)`.
+template <typename... Args, void (*Function)(Args...)>
+struct FfiDispatcher<void, void (*)(Args...), Function> {
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static void Call(
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ function, forwarding converted native arguments.
+    Function(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...);
+  }
+
+  static bool AllowedAsLeafCalls() {
+    if constexpr (sizeof...(Args) > 0) {
+      return AllowedInLeafCall<Args...>();
+    }
+    return true;
+  }
+
+  static const char* GetReturnFfiRepresentation() {
+    return tonic::DartConverter<void>::GetFfiRepresentation();
+  }
+
+  static const char* GetReturnDartRepresentation() {
+    return tonic::DartConverter<void>::GetDartRepresentation();
+  }
+
+  static void WriteFfiArguments(std::ostringstream* stream) {
+    if constexpr (sizeof...(Args) > 0) {
+      ::tonic::WriteFfiArguments<Args...>(stream);
+    }
+  }
+
+  static void WriteDartArguments(std::ostringstream* stream) {
+    if constexpr (sizeof...(Args) > 0) {
+      ::tonic::WriteDartArguments<Args...>(stream);
+    }
+  }
+};
+
+// `void` specialisation since we can't declare `ToFfi` to take void rvalues.
+// Match `void Object::Method(...)`.
+template <typename Object, typename... Args, void (Object::*Method)(Args...)>
+struct FfiDispatcher<Object, void (Object::*)(Args...), Method> {
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static void Call(
+      Object* obj,
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ method on obj, forwarding converted native arguments.
+    (obj->*Method)(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...);
+  }
+
+  static bool AllowedAsLeafCalls() {
+    if constexpr (sizeof...(Args) > 0) {
+      return AllowedInLeafCall<Args...>();
+    }
+    return true;
+  }
+
+  static const char* GetReturnFfiRepresentation() {
+    return tonic::DartConverter<void>::GetFfiRepresentation();
+  }
+
+  static const char* GetReturnDartRepresentation() {
+    return tonic::DartConverter<void>::GetDartRepresentation();
+  }
+
+  static void WriteFfiArguments(std::ostringstream* stream) {
+    *stream << tonic::DartConverter<DartWrappable*>::GetFfiRepresentation();
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      ::tonic::WriteFfiArguments<Args...>(stream);
+    }
+  }
+
+  static void WriteDartArguments(std::ostringstream* stream) {
+    *stream << tonic::DartConverter<DartWrappable*>::GetDartRepresentation();
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      ::tonic::WriteDartArguments<Args...>(stream);
+    }
+  }
+};
 
 }  // namespace tonic
 
