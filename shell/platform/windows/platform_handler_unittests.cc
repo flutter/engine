@@ -6,7 +6,6 @@
 
 #include <memory>
 
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
 #include "gmock/gmock.h"
@@ -35,7 +34,6 @@ class TestPlatformHandler : public PlatformHandler {
       : PlatformHandler(messenger) {}
 
   virtual ~TestPlatformHandler() {}
-
 
   // |PlatformHandler|
   MOCK_METHOD2(GetPlainText,
@@ -123,8 +121,8 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
   ON_CALL(platform_handler, HasStrings)
       .WillByDefault(
           [](std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-             result->NotImplemented();
-           });
+            result->NotImplemented();
+          });
 
   EXPECT_CALL(platform_handler, HasStrings(_));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
