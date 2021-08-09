@@ -924,8 +924,8 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != '.github' &&
             entry.name != '.gitignore' &&
             entry.name != '.vscode' &&
-            entry.name != 'jmods' &&      // jmod are binary files provided by Open JDK.
             entry.name != 'javatests' &&
+            entry.name != 'jmods' &&      // jmods are binary files provided by Open JDK.
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
             entry.name != 'test_support' &&
