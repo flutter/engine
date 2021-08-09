@@ -353,6 +353,8 @@ action("flutter_shell_java") {
     "--jar-source-path=$_rebased_source_jar_path",
     "--jar-source-base-dir=$_rebased_current_path",
     "--classpath=$_rebased_classpath",
+    "--bootclasspath=$_rebased_android_sdk_jar",
+    "--java-version=1.8",  # Java 8 is required for backward compatibility.
     "--jar-bin=$_jarbin",
     "--javac-bin=$_javacbin",
   ]
