@@ -12,6 +12,14 @@ import sys
 ANDROID_SRC_ROOT = 'flutter/shell/platform/android'
 
 
+def JavadocBin():
+  script_path = os.path.dirname(os.path.realpath(__file__))
+  if sys.platform == 'darwin':
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home', 'bin', 'javadoc')
+  else:
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'javadoc')
+
+
 def main():
   parser = argparse.ArgumentParser(description='Runs javadoc on Flutter Android libraries')
   parser.add_argument('--out-dir', type=str, required=True)
@@ -61,7 +69,7 @@ def main():
   ]
 
   command = [
-    'javadoc',
+    JavadocBin(),
     '-classpath', ':'.join(classpath),
     '-d', args.out_dir,
     '-link', 'https://developer.android.com/reference/',
