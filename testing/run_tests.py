@@ -327,7 +327,9 @@ def JavaBin():
   script_path = os.path.dirname(os.path.realpath(__file__))
   if IsMac():
     return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home', 'bin', 'java')
-  else:
+  elif IsWindows():
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'java.exe')
+  else :
     return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'java')
 
 

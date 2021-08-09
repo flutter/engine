@@ -16,7 +16,9 @@ def JavadocBin():
   script_path = os.path.dirname(os.path.realpath(__file__))
   if sys.platform == 'darwin':
     return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home', 'bin', 'javadoc')
-  else:
+  elif sys.platform.startswith(('cygwin', 'win')):
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'javadoc.exe')
+  else :
     return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'javadoc')
 
 
