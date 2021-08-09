@@ -116,19 +116,19 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
 
 class TestKeystate {
  public:
-  void Set(int virtual_key, bool pressed, bool toggled_on = false) {
+  void Set(uint32_t virtual_key, bool pressed, bool toggled_on = false) {
     state_[virtual_key] = (pressed ? kStateMaskPressed : 0) |
                           (toggled_on ? kStateMaskToggled : 0);
   }
 
-  SHORT Get(int virtual_key) { return state_[virtual_key]; }
+  SHORT Get(uint32_t virtual_key) { return state_[virtual_key]; }
 
   KeyboardKeyEmbedderHandler::GetKeyStateHandler Getter() {
-    return [this](int virtual_key) { return Get(virtual_key); };
+    return [this](uint32_t virtual_key) { return Get(virtual_key); };
   }
 
  private:
-  std::map<int, SHORT> state_;
+  std::map<uint32_t, SHORT> state_;
 };
 
 typedef struct {
@@ -174,6 +174,10 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     win32window->InjectMessageList(messages.size(),
                                    messages.data());
     pending_responds_.clear();
+  }
+
+  void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
+    key_state_.Set(key, pressed, toggled_on);
   }
 
  protected:
@@ -250,6 +254,10 @@ class KeyboardTester {
     window_->SetView(view_.get());
   }
 
+  void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
+    view_->SetKeyState(key, pressed, toggled_on);
+  }
+
   void Responding(bool response) { test_response = response; }
 
   void InjectMessages(int count, Win32Message message1, ...) {
@@ -264,6 +272,11 @@ class KeyboardTester {
     window_->InjectMessageList(count, messages);
   }
 
+  // Inject all events called with |SendInput| to the event queue,
+  // then process the event queue.
+  //
+  // If |redispatch_char| is not 0, then WM_KEYDOWN events will
+  // also redispatch a WM_CHAR event with that value as lparam.
   void InjectPendingEvents(uint32_t redispatch_char = 0) {
     view_->InjectPendingEvents(window_.get(), redispatch_char);
   }
@@ -387,7 +400,7 @@ constexpr uint64_t kScanCodeKeyA = 0x1e;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
 // constexpr uint64_t kScanCodeControl = 0x1d;
-// constexpr uint64_t kScanCodeShiftLeft = 0x2a;
+constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 // constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
@@ -466,6 +479,76 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
   tester.InjectPendingEvents('a');
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
+
+  // Release A
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, ShiftLeftKeyA) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press ShiftLeft
+  tester.SetKeyState(VK_LSHIFT, true, true);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalShiftLeft,
+                       kLogicalShiftLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'A', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "A", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents('A');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"A");
+  clear_key_calls();
+
+  // Release ShiftLeft
+  tester.SetKeyState(VK_LSHIFT, false, true);
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
+                       kLogicalShiftLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release A
