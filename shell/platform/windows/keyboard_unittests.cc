@@ -399,6 +399,7 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeKeyE = 0x12;
 constexpr uint64_t kScanCodeKeyQ = 0x10;
+constexpr uint64_t kScanCodeKeyW = 0x11;
 constexpr uint64_t kScanCodeDigit1 = 0x02;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
@@ -412,6 +413,7 @@ constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
 constexpr uint64_t kVirtualKeyE = 0x45;
 constexpr uint64_t kVirtualKeyQ = 0x51;
+constexpr uint64_t kVirtualKeyW = 0x57;
 
 constexpr bool kSynthesized = true;
 constexpr bool kNotSynthesized = false;
@@ -980,6 +982,66 @@ TEST(KeyboardTest, DeadKeyThatDoesNotCombine) {
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+}
+
+// This tests when the resulting character needs to be combined with surrogates.
+TEST(KeyboardTest, MultibyteCharacter) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // Gothic Keyboard layout. (We need a layout that yields non-BMP characters
+  // without IME, which that is actually very rare.)
+
+  // Press key W of a US keyboard, which should yield character '𐍅'.
+  tester.InjectMessages(
+      3,
+      WmKeyDownInfo{kVirtualKeyW, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{0xd800, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{0xdf45, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  const char* st = key_calls[0].key_event.character;
+  printf("CH: ");
+  while (*st != 0) {
+    printf("0x%02x ", *st);
+    st++;
+  }
+  printf(".\n");fflush(stdout);
+
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyW,
+                       kLogicalKeyW, "𐍅", kNotSynthesized);
+  clear_key_calls();
+
+  // Inject the redispatched high surrogate.
+  tester.InjectPendingEvents(0xd800);
+  // Manually inject the redispatched low surrogate.
+  tester.InjectMessages(
+      1,
+      WmCharInfo{0xdf45, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"𐍅");
+  clear_key_calls();
+
+  // Release W
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{kVirtualKeyW, kScanCodeKeyW, kNotExtended}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyW,
+                       kLogicalKeyW, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
 }
 
 }  // namespace testing

@@ -388,8 +388,19 @@ void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {
     out[0] = '\0';
     return;
   }
-  // TODO: Correctly handle UTF-32
-  std::wstring text({static_cast<wchar_t>(ch)});
+  assert(!(0xD800 <= ch && ch <= 0xDFFF));
+  std::wstring text;
+  // Encode char32 into UTF-16. See https://en.wikipedia.org/wiki/UTF-16.
+  if ((0x0000 <= ch && ch <= 0xD7FF) ||
+      (0xE000 <= ch && ch <= 0xFFFF)) {
+    text.push_back(static_cast<wchar_t>(ch));
+  } else { // 0x10000 <= ch && ch <= 0x10FFFF
+    const uint32_t offset = ch - 0x10000;
+    const uint16_t high_offset = (offset >> 10) & 0x3FF;
+    const uint16_t low_offset = offset & 0x3FF;
+    text.push_back(static_cast<wchar_t>(high_offset + 0xD800));
+    text.push_back(static_cast<wchar_t>(low_offset + 0xDC00));
+  }
   strcpy_s(out, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
 }
 

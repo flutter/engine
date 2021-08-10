@@ -358,7 +358,13 @@ WindowWin32::HandleMessage(UINT const message,
       // All key presses that generate a character should be sent from
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
-      if (keycode_for_char_message_ != 0) {
+      //
+      // A high surrogate is always followed by a low surrogate, while a
+      // non-surrogate character always appear alone. Filter out high
+      // surrogates out so that it's the low surrogate message that triggers
+      // the onKey, asks if the framework handles (which can only be done
+      // once), and calls OnText during the redispatched messages.
+      if (keycode_for_char_message_ != 0 && !IS_HIGH_SURROGATE(character)) {
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
         // Certain key combinations yield control characters as WM_CHAR's
