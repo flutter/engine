@@ -3832,14 +3832,11 @@ class FragmentShader extends Shader {
   /// This method will aquire additional fields as [FragmentShader] is
   /// implemented further.
   void update({
-    Float32List? floatUniforms,
+    required Float32List floatUniforms,
   }) {
-    if (floatUniforms == null) {
-      throw ArgumentError('No argument was given');
-    }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
-        'FragmentShader floatUniforms size must match given shader');
+        'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
     _update(floatUniforms);
   }
