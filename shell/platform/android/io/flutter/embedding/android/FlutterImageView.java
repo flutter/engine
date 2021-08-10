@@ -24,6 +24,7 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import java.nio.ByteBuffer;
+import java.util.Locale;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
@@ -93,15 +94,19 @@ public class FlutterImageView extends View implements RenderSurface {
     setAlpha(0.0f);
   }
 
+  private static void logW(String format, Object... args) {
+    Log.w(TAG, String.format(Locale.US, format, args));
+  }
+
   @TargetApi(19)
   @NonNull
   private static ImageReader createImageReader(int width, int height) {
     if (width <= 0) {
-      Log.w(TAG, "ImageReader dimensions must > 0, but given width=" + width + ", set width=1");
+      logW("ImageReader width must be greater than 0, but given width=%d, set width=1", width);
       width = 1;
     }
     if (height <= 0) {
-      Log.w(TAG, "ImageReader dimensions must > 0, but given height=" + height + ", set height=1");
+      logW("ImageReader height must be greater than 0, but given height=%d, set height=1", height);
       height = 1;
     }
     if (android.os.Build.VERSION.SDK_INT >= 29) {
