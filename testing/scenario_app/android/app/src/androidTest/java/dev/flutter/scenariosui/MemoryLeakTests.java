@@ -27,7 +27,7 @@ public class MemoryLeakTests {
   @Rule @NonNull
   public ActivityTestRule<TextPlatformViewActivity> strictActivityRule =
       new ActivityTestRule<>(
-          StrictModeFlutterActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);        
+          StrictModeFlutterActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
 
   @Test
   @FailTestOnLeak
