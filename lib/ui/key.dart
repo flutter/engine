@@ -149,17 +149,9 @@ class KeyData {
     }
   }
 
-  String? _quotedCharCode() {
-    if (character == null)
-      return '';
-    final Iterable<String> hexChars = character!.codeUnits
-        .map((int code) => code.toRadixString(16).padLeft(2, '0'));
-    return '0x${hexChars.join(' ')}';
-  }
-
   @override
   String toString() => 'KeyData(key ${_typeToString(type)}, physical: 0x${physical.toRadixString(16)}, '
-    'logical: ${_logicalToString()}, character: ${_escapeCharacter()}${_quotedCharCode()}${synthesized ? ', synthesized' : ''})';
+    'logical: ${_logicalToString()}, character: ${_escapeCharacter()})';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
