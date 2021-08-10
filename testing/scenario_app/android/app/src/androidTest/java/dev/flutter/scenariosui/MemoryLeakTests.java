@@ -61,8 +61,11 @@ public class MemoryLeakTests {
   @FailTestOnLeak
   public void platformViewHybridComposition_releaseRenderSurface() throws Exception {
     strictActivityRule.launchActivity(intent);
-    final TextureRegistry textureRegistry =
-        strictActivityRule.getActivity().flutterEngine.getRenderer();
+
+    final FlutterEngine flutterEngine = strictActivityRule.getActivity().flutterEngine;
+    assertNotNull(flutterEngine);
+
+    final TextureRegistry textureRegistry = flutterEngine.getRenderer();
     final SurfaceTextureEntry entry = textureRegistry.createSurfaceTexture();
     entry.release();
   }
