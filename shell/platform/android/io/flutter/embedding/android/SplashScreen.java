@@ -85,6 +85,8 @@ public interface SplashScreen {
    * @return True if the given splash {@code View} should be displayed in the {@code View}
    *     hierarchy.
    */
+  // We suppress NewApi because the CI linter thinks that "default" methods are unsupported.
+  @SuppressLint("NewApi")
   default boolean doesSplashViewRememberItsTransition() {
     return false;
   }
@@ -95,6 +97,8 @@ public interface SplashScreen {
    *
    * @return Bundle used to restore a splash screen state.
    */
+  // We suppress NewApi because the CI linter thinks that "default" methods are unsupported.
+  @SuppressLint("NewApi")
   @Nullable
   default Bundle saveSplashScreenState() {
     return null;
