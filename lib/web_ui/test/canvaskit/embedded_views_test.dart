@@ -241,35 +241,34 @@ void testMain() {
 
       // Frame 1:
       //   Render: up to cache size platform views.
-      //   Expect: main canvas plus platform view overlays; empty cache.
+      //   Expect: main canvas plus platform view overlays.
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces);
 
       // Frame 2:
       //   Render: zero platform views.
-      //   Expect: main canvas, no overlays; overlays in the cache.
+      //   Expect: main canvas, no overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
 
       // Frame 3:
       //   Render: less than cache size platform views.
-      //   Expect: overlays reused; cache shrinks.
+      //   Expect: overlays reused.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces - 2);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces - 1);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
-      //   Expect: main canvas, backup overlay, maximum overlays;
-      //           cache empty (everything reused).
+      //   Expect: main canvas, backup overlay, maximum overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: HtmlViewEmbedder.maximumOverlaySurfaces * 2);
       expect(countCanvases(), HtmlViewEmbedder.maximumOverlaySurfaces);
 
       // Frame 5:
       //   Render: zero platform views.
-      //   Expect: main canvas, no overlays; cache full but does not exceed limit.
+      //   Expect: main canvas, no overlays.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(viewCount: 0);
       expect(countCanvases(), 1);
