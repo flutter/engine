@@ -189,7 +189,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
     // to the assistive technology user.
     placeholder
       ..setAttribute('role', 'button')
-      ..setAttribute('aria-live', 'true')
+      ..setAttribute('aria-live', 'polite')
       ..setAttribute('tabindex', '0')
       ..setAttribute('aria-label', placeholderMessage);
 

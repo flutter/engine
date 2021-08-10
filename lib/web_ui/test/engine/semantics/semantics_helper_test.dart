@@ -37,7 +37,7 @@ void testMain() {
 
     test('prepare accesibility placeholder', () async {
       expect(_placeholder!.getAttribute('role'), 'button');
-      expect(_placeholder!.getAttribute('aria-live'), 'true');
+      expect(_placeholder!.getAttribute('aria-live'), 'polite');
       expect(_placeholder!.getAttribute('tabindex'), '0');
 
       html.document.body!.append(_placeholder!);
