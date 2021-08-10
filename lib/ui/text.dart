@@ -3253,6 +3253,16 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// metrics, so use it sparingly.
   TextRange getLineBoundary(TextPosition position) {
     final List<int> boundary = _getLineBoundary(position.offset);
+    final TextRange line = TextRange(start: boundary[0], end: boundary[1]);
+
+    // _getLineBoundary only considers the offset and assumes that the
+    // TextAffinity is upstream. In the case that TextPosition is just after a
+    // wordwrap (downstream), we need to get the line for the next offset.
+    if (position.offset != line.end || position.affinity == TextAffinity.upstream) {
+      return line;
+    }
+
+    final List<int> nextBoundary = _getLineBoundary(position.offset + 1);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
   List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
