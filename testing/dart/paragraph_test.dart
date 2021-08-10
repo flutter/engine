@@ -59,4 +59,49 @@ void main() {
       );
     }
   });
+
+  test('getLineBoundary', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+    ));
+    builder.addText('Test Ahem');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+
+    final TextPosition wrapPositionDown = TextPosition(
+      offset: 5,
+      affinity: TextAffinity.downstream,
+    );
+    TextRange line = paragraph.getLineBoundary(wrapPositionDown);
+    expect(line.start, 5);
+    expect(line.end, 9);
+
+    final TextPosition wrapPositionUp = TextPosition(
+      offset: 5,
+      affinity: TextAffinity.upstream,
+    );
+    line = paragraph.getLineBoundary(wrapPositionUp);
+    expect(line.start, 0);
+    expect(line.end, 5);
+
+    final TextPosition wrapPositionStart = TextPosition(
+      offset: 0,
+      affinity: TextAffinity.downstream,
+    );
+    line = paragraph.getLineBoundary(wrapPositionStart);
+    expect(line.start, 0);
+    expect(line.end, 5);
+
+    final TextPosition wrapPositionEnd = TextPosition(
+      offset: 9,
+      affinity: TextAffinity.downstream,
+    );
+    line = paragraph.getLineBoundary(wrapPositionEnd);
+    expect(line.start, 5);
+    expect(line.end, 9);
+  });
 }
