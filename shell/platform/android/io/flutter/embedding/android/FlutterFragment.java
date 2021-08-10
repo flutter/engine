@@ -65,8 +65,6 @@ import io.flutter.util.ViewUtils;
  * io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
  * FlutterEngine} are:
  *
- * <p>
- *
  * <ul>
  *   <li>When {@code FlutterFragment} is in the first {@code Activity} displayed by the app, because
  *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in

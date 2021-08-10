@@ -75,6 +75,7 @@ def main():
     '-classpath', ':'.join(classpath),
     '-d', args.out_dir,
     '-link', 'https://developer.android.com/reference/',
+    '-source', '1.8',
   ] + packages
 
   if not args.quiet:
@@ -85,7 +86,7 @@ def main():
     if not args.quiet:
       print(output)
   except subprocess.CalledProcessError as e:
-    print(e.output)
+    print(e.output.decode('utf-8'))
     return e.returncode
 
   return 0
