@@ -47,8 +47,7 @@ Win32Message WmCharInfo::Build(LRESULT expected_result, HWND hWnd) {
 Win32Message WmSysKeyUpInfo::Build(LRESULT expected_result, HWND hWnd) {
   uint32_t lParam = (1 /* repeat_count */ << 0) | (scan_code << 16) |
                     (extended << 24) | (context << 29) |
-                    (1 /* prev_state */ << 30) |
-                    (1 /* transition */ << 31);
+                    (1 /* prev_state */ << 30) | (1 /* transition */ << 31);
   return Win32Message{
       .message = WM_SYSKEYUP,
       .wParam = key,

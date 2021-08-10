@@ -223,8 +223,8 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   const bool is_deadchar = (character & 0x80000000) != 0;
   const char32_t event_character = is_deadchar ? 0 : character;
   for (const auto& delegate : delegates_) {
-    delegate->KeyboardHook(key, scancode, action, event_character, extended, was_down,
-                           [sequence_id, this](bool handled) {
+    delegate->KeyboardHook(key, scancode, action, event_character, extended,
+                           was_down, [sequence_id, this](bool handled) {
                              ResolvePendingEvent(sequence_id, handled);
                            });
   }

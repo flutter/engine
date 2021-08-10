@@ -369,10 +369,13 @@ WindowWin32::HandleMessage(UINT const message,
         const bool was_down = lparam & 0x40000000;
         // Certain key combinations yield control characters as WM_CHAR's
         // lParam. For example, 0x01 for Ctrl-A. Filter these characters.
-        // See https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
+        // See
+        // https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
         const char32_t event_character =
-            (message == WM_DEADCHAR || message == WM_SYSDEADCHAR) ? MapVirtualKey(keycode_for_char_message_, MAPVK_VK_TO_CHAR) :
-            IsPrintable(code_point) ? code_point : 0;
+            (message == WM_DEADCHAR || message == WM_SYSDEADCHAR)
+                ? MapVirtualKey(keycode_for_char_message_, MAPVK_VK_TO_CHAR)
+            : IsPrintable(code_point) ? code_point
+                                      : 0;
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
                              event_character, extended, was_down);
         keycode_for_char_message_ = 0;
