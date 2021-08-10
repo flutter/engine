@@ -25,7 +25,7 @@ public class MemoryLeakTests {
     buffer.rewind();
     return buffer;
   }
-  
+
   @Rule @NonNull
   public ActivityTestRule<TextPlatformViewActivity> activityRule =
       new ActivityTestRule<>(
@@ -60,7 +60,7 @@ public class MemoryLeakTests {
   @FailTestOnLeak
   public void platformViewHybridComposition_releaseRenderSurface() throws Exception {
     strictActivityRule.launchActivity(intent);
-    
+
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -88,7 +88,8 @@ public class MemoryLeakTests {
     platformViewCreateArguments.put("direction", 0);
     final MethodCall platformCreateMethodCall =
         new MethodCall("create", platformViewCreateArguments);
-    jni.handlePlatformMessage("flutter/platform_views", encodeMethodCall(platformCreateMethodCall), /*replyId=*/ 0);
+    jni.handlePlatformMessage(
+        "flutter/platform_views", encodeMethodCall(platformCreateMethodCall), /*replyId=*/ 0);
 
     // Produce a frame that displays a platform view and an overlay surface.
     platformViewsController.onBeginFrame();
