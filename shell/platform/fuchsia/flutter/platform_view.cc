@@ -110,13 +110,18 @@ PlatformView::PlatformView(
       fuchsia::ui::input::ImeService::Name_,
       text_sync_service_.NewRequest().TakeChannel());
 
-  focus_delegate_->WatchLoop([&](bool focused) {
+  focus_delegate_->WatchLoop([weak = weak_factory_.GetWeakPtr()](bool focused) {
+    if (!weak) {
+      FML_LOG(WARNING) << "PlatformView use-after-free attempted. Ignoring.";
+      return;
+    }
+
     // Ensure last_text_state_ is set to make sure Flutter actually wants
     // an IME.
-    if (focused && last_text_state_ != nullptr) {
-      ActivateIme();
+    if (focused && weak->last_text_state_) {
+      weak->ActivateIme();
     } else if (!focused) {
-      DeactivateIme();
+      weak->DeactivateIme();
     }
   });
 
@@ -484,7 +489,7 @@ void PlatformView::OnKeyEvent(
 }
 
 void PlatformView::ActivateIme() {
-  DEBUG_CHECK(last_text_state_ != nullptr, LOG_TAG, "");
+  DEBUG_CHECK(last_text_state_, LOG_TAG, "");
 
   text_sync_service_->GetInputMethodEditor(
       fuchsia::ui::input::KeyboardType::TEXT,       // keyboard type
@@ -769,8 +774,7 @@ bool PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
 
     const int64_t view_id_raw = view_id->value.GetUint64();
     auto on_view_created = fml::MakeCopyable(
-        [weak = weak_factory_.GetWeakPtr(),
-         platform_task_runner = task_runners_.GetPlatformTaskRunner(),
+        [platform_task_runner = task_runners_.GetPlatformTaskRunner(),
          message = std::move(message)]() {
           // The client is waiting for view creation. Send an empty response
           // back to signal the view was created.

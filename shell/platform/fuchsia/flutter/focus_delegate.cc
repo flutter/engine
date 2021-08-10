@@ -14,13 +14,14 @@ void FocusDelegate::WatchLoop(std::function<void(bool)> callback) {
     return;
   }
 
-  watch_loop_ = [this, callback = std::move(callback)](auto focus_state) {
+  watch_loop_ = [this, /*copy*/ callback](auto focus_state) {
     callback(is_focused_ = focus_state.focused());
     Complete(std::exchange(next_focus_request_, nullptr),
              is_focused_ ? "[true]" : "[false]");
-    view_ref_focused_->Watch(watch_loop_);
+    view_ref_focused_->Watch(/*copy*/ watch_loop_);
   };
-  view_ref_focused_->Watch(watch_loop_);
+
+  view_ref_focused_->Watch(/*copy*/ watch_loop_);
 }
 
 bool FocusDelegate::HandlePlatformMessage(

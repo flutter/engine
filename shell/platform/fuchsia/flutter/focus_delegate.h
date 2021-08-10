@@ -24,7 +24,11 @@ class FocusDelegate {
   /// Continuously watches the host viewRef for focus events, invoking a
   /// callback each time.
   ///
-  /// This can only be called once.
+  /// The callback is invoked on each Watch() call, which consumes the callback
+  /// argument. Hence, the callback argument must be copyable, so that a copy
+  /// can be freely moved into the Watch() call.
+  ///
+  /// This method can only be called once.
   void WatchLoop(std::function<void(bool)> callback);
 
   /// Handles the following focus-related platform message requests:
