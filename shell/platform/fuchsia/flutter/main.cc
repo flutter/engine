@@ -17,9 +17,15 @@
 #include "runtime/dart/utils/root_inspect_node.h"
 #include "runtime/dart/utils/tempfs.h"
 
+#if defined(OS_FUCHSIA)
+void init_fuchsia_logging();
+#endif
+
 int main(int argc, char const* argv[]) {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
-
+  #if defined(OS_FUCHSIA)
+  init_fuchsia_logging();
+  #endif
   // Create our component context which is served later.
   auto context = sys::ComponentContext::Create();
   dart_utils::RootInspectNode::Initialize(context.get());

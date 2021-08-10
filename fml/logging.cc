@@ -14,7 +14,86 @@
 #elif defined(OS_IOS)
 #include <syslog.h>
 #elif defined(OS_FUCHSIA)
-#include <lib/syslog/global.h>
+#include <zircon/process.h>
+#include <lib/syslog/logger.h>
+#include <lib/syslog/structured_backend/cpp/fuchsia_syslog.h>
+#include "lib/fdio/directory.h"
+#include <fuchsia/logger/cpp/fidl.h>
+#include <lib/async-loop/cpp/loop.h>
+#include <lib/async-loop/default.h>
+#include <lib/fidl/cpp/binding_set.h>
+#endif
+
+#if defined(OS_FUCHSIA)
+
+static inline fx_log_severity_t fx_log_severity_from_verbosity(int verbosity) {
+  if (verbosity < 0) {
+    verbosity = 0;
+  }
+  // verbosity scale sits in the interstitial space between INFO and DEBUG
+  int severity = FX_LOG_INFO - (verbosity * FX_LOG_VERBOSITY_STEP_SIZE);
+  if (severity < FX_LOG_DEBUG + 1) {
+    return FX_LOG_DEBUG + 1;
+  }
+  return severity;
+}
+
+zx_koid_t GetKoid(zx_handle_t handle) {
+  zx_info_handle_basic_t info;
+  zx_status_t status =
+      zx_object_get_info(handle, ZX_INFO_HANDLE_BASIC, &info, sizeof(info), nullptr, nullptr);
+  return status == ZX_OK ? info.koid : ZX_KOID_INVALID;
+}
+
+class FuchsiaState {
+ public:
+  FuchsiaState() {
+    ConnectAsync();
+  }
+  void BeginRecord(fuchsia_syslog::LogBuffer* buffer, FuchsiaLogSeverity severity,
+                   cpp17::optional<cpp17::string_view> file_name, unsigned int line,
+                   cpp17::optional<cpp17::string_view> msg,
+                   cpp17::optional<cpp17::string_view> condition) {
+    buffer->BeginRecord(severity, file_name, line, msg, condition, false,
+                                socket_.borrow(), 0, GetKoid(zx_process_self()),
+                                GetKoid(zx_thread_self()));
+  }
+  void WriteLog(int severity,
+                       const char* file,
+                       int line,
+                       const char* msg) {
+                         fuchsia_syslog::LogBuffer buffer;
+                         BeginRecord(&buffer, severity, file, line, msg, cpp17::nullopt);
+                         buffer.FlushRecord();
+                       }
+  private:
+  void ConnectAsync() {
+    zx::channel logger, logger_request;
+    if (zx::channel::create(0, &logger, &logger_request) != ZX_OK) {
+      return;
+    }
+    // TODO(https://fxbug.dev/75214): Support for custom names.
+    if (fdio_service_connect("/svc/fuchsia.logger.LogSink", logger_request.release()) != ZX_OK) {
+      return;
+    }
+    if (log_sink_.Bind(std::move(logger)) != ZX_OK) {
+      return;
+    }
+    zx::socket local, remote;
+    if (zx::socket::create(ZX_SOCKET_DATAGRAM, &local, &remote) != ZX_OK) {
+      return;
+    }
+    log_sink_->ConnectStructured(std::move(remote));
+    socket_ = std::move(local);
+  }
+  zx::socket socket_;
+  fuchsia::logger::LogSinkPtr log_sink_;
+};
+FuchsiaState* g_fuchsia_logger = nullptr;
+
+void init_fuchsia_logging() {
+  g_fuchsia_logger = new FuchsiaState();
+}
 #endif
 
 namespace fml {
@@ -97,30 +176,29 @@ LogMessage::~LogMessage() {
 #elif defined(OS_IOS)
   syslog(LOG_ALERT, "%s", stream_.str().c_str());
 #elif defined(OS_FUCHSIA)
-  fx_log_severity_t fx_severity;
+  FuchsiaLogSeverity fx_severity;
   switch (severity_) {
     case LOG_INFO:
-      fx_severity = FX_LOG_INFO;
+      fx_severity = FUCHSIA_LOG_INFO;
       break;
     case LOG_WARNING:
-      fx_severity = FX_LOG_WARNING;
+      fx_severity = FUCHSIA_LOG_WARNING;
       break;
     case LOG_ERROR:
-      fx_severity = FX_LOG_ERROR;
+      fx_severity = FUCHSIA_LOG_ERROR;
       break;
     case LOG_FATAL:
-      fx_severity = FX_LOG_FATAL;
+      fx_severity = FUCHSIA_LOG_FATAL;
       break;
     default:
       if (severity_ < 0) {
         fx_severity = fx_log_severity_from_verbosity(-severity_);
       } else {
         // Unknown severity. Use INFO.
-        fx_severity = FX_LOG_INFO;
+        fx_severity = FUCHSIA_LOG_INFO;
       }
   }
-  fx_logger_log_with_source(fx_log_get_logger(), fx_severity, nullptr, file_,
-                            line_, stream_.str().c_str());
+  g_fuchsia_logger->WriteLog(fx_severity, file_, line_, stream_.str().c_str());
 #else
   std::cerr << stream_.str();
   std::cerr.flush();

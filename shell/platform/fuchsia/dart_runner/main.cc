@@ -34,9 +34,16 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 }
 #endif  // !defined(DART_PRODUCT)
 
+#if defined(OS_FUCHSIA)
+void init_fuchsia_logging();
+#endif
+
+
 int main(int argc, const char** argv) {
   async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
-
+  #if defined(OS_FUCHSIA)
+  init_fuchsia_logging();
+  #endif
   // Create our component context which is served later.
   auto context = sys::ComponentContext::Create();
 
