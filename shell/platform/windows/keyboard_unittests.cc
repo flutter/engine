@@ -755,7 +755,7 @@ TEST(KeyboardTest, Digit1OnFrenchLayout) {
 }
 
 // This tests AltGr-Q on a German keyboard, which should print '@'.
-TEST(KeyboardTest, AltGrKeyQOnGermanLayout) {
+TEST(KeyboardTest, AltGrModifiedKey) {
   KeyboardTester tester;
   tester.Responding(false);
 
@@ -833,7 +833,7 @@ TEST(KeyboardTest, AltGrKeyQOnGermanLayout) {
 
 // This tests dead key ^ then E on a French keyboard, which should be combined
 // into ê.
-TEST(KeyboardTest, DeadCaretKeyThenKeyEOnFrench) {
+TEST(KeyboardTest, DeadKeyThatCombines) {
   KeyboardTester tester;
   tester.Responding(false);
 
@@ -897,6 +897,85 @@ TEST(KeyboardTest, DeadCaretKeyThenKeyEOnFrench) {
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyE,
                        kLogicalKeyE, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
+// This tests dead key ^ then & (US: 1) on a French keyboard, which do not
+// combine and should output "^$".
+TEST(KeyboardTest, DeadKeyThatDoesNotCombine) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // French Keyboard layout
+
+  // Press ^¨ (US: Left bracket)
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{0xDD, kScanCodeBracketLeft, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmDeadCharInfo{'^', kScanCodeBracketLeft, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBracketLeft,
+                       kLogicalBracketRight, "]", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents(0); // No WM_DEADCHAR messages sent here.
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release ^¨
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{0xDD, kScanCodeBracketLeft, kNotExtended}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalBracketLeft,
+                       kLogicalBracketRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Press 1
+  tester.InjectMessages(
+      3,
+      WmKeyDownInfo{kVirtualDigit1, kScanCodeDigit1, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'^', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'&', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
+                       kLogicalDigit1, "^", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"^");
+  clear_key_calls();
+
+  tester.InjectPendingEvents('&');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"&");
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release 1
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualDigit1, kScanCodeDigit1, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit1,
+                       kLogicalDigit1, "", kNotSynthesized);
   clear_key_calls();
 
   tester.InjectPendingEvents();
