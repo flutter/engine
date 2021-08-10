@@ -31,8 +31,8 @@ std::string _print_character(const char* s) {
 #define _RETURN_IF_NOT_EQUALS(val1, val2)                                     \
   if ((val1) != (val2)) {                                                     \
     return ::testing::AssertionFailure()                                      \
-           << "Expected equality of these values:\n  " #val1 "\n    " \
-           << val2 << "\n  Actual: \n    " << val1;                         \
+           << "Expected equality of these values:\n  " #val1 "\n    " << val2 \
+           << "\n  Actual: \n    " << val1;                                   \
   }
 
 ::testing::AssertionResult _EventEquals(const char* expr_event,
