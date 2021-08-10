@@ -8,10 +8,13 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import androidx.annotation.Nullable;
 import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.engine.FlutterEngine;
 
 // TODO: Trigger this activity.
 // https://github.com/flutter/flutter/issues/60635
 public class StrictModeFlutterActivity extends FlutterActivity {
+  public FlutterEngine flutterEngine;
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     StrictMode.setThreadPolicy(
@@ -21,5 +24,11 @@ public class StrictModeFlutterActivity extends FlutterActivity {
             .penaltyDeath()
             .build());
     super.onCreate(savedInstanceState);
+  }
+
+  @Override
+  public void configureFlutterEngine(FlutterEngine flutterEngine) {
+    super.configureFlutterEngine(flutterEngine);
+    this.flutterEngine = flutterEngine;
   }
 }
