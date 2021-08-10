@@ -1,0 +1,10 @@
+# Adapted from $FUCHSIA_DIR/build/dart/dart.gni
+
+# Copyright 2018 The Fuchsia Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# TODO(richkadel): Reconcile this file/path with the pre-existing `dart.gni`
+# imported below.
+
+import("//flutter/tools/fuchsia/dart.gni")
