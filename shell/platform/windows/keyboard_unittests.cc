@@ -397,6 +397,7 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 }
 
 constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeKeyE = 0x12;
 constexpr uint64_t kScanCodeKeyQ = 0x10;
 constexpr uint64_t kScanCodeDigit1 = 0x02;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
@@ -405,9 +406,11 @@ constexpr uint64_t kScanCodeControl = 0x1d;
 constexpr uint64_t kScanCodeAlt= 0x38;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 // constexpr uint64_t kScanCodeShiftRight = 0x36;
+constexpr uint64_t kScanCodeBracketLeft = 0x1a;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
+constexpr uint64_t kVirtualKeyE = 0x45;
 constexpr uint64_t kVirtualKeyQ = 0x51;
 
 constexpr bool kSynthesized = true;
@@ -826,6 +829,78 @@ TEST(KeyboardTest, AltGrKeyQOnGermanLayout) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalControlLeft,
                        kLogicalControlLeft, "", kNotSynthesized);
   clear_key_calls();
+}
+
+// This tests dead key ^ then E on a French keyboard, which should be combined
+// into ê.
+TEST(KeyboardTest, DeadCaretKeyThenKeyEOnFrench) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // French Keyboard layout
+
+  // Press ^¨ (US: Left bracket)
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{0xDD, kScanCodeBracketLeft, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmDeadCharInfo{'^', kScanCodeBracketLeft, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBracketLeft,
+                       kLogicalBracketRight, "]", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents(0); // No WM_DEADCHAR messages sent here.
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release ^¨
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{0xDD, kScanCodeBracketLeft, kNotExtended}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalBracketLeft,
+                       kLogicalBracketRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Press E
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyE, kScanCodeKeyE, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{0xEA, kScanCodeKeyE, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyE,
+                       kLogicalKeyE, "ê", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents(0xEA); // The redispatched event uses unmodified 'e'
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"ê");
+  clear_key_calls();
+
+  // Release E
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyE, kScanCodeKeyE, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyE,
+                       kLogicalKeyE, "", kNotSynthesized);
+  clear_key_calls();
+
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
 }
 
 }  // namespace testing

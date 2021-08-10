@@ -353,26 +353,37 @@ WindowWin32::HandleMessage(UINT const message,
         s_pending_high_surrogate = 0;
       }
 
+      const unsigned int scancode = (lparam >> 16) & 0xff;
+
       // All key presses that generate a character should be sent from
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
       if (keycode_for_char_message_ != 0) {
-        const unsigned int scancode = (lparam >> 16) & 0xff;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
         // Certain key combinations yield control characters as WM_CHAR's
         // lParam. For example, 0x01 for Ctrl-A. Filter these characters.
         // See https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
-        const char32_t event_character = IsPrintable(code_point) ? code_point : 0;
+        const char32_t event_character =
+            (message == WM_DEADCHAR || message == WM_SYSDEADCHAR) ? MapVirtualKey(keycode_for_char_message_, MAPVK_VK_TO_CHAR) :
+            IsPrintable(code_point) ? code_point : 0;
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
                              event_character, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
           // pass it to OnText, because handling the message indicates that
-          // OnKey either just sent it to the framework to be processed, or the
-          // framework handled the key in its response, so it shouldn't also be
-          // added as text.
+          // OnKey either just sent it to the framework to be processed.
+          //
+          // This message will be redispatched if not handled by the framework,
+          // during which the OnText (below) might be reached. However, if the
+          // original message was preceded by dead chars (such as ^ and e
+          // yielding ê), then since the redispatched message is no longer
+          // preceded by the dead char, the text will be wrong. Therefore we
+          // record the text here for the redispached event to use.
+          if (message == WM_CHAR) {
+            text_for_scancode_on_redispatch_[scancode] = text;
+          }
           return 0;
         }
       }
@@ -386,6 +397,11 @@ WindowWin32::HandleMessage(UINT const message,
       //   control key shortcuts.
       if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
           IsPrintable(character)) {
+        auto found_text_iter = text_for_scancode_on_redispatch_.find(scancode);
+        if (found_text_iter != text_for_scancode_on_redispatch_.end()) {
+          text = found_text_iter->second;
+          text_for_scancode_on_redispatch_.erase(found_text_iter);
+        }
         OnText(text);
       }
       return 0;

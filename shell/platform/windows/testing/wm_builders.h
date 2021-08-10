@@ -115,6 +115,9 @@ typedef struct {
                      HWND hWnd = NULL);
 } WmCharInfo;
 
+// WM_SYSKEYUP  messages.
+//
+// See https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-syskeyup.
 typedef struct {
   uint32_t key;
 
@@ -133,6 +136,28 @@ typedef struct {
   Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
                      HWND hWnd = NULL);
 } WmSysKeyUpInfo;
+
+// WM_DEADCHAR messages.
+//
+// See https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-deadchar.
+typedef struct {
+  uint32_t char_code;
+
+  uint8_t scan_code;
+
+  WmFieldExtended extended;
+
+  WmFieldPrevState prev_state;
+
+  WmFieldTransitionState transition;
+
+  WmFieldContext context;
+
+  uint16_t repeat_count = 1;
+
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
+                     HWND hWnd = NULL);
+} WmDeadCharInfo;
 
 }  // namespace testing
 }  // namespace flutter

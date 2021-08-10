@@ -220,8 +220,10 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   }
   pending_responds_.push_back(std::move(incoming));
 
+  const bool is_deadchar = (character & 0x80000000) != 0;
+  const char32_t event_character = is_deadchar ? 0 : character;
   for (const auto& delegate : delegates_) {
-    delegate->KeyboardHook(key, scancode, action, character, extended, was_down,
+    delegate->KeyboardHook(key, scancode, action, event_character, extended, was_down,
                            [sequence_id, this](bool handled) {
                              ResolvePendingEvent(sequence_id, handled);
                            });
@@ -261,7 +263,8 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
       if (event.unreplied == 0) {
         std::unique_ptr<PendingEvent> event_ptr = std::move(*iter);
         pending_responds_.erase(iter);
-        const bool should_redispatch = !event_ptr->any_handled;
+        const bool is_deadchar = (event_ptr->character & 0x80000000) != 0;
+        const bool should_redispatch = !event_ptr->any_handled && !is_deadchar;
         if (should_redispatch) {
           RedispatchEvent(std::move(event_ptr));
         }
