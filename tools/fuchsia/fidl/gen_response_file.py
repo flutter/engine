@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/fidl/gen_response_file.py
-
 #!/usr/bin/env python3.8
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/fidl/fidl.gni
-
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -16,16 +14,6 @@ import("//flutter/tools/fuchsia/fidl/toolchain.gni")
 #     intermediate representation consumable by language bindings generators;
 #   - in the target or shared toolchain, this will produce a source_set
 #     containing language-specific bindings.
-#
-# Parameters
-#
-#   name (optional)
-#     Name of the library.
-#     Defaults to the target's name.
-#
-#   host_llcpp (optional)
-#     A flag to enable or disable llcpp host generation.
-
 template("fidl") {
   # Allow generated targets visibility to their dependant generated targets
   if (defined(invoker.visibility)) {
@@ -54,57 +42,5 @@ template("fidl") {
     } else {
       not_needed("*")
     }
-
-    # TODO(richkadel): Can I implement this, to replace the cpp generation in //build/fuchsia/sdk.gni?
-    # # Define the C++ family of generated bindings
-    # import("//flutter/tools/fuchsia/cpp/fidl_cpp.gni")
-    # fidl_cpp_family(target_name) {
-    #   forward_variables_from(invoker, "*")
-    # }
-
-    # # Define FIDL coding tables target, used by C and C++
-    # import("//flutter/tools/fuchsia/c/fidl_c.gni")
-    # fidl_tables(target_name) {
-    #   forward_variables_from(invoker,
-    #                          [
-    #                            "testonly",
-    #                            "visibility",
-    #                          ])
-    # }
-
-    # # TODO(cramertj): remove pending fxbug.dev/26853.
-    # import("//flutter/tools/fuchsia/rust/fidl_rust_library.gni")
-    # fidl_rust_library(target_name) {
-    #   forward_variables_from(invoker, "*")
-    # }
-
-    # # Define the C generated bindings
-    # if (is_fuchsia) {
-    #   fidl_c_client(target_name) {
-    #     forward_variables_from(invoker, "*")
-    #   }
-
-    #   fidl_c_server(target_name) {
-    #     forward_variables_from(invoker, "*")
-    #   }
-
-    #   group("${target_name}_c") {
-    #     forward_variables_from(invoker,
-    #                            [
-    #                              "testonly",
-    #                              "visibility",
-    #                            ])
-
-    #     public_deps = [
-    #       ":${target_name}_client",
-    #       ":${target_name}_server",
-    #     ]
-    #   }
-
-    #   import("//flutter/tools/fuchsia/banjo/fidl_banjo.gni")
-    #   fidl_banjo(target_name) {
-    #     forward_variables_from(invoker, "*")
-    #   }
-    # }
   }
 }

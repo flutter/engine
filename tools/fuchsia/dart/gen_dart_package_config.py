@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/dart/gen_dart_package_config.py
-
 #!/usr/bin/env python3.8
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

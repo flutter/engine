@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/depfile_path_to_relative.py
-
 #!/usr/bin/env python3.8
 # Copyright 2021 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

@@ -81,7 +81,7 @@ def main():
                 'No package found for %s with version %s' % (package, version),
                 file=sys.stderr)
             if not args.ignore_missing:
-            return 1
+                return 1
 
     json.dump(dart_package_paths, sys.stdout)
 

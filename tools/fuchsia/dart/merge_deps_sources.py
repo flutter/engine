@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/dart/merge_deps_sources.py
-
 #!/usr/bin/env python3.8
 """Merges sources of a Dart target and its dependencies"""
 

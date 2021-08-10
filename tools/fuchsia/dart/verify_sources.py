@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/dart/verify_sources.py
-
 #!/usr/bin/env python3.8
 
 # Copyright 2019 The Fuchsia Authors. All rights reserved.

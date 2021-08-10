@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/dart/kernel/convert_manifest_to_json.py
-
 #!/usr/bin/env python3.8
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be

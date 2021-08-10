@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/fidl/fidl_library.gni
-
 # Copyright 2018 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -32,11 +30,6 @@ template("fidl_library") {
   fidl_stem = "$target_gen_dir/$target_name.fidl"
   json_representation = "$fidl_stem.json"
 
-  # c_stem =
-  #     target_name + "/c/" + string_replace(library_name, ".", "/") + "/c/fidl"
-  # c_client = "$target_gen_dir/$c_stem.client.c"
-  # c_header = "$target_gen_dir/$c_stem.h"
-  # c_server = "$target_gen_dir/$c_stem.server.c"
   coding_tables = "$fidl_stem.tables.c"
 
   main_target_name = target_name

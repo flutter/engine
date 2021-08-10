@@ -1,8 +1,26 @@
-# Adapted from $FUCHSIA_DIR/build/dart/kernel/dart_kernel.gni
-
 # Copyright 2020 The Fuchsia Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
+# NOTE: Generally, the build rules in //flutter/tools/fuchsia/dart/,
+# //flutter/tools/fuchsia/dart/kernel/, and similar SUBDIRECTORIES of
+# //flutter/tools/fuchsia/ (such as //flutter/tools/fuchsia/flutter/)
+# mirror the directory paths and much of the build rule content of fuchsia.git
+# //build/...
+#
+# Most of the fuchsia-derived build rules were implemented after some similar
+# build rules already existed in the directory //flutter/tools/fuchsia/
+# and several existing build targets use these (legacy) build rules.
+# Though some rules and targets in //flutter/tools/fuchsia/ have similar names
+# to the fuchsia.git-derived rules, the rule structures and behavior can be
+# different. Therefore both are maintained for now.
+#
+# This file--dart_kernel.gni--and its primary template--dart_kernel()--match
+# pre-existing (legacy) template and filename in
+# //flutter/tools/fuchsia/dart_kernel.gni.
+#
+# The templates appear to have different behavior, so both will be maintained
+# until we can determine a better way to reconcile them.
 
 import("//flutter/tools/fuchsia/dart/config.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
@@ -117,11 +135,6 @@ template("_convert_kernel_manifest") {
 #    the build. If false, the --no-link-platform flag will be passed to the
 #    compiler. Defaults to false
 template("dart_kernel") {
-  # TODO(richkadel): This template name `dart_kernel()`, and filename, `dart_kernel.gni`
-  # match pre-existing template and filename in flutter `tools/fuchsia/dart_kernel.gni`.
-  # The templates do different things, and may both be necessary. Since THIS `dart_kernel()`
-  # mirrors the `dart_kernel()` template in fuchsia.git (with some adaptation), I
-  # think we may want to rename the old `dart_kernel`.
   assert(defined(invoker.platform_name), "dart_kernel() requires platform_name")
   assert(defined(invoker.packages_path),
          "dart_kernel() requires the path to the package config")

@@ -1,5 +1,3 @@
-# Adapted from $FUCHSIA_DIR/build/python/package_python_binary.py
-
 #!/usr/bin/env python3.8
 """Creats a Python zip archive for the input main source."""
 
