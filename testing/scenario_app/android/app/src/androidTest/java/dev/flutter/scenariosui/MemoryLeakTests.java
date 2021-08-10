@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.test.filters.LargeTest;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
+import dev.flutter.scenarios.StrictModeFlutterActivity;
 import dev.flutter.scenarios.TextPlatformViewActivity;
 import leakcanary.FailTestOnLeak;
 import org.junit.Rule;
@@ -23,6 +24,11 @@ public class MemoryLeakTests {
       new ActivityTestRule<>(
           TextPlatformViewActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
 
+  @Rule @NonNull
+  public ActivityTestRule<TextPlatformViewActivity> strictActivityRule =
+      new ActivityTestRule<>(
+          StrictModeFlutterActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);        
+
   @Test
   @FailTestOnLeak
   public void platformViewHybridComposition_launchActivityFinishAndLaunchAgain() throws Exception {
@@ -31,5 +37,25 @@ public class MemoryLeakTests {
     intent.putExtra("use_android_view", true);
 
     activityRule.launchActivity(intent);
+  }
+
+  @Test
+  @FailTestOnLeak
+  public void platformViewHybridComposition_launchActivityFinishAndLaunchAgain() throws Exception {
+    Intent intent = new Intent(Intent.ACTION_MAIN);
+    intent.putExtra("scenario_name", "platform_view");
+    intent.putExtra("use_android_view", true);
+
+    activityRule.launchActivity(intent);
+  }
+
+  @Test
+  @FailTestOnLeak
+  public void platformViewHybridComposition_releaseRenderSurface() throws Exception {
+    // Intent intent = new Intent(Intent.ACTION_MAIN);
+    // intent.putExtra("scenario_name", "platform_view");
+    // intent.putExtra("use_android_view", true);
+
+    strictActivityRule.launchActivity(intent);
   }
 }
