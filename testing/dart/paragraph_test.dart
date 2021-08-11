@@ -121,8 +121,8 @@ void main() {
     final Paragraph paragraph = builder.build();
     paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
 
-      // Wraps to three lines.
-      expect(paragraph.height, closeTo(fontSize * 3.0, 0.001));
+    // Wraps to three lines.
+    expect(paragraph.height, closeTo(fontSize * 3.0, 0.001));
 
     final TextPosition wrapPositionDown = TextPosition(
       offset: 5,
@@ -154,6 +154,56 @@ void main() {
     );
     line = paragraph.getLineBoundary(wrapPositionEnd);
     expect(line.start, 5);
+    expect(line.end, 10);
+  });
+
+  test('getLineBoundary empty line', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      textDirection: TextDirection.rtl,
+    ));
+    builder.addText('Test\n\nAhem');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+
+    // Three lines due to line breaks, with the middle line being empty.
+    expect(paragraph.height, closeTo(fontSize * 3.0, 0.001));
+
+    final TextPosition emptyLinePosition = TextPosition(
+      offset: 5,
+      affinity: TextAffinity.downstream,
+    );
+    TextRange line = paragraph.getLineBoundary(emptyLinePosition);
+    expect(line.start, 5);
+    expect(line.end, 5);
+
+    // Since these are hard newlines, TextAffinity has no effect here.
+    final TextPosition emptyLinePositionUpstream = TextPosition(
+      offset: 5,
+      affinity: TextAffinity.upstream,
+    );
+    line = paragraph.getLineBoundary(emptyLinePositionUpstream);
+    expect(line.start, 5);
+    expect(line.end, 5);
+
+    final TextPosition endOfFirstLinePosition = TextPosition(
+      offset: 4,
+      affinity: TextAffinity.downstream,
+    );
+    line = paragraph.getLineBoundary(endOfFirstLinePosition);
+    expect(line.start, 0);
+    expect(line.end, 4);
+
+    final TextPosition startOfLastLinePosition = TextPosition(
+      offset: 6,
+      affinity: TextAffinity.downstream,
+    );
+    line = paragraph.getLineBoundary(startOfLastLinePosition);
+    expect(line.start, 6);
     expect(line.end, 10);
   });
 }
