@@ -12,6 +12,7 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
+#include "flutter/shell/platform/windows/testing/wm_builders.h"
 
 #include "gtest/gtest.h"
 
@@ -47,6 +48,26 @@ typedef std::function<bool (const FlutterKeyEvent* event)> MockKeyEventEmbedderH
 void MockEmbedderApiForKeyboard(EngineModifier& modifier,
                                 MockKeyEventChannelHandler channel_handler,
                                 MockKeyEventEmbedderHandler embedder_handler);
+
+class MockMessageQueue {
+ public:
+  // Simulates a WindowProc message from the OS.
+  void InjectMessageList(int count, const Win32Message* messages);
+
+  BOOL Win32PeekMessage(LPMSG lpMsg,
+                        HWND hWnd,
+                        UINT wMsgFilterMin,
+                        UINT wMsgFilterMax,
+                        UINT wRemoveMsg);
+
+ protected:
+  virtual LRESULT Win32SendMessage(HWND hWnd,
+                                   UINT const message,
+                                   WPARAM const wparam,
+                                   LPARAM const lparam) = 0;
+
+  std::list<Win32Message> _pending_messages;
+};
 
 }  // namespace testing
 }  // namespace flutter

@@ -16,26 +16,6 @@
 namespace flutter {
 namespace testing {
 
-class MockMessageQueue {
- public:
-  // Simulates a WindowProc message from the OS.
-  void InjectMessageList(int count, const Win32Message* messages);
-
-  BOOL Win32PeekMessage(LPMSG lpMsg,
-                        HWND hWnd,
-                        UINT wMsgFilterMin,
-                        UINT wMsgFilterMax,
-                        UINT wRemoveMsg);
-
- protected:
-  virtual LRESULT Win32SendMessage(HWND hWnd,
-                                   UINT const message,
-                                   WPARAM const wparam,
-                                   LPARAM const lparam) = 0;
-
-  std::list<Win32Message> _pending_messages;
-};
-
 /// Mock for the |WindowWin32| base class.
 class MockWin32Window : public WindowWin32, public MockMessageQueue {
  public:

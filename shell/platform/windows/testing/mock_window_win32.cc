@@ -9,44 +9,6 @@
 namespace flutter {
 namespace testing {
 
-void MockMessageQueue::InjectMessageList(int count,
-                                         const Win32Message* messages) {
-  for (int i = 0; i < count; i += 1) {
-    _pending_messages.push_back(messages[i]);
-  }
-  while (!_pending_messages.empty()) {
-    Win32Message message = _pending_messages.front();
-    _pending_messages.pop_front();
-    LRESULT result = Win32SendMessage(message.hWnd, message.message,
-                                      message.wParam, message.lParam);
-    if (message.expected_result != kWmResultDontCheck) {
-      EXPECT_EQ(result, message.expected_result);
-    }
-  }
-}
-
-BOOL MockMessageQueue::Win32PeekMessage(LPMSG lpMsg,
-                                        HWND hWnd,
-                                        UINT wMsgFilterMin,
-                                        UINT wMsgFilterMax,
-                                        UINT wRemoveMsg) {
-  for (auto iter = _pending_messages.begin(); iter != _pending_messages.end();
-       ++iter) {
-    if (iter->message >= wMsgFilterMin && iter->message <= wMsgFilterMax) {
-      *lpMsg = MSG{
-          .message = iter->message,
-          .wParam = iter->wParam,
-          .lParam = iter->lParam,
-      };
-      if ((wRemoveMsg & PM_REMOVE) == PM_REMOVE) {
-        _pending_messages.erase(iter);
-      }
-      return TRUE;
-    }
-  }
-  return FALSE;
-}
-
 MockWin32Window::MockWin32Window() : WindowWin32(){};
 
 MockWin32Window::~MockWin32Window() = default;

@@ -11,7 +11,6 @@
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_window_win32_test.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
-#include "flutter/shell/platform/windows/testing/mock_window_win32.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 
 #include "gmock/gmock.h"
