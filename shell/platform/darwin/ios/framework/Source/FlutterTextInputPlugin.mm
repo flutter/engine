@@ -648,6 +648,7 @@ static BOOL isScribbleAvailable() {
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
+@property(nonatomic, strong) UITextInteraction* textInteraction API_AVAILABLE(ios(13.0));
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -706,29 +707,9 @@ static BOOL isScribbleAvailable() {
       _smartDashesType = UITextSmartDashesTypeYes;
     }
     _selectionRects = @[];
-
-    // This makes sure UITextSelectionView.interactionAssistant is not nil so
-    // UITextSelectionView has access to this view (and its bounds). Otherwise
-    // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
-    if (@available(iOS 13.0, *)) {
-      UITextInteraction* interaction =
-          [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
-      interaction.textInput = self;
-      [self addInteraction:interaction];
-    }
   }
 
   return self;
-}
-
-// Prevent UITextInteraction gesture detectors from showing autocomplete
-// popups on tap or double tap.
-- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer*)gestureRecognizer {
-  if ([NSStringFromClass([gestureRecognizer class])
-          isEqual:@"PKTextInputDrawingGestureRecognizer"]) {
-    return YES;
-  }
-  return NO;
 }
 
 - (void)configureWithDictionary:(NSDictionary*)configuration {
@@ -786,7 +767,9 @@ static BOOL isScribbleAvailable() {
   return _textContentType;
 }
 
-// Prevent UITextInteraction from showing selection handles or highlights.
+// Prevent UIKit from showing selection handles or highlights. This is needed
+// because Scribble interactions require the view to have it's actual frame on
+// the screen.
 - (UIColor*)insertionPointColor {
   return [UIColor clearColor];
 }
@@ -1098,12 +1081,6 @@ static BOOL isScribbleAvailable() {
       _selectedTextRange = [selectedTextRange copy];
     }
     [oldSelectedRange release];
-  }
-  // This is required to remove the UITextSelectionView that the UITextInteraction
-  // adds (seemingly multiple times) that leaves a grey box after replacing a selection,
-  // for example when hitting backspace or using Scribble to delete text.
-  for (NSUInteger i = 0; i < [self.subviews count]; i++) {
-    [self.subviews[i] removeFromSuperview];
   }
 }
 
@@ -1638,6 +1615,15 @@ static BOOL isScribbleAvailable() {
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
   NSAssert(!_isFloatingCursorActive, @"Another floating cursor is currently active.");
   _isFloatingCursorActive = true;
+  // This makes sure UITextSelectionView.interactionAssistant is not nil so
+  // UITextSelectionView has access to this view (and its bounds). Otherwise
+  // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
+  NSLog(@"beginFloatingCursorAtPoint");
+  if (@available(iOS 13.0, *)) {
+    self.textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
+    self.textInteraction.textInput = self;
+    [self addInteraction:_textInteraction];
+  }
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
@@ -1657,6 +1643,12 @@ static BOOL isScribbleAvailable() {
   NSAssert(_isFloatingCursorActive,
            @"endFloatingCursor is called without an active floating cursor.");
   _isFloatingCursorActive = false;
+  if (@available(iOS 13.0, *)) {
+    if (_textInteraction != NULL) {
+      [self removeInteraction:_textInteraction];
+      self.textInteraction = NULL;
+    }
+  }
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient
