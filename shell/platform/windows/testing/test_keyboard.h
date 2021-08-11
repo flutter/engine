@@ -10,6 +10,7 @@
 #include <string>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/testing/engine_modifier.h"
 
 #include "gtest/gtest.h"
 
@@ -38,6 +39,13 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
                             USHORT repeat_count = 1,
                             bool context_code = 0,
                             bool transition_state = 1);
+
+typedef bool MockKeyEventChannelHandler();
+typedef bool MockKeyEventEmbedderHandler(const FlutterKeyEvent* event);
+
+void MockEmbedderApiForKeyboard(EngineModifier& modifier,
+                                MockKeyEventChannelHandler channel_handler,
+                                MockKeyEventEmbedderHandler embedder_handler);
 
 }  // namespace testing
 }  // namespace flutter

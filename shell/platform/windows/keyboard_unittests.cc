@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.h"
-#include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
@@ -19,7 +17,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <rapidjson/document.h>
 #include <functional>
 #include <vector>
 
@@ -204,15 +201,6 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   TestKeystate key_state_;
 };
 
-// A struct to use as a FlutterPlatformMessageResponseHandle so it can keep the
-// callbacks and user data passed to the engine's
-// PlatformMessageCreateResponseHandle for use in the SendPlatformMessage
-// overridden function.
-struct TestResponseHandle {
-  FlutterDesktopBinaryReply callback;
-  void* user_data;
-};
-
 typedef enum {
   kKeyCallOnKey,
   kKeyCallOnText,
@@ -291,14 +279,6 @@ class KeyboardTester {
 
 bool KeyboardTester::test_response = false;
 
-std::unique_ptr<std::vector<uint8_t>> keyHandlingResponse(bool handled) {
-  rapidjson::Document document;
-  auto& allocator = document.GetAllocator();
-  document.SetObject();
-  document.AddMember("handled", KeyboardTester::test_response, allocator);
-  return flutter::JsonMessageCodec::GetInstance().EncodeMessage(document);
-}
-
 // Returns an engine instance configured with dummy project path values, and
 // overridden methods for sending platform messages, so that the engine can
 // respond as if the framework were connected.
@@ -312,32 +292,11 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
   EngineModifier modifier(engine.get());
 
-  // This mock handles channel messages.
-  modifier.embedder_api().SendPlatformMessage =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         const FlutterPlatformMessage* message) {
-        if (std::string(message->channel) == std::string("flutter/settings")) {
-          return kSuccess;
-        }
-        if (std::string(message->channel) == std::string("flutter/keyevent")) {
-          auto response = keyHandlingResponse(true);
-          const TestResponseHandle* response_handle =
-              reinterpret_cast<const TestResponseHandle*>(
-                  message->response_handle);
-          if (response_handle->callback != nullptr) {
-            response_handle->callback(response->data(), response->size(),
-                                      response_handle->user_data);
-          }
-          return kSuccess;
-        }
-        return kSuccess;
-      };
+  MockEmbedderApiForKeyboard(
+    modifier,
+    [] {return KeyboardTester::test_response;},
+    [] (const FlutterKeyEvent* event) {
 
-  // This mock handles key events sent through the embedder API,
-  // and records it in `key_calls`.
-  modifier.embedder_api().SendKeyEvent =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine, const FlutterKeyEvent* event,
-         FlutterKeyEventCallback callback, void* user_data) {
         FlutterKeyEvent clone_event = *event;
         clone_event.character = event->character == nullptr
                                     ? nullptr
@@ -346,52 +305,9 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
             .type = kKeyCallOnKey,
             .key_event = clone_event,
         });
-        if (callback != nullptr) {
-          callback(KeyboardTester::test_response, user_data);
-        }
-        return kSuccess;
-      };
-
-  // The following mocks enable channel mocking.
-  modifier.embedder_api().PlatformMessageCreateResponseHandle =
-      [](auto engine, auto data_callback, auto user_data, auto response_out) {
-        TestResponseHandle* response_handle = new TestResponseHandle();
-        response_handle->user_data = user_data;
-        response_handle->callback = data_callback;
-        *response_out = reinterpret_cast<FlutterPlatformMessageResponseHandle*>(
-            response_handle);
-        return kSuccess;
-      };
-
-  modifier.embedder_api().PlatformMessageReleaseResponseHandle =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         FlutterPlatformMessageResponseHandle* response) {
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(response);
-        delete response_handle;
-        return kSuccess;
-      };
-
-  // The following mocks allows RunWithEntrypoint to be run, which creates a
-  // non-empty FlutterEngine and enables SendKeyEvent.
-
-  modifier.embedder_api().Run =
-      [](size_t version, const FlutterRendererConfig* config,
-         const FlutterProjectArgs* args, void* user_data,
-         FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
-        *engine_out = reinterpret_cast<FLUTTER_API_SYMBOL(FlutterEngine)>(1);
-
-        return kSuccess;
-      };
-  modifier.embedder_api().UpdateLocales =
-      [](auto engine, const FlutterLocale** locales, size_t locales_count) {
-        return kSuccess;
-      };
-  modifier.embedder_api().SendWindowMetricsEvent =
-      [](auto engine, const FlutterWindowMetricsEvent* event) {
-        return kSuccess;
-      };
-  modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
+        return KeyboardTester::test_response;
+    }
+  );
 
   engine->RunWithEntrypoint(nullptr);
   return engine;
