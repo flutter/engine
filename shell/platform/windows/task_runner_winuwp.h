@@ -7,11 +7,14 @@
 
 #include <windows.h>
 
+#include <third_party/cppwinrt/generated/winrt/Windows.System.Threading.h>
 #include <third_party/cppwinrt/generated/winrt/Windows.UI.Core.h>
 
 #include <chrono>
 #include <functional>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/task_runner.h"
@@ -23,9 +26,10 @@ namespace flutter {
 class TaskRunnerWinUwp : public TaskRunner {
  public:
   TaskRunnerWinUwp(DWORD main_thread_id,
+                   CurrentTimeProc get_current_time,
                    const TaskExpiredCallback& on_task_expired);
 
-  ~TaskRunnerWinUwp();
+  virtual ~TaskRunnerWinUwp();
 
   TaskRunnerWinUwp(const TaskRunnerWinUwp&) = delete;
   TaskRunnerWinUwp& operator=(const TaskRunnerWinUwp&) = delete;
@@ -42,7 +46,10 @@ class TaskRunnerWinUwp : public TaskRunner {
 
  private:
   DWORD main_thread_id_;
+  CurrentTimeProc get_current_time_;
   TaskExpiredCallback on_task_expired_;
+  std::mutex timer_queued_mutex_;
+  std::vector<winrt::Windows::System::Threading::ThreadPoolTimer> timer_queued_;
 
   winrt::Windows::UI::Core::CoreDispatcher dispatcher_{nullptr};
 };
