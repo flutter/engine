@@ -54,5 +54,16 @@ std::string _print_character(const char* s) {
   return ::testing::AssertionSuccess();
 }
 
+LPARAM CreateKeyEventLparam(USHORT scancode,
+                                   bool extended,
+                                   bool was_down,
+                                   USHORT repeat_count,
+                                   bool context_code,
+                                   bool transition_state) {
+  return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
+          (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
+          (LPARAM(scancode) << 16) | LPARAM(repeat_count));
+}
+
 }  // namespace testing
 }  // namespace flutter

@@ -28,18 +28,6 @@ namespace flutter {
 namespace testing {
 
 namespace {
-// Creates a valid Windows LPARAM for WM_KEYDOWN and WM_CHAR from parameters
-// given.
-static LPARAM CreateKeyEventLparam(USHORT scancode,
-                                   bool extended,
-                                   bool was_down,
-                                   USHORT repeat_count = 1,
-                                   bool context_code = 0,
-                                   bool transition_state = 1) {
-  return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
-          (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
-          (LPARAM(scancode) << 16) | LPARAM(repeat_count));
-}
 
 // A key event handler that can be spied on while it forwards calls to the real
 // key event handler.

@@ -250,6 +250,7 @@ executable("flutter_windows_unittests") {
       "testing/mock_window_binding_handler.h",
       "testing/mock_window_win32.cc",
       "testing/mock_window_win32.h",
+      "testing/test_keyboard_unittests.cc",
       "testing/test_keyboard.cc",
       "testing/test_keyboard.h",
       "testing/wm_builders.cc",
