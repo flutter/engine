@@ -10,14 +10,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
+import android.util.SparseArray;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.util.FakeKeyEvent;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -139,8 +138,7 @@ public class KeyEventChannelTest {
   @Implements(InputDevice.class)
   public static class ShadowInputDevice extends org.robolectric.shadows.ShadowInputDevice {
     public static int[] sDeviceIds;
-
-    private static Map<Integer, InputDevice> sDeviceMap = new HashMap<>();
+    private static SparseArray<InputDevice> sDeviceMap = new SparseArray<>();
 
     private int mDeviceId;
 
@@ -155,7 +153,7 @@ public class KeyEventChannelTest {
     }
 
     public static void addDevice(int id, InputDevice device) {
-      sDeviceMap.put(id, device);
+      sDeviceMap.append(id, device);
     }
 
     @Resetter
