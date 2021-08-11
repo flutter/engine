@@ -88,6 +88,12 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
 static MockKeyEventChannelHandler stored_channel_handler;
 static MockKeyEventEmbedderHandler stored_embedder_handler;
 
+// Set EngineModifier, listen to event messages that go through the channel and
+// the embedder API, while disabling other methods so that the engine can be
+// run headlessly.
+//
+// The |channel_handler| and |embedder_handler| should return a boolean
+// indicating whether the framework decides to handle the event.
 void MockEmbedderApiForKeyboard(EngineModifier& modifier,
                                 MockKeyEventChannelHandler channel_handler,
                                 MockKeyEventEmbedderHandler embedder_handler) {
