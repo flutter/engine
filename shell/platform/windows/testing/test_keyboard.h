@@ -49,11 +49,19 @@ void MockEmbedderApiForKeyboard(EngineModifier& modifier,
                                 MockKeyEventChannelHandler channel_handler,
                                 MockKeyEventEmbedderHandler embedder_handler);
 
+// Simulate a message queue for WM messages.
+//
+// Subclasses must implement |Win32SendMessage| for how dispatched messages are
+// processed.
 class MockMessageQueue {
  public:
-  // Simulates a WindowProc message from the OS.
+  // Push a list of messages to the message queue, then dispatch
+  // them with |Win32SendMessage| one by one.
   void InjectMessageList(int count, const Win32Message* messages);
 
+  // Peak the next message in the message queue.
+  //
+  // See Win32's |PeekMessage| for documentation.
   BOOL Win32PeekMessage(LPMSG lpMsg,
                         HWND hWnd,
                         UINT wMsgFilterMin,

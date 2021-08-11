@@ -146,6 +146,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
  protected:
   // Called to create the keyboard hook handlers.
+  //
+  // The provided |dispatch_event| is where to inject events into the system,
+  // while |get_key_state| is where to acquire keyboard states. They will be
+  // the system APIs in production classes, but might be replaced with mock
+  // functions in unit tests.
   virtual void RegisterKeyboardHandlers(
       flutter::BinaryMessenger* messenger,
       flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,

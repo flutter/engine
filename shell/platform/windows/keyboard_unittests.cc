@@ -924,13 +924,6 @@ TEST(KeyboardTest, MultibyteCharacter) {
           kWmResultZero));
 
   const char* st = key_calls[0].key_event.character;
-  printf("CH: ");
-  while (*st != 0) {
-    printf("0x%02x ", *st);
-    st++;
-  }
-  printf(".\n");
-  fflush(stdout);
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyW,
