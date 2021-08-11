@@ -51,7 +51,7 @@ void testMain() {
       character: 'A',
       timeStamp: Duration.zero,
       synthesized: false,
-    ).toString(), '');
+    ).toString(), 'KeyData(type: down, physical: 0x700e5, logical: 0x61 (Unicode), character: "A" (0x41))');
 
     expect(const ui.KeyData(
       type: ui.KeyEventType.up,
@@ -60,7 +60,7 @@ void testMain() {
       character: '\n',
       timeStamp: Duration.zero,
       synthesized: true,
-    ).toString(), '');
+    ).toString(), 'KeyData(type: down, physical: 0x700e6, logical: 0x100000061 (Unprintable), character: "\\n" (0x41))', synthesized);
 
     expect(const ui.KeyData(
       type: ui.KeyEventType.repeat,
@@ -69,7 +69,7 @@ void testMain() {
       character: null,
       timeStamp: Duration.zero,
       synthesized: false,
-    ).toString(), '');
+    ).toString(), 'KeyData(type: down, physical: 0x700e5, logical: 0x9900000071, character: <none>)');
   });
 
   test('Single key press, repeat, and release', () {
