@@ -707,6 +707,12 @@ static BOOL isScribbleAvailable() {
       _smartDashesType = UITextSmartDashesTypeYes;
     }
     _selectionRects = @[];
+
+    if (@available(iOS 14.0, *)) {
+      UIScribbleInteraction* interaction =
+          [[[UIScribbleInteraction alloc] initWithDelegate:self] autorelease];
+      [self addInteraction:interaction];
+    }
   }
 
   return self;
@@ -2247,11 +2253,6 @@ static BOOL isScribbleAvailable() {
   UIView* parentView = self.keyWindow;
   if (_inputHider.superview != parentView) {
     [parentView addSubview:_inputHider];
-    if (@available(iOS 14.0, *)) {
-      UIScribbleInteraction* interaction =
-          [[[UIScribbleInteraction alloc] initWithDelegate:inputView] autorelease];
-      [inputView addInteraction:interaction];
-    }
   }
 }
 
