@@ -191,9 +191,9 @@ static uint16_t ResolveKeyCode(uint16_t original,
 }
 
 static bool IsPrintable(uint32_t c) {
-  constexpr char32_t min_printable = ' ';
-  constexpr char32_t del = 0x7F;
-  return c >= min_printable && c != del;
+  constexpr char32_t kMinPrintable = ' ';
+  constexpr char32_t kDelete = 0x7F;
+  return c >= kMinPrintable && c != kDelete;
 }
 
 LRESULT
@@ -430,16 +430,11 @@ WindowWin32::HandleMessage(UINT const message,
       // to properly produce key down events even though `MapVirtualKey` returns
       // a valid character. See https://github.com/flutter/flutter/issues/85587.
       unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-      bool has_wm_char;
-      {
-        MSG next_message;
-        BOOL has_msg = Win32PeekMessage(&next_message, window_handle_,
-                                        WM_KEYFIRST, WM_KEYLAST, PM_NOREMOVE);
-        has_wm_char = has_msg && (next_message.message == WM_DEADCHAR ||
-                                  next_message.message == WM_SYSDEADCHAR ||
-                                  next_message.message == WM_CHAR ||
-                                  next_message.message == WM_SYSCHAR);
-      }
+      UINT next_key_message = PeekNextMessageType(WM_KEYFIRST, WM_KEYLAST);
+      bool has_wm_char = (next_key_message == WM_DEADCHAR ||
+                          next_key_message == WM_SYSDEADCHAR ||
+                          next_key_message == WM_CHAR ||
+                          next_key_message == WM_SYSCHAR);
       if (character > 0 && is_keydown_message && has_wm_char) {
         keycode_for_char_message_ = wparam;
         return 0;
@@ -489,6 +484,16 @@ void WindowWin32::HandleResize(UINT width, UINT height) {
   current_width_ = width;
   current_height_ = height;
   OnResize(width, height);
+}
+
+UINT WindowWin32::PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax) {
+  MSG next_message;
+  BOOL has_msg = Win32PeekMessage(&next_message, window_handle_,
+                                  wMsgFilterMin, wMsgFilterMax, PM_NOREMOVE);
+  if (!has_msg) {
+    return 0;
+  }
+  return next_message.message;
 }
 
 WindowWin32* WindowWin32::GetThisFromHandle(HWND const window) noexcept {

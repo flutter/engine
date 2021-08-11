@@ -4,8 +4,6 @@
 
 #include "flutter/shell/platform/windows/testing/mock_window_win32.h"
 
-#include "gtest/gtest.h"
-
 namespace flutter {
 namespace testing {
 

@@ -6,10 +6,8 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 
 #include <windowsx.h>
-#include <list>
 
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
-#include "flutter/shell/platform/windows/testing/wm_builders.h"
 #include "flutter/shell/platform/windows/window_win32.h"
 #include "gmock/gmock.h"
 
@@ -34,8 +32,6 @@ class MockWin32Window : public WindowWin32, public MockMessageQueue {
                               WPARAM const wparam,
                               LPARAM const lparam);
 
-  LRESULT Win32DefWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
   MOCK_METHOD2(OnPointerMove, void(double, double));
@@ -52,6 +48,8 @@ class MockWin32Window : public WindowWin32, public MockMessageQueue {
   MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
 
  protected:
+  LRESULT Win32DefWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+
   LRESULT Win32SendMessage(HWND hWnd,
                            UINT const message,
                            WPARAM const wparam,

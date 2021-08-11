@@ -188,8 +188,19 @@ class WindowWin32 {
   // Stores new width and height and calls |OnResize| to notify inheritors
   void HandleResize(UINT width, UINT height);
 
+  // Returns the type of the next WM message.
+  //
+  // The parameters limits the range of interested messages. See Win32's
+  // |PeekMessage| for information.
+  //
+  // If there's no message, returns 0.
+  //
+  // The behavior can be mocked by replacing |Win32PeekMessage|.
+  UINT PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax);
+
   // Retrieves a class instance pointer for |window|
   static WindowWin32* GetThisFromHandle(HWND const window) noexcept;
+
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
