@@ -72,6 +72,9 @@ void main() {
     final Paragraph paragraph = builder.build();
     paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
 
+    // Wraps to two lines.
+    expect(paragraph.height, closeTo(fontSize * 2.0, 0.001));
+
     final TextPosition wrapPositionDown = TextPosition(
       offset: 5,
       affinity: TextAffinity.downstream,
@@ -103,5 +106,54 @@ void main() {
     line = paragraph.getLineBoundary(wrapPositionEnd);
     expect(line.start, 5);
     expect(line.end, 9);
+  });
+
+  test('getLineBoundary RTL', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontFamily: 'Ahem',
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      textDirection: TextDirection.rtl,
+    ));
+    builder.addText('القاهرةالقاهرة');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
+
+      // Wraps to three lines.
+      expect(paragraph.height, closeTo(fontSize * 3.0, 0.001));
+
+    final TextPosition wrapPositionDown = TextPosition(
+      offset: 5,
+      affinity: TextAffinity.downstream,
+    );
+    TextRange line = paragraph.getLineBoundary(wrapPositionDown);
+    expect(line.start, 5);
+    expect(line.end, 10);
+
+    final TextPosition wrapPositionUp = TextPosition(
+      offset: 5,
+      affinity: TextAffinity.upstream,
+    );
+    line = paragraph.getLineBoundary(wrapPositionUp);
+    expect(line.start, 0);
+    expect(line.end, 5);
+
+    final TextPosition wrapPositionStart = TextPosition(
+      offset: 0,
+      affinity: TextAffinity.downstream,
+    );
+    line = paragraph.getLineBoundary(wrapPositionStart);
+    expect(line.start, 0);
+    expect(line.end, 5);
+
+    final TextPosition wrapPositionEnd = TextPosition(
+      offset: 9,
+      affinity: TextAffinity.downstream,
+    );
+    line = paragraph.getLineBoundary(wrapPositionEnd);
+    expect(line.start, 5);
+    expect(line.end, 10);
   });
 }
