@@ -122,7 +122,7 @@ public final class ApplicationInfoLoader {
   private static void parseDomain(
       XmlResourceParser xrp, JSONArray output, boolean cleartextPermitted)
       throws IOException, XmlPullParserException {
-    boolean includeSubDomains = xrp.getAttributeBooleanValue(null, "includeSubdomains", true);
+    boolean includeSubDomains = xrp.getAttributeBooleanValue(null, "includeSubdomains", false);
     xrp.next();
     if (xrp.getEventType() != XmlResourceParser.TEXT) {
       throw new IllegalStateException("Expected text");
