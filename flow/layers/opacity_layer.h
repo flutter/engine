@@ -41,6 +41,11 @@ class OpacityLayer : public MergedContainerLayer {
   SkAlpha alpha_;
   SkPoint offset_;
 
+  // Do not raster cache excessively if alpha is 0 or 255. This allows the
+  // framework to skip dropping the opacity layer in order to remove the raster
+  // cache memory overhead.
+  bool ShouldRasterCache() const;
+
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };
 

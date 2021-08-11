@@ -100,6 +100,64 @@ TEST_F(OpacityLayerTest, ChildIsCached) {
   EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
 }
 
+TEST_F(OpacityLayerTest, ChildIsNotCachedWhenFullyOpaque) {
+  const SkAlpha alphaFull = 255;
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer =
+      std::make_shared<OpacityLayer>(alphaFull, SkPoint::Make(0.0f, 0.0f));
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+}
+
+TEST_F(OpacityLayerTest, ChildIsNotCachedWhenFullyTransparent) {
+  const SkAlpha alphaTransparent = 0;
+  auto initial_transform = SkMatrix::Translate(50.0, 25.5);
+  auto other_transform = SkMatrix::Scale(1.0, 2.0);
+  const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
+  auto mock_layer = std::make_shared<MockLayer>(child_path);
+  auto layer = std::make_shared<OpacityLayer>(alphaTransparent,
+                                              SkPoint::Make(0.0f, 0.0f));
+  layer->Add(mock_layer);
+
+  SkMatrix cache_ctm = initial_transform;
+  SkCanvas cache_canvas;
+  cache_canvas.setMatrix(cache_ctm);
+  SkCanvas other_canvas;
+  other_canvas.setMatrix(other_transform);
+
+  use_mock_raster_cache();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+
+  layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+}
+
 TEST_F(OpacityLayerTest, ChildrenNotCached) {
   const SkAlpha alpha_half = 255 / 2;
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);

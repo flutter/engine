@@ -55,7 +55,9 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
 #endif
-    TryToPrepareRasterCache(context, GetCacheableChild(), child_matrix);
+    if (ShouldRasterCache()) {
+      TryToPrepareRasterCache(context, GetCacheableChild(), child_matrix);
+    }
   }
 
   // Restore cull_rect
@@ -77,7 +79,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache &&
+  if (context.raster_cache && ShouldRasterCache() &&
       context.raster_cache->Draw(GetCacheableChild(),
                                  *context.leaf_nodes_canvas, &paint)) {
     return;
@@ -99,6 +101,10 @@ void OpacityLayer::Paint(PaintContext& context) const {
   Layer::AutoSaveLayer save_layer =
       Layer::AutoSaveLayer::Create(context, saveLayerBounds, &paint);
   PaintChildren(context);
+}
+
+bool OpacityLayer::ShouldRasterCache() const {
+  return alpha_ != 255 && alpha_ != 0;
 }
 
 }  // namespace flutter
