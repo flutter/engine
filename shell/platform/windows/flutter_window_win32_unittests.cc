@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/windows/testing/flutter_window_win32_test.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/mock_window_win32.h"
+#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
@@ -280,15 +281,6 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   bool is_printable_;
 };
 
-// A struct to use as a FlutterPlatformMessageResponseHandle so it can keep the
-// callbacks and user data passed to the engine's
-// PlatformMessageCreateResponseHandle for use in the SendPlatformMessage
-// overridden function.
-struct TestResponseHandle {
-  FlutterDesktopBinaryReply callback;
-  void* user_data;
-};
-
 // The static value to return as the "handled" value from the framework for key
 // events. Individual tests set this to change the framework response that the
 // test engine simulates.
@@ -306,46 +298,11 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   auto engine = std::make_unique<FlutterWindowsEngine>(project);
 
   EngineModifier modifier(engine.get());
-  // Force the non-AOT path unless overridden by the test.
-  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-
-  modifier.embedder_api().PlatformMessageCreateResponseHandle =
-      [](auto engine, auto data_callback, auto user_data, auto response_out) {
-        TestResponseHandle* response_handle = new TestResponseHandle();
-        response_handle->user_data = user_data;
-        response_handle->callback = data_callback;
-        *response_out = reinterpret_cast<FlutterPlatformMessageResponseHandle*>(
-            response_handle);
-        return kSuccess;
-      };
-
-  modifier.embedder_api().SendPlatformMessage =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         const FlutterPlatformMessage* message) {
-        rapidjson::Document document;
-        auto& allocator = document.GetAllocator();
-        document.SetObject();
-        document.AddMember("handled", test_response, allocator);
-        auto encoded =
-            flutter::JsonMessageCodec::GetInstance().EncodeMessage(document);
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(
-                message->response_handle);
-        if (response_handle->callback != nullptr) {
-          response_handle->callback(encoded->data(), encoded->size(),
-                                    response_handle->user_data);
-        }
-        return kSuccess;
-      };
-
-  modifier.embedder_api().PlatformMessageReleaseResponseHandle =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         FlutterPlatformMessageResponseHandle* response) {
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(response);
-        delete response_handle;
-        return kSuccess;
-      };
+  MockEmbedderApiForKeyboard(
+    modifier,
+    [] {return test_response;},
+    [] (const FlutterKeyEvent* event) {return false; }
+  );
 
   return engine;
 }

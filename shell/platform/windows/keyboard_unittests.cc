@@ -296,7 +296,6 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
     modifier,
     [] {return KeyboardTester::test_response;},
     [] (const FlutterKeyEvent* event) {
-
         FlutterKeyEvent clone_event = *event;
         clone_event.character = event->character == nullptr
                                     ? nullptr

@@ -7,6 +7,7 @@
 
 #include <windows.h>
 
+#include <functional>
 #include <string>
 
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -40,8 +41,8 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
                             bool context_code = 0,
                             bool transition_state = 1);
 
-typedef bool MockKeyEventChannelHandler();
-typedef bool MockKeyEventEmbedderHandler(const FlutterKeyEvent* event);
+typedef std::function<bool ()> MockKeyEventChannelHandler;
+typedef std::function<bool (const FlutterKeyEvent* event)> MockKeyEventEmbedderHandler;
 
 void MockEmbedderApiForKeyboard(EngineModifier& modifier,
                                 MockKeyEventChannelHandler channel_handler,
