@@ -10,6 +10,7 @@ enabled_branches:
   - dev
   - beta
   - stable
+  - flutter-2.5-candidate.5
 
 platform_properties:
   linux:
@@ -57,7 +58,6 @@ platform_properties:
 
 targets:
   - name: Linux Android AOT Engine
-    builder: Linux Android AOT Engine
     recipe: engine
     properties:
       add_recipes_cq: "true"
@@ -68,7 +68,6 @@ targets:
     scheduler: luci
 
   - name: Linux Android Debug Engine
-    builder: Linux Android Debug Engine
     recipe: engine
     properties:
       add_recipes_cq: "true"
@@ -81,7 +80,6 @@ targets:
     scheduler: luci
 
   - name: Linux Android Scenarios
-    builder: Linux Android Scenarios
     bringup: true # Recipe issue https://github.com/flutter/flutter/issues/86427
     recipe: engine/scenarios
     properties:
@@ -91,7 +89,6 @@ targets:
     scheduler: luci
 
   - name: Linux Benchmarks
-    builder: Linux Benchmarks
     enabled_branches:
       - master
     recipe: engine/engine_metrics
@@ -102,7 +99,6 @@ targets:
     scheduler: luci
 
   - name: Linux Fuchsia
-    builder: Linux Fuchsia
     recipe: engine
     properties:
       add_recipes_cq: "true"
@@ -112,7 +108,6 @@ targets:
     scheduler: luci
 
   - name: Linux Fuchsia FEMU
-    builder: Linux Fuchsia FEMU
     recipe: femu_test
     properties:
       add_recipes_cq: "true"
@@ -122,13 +117,11 @@ targets:
     scheduler: luci
 
   - name: Linux Framework Smoke Tests
-    builder: Linux Framework Smoke Tests
     recipe: engine/framework_smoke
     timeout: 60
     scheduler: luci
 
   - name: Linux Host Engine
-    builder: Linux Host Engine
     recipe: engine
     properties:
       add_recipes_cq: "true"
@@ -137,7 +130,6 @@ targets:
     scheduler: luci
 
   - name: Linux Unopt
-    builder: Linux Unopt
     recipe: engine_unopt
     properties:
       add_recipes_cq: "true"
@@ -145,7 +137,6 @@ targets:
     scheduler: luci
 
   - name: Linux Arm Host Engine
-    builder: Linux Arm Host Engine
     recipe: engine/engine_arm
     properties:
       add_recipes_cq: "true"
@@ -154,7 +145,6 @@ targets:
     scheduler: luci
 
   - name: Linux Web Engine
-    builder: Linux Web Engine
     recipe: web_engine
     properties:
       add_recipes_cq: "true"
@@ -170,7 +160,6 @@ targets:
       - flutter_frontend_server/**
 
   - name: Linux Web Framework tests
-    builder: Linux Web Framework tests
     recipe: engine/web_engine_framework
     properties:
       add_recipes_cq: "true"
@@ -189,7 +178,6 @@ targets:
       - flutter_frontend_server/**
 
   - name: Mac Android AOT Engine
-    builder: Mac Android AOT Engine
     recipe: engine
     properties:
       android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
@@ -198,18 +186,7 @@ targets:
     timeout: 60
     scheduler: luci
 
-  - name: Mac Android Debug Engine
-    builder: Mac Android Debug Engine
-    recipe: engine
-    properties:
-      android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
-      android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
-      build_android_debug: "true"
-    timeout: 60
-    scheduler: luci
-
   - name: Mac Host Engine
-    builder: Mac Host Engine
     recipe: engine
     properties:
       add_recipes_cq: "true"
@@ -218,7 +195,6 @@ targets:
     scheduler: luci
 
   - name: Mac Unopt
-    builder: Mac Unopt
     recipe: engine_unopt
     properties:
       add_recipes_cq: "true"
@@ -227,7 +203,6 @@ targets:
     scheduler: luci
 
   - name: Mac iOS Engine
-    builder: Mac iOS Engine
     recipe: engine
     properties:
       build_ios: "true"
@@ -237,7 +212,6 @@ targets:
     scheduler: luci
 
   - name: Mac Web Engine
-    builder: Mac Web Engine
     recipe: web_engine
     properties:
       gcs_goldens_bucket: flutter_logs
@@ -252,7 +226,6 @@ targets:
       - flutter_frontend_server/**
 
   - name: Windows Android AOT Engine
-    builder: Windows Android AOT Engine
     recipe: engine
     properties:
       build_android_aot: "true"
@@ -262,7 +235,6 @@ targets:
     scheduler: luci
 
   - name: Windows Host Engine
-    builder: Windows Host Engine
     recipe: engine
     timeout: 60
     properties:
@@ -271,7 +243,6 @@ targets:
     scheduler: luci
 
   - name: Windows Unopt
-    builder: Windows Unopt
     recipe: engine_unopt
     properties:
       add_recipes_cq: "true"
@@ -279,7 +250,6 @@ targets:
     scheduler: luci
 
   - name: Windows UWP Engine
-    builder: Windows UWP Engine
     recipe: engine
     properties:
       build_windows_uwp: "true"
@@ -287,7 +257,6 @@ targets:
     scheduler: luci
 
   - name: Windows Web Engine
-    builder: Windows Web Engine
     recipe: web_engine
     properties:
       gcs_goldens_bucket: flutter_logs
@@ -299,7 +268,6 @@ targets:
       - web_sdk/**
 
   - name: Mac iOS Engine Profile
-    builder: Mac iOS Engine Profile
     presubmit: false
     recipe: engine
     properties:
@@ -310,7 +278,6 @@ targets:
     scheduler: luci
 
   - name: Mac iOS Engine Release
-    builder: Mac iOS Engine Release
     presubmit: false
     recipe: engine
     properties:
@@ -321,7 +288,6 @@ targets:
     scheduler: luci
 
   - name: Linux ci_yaml engine roller
-    builder: Linux ci_yaml engine roller
     bringup: true
     presubmit: false
     recipe: infra/ci_yaml
