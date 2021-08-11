@@ -29,6 +29,35 @@ constexpr SHORT kStateMaskPressed = 0x80;
 const char* empty_character = "";
 }  // namespace
 
+// Get some bits of the char, from the start'th bit from the right (excluded)
+// to the end'th bit from the right (included).
+//
+// For example, _GetBit(0x1234, 8, 4) => 0x3.
+char _GetBit(char32_t ch, size_t start, size_t end) {
+  return (ch >> end) & ((1 << (start - end)) - 1);
+}
+
+std::string ConvertChar32ToUtf8(char32_t ch) {
+  std::string result;
+  assert(0 <= ch && ch <= 0x10FFFF);
+  if (ch <= 0x007F) {
+    result.push_back(ch);
+  } else if (ch <= 0x07FF) {
+    result.push_back(0b11000000 + _GetBit(ch, 11, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  } else if (ch <= 0xFFFF) {
+    result.push_back(0b11100000 + _GetBit(ch, 16, 12));
+    result.push_back(0b10000000 + _GetBit(ch, 12, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  } else {
+    result.push_back(0b11110000 + _GetBit(ch, 21, 18));
+    result.push_back(0b10000000 + _GetBit(ch, 18, 12));
+    result.push_back(0b10000000 + _GetBit(ch, 12, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  }
+  return result;
+}
+
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
     SendEvent send_event,
     GetKeyStateHandler get_key_state)
@@ -388,19 +417,8 @@ void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {
     out[0] = '\0';
     return;
   }
-  assert(!(0xD800 <= ch && ch <= 0xDFFF));
-  std::wstring text;
-  // Encode char32 into UTF-16. See https://en.wikipedia.org/wiki/UTF-16.
-  if ((0x0000 <= ch && ch <= 0xD7FF) || (0xE000 <= ch && ch <= 0xFFFF)) {
-    text.push_back(static_cast<wchar_t>(ch));
-  } else {  // 0x10000 <= ch && ch <= 0x10FFFF
-    const uint32_t offset = ch - 0x10000;
-    const uint16_t high_offset = (offset >> 10) & 0x3FF;
-    const uint16_t low_offset = offset & 0x3FF;
-    text.push_back(static_cast<wchar_t>(high_offset + 0xD800));
-    text.push_back(static_cast<wchar_t>(low_offset + 0xDC00));
-  }
-  strcpy_s(out, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
+  std::string result = ConvertChar32ToUtf8(ch);
+  strcpy_s(out, kCharacterCacheSize, result.c_str());
 }
 
 FlutterKeyEvent KeyboardKeyEmbedderHandler::CreateEmptyEvent() {
