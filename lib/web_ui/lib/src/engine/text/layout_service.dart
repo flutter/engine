@@ -5,8 +5,8 @@
 import 'dart:html' as html;
 import 'dart:math' as math;
 
-import 'package:ui/ui.dart' as ui;
 import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
 
 import 'canvas_paragraph.dart';
 import 'line_breaker.dart';
@@ -342,7 +342,7 @@ class TextLayoutService {
     // We could do a binary search here but it's not worth it because the number
     // of line is typically low, and each iteration is a cheap comparison of
     // doubles.
-    for (EngineLineMetrics line in lines) {
+    for (final EngineLineMetrics line in lines) {
       if (y <= line.height) {
         return line;
       }
@@ -518,7 +518,7 @@ class PlaceholderBox extends RangeBox {
 /// Represents a box in a [FlatTextSpan].
 class SpanBox extends RangeBox {
   SpanBox(
-    Spanometer spanometer, {
+    this.spanometer, {
     required LineBreakResult start,
     required LineBreakResult end,
     required double width,
@@ -526,8 +526,7 @@ class SpanBox extends RangeBox {
     required ui.TextDirection boxDirection,
     required this.contentDirection,
     required this.isSpaceOnly,
-  })  : this.spanometer = spanometer,
-        span = spanometer.currentSpan,
+  })  : span = spanometer.currentSpan,
         height = spanometer.height,
         baseline = spanometer.ascent,
         super(start, end, width, paragraphDirection, boxDirection);
@@ -576,7 +575,7 @@ class SpanBox extends RangeBox {
   /// Whether this box's range overlaps with the range from [startIndex] to
   /// [endIndex].
   bool overlapsWith(int startIndex, int endIndex) {
-    return startIndex < this.end.index && this.start.index < endIndex;
+    return startIndex < end.index && start.index < endIndex;
   }
 
   /// Returns the substring of the paragraph that's represented by this box.
@@ -829,7 +828,7 @@ class LineBuilder {
       spanometer,
       maxWidth: maxWidth,
       lineNumber: 0,
-      start: LineBreakResult.sameIndex(0, LineBreakType.prohibited),
+      start: const LineBreakResult.sameIndex(0, LineBreakType.prohibited),
       accumulatedHeight: 0.0,
     );
   }
@@ -907,7 +906,7 @@ class LineBuilder {
     if (_boxes.isEmpty) {
       return false;
     }
-    return (_boxes.last is PlaceholderBox);
+    return _boxes.last is PlaceholderBox;
   }
 
   ui.TextDirection get _paragraphDirection =>
@@ -985,7 +984,7 @@ class LineBuilder {
         break;
 
       case ui.PlaceholderAlignment.middle:
-        final double textMidPoint = this.height / 2;
+        final double textMidPoint = height / 2;
         final double placeholderMidPoint = placeholder.height / 2;
         final double diff = placeholderMidPoint - textMidPoint;
         ascent = this.ascent + diff;
@@ -1175,7 +1174,7 @@ class LineBuilder {
 
     // There's a possibility that the end of line has moved backwards, so we
     // need to remove some boxes in that case.
-    while (_boxes.length > 0 && _boxes.last.end.index > breakingPoint) {
+    while (_boxes.isNotEmpty && _boxes.last.end.index > breakingPoint) {
       _boxes.removeLast();
     }
     _currentBoxStartOffset = widthIncludingSpace;

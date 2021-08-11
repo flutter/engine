@@ -278,7 +278,7 @@ class SemanticsTester {
     ui.Rect effectiveRect = rect ?? ui.Rect.zero;
     if (children != null && children.isNotEmpty) {
       effectiveRect = childRect(children.first);
-      for (SemanticsNodeUpdate child in children.skip(1)) {
+      for (final SemanticsNodeUpdate child in children.skip(1)) {
         effectiveRect = effectiveRect.expandToInclude(childRect(child));
       }
     }
@@ -342,7 +342,7 @@ class SemanticsTester {
 
   /// Locates the [TextField] role manager of the semantics object with the give [id].
   TextField getTextField(int id) {
-    return getRoleManager(id, Role.textField) as TextField;
+    return getRoleManager(id, Role.textField)! as TextField;
   }
 }
 

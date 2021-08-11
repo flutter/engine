@@ -39,7 +39,7 @@ class TextCapitalizationConfig {
       : textCapitalization = TextCapitalization.none;
 
   const TextCapitalizationConfig.fromInputConfiguration(String inputConfiguration)
-      : this.textCapitalization =
+      : textCapitalization =
             inputConfiguration == 'TextCapitalization.words'
                 ? TextCapitalization.words
                 : inputConfiguration == 'TextCapitalization.characters'
@@ -62,7 +62,7 @@ class TextCapitalizationConfig {
     String autocapitalize = '';
     switch (textCapitalization) {
       case TextCapitalization.words:
-        // TODO: There is a bug for `words` level capitalization in IOS now.
+        // TODO(mdebbar): There is a bug for `words` level capitalization in IOS now.
         // For now go back to default. Remove the check after bug is resolved.
         // https://bugs.webkit.org/show_bug.cgi?id=148504
         if (browserEngine == BrowserEngine.webkit) {

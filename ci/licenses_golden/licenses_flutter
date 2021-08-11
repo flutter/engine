@@ -259,6 +259,8 @@ FILE: ../../../flutter/fml/posix_wrappers.h
 FILE: ../../../flutter/fml/raster_thread_merger.cc
 FILE: ../../../flutter/fml/raster_thread_merger.h
 FILE: ../../../flutter/fml/raster_thread_merger_unittests.cc
+FILE: ../../../flutter/fml/shared_thread_merger.cc
+FILE: ../../../flutter/fml/shared_thread_merger.h
 FILE: ../../../flutter/fml/size.h
 FILE: ../../../flutter/fml/status.h
 FILE: ../../../flutter/fml/synchronization/atomic_object.h
@@ -290,12 +292,17 @@ FILE: ../../../flutter/fml/thread_local.cc
 FILE: ../../../flutter/fml/thread_local.h
 FILE: ../../../flutter/fml/thread_local_unittests.cc
 FILE: ../../../flutter/fml/thread_unittests.cc
+FILE: ../../../flutter/fml/time/chrono_timestamp_provider.cc
+FILE: ../../../flutter/fml/time/chrono_timestamp_provider.h
+FILE: ../../../flutter/fml/time/dart_timestamp_provider.cc
+FILE: ../../../flutter/fml/time/dart_timestamp_provider.h
 FILE: ../../../flutter/fml/time/time_delta.h
 FILE: ../../../flutter/fml/time/time_delta_unittest.cc
 FILE: ../../../flutter/fml/time/time_point.cc
 FILE: ../../../flutter/fml/time/time_point.h
 FILE: ../../../flutter/fml/time/time_point_unittest.cc
 FILE: ../../../flutter/fml/time/time_unittest.cc
+FILE: ../../../flutter/fml/time/timestamp_provider.h
 FILE: ../../../flutter/fml/trace_event.cc
 FILE: ../../../flutter/fml/trace_event.h
 FILE: ../../../flutter/fml/unique_fd.cc
@@ -725,8 +732,10 @@ FILE: ../../../flutter/shell/common/shell_unittests.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.cc
 FILE: ../../../flutter/shell/common/skia_event_tracer_impl.h
 FILE: ../../../flutter/shell/common/skp_shader_warmup_unittests.cc
+FILE: ../../../flutter/shell/common/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/common/switches.cc
 FILE: ../../../flutter/shell/common/switches.h
+FILE: ../../../flutter/shell/common/switches_unittests.cc
 FILE: ../../../flutter/shell/common/thread_host.cc
 FILE: ../../../flutter/shell/common/thread_host.h
 FILE: ../../../flutter/shell/common/vsync_waiter.cc
@@ -934,6 +943,8 @@ FILE: ../../../flutter/shell/platform/android/surface/android_surface.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_surface.h
 FILE: ../../../flutter/shell/platform/android/surface/android_surface_mock.cc
 FILE: ../../../flutter/shell/platform/android/surface/android_surface_mock.h
+FILE: ../../../flutter/shell/platform/android/surface/snapshot_surface_producer.cc
+FILE: ../../../flutter/shell/platform/android/surface/snapshot_surface_producer.h
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.cc
 FILE: ../../../flutter/shell/platform/android/vsync_waiter_android.h
 FILE: ../../../flutter/shell/platform/common/accessibility_bridge.cc

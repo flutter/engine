@@ -22,9 +22,6 @@ import 'webgl_context.dart';
 ///              scale = (c2 - c1) / (t2 - t1)
 ///              bias = c1 - t1 / (t2 - t1) * (c2 - c1)
 class NormalizedGradient {
-  NormalizedGradient._(
-      this.thresholdCount, this._thresholds, this._scale, this._bias);
-
   final Float32List _thresholds;
   final Float32List _bias;
   final Float32List _scale;
@@ -59,13 +56,13 @@ class NormalizedGradient {
       bias[targetIndex++] = c.alpha / 255.0;
       thresholds[thresholdIndex++] = 0.0;
     }
-    for (ui.Color c in colors) {
+    for (final ui.Color c in colors) {
       bias[targetIndex++] = c.red / 255.0;
       bias[targetIndex++] = c.green / 255.0;
       bias[targetIndex++] = c.blue / 255.0;
       bias[targetIndex++] = c.alpha / 255.0;
     }
-    for (double stop in stops) {
+    for (final double stop in stops) {
       thresholds[thresholdIndex++] = stop;
     }
     if (addLast) {
@@ -99,6 +96,9 @@ class NormalizedGradient {
     }
     return NormalizedGradient._(normalizedCount, thresholds, scale, bias);
   }
+
+  NormalizedGradient._(
+      this.thresholdCount, this._thresholds, this._scale, this._bias);
 
   /// Sets uniforms for threshold, bias and scale for program.
   void setupUniforms(GlContext gl, GlProgram glProgram) {
@@ -141,10 +141,10 @@ void writeUnrolledBinarySearch(ShaderMethod method, int start, int end,
     required String biasName,
     required String scaleName}) {
   if (start == end) {
-    final String biasSource = '${biasName}_${start}';
-    method.addStatement('${biasName} = ${biasSource};');
-    final String scaleSource = '${scaleName}_${start}';
-    method.addStatement('${scaleName} = ${scaleSource};');
+    final String biasSource = '${biasName}_$start';
+    method.addStatement('$biasName = $biasSource;');
+    final String scaleSource = '${scaleName}_$start';
+    method.addStatement('$scaleName = $scaleSource;');
   } else {
     // Add probe check.
     final int mid = (start + end) ~/ 2;

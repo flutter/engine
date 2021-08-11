@@ -25,10 +25,10 @@ import '../window.dart';
 import 'clip.dart';
 import 'color_filter.dart';
 import 'dom_canvas.dart';
-import 'recording_canvas.dart';
-import 'render_vertices.dart';
 import 'painting.dart';
 import 'path/path.dart';
+import 'recording_canvas.dart';
+import 'render_vertices.dart';
 import 'shaders/image_shader.dart';
 
 /// A raw HTML canvas that is directly written to.
@@ -68,7 +68,7 @@ class BitmapCanvas extends EngineCanvas {
 
   /// The last CSS font string is cached to optimize the case where the font
   /// styles hasn't changed.
-  String? _cachedLastCssFont = null;
+  String? _cachedLastCssFont;
 
   /// List of extra sibling elements created for paragraphs and clipping.
   final List<html.Element> _children = <html.Element>[];
@@ -105,7 +105,7 @@ class BitmapCanvas extends EngineCanvas {
 
   // Indicates the instructions following drawImage or drawParagraph that
   // a child element was created to paint.
-  // TODO(flutter_web): When childElements are created by
+  // TODO(yjbanov): When childElements are created by
   // drawImage/drawParagraph commands, compositing order is not correctly
   // handled when we interleave these with other paint commands.
   // To solve this, recording canvas will have to check the paint queue
@@ -160,7 +160,7 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
     _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     _updateRootElementTransform();
-    _canvasPool.allocateCanvas(rootElement as html.HtmlElement);
+    _canvasPool.mount(rootElement as html.HtmlElement);
     _setupInitialTransform();
   }
 
@@ -183,7 +183,8 @@ class BitmapCanvas extends EngineCanvas {
     // initial translation so the paint operations are positioned as expected.
     //
     // The flooring of the value is to ensure that canvas' top-left corner
-    // lands on the physical pixel. TODO: !This is not accurate if there are
+    // lands on the physical pixel.
+    // TODO(yjbanov): !This is not accurate if there are
     // transforms higher up in the stack.
     rootElement.style.transform =
         'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
@@ -336,11 +337,11 @@ class BitmapCanvas extends EngineCanvas {
   }
 
   @override
-  void clipRect(ui.Rect rect, ui.ClipOp op) {
-    if (op == ui.ClipOp.difference) {
+  void clipRect(ui.Rect rect, ui.ClipOp clipOp) {
+    if (clipOp == ui.ClipOp.difference) {
       // Create 2 rectangles inside each other that represents
       // clip area difference using even-odd fill rule.
-      final SurfacePath path = new SurfacePath();
+      final SurfacePath path = SurfacePath();
       path.fillType = ui.PathFillType.evenOdd;
       path.addRect(ui.Rect.fromLTWH(0, 0, _bounds.width, _bounds.height));
       path.addRect(rect);
@@ -371,7 +372,7 @@ class BitmapCanvas extends EngineCanvas {
       _renderStrategy.isInsideSvgFilterTree ||
       (_preserveImageData == false && _contains3dTransform) ||
       (_childOverdraw &&
-          _canvasPool.canvas == null &&
+          _canvasPool.isEmpty &&
           paint.maskFilter == null &&
           paint.shader == null &&
           paint.style != ui.PaintingStyle.stroke);
@@ -385,7 +386,7 @@ class BitmapCanvas extends EngineCanvas {
       ((_childOverdraw ||
               _renderStrategy.hasImageElements ||
               _renderStrategy.hasParagraphs) &&
-          _canvasPool.canvas == null &&
+          _canvasPool.isEmpty &&
           paint.maskFilter == null &&
           paint.shader == null);
 
@@ -457,7 +458,7 @@ class BitmapCanvas extends EngineCanvas {
           element,
           ui.Offset.zero,
           transformWithOffset(_canvasPool.currentTransform, offset));
-      for (html.Element clipElement in clipElements) {
+      for (final html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -510,7 +511,7 @@ class BitmapCanvas extends EngineCanvas {
               math.min(rect.left, rect.right), math.min(rect.top, rect.bottom)),
           paint);
       element.style.borderRadius =
-          '${(rect.width / 2.0)}px / ${(rect.height / 2.0)}px';
+          '${rect.width / 2.0}px / ${rect.height / 2.0}px';
     } else {
       setUpPaint(paint, rect);
       _canvasPool.drawOval(rect, paint.style);
@@ -586,7 +587,7 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
       _applyFilter(svgElm, paint);
-      _drawElement(svgElm, ui.Offset(0, 0), paint);
+      _drawElement(svgElm, const ui.Offset(0, 0), paint);
     } else {
       setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
       if (paint.style == null && paint.strokeWidth != null) {
@@ -674,7 +675,7 @@ class BitmapCanvas extends EngineCanvas {
       imgElement.style..removeProperty('width')..removeProperty('height');
       final List<html.Element> clipElements = _clipContent(
           _canvasPool.clipStack!, imgElement, p, _canvasPool.currentTransform);
-      for (html.Element clipElement in clipElements) {
+      for (final html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -783,8 +784,8 @@ class BitmapCanvas extends EngineCanvas {
       // left,top are set to 0 (although position is absolute) because
       // Chrome will glitch if you leave them out, reproducible with
       // canvas_image_blend_test on row 6,  MacOS / Chrome 81.04.
-      ..left = "0px"
-      ..top = "0px"
+      ..left = '0px'
+      ..top = '0px'
       ..width = widthPx
       ..height = heightPx;
     if (imageElement is! html.ImageElement) {
@@ -857,7 +858,7 @@ class BitmapCanvas extends EngineCanvas {
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
-    imgElement.style.filter = 'url(#_fcf${filterIdCounter})';
+    imgElement.style.filter = 'url(#_fcf$filterIdCounter)';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
       imgElement.style.backgroundColor = colorToCssString(filterColor);
     }
@@ -874,7 +875,7 @@ class BitmapCanvas extends EngineCanvas {
     rootElement.append(filterElement);
     _children.add(filterElement);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
-    imgElement.style.filter = 'url(#_fcf${filterIdCounter})';
+    imgElement.style.filter = 'url(#_fcf$filterIdCounter)';
     return imgElement;
   }
 
@@ -958,7 +959,7 @@ class BitmapCanvas extends EngineCanvas {
           paragraphElement as html.HtmlElement,
           offset,
           _canvasPool.currentTransform);
-      for (html.Element clipElement in clipElements) {
+      for (final html.Element clipElement in clipElements) {
         rootElement.append(clipElement);
         _children.add(clipElement);
       }
@@ -972,8 +973,8 @@ class BitmapCanvas extends EngineCanvas {
     _children.add(paragraphElement);
     // If there is a prior sibling such as img prevent left/top shift.
     paragraphElement.style
-      ..left = "0px"
-      ..top = "0px";
+      ..left = '0px'
+      ..top = '0px';
     _closeCurrentCanvas();
   }
 
@@ -992,7 +993,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawVertices(SurfaceVertices vertices, ui.BlendMode blendMode,
       SurfacePaintData paint) {
-    // TODO(flutter_web): Implement shaders for [Paint.shader] and
+    // TODO(ferhat): Implement shaders for [Paint.shader] and
     // blendMode. https://github.com/flutter/flutter/issues/40096
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
@@ -1009,7 +1010,7 @@ class BitmapCanvas extends EngineCanvas {
           : convertVertexPositions(mode, vertices.positions);
       // Draw hairline for vertices if no vertex colors are specified.
       save();
-      final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+      final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
       _canvasPool.contextHandle
         ..fillStyle = null
         ..strokeStyle = colorToCssString(color);
@@ -1057,7 +1058,7 @@ class BitmapCanvas extends EngineCanvas {
     _elementCache?.commitFrame();
     // Wrap all elements in translate3d (workaround for webkit paint order bug).
     if (_contains3dTransform && browserEngine == BrowserEngine.webkit) {
-      for (html.Element element in rootElement.children) {
+      for (final html.Element element in rootElement.children) {
         final html.DivElement paintOrderElement = html.DivElement()
           ..style.transform = 'translate3d(0,0,0)';
         paintOrderElement.append(element);
@@ -1065,10 +1066,11 @@ class BitmapCanvas extends EngineCanvas {
         _children.add(paintOrderElement);
       }
     }
-    if (rootElement.firstChild is html.HtmlElement &&
-        (rootElement.firstChild as html.HtmlElement).tagName.toLowerCase() ==
+    final html.Node? firstChild = rootElement.firstChild;
+    if (firstChild != null && firstChild is html.HtmlElement &&
+        firstChild.tagName.toLowerCase() ==
             'canvas') {
-      (rootElement.firstChild as html.HtmlElement).style.zIndex = '-1';
+      firstChild.style.zIndex = '-1';
     }
   }
 
@@ -1131,7 +1133,7 @@ String? stringForBlendMode(ui.BlendMode? blendMode) {
       return 'xor';
     case ui.BlendMode.multiply:
     // Falling back to multiply, ignoring alpha channel.
-    // TODO(flutter_web): only used for debug, find better fallback for web.
+    // TODO(ferhat): only used for debug, find better fallback for web.
     case ui.BlendMode.modulate:
       return 'multiply';
     case ui.BlendMode.screen:
@@ -1253,7 +1255,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
       // Clipping optimization when we know that the path is an oval.
       // We use a div with border-radius set to 50% with a size that is
       // set to path bounds and set overflow to hidden.
-      final SurfacePath surfacePath = entry.path as SurfacePath;
+      final SurfacePath surfacePath = entry.path! as SurfacePath;
       if (surfacePath.pathRef.isOval != -1) {
         final ui.Rect ovalBounds = surfacePath.getBounds();
         final double clipOffsetX = ovalBounds.left;
@@ -1280,7 +1282,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
     }
     // Reverse the transform of the clipping element so children can use
     // effective transform to render.
-    // TODO(flutter_web): When we have more than a single clip element,
+    // TODO(ferhat): When we have more than a single clip element,
     // reduce number of div nodes by merging (multiplying transforms).
     final html.Element reverseTransformDiv = html.DivElement();
     reverseTransformDiv.style.position = 'absolute';

@@ -14,8 +14,8 @@ import '../util.dart';
 import '../vector_math.dart';
 import 'painting.dart';
 import 'shaders/image_shader.dart';
-import 'shaders/shader_builder.dart';
 import 'shaders/normalized_gradient.dart';
+import 'shaders/shader_builder.dart';
 import 'shaders/vertex_shaders.dart';
 import 'shaders/webgl_context.dart';
 
@@ -34,8 +34,11 @@ class SurfaceVertices implements ui.Vertices {
     List<int>? indices,
   })  : assert(mode != null), // ignore: unnecessary_null_comparison
         assert(positions != null), // ignore: unnecessary_null_comparison
+        // ignore: unnecessary_this
         this.colors = colors != null ? _int32ListFromColors(colors) : null,
+        // ignore: unnecessary_this
         this.indices = indices != null ? Uint16List.fromList(indices) : null,
+        // ignore: unnecessary_this
         this.positions = offsetListToFloat32List(positions) {
     initWebGl();
   }
@@ -145,7 +148,7 @@ class _WebGlRenderer implements GlRenderer {
     final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
 
     final EngineImageShader? imageShader =
-        paint.shader == null ? null : paint.shader as EngineImageShader;
+        paint.shader == null ? null : paint.shader! as EngineImageShader;
 
     final String vertexShader = imageShader == null
         ? VertexShaders.writeBaseVertexShader()
@@ -220,7 +223,7 @@ class _WebGlRenderer implements GlRenderer {
 
       // Buffer kBGRA_8888.
       if (vertices.colors == null) {
-        final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+        final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
         final Uint32List vertexColors = Uint32List(vertexCount);
         for (int i = 0; i < vertexCount; i++) {
           vertexColors[i] = color.value;
@@ -302,6 +305,7 @@ class _WebGlRenderer implements GlRenderer {
   ///
   /// Browsers that support OffscreenCanvas and the transferToImageBitmap api
   /// will return ImageBitmap, otherwise will return CanvasElement.
+  @override
   Object? drawRect(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     drawRectToGl(
@@ -314,6 +318,7 @@ class _WebGlRenderer implements GlRenderer {
 
   /// Renders a rectangle using given program into an image resource and returns
   /// url.
+  @override
   String drawRectToImageUrl(
       ui.Rect targetRect,
       GlContext gl,

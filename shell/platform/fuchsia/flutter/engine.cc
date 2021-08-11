@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#define FML_USED_ON_EMBEDDER
-
 #include "engine.h"
 
 #include <lib/async/cpp/task.h>
@@ -43,6 +41,13 @@ std::unique_ptr<flutter::PlatformMessage> MakeLocalizationPlatformMessage(
 
 }  // namespace
 
+flutter::ThreadHost Engine::CreateThreadHost(const std::string& name_prefix) {
+  fml::Thread::SetCurrentThreadName(name_prefix + ".platform");
+  return flutter::ThreadHost(name_prefix, flutter::ThreadHost::Type::RASTER |
+                                              flutter::ThreadHost::Type::UI |
+                                              flutter::ThreadHost::Type::IO);
+}
+
 Engine::Engine(Delegate& delegate,
                std::string thread_label,
                std::shared_ptr<sys::ServiceDirectory> svc,
@@ -55,10 +60,7 @@ Engine::Engine(Delegate& delegate,
                FlutterRunnerProductConfiguration product_config)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
-      thread_host_(thread_label_ + ".",
-                   flutter::ThreadHost::Type::RASTER |
-                       flutter::ThreadHost::Type::UI |
-                       flutter::ThreadHost::Type::IO),
+      thread_host_(CreateThreadHost(thread_label_)),
       intercept_all_input_(product_config.get_intercept_all_input()),
       weak_factory_(this) {
   // Get the task runners from the managed threads. The current thread will be
@@ -607,6 +609,10 @@ void Engine::WarmupSkps(
       surface_producer.ProduceOffscreenSurface(size).release();
   if (!skp_warmup_surface) {
     FML_LOG(ERROR) << "Failed to create offscreen warmup surface";
+    // Tell client that zero shaders were warmed up because warmup failed.
+    if (completion_callback.has_value() && completion_callback.value()) {
+      completion_callback.value()(0);
+    }
     return;
   }
 
@@ -680,7 +686,7 @@ void Engine::WarmupSkps(
           // we want to unblock the dart animation code as soon as the raster
           // thread is free to enque work, rather than waiting for the GPU work
           // itself to finish.
-          if (completion_callback) {
+          if (completion_callback.has_value() && completion_callback.value()) {
             completion_callback.value()(count);
           }
         }

@@ -5,11 +5,11 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 import 'common.dart';
 
@@ -26,7 +26,7 @@ void testMain() {
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/skia',
-        codec.encodeMethodCall(MethodCall(
+        codec.encodeMethodCall(const MethodCall(
           'Skia.setResourceCacheMaxBytes',
           512 * 1000 * 1000,
         )),
@@ -40,6 +40,6 @@ void testMain() {
         <bool>[true],
       );
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

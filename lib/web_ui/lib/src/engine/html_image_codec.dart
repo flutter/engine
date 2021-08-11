@@ -4,19 +4,22 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:typed_data';
 import 'dart:js_util' as js_util;
+import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
 import 'util.dart';
 
-final bool _supportsDecode = js_util.getProperty(
-        js_util.getProperty(
-            js_util.getProperty(html.window, 'Image'), 'prototype'),
-        'decode') !=
-    null;
+Object? get _jsImageDecodeFunction => js_util.getProperty(
+  js_util.getProperty(
+    js_util.getProperty(html.window, 'Image') as Object,
+    'prototype',
+  ) as Object,
+  'decode',
+);
+final bool _supportsDecode = _jsImageDecodeFunction != null;
 
 typedef WebOnlyImageCodecChunkCallback = void Function(
     int cumulativeBytesLoaded, int expectedTotalBytes);

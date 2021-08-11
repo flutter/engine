@@ -549,7 +549,6 @@ class RecordingCanvas {
   void drawPicture(ui.Picture picture) {
     assert(!_recordingEnded);
     final EnginePicture enginePicture = picture as EnginePicture;
-    // TODO apply renderStrategy of picture recording to this recording.
     if (enginePicture.recordingCanvas == null) {
       // No contents / nothing to draw.
       return;
@@ -1091,9 +1090,7 @@ class PaintDrawDRRect extends DrawCommand {
 
   @override
   void apply(EngineCanvas canvas) {
-    if (paint.style == null) {
-      paint.style = ui.PaintingStyle.fill;
-    }
+    paint.style ??= ui.PaintingStyle.fill;
     canvas.drawPath(path!, paint);
   }
 
@@ -1707,7 +1704,7 @@ class _PaintBounds {
       _currentClipRight = 0.0,
       _currentClipBottom = 0.0;
 
-  _PaintBounds(ui.Rect maxPaintBounds) : maxPaintBounds = maxPaintBounds;
+  _PaintBounds(this.maxPaintBounds);
 
   void translate(double dx, double dy) {
     if (dx != 0.0 || dy != 0.0) {
@@ -1835,19 +1832,19 @@ class _PaintBounds {
     }
 
     if (_clipRectInitialized) {
-      if (transformedPointLeft > _currentClipRight) {
+      if (transformedPointLeft >= _currentClipRight) {
         command.isClippedOut = true;
         return;
       }
-      if (transformedPointRight < _currentClipLeft) {
+      if (transformedPointRight <= _currentClipLeft) {
         command.isClippedOut = true;
         return;
       }
-      if (transformedPointTop > _currentClipBottom) {
+      if (transformedPointTop >= _currentClipBottom) {
         command.isClippedOut = true;
         return;
       }
-      if (transformedPointBottom < _currentClipTop) {
+      if (transformedPointBottom <= _currentClipTop) {
         command.isClippedOut = true;
         return;
       }

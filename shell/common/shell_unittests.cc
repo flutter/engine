@@ -816,7 +816,7 @@ TEST_F(ShellTest,
        OnPlatformViewDestroyAfterMergingThreads
 #endif
 ) {
-  const size_t ThreadMergingLease = 10;
+  const int ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
@@ -896,7 +896,7 @@ TEST_F(ShellTest,
        OnPlatformViewDestroyWhenThreadsAreMerging
 #endif
 ) {
-  const size_t kThreadMergingLease = 10;
+  const int kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -1363,7 +1363,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22});
   fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
@@ -1484,7 +1484,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1504,7 +1504,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1522,7 +1522,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1550,7 +1550,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -2234,7 +2234,7 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
             {1.0, static_cast<double>(expected_size.width()),
-             static_cast<double>(expected_size.height())});
+             static_cast<double>(expected_size.height()), 22});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2307,13 +2307,13 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200});
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200, 22});
     task_runner->PostTask([&]() {
-      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200});
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200, 22});
       task_runner->PostTask([&]() {
-        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0});
+        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0, 22});
         task_runner->PostTask([&]() {
-          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0});
+          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0, 22});
         });
       });
     });
@@ -2325,7 +2325,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   latch.Reset();
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300});
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300, 22});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);
@@ -2860,6 +2860,39 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UserTagSetOnStartup) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  // Make sure the shell launch does not kick off the creation of the VM
+  // instance by already creating one upfront.
+  auto vm_settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(vm_settings);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  auto settings = vm_settings;
+  fml::AutoResetWaitableEvent isolate_create_latch;
+
+  // ensure that "AppStartUpTag" is set during isolate creation.
+  settings.root_isolate_create_callback = [&](const DartIsolate& isolate) {
+    Dart_Handle current_tag = Dart_GetCurrentUserTag();
+    Dart_Handle startup_tag = Dart_NewUserTag("AppStartUp");
+    EXPECT_TRUE(Dart_IdentityEquals(current_tag, startup_tag));
+
+    isolate_create_latch.Signal();
+  };
+
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+
+  RunEngine(shell.get(), std::move(configuration));
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  DestroyShell(std::move(shell));
+  isolate_create_latch.Wait();
 }
 
 }  // namespace testing

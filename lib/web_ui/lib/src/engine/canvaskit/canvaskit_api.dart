@@ -6,6 +6,9 @@
 ///
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
+// ignore_for_file: non_constant_identifier_names
+
+// ignore_for_file: public_member_api_docs
 @JS()
 library canvaskit_api;
 
@@ -870,7 +873,10 @@ class SkShader {
 
 @JS()
 class SkMaskFilterNamespace {
-  external SkMaskFilter MakeBlur(
+  // Creates a blur MaskFilter.
+  //
+  // Returns `null` if [sigma] is 0 or infinite.
+  external SkMaskFilter? MakeBlur(
       SkBlurStyle blurStyle, double sigma, bool respectCTM);
 }
 

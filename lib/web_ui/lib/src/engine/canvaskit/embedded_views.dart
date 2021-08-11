@@ -27,7 +27,7 @@ class HtmlViewEmbedder {
   HtmlViewEmbedder._();
 
   /// The maximum number of overlay surfaces that can be live at once.
-  static const int maximumOverlaySurfaces = const int.fromEnvironment(
+  static const int maximumOverlaySurfaces = int.fromEnvironment(
     'FLUTTER_WEB_MAXIMUM_OVERLAYS',
     defaultValue: 8,
   );
@@ -81,7 +81,7 @@ class HtmlViewEmbedder {
   /// The size of the frame, in physical pixels.
   ui.Size _frameSize = ui.window.physicalSize;
 
-  void set frameSize(ui.Size size) {
+  set frameSize(ui.Size size) {
     _frameSize = size;
   }
 
@@ -101,14 +101,14 @@ class HtmlViewEmbedder {
         // Only initialize the picture recorder for the backup surface once.
         final CkPictureRecorder pictureRecorder = CkPictureRecorder();
         pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-        pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+        pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
         _backupPictureRecorder = pictureRecorder;
       }
       _pictureRecorders[viewId] = _backupPictureRecorder!;
     } else {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
       _pictureRecorders[viewId] = pictureRecorder;
     }
     _compositionOrder.add(viewId);
@@ -218,12 +218,12 @@ class HtmlViewEmbedder {
           _svgPathDefs!.querySelector('#sk_path_defs')!;
       final List<html.Element> nodesToRemove = <html.Element>[];
       final Set<String> oldDefs = _svgClipDefs[viewId]!;
-      for (html.Element child in clipDefs.children) {
+      for (final html.Element child in clipDefs.children) {
         if (oldDefs.contains(child.id)) {
           nodesToRemove.add(child);
         }
       }
-      for (html.Element node in nodesToRemove) {
+      for (final html.Element node in nodesToRemove) {
         node.remove();
       }
       _svgClipDefs[viewId]!.clear();
@@ -278,7 +278,7 @@ class HtmlViewEmbedder {
             _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
             clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
-            final CkPath path = mutator.path as CkPath;
+            final CkPath path = mutator.path! as CkPath;
             _ensureSvgPathDefs();
             final html.Element pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
@@ -373,12 +373,12 @@ class HtmlViewEmbedder {
         frame.submit();
       }
     }
-    _pictureRecorders.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
 
+    SurfaceFactory.instance.removeSurfacesFromDom();
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
@@ -403,10 +403,14 @@ class HtmlViewEmbedder {
       skiaSceneHost!.append(overlay);
       _activeCompositionOrder.add(viewId);
     }
+    if (_didPaintBackupSurface) {
+      skiaSceneHost!.append(SurfaceFactory.instance.backupSurface.htmlElement);
+    }
 
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
+    _releaseOverlays();
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -424,12 +428,18 @@ class HtmlViewEmbedder {
       final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
       clipChain?.root.remove();
       // More cleanup
-      _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
       _viewsToRecomposite.remove(viewId);
       _cleanUpClipDefs(viewId);
       _svgClipDefs.remove(viewId);
     }
+  }
+
+  void _releaseOverlays() {
+    _pictureRecorders.clear();
+    _overlays.clear();
+    _viewsUsingBackupSurface.clear();
+    SurfaceFactory.instance.releaseSurfaces();
   }
 
   void _releaseOverlay(int viewId) {
@@ -477,10 +487,12 @@ class HtmlViewEmbedder {
 
   /// Deletes SVG clip paths, useful for tests.
   void debugCleanupSvgClipPaths() {
-    _svgPathDefs?.children.single.children.forEach((html.Element element) {
-      element.remove();
-    });
+    _svgPathDefs?.children.single.children.forEach(removeElement);
     _svgClipDefs.clear();
+  }
+
+  static void removeElement(html.Element element) {
+    element.remove();
   }
 
   /// Clears the state of this view embedder. Used in tests.
@@ -514,8 +526,8 @@ class ViewClipChain {
   int _clipCount = -1;
 
   ViewClipChain({required html.Element view})
-      : this._root = view,
-        this._slot = view;
+      : _root = view,
+        _slot = view;
 
   html.Element get root => _root;
   html.Element get slot => _slot;
@@ -536,6 +548,7 @@ class EmbeddedViewParams {
   final ui.Size size;
   final MutatorsStack mutators;
 
+  @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
@@ -546,6 +559,7 @@ class EmbeddedViewParams {
         other.mutators == mutators;
   }
 
+  @override
   int get hashCode => ui.hashValues(offset, size, mutators);
 }
 
@@ -593,6 +607,7 @@ class Mutator {
 
   double get alphaFloat => alpha! / 255.0;
 
+  @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
@@ -622,6 +637,7 @@ class Mutator {
     }
   }
 
+  @override
   int get hashCode => ui.hashValues(type, rect, rrect, path, matrix, alpha);
 }
 
@@ -658,6 +674,7 @@ class MutatorsStack extends Iterable<Mutator> {
     _mutators.removeLast();
   }
 
+  @override
   bool operator ==(Object other) {
     if (identical(other, this)) {
       return true;
@@ -666,6 +683,7 @@ class MutatorsStack extends Iterable<Mutator> {
         listEquals<Mutator>(other._mutators, _mutators);
   }
 
+  @override
   int get hashCode => ui.hashList(_mutators);
 
   @override

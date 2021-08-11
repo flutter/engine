@@ -188,8 +188,8 @@ void testMain() {
       expect(picture.buildCount, 1);
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 2);
-    }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-        skip: (browserEngine == BrowserEngine.firefox));
+    }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
+        skip: browserEngine == BrowserEngine.firefox);
   });
 
   group('Compositing order', () {
@@ -268,7 +268,7 @@ void testMain() {
     final html.Element content = builder.build().webOnlyRootElement!;
     html.document.body!.append(content);
     List<html.ImageElement> list = content.querySelectorAll('img');
-    for (html.ImageElement image in list) {
+    for (final html.ImageElement image in list) {
       image.alt = 'marked';
     }
 
@@ -284,7 +284,7 @@ void testMain() {
 
     final html.Element contentAfterReuse = builder2.build().webOnlyRootElement!;
     list = contentAfterReuse.querySelectorAll('img');
-    for (html.ImageElement image in list) {
+    for (final html.ImageElement image in list) {
       expect(image.alt, 'marked');
     }
     expect(list.length, 1);
@@ -333,7 +333,7 @@ void testMain() {
     builder.pushOffset(0, 0);
     builder.pushClipRect(const ui.Rect.fromLTRB(0, 0, 1000, 1000)) as PersistedContainerSurface;
     builder.pushTransform((Matrix4.identity()..scale(0.5, 0.5)).toFloat64());
-    builder.addPicture(ui.Offset(1000, 1000), picture);
+    builder.addPicture(const ui.Offset(1000, 1000), picture);
     builder.pop();
     builder.pop();
     builder.pop();
@@ -469,11 +469,11 @@ void testMain() {
       final EnginePictureRecorder recorder = EnginePictureRecorder();
       final RecordingCanvas canvas = recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 400, 400));
       final DomParagraph paragraph = (DomParagraphBuilder(EngineParagraphStyle())..addText(char)).build() as DomParagraph;
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
       canvas.drawParagraph(paragraph, ui.Offset.zero);
       final ui.EngineLayer newLayer = useOffset
-          ? builder.pushOffset(0, 0, oldLayer: oldLayer as ui.OffsetEngineLayer)
-          : builder.pushOpacity(100, oldLayer: oldLayer as ui.OpacityEngineLayer);
+          ? builder.pushOffset(0, 0, oldLayer: oldLayer == null ? null : oldLayer as ui.OffsetEngineLayer)
+          : builder.pushOpacity(100, oldLayer: oldLayer == null ? null : oldLayer as ui.OpacityEngineLayer);
       builder.addPicture(ui.Offset.zero, recorder.endRecording());
       builder.pop();
       return newLayer;
@@ -497,7 +497,7 @@ void testMain() {
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
       final html.MutationObserver observer = html.MutationObserver((List<dynamic> mutations, _) {
-        for (html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
+        for (final html.MutationRecord record in mutations.cast<html.MutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);
         }
@@ -588,7 +588,7 @@ void testMain() {
     builder.pop();
 
     final html.Element content = builder.build().webOnlyRootElement!;
-    final html.CanvasElement canvas = content.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas = content.querySelector('canvas')! as html.CanvasElement;
     final int unscaledWidth = canvas.width!;
     final int unscaledHeight = canvas.height!;
 
@@ -605,7 +605,7 @@ void testMain() {
     builder2.pop();
 
     final html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
-    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas')! as html.CanvasElement;
     // Although we are drawing same picture, due to scaling the new canvas
     // should have fewer pixels.
     expect(canvas2.width! < unscaledWidth, isTrue);
@@ -620,7 +620,7 @@ void testMain() {
     builder.pop();
 
     final html.Element content = builder.build().webOnlyRootElement!;
-    final html.CanvasElement canvas = content.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas = content.querySelector('canvas')! as html.CanvasElement;
     final int unscaledWidth = canvas.width!;
     final int unscaledHeight = canvas.height!;
 
@@ -637,7 +637,7 @@ void testMain() {
     builder2.pop();
 
     final html.Element contentAfterScale = builder2.build().webOnlyRootElement!;
-    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas') as html.CanvasElement;
+    final html.CanvasElement canvas2 = contentAfterScale.querySelector('canvas')! as html.CanvasElement;
     // Although we are drawing same picture, due to scaling the new canvas
     // should have more pixels.
     expect(canvas2.width! > unscaledWidth, isTrue);
@@ -760,7 +760,7 @@ class MockPersistedPicture extends PersistedPicture {
     final EnginePictureRecorder recorder = EnginePictureRecorder();
     // Use the largest cull rect so that layer clips are effective. The tests
     // rely on this.
-    recorder.beginRecording(ui.Rect.largest)..drawPaint(SurfacePaint());
+    recorder.beginRecording(ui.Rect.largest).drawPaint(SurfacePaint());
     return MockPersistedPicture._(recorder.endRecording());
   }
 
@@ -821,31 +821,31 @@ ui.Picture _drawPicture() {
   final RecordingCanvas canvas =
   recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 400, 400));
   final ui.Shader gradient = ui.Gradient.radial(
-    ui.Offset(100, 100), 50,
-    <ui.Color>[
-      const ui.Color.fromARGB(255, 0, 0, 0),
-      const ui.Color.fromARGB(255, 0, 0, 255),
+    const ui.Offset(100, 100), 50,
+    const <ui.Color>[
+      ui.Color.fromARGB(255, 0, 0, 0),
+      ui.Color.fromARGB(255, 0, 0, 255),
     ],
   );
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 10), 10,
+      const ui.Offset(offsetX + 10, offsetY + 10), 10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..shader = gradient);
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 10),
+      const ui.Offset(offsetX + 60, offsetY + 10),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(255, 0, 0, 1));
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 60),
+      const ui.Offset(offsetX + 10, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(0, 255, 0, 1));
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 60),
+      const ui.Offset(offsetX + 60, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
@@ -866,37 +866,37 @@ EnginePicture _drawPathImagePath() {
   final RecordingCanvas canvas =
   recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 400, 400));
   final ui.Shader gradient = ui.Gradient.radial(
-    ui.Offset(100, 100), 50,
-    <ui.Color>[
-      const ui.Color.fromARGB(255, 0, 0, 0),
-      const ui.Color.fromARGB(255, 0, 0, 255),
+    const ui.Offset(100, 100), 50,
+    const <ui.Color>[
+      ui.Color.fromARGB(255, 0, 0, 0),
+      ui.Color.fromARGB(255, 0, 0, 255),
     ],
   );
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 10), 10,
+      const ui.Offset(offsetX + 10, offsetY + 10), 10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..shader = gradient);
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 10),
+      const ui.Offset(offsetX + 60, offsetY + 10),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(255, 0, 0, 1));
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 60),
+      const ui.Offset(offsetX + 10, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..color = const ui.Color.fromRGBO(0, 255, 0, 1));
-  canvas.drawImage(createTestImage(), ui.Offset(0, 0), SurfacePaint());
+  canvas.drawImage(createTestImage(), const ui.Offset(0, 0), SurfacePaint());
   canvas.drawCircle(
-      ui.Offset(offsetX + 10, offsetY + 10), 10,
+      const ui.Offset(offsetX + 10, offsetY + 10), 10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
         ..shader = gradient);
   canvas.drawCircle(
-      ui.Offset(offsetX + 60, offsetY + 60),
+      const ui.Offset(offsetX + 60, offsetY + 60),
       10,
       SurfacePaint()
         ..style = ui.PaintingStyle.fill
@@ -906,7 +906,7 @@ EnginePicture _drawPathImagePath() {
 
 HtmlImage createTestImage({int width = 100, int height = 50}) {
   final html.CanvasElement canvas =
-  new html.CanvasElement(width: width, height: height);
+      html.CanvasElement(width: width, height: height);
   final html.CanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
@@ -918,6 +918,6 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
   final html.ImageElement imageElement = html.ImageElement();
-  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src = js_util.callMethod(canvas, 'toDataURL', <dynamic>[]) as String;
   return HtmlImage(imageElement, width, height);
 }

@@ -29,6 +29,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   /// introduced by the [rootElement] translation.
   html.Element? _childContainer;
 
+  /// Color filter to apply to this surface.
   final ui.ColorFilter filter;
   html.Element? _filterElement;
   bool containerVisible = true;
@@ -141,7 +142,7 @@ class PersistedColorFilter extends PersistedContainerSurface
           html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
       //rootElement!.insertBefore(_filterElement!, childContainer!);
       domRenderer.addResource(_filterElement!);
-      style.filter = 'url(#_fcf${filterIdCounter})';
+      style.filter = 'url(#_fcf$filterIdCounter)';
       if (colorFilterBlendMode == ui.BlendMode.saturation ||
           colorFilterBlendMode == ui.BlendMode.multiply ||
           colorFilterBlendMode == ui.BlendMode.modulate) {
@@ -156,7 +157,7 @@ class PersistedColorFilter extends PersistedContainerSurface
       _filterElement =
           html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
       domRenderer.addResource(_filterElement!);
-      childContainer!.style.filter = 'url(#_fcf${filterIdCounter})';
+      childContainer!.style.filter = 'url(#_fcf$filterIdCounter)';
     }
   }
 
@@ -220,11 +221,8 @@ String? svgFilterFromBlendMode(
     case ui.BlendMode.luminosity:
     case ui.BlendMode.multiply:
     case ui.BlendMode.screen:
-    case ui.BlendMode.overlay:
     case ui.BlendMode.darken:
     case ui.BlendMode.lighten:
-    case ui.BlendMode.colorDodge:
-    case ui.BlendMode.colorBurn:
     case ui.BlendMode.hardLight:
     case ui.BlendMode.softLight:
     case ui.BlendMode.difference:

@@ -6,11 +6,14 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath 'com.android.tools.build:gradle:4.2.0'
         classpath 'com.facebook.testing.screenshot:plugin:0.12.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
+    }
+    configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
     }
 }
 
@@ -27,9 +30,11 @@ rootProject.buildDir = project.hasProperty('out_dir')
 
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
     project.evaluationDependsOn(':app')
+
+    dependencyLocking {
+        lockAllConfigurations()
+    }
 }
 
 task clean(type: Delete) {

@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:meta/meta.dart' show isTest;
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:meta/meta.dart' show isTest;
 
 const int kLocationLeft = 1;
 const int kLocationRight = 2;
@@ -25,14 +25,14 @@ final int kPhysicalTab = kWebToPhysicalKey['Tab']!;
 final int kPhysicalCapsLock = kWebToPhysicalKey['CapsLock']!;
 final int kPhysicalScrollLock = kWebToPhysicalKey['ScrollLock']!;
 
-final int kLogicalKeyA = 0x00000000061;
-final int kLogicalKeyU = 0x00000000075;
-final int kLogicalDigit1 = 0x00000000031;
+const int kLogicalKeyA = 0x00000000061;
+const int kLogicalKeyU = 0x00000000075;
+const int kLogicalDigit1 = 0x00000000031;
 final int kLogicalNumpad1 = kWebLogicalLocationMap['1']![kLocationNumpad]!;
 final int kLogicalShiftLeft = kWebLogicalLocationMap['Shift']![kLocationLeft]!;
 final int kLogicalShiftRight = kWebLogicalLocationMap['Shift']![kLocationRight]!;
 final int kLogicalMetaLeft = kWebLogicalLocationMap['Meta']![kLocationLeft]!;
-final int kLogicalTab = 0x0000000009;
+const int kLogicalTab = 0x0000000009;
 final int kLogicalCapsLock = kWebToLogicalKey['CapsLock']!;
 final int kLogicalScrollLock = kWebToLogicalKey['ScrollLock']!;
 
@@ -51,14 +51,14 @@ void testMain() {
       return key.type == ui.KeyEventType.down;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     converter.handleEvent(keyDownEvent('KeyA', 'a')
       ..timeStamp = 1
       ..onPreventDefault = onPreventDefault
     );
     expectKeyData(keyDataList.last,
-      timeStamp: Duration(milliseconds: 1),
+      timeStamp: const Duration(milliseconds: 1),
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
@@ -72,7 +72,7 @@ void testMain() {
       ..onPreventDefault = onPreventDefault
     );
     expectKeyData(keyDataList.last,
-      timeStamp: Duration(milliseconds: 1, microseconds: 500),
+      timeStamp: const Duration(milliseconds: 1, microseconds: 500),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
@@ -85,7 +85,7 @@ void testMain() {
       ..onPreventDefault = onPreventDefault
     );
     expectKeyData(keyDataList.last,
-      timeStamp: Duration(seconds: 1, milliseconds: 500),
+      timeStamp: const Duration(seconds: 1, milliseconds: 500),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
@@ -98,7 +98,7 @@ void testMain() {
       ..onPreventDefault = onPreventDefault
     );
     expectKeyData(keyDataList.last,
-      timeStamp: Duration(seconds: 2, microseconds: 500),
+      timeStamp: const Duration(seconds: 2, microseconds: 500),
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
@@ -115,7 +115,7 @@ void testMain() {
       return key.type == ui.KeyEventType.down;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
@@ -356,7 +356,7 @@ void testMain() {
       return true;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
@@ -369,9 +369,12 @@ void testMain() {
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
-    expect(keyDataList, isEmpty);
-    expect(preventedDefault, isFalse);
+    expect(keyDataList, hasLength(1));
+    expect(keyDataList[0].physical, 0);
+    expect(keyDataList[0].logical, 0);
+    expect(preventedDefault, isTrue);
 
+    keyDataList.clear();
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
@@ -392,14 +395,16 @@ void testMain() {
       return true;
     });
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
     converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight)
       ..onPreventDefault = onPreventDefault
     );
-    expect(keyDataList, isEmpty);
-    expect(preventedDefault, isFalse);
+    expect(keyDataList, hasLength(1));
+    expect(keyDataList[0].physical, 0);
+    expect(keyDataList[0].logical, 0);
+    expect(preventedDefault, isTrue);
   });
 
   test('Conflict from multiple keyboards do not crash', () {
@@ -447,7 +452,7 @@ void testMain() {
       return true;
     }, onMacOs: true);
     bool preventedDefault = false;
-    final ui.VoidCallback onPreventDefault = () { preventedDefault = true; };
+    void onPreventDefault() { preventedDefault = true; }
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock')
@@ -464,7 +469,7 @@ void testMain() {
     keyDataList.clear();
     preventedDefault = false;
 
-    async.elapse(Duration(microseconds: 1));
+    async.elapse(const Duration(microseconds: 1));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
@@ -490,7 +495,7 @@ void testMain() {
     keyDataList.clear();
     preventedDefault = false;
 
-    async.elapse(Duration(microseconds: 1));
+    async.elapse(const Duration(microseconds: 1));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
@@ -516,7 +521,7 @@ void testMain() {
 
     // Schedules are canceled after disposal
     converter.dispose();
-    async.elapse(Duration(seconds: 10));
+    async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
   });
 
@@ -537,7 +542,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    async.elapse(Duration(seconds: 10));
+    async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
     converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
@@ -550,7 +555,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    async.elapse(Duration(seconds: 10));
+    async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
     converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
@@ -578,7 +583,7 @@ void testMain() {
     });
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
     expectKeyData(keyDataList.last,
@@ -592,7 +597,7 @@ void testMain() {
 
     // Keyup of KeyA is omitted due to being a shortcut.
 
-    async.elapse(Duration(milliseconds: 2500));
+    async.elapse(const Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1200),
       type: ui.KeyEventType.up,
@@ -611,7 +616,7 @@ void testMain() {
       logical: kLogicalMetaLeft,
       character: null,
     );
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     // Key A states are cleared
     converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
@@ -622,7 +627,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
     expectKeyData(keyDataList.last,
@@ -642,20 +647,20 @@ void testMain() {
     });
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
-    async.elapse(Duration(milliseconds: 400));
+    async.elapse(const Duration(milliseconds: 400));
 
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 600);
-    async.elapse(Duration(milliseconds: 50));
+    async.elapse(const Duration(milliseconds: 50));
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 650);
-    async.elapse(Duration(milliseconds: 50));
+    async.elapse(const Duration(milliseconds: 50));
     converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700);
 
     // Keyup of KeyA is omitted due to being a shortcut.
 
-    async.elapse(Duration(milliseconds: 2500));
+    async.elapse(const Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1700),
       type: ui.KeyEventType.up,
@@ -674,7 +679,7 @@ void testMain() {
       logical: kLogicalMetaLeft,
       character: null,
     );
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     // Key A states are cleared
     converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 3300);
@@ -685,7 +690,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 3400);
     expectKeyData(keyDataList.last,
@@ -705,7 +710,7 @@ void testMain() {
     });
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 200);
     expectKeyData(keyDataList.last,
@@ -716,10 +721,10 @@ void testMain() {
       character: 'a',
     );
     keyDataList.clear();
-    async.elapse(Duration(milliseconds: 500));
+    async.elapse(const Duration(milliseconds: 500));
 
     converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 700);
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 800);
     expectKeyData(keyDataList.last,
@@ -730,7 +735,7 @@ void testMain() {
       character: null,
     );
     keyDataList.clear();
-    async.elapse(Duration(milliseconds: 2000));
+    async.elapse(const Duration(milliseconds: 2000));
     expect(keyDataList, isEmpty);
 
     // Key A states are cleared
@@ -742,7 +747,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    async.elapse(Duration(milliseconds: 100));
+    async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
     expectKeyData(keyDataList.last,
@@ -771,7 +776,7 @@ void testMain() {
     );
     keyDataList.clear();
 
-    async.elapse(Duration(seconds: 10));
+    async.elapse(const Duration(seconds: 10));
     expect(keyDataList, isEmpty);
 
     converter.handleEvent(keyUpEvent('ScrollLock', 'ScrollLock'));
@@ -867,20 +872,41 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
     this.onPreventDefault,
   });
 
+  @override
   String type;
+
+  @override
   String? code;
+
+  @override
   String? key;
+
+  @override
   bool? repeat;
+
+  @override
   num? timeStamp;
+
+  @override
   bool altKey;
+
+  @override
   bool ctrlKey;
+
+  @override
   bool shiftKey;
+
+  @override
   bool metaKey;
+
+  @override
   int? location;
 
+  @override
   bool getModifierState(String key) => modifierState.contains(key);
   final Set<String> modifierState = <String>{};
 
+  @override
   void preventDefault() { onPreventDefault?.call(); }
   VoidCallback? onPreventDefault;
 }

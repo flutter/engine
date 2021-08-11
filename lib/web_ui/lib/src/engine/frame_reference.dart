@@ -46,8 +46,8 @@ class CrossFrameCache<T> {
   void commitFrame() {
     // Evict unused items from prior frame.
     if (_reusablePool != null) {
-      for (List<_CrossFrameCacheItem<T>> items in _reusablePool!.values) {
-        for (_CrossFrameCacheItem<T> item in items) {
+      for (final List<_CrossFrameCacheItem<T>> items in _reusablePool!.values) {
+        for (final _CrossFrameCacheItem<T> item in items) {
           item.evict();
         }
       }
@@ -67,7 +67,7 @@ class CrossFrameCache<T> {
 
   void _addToCache(String key, _CrossFrameCacheItem<T> item) {
     _cache ??= <String, List<_CrossFrameCacheItem<T>>>{};
-    (_cache![key] ??= <_CrossFrameCacheItem<T>>[])..add(item);
+    (_cache![key] ??= <_CrossFrameCacheItem<T>>[]).add(item);
   }
 
   /// Given a key, consumes an item that has been cached in a prior frame.

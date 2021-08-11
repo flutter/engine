@@ -12,6 +12,7 @@
 
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/time/chrono_timestamp_provider.h"
 #include "gtest/gtest.h"
 
 namespace fml {
@@ -55,11 +56,40 @@ TEST(MessageLoopTaskQueue, RegisterTwoTasksAndCount) {
   auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
   auto queue_id = task_queue->CreateTaskQueue();
   task_queue->RegisterTask(
-      queue_id, [] {}, fml::TimePoint::Now());
+      queue_id, [] {}, ChronoTicksSinceEpoch());
   task_queue->RegisterTask(
       queue_id, [] {}, fml::TimePoint::Max());
   ASSERT_TRUE(task_queue->HasPendingTasks(queue_id));
   ASSERT_TRUE(task_queue->GetNumPendingTasks(queue_id) == 2);
+}
+
+TEST(MessageLoopTaskQueue, RegisterTasksOnMergedQueuesAndCount) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster_queue = task_queue->CreateTaskQueue();
+  // A task in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, []() {}, fml::TimePoint::Now());
+  // A task in raster_queue
+  task_queue->RegisterTask(
+      raster_queue, []() {}, fml::TimePoint::Now());
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 1);
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 1);
+
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+  task_queue->Merge(platform_queue, raster_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster_queue));
+
+  ASSERT_TRUE(task_queue->HasPendingTasks(platform_queue));
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 2);
+  // The task count of subsumed queue is 0
+  ASSERT_FALSE(task_queue->HasPendingTasks(raster_queue));
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 0);
+
+  task_queue->Unmerge(platform_queue, raster_queue);
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 1);
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 1);
 }
 
 TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
@@ -69,15 +99,15 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
 
   // order: 0
   task_queue->RegisterTask(
-      queue_id, [&test_val]() { test_val = 1; }, fml::TimePoint::Now());
+      queue_id, [&test_val]() { test_val = 1; }, ChronoTicksSinceEpoch());
 
   // order: 1
   task_queue->RegisterTask(
-      queue_id, [&test_val]() { test_val = 2; }, fml::TimePoint::Now());
+      queue_id, [&test_val]() { test_val = 2; }, ChronoTicksSinceEpoch());
 
-  const auto now = fml::TimePoint::Now();
+  const auto now = ChronoTicksSinceEpoch();
   int expected_value = 1;
-  for (;;) {
+  while (true) {
     fml::closure invocation = task_queue->GetNextTaskToRun(queue_id, now);
     if (!invocation) {
       break;
@@ -85,6 +115,123 @@ TEST(MessageLoopTaskQueue, PreserveTaskOrdering) {
     invocation();
     ASSERT_TRUE(test_val == expected_value);
     expected_value++;
+  }
+}
+
+TEST(MessageLoopTaskQueue, RegisterTasksOnMergedQueuesPreserveTaskOrdering) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster1_queue = task_queue->CreateTaskQueue();
+  auto raster2_queue = task_queue->CreateTaskQueue();
+  int test_val = 0;
+
+  // order 0 in raster1_queue
+  task_queue->RegisterTask(
+      raster1_queue, [&test_val]() { test_val = 0; }, fml::TimePoint::Now());
+
+  // order 1 in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, [&test_val]() { test_val = 1; }, fml::TimePoint::Now());
+
+  // order 2 in raster2_queue
+  task_queue->RegisterTask(
+      raster2_queue, [&test_val]() { test_val = 2; }, fml::TimePoint::Now());
+
+  task_queue->Merge(platform_queue, raster1_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster1_queue));
+  task_queue->Merge(platform_queue, raster2_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster2_queue));
+  const auto now = fml::TimePoint::Now();
+  int expected_value = 0;
+  // Right order:
+  // "test_val = 0" in raster1_queue
+  // "test_val = 1" in platform_queue
+  // "test_val = 2" in raster2_queue
+  while (true) {
+    fml::closure invocation = task_queue->GetNextTaskToRun(platform_queue, now);
+    if (!invocation) {
+      break;
+    }
+    invocation();
+    ASSERT_TRUE(test_val == expected_value);
+    expected_value++;
+  }
+}
+
+TEST(MessageLoopTaskQueue, UnmergeRespectTheOriginalTaskOrderingInQueues) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster_queue = task_queue->CreateTaskQueue();
+  int test_val = 0;
+
+  // order 0 in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, [&test_val]() { test_val = 0; }, fml::TimePoint::Now());
+  // order 1 in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, [&test_val]() { test_val = 1; }, fml::TimePoint::Now());
+  // order 2 in raster_queue
+  task_queue->RegisterTask(
+      raster_queue, [&test_val]() { test_val = 2; }, fml::TimePoint::Now());
+  // order 3 in raster_queue
+  task_queue->RegisterTask(
+      raster_queue, [&test_val]() { test_val = 3; }, fml::TimePoint::Now());
+  // order 4 in platform_queue
+  task_queue->RegisterTask(
+      platform_queue, [&test_val]() { test_val = 4; }, fml::TimePoint::Now());
+  // order 5 in raster_queue
+  task_queue->RegisterTask(
+      raster_queue, [&test_val]() { test_val = 5; }, fml::TimePoint::Now());
+
+  ASSERT_TRUE(task_queue->Merge(platform_queue, raster_queue));
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster_queue));
+  const auto now = fml::TimePoint::Now();
+  // The right order after merged and consumed 3 tasks:
+  // "test_val = 0" in platform_queue
+  // "test_val = 1" in platform_queue
+  // "test_val = 2" in raster_queue (running on platform)
+  for (int i = 0; i < 3; i++) {
+    fml::closure invocation = task_queue->GetNextTaskToRun(platform_queue, now);
+    ASSERT_FALSE(!invocation);
+    invocation();
+    ASSERT_TRUE(test_val == i);
+  }
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 3);
+  ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 0);
+
+  ASSERT_TRUE(task_queue->Unmerge(platform_queue, raster_queue));
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+
+  // The right order after unmerged and left 3 tasks:
+  // "test_val = 3" in raster_queue
+  // "test_val = 4" in platform_queue
+  // "test_val = 5" in raster_queue
+
+  // platform_queue has 1 task left: "test_val = 4"
+  {
+    ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 1);
+    fml::closure invocation = task_queue->GetNextTaskToRun(platform_queue, now);
+    ASSERT_FALSE(!invocation);
+    invocation();
+    ASSERT_TRUE(test_val == 4);
+    ASSERT_TRUE(task_queue->GetNumPendingTasks(platform_queue) == 0);
+  }
+
+  // raster_queue has 2 tasks left: "test_val = 3" and "test_val = 5"
+  {
+    ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 2);
+    fml::closure invocation = task_queue->GetNextTaskToRun(raster_queue, now);
+    ASSERT_FALSE(!invocation);
+    invocation();
+    ASSERT_TRUE(test_val == 3);
+  }
+  {
+    ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 1);
+    fml::closure invocation = task_queue->GetNextTaskToRun(raster_queue, now);
+    ASSERT_FALSE(!invocation);
+    invocation();
+    ASSERT_TRUE(test_val == 5);
+    ASSERT_TRUE(task_queue->GetNumPendingTasks(raster_queue) == 0);
   }
 }
 
@@ -124,7 +271,7 @@ TEST(MessageLoopTaskQueue, WakeUpIndependentOfTime) {
                     [&num_wakes](fml::TimePoint wake_time) { ++num_wakes; }));
 
   task_queue->RegisterTask(
-      queue_id, []() {}, fml::TimePoint::Now());
+      queue_id, []() {}, ChronoTicksSinceEpoch());
   task_queue->RegisterTask(
       queue_id, []() {}, fml::TimePoint::Max());
 
@@ -147,7 +294,7 @@ TEST(MessageLoopTaskQueue, WokenUpWithNewerTime) {
   task_queue->RegisterTask(
       queue_id, []() {}, fml::TimePoint::Max());
 
-  const auto now = fml::TimePoint::Now();
+  const auto now = ChronoTicksSinceEpoch();
   expected = now;
   task_queue->RegisterTask(
       queue_id, []() {}, now);
@@ -194,6 +341,17 @@ TEST(MessageLoopTaskQueue, QueueDoNotOwnUnmergedTaskQueueId) {
   ASSERT_FALSE(task_queue->Owns(_kUnmerged, _kUnmerged));
 }
 
+TEST(MessageLoopTaskQueue, QueueOwnsMergedTaskQueueId) {
+  auto task_queue = fml::MessageLoopTaskQueues::GetInstance();
+  auto platform_queue = task_queue->CreateTaskQueue();
+  auto raster_queue = task_queue->CreateTaskQueue();
+  ASSERT_FALSE(task_queue->Owns(platform_queue, raster_queue));
+  ASSERT_FALSE(task_queue->Owns(raster_queue, platform_queue));
+  task_queue->Merge(platform_queue, raster_queue);
+  ASSERT_TRUE(task_queue->Owns(platform_queue, raster_queue));
+  ASSERT_FALSE(task_queue->Owns(raster_queue, platform_queue));
+}
+
 //------------------------------------------------------------------------------
 /// Verifies that tasks can be added to task queues concurrently.
 ///
@@ -221,7 +379,7 @@ TEST(MessageLoopTaskQueue, ConcurrentQueueAndTaskCreatingCounts) {
           task_queue_ids[std::rand() % kTaskQueuesCount];
       const auto empty_task = []() {};
       // The timepoint doesn't matter as the queue is never going to be drained.
-      const auto task_timepoint = fml::TimePoint::Now();
+      const auto task_timepoint = ChronoTicksSinceEpoch();
 
       task_queues->RegisterTask(current_task_queue_id, empty_task,
                                 task_timepoint);
@@ -271,8 +429,8 @@ TEST(MessageLoopTaskQueue, RegisterTaskWakesUpOwnerQueue) {
                             ASSERT_FALSE(true);
                           }));
 
-  auto time1 = fml::TimePoint::Now() + fml::TimeDelta::FromMilliseconds(1);
-  auto time2 = fml::TimePoint::Now() + fml::TimeDelta::FromMilliseconds(2);
+  auto time1 = ChronoTicksSinceEpoch() + fml::TimeDelta::FromMilliseconds(1);
+  auto time2 = ChronoTicksSinceEpoch() + fml::TimeDelta::FromMilliseconds(2);
 
   ASSERT_EQ(0UL, wakes.size());
 

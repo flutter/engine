@@ -4,50 +4,12 @@
 
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
-import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
-
-class FirefoxArgParser extends BrowserArgParser {
-  static final FirefoxArgParser _singletonInstance = FirefoxArgParser._();
-
-  /// The [FirefoxArgParser] singleton.
-  static FirefoxArgParser get instance => _singletonInstance;
-
-  late final String _version;
-
-  FirefoxArgParser._();
-
-  @override
-  void populateOptions(ArgParser argParser) {
-    final YamlMap browserLock = BrowserLock.instance.configuration;
-    final String firefoxVersion = browserLock['firefox']['version'] as String;
-
-    argParser
-      ..addOption(
-        'firefox-version',
-        defaultsTo: '$firefoxVersion',
-        help: 'The Firefox version to use while running tests. If the requested '
-            'version has not been installed, it will be downloaded and installed '
-            'automatically. Value "latest" will use the latest '
-            'stable build of Firefox, installing it if necessary. Value "system" '
-            'will use the manually installed version of Firefox on this computer.',
-      );
-  }
-
-  @override
-  void parseOptions(ArgResults argResults) {
-    _version = argResults['firefox-version'] as String;
-  }
-
-  @override
-  String get version => _version;
-}
 
 /// Returns the installation of Firefox, installing it if necessary.
 ///
@@ -252,7 +214,7 @@ class FirefoxInstaller {
     final io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
       'attach',
       '-readonly',
-      '${dmgFile.path}',
+      dmgFile.path,
     ]);
     if (mountResult.exitCode != 0) {
       throw BrowserInstallerException(
@@ -273,7 +235,7 @@ class FirefoxInstaller {
   // Parses volume from mount result.
   // Output is of form: {devicename} /Volumes/{name}.
   String? _volumeFromMountResult(List<String> lines) {
-    for (String line in lines) {
+    for (final String line in lines) {
       final int pos = line.indexOf('/Volumes');
       if (pos != -1) {
         return line.substring(pos);
@@ -285,11 +247,11 @@ class FirefoxInstaller {
   Future<void> _hdiUtilUnmount(String volumeName) async {
     final io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
       'unmount',
-      '$volumeName',
+      volumeName,
     ]);
     if (unmountResult.exitCode != 0) {
       throw BrowserInstallerException(
-          'Failed to unmount Firefox disk image ${volumeName}.\n'
+          'Failed to unmount Firefox disk image $volumeName.\n'
               'Exit code ${unmountResult.exitCode}. ${unmountResult.stderr}');
     }
   }
@@ -318,7 +280,7 @@ Future<String> _findSystemFirefoxExecutable() async {
 
 /// Fetches the latest available Firefox build version on Linux.
 Future<String> fetchLatestFirefoxVersionLinux() async {
-  final RegExp forFirefoxVersion = RegExp("firefox-[0-9.]+[0-9]");
+  final RegExp forFirefoxVersion = RegExp('firefox-[0-9.]+[0-9]');
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;
@@ -333,7 +295,7 @@ Future<String> fetchLatestFirefoxVersionLinux() async {
 
 /// Fetches the latest available Firefox build version on Mac OS.
 Future<String> fetchLatestFirefoxVersionMacOS() async {
-  final RegExp forFirefoxVersion = RegExp("firefox/releases/[0-9.]+[0-9]");
+  final RegExp forFirefoxVersion = RegExp('firefox/releases/[0-9.]+[0-9]');
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;
