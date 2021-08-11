@@ -24,6 +24,12 @@ public class StrictModeFlutterActivity extends FlutterActivity {
             .detectDiskWrites()
             .penaltyDeath()
             .build());
+    StrictMode.setVmPolicy(
+        new StrictMode.VmPolicy.Builder()
+            .detectLeakedClosableObjects()
+            .penaltyLog()
+            .penaltyDeath()
+            .build());
     super.onCreate(savedInstanceState);
   }
 
