@@ -21,12 +21,6 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class MemoryLeakTests {
-  private static ByteBuffer encodeMethodCall(MethodCall call) {
-    final ByteBuffer buffer = StandardMethodCodec.INSTANCE.encodeMethodCall(call);
-    buffer.rewind();
-    return buffer;
-  }
-
   @Rule @NonNull
   public ActivityTestRule<TextPlatformViewActivity> activityRule =
       new ActivityTestRule<>(
@@ -36,16 +30,6 @@ public class MemoryLeakTests {
   public ActivityTestRule<TextPlatformViewActivity> strictActivityRule =
       new ActivityTestRule<>(
           StrictModeFlutterActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
-
-  @Test
-  @FailTestOnLeak
-  public void platformViewHybridComposition_launchActivityFinishAndLaunchAgain() throws Exception {
-    Intent intent = new Intent(Intent.ACTION_MAIN);
-    intent.putExtra("scenario_name", "platform_view");
-    intent.putExtra("use_android_view", true);
-
-    activityRule.launchActivity(intent);
-  }
 
   @Test
   @FailTestOnLeak
