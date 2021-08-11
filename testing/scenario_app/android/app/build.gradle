@@ -24,7 +24,7 @@ android {
         // The others are irrelevant for a test application.
         disable 'UnpackedNativeCode','MissingApplicationIcon','GoogleAppIndexingApiWarning','GoogleAppIndexingWarning','GradleDependency','NewerVersionAvailable','Registered'
     }
-    compileSdkVersion 30
+    compileSdkVersion 31
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId 'dev.flutter.scenarios'
         minSdkVersion 18
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 1
         versionName '1.0'
         testInstrumentationRunner 'dev.flutter.TestRunner'
