@@ -1,4 +1,4 @@
-Signature: 00a52557055747b190d376622c945d1f
+Signature: e13bd056d100d5095a7f354652d0c705
 
 UNUSED LICENSES:
 
@@ -167,39 +167,6 @@ liability incurred by, or claims asserted against, such Contributor by
 reason of your accepting any such warranty or additional liability.
 
 END OF TERMS AND CONDITIONS
-====================================================================================================
-
-====================================================================================================
-ORIGIN: ../../../third_party/skia/third_party/expat/include/expat_config/LICENSE
-TYPE: LicenseType.bsd
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2021 Google Inc. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
@@ -484,6 +451,41 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/skia/third_party/expat/include/expat_config/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/third_party/harfbuzz/config-override.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2021 Google Inc. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: skcms
 LIBRARY: vulkanmemoryallocator
 ORIGIN: ../../../third_party/skia/include/third_party/skcms/skcms.h + ../../../third_party/skia/include/third_party/skcms/LICENSE
@@ -670,8 +672,17 @@ FILE: ../../../third_party/skia/experimental/skottiekit/postamble.js
 FILE: ../../../third_party/skia/experimental/skottiekit/preamble.js
 FILE: ../../../third_party/skia/experimental/skottiekit/release.js
 FILE: ../../../third_party/skia/experimental/skottiekit/skottiekit/package.json
+FILE: ../../../third_party/skia/experimental/sktext/editor/Cursor.cpp
+FILE: ../../../third_party/skia/experimental/sktext/editor/Cursor.h
+FILE: ../../../third_party/skia/experimental/sktext/editor/Defaults.h
 FILE: ../../../third_party/skia/experimental/sktext/editor/Editor.cpp
 FILE: ../../../third_party/skia/experimental/sktext/editor/Editor.h
+FILE: ../../../third_party/skia/experimental/sktext/editor/Mouse.cpp
+FILE: ../../../third_party/skia/experimental/sktext/editor/Mouse.h
+FILE: ../../../third_party/skia/experimental/sktext/editor/Selection.cpp
+FILE: ../../../third_party/skia/experimental/sktext/editor/Selection.h
+FILE: ../../../third_party/skia/experimental/sktext/editor/Texts.cpp
+FILE: ../../../third_party/skia/experimental/sktext/editor/Texts.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Text.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Types.h
 FILE: ../../../third_party/skia/experimental/sktext/samples/Text.cpp
@@ -1794,7 +1805,6 @@ FILE: ../../../third_party/skia/src/core/SkAutoMalloc.h
 FILE: ../../../third_party/skia/src/core/SkAutoPixmapStorage.cpp
 FILE: ../../../third_party/skia/src/core/SkAutoPixmapStorage.h
 FILE: ../../../third_party/skia/src/core/SkBlendModePriv.h
-FILE: ../../../third_party/skia/src/core/SkClipOpPriv.h
 FILE: ../../../third_party/skia/src/core/SkColorFilter_Matrix.h
 FILE: ../../../third_party/skia/src/core/SkColorSpace.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpacePriv.h
@@ -1832,8 +1842,6 @@ FILE: ../../../third_party/skia/src/effects/imagefilters/SkShaderImageFilter.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAppliedClip.h
 FILE: ../../../third_party/skia/src/gpu/GrAuditTrail.cpp
 FILE: ../../../third_party/skia/src/gpu/GrAuditTrail.h
-FILE: ../../../third_party/skia/src/gpu/GrClipStackClip.cpp
-FILE: ../../../third_party/skia/src/gpu/GrClipStackClip.h
 FILE: ../../../third_party/skia/src/gpu/GrColorSpaceXform.cpp
 FILE: ../../../third_party/skia/src/gpu/GrColorSpaceXform.h
 FILE: ../../../third_party/skia/src/gpu/GrDirectContextPriv.h
@@ -1841,8 +1849,6 @@ FILE: ../../../third_party/skia/src/gpu/GrFixedClip.h
 FILE: ../../../third_party/skia/src/gpu/GrOpsRenderPass.cpp
 FILE: ../../../third_party/skia/src/gpu/GrOpsRenderPass.h
 FILE: ../../../third_party/skia/src/gpu/GrProgramDesc.cpp
-FILE: ../../../third_party/skia/src/gpu/GrReducedClip.cpp
-FILE: ../../../third_party/skia/src/gpu/GrReducedClip.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTargetProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrResourceHandle.h
@@ -1852,8 +1858,6 @@ FILE: ../../../third_party/skia/src/gpu/GrShaderVar.h
 FILE: ../../../third_party/skia/src/gpu/GrStencilSettings.h
 FILE: ../../../third_party/skia/src/gpu/GrStyle.cpp
 FILE: ../../../third_party/skia/src/gpu/GrStyle.h
-FILE: ../../../third_party/skia/src/gpu/GrSurfaceContext.cpp
-FILE: ../../../third_party/skia/src/gpu/GrSurfaceContext.h
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSurfaceProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrSwizzle.h
@@ -1864,6 +1868,8 @@ FILE: ../../../third_party/skia/src/gpu/GrTextureRenderTargetProxy.h
 FILE: ../../../third_party/skia/src/gpu/GrUserStencilSettings.h
 FILE: ../../../third_party/skia/src/gpu/GrWindowRectangles.h
 FILE: ../../../third_party/skia/src/gpu/GrWindowRectsState.h
+FILE: ../../../third_party/skia/src/gpu/SurfaceContext.cpp
+FILE: ../../../third_party/skia/src/gpu/SurfaceContext.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DPipelineStateDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrShadowGeoProc.cpp
 FILE: ../../../third_party/skia/src/gpu/effects/GrShadowGeoProc.h
@@ -2105,7 +2111,6 @@ FILE: ../../../third_party/skia/src/core/SkRTree.h
 FILE: ../../../third_party/skia/src/core/SkReadBuffer.cpp
 FILE: ../../../third_party/skia/src/core/SkStrokeRec.cpp
 FILE: ../../../third_party/skia/src/core/SkTInternalLList.h
-FILE: ../../../third_party/skia/src/core/SkTLList.h
 FILE: ../../../third_party/skia/src/core/SkWriteBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrMemoryPool.cpp
 FILE: ../../../third_party/skia/src/gpu/GrMemoryPool.h
@@ -3010,6 +3015,8 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLBinaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorArray.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorArray.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorArrayCast.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorArrayCast.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorCompound.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorCompound.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLConstructorCompoundCast.cpp
