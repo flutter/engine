@@ -60,7 +60,7 @@ void testMain() {
       character: '\n',
       timeStamp: Duration.zero,
       synthesized: true,
-    ).toString(), r'KeyData(type: up, physical: 0x700e6, logical: 0x100000061 (Unprintable), character: "\n" (0x0a)), synthesized');
+    ).toString(), r'KeyData(type: up, physical: 0x700e6, logical: 0x100000061 (Unprintable), character: "\n" (0x0a), synthesized)');
 
     expect(const ui.KeyData(
       type: ui.KeyEventType.repeat,
