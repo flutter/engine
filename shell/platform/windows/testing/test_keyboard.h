@@ -42,8 +42,9 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
                             bool context_code = 0,
                             bool transition_state = 1);
 
-typedef std::function<bool ()> MockKeyEventChannelHandler;
-typedef std::function<bool (const FlutterKeyEvent* event)> MockKeyEventEmbedderHandler;
+typedef std::function<bool()> MockKeyEventChannelHandler;
+typedef std::function<bool(const FlutterKeyEvent* event)>
+    MockKeyEventEmbedderHandler;
 
 void MockEmbedderApiForKeyboard(EngineModifier& modifier,
                                 MockKeyEventChannelHandler channel_handler,

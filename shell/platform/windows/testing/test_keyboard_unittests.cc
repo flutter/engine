@@ -21,13 +21,9 @@ TEST(TestKeyboard, CloneString) {
 };
 
 TEST(TestKeyboard, CreateKeyEventLparam) {
-  EXPECT_EQ(
-    CreateKeyEventLparam(0x1, true, true),
-    0xC1010001);
+  EXPECT_EQ(CreateKeyEventLparam(0x1, true, true), 0xC1010001);
 
-  EXPECT_EQ(
-    CreateKeyEventLparam(0x05, false, false, 0, 1, 0),
-    0x20050000);
+  EXPECT_EQ(CreateKeyEventLparam(0x05, false, false, 0, 1, 0), 0x20050000);
 };
 
 }  // namespace testing

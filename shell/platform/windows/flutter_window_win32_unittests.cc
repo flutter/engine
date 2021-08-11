@@ -298,10 +298,8 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
   EngineModifier modifier(engine.get());
   MockEmbedderApiForKeyboard(
-    modifier,
-    [] {return test_response;},
-    [] (const FlutterKeyEvent* event) {return false; }
-  );
+      modifier, [] { return test_response; },
+      [](const FlutterKeyEvent* event) { return false; });
 
   return engine;
 }

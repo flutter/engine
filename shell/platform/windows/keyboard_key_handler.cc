@@ -221,8 +221,8 @@ bool KeyboardKeyHandler::KeyboardHook(FlutterWindowsView* view,
   pending_responds_.push_back(std::move(incoming));
 
   for (const auto& delegate : delegates_) {
-    delegate->KeyboardHook(key, scancode, action, character, extended,
-                           was_down, [sequence_id, this](bool handled) {
+    delegate->KeyboardHook(key, scancode, action, character, extended, was_down,
+                           [sequence_id, this](bool handled) {
                              ResolvePendingEvent(sequence_id, handled);
                            });
   }

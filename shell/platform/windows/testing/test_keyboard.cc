@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
-#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 
 #include <rapidjson/document.h>
 #include <windowsx.h>
@@ -75,11 +75,11 @@ struct TestResponseHandle {
 }
 
 LPARAM CreateKeyEventLparam(USHORT scancode,
-                                   bool extended,
-                                   bool was_down,
-                                   USHORT repeat_count,
-                                   bool context_code,
-                                   bool transition_state) {
+                            bool extended,
+                            bool was_down,
+                            USHORT repeat_count,
+                            bool context_code,
+                            bool transition_state) {
   return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
           (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
           (LPARAM(scancode) << 16) | LPARAM(repeat_count));
@@ -101,25 +101,25 @@ void MockEmbedderApiForKeyboard(EngineModifier& modifier,
   stored_embedder_handler = embedder_handler;
   // This mock handles channel messages.
   modifier.embedder_api().SendPlatformMessage =
-    [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-                      const FlutterPlatformMessage* message) {
-      if (std::string(message->channel) == std::string("flutter/settings")) {
-        return kSuccess;
-      }
-      if (std::string(message->channel) == std::string("flutter/keyevent")) {
-        bool result = stored_channel_handler();
-        auto response = _keyHandlingResponse(result);
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(
-                message->response_handle);
-        if (response_handle->callback != nullptr) {
-          response_handle->callback(response->data(), response->size(),
-                                    response_handle->user_data);
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterPlatformMessage* message) {
+        if (std::string(message->channel) == std::string("flutter/settings")) {
+          return kSuccess;
+        }
+        if (std::string(message->channel) == std::string("flutter/keyevent")) {
+          bool result = stored_channel_handler();
+          auto response = _keyHandlingResponse(result);
+          const TestResponseHandle* response_handle =
+              reinterpret_cast<const TestResponseHandle*>(
+                  message->response_handle);
+          if (response_handle->callback != nullptr) {
+            response_handle->callback(response->data(), response->size(),
+                                      response_handle->user_data);
+          }
+          return kSuccess;
         }
         return kSuccess;
-      }
-      return kSuccess;
-    };
+      };
 
   // This mock handles key events sent through the embedder API,
   // and records it in `key_calls`.
@@ -212,7 +212,6 @@ BOOL MockMessageQueue::Win32PeekMessage(LPMSG lpMsg,
   }
   return FALSE;
 }
-
 
 }  // namespace testing
 }  // namespace flutter

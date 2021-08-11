@@ -431,10 +431,10 @@ WindowWin32::HandleMessage(UINT const message,
       // a valid character. See https://github.com/flutter/flutter/issues/85587.
       unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
       UINT next_key_message = PeekNextMessageType(WM_KEYFIRST, WM_KEYLAST);
-      bool has_wm_char = (next_key_message == WM_DEADCHAR ||
-                          next_key_message == WM_SYSDEADCHAR ||
-                          next_key_message == WM_CHAR ||
-                          next_key_message == WM_SYSCHAR);
+      bool has_wm_char =
+          (next_key_message == WM_DEADCHAR ||
+           next_key_message == WM_SYSDEADCHAR || next_key_message == WM_CHAR ||
+           next_key_message == WM_SYSCHAR);
       if (character > 0 && is_keydown_message && has_wm_char) {
         keycode_for_char_message_ = wparam;
         return 0;
@@ -488,8 +488,8 @@ void WindowWin32::HandleResize(UINT width, UINT height) {
 
 UINT WindowWin32::PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax) {
   MSG next_message;
-  BOOL has_msg = Win32PeekMessage(&next_message, window_handle_,
-                                  wMsgFilterMin, wMsgFilterMax, PM_NOREMOVE);
+  BOOL has_msg = Win32PeekMessage(&next_message, window_handle_, wMsgFilterMin,
+                                  wMsgFilterMax, PM_NOREMOVE);
   if (!has_msg) {
     return 0;
   }
