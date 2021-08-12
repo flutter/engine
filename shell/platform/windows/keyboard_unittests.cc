@@ -109,7 +109,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
 
   void SetLayout(MapVkToCharHandler map_vk_to_char) {
     map_vk_to_char_ =
-        map_vk_to_char == nullptr ?  LayoutDefault : map_vk_to_char;
+        map_vk_to_char == nullptr ? LayoutDefault : map_vk_to_char;
   }
 
  protected:

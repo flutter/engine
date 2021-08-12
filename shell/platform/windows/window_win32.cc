@@ -516,7 +516,6 @@ BOOL WindowWin32::Win32PeekMessage(LPMSG lpMsg,
   return PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
 }
 
-
 uint32_t WindowWin32::Win32MapVkToChar(uint32_t virtual_key) {
   return MapVirtualKey(virtual_key, MAPVK_VK_TO_CHAR);
 }
