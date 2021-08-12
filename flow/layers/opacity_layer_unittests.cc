@@ -129,14 +129,18 @@ TEST_F(OpacityLayerTest, ChildIsNotCachedWhenFullyOpaque) {
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
 }
 
-TEST_F(OpacityLayerTest, ChildIsNotCachedWhenFullyTransparent) {
-  const SkAlpha alphaTransparent = 0;
+// Allow the raster cache to re-use the raster at 255 opaque if it is present,
+// but don't cause it to be retained after the frame.
+TEST_F(OpacityLayerTest, ChildIsCachedButPictureRemovedAtFullyOpaque) {
+  const SkAlpha alphaFull = 255;
+  const SkAlpha alphaPartial = 255 / 2;
+
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto layer = std::make_shared<OpacityLayer>(alphaTransparent,
-                                              SkPoint::Make(0.0f, 0.0f));
+  auto layer =
+      std::make_shared<OpacityLayer>(alphaPartial, SkPoint::Make(0.0f, 0.0f));
   layer->Add(mock_layer);
 
   SkMatrix cache_ctm = initial_transform;
@@ -153,9 +157,23 @@ TEST_F(OpacityLayerTest, ChildIsNotCachedWhenFullyTransparent) {
 
   layer->Preroll(preroll_context(), initial_transform);
 
-  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
   EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), other_canvas));
-  EXPECT_FALSE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  EXPECT_TRUE(raster_cache()->Draw(mock_layer.get(), cache_canvas));
+  raster_cache()->SweepAfterFrame();
+
+  auto updated_layer =
+      std::make_shared<OpacityLayer>(alphaFull, SkPoint::Make(0.0f, 0.0f));
+  updated_layer->Add(mock_layer);
+  updated_layer->AssignOldLayer(layer.get());
+  updated_layer->Preroll(preroll_context(), initial_transform);
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)1);
+
+  updated_layer->Paint(paint_context());
+  raster_cache()->SweepAfterFrame();
+
+  EXPECT_EQ(raster_cache()->GetLayerCachedEntriesCount(), (size_t)0);
 }
 
 TEST_F(OpacityLayerTest, ChildrenNotCached) {

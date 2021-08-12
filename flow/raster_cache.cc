@@ -389,6 +389,30 @@ bool RasterCache::Draw(const Layer* layer,
   return false;
 }
 
+bool RasterCache::Draw(const Layer* layer,
+                       SkCanvas& canvas,
+                       SkPaint* paint,
+                       bool retain_cache) const {
+  LayerRasterCacheKey cache_key(layer->unique_id(), canvas.getTotalMatrix());
+  auto it = layer_cache_.find(cache_key);
+  if (it == layer_cache_.end()) {
+    return false;
+  }
+
+  Entry& entry = it->second;
+  if (retain_cache) {
+    entry.access_count++;
+    entry.used_this_frame = true;
+  }
+
+  if (entry.image) {
+    entry.image->draw(canvas, paint);
+    return true;
+  }
+
+  return false;
+}
+
 void RasterCache::SweepAfterFrame() {
   SweepOneCacheAfterFrame(picture_cache_);
   SweepOneCacheAfterFrame(display_list_cache_);

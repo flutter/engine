@@ -79,9 +79,12 @@ void OpacityLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache && ShouldRasterCache() &&
+  // If the opacity layer has become fully opaque, attempt to reuse an available
+  // raster but do not retain the cache entry.
+  if (context.raster_cache &&
       context.raster_cache->Draw(GetCacheableChild(),
-                                 *context.leaf_nodes_canvas, &paint)) {
+                                 *context.leaf_nodes_canvas, &paint,
+                                 ShouldRasterCache())) {
     return;
   }
 
@@ -104,7 +107,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
 }
 
 bool OpacityLayer::ShouldRasterCache() const {
-  return alpha_ != 255 && alpha_ != 0;
+  return alpha_ != 255;
 }
 
 }  // namespace flutter

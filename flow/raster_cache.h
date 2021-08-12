@@ -174,6 +174,20 @@ class RasterCache {
             SkCanvas& canvas,
             SkPaint* paint = nullptr) const;
 
+  // Find the raster cache for the layer and draw it to the canvas.
+  //
+  // Additional paint can be given to change how the raster cache is drawn
+  // (e.g., draw the raster cache with some opacity).
+  //
+  // Return true if the layer raster cache is found and drawn.
+  //
+  // If retain_cache is false, the cache entry will not be marked as used,
+  // allowing it to be reclaimed.
+  bool Draw(const Layer* layer,
+                       SkCanvas& canvas,
+                       SkPaint* paint,
+                       bool retain_cache) const;
+
   void SweepAfterFrame();
 
   void Clear();
