@@ -184,9 +184,9 @@ class RasterCache {
   // If retain_cache is false, the cache entry will not be marked as used,
   // allowing it to be reclaimed.
   bool Draw(const Layer* layer,
-                       SkCanvas& canvas,
-                       SkPaint* paint,
-                       bool retain_cache) const;
+            SkCanvas& canvas,
+            SkPaint* paint,
+            bool retain_cache) const;
 
   void SweepAfterFrame();
 
