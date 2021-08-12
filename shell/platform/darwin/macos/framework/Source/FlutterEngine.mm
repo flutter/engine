@@ -636,6 +636,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return 0;
 }
 
+- (FlutterBinaryMessengerConnection)setFFIMessageHandlerOnChannel:(NSString*)channel
+                                             binaryMessageHandler:
+                                                 (FlutterFFIBinaryMessageHandler _Nullable)handler {
+  return -1;
+}
+
 - (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
   // There hasn't been a need to implement this yet for macOS.
 }

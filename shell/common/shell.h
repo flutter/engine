@@ -586,6 +586,10 @@ class Shell final : public PlatformView::Delegate,
   void OnEngineHandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) override;
 
+  // |Engine::Delegate|
+  std::unique_ptr<fml::Mapping> OnEngineHandleFfiPlatformMessage(
+      std::unique_ptr<PlatformMessage> message) override;
+
   void HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message);
 
   // |Engine::Delegate|

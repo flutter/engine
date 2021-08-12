@@ -8,6 +8,8 @@
 #import "FlutterBinaryMessenger.h"
 #import "FlutterCodecs.h"
 
+@class FlutterError;
+
 NS_ASSUME_NONNULL_BEGIN
 /**
  * A message reply callback.
@@ -27,6 +29,8 @@ typedef void (^FlutterReply)(id _Nullable reply);
  * @param callback A callback for submitting a reply to the sender.
  */
 typedef void (^FlutterMessageHandler)(id _Nullable message, FlutterReply callback);
+
+typedef id _Nullable (^FlutterFFIMessageHandler)(id _Nullable message);
 
 /**
  * A channel for communicating with the Flutter side using basic, asynchronous
@@ -381,6 +385,14 @@ FLUTTER_DARWIN_EXPORT
  */
 - (void)setStreamHandler:(NSObject<FlutterStreamHandler>* _Nullable)handler;
 @end
+
+@interface FlutterFFIChannel : NSObject
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMessageCodec>*)codec;
+- (void)setMessageHandler:(FlutterFFIMessageHandler _Nullable)handler;
+@end
+
 NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERCHANNELS_H_

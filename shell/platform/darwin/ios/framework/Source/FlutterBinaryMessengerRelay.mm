@@ -46,6 +46,17 @@
   }
 }
 
+- (FlutterBinaryMessengerConnection)setFFIMessageHandlerOnChannel:(NSString*)channel
+                                             binaryMessageHandler:
+                                                 (FlutterFFIBinaryMessageHandler _Nullable)handler {
+  if (self.parent) {
+    return [self.parent setFFIMessageHandlerOnChannel:channel binaryMessageHandler:handler];
+  } else {
+    FML_LOG(WARNING) << "Communicating on a dead channel.";
+    return -1;
+  }
+}
+
 - (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
   if (self.parent) {
     return [self.parent cleanupConnection:connection];

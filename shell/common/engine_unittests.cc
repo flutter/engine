@@ -27,6 +27,8 @@ class MockDelegate : public Engine::Delegate {
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(OnEngineHandlePlatformMessage,
                void(std::unique_ptr<PlatformMessage>));
+  MOCK_METHOD1(OnEngineHandleFfiPlatformMessage,
+               std::unique_ptr<fml::Mapping>(std::unique_ptr<PlatformMessage>));
   MOCK_METHOD0(OnPreEngineRestart, void());
   MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
@@ -52,6 +54,8 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD2(UpdateSemantics,
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(std::unique_ptr<PlatformMessage>));
+  MOCK_METHOD1(HandleFfiPlatformMessage,
+               std::unique_ptr<fml::Mapping>(std::unique_ptr<PlatformMessage>));
   MOCK_METHOD0(GetFontCollection, FontCollection&());
   MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));

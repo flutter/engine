@@ -105,6 +105,27 @@ void ReportUnhandledException(Dart_NativeArguments args) {
                                                    std::move(stack_trace));
 }
 
+std::unique_ptr<fml::Mapping> SendFfiPlatformMessage(Dart_Handle window,
+                                                     const std::string& name,
+                                                     Dart_Handle data_handle) {
+  UIDartState* dart_state = UIDartState::Current();
+  fml::RefPtr<PlatformMessageResponse> response;
+  if (Dart_IsNull(data_handle)) {
+    return dart_state->platform_configuration()
+        ->client()
+        ->HandleFfiPlatformMessage(
+            std::make_unique<PlatformMessage>(name, response));
+  } else {
+    tonic::DartByteData data(data_handle);
+    const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
+    return dart_state->platform_configuration()
+        ->client()
+        ->HandleFfiPlatformMessage(std::make_unique<PlatformMessage>(
+            name, fml::MallocMapping::Copy(buffer, data.length_in_bytes()),
+            response));
+  }
+}
+
 Dart_Handle SendPlatformMessage(Dart_Handle window,
                                 const std::string& name,
                                 Dart_Handle callback,
@@ -139,6 +160,24 @@ Dart_Handle SendPlatformMessage(Dart_Handle window,
 
 void _SendPlatformMessage(Dart_NativeArguments args) {
   tonic::DartCallStatic(&SendPlatformMessage, args);
+}
+
+Dart_Handle ToByteData(const fml::Mapping& buffer) {
+  return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());
+}
+
+void _SendFfiPlatformMessage(Dart_NativeArguments args) {
+  Dart_Handle window = Dart_GetNativeArgument(args, 0);
+  Dart_Handle exception = nullptr;
+  std::string channel =
+      tonic::DartConverter<std::string>::FromArguments(args, 1, exception);
+  if (exception) {
+    Dart_ThrowException(exception);
+  }
+  Dart_Handle data_handle = Dart_GetNativeArgument(args, 2);
+  Dart_Handle result =
+      ToByteData(*SendFfiPlatformMessage(window, channel, data_handle));
+  Dart_SetReturnValue(args, result);
 }
 
 void RespondToPlatformMessage(Dart_Handle window,
@@ -189,11 +228,6 @@ void RespondToKeyData(Dart_Handle window, int response_id, bool handled) {
 void _RespondToKeyData(Dart_NativeArguments args) {
   tonic::DartCallStatic(&RespondToKeyData, args);
 }
-
-Dart_Handle ToByteData(const fml::Mapping& buffer) {
-  return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());
-}
-
 }  // namespace
 
 PlatformConfigurationClient::~PlatformConfigurationClient() {}
@@ -493,6 +527,8 @@ void PlatformConfiguration::RegisterNatives(
       {"PlatformConfiguration_scheduleFrame", ScheduleFrame, 1, true},
       {"PlatformConfiguration_sendPlatformMessage", _SendPlatformMessage, 4,
        true},
+      {"PlatformConfiguration_sendFfiPlatformMessage", _SendFfiPlatformMessage,
+       3, true},
       {"PlatformConfiguration_respondToPlatformMessage",
        _RespondToPlatformMessage, 3, true},
       {"PlatformConfiguration_respondToKeyData", _RespondToKeyData, 3, true},

@@ -1490,6 +1490,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                               binaryMessageHandler:handler];
 }
 
+- (FlutterBinaryMessengerConnection)setFFIMessageHandlerOnChannel:(NSString*)channel
+                                             binaryMessageHandler:
+                                                 (FlutterFFIBinaryMessageHandler)handler {
+  NSAssert(channel, @"The channel must not be null");
+  return [_engine.get().binaryMessenger setFFIMessageHandlerOnChannel:channel
+                                                 binaryMessageHandler:handler];
+}
+
 - (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
   [_engine.get().binaryMessenger cleanupConnection:connection];
 }

@@ -493,6 +493,11 @@ void Engine::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   }
 }
 
+std::unique_ptr<fml::Mapping> Engine::HandleFfiPlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  return delegate_.OnEngineHandleFfiPlatformMessage(std::move(message));
+}
+
 void Engine::OnRootIsolateCreated() {
   delegate_.OnRootIsolateCreated();
 }

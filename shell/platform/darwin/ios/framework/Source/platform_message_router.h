@@ -22,13 +22,21 @@ class PlatformMessageRouter {
   void HandlePlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message) const;
 
+  std::unique_ptr<fml::Mapping> HandleFFIPlatformMessage(
+      std::unique_ptr<flutter::PlatformMessage> message) const;
+
   void SetMessageHandler(const std::string& channel,
                          FlutterBinaryMessageHandler handler);
+
+  void SetFFIMessageHandler(const std::string& channel,
+                            FlutterFFIBinaryMessageHandler handler);
 
  private:
   std::unordered_map<std::string, fml::ScopedBlock<FlutterBinaryMessageHandler>>
       message_handlers_;
-
+  std::unordered_map<std::string,
+                     fml::ScopedBlock<FlutterFFIBinaryMessageHandler>>
+      ffi_message_handlers_;
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageRouter);
 };
 

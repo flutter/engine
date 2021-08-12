@@ -355,3 +355,35 @@ static void SetStreamHandlerMessageHandlerOnChannel(NSObject<FlutterStreamHandle
   SetStreamHandlerMessageHandlerOnChannel(handler, _name, _messenger, _codec);
 }
 @end
+
+@interface FlutterFFIChannel ()
+@property(nonatomic, copy) NSString* name;
+@property(nonatomic, strong) NSObject<FlutterBinaryMessenger>* messenger;
+@property(nonatomic, strong) NSObject<FlutterMessageCodec>* codec;
+@end
+
+@implementation FlutterFFIChannel
+- (instancetype)initWithName:(NSString*)name
+             binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                       codec:(NSObject<FlutterMessageCodec>*)codec {
+  self = [super init];
+  if (self) {
+    _name = [name copy];
+    _messenger = [messenger retain];
+    _codec = [codec retain];
+  }
+  return self;
+}
+
+- (void)setMessageHandler:(FlutterFFIMessageHandler _Nullable)handler {
+  if (handler) {
+    [_messenger setFFIMessageHandlerOnChannel:self.name
+                         binaryMessageHandler:^(NSData* _Nullable input) {
+                           id reply = [self.codec decode:input];
+                           return handler(reply);
+                         }];
+  } else {
+    [_messenger setFFIMessageHandlerOnChannel:self.name binaryMessageHandler:nil];
+  }
+}
+@end

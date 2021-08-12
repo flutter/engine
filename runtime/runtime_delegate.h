@@ -31,6 +31,9 @@ class RuntimeDelegate {
   virtual void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) = 0;
 
+  virtual std::unique_ptr<fml::Mapping> HandleFfiPlatformMessage(
+      std::unique_ptr<PlatformMessage> message) = 0;
+
   virtual FontCollection& GetFontCollection() = 0;
 
   virtual void OnRootIsolateCreated() = 0;

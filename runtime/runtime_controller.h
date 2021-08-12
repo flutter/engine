@@ -605,6 +605,9 @@ class RuntimeController : public PlatformConfigurationClient {
   // |PlatformConfigurationClient|
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
+  std::unique_ptr<fml::Mapping> HandleFfiPlatformMessage(
+      std::unique_ptr<PlatformMessage> message) override;
+
   // |PlatformConfigurationClient|
   FontCollection& GetFontCollection() override;
 

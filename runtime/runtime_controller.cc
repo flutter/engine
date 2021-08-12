@@ -301,6 +301,12 @@ void RuntimeController::HandlePlatformMessage(
 }
 
 // |PlatformConfigurationClient|
+std::unique_ptr<fml::Mapping> RuntimeController::HandleFfiPlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  return client_.HandleFfiPlatformMessage(std::move(message));
+}
+
+// |PlatformConfigurationClient|
 FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
 }

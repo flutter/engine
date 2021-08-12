@@ -397,6 +397,11 @@ class PlatformView {
   ///
   virtual void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
+  virtual std::unique_ptr<fml::Mapping> HandleFfiPlatformMessage(
+      std::unique_ptr<PlatformMessage> message) {
+    return nullptr;
+  }
+
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to dispatch an accessibility action to a
   ///             running isolate hosted by the engine.

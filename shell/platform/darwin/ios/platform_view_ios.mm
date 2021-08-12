@@ -76,6 +76,11 @@ void PlatformViewIOS::HandlePlatformMessage(std::unique_ptr<flutter::PlatformMes
   platform_message_router_.HandlePlatformMessage(std::move(message));
 }
 
+std::unique_ptr<fml::Mapping> PlatformViewIOS::HandleFfiPlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  return platform_message_router_.HandleFFIPlatformMessage(std::move(message));
+}
+
 fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
   return owner_controller_;
 }

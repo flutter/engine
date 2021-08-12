@@ -40,12 +40,41 @@ void PlatformMessageRouter::HandlePlatformMessage(
   }
 }
 
+std::unique_ptr<fml::Mapping> PlatformMessageRouter::HandleFFIPlatformMessage(
+    std::unique_ptr<flutter::PlatformMessage> message) const {
+  std::unique_ptr<fml::Mapping> response;
+  std::unique_ptr<fml::Mapping>* response_ptr = &response;
+  auto it = message_handlers_.find(message->channel());
+  if (it != message_handlers_.end()) {
+    FlutterBinaryMessageHandler handler = it->second;
+    NSData* data = nil;
+    if (message->hasData()) {
+      data = ConvertMappingToNSData(message->releaseData());
+    }
+    handler(data, ^(NSData* reply) {
+      if (reply) {
+        *response_ptr = ConvertNSDataToMappingPtr(reply);
+      }
+    });
+  }
+  return response;
+}
+
 void PlatformMessageRouter::SetMessageHandler(const std::string& channel,
                                               FlutterBinaryMessageHandler handler) {
   message_handlers_.erase(channel);
   if (handler) {
     message_handlers_[channel] =
         fml::ScopedBlock<FlutterBinaryMessageHandler>{handler, fml::OwnershipPolicy::Retain};
+  }
+}
+
+void PlatformMessageRouter::SetFFIMessageHandler(const std::string& channel,
+                                                 FlutterFFIBinaryMessageHandler handler) {
+  ffi_message_handlers_.erase(channel);
+  if (handler) {
+    ffi_message_handlers_[channel] =
+        fml::ScopedBlock<FlutterFFIBinaryMessageHandler>{handler, fml::OwnershipPolicy::Retain};
   }
 }
 

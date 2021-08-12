@@ -874,6 +874,21 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }
 }
 
+- (FlutterBinaryMessengerConnection)setFFIMessageHandlerOnChannel:(NSString*)channel
+                                             binaryMessageHandler:
+                                                 (FlutterFFIBinaryMessageHandler _Nullable)handler {
+  NSParameterAssert(channel);
+  if (_shell && _shell->IsSetup()) {
+    self.iosPlatformView->GetPlatformMessageRouter().SetFFIMessageHandler(channel.UTF8String,
+                                                                          handler);
+    return _connections->AquireConnection(channel.UTF8String);
+  } else {
+    NSAssert(!handler, @"Setting a message handler before the FlutterEngine has been run.");
+    // Setting a handler to nil for a channel that has not yet been set up is a no-op.
+    return flutter::ConnectionCollection::MakeErrorConnection(-1);
+  }
+}
+
 - (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
   if (_shell && _shell->IsSetup()) {
     std::string channel = _connections->CleanupConnection(connection);

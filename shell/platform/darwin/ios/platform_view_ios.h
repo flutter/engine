@@ -150,6 +150,10 @@ class PlatformViewIOS final : public PlatformView {
   void HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) override;
 
   // |PlatformView|
+  std::unique_ptr<fml::Mapping> HandleFfiPlatformMessage(
+      std::unique_ptr<PlatformMessage> message) override;
+
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|

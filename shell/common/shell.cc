@@ -1226,6 +1226,14 @@ void Shell::OnEngineHandlePlatformMessage(
       }));
 }
 
+std::unique_ptr<fml::Mapping> Shell::OnEngineHandleFfiPlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  return platform_view_->GetWeakPtr()->HandleFfiPlatformMessage(
+      std::move(message));
+}
+
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
   const auto& data = message->data();
 

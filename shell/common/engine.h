@@ -178,6 +178,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     virtual void OnEngineHandlePlatformMessage(
         std::unique_ptr<PlatformMessage> message) = 0;
 
+    virtual std::unique_ptr<fml::Mapping> OnEngineHandleFfiPlatformMessage(
+        std::unique_ptr<PlatformMessage> message) = 0;
+
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the root isolate of the
     ///             application is about to be discarded and a new isolate with
@@ -944,6 +947,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   // |RuntimeDelegate|
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
+
+  std::unique_ptr<fml::Mapping> HandleFfiPlatformMessage(
+      std::unique_ptr<PlatformMessage> message) override;
 
   // |RuntimeDelegate|
   void OnRootIsolateCreated() override;

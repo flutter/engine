@@ -10,6 +10,9 @@
 #import "FlutterMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class FlutterError;
+
 /**
  * A message reply callback.
  *
@@ -28,6 +31,8 @@ typedef void (^FlutterBinaryReply)(NSData* _Nullable reply);
  * @param reply A callback for submitting an asynchronous reply to the sender.
  */
 typedef void (^FlutterBinaryMessageHandler)(NSData* _Nullable message, FlutterBinaryReply reply);
+
+typedef NSData* _Nullable (^FlutterFFIBinaryMessageHandler)(NSData* _Nullable message);
 
 typedef int64_t FlutterBinaryMessengerConnection;
 
@@ -79,6 +84,10 @@ FLUTTER_DARWIN_EXPORT
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
                                           binaryMessageHandler:
                                               (FlutterBinaryMessageHandler _Nullable)handler;
+
+- (FlutterBinaryMessengerConnection)setFFIMessageHandlerOnChannel:(NSString*)channel
+                                             binaryMessageHandler:
+                                                 (FlutterFFIBinaryMessageHandler _Nullable)handler;
 
 /**
  * Clears out a channel's message handler if that handler is still the one that
