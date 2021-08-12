@@ -1518,6 +1518,12 @@ static BOOL isScribbleAvailable() {
 }
 
 - (NSArray*)selectionRectsForRange:(UITextRange*)range {
+  // At least in the simulator, swapping to the Japanese keyboard crashes the app as this method
+  // is called immediately with a UITextRange with a UITextPosition rather than FlutterTextPosition
+  // for the start and end.
+  if (![range.start isKindOfClass:[FlutterTextPosition class]]) {
+    return @[];
+  }
   NSAssert([range.start isKindOfClass:[FlutterTextPosition class]],
            @"Expected a FlutterTextPosition for range.start (got %@).", [range.start class]);
   NSAssert([range.end isKindOfClass:[FlutterTextPosition class]],
