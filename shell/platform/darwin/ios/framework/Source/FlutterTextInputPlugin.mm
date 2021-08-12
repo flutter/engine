@@ -1624,7 +1624,6 @@ static BOOL isScribbleAvailable() {
   // This makes sure UITextSelectionView.interactionAssistant is not nil so
   // UITextSelectionView has access to this view (and its bounds). Otherwise
   // floating cursor breaks: https://github.com/flutter/flutter/issues/70267.
-  NSLog(@"beginFloatingCursorAtPoint");
   if (@available(iOS 13.0, *)) {
     self.textInteraction = [UITextInteraction textInteractionForMode:UITextInteractionModeEditable];
     self.textInteraction.textInput = self;
