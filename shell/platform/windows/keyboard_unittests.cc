@@ -64,7 +64,8 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
   typedef std::function<void(const std::u16string& text)> U16StringHandler;
 
   MockFlutterWindowWin32(U16StringHandler on_text)
-      : FlutterWindowWin32(800, 600), on_text_(std::move(on_text)),
+      : FlutterWindowWin32(800, 600),
+        on_text_(std::move(on_text)),
         map_vk_to_char_(LayoutDefault) {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindowWin32::GetDpiScale()));
@@ -107,8 +108,8 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
 
   void SetLayout(MapVkToCharHandler map_vk_to_char) {
-    map_vk_to_char_ = map_vk_to_char == nullptr ?
-      LayoutDefault : map_vk_to_char;
+    map_vk_to_char_ =
+        map_vk_to_char == nullptr ?  LayoutDefault : map_vk_to_char;
   }
 
  protected:
@@ -276,9 +277,7 @@ class KeyboardTester {
 
   void Responding(bool response) { test_response = response; }
 
-  void SetLayout(MapVkToCharHandler layout) {
-    window_->SetLayout(layout);
-  }
+  void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
   void InjectMessages(int count, Win32Message message1, ...) {
     Win32Message messages[count];
