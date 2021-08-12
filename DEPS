@@ -435,7 +435,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/bundletool',
-        'version': 'version:1.7.1'
+        'version': 'version:1.7.1.1'
        }
      ],
      'dep_type': 'cipd',
