@@ -1,8 +1,6 @@
-# Copyright 2021 The Fuchsia Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
-import("//build/fuchsia/sdk.gni")
 
 if (host_os == "win") {
   host_executable_suffix = ".exe"
@@ -13,6 +11,7 @@ if (host_os == "win") {
 template("executable_action") {
   action(target_name) {
     assert(defined(invoker.tool), "The executable tool must be specified.")
+    assert(defined(invoker.args), "The command line args must be specified.")
     if (defined(invoker.visibility)) {
       visibility = invoker.visibility
     }

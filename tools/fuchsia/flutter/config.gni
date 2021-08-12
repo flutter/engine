@@ -1,11 +1,11 @@
-# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//flutter/tools/fuchsia/flutter/flutter_build_config.gni")
 
 declare_args() {
-  # If set to true, will force the runenrs to be built in
+  # If set to true, will force the runners to be built in
   # product mode which means they will not have an exposed vm service
   flutter_force_product = false
 }

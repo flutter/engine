@@ -1,13 +1,13 @@
-# Copyright 2020 The Fuchsia Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/tools/executable_action.gni")
 import("//flutter/tools/fuchsia/dart/config.gni")
 import("//flutter/tools/fuchsia/dart/dart.gni")
 import("//flutter/tools/fuchsia/dart/dart_package_config.gni")
 import("//flutter/tools/fuchsia/dart/kernel/dart_kernel.gni")
 import("//flutter/tools/fuchsia/dist/resource.gni")
-import("//flutter/tools/fuchsia/executable_action.gni")
 import("//flutter/tools/fuchsia/sdk/cmc.gni")
 import("//flutter/tools/fuchsia/sdk/component.gni")
 
