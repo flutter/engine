@@ -15,6 +15,8 @@ import 'paint_service.dart';
 import 'paragraph.dart';
 import 'word_breaker.dart';
 
+const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
+
 /// A paragraph made up of a flat list of text spans and placeholders.
 ///
 /// As opposed to [DomParagraph], a [CanvasParagraph] doesn't use a DOM element
@@ -574,7 +576,7 @@ class RootStyleNode extends StyleNode {
   final EngineParagraphStyle paragraphStyle;
 
   @override
-  final ui.Color _color = defaultTextColor;
+  final ui.Color _color = _defaultTextColor;
 
   @override
   ui.TextDecoration? get _decoration => null;
