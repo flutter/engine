@@ -8,7 +8,9 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import io.flutter.Log;
 import io.flutter.embedding.android.FlutterActivity;
+import io.flutter.embedding.android.RenderMode;
 import io.flutter.embedding.engine.FlutterEngine;
 
 // TODO: Trigger this activity.
@@ -18,6 +20,7 @@ public class StrictModeFlutterActivity extends FlutterActivity {
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
+    Log.setLogLevel(Log.VERBOSE);
     StrictMode.setThreadPolicy(
         new StrictMode.ThreadPolicy.Builder()
             .detectDiskReads()
@@ -31,6 +34,12 @@ public class StrictModeFlutterActivity extends FlutterActivity {
             .penaltyDeath()
             .build());
     super.onCreate(savedInstanceState);
+  }
+
+  @NonNull
+  @Override
+  public RenderMode getRenderMode() {
+    return RenderMode.texture;
   }
 
   @Override

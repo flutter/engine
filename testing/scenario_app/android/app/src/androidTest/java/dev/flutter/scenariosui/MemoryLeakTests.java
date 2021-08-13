@@ -11,8 +11,6 @@ import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 import dev.flutter.scenarios.StrictModeFlutterActivity;
 import dev.flutter.scenarios.TextPlatformViewActivity;
-import io.flutter.view.TextureRegistry;
-import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
 import leakcanary.FailTestOnLeak;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,12 +43,6 @@ public class MemoryLeakTests {
   @FailTestOnLeak
   public void platformViewHybridComposition_releaseRenderSurface() throws Exception {
     strictActivityRule.launchActivity(intent);
-
-    final FlutterEngine flutterEngine = strictActivityRule.getActivity().flutterEngine;
-    assertNotNull(flutterEngine);
-
-    final TextureRegistry textureRegistry = flutterEngine.getRenderer();
-    final SurfaceTextureEntry entry = textureRegistry.createSurfaceTexture();
-    entry.release();
+    strictActivityRule.finishActivity();
   }
 }
