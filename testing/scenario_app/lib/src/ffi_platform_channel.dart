@@ -4,7 +4,6 @@
 
 import 'dart:ui';
 
-import 'channel_util.dart';
 import 'scenario.dart';
 
 /// Tests calling an FfiPlatformChannel
