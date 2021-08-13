@@ -386,6 +386,7 @@ FLUTTER_DARWIN_EXPORT
 - (void)setStreamHandler:(NSObject<FlutterStreamHandler>* _Nullable)handler;
 @end
 
+FLUTTER_DARWIN_EXPORT
 @interface FlutterFFIChannel : NSObject
 - (instancetype)initWithName:(NSString*)name
              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
