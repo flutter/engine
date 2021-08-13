@@ -31,6 +31,7 @@
          initWithName:@"ffi-platform-channel-control"
       binaryMessenger:engine.binaryMessenger
                 codec:[FlutterStandardMessageCodec sharedInstance]];
+  /// TODO(gaaclarke): This is a hack that should be removed and done properly.
   sleep(5);
   [ffiChannelController sendMessage:nil];
 
