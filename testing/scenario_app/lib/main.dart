@@ -48,12 +48,18 @@ Future<void> _handlePlatformMessage(
 
   switch (name) {
     case 'driver':
-      _handleDriverMessage(json.decode(utf8.decode(data!.buffer.asUint8List())) as Map<String, dynamic>);
-    break;
+      _handleDriverMessage(json.decode(utf8.decode(data!.buffer.asUint8List()))
+          as Map<String, dynamic>);
+      break;
     case 'write_timeline':
       final String timelineData = await _getTimelineData();
-      callback!(Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
-    break;
+      callback!(
+          Uint8List.fromList(utf8.encode(timelineData)).buffer.asByteData());
+      break;
+    case 'ffi-platform-channel-control':
+      print('sending on ffi-platform-channel');
+      PlatformDispatcher.instance.sendFfiPlatformMessage('ffi-platform-channel', null);
+      break;
     default:
       currentScenario?.onPlatformMessage(name, data, callback);
   }

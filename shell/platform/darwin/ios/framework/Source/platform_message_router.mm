@@ -43,19 +43,17 @@ void PlatformMessageRouter::HandlePlatformMessage(
 std::unique_ptr<fml::Mapping> PlatformMessageRouter::HandleFFIPlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) const {
   std::unique_ptr<fml::Mapping> response;
-  std::unique_ptr<fml::Mapping>* response_ptr = &response;
-  auto it = message_handlers_.find(message->channel());
-  if (it != message_handlers_.end()) {
-    FlutterBinaryMessageHandler handler = it->second;
+  auto it = ffi_message_handlers_.find(message->channel());
+  if (it != ffi_message_handlers_.end()) {
+    FlutterFFIBinaryMessageHandler handler = it->second;
     NSData* data = nil;
     if (message->hasData()) {
       data = ConvertMappingToNSData(message->releaseData());
     }
-    handler(data, ^(NSData* reply) {
-      if (reply) {
-        *response_ptr = ConvertNSDataToMappingPtr(reply);
-      }
-    });
+    NSData* reply = handler(data);
+    if (reply) {
+      response = ConvertNSDataToMappingPtr(reply);
+    }
   }
   return response;
 }
