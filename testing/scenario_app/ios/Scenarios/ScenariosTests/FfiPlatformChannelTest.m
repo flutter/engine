@@ -15,27 +15,27 @@
 - (void)testCalls {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   XCTAssertTrue([engine runWithEntrypoint:nil]);
-  
+
   XCTestExpectation* ffiChannelCalled = [self expectationWithDescription:@"ffi channel called"];
-  
+
   FlutterFFIChannel* ffiChannel =
       [[FlutterFFIChannel alloc] initWithName:@"ffi-platform-channel"
                               binaryMessenger:engine.binaryMessenger
                                         codec:[FlutterStandardMessageCodec sharedInstance]];
-  [ffiChannel setMessageHandler:^id _Nullable(id  _Nullable message) {
+  [ffiChannel setMessageHandler:^id _Nullable(id _Nullable message) {
     [ffiChannelCalled fulfill];
     return nil;
   }];
-  
-  FlutterBasicMessageChannel* ffiChannelController =
-      [[FlutterBasicMessageChannel alloc] initWithName:@"ffi-platform-channel-control"
-                                       binaryMessenger:engine.binaryMessenger
-                                                 codec:[FlutterStandardMessageCodec sharedInstance]];
+
+  FlutterBasicMessageChannel* ffiChannelController = [[FlutterBasicMessageChannel alloc]
+         initWithName:@"ffi-platform-channel-control"
+      binaryMessenger:engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]];
   sleep(5);
   [ffiChannelController sendMessage:nil];
-  
-  [self waitForExpectations:@[ffiChannelCalled] timeout:30.0];
-  
+
+  [self waitForExpectations:@[ ffiChannelCalled ] timeout:30.0];
+
   [engine destroyContext];
 }
 
