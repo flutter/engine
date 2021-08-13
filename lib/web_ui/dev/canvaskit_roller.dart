@@ -11,13 +11,14 @@ import 'package:yaml/yaml.dart';
 import 'environment.dart';
 import 'utils.dart';
 
-/// Fetches a snapshot of the pre-built CanvasKit from the CDN using the version
-/// specified in `dev/canvaskit_lock.yaml`, and packages it into a CIPD package.
+/// Rolls CanvasKit to the version specified in `dev/canvaskit_lock.yaml`.
 ///
-/// Verifies that the version is correctly specified in the `DEPS` file and in
-/// `lib/web_ui/lib/src/engine/canvaskit/initialization.dart`.
+/// Detailed instructions for how to use this script can be found in
+/// `lib/web_ui/README.md`.
 Future<void> main(List<String> args) async {
   final String canvaskitVersion = _readCanvaskitVersion();
+  print('Rolling CanvasKit to version $canvaskitVersion');
+
   final Directory canvaskitDirectory = await Directory.systemTemp.createTemp('canvaskit-roll-$canvaskitVersion-');
   print('Will use ${canvaskitDirectory.path} as staging directory.');
 
