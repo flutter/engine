@@ -29,5 +29,6 @@ public class FlutterTextureViewTest {
     listener.onSurfaceTextureDestroyed(mock(SurfaceTexture.class));
 
     verify(mockRenderSurface).release();
+    assertEquals(1, 2);
   }
 }
