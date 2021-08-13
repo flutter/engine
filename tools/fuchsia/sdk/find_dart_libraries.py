@@ -13,11 +13,9 @@ its provided libraries or its third_party packages.
 
 import argparse
 import json
-import yaml
 import os
 import sys
 import pkg_resources
-
 
 def find_package(root, local_paths, package, version):
     """Return the package target if found with at least this version"""
@@ -68,6 +66,9 @@ def main():
     if len(versioned_dart_packages) > 0:
         assert len(versioned_dart_packages) % 2 == 0, (
             'Each third_party_dep package must be accompanied by a version')
+
+    sys.path += [os.path.join(root, 'third_party', 'pyyaml', 'lib3')]
+    import yaml
 
     dart_package_paths = []
     it = iter(versioned_dart_packages)

@@ -138,6 +138,8 @@ deps = {
   'src/third_party/spirv_cross':
    Var('github_git') + '/KhronosGroup/SPIRV-Cross.git' + '@' + '418542eaefdb609f548d25a1e3962fb69d80da63',
 
+  'src/third_party/pyyaml':
+   Var('fuchsia_git') + '/third_party/pyyaml' + '@' + '0d71b7df69ec44d1e8cfd81dc580a9612c0e5e21',
 
    # Chromium-style
    #
