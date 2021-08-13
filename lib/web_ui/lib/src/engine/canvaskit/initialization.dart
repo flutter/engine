@@ -59,6 +59,11 @@ const bool canvasKitForceCpuOnly = bool.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
     defaultValue: false);
 
+/// The version of CanvasKit used by the web engine by default.
+///
+/// See `lib/web_ui/README.md` for how to update this value.
+const String canvaskitVersion = '0.29.0';
+
 /// The URL to use when downloading the CanvasKit script and associated wasm.
 ///
 /// The expected directory structure nested under this URL is as follows:
@@ -86,7 +91,7 @@ const bool canvasKitForceCpuOnly = bool.fromEnvironment(
 /// NPM, update this URL to `https://unpkg.com/canvaskit-wasm@0.34.0/bin/`.
 const String canvasKitBaseUrl = String.fromEnvironment(
   'FLUTTER_WEB_CANVASKIT_URL',
-  defaultValue: 'https://unpkg.com/canvaskit-wasm@0.28.1/bin/',
+  defaultValue: 'https://unpkg.com/canvaskit-wasm@$canvaskitVersion/bin/',
 );
 const String canvasKitBuildUrl =
     canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
