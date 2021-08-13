@@ -1,4 +1,4 @@
-Signature: e2fd126030d914f33c35d4840c3f9b17
+Signature: 8cbedd9744c59b2dcbba33f4bf7c356c
 
 UNUSED LICENSES:
 
@@ -9906,6 +9906,8 @@ ORIGIN: ../../../third_party/dart/benchmarks/DartCLIStartup/dart/DartCLIStartup.
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/DartCLIStartup/dart/DartCLIStartup.dart
 FILE: ../../../third_party/dart/benchmarks/DartCLIStartup/dart2/DartCLIStartup.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart/IsolateFibonacci.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart2/IsolateFibonacci.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/MapLookup.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/MapLookup.dart
@@ -9926,6 +9928,10 @@ FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool100.dart
 FILE: ../../../third_party/dart/runtime/bin/abstract_socket_test.cc
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory_fuchsia.cc
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory_posix.cc
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory_win.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.h
