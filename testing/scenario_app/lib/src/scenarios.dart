@@ -6,7 +6,6 @@ import 'dart:ui';
 
 import 'animated_color_square.dart';
 import 'bogus_font_text.dart';
-import 'ffi_platform_channel.dart';
 import 'initial_route_reply.dart';
 import 'locale_initialization.dart';
 import 'platform_view.dart';
@@ -49,7 +48,6 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'bogus_font_text': () => BogusFontText(PlatformDispatcher.instance),
   'spawn_engine_works' : () => BogusFontText(PlatformDispatcher.instance),
   'pointer_events': () => TouchesScenario(PlatformDispatcher.instance),
-  'ffi_platform_channel' : () => FfiPlatformChannel(PlatformDispatcher.instance),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

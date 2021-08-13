@@ -58,7 +58,6 @@
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",
     @"--pointer-events" : @"pointer_events",
-    @"--ffi-platform-channel" : @"ffi_platform_channel",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -133,15 +132,6 @@
               text.text = dict[@"data"];
               [flutterViewController.view addSubview:text];
             }];
-  FlutterFFIChannel* ffiChannel = [[FlutterFFIChannel alloc] initWithName:@"ffi-platform-channel"
-                                                          binaryMessenger:engine.binaryMessenger
-                                                                    codec:[FlutterStandardMessageCodec sharedInstance]];
-  [ffiChannel setMessageHandler:^id _Nullable(id  _Nullable message) {
-    UIButton* button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    [button setTitle:@"ffi-platform-channel" forState:UIControlStateNormal];
-    [flutterViewController.view addSubview:button];
-    return nil;
-  }];
 
   TextPlatformViewFactory* textPlatformViewFactory =
       [[TextPlatformViewFactory alloc] initWithMessenger:engine.binaryMessenger];
