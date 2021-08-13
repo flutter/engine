@@ -186,6 +186,10 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
     }
   }
 
+  public void setRenderSurface(Surface renderSurface) {
+    this.renderSurface = renderSurface;
+  }
+
   // FlutterRenderer and getSurfaceTexture() must both be non-null.
   private void connectSurfaceToRenderer() {
     if (flutterRenderer == null || getSurfaceTexture() == null) {
