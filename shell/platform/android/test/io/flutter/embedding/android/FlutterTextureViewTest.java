@@ -1,5 +1,6 @@
 package test.io.flutter.embedding.android;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
