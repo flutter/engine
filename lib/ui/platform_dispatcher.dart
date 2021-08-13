@@ -474,6 +474,14 @@ class PlatformDispatcher {
   String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data)
       native 'PlatformConfiguration_sendPlatformMessage';
 
+
+  ByteData? sendFfiPlatformMessage(String name, ByteData? data) {
+    return _sendFfiPlatformMessage(name, data);
+  }
+
+  ByteData? _sendFfiPlatformMessage(String name, ByteData? data)
+      native 'PlatformConfiguration_sendFfiPlatformMessage';
+
   /// Called whenever this platform dispatcher receives a message from a
   /// platform-specific plugin.
   ///
