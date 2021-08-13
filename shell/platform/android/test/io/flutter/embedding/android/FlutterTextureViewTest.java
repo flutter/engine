@@ -23,7 +23,7 @@ public class FlutterTextureViewTest {
     final FlutterTextureView textureView = new FlutterTextureView(RuntimeEnvironment.application);
     final Surface mockRenderSurface = mock(Surface.class);
 
-    flutterTextureView.setRenderSurface(mockRenderSurface);
+    textureView.setRenderSurface(mockRenderSurface);
 
     final TextureView.SurfaceTextureListener listener = textureView.getSurfaceTextureListener();
     listener.onSurfaceTextureDestroyed(mock(SurfaceTexture.class));
