@@ -42,6 +42,8 @@ void PlatformMessageRouter::HandlePlatformMessage(
 
 std::unique_ptr<fml::Mapping> PlatformMessageRouter::HandleFFIPlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) const {
+  // This executes on the ui thread.
+  std::scoped_lock lock(ffi_mutex_);
   std::unique_ptr<fml::Mapping> response;
   auto it = ffi_message_handlers_.find(message->channel());
   if (it != ffi_message_handlers_.end()) {
@@ -69,6 +71,8 @@ void PlatformMessageRouter::SetMessageHandler(const std::string& channel,
 
 void PlatformMessageRouter::SetFFIMessageHandler(const std::string& channel,
                                                  FlutterFFIBinaryMessageHandler handler) {
+  // This executes on the platform thread.
+  std::scoped_lock lock(ffi_mutex_);
   ffi_message_handlers_.erase(channel);
   if (handler) {
     ffi_message_handlers_[channel] =

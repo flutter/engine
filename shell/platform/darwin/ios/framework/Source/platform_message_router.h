@@ -32,6 +32,7 @@ class PlatformMessageRouter {
                             FlutterFFIBinaryMessageHandler handler);
 
  private:
+  mutable std::mutex ffi_mutex_;
   std::unordered_map<std::string, fml::ScopedBlock<FlutterBinaryMessageHandler>>
       message_handlers_;
   std::unordered_map<std::string,
