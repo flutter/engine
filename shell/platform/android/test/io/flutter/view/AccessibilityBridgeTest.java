@@ -741,13 +741,16 @@ public class AccessibilityBridgeTest {
     ViewParent mockParent = mock(ViewParent.class);
     when(mockRootView.getParent()).thenReturn(mockParent);
     when(mockManager.isEnabled()).thenReturn(true);
-
+    // Create a node with tooltip.
     TestSemanticsNode root = new TestSemanticsNode();
     root.id = 0;
     root.tooltip = "tooltip";
 
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
+
+    // Test the generated AccessibilityNodeInfo for the node we created
+    // and verify it has correct tooltip text.
     AccessibilityNodeInfo nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(0);
     CharSequence actual = nodeInfo.getTooltipText();
     assertEquals(actual.toString(), root.tooltip);

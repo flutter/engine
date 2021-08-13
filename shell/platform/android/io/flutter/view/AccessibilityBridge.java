@@ -266,8 +266,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         /** The user has opened a tooltip. */
         @Override
         public void onTooltip(@NonNull String message) {
-          // Tooltip open is no longer announced after API 28 and is handled by
+          // Native Android tooltip is no longer announced when it pops up after API 28 and is
+          // handled by
           // AccessibilityNodeInfo.setTooltipText instead.
+          //
+          // To reproduce native behavior, see
+          // https://developer.android.com/guide/topics/ui/tooltips.
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             return;
           }
@@ -831,6 +835,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       CharSequence content = semanticsNode.getValueLabelHint();
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
         if (semanticsNode.tooltip != null) {
+          // For backward compatibility, the tooltip is appended
+          // at the end of content description.
           content = content != null ? content : "";
           content = content + "\n" + semanticsNode.tooltip;
         }
@@ -2204,7 +2210,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private List<StringAttribute> decreasedValueAttributes;
     private String hint;
     private List<StringAttribute> hintAttributes;
-    private String tooltip;
+
+    // The textual description of the backing widget's tooltip.
+    //
+    // The tooltip is attached through AccessibilityNodInfo.setTooltipText if
+    // API level >= 28; otherwise, this is attached to the end of content description.
+    @Nullable private String tooltip;
 
     // The id of the sibling node that is before this node in traversal
     // order.
