@@ -1230,8 +1230,12 @@ std::unique_ptr<fml::Mapping> Shell::OnEngineHandleFfiPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  return platform_view_->GetWeakPtr()->HandleFfiPlatformMessage(
-      std::move(message));
+  /// TODO(gaaclarke): This isn't threadsafe.  Someone could change
+  /// platform_view_ on the platform thread.  Dispatching to the platform thread
+  /// will cause deadlocks.
+  std::unique_ptr<fml::Mapping> result =
+      platform_view_->HandleFfiPlatformMessage(std::move(message));
+  return result;
 }
 
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {

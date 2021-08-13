@@ -175,8 +175,8 @@ void _SendFfiPlatformMessage(Dart_NativeArguments args) {
     Dart_ThrowException(exception);
   }
   Dart_Handle data_handle = Dart_GetNativeArgument(args, 2);
-  Dart_Handle result =
-      ToByteData(*SendFfiPlatformMessage(window, channel, data_handle));
+  std::unique_ptr<fml::Mapping> resultData = SendFfiPlatformMessage(window, channel, data_handle);
+  Dart_Handle result = (resultData && resultData->GetSize() > 0) ? ToByteData(*resultData) : Dart_Null();
   Dart_SetReturnValue(args, result);
 }
 
