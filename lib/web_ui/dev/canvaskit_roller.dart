@@ -18,8 +18,6 @@ import 'utils.dart';
 /// `lib/web_ui/lib/src/engine/canvaskit/initialization.dart`.
 Future<void> main(List<String> args) async {
   final String canvaskitVersion = _readCanvaskitVersion();
-  await _validateCanvaskitInitializationCode(canvaskitVersion);
-
   final Directory canvaskitDirectory = await Directory.systemTemp.createTemp('canvaskit-roll-$canvaskitVersion-');
   print('Will use ${canvaskitDirectory.path} as staging directory.');
 
@@ -76,6 +74,7 @@ data:
 
   print('Updating DEPS file');
   await _updateDepsFile(cipdInstanceId);
+  await _updateCanvaskitInitializationCode(canvaskitVersion);
 
   print('\nATTENTION: the roll process is not complete yet.');
   print('Last step: for the roll to take effect submit an engine pull request from local git changes.');
@@ -131,35 +130,38 @@ Future<void> _updateDepsFile(String cipdInstanceId) async {
   await depsFile.writeAsString(rewrittenDepsCode.join('\n'));
 }
 
-Future<void> _validateCanvaskitInitializationCode(String canvaskitVersion) async {
+Future<void> _updateCanvaskitInitializationCode(String canvaskitVersion) async {
   const String kCanvasKitVersionKey = 'const String canvaskitVersion';
   const String kPathToInitializationCode = 'lib/src/engine/canvaskit/initialization.dart';
-  final String initializationCode = await File(pathlib.join(
+  final File initializationFile = File(pathlib.join(
     environment.webUiRootDir.path,
     kPathToInitializationCode,
-  )).readAsString();
-  final String versionInCode = initializationCode
-    .split('\n')
-    .firstWhere(
-      (String line) => line.startsWith(kCanvasKitVersionKey),
-      orElse: () {
-        throw Exception('Failed to find "$kCanvasKitVersionKey" in $kPathToInitializationCode');
-      }
-    );
+  ));
+  final String originalInitializationCode = await initializationFile.readAsString();
 
-  final String expectedVersion = '$kCanvasKitVersionKey = \'$canvaskitVersion\';';
-  if (versionInCode != expectedVersion) {
+  final List<String> rewrittenCode = <String>[];
+  bool canvaskitVersionFound = false;
+  for (final String line in originalInitializationCode.split('\n')) {
+    if (line.trim().startsWith(kCanvasKitVersionKey)) {
+      canvaskitVersionFound = true;
+      rewrittenCode.add(
+        "const String canvaskitVersion = '$canvaskitVersion';",
+      );
+    } else {
+      rewrittenCode.add(line);
+    }
+  }
+
+  if (!canvaskitVersionFound) {
     stderr.writeln(
-      'ERROR: the CanvasKit bundle version specified in $kPathToInitializationCode '
-      'does not match the version specified in lib/web_ui/dev/canvaskit_lock.yaml.\n'
+      'Failed to update CanvasKit version in $kPathToInitializationCode.\n'
+      'Could not to locate the constant that defines the version. Make sure the '
+      '$kPathToInitializationCode file contains a line like this:\n'
       '\n'
-      'Expected: $expectedVersion\n'
-      'Actual  : $versionInCode\n'
-      '\n'
-      'To fix the issue, edit $kPathToInitializationCode and update the value of '
-      'the constant. Alternatively, revert the changes made in '
-      'lib/web_ui/dev/canvaskit_lock.yaml.',
+      'const String canvaskitVersion = \'VERSION\';'
     );
     exit(1);
   }
+
+  await initializationFile.writeAsString(rewrittenCode.join('\n'));
 }

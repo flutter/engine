@@ -18,8 +18,6 @@ directly), follow these steps to roll to the new version:
   #hackers-infra-🌡 on Flutter's Discord server).
 - Edit `dev/canvaskit_lock.yaml` and update the value of `canvaskit_version`
   to the new version.
-- Edit `lib/src/engine/canvaskit/initialization.dart` and update the value of
-  the `canvaskitVersion` constant in Dart code to the new version.
 - Run `dart dev/canvaskit_roller.dart` and make sure it completes successfully.
   The script uploads the new version of CanvasKit to the
   `flutter/web/canvaskit_bundle` CIPD package, and writes the CIPD package

@@ -30,7 +30,7 @@ vars = {
   'skia_revision': 'b65b4da554184bb0a4c965d0bdcd3d806178f50c',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
-  # See `lib/web_ui/README.md` for how to update this value.
+  # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
   'canvaskit_cipd_instance': 'srPdrAoUIWOde-KMPE5S8koi64mejhae7NzvfR_7m3gC',
 
   # When updating the Dart revision, ensure that all entries that are
