@@ -19,9 +19,9 @@ const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
 
 /// A paragraph made up of a flat list of text spans and placeholders.
 ///
-/// As opposed to [DomParagraph], a [CanvasParagraph] doesn't use a DOM element
-/// to represent the structure of its spans and styles. Instead it uses a flat
-/// list of [ParagraphSpan] objects.
+/// [CanvasParagraph] doesn't use a DOM element to represent the structure of
+/// its spans and styles. Instead it uses a flat list of [ParagraphSpan]
+/// objects.
 class CanvasParagraph implements EngineParagraph {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
