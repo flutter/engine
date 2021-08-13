@@ -55,35 +55,4 @@ Future<void> testMain() async {
 
     return scuba.diffCanvasScreenshot(canvas, 'text_max_lines');
   });
-
-  testEachCanvas('long unbreakable text', (EngineCanvas canvas) {
-    Offset offset = Offset.zero;
-    EngineParagraph p;
-
-    // The whole line is rendered unbroken when there are no constraints.
-    p = paragraph(longUnbreakable);
-    canvas.drawParagraph(p, offset);
-    offset = offset.translate(0, p.height + 10);
-
-    // The whole line is rendered with an ellipsis.
-    p = paragraph(
-      longUnbreakable,
-      paragraphStyle: ParagraphStyle(ellipsis: '...'),
-      maxWidth: 200,
-    );
-    canvas.drawParagraph(p, offset);
-    offset = offset.translate(0, p.height + 10);
-
-    // The text is broken into multiple lines.
-    p = paragraph(longUnbreakable, maxWidth: 200);
-    canvas.drawParagraph(p, offset);
-    offset = offset.translate(0, p.height + 10);
-
-    // Very narrow constraint (less than one character's width).
-    p = paragraph('AA', maxWidth: 7);
-    canvas.drawParagraph(p, offset);
-    offset = offset.translate(0, p.height + 10);
-
-    return scuba.diffCanvasScreenshot(canvas, 'text_long_unbreakable');
-  });
 }
