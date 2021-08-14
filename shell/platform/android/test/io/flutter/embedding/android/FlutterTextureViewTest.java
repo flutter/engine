@@ -8,7 +8,6 @@ import android.annotation.TargetApi;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.TextureView;
-import io.flutter.embedding.android.FlutterTextureView;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
