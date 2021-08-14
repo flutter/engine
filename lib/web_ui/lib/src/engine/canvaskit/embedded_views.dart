@@ -378,33 +378,81 @@ class HtmlViewEmbedder {
       return;
     }
 
-    SurfaceFactory.instance.removeSurfacesFromDom();
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
+    final ViewListDiffResult? diffResult =
+        (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
+            ? null
+            : diffViewList(_activeCompositionOrder, _compositionOrder);
     _activeCompositionOrder.clear();
 
     List<int>? debugInvalidViewIds;
-    for (int i = 0; i < _compositionOrder.length; i++) {
-      final int viewId = _compositionOrder[i];
 
-      if (assertionsEnabled) {
-        if (!platformViewManager.knowsViewId(viewId)) {
-          debugInvalidViewIds ??= <int>[];
-          debugInvalidViewIds.add(viewId);
-          continue;
-        }
+    if (diffResult != null) {
+      disposeViews(diffResult.viewsToRemove.toSet());
+      _activeCompositionOrder.addAll(_compositionOrder);
+      unusedViews.removeAll(_compositionOrder);
+
+      html.Element? elementToInsertBefore;
+      if (diffResult.addToBeginning) {
+        elementToInsertBefore =
+            _viewClipChains[diffResult.viewToInsertBefore!]!.root;
       }
 
-      unusedViews.remove(viewId);
-      final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
-      final html.Element overlay = _overlays[viewId]!.htmlElement;
-      platformViewRoot.remove();
-      skiaSceneHost!.append(platformViewRoot);
-      overlay.remove();
-      skiaSceneHost!.append(overlay);
-      _activeCompositionOrder.add(viewId);
-    }
-    if (_didPaintBackupSurface) {
-      skiaSceneHost!.append(SurfaceFactory.instance.backupSurface.htmlElement);
+      for (final int viewId in diffResult.viewsToAdd) {
+        unusedViews.remove(viewId);
+        if (assertionsEnabled) {
+          if (!platformViewManager.knowsViewId(viewId)) {
+            debugInvalidViewIds ??= <int>[];
+            debugInvalidViewIds.add(viewId);
+            continue;
+          }
+        }
+        if (diffResult.addToBeginning) {
+          final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
+          skiaSceneHost!.insertBefore(platformViewRoot, elementToInsertBefore);
+          final Surface overlay = _overlays[viewId]!;
+          if (overlay != SurfaceFactory.instance.backupSurface) {
+            skiaSceneHost!
+                .insertBefore(overlay.htmlElement, elementToInsertBefore);
+          }
+        } else {
+          final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
+          skiaSceneHost!.append(platformViewRoot);
+          final Surface overlay = _overlays[viewId]!;
+          if (overlay != SurfaceFactory.instance.backupSurface) {
+            skiaSceneHost!.append(overlay.htmlElement);
+          }
+        }
+      }
+      if (_didPaintBackupSurface) {
+        skiaSceneHost!
+            .append(SurfaceFactory.instance.backupSurface.htmlElement);
+      }
+    } else {
+      SurfaceFactory.instance.removeSurfacesFromDom();
+      for (int i = 0; i < _compositionOrder.length; i++) {
+        final int viewId = _compositionOrder[i];
+
+        if (assertionsEnabled) {
+          if (!platformViewManager.knowsViewId(viewId)) {
+            debugInvalidViewIds ??= <int>[];
+            debugInvalidViewIds.add(viewId);
+            continue;
+          }
+        }
+
+        final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
+        final Surface overlay = _overlays[viewId]!;
+        skiaSceneHost!.append(platformViewRoot);
+        if (overlay != SurfaceFactory.instance.backupSurface) {
+          skiaSceneHost!.append(overlay.htmlElement);
+        }
+        _activeCompositionOrder.add(viewId);
+      }
+      if (_didPaintBackupSurface) {
+        skiaSceneHost!
+            .append(SurfaceFactory.instance.backupSurface.htmlElement);
+      }
     }
 
     _compositionOrder.clear();
@@ -688,4 +736,86 @@ class MutatorsStack extends Iterable<Mutator> {
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;
+}
+
+/// The results of diffing the current composition order with the active
+/// composition order.
+class ViewListDiffResult {
+  /// Views which should be removed from the scene.
+  final List<int> viewsToRemove;
+
+  /// Views to add to the scene.
+  final List<int> viewsToAdd;
+
+  /// If `true`, [viewsToAdd] should be added at the beginning of the scene.
+  /// Otherwise, they should be added at the end of the scene.
+  final bool addToBeginning;
+
+  /// If [addToBeginning] is `true`, then this is the id of the platform view
+  /// to insert [viewsToAdd] before.
+  ///
+  /// `null` if [addToBeginning] is `false`.
+  final int? viewToInsertBefore;
+
+  const ViewListDiffResult(
+      this.viewsToRemove, this.viewsToAdd, this.addToBeginning,
+      {this.viewToInsertBefore});
+}
+
+/// Diff the composition order with the active composition order. It is
+/// common for the composition order and active composition order to differ
+/// only slightly.
+///
+/// Consider a scrolling list of platform views; from frame
+/// to frame the composition order will change in one of two ways, depending
+/// on which direction the list is scrolling. One or more views will be added
+/// to the beginning of the list, and one or more views will be removed from
+/// the end of the list, with the order of the unchanged middle views
+/// remaining the same.
+ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
+  assert(active.isNotEmpty && next.isNotEmpty,
+      'diffViewList called with empty view list');
+  // If the [active] and [next] lists are in the expected form described above,
+  // then either the first or last element of [next] will be in [active].
+  int index = active.indexOf(next.first);
+  if (index != -1) {
+    // Verify that the active composition order is contained, in order, in the
+    // next composition order.
+    for (int i = 0; i + index < active.length; i++) {
+      if (active[i + index] != next[i]) {
+        return null;
+      }
+      if (i == next.length - 1) {
+        if (index == 0) {
+          return ViewListDiffResult(active.sublist(i + 1), const <int>[], true,
+              viewToInsertBefore: next.first);
+        } else {
+          return ViewListDiffResult(
+              active.sublist(0, index), const <int>[], false);
+        }
+      }
+    }
+    return ViewListDiffResult(
+      active.sublist(0, index),
+      next.sublist(active.length - index),
+      false,
+    );
+  }
+
+  index = active.lastIndexOf(next.last);
+  if (index != -1) {
+    for (int i = 0; index - i >= 0; i++) {
+      if (next.length <= i || active[index - i] != next[next.length - 1 - i]) {
+        return null;
+      }
+    }
+    return ViewListDiffResult(
+      active.sublist(index + 1),
+      next.sublist(0, next.length - index - 1),
+      true,
+      viewToInsertBefore: active.first,
+    );
+  }
+
+  return null;
 }
