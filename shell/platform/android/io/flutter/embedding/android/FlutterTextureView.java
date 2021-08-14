@@ -11,6 +11,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
@@ -82,6 +83,12 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
           // has been destroyed.
           if (isAttachedToFlutterRenderer) {
             disconnectSurfaceFromRenderer();
+          }
+
+          // Definitively release the surface to avoid leaked closeables, just in case
+          if (renderSurface != null) {
+            renderSurface.release();
+            renderSurface = null;
           }
 
           // Return true to indicate that no further painting will take place
@@ -186,6 +193,12 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
     }
   }
 
+  /**
+   * Manually set the render surface for this view.
+   *
+   * <p>This should only be used for testing purposes.
+   */
+  @VisibleForTesting
   public void setRenderSurface(Surface renderSurface) {
     this.renderSurface = renderSurface;
   }
@@ -195,6 +208,12 @@ public class FlutterTextureView extends TextureView implements RenderSurface {
     if (flutterRenderer == null || getSurfaceTexture() == null) {
       throw new IllegalStateException(
           "connectSurfaceToRenderer() should only be called when flutterRenderer and getSurfaceTexture() are non-null.");
+    }
+
+    // Definitively release the surface to avoid leaked closeables, just in case
+    if (renderSurface != null) {
+      renderSurface.release();
+      renderSurface = null;
     }
 
     renderSurface = new Surface(getSurfaceTexture());

@@ -1,6 +1,5 @@
 package io.flutter.embedding.android;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -29,6 +28,5 @@ public class FlutterTextureViewTest {
     listener.onSurfaceTextureDestroyed(mock(SurfaceTexture.class));
 
     verify(mockRenderSurface).release();
-    assertEquals(1, 2);
   }
 }
