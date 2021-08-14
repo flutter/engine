@@ -470,8 +470,12 @@ Shell::~Shell() {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetPlatformTaskRunner(),
       fml::MakeCopyable([platform_view = std::move(platform_view_),
+                         &platform_view_mutex = platform_view_mutex_,
                          &platform_latch]() mutable {
-        platform_view.reset();
+        {
+          std::scoped_lock lock(platform_view_mutex);
+          platform_view.reset();
+        }
         platform_latch.Signal();
       }));
   platform_latch.Wait();
@@ -621,7 +625,10 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
     return false;
   }
 
-  platform_view_ = std::move(platform_view);
+  {
+    std::scoped_lock lock(platform_view_mutex_);
+    platform_view_ = std::move(platform_view);
+  }
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
   io_manager_ = std::move(io_manager);
@@ -1230,11 +1237,17 @@ std::unique_ptr<fml::Mapping> Shell::OnEngineHandleFfiPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
-  /// TODO(gaaclarke): This isn't threadsafe.  Someone could change
-  /// platform_view_ on the platform thread.  Dispatching to the platform thread
-  /// will cause deadlocks.
-  std::unique_ptr<fml::Mapping> result =
-      platform_view_->HandleFfiPlatformMessage(std::move(message));
+  std::unique_ptr<fml::Mapping> result;
+  {
+    std::scoped_lock lock(platform_view_mutex_);
+    if (platform_view_) {
+      result = platform_view_->HandleFfiPlatformMessage(std::move(message));
+    } else {
+      FML_DLOG(ERROR) << "FFI Platform Message sent to engine that isn't "
+                         "running on channel "
+                      << message->channel();
+    }
+  }
   return result;
 }
 

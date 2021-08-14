@@ -406,9 +406,12 @@ class Shell final : public PlatformView::Delegate,
   mutable std::mutex time_recorder_mutex_;
   std::optional<fml::TimePoint> latest_frame_target_time_;
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
-  std::unique_ptr<Engine> engine_;               // on UI task runner
-  std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
-  std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
+  /// A mutex that blocks the platform_view_ from being deleted while it is
+  /// handling FFI platform messages.
+  std::mutex platform_view_mutex_;
+  std::unique_ptr<Engine> engine_;              // on UI task runner
+  std::unique_ptr<Rasterizer> rasterizer_;      // on raster task runner
+  std::unique_ptr<ShellIOManager> io_manager_;  // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
   std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
 
