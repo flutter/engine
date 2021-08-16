@@ -66,8 +66,8 @@ void DartUI::InitForGlobal() {
     ColorFilter::RegisterNatives(g_natives);
     DartRuntimeHooks::RegisterNatives(g_natives);
     EngineLayer::RegisterNatives(g_natives);
-    FragmentShader::RegisterNatives(g_natives);
     FontCollection::RegisterNatives(g_natives);
+    FragmentShader::RegisterNatives(g_natives);
     ImageDescriptor::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);

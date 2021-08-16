@@ -38,7 +38,8 @@ void FragmentShader::RegisterNatives(tonic::DartLibraryNatives* natives) {
 }
 
 sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
-  // TODO(insert github issue): implement this method.
+  // TODO(antrob): Use sampling?
+  // https://github.com/flutter/flutter/issues/88303
   return shader_;
 }
 

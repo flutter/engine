@@ -19,8 +19,8 @@ int main(int argc, const char* argv[]) {
   }
 
   fs::path path(argv[1]);
-  if (!fs::exists(path)) {
-    std::cerr << "File does not exist." << std::endl;
+  if (!fs::is_regular_file(path)) {
+    std::cerr << "File is not a regular file." << std::endl;
     return -1;
   }
 
@@ -56,7 +56,7 @@ int main(int argc, const char* argv[]) {
   if (!output.is_open()) {
     output.close();
     std::cerr << "failed to open output file" << std::endl;
-    std::abort();
+    return -1;
   }
 
   output.write(reinterpret_cast<const char*>(spirv.data()),
