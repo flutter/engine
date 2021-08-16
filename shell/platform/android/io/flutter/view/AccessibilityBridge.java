@@ -829,14 +829,16 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
     }
 
+    // Scopes routes are not focusable, only need to set the content
+    // for non-scopes-routes semantics nodes.
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
       result.setText(semanticsNode.getValueLabelHint());
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       CharSequence content = semanticsNode.getValueLabelHint();
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
         if (semanticsNode.tooltip != null) {
-          // For backward compatibility, the tooltip is appended
-          // at the end of content description.
+          // For backward compatibility with Flutter SDK before Android API
+          // level 28, the tooltip is appended at the end of content description.
           content = content != null ? content : "";
           content = content + "\n" + semanticsNode.tooltip;
         }
