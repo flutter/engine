@@ -62,6 +62,7 @@ FlutterEngine.html
 FlutterEngineGroup.html
 FlutterError.html
 FlutterEventChannel.html
+FlutterFFIChannel.html
 FlutterHeadlessDartRunner.html
 FlutterMethodCall.html
 FlutterMethodChannel.html

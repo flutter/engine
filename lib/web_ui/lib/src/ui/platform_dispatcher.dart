@@ -48,6 +48,8 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  ByteData? sendFfiPlatformMessage(String name, ByteData? data) => null;
+
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
