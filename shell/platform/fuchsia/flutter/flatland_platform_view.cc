@@ -1,4 +1,4 @@
-// Copyright 2021 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -16,6 +16,7 @@ FlatlandPlatformView::FlatlandPlatformView(
     std::shared_ptr<sys::ServiceDirectory> runner_services,
     fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
         parent_environment_service_provider,
+    fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher,
     fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> vrf,
     fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
     fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
@@ -51,8 +52,47 @@ FlatlandPlatformView::FlatlandPlatformView(
                    std::move(on_shader_warmup),
                    std::move(view_embedder),
                    std::move(await_vsync_callback),
-                   std::move(await_vsync_for_secondary_callback_callback)) {}
+                   std::move(await_vsync_for_secondary_callback_callback)),
+      parent_viewport_watcher_(std::move(parent_viewport_watcher)) {
+  parent_viewport_watcher_.set_error_handler([](zx_status_t status) {
+    FML_LOG(ERROR) << "Interface error on: ParentViewportWatcher status: "
+                   << status;
+  });
+
+  parent_viewport_watcher_->GetLayout(
+      fit::bind_member(this, &FlatlandPlatformView::OnGetLayout));
+}
 
 FlatlandPlatformView::~FlatlandPlatformView() = default;
+
+void FlatlandPlatformView::OnGetLayout(
+    fuchsia::ui::composition::LayoutInfo info) {
+  view_logical_size_ = {static_cast<float>(info.logical_size().width),
+                        static_cast<float>(info.logical_size().height)};
+
+  // TODO(fxbug.dev/64201): Set device pixel ratio.
+
+  SetViewportMetrics({
+      1,                              // device_pixel_ratio
+      view_logical_size_.value()[0],  // physical_width
+      view_logical_size_.value()[1],  // physical_height
+      0.0f,                           // physical_padding_top
+      0.0f,                           // physical_padding_right
+      0.0f,                           // physical_padding_bottom
+      0.0f,                           // physical_padding_left
+      0.0f,                           // physical_view_inset_top
+      0.0f,                           // physical_view_inset_right
+      0.0f,                           // physical_view_inset_bottom
+      0.0f,                           // physical_view_inset_left
+      0.0f,                           // p_physical_system_gesture_inset_top
+      0.0f,                           // p_physical_system_gesture_inset_right
+      0.0f,                           // p_physical_system_gesture_inset_bottom
+      0.0f,                           // p_physical_system_gesture_inset_left,
+      -1.0,                           // p_physical_touch_slop,
+  });
+
+  parent_viewport_watcher_->GetLayout(
+      fit::bind_member(this, &FlatlandPlatformView::OnGetLayout));
+}
 
 }  // namespace flutter_runner

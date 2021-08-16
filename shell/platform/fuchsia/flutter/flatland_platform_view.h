@@ -1,4 +1,4 @@
-// Copyright 2021 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -20,6 +20,8 @@ class FlatlandPlatformView final : public flutter_runner::PlatformView {
       std::shared_ptr<sys::ServiceDirectory> runner_services,
       fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
           parent_environment_service_provider,
+      fuchsia::ui::composition::ParentViewportWatcherPtr
+          parent_viewport_watcher,
       fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> vrf,
       fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
       fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
@@ -38,7 +40,11 @@ class FlatlandPlatformView final : public flutter_runner::PlatformView {
           await_vsync_for_secondary_callback_callback);
   ~FlatlandPlatformView();
 
+  void OnGetLayout(fuchsia::ui::composition::LayoutInfo info);
+
  private:
+  fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlatlandPlatformView);
 };
 
