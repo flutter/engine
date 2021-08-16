@@ -833,18 +833,18 @@ public class AccessibilityBridgeTest {
     TestSemanticsUpdate testSemanticsUpdate = root.toUpdate();
     testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
     accessibilityBridge.performAction(0, AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null);
-    AccessibilityNodeInfo nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(1);
+    AccessibilityNodeInfo nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(0);
     assertTrue(nodeInfo.isAccessibilityFocused());
     // Clear focus on non-focused node shouldn't do anything
     accessibilityBridge.performAction(
         1, AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS, null);
-    nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(1);
+    nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(0);
     assertTrue(nodeInfo.isAccessibilityFocused());
 
     // Now, clear the focus for real.
     accessibilityBridge.performAction(
         0, AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS, null);
-    nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(1);
+    nodeInfo = accessibilityBridge.createAccessibilityNodeInfo(0);
     assertFalse(nodeInfo.isAccessibilityFocused());
   }
 
