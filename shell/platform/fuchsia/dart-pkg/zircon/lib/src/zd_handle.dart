@@ -30,6 +30,7 @@ class ZDHandle {
   }
 
   bool close() {
+    assert(isValid());
     if (isValid()) {
       int? ret = zirconFFIBindings?.zircon_dart_handle_close(_ptr);
       return ret == 1;
