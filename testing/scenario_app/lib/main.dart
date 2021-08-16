@@ -58,7 +58,7 @@ Future<void> _handlePlatformMessage(
       break;
     case 'ffi-platform-channel-control':
       print('sending on ffi-platform-channel');
-      PlatformDispatcher.instance.sendFfiPlatformMessage('ffi-platform-channel', null);
+      PlatformDispatcher.instance.sendFfiPlatformMessage('ffi-platform-channel', data);
       break;
     default:
       currentScenario?.onPlatformMessage(name, data, callback);
