@@ -13,4 +13,4 @@ export UBSAN_OPTIONS="suppressions=${UBSAN_SUPPRESSIONS_FILE}"
 echo "Using Undefined Behavior suppressions in ${UBSAN_SUPPRESSIONS_FILE}"
 
 
-export ASAN_OPTIONS="detect_leaks=1"
+export ASAN_OPTIONS="detect_leaks=0"
