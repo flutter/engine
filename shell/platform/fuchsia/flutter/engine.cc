@@ -25,7 +25,7 @@
 #include "../runtime/dart/utils/root_inspect_node.h"
 #include "focus_delegate.h"
 #include "fuchsia_intl.h"
-#include "platform_view.h"
+#include "gfx_platform_view.h"
 #include "surface.h"
 #include "vsync_waiter.h"
 
@@ -62,7 +62,21 @@ Engine::Engine(Delegate& delegate,
       thread_label_(std::move(thread_label)),
       thread_host_(CreateThreadHost(thread_label_)),
       intercept_all_input_(product_config.get_intercept_all_input()),
+      view_token_(std::move(view_token)),
+      view_ref_pair_(std::move(view_ref_pair)),
       weak_factory_(this) {
+  Initialize(std::move(svc), std::move(runner_services), std::move(settings),
+             std::move(fdio_ns), std::move(directory_request),
+             std::move(product_config));
+}
+
+void Engine::Initialize(
+    std::shared_ptr<sys::ServiceDirectory> svc,
+    std::shared_ptr<sys::ServiceDirectory> runner_services,
+    flutter::Settings settings,
+    UniqueFDIONS fdio_ns,
+    fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
+    FlutterRunnerProductConfiguration product_config) {
   // Get the task runners from the managed threads. The current thread will be
   // used as the "platform" thread.
   fml::RefPtr<fml::TaskRunner> platform_task_runner =
@@ -93,15 +107,15 @@ Engine::Engine(Delegate& delegate,
   // Make clones of the `ViewRef` before sending it down to Scenic, since the
   // refs are not copyable, and multiple consumers need view refs.
   fuchsia::ui::views::ViewRef platform_view_ref;
-  view_ref_pair.view_ref.Clone(&platform_view_ref);
+  view_ref_pair_.view_ref.Clone(&platform_view_ref);
   fuchsia::ui::views::ViewRef accessibility_bridge_view_ref;
-  view_ref_pair.view_ref.Clone(&accessibility_bridge_view_ref);
+  view_ref_pair_.view_ref.Clone(&accessibility_bridge_view_ref);
   fuchsia::ui::views::ViewRef isolate_view_ref;
-  view_ref_pair.view_ref.Clone(&isolate_view_ref);
+  view_ref_pair_.view_ref.Clone(&isolate_view_ref);
   // Input3 keyboard listener registration requires a ViewRef as an event
   // filter. So we clone it here, as ViewRefs can not be reused, only cloned.
   fuchsia::ui::views::ViewRef keyboard_view_ref;
-  view_ref_pair.view_ref.Clone(&keyboard_view_ref);
+  view_ref_pair_.view_ref.Clone(&keyboard_view_ref);
 
   // Session is terminated on the raster thread, but we must terminate ourselves
   // on the platform thread.
@@ -129,8 +143,8 @@ Engine::Engine(Delegate& delegate,
        session_inspect_node = std::move(session_inspect_node),
        session = std::move(session),
        session_error_callback = std::move(session_error_callback),
-       view_token = std::move(view_token),
-       view_ref_pair = std::move(view_ref_pair),
+       view_token = std::move(view_token_),
+       view_ref_pair = std::move(view_ref_pair_),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
        vsync_offset = product_config.get_vsync_offset()]() mutable {
         session_connection_ = std::make_shared<GfxSessionConnection>(
@@ -311,7 +325,7 @@ Engine::Engine(Delegate& delegate,
               }
             }
 
-            return std::make_unique<flutter_runner::PlatformView>(
+            return std::make_unique<flutter_runner::GfxPlatformView>(
                 shell,                   // delegate
                 debug_label,             // debug label
                 std::move(view_ref),     // view ref

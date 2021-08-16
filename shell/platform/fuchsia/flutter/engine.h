@@ -87,7 +87,18 @@ class Engine final {
 
   bool intercept_all_input_ = false;
 
+  fuchsia::ui::views::ViewToken view_token_;
+  scenic::ViewRefPair view_ref_pair_;
+
   fml::WeakPtrFactory<Engine> weak_factory_;
+
+  void Initialize(
+      std::shared_ptr<sys::ServiceDirectory> svc,
+      std::shared_ptr<sys::ServiceDirectory> runner_services,
+      flutter::Settings settings,
+      UniqueFDIONS fdio_ns,
+      fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
+      FlutterRunnerProductConfiguration product_config);
 
   static void WarmupSkps(
       fml::BasicTaskRunner* concurrent_task_runner,
