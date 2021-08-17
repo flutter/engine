@@ -155,6 +155,7 @@ class _Transpiler {
     }
 
     src.writeln();
+    // TODO(antrob): Investigate if `List<bool>.filled(maxFunctionId, false)` can be used here instead.
     final Set<int> visited = <int>{};
     writeFunctionAndDeps(visited, entryPoint);
   }

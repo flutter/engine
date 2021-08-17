@@ -50,8 +50,6 @@ class FragmentShader : public Shader {
 
   // A new shader is created every time update is called.
   sk_sp<SkShader> shader_;
-
-  std::string construction_error_message_;
 };
 
 }  // namespace flutter

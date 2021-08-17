@@ -179,6 +179,7 @@ FileType identifyFile(String name, Reader reader) {
     case '.xpt': return FileType.binary; // XPCOM Type Library
     // Graphics code
     case '.glsl': return FileType.text;
+    case '.spvasm': return FileType.text;
     // Documentation
     case '.md': return FileType.text;
     case '.txt': return FileType.text;

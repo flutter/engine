@@ -48,16 +48,10 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
       SkRuntimeEffect::MakeForShader(SkString(sksl));
   runtime_effect_ = result.effect;
 
-  // TODO(reviewers): what is the proper way to throw and log these?
   if (runtime_effect_ == nullptr) {
-    Dart_Handle err = Dart_ThrowException(tonic::ToDart(
+    Dart_ThrowException(tonic::ToDart(
         std::string("Invalid SkSL:\n") + sksl.c_str() +
         std::string("\nSkSL Error:\n") + result.errorText.c_str()));
-    if (err) {
-      FML_DLOG(ERROR) << Dart_GetError(err);
-    } else {
-      FML_DLOG(ERROR) << std::string("SkSL:\n") + sksl.c_str();
-    }
     return;
   }
   if (debugPrintSksl) {

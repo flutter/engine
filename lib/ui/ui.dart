@@ -23,7 +23,6 @@ import 'dart:math' as math;
 import 'dart:nativewrappers'; // ignore: unused_import
 import 'dart:typed_data';
 
-
 part 'annotations.dart';
 part 'channel_buffers.dart';
 part 'compositing.dart';
