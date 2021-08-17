@@ -15,6 +15,10 @@ architecture, click one of the "Instances" to open it's detail page, and then
 edit the web URL to replace the selected instance ID with the instance ID you
 synched with, from the DEPS file (for the same architecture).
 
+<!-- TODO(richkadel): after any flutter_update, it would be nice if we could
+warn the user if DEPS was updated after a recent roll of a newer Fuchsia SDK?
+-->
+
 From the new page matching your current instance ID, copy the `jiri_snapshot`
 (only the value after the colon) and set a shell variable to this value:
 
@@ -139,6 +143,9 @@ $ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" \
 $ fx shell run-test-component \
     fuchsia-pkg://fuchsia.com/flutter_scenic_embedder_test#meta/flutter_scenic_embedder_test.cmx
 ```
+
+From here, you can modify the Flutter test, rebuild flutter, and usually rerun the test without
+rebooting, by repeating the calls above to `fx pm ...` and `fx shell run-test-component ...`.
 
 The embedder tests must be run on a product without a graphical base shell,
 such as `core` because it starts and stops Scenic.

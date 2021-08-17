@@ -40,7 +40,7 @@ constexpr zx::duration kScreenshotTimeout = zx::sec(10);
 constexpr zx::duration kTestTimeout = zx::min(1);
 
 class FlutterScenicEmbedderTestsBase : public sys::testing::TestWithEnvironment,
-                                 public ::testing::Test {
+                                       public ::testing::Test {
  public:
   explicit FlutterScenicEmbedderTestsBase(
       const std::vector<std::pair<const char*, const char*>> injected_services)
@@ -67,7 +67,7 @@ class FlutterScenicEmbedderTestsBase : public sys::testing::TestWithEnvironment,
         {.inherit_parent_services = true});
     WaitForEnclosingEnvToStart(environment());
 
-    FML_VLOG(1) << "Created test environment.";
+    FML_VLOG(fml::LOG_INFO) << "Created test environment.";
 
     // Post a "just in case" quit task, if the test hangs.
     async::PostDelayedTask(
@@ -110,7 +110,8 @@ class FlutterScenicEmbedderTestsBase : public sys::testing::TestWithEnvironment,
 
 class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
  public:
-  FlutterScenicEmbedderTests() : FlutterScenicEmbedderTestsBase(GetInjectedServices()) {}
+  FlutterScenicEmbedderTests()
+      : FlutterScenicEmbedderTestsBase(GetInjectedServices()) {}
 
   // |testing::Test|
   void SetUp() override {
@@ -120,8 +121,18 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
     auto scenic =
         environment()->ConnectToService<fuchsia::ui::scenic::Scenic>();
     scenic->GetDisplayInfo(
-        [this](fuchsia::ui::gfx::DisplayInfo info) { QuitLoop(); });
+        //        [this](fuchsia::ui::gfx::DisplayInfo info) { QuitLoop(); });
+        // TODO(richkadel): remove this version and uncomment above
+        [this](fuchsia::ui::gfx::DisplayInfo info) {
+          FML_VLOG(fml::LOG_INFO) << "Got DisplayInfo from scenic";
+          QuitLoop();
+          FML_VLOG(fml::LOG_INFO) << "quitted loop?";
+        });
+    // TODO(richkadel): remove this log
+    FML_VLOG(fml::LOG_INFO) << "Calling RunLoopWithTimeout()";
     RunLoopWithTimeout(kCallTimeout);
+    // TODO(richkadel): remove this log
+    FML_VLOG(fml::LOG_INFO) << "Exited RunLoopWithTimeout()";
   }
 
   void RunAppWithArgs(const std::string& component_url,
@@ -132,10 +143,52 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
       FAIL() << "Lost connection to Scenic: " << zx_status_get_string(status);
     });
 
+    // TODO(richkadel): remove this log
+    FML_VLOG(fml::LOG_INFO)
+        << "Launching flutter_runner, component_url=" << component_url;
     scenic::EmbeddedViewInfo flutter_runner =
         scenic::LaunchComponentAndCreateView(environment()->launcher_ptr(),
                                              component_url, component_args);
-    flutter_runner.controller.events().OnTerminated = [](auto...) { FAIL(); };
+    /*
+
+    [2021-08-16 21:58:31][15084][15086][pkg-resolver] INFO: Fetching blobs for
+    fuchsia-pkg://google3-devhost/parent-view/0: [] [2021-08-16
+    21:58:31][15084][15086][pkg-resolver] INFO: resolved
+    fuchsia-pkg://fuchsia.com/parent-view/0 as
+    fuchsia-pkg://google3-devhost/parent-view/0 to
+    22634f985109075d736ca3c3090350c4cb04c093d512ceea84f5520742ed1640 with TUF
+    [2021-08-16 21:58:31][20145][20147][sysmgr.cmx] ERROR:
+    [src/sys/sysmgr/package_updating_loader.cc(86)] Could not load package
+    resource meta/parent_view.cmx from
+    fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx
+
+    but the FML_VLOG above prints:
+    [259863.637267][36607967][36607969][flutter_scenic_embedder_test.cm] INFO:
+    [flutter-scenic-embedder-test.h(146)] Launching flutter_runner,
+    component_url=fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx
+
+    fuchsia-pkg://google3-devhost/parent-view/0
+    fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx
+
+    Compare to these successful logs, JUST before trying to resolve parent_view:
+
+    [2021-08-16 22:24:22][15084][15086][pkg-resolver] INFO: Fetching blobs for
+    fuchsia-pkg://google3-devhost/ktrace_provider/0: [] [2021-08-16
+    22:24:22][15084][15086][pkg-resolver] INFO: resolved
+    fuchsia-pkg://fuchsia.com/ktrace_provider/0 as
+    fuchsia-pkg://google3-devhost/ktrace_provider/0 to
+    53eba946b3fb22d0347755e88eaa7ef10cc8552809017363337e8b98fb0e9e41 with TUF
+    */
+    // flutter_runner.controller.events().OnTerminated = [](auto...) { FAIL();
+    // };
+    // TODO(richkadel): remove this assignment to OnTerminated and uncomment
+    // above
+    flutter_runner.controller.events().OnTerminated = [](auto...) {
+      // TODO(richkadel): remove this log
+      FML_VLOG(fml::LOG_INFO)
+          << "flutter_runner.controller terminated. Failing test.";
+      FAIL();
+    };
 
     // Present the view.
     embedder_view_.emplace(scenic::ViewContext{
@@ -184,13 +237,21 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
       zx::duration timeout = kTestTimeout) {
     return RunLoopWithTimeoutOrUntil(
         [this, &callback, &color] {
+          // TODO(richkadel): remove this log
+          FML_VLOG(fml::LOG_INFO) << "Calling TakeScreenshot()";
           auto screenshot = TakeScreenshot();
+          // TODO(richkadel): remove this log
+          FML_VLOG(fml::LOG_INFO) << "Exited from TakeScreenshot()";
           auto histogram = screenshot.Histogram();
+          // TODO(richkadel): remove this log
+          FML_VLOG(fml::LOG_INFO) << "Exited from screenshot.Histogram()";
 
           bool color_found = histogram[color] > 0;
           if (color_found && callback != nullptr) {
             callback(std::move(histogram));
           }
+          // TODO(richkadel): remove this log
+          FML_VLOG(fml::LOG_INFO) << "returning color_found=" << color_found;
           return color_found;
         },
         timeout);

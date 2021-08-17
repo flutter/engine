@@ -5,6 +5,7 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
 dart_library("lib") {
   package_name = "child-view"
@@ -13,8 +14,12 @@ dart_library("lib") {
   deps = []
 }
 
-flutter_component("child-view") {
+flutter_component("child-view-component") {
   manifest = "meta/child_view.cmx"
   main_package = "child-view"
   deps = [ ":lib" ]
+}
+
+fuchsia_package("child-view") {
+  deps = [ ":child-view-component" ]
 }
