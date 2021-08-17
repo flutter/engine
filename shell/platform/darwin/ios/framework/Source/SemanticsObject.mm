@@ -83,7 +83,18 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   CGFloat scale = [[[reference bridge]->view() window] screen].scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
-  return UIAccessibilityConvertFrameToScreenCoordinates(result, [reference bridge]->view());
+  CGRect resultInScreenCoordinates =
+      UIAccessibilityConvertFrameToScreenCoordinates(result, [reference bridge]->view());
+  NSCAssert(isfinite(resultInScreenCoordinates.origin.x) &&
+                !isnan(resultInScreenCoordinates.origin.x) &&
+                isfinite(resultInScreenCoordinates.origin.y) &&
+                !isnan(resultInScreenCoordinates.origin.y) &&
+                isfinite(resultInScreenCoordinates.size.width) &&
+                !isnan(resultInScreenCoordinates.size.width) &&
+                isfinite(resultInScreenCoordinates.size.height) &&
+                !isnan(resultInScreenCoordinates.size.height),
+            @"The global rect must be finite %@", NSStringFromCGRect(resultInScreenCoordinates));
+  return resultInScreenCoordinates;
 }
 
 }  // namespace
@@ -284,12 +295,19 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   } else {
     result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
   }
+  NSCAssert(isfinite(result.origin.x) && !isnan(result.origin.x) && isfinite(result.origin.y) &&
+                !isnan(result.origin.y) && isfinite(result.size.width) &&
+                !isnan(result.size.width) && isfinite(result.size.height) &&
+                !isnan(result.size.height),
+            @"The content rect must be finite %@", NSStringFromCGRect(result));
   return ConvertRectToGlobal(_semanticsObject, result).size;
 }
 
 - (CGPoint)contentOffsetInternal {
   CGPoint result;
   CGPoint origin = self.frame.origin;
+  NSCAssert(isfinite(origin.x) && !isnan(origin.x) && isfinite(origin.y) && !isnan(origin.y),
+            @"The origin must be finite %@", NSStringFromCGPoint(origin));
   const SkRect& rect = _semanticsObject.node.rect;
   if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
     result = ConvertPointToGlobal(_semanticsObject,
@@ -300,7 +318,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   } else {
     result = origin;
   }
-  return CGPointMake(result.x - origin.x, result.y - origin.y);
+  NSCAssert(isfinite(result.x) && !isnan(result.x) && isfinite(result.y) && !isnan(result.y),
+            @"The result must be finite %@", NSStringFromCGPoint(result));
+  CGPoint offset = CGPointMake(result.x - origin.x, result.y - origin.y);
+  NSCAssert(isfinite(offset.x) && !isnan(offset.x) && isfinite(offset.y) && !isnan(offset.y),
+            @"The offset must be finite %@", NSStringFromCGPoint(offset));
+  return offset;
 }
 
 // The following methods are explicitly forwarded to the wrapped SemanticsObject because the
