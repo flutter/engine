@@ -415,7 +415,7 @@ void FlutterWindowsEngine::SendSystemSettings() {
   settings.AddMember("textScaleFactor", 1.0, allocator);
   // TODO: Implement dark mode support.
   // https://github.com/flutter/flutter/issues/54612
-  settings.AddMember("platformBrightness", "light", allocator);
+  settings.AddMember("platformBrightness", GetPreferredBrightness(), allocator);
   settings_channel_->Send(settings);
 }
 

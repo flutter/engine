@@ -88,5 +88,10 @@ TEST(SystemUtils, Prefer24HourTimeHandles24Hour) {
   EXPECT_TRUE(Prefer24HourTime(L"HH:mm:ss"));
 }
 
+TEST(SystemUtils, GetPreferredBrightness) {
+  std::string brightness = GetPreferredBrightness();
+  EXPECT_TRUE(brightness == kBrightnessLight || brightness == kBrightnessDark);
+}
+
 }  // namespace testing
 }  // namespace flutter
