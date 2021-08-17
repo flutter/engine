@@ -9,6 +9,8 @@ import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 import 'package:spirv/spirv.dart' as spirv;
 
+import 'shader_test_file_utils.dart';
+
 const List<spirv.TargetLanguage> targets = <spirv.TargetLanguage>[
   spirv.TargetLanguage.sksl,
   spirv.TargetLanguage.glslES,
@@ -31,18 +33,7 @@ void main() {
 }
 
 Stream<Uint8List> _exceptionShaders() async* {
-  final String buildDirectory =
-    Platform.environment['FLUTTER_BUILD_DIRECTORY']!;
-
-  final Directory dir = Directory(path.joinAll(<String>[
-    ...path.split(buildDirectory),
-    'gen',
-    'flutter',
-    'lib',
-    'spirv',
-    'test',
-    'exception_shaders',
-  ]));
+  final Directory dir = spvDirectory('exception_shaders');
   await for (final FileSystemEntity entry in dir.list()) {
     if (entry is! File) {
       continue;

@@ -11,6 +11,8 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
+import 'shader_test_file_utils.dart';
+
 void main() {
   test('throws exception for invalid shader', () {
     final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
@@ -18,12 +20,12 @@ void main() {
   });
 
   test('simple shader renders correctly', () async {
-    final Uint8List shaderBytes = await _getFile('general_shaders', 'simple.spv').readAsBytes();
+    final Uint8List shaderBytes = await spvFile('general_shaders', 'simple.spv').readAsBytes();
     _expectShaderRendersGreen(shaderBytes.buffer.asUint32List());
   });
 
   test('shader with uniforms renders and updates correctly', () async {
-    final Uint8List shaderBytes = await _getFile('general_shaders', 'uniforms.spv').readAsBytes();
+    final Uint8List shaderBytes = await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
     final FragmentShader shader = FragmentShader(spirv: shaderBytes.buffer);
 
     shader.update(floatUniforms: Float32List.fromList(<double>[
@@ -151,7 +153,7 @@ Future<ByteData?> _imageByteDataFromShader({
 // $FLUTTER_BUILD_DIRECTORY/gen/flutter/lib/spirv/test/$leafFolderName
 Map<String, Uint32List> _loadSpv(String leafFolderName) {
   final Map<String, Uint32List> out = SplayTreeMap<String, Uint32List>();
-  _getDirectory(leafFolderName).listSync()
+  spvDirectory(leafFolderName).listSync()
     .where((FileSystemEntity entry) => path.extension(entry.path) == '.spv')
     .forEach((FileSystemEntity entry) {
       final String key = path.basenameWithoutExtension(entry.path);
@@ -160,33 +162,6 @@ Map<String, Uint32List> _loadSpv(String leafFolderName) {
   return out;
 }
 
-// Get the directory that contains shader test files.
-Directory _getDirectory(String leafFolderName) {
-  return Directory(path.joinAll(<String>[
-    ..._basePathChunks,
-    leafFolderName,
-  ]));
-}
-
-File _getFile(String folderName, String fileName) {
-  return File(path.joinAll(<String>[
-    ..._basePathChunks,
-    folderName,
-    fileName,
-  ]));
-}
-
-final String _buildDirectory =
-  Platform.environment['FLUTTER_BUILD_DIRECTORY']!;
-
-final List<String> _basePathChunks = <String>[
-  ...path.split(_buildDirectory),
-  'gen',
-  'flutter',
-  'lib',
-  'spirv',
-  'test',
-];
 
 // Arbitrary, but needs to be greater than 1 for frag coord tests.
 const int _shaderImageDimension = 4;
