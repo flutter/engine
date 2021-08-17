@@ -260,7 +260,6 @@ class _Transpiler {
     out.writeln('$indent$type $name = $type($value);');
   }
 
-
   /// Read an instruction word, and handle the operation.
   ///
   /// SPIR-V instructions contain an op-code as well as a

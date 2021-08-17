@@ -3804,6 +3804,10 @@ class FragmentShader extends Shader {
   ///
   /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
   /// be thrown. See [FragmentShader] docs for details.
+  /// 
+  /// The compilation of a shader gets more expensive the more complicated the source is.
+  /// Because of this, it is reccommended to construct a FragmentShader asynchrounously,
+  /// outside of a widget's `build` method, to minimize the chance of UI jank.
   @pragma('vm:entry-point')
   FragmentShader({
     required ByteBuffer spirv,
@@ -3811,8 +3815,10 @@ class FragmentShader extends Shader {
     bool debugPrint = false,
   }) : super._() {
     _constructor();
-    final spv.TranspileResult result =
-        spv.transpile(spirv, spv.TargetLanguage.sksl);
+    final spv.TranspileResult result = spv.transpile(
+      spirv,
+      spv.TargetLanguage.sksl,
+    );
     _uniformFloatCount = result.uniformFloatCount;
     _init(result.src, debugPrint);
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
