@@ -563,7 +563,7 @@ def main():
     file_dir = os.path.dirname(os.path.abspath(__file__))
     command = [
       "env", "-i", "bash",
-      "-c", f"source {file_dir}/sanitizer_suppressions.sh >/dev/null && env"
+      "-c", "source {}/sanitizer_suppressions.sh >/dev/null && env".format(file_dir)
     ]
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in process.stdout:
