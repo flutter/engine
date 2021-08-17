@@ -5,6 +5,8 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_PAINT_H_
 #define FLUTTER_LIB_UI_PAINTING_PAINT_H_
 
+#include "flow/display_list.h"
+
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
@@ -15,13 +17,19 @@ class Paint {
   Paint() = default;
   Paint(Dart_Handle paint_objects, Dart_Handle paint_data);
 
-  const SkPaint* paint() const { return is_null_ ? nullptr : &paint_; }
+  const SkPaint* paint(SkPaint& paint) const;
+  void syncToDisplayList(
+      DisplayListBuilder* builder,
+      int attribute_mask = DisplayListBuilder::kAllAttributesMask) const;
+
+  bool isNull() const { return Dart_IsNull(paint_data_); }
+  bool isNotNull() const { return !Dart_IsNull(paint_data_); }
 
  private:
   friend struct tonic::DartConverter<Paint>;
 
-  SkPaint paint_;
-  bool is_null_ = true;
+  Dart_Handle paint_objects_;
+  Dart_Handle paint_data_;
 };
 
 // The PaintData argument is a placeholder to receive encoded data for Paint

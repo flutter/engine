@@ -65,28 +65,30 @@ constexpr float invert_colors[20] = {
 // Must be kept in sync with the MaskFilter private constants in painting.dart.
 enum MaskFilterType { Null, Blur };
 
-Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
-  is_null_ = Dart_IsNull(paint_data);
-  if (is_null_) {
-    return;
+Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data)
+    : paint_objects_(paint_objects), paint_data_(paint_data) {}
+
+const SkPaint* Paint::paint(SkPaint& paint_) const {
+  if (Dart_IsNull(paint_data_)) {
+    return nullptr;
   }
 
-  tonic::DartByteData byte_data(paint_data);
+  tonic::DartByteData byte_data(paint_data_);
   FML_CHECK(byte_data.length_in_bytes() == kDataByteCount);
 
   const uint32_t* uint_data = static_cast<const uint32_t*>(byte_data.data());
   const float* float_data = static_cast<const float*>(byte_data.data());
 
   Dart_Handle values[kObjectCount];
-  if (!Dart_IsNull(paint_objects)) {
-    FML_DCHECK(Dart_IsList(paint_objects));
+  if (!Dart_IsNull(paint_objects_)) {
+    FML_DCHECK(Dart_IsList(paint_objects_));
     intptr_t length = 0;
-    Dart_ListLength(paint_objects, &length);
+    Dart_ListLength(paint_objects_, &length);
 
     FML_CHECK(length == kObjectCount);
     if (Dart_IsError(
-            Dart_ListGetRange(paint_objects, 0, kObjectCount, values))) {
-      return;
+            Dart_ListGetRange(paint_objects_, 0, kObjectCount, values))) {
+      return nullptr;
     }
 
     Dart_Handle shader = values[kShaderIndex];
@@ -174,6 +176,143 @@ Paint::Paint(Dart_Handle paint_objects, Dart_Handle paint_data) {
       double sigma = float_data[kMaskFilterSigmaIndex];
       paint_.setMaskFilter(SkMaskFilter::MakeBlur(blur_style, sigma));
       break;
+  }
+
+  return &paint_;
+}
+
+void Paint::syncToDisplayList(DisplayListBuilder* builder,
+                              int attribute_mask) const {
+  if (Dart_IsNull(paint_data_)) {
+    // TODO: We should be synchronizing the defaults to the DL
+    // or indicating to the caller that no paint was given.
+    // Unfortunately DL has methods which take an optional paint
+    // in SkCanvas but the DL method has no way to indicate that
+    // it should apply the current paint attributes or not.
+    return;
+  }
+
+  tonic::DartByteData byte_data(paint_data_);
+  FML_CHECK(byte_data.length_in_bytes() == kDataByteCount);
+
+  const uint32_t* uint_data = static_cast<const uint32_t*>(byte_data.data());
+  const float* float_data = static_cast<const float*>(byte_data.data());
+
+  if (Dart_IsNull(paint_objects_)) {
+    if ((attribute_mask & DisplayListBuilder::kShaderNeeded) != 0) {
+      builder->setShader(nullptr);
+    }
+    if ((attribute_mask & DisplayListBuilder::kColorFilterNeeded) != 0) {
+      builder->setColorFilter(nullptr);
+    }
+    if ((attribute_mask & DisplayListBuilder::kImageFilterNeeded) != 0) {
+      builder->setImageFilter(nullptr);
+    }
+  } else {
+    FML_DCHECK(Dart_IsList(paint_objects_));
+    intptr_t length = 0;
+    Dart_ListLength(paint_objects_, &length);
+
+    FML_CHECK(length == kObjectCount);
+    Dart_Handle values[kObjectCount];
+    if (Dart_IsError(
+            Dart_ListGetRange(paint_objects_, 0, kObjectCount, values))) {
+      return;
+    }
+
+    if ((attribute_mask & DisplayListBuilder::kShaderNeeded) != 0) {
+      Dart_Handle shader = values[kShaderIndex];
+      if (Dart_IsNull(shader)) {
+        builder->setShader(nullptr);
+      } else {
+        Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader);
+        auto sampling =
+            ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
+        builder->setShader(decoded->shader(sampling));
+      }
+    }
+
+    if ((attribute_mask & DisplayListBuilder::kColorFilterNeeded) != 0) {
+      Dart_Handle color_filter = values[kColorFilterIndex];
+      if (Dart_IsNull(color_filter)) {
+        builder->setColorFilter(nullptr);
+      } else {
+        ColorFilter* decoded_color_filter =
+            tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
+        builder->setColorFilter(decoded_color_filter->filter());
+      }
+    }
+
+    if ((attribute_mask & DisplayListBuilder::kImageFilterNeeded) != 0) {
+      Dart_Handle image_filter = values[kImageFilterIndex];
+      if (Dart_IsNull(image_filter)) {
+        builder->setImageFilter(nullptr);
+      } else {
+        ImageFilter* decoded =
+            tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
+        builder->setImageFilter(decoded->filter());
+      }
+    }
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kAaNeeded) != 0) {
+    builder->setAA(uint_data[kIsAntiAliasIndex] == 0);
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kColorNeeded) != 0) {
+    uint32_t encoded_color = uint_data[kColorIndex];
+    SkColor color = encoded_color ^ kColorDefault;
+    builder->setColor(color);
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kBlendNeeded) != 0) {
+    uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
+    uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
+    builder->setBlendMode(static_cast<SkBlendMode>(blend_mode));
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kPaintStyleNeeded) != 0) {
+    uint32_t style = uint_data[kStyleIndex];
+    builder->setDrawStyle(static_cast<SkPaint::Style>(style));
+    if (style != SkPaint::Style::kFill_Style) {
+      attribute_mask |= DisplayListBuilder::kStrokeStyleNeeded;
+    }
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kStrokeStyleNeeded) != 0) {
+    float stroke_width = float_data[kStrokeWidthIndex];
+    builder->setStrokeWidth(stroke_width);
+
+    uint32_t stroke_cap = uint_data[kStrokeCapIndex];
+    builder->setCaps(static_cast<SkPaint::Cap>(stroke_cap));
+
+    uint32_t stroke_join = uint_data[kStrokeJoinIndex];
+    builder->setJoins(static_cast<SkPaint::Join>(stroke_join));
+
+    float stroke_miter_limit = float_data[kStrokeMiterLimitIndex];
+    builder->setMiterLimit(stroke_miter_limit + kStrokeMiterLimitDefault);
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kInvertColorsNeeded) != 0) {
+    builder->setInvertColors(uint_data[kInvertColorIndex] != 0);
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kDitherNeeded) != 0) {
+    builder->setDither(uint_data[kDitherIndex] != 0);
+  }
+
+  if ((attribute_mask & DisplayListBuilder::kMaskFilterNeeded) != 0) {
+    switch (uint_data[kMaskFilterIndex]) {
+      case Null:
+        builder->setMaskFilter(nullptr);
+        break;
+      case Blur:
+        SkBlurStyle blur_style =
+            static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
+        double sigma = float_data[kMaskFilterSigmaIndex];
+        builder->setMaskFilter(SkMaskFilter::MakeBlur(blur_style, sigma));
+        break;
+    }
   }
 }
 

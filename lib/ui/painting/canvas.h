@@ -188,8 +188,8 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   // paint attributes from an SkPaint and an operation type as well as access
   // to the raw DisplayListBuilder for emitting custom rendering operations.
   sk_sp<DisplayListCanvasRecorder> display_list_recorder_;
-  sk_sp<DisplayListBuilder> builder() {
-    return display_list_recorder_->builder();
+  DisplayListBuilder* builder() {
+    return display_list_recorder_->builder().get();
   }
 };
 

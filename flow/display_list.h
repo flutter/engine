@@ -133,14 +133,13 @@ namespace flutter {
   V(DrawVertices)                   \
                                     \
   V(DrawImage)                      \
-  V(DrawImageRectStrict)            \
-  V(DrawImageRectFast)              \
+  V(DrawImageWithAttr)              \
+  V(DrawImageRect)                  \
   V(DrawImageNine)                  \
+  V(DrawImageNineWithAttr)          \
   V(DrawImageLattice)               \
   V(DrawAtlas)                      \
-  V(DrawAtlasColored)               \
   V(DrawAtlasCulled)                \
-  V(DrawAtlasColoredCulled)         \
                                     \
   V(DrawSkPicture)                  \
   V(DrawSkPictureMatrix)            \
@@ -246,7 +245,7 @@ class Dispatcher {
 
   virtual void save() = 0;
   virtual void restore() = 0;
-  virtual void saveLayer(const SkRect* bounds, bool restoreWithPaint) = 0;
+  virtual void saveLayer(const SkRect* bounds, bool restore_with_paint) = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;
   virtual void scale(SkScalar sx, SkScalar sy) = 0;
@@ -268,9 +267,11 @@ class Dispatcher {
                             SkScalar py,
                             SkScalar pt) = 0;
 
-  virtual void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) = 0;
-  virtual void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) = 0;
-  virtual void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) = 0;
+  virtual void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) = 0;
+  virtual void clipRRect(const SkRRect& rrect,
+                         SkClipOp clip_op,
+                         bool is_aa) = 0;
+  virtual void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) = 0;
 
   virtual void drawPaint() = 0;
   virtual void drawColor(SkColor color, SkBlendMode mode) = 0;
@@ -292,21 +293,24 @@ class Dispatcher {
                             SkBlendMode mode) = 0;
   virtual void drawImage(const sk_sp<SkImage> image,
                          const SkPoint point,
-                         const SkSamplingOptions& sampling) = 0;
+                         const SkSamplingOptions& sampling,
+                         bool render_with_attributes) = 0;
   virtual void drawImageRect(const sk_sp<SkImage> image,
                              const SkRect& src,
                              const SkRect& dst,
                              const SkSamplingOptions& sampling,
+                             bool render_with_attributes,
                              SkCanvas::SrcRectConstraint constraint) = 0;
   virtual void drawImageNine(const sk_sp<SkImage> image,
                              const SkIRect& center,
                              const SkRect& dst,
-                             SkFilterMode filter) = 0;
+                             SkFilterMode filter,
+                             bool render_with_attributes) = 0;
   virtual void drawImageLattice(const sk_sp<SkImage> image,
                                 const SkCanvas::Lattice& lattice,
                                 const SkRect& dst,
                                 SkFilterMode filter,
-                                bool with_paint) = 0;
+                                bool render_with_attributes) = 0;
   virtual void drawAtlas(const sk_sp<SkImage> atlas,
                          const SkRSXform xform[],
                          const SkRect tex[],
@@ -314,10 +318,11 @@ class Dispatcher {
                          int count,
                          SkBlendMode mode,
                          const SkSamplingOptions& sampling,
-                         const SkRect* cullRect) = 0;
+                         const SkRect* cullRect,
+                         bool render_with_attributes) = 0;
   virtual void drawPicture(const sk_sp<SkPicture> picture,
                            const SkMatrix* matrix,
-                           bool with_save_layer) = 0;
+                           bool render_with_attributes) = 0;
   virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
@@ -357,9 +362,12 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
 
+  void setAttributesFromPaint(const SkPaint* paint, int attribute_mask);
+
   void save() override;
   void restore() override;
-  void saveLayer(const SkRect* bounds, bool restoreWithPaint) override;
+  void saveLayer(const SkRect* bounds, bool restore_with_paint) override;
+  int getSaveCount() const { return save_level_ + 1; }
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
@@ -381,9 +389,9 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                     SkScalar py,
                     SkScalar pt) override;
 
-  void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) override;
-  void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) override;
-  void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) override;
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
+  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
+  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
   void drawPaint() override;
   void drawColor(SkColor color, SkBlendMode mode) override;
@@ -405,23 +413,24 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                     SkBlendMode mode) override;
   void drawImage(const sk_sp<SkImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling) override;
-  void drawImageRect(
-      const sk_sp<SkImage> image,
-      const SkRect& src,
-      const SkRect& dst,
-      const SkSamplingOptions& sampling,
-      SkCanvas::SrcRectConstraint constraint =
-          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
+                 const SkSamplingOptions& sampling,
+                 bool render_with_attributes) override;
+  void drawImageRect(const sk_sp<SkImage> image,
+                     const SkRect& src,
+                     const SkRect& dst,
+                     const SkSamplingOptions& sampling,
+                     bool render_with_attributes,
+                     SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<SkImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter) override;
+                     SkFilterMode filter,
+                     bool render_with_attributes) override;
   void drawImageLattice(const sk_sp<SkImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         SkFilterMode filter,
-                        bool with_paint) override;
+                        bool render_with_attributes) override;
   void drawAtlas(const sk_sp<SkImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -429,10 +438,11 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                  int count,
                  SkBlendMode mode,
                  const SkSamplingOptions& sampling,
-                 const SkRect* cullRect) override;
+                 const SkRect* cullRect,
+                 bool render_with_attributes) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool with_save_layer) override;
+                   bool render_with_attributes) override;
   void drawDisplayList(const sk_sp<DisplayList> display_list) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
@@ -444,6 +454,83 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                   SkScalar dpr) override;
 
   sk_sp<DisplayList> Build();
+
+  // Mask bits for the various attributes that might be needed for a given
+  // operation.
+  // clang-format off
+  static constexpr int kAaNeeded            = 1 << 0;
+  static constexpr int kColorNeeded         = 1 << 1;
+  static constexpr int kBlendNeeded         = 1 << 2;
+  static constexpr int kInvertColorsNeeded  = 1 << 3;
+  static constexpr int kPaintStyleNeeded    = 1 << 4;
+  static constexpr int kStrokeStyleNeeded   = 1 << 5;
+  static constexpr int kShaderNeeded        = 1 << 6;
+  static constexpr int kColorFilterNeeded   = 1 << 7;
+  static constexpr int kImageFilterNeeded   = 1 << 8;
+  static constexpr int kPathEffectNeeded    = 1 << 9;
+  static constexpr int kMaskFilterNeeded    = 1 << 10;
+  static constexpr int kDitherNeeded        = 1 << 11;
+  // clang-format on
+
+  static constexpr int kAllAttributesMask =
+      kAaNeeded | kColorNeeded | kBlendNeeded | kInvertColorsNeeded |
+      kPaintStyleNeeded | kStrokeStyleNeeded | kShaderNeeded |
+      kColorFilterNeeded | kImageFilterNeeded | kPathEffectNeeded |
+      kMaskFilterNeeded | kDitherNeeded;
+
+ private:
+  // Combinations of the above mask bits that are common to typical "draw"
+  // calls.
+  // Note that the strokeStyle_ is handled conditionally depending on whether
+  // the paintStyle_ attribute value is synchronized. It can also be manually
+  // specified for operations that will be always stroking, like [drawLine].
+  static constexpr int kPaintMask_ =
+      kAaNeeded | kColorNeeded | kBlendNeeded | kInvertColorsNeeded |
+      kColorFilterNeeded | kShaderNeeded | kDitherNeeded | kImageFilterNeeded;
+  static constexpr int kDrawMask_ =
+      kPaintMask_ | kPaintStyleNeeded | kMaskFilterNeeded | kPathEffectNeeded;
+  static constexpr int kStrokeMask_ =
+      kPaintMask_ | kStrokeStyleNeeded | kMaskFilterNeeded | kPathEffectNeeded;
+  static constexpr int kImageMask_ =
+      kColorNeeded | kBlendNeeded | kInvertColorsNeeded | kColorFilterNeeded |
+      kDitherNeeded | kImageFilterNeeded | kMaskFilterNeeded;
+  static constexpr int kImageRectMask_ = kImageMask_ | kAaNeeded;
+  static constexpr int kSaveLayerMask_ =
+      kColorNeeded | kBlendNeeded | kInvertColorsNeeded | kColorFilterNeeded |
+      kImageFilterNeeded;
+
+ public:
+  static constexpr int kSaveLayerMask = kSaveLayerMask_;
+
+  static constexpr int kDrawPaintMask = kPaintMask_;
+  // static constexpr int kDrawColorMask = 0;
+
+  static constexpr int kDrawLineMask = kStrokeMask_;
+  static constexpr int kDrawRectMask = kDrawMask_;
+  static constexpr int kDrawOvalMask = kDrawMask_;
+  static constexpr int kDrawCircleMask = kDrawMask_;
+  static constexpr int kDrawRRectMask = kDrawMask_;
+  static constexpr int kDrawDRRectMask = kDrawMask_;
+  static constexpr int kDrawArcMask = kDrawMask_;
+  static constexpr int kDrawPathMask = kDrawMask_;
+
+  static constexpr int kDrawPointsMask = kStrokeMask_;
+  static constexpr int kDrawLinesMask = kStrokeMask_;
+  static constexpr int kDrawPolygonMask = kStrokeMask_;
+  static constexpr int kDrawVerticesMask = kDrawMask_;
+
+  static constexpr int kDrawImageMask = kImageMask_;
+  static constexpr int kDrawImageRectMask = kImageRectMask_;
+  static constexpr int kDrawImageNineMask = kImageMask_;
+  static constexpr int kDrawImageLatticeMask = kImageMask_;
+  static constexpr int kDrawAtlasMask = kImageMask_;
+
+  static constexpr int kDrawSkPictureMask = kSaveLayerMask_;
+  // static constexpr int kDrawDisplayListMask = 0;
+  static constexpr int kDrawTextBlobMask = kDrawMask_;
+
+  // static constexpr int kDrawShadowMask = 0;
+  // static constexpr int kDrawShadowOccludesMask = 0;
 
  private:
   SkAutoTMalloc<uint8_t> storage_;
@@ -458,6 +545,32 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
 
   template <typename T, typename... Args>
   void* Push(size_t extra, Args&&... args);
+
+  // kInvalidSigma is used to indicate that no MaskBlur is currently set.
+  static constexpr SkScalar kInvalidSigma = 0.0;
+  bool mask_sigma_valid(SkScalar sigma) {
+    return SkScalarIsFinite(sigma) && sigma > 0.0;
+  }
+
+  // These values should match the defaults of the Dart Paint object.
+  bool current_aa_ = false;
+  bool current_dither_ = false;
+  bool current_invert_colors_ = false;
+  SkColor current_color_ = 0xFF000000;
+  SkBlendMode current_blend_ = SkBlendMode::kSrcOver;
+  SkPaint::Style current_style_ = SkPaint::Style::kFill_Style;
+  SkScalar current_stroke_width_ = 0.0;
+  SkScalar current_miter_limit_ = 4.0;
+  SkPaint::Cap current_cap_ = SkPaint::Cap::kButt_Cap;
+  SkPaint::Join current_join_ = SkPaint::Join::kMiter_Join;
+  sk_sp<SkBlender> current_blender_;
+  sk_sp<SkShader> current_shader_;
+  sk_sp<SkColorFilter> current_color_filter_;
+  sk_sp<SkImageFilter> current_image_filter_;
+  sk_sp<SkPathEffect> current_path_effect_;
+  int current_mask_style_;
+  sk_sp<SkMaskFilter> current_mask_filter_;
+  SkScalar current_mask_sigma_ = kInvalidSigma;
 };
 
 }  // namespace flutter

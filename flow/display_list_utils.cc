@@ -137,22 +137,22 @@ void SkMatrixDispatchHelper::reset() {
 }
 
 void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
-                                        bool isAA,
-                                        SkClipOp clip_op) {
+                                        SkClipOp clip_op,
+                                        bool is_aa) {
   if (clip_op == SkClipOp::kIntersect) {
     intersect(rect);
   }
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
-                                         bool isAA,
-                                         SkClipOp clip_op) {
+                                         SkClipOp clip_op,
+                                         bool is_aa) {
   if (clip_op == SkClipOp::kIntersect) {
     intersect(rrect.getBounds());
   }
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
-                                        bool isAA,
-                                        SkClipOp clip_op) {
+                                        SkClipOp clip_op,
+                                        bool is_aa) {
   if (clip_op == SkClipOp::kIntersect) {
     intersect(path.getBounds());
   }
@@ -172,13 +172,14 @@ void ClipBoundsDispatchHelper::restore() {
 }
 
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            bool with_paint) {
+                                            bool restore_with_paint) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   saved_infos_.emplace_back(
-      with_paint ? std::make_unique<SaveLayerWithPaintInfo>(
-                       this, accumulator_, matrix(), bounds, paint())
-                 : std::make_unique<SaveLayerInfo>(accumulator_, matrix()));
+      restore_with_paint
+          ? std::make_unique<SaveLayerWithPaintInfo>(this, accumulator_,
+                                                     matrix(), bounds, paint())
+          : std::make_unique<SaveLayerInfo>(accumulator_, matrix()));
   accumulator_ = saved_infos_.back()->save();
   SkMatrixDispatchHelper::reset();
 }
@@ -259,32 +260,35 @@ void DisplayListBoundsCalculator::drawVertices(const sk_sp<SkVertices> vertices,
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
                                             const SkPoint point,
-                                            const SkSamplingOptions& sampling) {
+                                            const SkSamplingOptions& sampling,
+                                            bool render_with_attributes) {
   SkRect bounds = SkRect::Make(image->bounds());
   bounds.offset(point);
-  accumulateRect(bounds);
+  accumulateImageBounds(bounds, render_with_attributes);
 }
 void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<SkImage> image,
     const SkRect& src,
     const SkRect& dst,
     const SkSamplingOptions& sampling,
+    bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
-  accumulateRect(dst);
+  accumulateImageBounds(dst, render_with_attributes);
 }
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
-                                                SkFilterMode filter) {
-  accumulateRect(dst);
+                                                SkFilterMode filter,
+                                                bool render_with_attributes) {
+  accumulateImageBounds(dst, render_with_attributes);
 }
 void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<SkImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
     SkFilterMode filter,
-    bool with_paint) {
-  accumulateRect(dst);
+    bool render_with_attributes) {
+  accumulateImageBounds(dst, render_with_attributes);
 }
 void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
                                             const SkRSXform xform[],
@@ -293,7 +297,8 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
                                             int count,
                                             SkBlendMode mode,
                                             const SkSamplingOptions& sampling,
-                                            const SkRect* cullRect) {
+                                            const SkRect* cullRect,
+                                            bool render_with_attributes) {
   SkPoint quad[4];
   BoundsAccumulator atlasBounds;
   for (int i = 0; i < count; i++) {
@@ -304,12 +309,12 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
     }
   }
   if (atlasBounds.isNotEmpty()) {
-    accumulateRect(atlasBounds.getBounds());
+    accumulateImageBounds(atlasBounds.getBounds(), render_with_attributes);
   }
 }
 void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* pic_matrix,
-                                              bool with_save_layer) {
+                                              bool render_with_attributes) {
   // TODO(flar) cull rect really cannot be trusted in general, but it will
   // work for SkPictures generated from our own PictureRecorder or any
   // picture captured with an SkRTreeFactory or accurate bounds estimate.
@@ -317,12 +322,7 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
   if (pic_matrix) {
     pic_matrix->mapRect(&bounds);
   }
-  if (with_save_layer) {
-    accumulateRect(bounds);
-  } else {
-    matrix().mapRect(&bounds);
-    accumulator_->accumulate(bounds);
-  }
+  accumulateImageBounds(bounds, render_with_attributes);
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
@@ -340,6 +340,17 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              SkScalar dpr) {
   accumulateRect(
       PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix()));
+}
+
+void DisplayListBoundsCalculator::accumulateImageBounds(const SkRect& bounds,
+                                                        bool with_attributes) {
+  if (with_attributes) {
+    accumulateRect(bounds);
+  } else {
+    SkRect transformed_bounds;
+    matrix().mapRect(&transformed_bounds, bounds);
+    accumulator_->accumulate(transformed_bounds);
+  }
 }
 
 void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,

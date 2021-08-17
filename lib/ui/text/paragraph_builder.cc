@@ -452,17 +452,19 @@ void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
 
   if (mask & tsBackgroundMask) {
     Paint background(background_objects, background_data);
-    if (background.paint()) {
+    if (background.isNotNull()) {
+      SkPaint paint;
       style.has_background = true;
-      style.background = *background.paint();
+      style.background = *background.paint(paint);
     }
   }
 
   if (mask & tsForegroundMask) {
     Paint foreground(foreground_objects, foreground_data);
-    if (foreground.paint()) {
+    if (foreground.isNotNull()) {
+      SkPaint paint;
       style.has_foreground = true;
-      style.foreground = *foreground.paint();
+      style.foreground = *foreground.paint(paint);
     }
   }
 
