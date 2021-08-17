@@ -129,9 +129,8 @@ TEST(KeyboardKeyChannelHandlerTest, DeadKeysDoNotCrash) {
 
   KeyboardKeyChannelHandler handler(&messenger);
   // Extended key flag is passed to redispatched events if set.
-  handler.KeyboardHook(
-      0xDD, 0x1a, WM_KEYDOWN, 0x8000005E, false, false,
-      [](bool handled) { });
+  handler.KeyboardHook(0xDD, 0x1a, WM_KEYDOWN, 0x8000005E, false, false,
+                       [](bool handled) {});
 
   // EXPECT is done during the callback above.
 }

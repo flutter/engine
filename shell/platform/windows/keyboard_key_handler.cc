@@ -271,7 +271,8 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
         // Redispatching dead keys events makes Win32 ignore the dead key state
         // and redispatches a normal character without combining it with the
         // next letter key.
-        const bool should_redispatch = !event_ptr->any_handled && !_IsDeadKey(event_ptr->character);
+        const bool should_redispatch =
+            !event_ptr->any_handled && !_IsDeadKey(event_ptr->character);
         if (should_redispatch) {
           RedispatchEvent(std::move(event_ptr));
         }

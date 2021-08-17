@@ -176,7 +176,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   uint32_t redispatch_char;
 
   int InjectPendingEvents(MockFlutterWindowWin32* win32window,
-                           uint32_t redispatch_char) {
+                          uint32_t redispatch_char) {
     std::vector<Win32Message> messages;
     int num_pending_responds = pending_responds_.size();
     for (const SendInputInfo& input : pending_responds_) {
