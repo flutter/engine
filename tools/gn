@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env vpython3
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -379,10 +379,6 @@ def to_gn_args(args):
     # Overrides whether Boring SSL is compiled with system as. Only meaningful
     # on Android.
     gn_args['bssl_use_clang_integrated_as'] = True
-
-    # Enable pointer compression on 64-bit mobile targets.
-    if args.target_os in ['android', 'ios'] and gn_args['target_cpu'] in ['x64' , 'arm64']:
-      gn_args['dart_use_compressed_pointers'] = True
 
     return gn_args
 

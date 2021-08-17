@@ -1023,8 +1023,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           // Focused semantics node must be reset before sending the
           // TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED event. Otherwise,
           // TalkBack may think the node is still focused.
-          accessibilityFocusedSemanticsNode = null;
-          embeddedAccessibilityFocusedNodeId = null;
+          if (accessibilityFocusedSemanticsNode != null
+              && accessibilityFocusedSemanticsNode.id == virtualViewId) {
+            accessibilityFocusedSemanticsNode = null;
+          }
+          if (embeddedAccessibilityFocusedNodeId != null
+              && embeddedAccessibilityFocusedNodeId == virtualViewId) {
+            embeddedAccessibilityFocusedNodeId = null;
+          }
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
           sendAccessibilityEvent(
