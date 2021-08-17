@@ -18,7 +18,7 @@ const List<spirv.TargetLanguage> targets = <spirv.TargetLanguage>[
 void main() {
   test('spirv transpiler throws exceptions', () async {
     int count = 0;
-    await for (final Uint8List shader in exceptionShaders()) {
+    await for (final Uint8List shader in _exceptionShaders()) {
       for (final spirv.TargetLanguage target in targets) {
         expect(() => spirv.transpile(shader.buffer, target), throwsException);
       }
@@ -30,12 +30,12 @@ void main() {
   });
 }
 
-final String _buildDirectory =
-  Platform.environment['FLUTTER_BUILD_DIRECTORY']!;
+Stream<Uint8List> _exceptionShaders() async* {
+  final String buildDirectory =
+    Platform.environment['FLUTTER_BUILD_DIRECTORY']!;
 
-Stream<Uint8List> exceptionShaders() async* {
   final Directory dir = Directory(path.joinAll(<String>[
-    ...path.split(_buildDirectory),
+    ...path.split(buildDirectory),
     'gen',
     'flutter',
     'lib',
