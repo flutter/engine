@@ -151,9 +151,17 @@ Future<ByteData?> _imageByteDataFromShader({
 
 // Loads the path and spirv content of the files at
 // $FLUTTER_BUILD_DIRECTORY/gen/flutter/lib/spirv/test/$leafFolderName
+// This is synchronous so that tests can be inside of a loop with
+// the proper test name.
 Map<String, Uint32List> _loadSpv(String leafFolderName) {
   final Map<String, Uint32List> out = SplayTreeMap<String, Uint32List>();
-  spvDirectory(leafFolderName).listSync()
+
+  final Directory directory = spvDirectory(leafFolderName);
+  if (!directory.existsSync()) {
+    return out;
+  }
+  
+  directory.listSync()
     .where((FileSystemEntity entry) => path.extension(entry.path) == '.spv')
     .forEach((FileSystemEntity entry) {
       final String key = path.basenameWithoutExtension(entry.path);
