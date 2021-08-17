@@ -3804,7 +3804,7 @@ class FragmentShader extends Shader {
   ///
   /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
   /// be thrown. See [FragmentShader] docs for details.
-  /// 
+  ///
   /// The compilation of a shader gets more expensive the more complicated the source is.
   /// Because of this, it is reccommended to construct a FragmentShader asynchrounously,
   /// outside of a widget's `build` method, to minimize the chance of UI jank.
