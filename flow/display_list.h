@@ -423,7 +423,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
     }
   }
   void setMaskFilter(sk_sp<SkMaskFilter> filter) override {
-    if (mask_sigma_valid(current_mask_sigma_) || current_mask_filter_ != filter) {
+    if (mask_sigma_valid(current_mask_sigma_) ||
+        current_mask_filter_ != filter) {
       onSetMaskFilter(std::move(filter));
     }
   }

@@ -1115,7 +1115,8 @@ void DisplayListBuilder::onSetMaskFilter(sk_sp<SkMaskFilter> filter) {
   current_mask_filter_ = filter;
   Push<SetMaskFilterOp>(0, std::move(filter));
 }
-void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma) {
+void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style,
+                                             SkScalar sigma) {
   // Valid sigma is checked by setMaskBlurFilter
   FML_DCHECK(mask_sigma_valid(sigma));
   current_mask_filter_ = nullptr;
