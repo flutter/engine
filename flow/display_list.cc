@@ -9,8 +9,6 @@
 #include "flutter/flow/display_list_utils.h"
 #include "flutter/fml/logging.h"
 
-#include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -1054,121 +1052,88 @@ DisplayListBuilder::~DisplayListBuilder() {
   }
 }
 
-void DisplayListBuilder::setAA(bool aa) {
-  if (current_aa_ != aa) {
-    Push<SetAAOp>(0, current_aa_ = aa);
-  }
+void DisplayListBuilder::onSetAA(bool aa) {
+  Push<SetAAOp>(0, current_aa_ = aa);
 }
-void DisplayListBuilder::setDither(bool dither) {
-  if (current_dither_ != dither) {
-    Push<SetDitherOp>(0, current_dither_ = dither);
-  }
+void DisplayListBuilder::onSetDither(bool dither) {
+  Push<SetDitherOp>(0, current_dither_ = dither);
 }
-void DisplayListBuilder::setInvertColors(bool invert) {
-  if (current_invert_colors_ != invert) {
-    Push<SetInvertColorsOp>(0, current_invert_colors_ = invert);
-  }
+void DisplayListBuilder::onSetInvertColors(bool invert) {
+  Push<SetInvertColorsOp>(0, current_invert_colors_ = invert);
 }
-void DisplayListBuilder::setCaps(SkPaint::Cap cap) {
-  if (current_cap_ != cap) {
-    Push<SetCapsOp>(0, current_cap_ = cap);
-  }
+void DisplayListBuilder::onSetCaps(SkPaint::Cap cap) {
+  Push<SetCapsOp>(0, current_cap_ = cap);
 }
-void DisplayListBuilder::setJoins(SkPaint::Join join) {
-  if (current_join_ != join) {
-    Push<SetJoinsOp>(0, current_join_ = join);
-  }
+void DisplayListBuilder::onSetJoins(SkPaint::Join join) {
+  Push<SetJoinsOp>(0, current_join_ = join);
 }
-void DisplayListBuilder::setDrawStyle(SkPaint::Style style) {
-  if (current_style_ != style) {
-    Push<SetDrawStyleOp>(0, current_style_ = style);
-  }
+void DisplayListBuilder::onSetDrawStyle(SkPaint::Style style) {
+  Push<SetDrawStyleOp>(0, current_style_ = style);
 }
-void DisplayListBuilder::setStrokeWidth(SkScalar width) {
-  if (current_stroke_width_ != width) {
-    Push<SetStrokeWidthOp>(0, current_stroke_width_ = width);
-  }
+void DisplayListBuilder::onSetStrokeWidth(SkScalar width) {
+  Push<SetStrokeWidthOp>(0, current_stroke_width_ = width);
 }
-void DisplayListBuilder::setMiterLimit(SkScalar limit) {
-  if (current_miter_limit_ != limit) {
-    Push<SetMiterLimitOp>(0, current_miter_limit_ = limit);
-  }
+void DisplayListBuilder::onSetMiterLimit(SkScalar limit) {
+  Push<SetMiterLimitOp>(0, current_miter_limit_ = limit);
 }
-void DisplayListBuilder::setColor(SkColor color) {
-  if (current_color_ != color) {
-    Push<SetColorOp>(0, current_color_ = color);
-  }
+void DisplayListBuilder::onSetColor(SkColor color) {
+  Push<SetColorOp>(0, current_color_ = color);
 }
-void DisplayListBuilder::setBlendMode(SkBlendMode mode) {
-  if (current_blender_ || current_blend_ != mode) {
-    current_blender_ = nullptr;
-    Push<SetBlendModeOp>(0, current_blend_ = mode);
-  }
+void DisplayListBuilder::onSetBlendMode(SkBlendMode mode) {
+  current_blender_ = nullptr;
+  Push<SetBlendModeOp>(0, current_blend_ = mode);
 }
-void DisplayListBuilder::setBlender(sk_sp<SkBlender> blender) {
-  if (!blender) {
-    setBlendMode(SkBlendMode::kSrcOver);
-  } else if (current_blender_ != blender) {
-    (current_blender_ = blender)  //
-        ? Push<SetBlenderOp>(0, std::move(blender))
-        : Push<ClearBlenderOp>(0);
-  }
+void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
+  // setBlender(nullptr) should be redirected to setBlendMode(SrcOver)
+  FML_DCHECK(blender);
+  (current_blender_ = blender)  //
+      ? Push<SetBlenderOp>(0, std::move(blender))
+      : Push<ClearBlenderOp>(0);
 }
-void DisplayListBuilder::setShader(sk_sp<SkShader> shader) {
-  if (current_shader_ != shader) {
-    (current_shader_ = shader)  //
-        ? Push<SetShaderOp>(0, std::move(shader))
-        : Push<ClearShaderOp>(0);
-  }
+void DisplayListBuilder::onSetShader(sk_sp<SkShader> shader) {
+  (current_shader_ = shader)  //
+      ? Push<SetShaderOp>(0, std::move(shader))
+      : Push<ClearShaderOp>(0);
 }
-void DisplayListBuilder::setImageFilter(sk_sp<SkImageFilter> filter) {
-  if (current_image_filter_ != filter) {
-    (current_image_filter_ = filter)  //
-        ? Push<SetImageFilterOp>(0, std::move(filter))
-        : Push<ClearImageFilterOp>(0);
-  }
+void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
+  (current_image_filter_ = filter)  //
+      ? Push<SetImageFilterOp>(0, std::move(filter))
+      : Push<ClearImageFilterOp>(0);
 }
-void DisplayListBuilder::setColorFilter(sk_sp<SkColorFilter> filter) {
-  if (current_color_filter_ != filter) {
-    (current_color_filter_ = filter)  //
-        ? Push<SetColorFilterOp>(0, std::move(filter))
-        : Push<ClearColorFilterOp>(0);
-  }
+void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
+  (current_color_filter_ = filter)  //
+      ? Push<SetColorFilterOp>(0, std::move(filter))
+      : Push<ClearColorFilterOp>(0);
 }
-void DisplayListBuilder::setPathEffect(sk_sp<SkPathEffect> effect) {
-  if (current_path_effect_ != effect) {
-    (current_path_effect_ = effect)  //
-        ? Push<SetPathEffectOp>(0, std::move(effect))
-        : Push<ClearPathEffectOp>(0);
-  }
+void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
+  (current_path_effect_ = effect)  //
+      ? Push<SetPathEffectOp>(0, std::move(effect))
+      : Push<ClearPathEffectOp>(0);
 }
-void DisplayListBuilder::setMaskFilter(sk_sp<SkMaskFilter> filter) {
-  if (mask_sigma_valid(current_mask_sigma_) || current_mask_filter_ != filter) {
-    current_mask_sigma_ = kInvalidSigma;
-    current_mask_filter_ = filter;
-    Push<SetMaskFilterOp>(0, std::move(filter));
-  }
+void DisplayListBuilder::onSetMaskFilter(sk_sp<SkMaskFilter> filter) {
+  current_mask_sigma_ = kInvalidSigma;
+  current_mask_filter_ = filter;
+  Push<SetMaskFilterOp>(0, std::move(filter));
 }
-void DisplayListBuilder::setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) {
-  if (mask_sigma_valid(sigma) &&
-      (current_mask_sigma_ != sigma || current_mask_style_ != style)) {
-    current_mask_filter_ = nullptr;
-    current_mask_style_ = style;
-    current_mask_sigma_ = sigma;
-    switch (style) {
-      case kNormal_SkBlurStyle:
-        Push<SetMaskBlurFilterNormalOp>(0, sigma);
-        break;
-      case kSolid_SkBlurStyle:
-        Push<SetMaskBlurFilterSolidOp>(0, sigma);
-        break;
-      case kOuter_SkBlurStyle:
-        Push<SetMaskBlurFilterOuterOp>(0, sigma);
-        break;
-      case kInner_SkBlurStyle:
-        Push<SetMaskBlurFilterInnerOp>(0, sigma);
-        break;
-    }
+void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma) {
+  // Valid sigma is checked by setMaskBlurFilter
+  FML_DCHECK(mask_sigma_valid(sigma));
+  current_mask_filter_ = nullptr;
+  current_mask_style_ = style;
+  current_mask_sigma_ = sigma;
+  switch (style) {
+    case kNormal_SkBlurStyle:
+      Push<SetMaskBlurFilterNormalOp>(0, sigma);
+      break;
+    case kSolid_SkBlurStyle:
+      Push<SetMaskBlurFilterSolidOp>(0, sigma);
+      break;
+    case kOuter_SkBlurStyle:
+      Push<SetMaskBlurFilterOuterOp>(0, sigma);
+      break;
+    case kInner_SkBlurStyle:
+      Push<SetMaskBlurFilterInnerOp>(0, sigma);
+      break;
   }
 }
 void DisplayListBuilder::setAttributesFromPaint(const SkPaint* paint,

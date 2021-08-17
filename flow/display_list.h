@@ -11,6 +11,7 @@
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageFilter.h"
+#include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPathEffect.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkShader.h"
@@ -344,23 +345,94 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   DisplayListBuilder(const SkRect& cull = kMaxCull_);
   ~DisplayListBuilder();
 
-  void setAA(bool aa) override;
-  void setDither(bool dither) override;
-  void setInvertColors(bool invert) override;
-  void setCaps(SkPaint::Cap cap) override;
-  void setJoins(SkPaint::Join join) override;
-  void setDrawStyle(SkPaint::Style style) override;
-  void setStrokeWidth(SkScalar width) override;
-  void setMiterLimit(SkScalar limit) override;
-  void setColor(SkColor color) override;
-  void setBlendMode(SkBlendMode mode) override;
-  void setBlender(sk_sp<SkBlender> blender) override;
-  void setShader(sk_sp<SkShader> shader) override;
-  void setImageFilter(sk_sp<SkImageFilter> filter) override;
-  void setColorFilter(sk_sp<SkColorFilter> filter) override;
-  void setPathEffect(sk_sp<SkPathEffect> effect) override;
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+  void setAA(bool aa) override {
+    if (current_aa_ != aa) {
+      onSetAA(aa);
+    }
+  }
+  void setDither(bool dither) override {
+    if (current_dither_ != dither) {
+      onSetDither(dither);
+    }
+  }
+  void setInvertColors(bool invert) override {
+    if (current_invert_colors_ != invert) {
+      onSetInvertColors(invert);
+    }
+  }
+  void setCaps(SkPaint::Cap cap) override {
+    if (current_cap_ != cap) {
+      onSetCaps(cap);
+    }
+  }
+  void setJoins(SkPaint::Join join) override {
+    if (current_join_ != join) {
+      onSetJoins(join);
+    }
+  }
+  void setDrawStyle(SkPaint::Style style) override {
+    if (current_style_ != style) {
+      onSetDrawStyle(style);
+    }
+  }
+  void setStrokeWidth(SkScalar width) override {
+    if (current_stroke_width_ != width) {
+      onSetStrokeWidth(width);
+    }
+  }
+  void setMiterLimit(SkScalar limit) override {
+    if (current_miter_limit_ != limit) {
+      onSetMiterLimit(limit);
+    }
+  }
+  void setColor(SkColor color) override {
+    if (current_color_ != color) {
+      onSetColor(color);
+    }
+  }
+  void setBlendMode(SkBlendMode mode) override {
+    if (current_blender_ || current_blend_ != mode) {
+      onSetBlendMode(mode);
+    }
+  }
+  void setBlender(sk_sp<SkBlender> blender) override {
+    if (!blender) {
+      setBlendMode(SkBlendMode::kSrcOver);
+    } else if (current_blender_ != blender) {
+      onSetBlender(std::move(blender));
+    }
+  }
+  void setShader(sk_sp<SkShader> shader) override {
+    if (current_shader_ != shader) {
+      onSetShader(std::move(shader));
+    }
+  }
+  void setImageFilter(sk_sp<SkImageFilter> filter) override {
+    if (current_image_filter_ != filter) {
+      onSetImageFilter(std::move(filter));
+    }
+  }
+  void setColorFilter(sk_sp<SkColorFilter> filter) override {
+    if (current_color_filter_ != filter) {
+      onSetColorFilter(std::move(filter));
+    }
+  }
+  void setPathEffect(sk_sp<SkPathEffect> effect) override {
+    if (current_path_effect_ != effect) {
+      onSetPathEffect(std::move(effect));
+    }
+  }
+  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {
+    if (mask_sigma_valid(current_mask_sigma_) || current_mask_filter_ != filter) {
+      onSetMaskFilter(std::move(filter));
+    }
+  }
+  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {
+    if (mask_sigma_valid(sigma) &&
+        (current_mask_sigma_ != sigma || current_mask_style_ != style)) {
+      onSetMaskBlurFilter(style, sigma);
+    }
+  }
 
   void setAttributesFromPaint(const SkPaint* paint, int attribute_mask);
 
@@ -551,6 +623,24 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   bool mask_sigma_valid(SkScalar sigma) {
     return SkScalarIsFinite(sigma) && sigma > 0.0;
   }
+
+  void onSetAA(bool aa);
+  void onSetDither(bool dither);
+  void onSetInvertColors(bool invert);
+  void onSetCaps(SkPaint::Cap cap);
+  void onSetJoins(SkPaint::Join join);
+  void onSetDrawStyle(SkPaint::Style style);
+  void onSetStrokeWidth(SkScalar width);
+  void onSetMiterLimit(SkScalar limit);
+  void onSetColor(SkColor color);
+  void onSetBlendMode(SkBlendMode mode);
+  void onSetBlender(sk_sp<SkBlender> blender);
+  void onSetShader(sk_sp<SkShader> shader);
+  void onSetImageFilter(sk_sp<SkImageFilter> filter);
+  void onSetColorFilter(sk_sp<SkColorFilter> filter);
+  void onSetPathEffect(sk_sp<SkPathEffect> effect);
+  void onSetMaskFilter(sk_sp<SkMaskFilter> filter);
+  void onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma);
 
   // These values should match the defaults of the Dart Paint object.
   bool current_aa_ = false;
