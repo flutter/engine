@@ -112,13 +112,21 @@ TEST_F(FlutterScenicEmbedderTests, NotARealTest1) {
 }
 
 TEST_F(FlutterScenicEmbedderTests, Embedding) {
+  // TODO(richkadel): remove this log
+  FML_VLOG(fml::LOG_INFO) << "Calling RunAppWithArgs()";
   RunAppWithArgs(kParentViewUrl);
+  // TODO(richkadel): remove this log
+  FML_VLOG(fml::LOG_INFO) << "Exited RunAppWithArgs()";
 
   // Take screenshot until we see the child-view's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildBackgroundColor, [](std::map<scenic::Color, size_t> histogram) {
-        OverlayPixelCount(
-            histogram);  // TODO(richkadel): remove this line... unused
+        // TODO(richkadel): remove this log
+        FML_VLOG(fml::LOG_INFO)
+            << "in callback from TakeScreenshotUntil() ... color was found!";
+        if (false) {  // TODO(richkadel): remove this if block... unused
+          OverlayPixelCount(histogram);
+        }
         // Expect parent and child background colors, with parent color > child
         // color.
         EXPECT_GT(histogram[kParentBackgroundColor], 0u);

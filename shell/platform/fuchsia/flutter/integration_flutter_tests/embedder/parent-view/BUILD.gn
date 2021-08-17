@@ -5,6 +5,7 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
 dart_library("lib") {
   package_name = "parent-view"
@@ -20,8 +21,12 @@ dart_library("lib") {
   ]
 }
 
-flutter_component("parent-view") {
+flutter_component("parent-view-component") {
   manifest = "meta/parent_view.cmx"
   main_package = "parent-view"
   deps = [ ":lib" ]
+}
+
+fuchsia_package("parent-view") {
+  deps = [ ":parent-view-component" ]
 }
