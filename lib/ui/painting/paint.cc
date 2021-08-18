@@ -181,15 +181,10 @@ const SkPaint* Paint::paint(SkPaint& paint_) const {
   return &paint_;
 }
 
-void Paint::syncToDisplayList(DisplayListBuilder* builder,
+bool Paint::syncToDisplayList(DisplayListBuilder* builder,
                               int attribute_mask) const {
   if (Dart_IsNull(paint_data_)) {
-    // TODO: We should be synchronizing the defaults to the DL
-    // or indicating to the caller that no paint was given.
-    // Unfortunately DL has methods which take an optional paint
-    // in SkCanvas but the DL method has no way to indicate that
-    // it should apply the current paint attributes or not.
-    return;
+    return false;
   }
 
   tonic::DartByteData byte_data(paint_data_);
@@ -217,7 +212,7 @@ void Paint::syncToDisplayList(DisplayListBuilder* builder,
     Dart_Handle values[kObjectCount];
     if (Dart_IsError(
             Dart_ListGetRange(paint_objects_, 0, kObjectCount, values))) {
-      return;
+      return false;
     }
 
     if ((attribute_mask & DisplayListBuilder::kShaderNeeded) != 0) {
@@ -310,10 +305,12 @@ void Paint::syncToDisplayList(DisplayListBuilder* builder,
         SkBlurStyle blur_style =
             static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
         double sigma = float_data[kMaskFilterSigmaIndex];
-        builder->setMaskFilter(SkMaskFilter::MakeBlur(blur_style, sigma));
+        builder->setMaskBlurFilter(blur_style, sigma);
         break;
     }
   }
+
+  return true;
 }
 
 }  // namespace flutter

@@ -18,7 +18,14 @@ class Paint {
   Paint(Dart_Handle paint_objects, Dart_Handle paint_data);
 
   const SkPaint* paint(SkPaint& paint) const;
-  void syncToDisplayList(
+
+  /// Synchronize the Dart properties to the display list according
+  /// to the draw-op-specific mask of which properties are needed.
+  /// The return value indicates if the paint was non-null and can
+  /// either be DCHECKed or used to indicate to the DisplayList
+  /// draw operation whether or not to use the synchronized attributes
+  /// (mainly the drawImage and saveLayer methods).
+  bool syncToDisplayList(
       DisplayListBuilder* builder,
       int attribute_mask = DisplayListBuilder::kAllAttributesMask) const;
 
