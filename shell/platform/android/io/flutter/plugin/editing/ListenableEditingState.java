@@ -280,13 +280,18 @@ class ListenableEditingState extends SpannableStringBuilder {
                 .subSequence(start, end)
                 .equals(tb.toString().subSequence(tbstart, end - start));
 
+    final boolean isEqual = toString().subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
+
     // A replacement means the original composing region has changed, anything else will be
     // considered an insertion.
     final boolean isReplaced =
         isOriginalComposingRegionTextChanged
             && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
 
-    if (isCalledFromDelete || isDeletingInsideComposingRegion) {
+    if (isEqual) {
+      Log.e("DELTAS", "EQUALITY");
+      setDeltas(toString(), "", "EQUALITY", -1, -1);
+    } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
       Log.e("DELTAS", "DELETION");
       setDeltas(
           toString(), toString().subSequence(start + tbend, end).toString(), "DELETION", end, end);
