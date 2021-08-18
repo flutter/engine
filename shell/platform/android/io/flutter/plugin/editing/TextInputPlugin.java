@@ -635,7 +635,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final boolean skipFrameworkUpdate =
         // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null
-                || (mEditable.toString().equals(mLastKnownFrameworkTextEditingState.text)
+            || (mEditable.toString().equals(mLastKnownFrameworkTextEditingState.text)
                 && selectionStart == mLastKnownFrameworkTextEditingState.selectionStart
                 && selectionEnd == mLastKnownFrameworkTextEditingState.selectionEnd
                 && composingStart == mLastKnownFrameworkTextEditingState.composingStart
