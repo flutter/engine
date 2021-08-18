@@ -89,7 +89,6 @@ Future<int> runLint(ArgParser argParser, ArgResults argResults) async {
 ''');
   await projectXml.close();
   print('Wrote project.xml, starting lint...');
-  print(path.join(androidSdkDir.path, 'tools', 'bin', 'lint'));
   final List<String> lintArgs = <String>[
     path.join(androidSdkDir.path, 'cmdline-tools', 'bin', 'lint'),
     '--project', projectXmlPath,
