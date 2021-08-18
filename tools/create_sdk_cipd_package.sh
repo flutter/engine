@@ -5,7 +5,7 @@
 print_usage () {
   echo "Usage: create_sdk_cipd_package.sh <PACKAGE_TYPE> <PATH_TO_ASSETS> <PLATFORM_NAME> <VERSION_TAG>"
   echo "  where:"
-  echo "    - PACKAGE_TYPE is one of build-tools, platform-tools, platforms, or tools"
+  echo "    - PACKAGE_TYPE is one of build-tools, platform-tools, platforms, tools, or cmdline-tools;latest"
   echo "    - PATH_TO_ASSETS is the path to the unzipped asset folder"
   echo "    - PLATFORM_NAME is one of linux-amd64, mac-amd64, or windows-amd64"
   echo "    - VERSION_TAG is the version of the package, e.g. 28r6 or 28.0.3"
