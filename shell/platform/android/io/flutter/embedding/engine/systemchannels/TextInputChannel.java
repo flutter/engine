@@ -186,6 +186,17 @@ public class TextInputChannel {
     state.put("composingExtent", composingEnd);
     return state;
   }
+
+  private static HashMap<Object, Object> createEditingDeltaJSON(
+      String oldTxt, String newTxt, String diffType, int newStart, int newEnd) {
+    HashMap<Object, Object> state = new HashMap<>();
+    state.put("oldText", oldTxt);
+    state.put("deltaText", newTxt);
+    state.put("delta", diffType);
+    state.put("deltaStart", newStart);
+    state.put("deltaEnd", newEnd);
+    return state;
+  }
   /**
    * Instructs Flutter to update its text input editing state to reflect the given configuration.
    */
@@ -218,6 +229,39 @@ public class TextInputChannel {
         createEditingStateJSON(text, selectionStart, selectionEnd, composingStart, composingEnd);
 
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
+  }
+
+  public void updateEditingStateWithDelta(
+      int inputClientId,
+      String oldText,
+      String newText,
+      String diffType,
+      int newStart,
+      int newExtent) {
+
+    Log.e(
+        "DELTAS",
+        "Sending message to update editing state with delta: \n"
+            + "old text: "
+            + oldText
+            + "\n"
+            + "delta text: "
+            + newText
+            + "\n"
+            + "diff type: "
+            + diffType
+            + "\n"
+            + "delta start: "
+            + newStart
+            + "\n"
+            + "delta end: "
+            + newExtent);
+
+    final HashMap<Object, Object> state =
+        createEditingDeltaJSON(oldText, newText, diffType, newStart, newExtent);
+
+    channel.invokeMethod(
+        "TextInputClient.updateEditingStateWithDelta", Arrays.asList(inputClientId, state));
   }
 
   public void updateEditingStateWithTag(

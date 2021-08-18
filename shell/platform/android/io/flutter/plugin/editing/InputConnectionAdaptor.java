@@ -288,7 +288,7 @@ class InputConnectionAdaptor extends BaseInputConnection
         // When the enter key is pressed on a non-multiline field, consider it a
         // submit instead of a newline.
       } else if ((event.getKeyCode() == KeyEvent.KEYCODE_ENTER
-              || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
+          || event.getKeyCode() == KeyEvent.KEYCODE_NUMPAD_ENTER)
           && (InputType.TYPE_TEXT_FLAG_MULTI_LINE & mEditorInfo.inputType) == 0) {
         performEditorAction(mEditorInfo.imeOptions & EditorInfo.IME_MASK_ACTION);
         return true;
@@ -313,7 +313,7 @@ class InputConnectionAdaptor extends BaseInputConnection
     }
     if (event.getAction() == KeyEvent.ACTION_UP
         && (event.getKeyCode() == KeyEvent.KEYCODE_SHIFT_LEFT
-            || event.getKeyCode() == KeyEvent.KEYCODE_SHIFT_RIGHT)) {
+        || event.getKeyCode() == KeyEvent.KEYCODE_SHIFT_RIGHT)) {
       int selEnd = Selection.getSelectionEnd(mEditable);
       setSelection(selEnd, selEnd);
       return true;
