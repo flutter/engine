@@ -198,7 +198,7 @@ void _validatePath(Path path) native 'ValidatePath';
 
 @pragma('vm:entry-point')
 void frameCallback(_Image, int) {
-   print('called back');
+  print('called back');
 }
 
 @pragma('vm:entry-point')
