@@ -439,6 +439,7 @@ public class FlutterActivityTest {
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
       super.delegate = new FlutterActivityAndFragmentDelegate(this);
       super.delegate.setupFlutterEngine();
     }
