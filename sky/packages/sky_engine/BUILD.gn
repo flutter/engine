@@ -139,7 +139,8 @@ copy("math") {
 
 copy("spirv") {
   sources = [ "//flutter/lib/spirv/lib" ]
-  outputs = [ "$root_gen_dir/dart-pkg/sky_engine/lib/spirv/{{source_file_part}}" ]
+  outputs = 
+      [ "$root_gen_dir/dart-pkg/sky_engine/lib/spirv/{{source_file_part}}" ]
 }
 
 copy("typed_data") {
