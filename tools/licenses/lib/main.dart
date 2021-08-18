@@ -77,7 +77,7 @@ class _RepositorySourceFile extends _RepositoryLicensedFile {
 
   fs.TextFile get ioTextFile => super.io as fs.TextFile;
 
-  static final RegExp _hashBangPattern = RegExp(r'^#! *(?:/bin/sh|/bin/bash|/usr/bin/env +(?:python|python3|bash))\b');
+  static final RegExp _hashBangPattern = RegExp(r'^#! *(?:/bin/sh|/bin/bash|/usr/bin/env +(?:python[23]?|bash))\b');
 
   @override
   bool get isShellScript {
@@ -1878,7 +1878,20 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
       return _RepositoryVulkanDirectory(this, entry);
     if (entry.name == 'wuffs')
       return _RepositoryWuffsDirectory(this, entry);
+    if (entry.name == 'web_dependencies')
+      return _RepositoryThirdPartyWebDependenciesDirectory(this, entry);
     return super.createSubdirectory(entry);
+  }
+}
+
+/// Corresponds to the `src/third_party/web_dependencies` directory.
+class _RepositoryThirdPartyWebDependenciesDirectory extends _RepositoryDirectory {
+  _RepositoryThirdPartyWebDependenciesDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'canvaskit' // redundant; covered by Skia dependencies
+        && super.shouldRecurse(entry);
   }
 }
 
