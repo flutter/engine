@@ -277,8 +277,8 @@ class ListenableEditingState extends SpannableStringBuilder {
     final boolean isOriginalComposingRegionTextChanged =
         (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
             || !toString()
-            .subSequence(start, end)
-            .equals(tb.toString().subSequence(tbstart, end - start));
+              .subSequence(start, end)
+              .equals(tb.toString().subSequence(tbstart, end - start));
 
     // A replacement means the original composing region has changed, anything else will be
     // considered an insertion.
