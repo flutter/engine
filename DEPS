@@ -536,17 +536,6 @@ deps = {
     'dep_type': 'cipd',
   },
 
-  'src/third_party/android_tools/sdk/cmdline-tools': {
-     'packages': [
-       {
-        'package': 'flutter/android/sdk/cmdline-tools',
-        'version': 'latest',
-       }
-     ],
-    'condition': 'download_android_deps',
-    'dep_type': 'cipd',
-  },
-
   'src/third_party/android_embedding_dependencies': {
      'packages': [
        {
