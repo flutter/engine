@@ -160,7 +160,7 @@ Map<String, Uint32List> _loadSpv(String leafFolderName) {
   if (!directory.existsSync()) {
     return out;
   }
-  
+
   directory.listSync()
     .where((FileSystemEntity entry) => path.extension(entry.path) == '.spv')
     .forEach((FileSystemEntity entry) {
