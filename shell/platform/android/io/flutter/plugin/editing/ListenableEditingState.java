@@ -280,7 +280,8 @@ class ListenableEditingState extends SpannableStringBuilder {
                 .subSequence(start, end)
                 .equals(tb.toString().subSequence(tbstart, end - start));
 
-    final boolean isEqual = toString().subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
+    final boolean isEqual =
+        toString().subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
 
     // A replacement means the original composing region has changed, anything else will be
     // considered an insertion.
