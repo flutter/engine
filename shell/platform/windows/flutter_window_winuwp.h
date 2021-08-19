@@ -159,7 +159,7 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   winrt::Windows::UI::Composition::SpriteVisual render_target_{nullptr};
 
   // UISettings for observing the color change.
-  winrt::Windows::UI::ViewManagement::UISettings ui_settings_{nullptr};
+  winrt::Windows::UI::ViewManagement::UISettings ui_settings_;
 
   // GamepadCursorWinUWP object used to manage an emulated cursor visual driven
   // by gamepad.

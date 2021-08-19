@@ -77,8 +77,6 @@ FlutterWindowWinUWP::FlutterWindowWinUWP(
   application_view_ = cav;
   window_ = application_view_.CoreWindow();
 
-  ui_settings_ = winrt::Windows::UI::ViewManagement::UISettings{};
-
   SetEventHandlers();
 
   display_helper_ = std::make_unique<DisplayHelperWinUWP>();
