@@ -52,40 +52,7 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   private BaseInputConnection mDummyConnection;
 
-  // Fields for delta.
-  private String oldText;
-  private String deltaText;
-  private String deltaType;
-  private int deltaStart;
-  private int deltaEnd;
-
-  public String getOldText() {
-    return oldText;
-  }
-
-  public String getDeltaText() {
-    return deltaText;
-  }
-
-  public String getDeltaType() {
-    return deltaType;
-  }
-
-  public int getDeltaStart() {
-    return deltaStart;
-  }
-
-  public int getDeltaEnd() {
-    return deltaEnd;
-  }
-
-  private void setDeltas(String oldTxt, String newTxt, String type, int newStart, int newExtent) {
-    oldText = oldTxt;
-    deltaText = newTxt;
-    deltaStart = newStart;
-    deltaEnd = newExtent;
-    deltaType = type;
-  }
+  private TextEditingDelta mTextEditingDelta;
 
   // The View is only used for creating a dummy BaseInputConnection for setComposingRegion. The View
   // needs to have a non-null Context.
@@ -94,6 +61,8 @@ class ListenableEditingState extends SpannableStringBuilder {
     if (initalState != null) {
       setEditingState(initalState);
     }
+
+    mTextEditingDelta = new TextEditingDelta();
 
     Editable self = this;
     mDummyConnection =
@@ -261,49 +230,7 @@ class ListenableEditingState extends SpannableStringBuilder {
         "DELTAS",
         "replace(" + start + ", " + end + ", " + tb + ", " + tbstart + ", " + tbend + ")");
 
-    final boolean isDeletionGreaterThanOne = end - (start + tbend) > 1;
-    final boolean isCalledFromDelete = tb == "" && tbstart == 0 && tbstart == tbend;
-
-    final boolean isReplacedByShorter = isDeletionGreaterThanOne && (tbend - tbstart < end - start);
-    final boolean isReplacedByLonger = tbend - tbstart > end - start;
-    final boolean isReplacedBySame = tbend - tbstart == end - start;
-
-    // Is deleting/inserting at the end of a composing region.
-    final boolean isDeletingInsideComposingRegion = !isReplacedByShorter && start + tbend < end;
-    final boolean isInsertingInsideComposingRegion = start + tbend > end;
-
-    // To consider the cases when autocorrect increases the length of the text being composed by
-    // one, but changes more than one character.
-    final boolean isOriginalComposingRegionTextChanged =
-        (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
-            || !toString()
-                .subSequence(start, end)
-                .equals(tb.toString().subSequence(tbstart, end - start));
-
-    final boolean isEqual =
-        toString().subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
-
-    // A replacement means the original composing region has changed, anything else will be
-    // considered an insertion.
-    final boolean isReplaced =
-        isOriginalComposingRegionTextChanged
-            && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
-
-    if (isEqual) {
-      Log.e("DELTAS", "EQUALITY");
-      setDeltas(toString(), "", "EQUALITY", -1, -1);
-    } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
-      Log.e("DELTAS", "DELETION");
-      setDeltas(
-          toString(), toString().subSequence(start + tbend, end).toString(), "DELETION", end, end);
-    } else if ((start == end || isInsertingInsideComposingRegion)
-        && !isOriginalComposingRegionTextChanged) {
-      Log.e("DELTAS", "INSERTION");
-      setDeltas(toString(), tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
-    } else if (isReplaced) {
-      Log.e("DELTAS", "REPLACEMENT");
-      setDeltas(toString(), tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
-    }
+    mTextEditingDelta.reasonDeltas(toString(), start, end, tb, tbstart, tbend);
 
     boolean textChanged = end - start != tbend - tbstart;
     for (int i = 0; i < end - start && !textChanged; i++) {
@@ -364,6 +291,10 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   public final int getComposingEnd() {
     return BaseInputConnection.getComposingSpanEnd(this);
+  }
+
+  public TextEditingDelta getTextEditingDelta() {
+    return mTextEditingDelta;
   }
 
   @Override
