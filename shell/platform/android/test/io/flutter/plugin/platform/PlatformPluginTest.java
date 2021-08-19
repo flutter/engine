@@ -171,8 +171,7 @@ public class PlatformPluginTest {
             0XFFC70039, // systemNavigationBarColor
             null, // systemNavigationBarIconBrightness
             0XFF006DB3, // systemNavigationBarDividerColor
-            true, // systemNavigationBarContrastEnforced
-        );
+            true); // systemNavigationBarContrastEnforced
 
     if (Build.VERSION.SDK_INT >= 28) {
       platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
@@ -183,15 +182,15 @@ public class PlatformPluginTest {
 
       // Regression test for https://github.com/flutter/flutter/issues/88431
       // A null brightness should not affect changing color settings.
-      style = new SystemChromeStyle(
-          0XFF006DB3, // statusBarColor
-          null, // statusBarIconBrightness
-          true, // systemStatusBarContrastEnforced
-          0XFF000000, // systemNavigationBarColor
-          null, // systemNavigationBarIconBrightness
-          0XFF006DB3, // systemNavigationBarDividerColor
-          true, // systemNavigationBarContrastEnforced
-      );
+      style =
+          new SystemChromeStyle(
+              0XFF006DB3, // statusBarColor
+              null, // statusBarIconBrightness
+              true, // systemStatusBarContrastEnforced
+              0XFF000000, // systemNavigationBarColor
+              null, // systemNavigationBarIconBrightness
+              0XFF006DB3, // systemNavigationBarDividerColor
+              true); // systemNavigationBarContrastEnforced
 
       platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
