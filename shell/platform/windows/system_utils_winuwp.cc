@@ -88,9 +88,9 @@ std::string GetPreferredBrightness() {
       winrt::Windows::UI::ViewManagement::UIColorType::Background);
   // Assuming that Windows return `Colors::Black` when being dark theme.
   if (background_color == winrt::Windows::UI::Colors::Black()) {
-    return kBrightnessDark;
+    return kPlatformBrightnessDark;
   } else {
-    return kBrightnessLight;
+    return kPlatformBrightnessLight;
   }
 }
 

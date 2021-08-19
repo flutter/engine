@@ -13,8 +13,8 @@
 namespace flutter {
 
 namespace {
-static constexpr char kBrightnessLight[] = "light";
-static constexpr char kBrightnessDark[] = "dark";
+static constexpr char kPlatformBrightnessLight[] = "light";
+static constexpr char kPlatformBrightnessDark[] = "dark";
 }  // namespace
 
 // Components of a system language/locale.

@@ -117,14 +117,14 @@ std::string GetPreferredBrightness() {
 
   if (result == 0) {
     if (use_light_theme == 1) {
-      return kBrightnessLight;
+      return kPlatformBrightnessLight;
     } else {
-      return kBrightnessDark;
+      return kPlatformBrightnessDark;
     }
   } else {
     // The current OS does not support dark mode. (Older Windows 10 or before
     // Windows 10)
-    return kBrightnessLight;
+    return kPlatformBrightnessLight;
   }
 }
 
