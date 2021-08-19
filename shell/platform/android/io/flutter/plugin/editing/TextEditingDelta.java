@@ -68,9 +68,9 @@ public class TextEditingDelta {
     final boolean isOriginalComposingRegionTextChanged =
         (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
             || !currentEditable
-            .subSequence(start, end)
-            .toString()
-            .equals(tb.subSequence(tbstart, end - start).toString());
+                .subSequence(start, end)
+                .toString()
+                .equals(tb.subSequence(tbstart, end - start).toString());
 
     final boolean isEqual =
         currentEditable.subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
@@ -87,7 +87,11 @@ public class TextEditingDelta {
     } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
       Log.e("DELTAS", "DELETION");
       setDeltas(
-          currentEditable, currentEditable.subSequence(start + tbend, end).toString(), "DELETION", end, end);
+          currentEditable,
+          currentEditable.subSequence(start + tbend, end).toString(),
+          "DELETION",
+          end,
+          end);
     } else if ((start == end || isInsertingInsideComposingRegion)
         && !isOriginalComposingRegionTextChanged) {
       Log.e("DELTAS", "INSERTION");
