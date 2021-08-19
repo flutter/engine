@@ -3789,10 +3789,6 @@ class ImageShader extends Shader {
 ///
 class FragmentShader extends Shader {
 
-  // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
-  // constructor and to [update].
-  // https://github.com/flutter/flutter/issues/85240
-
   /// Creates a fragment shader from SPIR-V byte data as an input.
   ///
   /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
@@ -3812,6 +3808,7 @@ class FragmentShader extends Shader {
   FragmentShader({
     required ByteBuffer spirv,
     Float32List? floatUniforms,
+    List<Shader> children = const <Shader>[],
     bool debugPrint = false,
   }) : super._() {
     _constructor();
@@ -3820,11 +3817,16 @@ class FragmentShader extends Shader {
       spv.TargetLanguage.sksl,
     );
     _uniformFloatCount = result.uniformFloatCount;
+    _samplerCount = result.samplerCount;
+    _assertChildrenSize(children);
+    _children = children;
     _init(result.src, debugPrint);
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
 
   late final int _uniformFloatCount;
+  late final int _samplerCount;
+  late final List<Shader> _children;
 
   void _constructor() native 'FragmentShader_constructor';
   void _init(String sksl, bool debugPrint) native 'FragmentShader_init';
@@ -3839,15 +3841,29 @@ class FragmentShader extends Shader {
   /// implemented further.
   void update({
     required Float32List floatUniforms,
+    List<Shader>? children,
   }) {
+    if (children != null) {
+      _assertChildrenSize(children);
+      for (int i = 0; i < children.length; i++) {
+        _children[i] = children[i];
+      }
+    }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
-    _update(floatUniforms);
+    _update(floatUniforms, _children);
   }
 
-  void _update(Float32List floatUniforms) native 'FragmentShader_update';
+  void _update(Float32List floatUniforms, List<Shader> children) native 'FragmentShader_update';
+
+  void _assertChildrenSize(List<Shader> children) {
+    if (children.length != _samplerCount) {
+      throw ArgumentError(
+          'FragmentShader children size: ${children.length} must match given shader children size: $_samplerCount');
+    }
+  }
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.

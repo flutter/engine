@@ -35,7 +35,7 @@ class FragmentShader : public Shader {
 
   void init(std::string sksl, bool debugPrintSksl);
 
-  void update(const tonic::Float32List& uniforms);
+  void update(const tonic::Float32List& uniforms, Dart_Handle children);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

@@ -55,17 +55,26 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
     return;
   }
   if (debugPrintSksl) {
-    FML_DLOG(INFO) << std::string("debugPrintSksl:\n") + sksl.c_str();
+    std::cout << std::string("debugPrintSksl:\n") + sksl.c_str() << std::endl;
   }
 }
 
-// TODO(https://github.com/flutter/flutter/issues/85240):
-// Add `Dart_Handle children` as a paramter.
-void FragmentShader::update(const tonic::Float32List& uniforms) {
+void FragmentShader::update(const tonic::Float32List& uniforms,
+                            Dart_Handle children) {
+  std::vector<Shader*> shaders =
+      tonic::DartConverter<std::vector<Shader*>>::FromDart(children);
+  std::vector<sk_sp<SkShader>> sk_children(shaders.size());
+  for (size_t i = 0; i < shaders.size(); i++) {
+    // The default value for SkSamplingOptions is used because ImageShader
+    // uses a cached value set by the user, it is ignored by Gradient,
+    // and because it is not necessary for FragmentShader (shaders should
+    // implement their own optimal filtering).
+    sk_children[i] = shaders[i]->shader(SkSamplingOptions());
+  }
   shader_ = runtime_effect_->makeShader(
       SkData::MakeWithCopy(uniforms.data(),
                            uniforms.num_elements() * sizeof(float)),
-      0, 0, nullptr, false);
+      sk_children.data(), sk_children.size(), nullptr, false);
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create() {
