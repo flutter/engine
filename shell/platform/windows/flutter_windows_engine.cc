@@ -391,6 +391,12 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
   embedder_api_.ReloadSystemFonts(engine_);
 }
 
+void FlutterWindowsEngine::ReloadPlatformBrightness() {
+  if (engine_) {
+    SendSystemSettings();
+  }
+}
+
 void FlutterWindowsEngine::SendSystemSettings() {
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   std::vector<FlutterLocale> flutter_locales;
