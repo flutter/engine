@@ -77,6 +77,8 @@ FlutterWindowWinUWP::FlutterWindowWinUWP(
   application_view_ = cav;
   window_ = application_view_.CoreWindow();
 
+  ui_settings_ = winrt::Windows::UI::ViewManagement::UISettings{};
+
   SetEventHandlers();
 
   display_helper_ = std::make_unique<DisplayHelperWinUWP>();
@@ -155,6 +157,9 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   window_.PointerMoved({this, &FlutterWindowWinUWP::OnPointerMoved});
   window_.PointerWheelChanged(
       {this, &FlutterWindowWinUWP::OnPointerWheelChanged});
+
+  ui_settings_.ColorValuesChanged(
+      {this, &FlutterWindowWinUWP::OnColorValuesChanged});
 
   // TODO(clarkezone) support mouse leave handling
   // https://github.com/flutter/flutter/issues/70199
@@ -353,6 +358,12 @@ void FlutterWindowWinUWP::OnCharacterReceived(
     std::u16string text({keycode});
     binding_handler_delegate_->OnText(text);
   }
+}
+
+void FlutterWindowWinUWP::OnColorValuesChanged(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::Foundation::IInspectable const&) {
+  binding_handler_delegate_->OnPlatformBrightnessChanged();
 }
 
 bool FlutterWindowWinUWP::OnBitmapSurfaceUpdated(const void* allocation,
