@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
+import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
@@ -95,7 +96,15 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    _ensureOverlayInitialized(viewId);
+    // We must decide in the preroll phase if a platform view will use the
+    // backup overlay, so that draw commands after the platform view will
+    // correctly paint to the backup surface.
+    _viewsUsingBackupSurface.remove(viewId);
+    if (_compositionOrder.length >=
+        SurfaceFactory.instance.maximumSurfaces - 1) {
+      _viewsUsingBackupSurface.add(viewId);
+    }
+
     if (_viewsUsingBackupSurface.contains(viewId)) {
       if (_backupPictureRecorder == null) {
         // Only initialize the picture recorder for the backup surface once.
@@ -373,7 +382,9 @@ class HtmlViewEmbedder {
         frame.submit();
       }
     }
+    _pictureRecorders.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
+      _viewsUsingBackupSurface.clear();
       _compositionOrder.clear();
       return;
     }
@@ -383,6 +394,8 @@ class HtmlViewEmbedder {
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
+    _updateOverlays(diffResult);
+    _viewsUsingBackupSurface.clear();
     _activeCompositionOrder.clear();
 
     List<int>? debugInvalidViewIds;
@@ -399,7 +412,6 @@ class HtmlViewEmbedder {
       }
 
       for (final int viewId in diffResult.viewsToAdd) {
-        unusedViews.remove(viewId);
         if (assertionsEnabled) {
           if (!platformViewManager.knowsViewId(viewId)) {
             debugInvalidViewIds ??= <int>[];
@@ -458,7 +470,8 @@ class HtmlViewEmbedder {
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
-    _releaseOverlays();
+
+    _pictureRecorders.clear();
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -483,29 +496,56 @@ class HtmlViewEmbedder {
     }
   }
 
-  void _releaseOverlays() {
-    _pictureRecorders.clear();
-    _overlays.clear();
-    _viewsUsingBackupSurface.clear();
-    SurfaceFactory.instance.releaseSurfaces();
-  }
-
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
       final Surface overlay = _overlays[viewId]!;
-      if (overlay == SurfaceFactory.instance.backupSurface) {
-        assert(_viewsUsingBackupSurface.contains(viewId));
-        _viewsUsingBackupSurface.remove(viewId);
-        _overlays.remove(viewId);
-        // If no views use the backup surface, then we can release it. This
-        // happens when the number of live platform views drops below the
-        // maximum overlay surfaces, so the backup surface is no longer needed.
-        if (_viewsUsingBackupSurface.isEmpty) {
-          SurfaceFactory.instance.releaseSurface(overlay);
+      SurfaceFactory.instance.releaseSurface(overlay);
+      _overlays.remove(viewId);
+    }
+  }
+
+  // Called right before compositing the scene.
+  //
+  // [_compositionOrder] and [_activeComposition] order should contain the
+  // composition order of the current and previous frame, respectively.
+  void _updateOverlays(ViewListDiffResult? diffResult) {
+    if (diffResult == null) {
+      // Everything is going to be explicitly recomposited anyway. Release all
+      // the surfaces and assign an overlay to the first N surfaces where
+      // N = [SurfaceFactory.instance.maximumSurfaces] - 2 and assign the rest
+      // to the backup surface.
+      SurfaceFactory.instance.releaseSurfaces();
+      _overlays.clear();
+      final int numOverlays = math.min(
+        SurfaceFactory.instance.maximumSurfaces - 2,
+        _compositionOrder.length,
+      );
+      for (int i = 0; i < numOverlays; i++) {
+        final int viewId = _compositionOrder[i];
+        if (_viewsUsingBackupSurface.contains(viewId)) {
+          continue;
         }
-      } else {
-        SurfaceFactory.instance.releaseSurface(overlay);
-        _overlays.remove(viewId);
+        final Surface surface = SurfaceFactory.instance.getSurface();
+        _overlays[viewId] = surface;
+      }
+    } else {
+      // We want to preserve the overlays in the "unchanged" section of the
+      // diff result as much as possible. If `addToBeginning` is `false`, then
+      // release the overlays for the views which were deleted from the
+      // beginning of the composition order and try to reuse those overlays in
+      // either the unchanged segment or the newly added views. If
+      // `addToBeginning` is `true` then release the overlays for the deleted
+      // views and from the unchanged segment and assign the newly added views
+      // to them.
+      diffResult.viewsToRemove.forEach(_releaseOverlay);
+      int availableOverlays = SurfaceFactory.instance.numAvailableOverlays;
+      if (diffResult.addToBeginning) {
+        // If we have enough overlays for the newly added views, then just use
+        // them. Otherwise, we will need to release overlays from the unchanged
+        // segment of view ids.
+        if (diffResult.viewsToAdd.length > availableOverlays) {
+          int viewsToDispose = availableOverlays - diffResult.viewsToAdd.length;
+        }
       }
     }
   }

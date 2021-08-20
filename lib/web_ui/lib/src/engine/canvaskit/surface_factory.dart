@@ -39,6 +39,11 @@ class SurfaceFactory {
   /// The number of surfaces which have been created by this factory.
   int get _surfaceCount => _liveSurfaces.length + _cache.length + 2;
 
+  /// The number of available overlay surfaces.
+  ///
+  /// This does not include the base surface or backup surface.
+  int get numAvailableOverlays => maximumSurfaces - _liveSurfaces.length - 2;
+
   /// The number of surfaces created by this factory. Used for testing.
   @visibleForTesting
   int get debugSurfaceCount => _surfaceCount;
