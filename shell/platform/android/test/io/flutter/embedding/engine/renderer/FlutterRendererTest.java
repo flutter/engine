@@ -160,6 +160,7 @@ public class FlutterRendererTest {
             anyInt(),
             anyInt(),
             anyInt(),
+            anyInt(),
             boundsCaptor.capture(),
             typeCaptor.capture(),
             stateCaptor.capture());

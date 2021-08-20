@@ -30,7 +30,6 @@ UIDartState::Context::Context(const TaskRunners& task_runners)
 UIDartState::Context::Context(
     const TaskRunners& task_runners,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
     fml::WeakPtr<IOManager> io_manager,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
     fml::WeakPtr<ImageDecoder> image_decoder,
@@ -40,7 +39,6 @@ UIDartState::Context::Context(
     std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
     : task_runners(task_runners),
       snapshot_delegate(snapshot_delegate),
-      hint_freed_delegate(hint_freed_delegate),
       io_manager(io_manager),
       unref_queue(unref_queue),
       image_decoder(image_decoder),
@@ -58,6 +56,7 @@ UIDartState::UIDartState(
     std::shared_ptr<IsolateNameServer> isolate_name_server,
     bool is_root_isolate,
     bool enable_skparagraph,
+    bool enable_display_list,
     const UIDartState::Context& context)
     : add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
@@ -67,6 +66,7 @@ UIDartState::UIDartState(
       log_message_callback_(log_message_callback),
       isolate_name_server_(std::move(isolate_name_server)),
       enable_skparagraph_(enable_skparagraph),
+      enable_display_list_(enable_display_list),
       context_(std::move(context)) {
   AddOrRemoveTaskObserver(true /* add */);
 }
@@ -169,10 +169,6 @@ fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
   return context_.snapshot_delegate;
 }
 
-fml::WeakPtr<HintFreedDelegate> UIDartState::GetHintFreedDelegate() const {
-  return context_.hint_freed_delegate;
-}
-
 fml::WeakPtr<GrDirectContext> UIDartState::GetResourceContext() const {
   if (!context_.io_manager) {
     return {};
@@ -242,6 +238,10 @@ void UIDartState::LogMessage(const std::string& tag,
 
 bool UIDartState::enable_skparagraph() const {
   return enable_skparagraph_;
+}
+
+bool UIDartState::enable_display_list() const {
+  return enable_display_list_;
 }
 
 }  // namespace flutter

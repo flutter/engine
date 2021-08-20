@@ -13,13 +13,39 @@
 namespace flutter {
 
 namespace {
+
+static constexpr int32_t kDefaultPointerDeviceId = 0;
+
+// This method is only valid during a window message related to mouse/touch
+// input.
+// See
+// https://docs.microsoft.com/en-us/windows/win32/tablet/system-events-and-mouse-messages?redirectedfrom=MSDN#distinguishing-pen-input-from-mouse-and-touch.
+static FlutterPointerDeviceKind GetFlutterPointerDeviceKind() {
+  constexpr LPARAM kTouchOrPenSignature = 0xFF515700;
+  constexpr LPARAM kTouchSignature = kTouchOrPenSignature | 0x80;
+  constexpr LPARAM kSignatureMask = 0xFFFFFF00;
+  LPARAM info = GetMessageExtraInfo();
+  if ((info & kSignatureMask) == kTouchOrPenSignature) {
+    if ((info & kTouchSignature) == kTouchSignature) {
+      return kFlutterPointerDeviceKindTouch;
+    }
+    return kFlutterPointerDeviceKindStylus;
+  }
+  return kFlutterPointerDeviceKindMouse;
+}
+
 char32_t CodePointFromSurrogatePair(wchar_t high, wchar_t low) {
   return 0x10000 + ((static_cast<char32_t>(high) & 0x000003FF) << 10) +
          (low & 0x3FF);
 }
+
+static const int kMinTouchDeviceId = 0;
+static const int kMaxTouchDeviceId = 128;
+
 }  // namespace
 
-WindowWin32::WindowWin32() {
+WindowWin32::WindowWin32()
+    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
@@ -94,6 +120,7 @@ LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
     auto that = static_cast<WindowWin32*>(cs->lpCreateParams);
     that->window_handle_ = window;
     that->text_input_manager_.SetWindowHandle(window);
+    RegisterTouchWindow(window, 0);
   } else if (WindowWin32* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
   }
@@ -172,6 +199,30 @@ void WindowWin32::UpdateCursorRect(const Rect& rect) {
   text_input_manager_.UpdateCaretRect(rect);
 }
 
+static uint16_t ResolveKeyCode(uint16_t original,
+                               bool extended,
+                               uint8_t scancode) {
+  switch (original) {
+    case VK_SHIFT:
+    case VK_LSHIFT:
+      return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
+    case VK_MENU:
+    case VK_LMENU:
+      return extended ? VK_RMENU : VK_LMENU;
+    case VK_CONTROL:
+    case VK_LCONTROL:
+      return extended ? VK_RCONTROL : VK_LCONTROL;
+    default:
+      return original;
+  }
+}
+
+static bool IsPrintable(uint32_t c) {
+  constexpr char32_t kMinPrintable = ' ';
+  constexpr char32_t kDelete = 0x7F;
+  return c >= kMinPrintable && c != kDelete;
+}
+
 LRESULT
 WindowWin32::HandleMessage(UINT const message,
                            WPARAM const wparam,
@@ -180,6 +231,7 @@ WindowWin32::HandleMessage(UINT const message,
   int xPos = 0, yPos = 0;
   UINT width = 0, height = 0;
   UINT button_pressed = 0;
+  FlutterPointerDeviceKind device_kind;
 
   switch (message) {
     case kWmDpiChangedBeforeParent:
@@ -194,15 +246,56 @@ WindowWin32::HandleMessage(UINT const message,
       current_height_ = height;
       HandleResize(width, height);
       break;
-    case WM_MOUSEMOVE:
-      TrackMouseLeaveEvent(window_handle_);
+    case WM_TOUCH: {
+      UINT num_points = LOWORD(wparam);
+      touch_points_.resize(num_points);
+      auto touch_input_handle = reinterpret_cast<HTOUCHINPUT>(lparam);
+      if (GetTouchInputInfo(touch_input_handle, num_points,
+                            touch_points_.data(), sizeof(TOUCHINPUT))) {
+        for (const auto& touch : touch_points_) {
+          // Generate a mapped ID for the Windows-provided touch ID
+          auto touch_id = touch_id_generator_.GetGeneratedId(touch.dwID);
 
-      xPos = GET_X_LPARAM(lparam);
-      yPos = GET_Y_LPARAM(lparam);
-      OnPointerMove(static_cast<double>(xPos), static_cast<double>(yPos));
+          POINT pt = {TOUCH_COORD_TO_PIXEL(touch.x),
+                      TOUCH_COORD_TO_PIXEL(touch.y)};
+          ScreenToClient(window_handle_, &pt);
+          auto x = static_cast<double>(pt.x);
+          auto y = static_cast<double>(pt.y);
+
+          if (touch.dwFlags & TOUCHEVENTF_DOWN) {
+            OnPointerDown(x, y, kFlutterPointerDeviceKindTouch, touch_id,
+                          WM_LBUTTONDOWN);
+          } else if (touch.dwFlags & TOUCHEVENTF_MOVE) {
+            OnPointerMove(x, y, kFlutterPointerDeviceKindTouch, touch_id);
+          } else if (touch.dwFlags & TOUCHEVENTF_UP) {
+            OnPointerUp(x, y, kFlutterPointerDeviceKindTouch, touch_id,
+                        WM_LBUTTONDOWN);
+            OnPointerLeave(kFlutterPointerDeviceKindTouch, touch_id);
+            touch_id_generator_.ReleaseNumber(touch.dwID);
+          }
+        }
+        CloseTouchInputHandle(touch_input_handle);
+      }
+      return 0;
+    }
+    case WM_MOUSEMOVE:
+      device_kind = GetFlutterPointerDeviceKind();
+      if (device_kind == kFlutterPointerDeviceKindMouse) {
+        TrackMouseLeaveEvent(window_handle_);
+
+        xPos = GET_X_LPARAM(lparam);
+        yPos = GET_Y_LPARAM(lparam);
+
+        OnPointerMove(static_cast<double>(xPos), static_cast<double>(yPos),
+                      device_kind, kDefaultPointerDeviceId);
+      }
       break;
-    case WM_MOUSELEAVE:;
-      OnPointerLeave();
+    case WM_MOUSELEAVE:
+      device_kind = GetFlutterPointerDeviceKind();
+      if (device_kind == kFlutterPointerDeviceKindMouse) {
+        OnPointerLeave(device_kind, kDefaultPointerDeviceId);
+      }
+
       // Once the tracked event is received, the TrackMouseEvent function
       // resets. Set to false to make sure it's called once mouse movement is
       // detected again.
@@ -226,6 +319,11 @@ WindowWin32::HandleMessage(UINT const message,
     case WM_RBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_XBUTTONDOWN:
+      device_kind = GetFlutterPointerDeviceKind();
+      if (device_kind != kFlutterPointerDeviceKindMouse) {
+        break;
+      }
+
       if (message == WM_LBUTTONDOWN) {
         // Capture the pointer in case the user drags outside the client area.
         // In this case, the "mouse leave" event is delayed until the user
@@ -241,12 +339,17 @@ WindowWin32::HandleMessage(UINT const message,
       xPos = GET_X_LPARAM(lparam);
       yPos = GET_Y_LPARAM(lparam);
       OnPointerDown(static_cast<double>(xPos), static_cast<double>(yPos),
-                    button_pressed);
+                    device_kind, kDefaultPointerDeviceId, button_pressed);
       break;
     case WM_LBUTTONUP:
     case WM_RBUTTONUP:
     case WM_MBUTTONUP:
     case WM_XBUTTONUP:
+      device_kind = GetFlutterPointerDeviceKind();
+      if (device_kind != kFlutterPointerDeviceKindMouse) {
+        break;
+      }
+
       if (message == WM_LBUTTONUP) {
         ReleaseCapture();
       }
@@ -257,16 +360,18 @@ WindowWin32::HandleMessage(UINT const message,
       xPos = GET_X_LPARAM(lparam);
       yPos = GET_Y_LPARAM(lparam);
       OnPointerUp(static_cast<double>(xPos), static_cast<double>(yPos),
-                  button_pressed);
+                  device_kind, kDefaultPointerDeviceId, button_pressed);
       break;
     case WM_MOUSEWHEEL:
-      OnScroll(0.0, -(static_cast<short>(HIWORD(wparam)) /
-                      static_cast<double>(WHEEL_DELTA)));
+      OnScroll(0.0,
+               -(static_cast<short>(HIWORD(wparam)) /
+                 static_cast<double>(WHEEL_DELTA)),
+               kFlutterPointerDeviceKindMouse, kDefaultPointerDeviceId);
       break;
     case WM_MOUSEHWHEEL:
       OnScroll((static_cast<short>(HIWORD(wparam)) /
                 static_cast<double>(WHEEL_DELTA)),
-               0.0);
+               0.0, kFlutterPointerDeviceKindMouse, kDefaultPointerDeviceId);
       break;
     case WM_INPUTLANGCHANGE:
       // TODO(cbracken): pass this to TextInputManager to aid with
@@ -329,22 +434,46 @@ WindowWin32::HandleMessage(UINT const message,
         s_pending_high_surrogate = 0;
       }
 
+      const unsigned int scancode = (lparam >> 16) & 0xff;
+
       // All key presses that generate a character should be sent from
       // WM_CHAR. In order to send the full key press information, the keycode
       // is persisted in keycode_for_char_message_ obtained from WM_KEYDOWN.
-      if (keycode_for_char_message_ != 0) {
-        const unsigned int scancode = (lparam >> 16) & 0xff;
+      //
+      // A high surrogate is always followed by a low surrogate, while a
+      // non-surrogate character always appears alone. Filter out high
+      // surrogates so that it's the low surrogate message that triggers
+      // the onKey, asks if the framework handles it (which can only be done
+      // once), and calls OnText during the redispatched messages.
+      if (keycode_for_char_message_ != 0 && !IS_HIGH_SURROGATE(character)) {
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
+        // Certain key combinations yield control characters as WM_CHAR's
+        // lParam. For example, 0x01 for Ctrl-A. Filter these characters.
+        // See
+        // https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
+        const char32_t event_character =
+            (message == WM_DEADCHAR || message == WM_SYSDEADCHAR)
+                ? Win32MapVkToChar(keycode_for_char_message_)
+            : IsPrintable(code_point) ? code_point
+                                      : 0;
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
-                             code_point, extended, was_down);
+                             event_character, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
           // pass it to OnText, because handling the message indicates that
-          // OnKey either just sent it to the framework to be processed, or the
-          // framework handled the key in its response, so it shouldn't also be
-          // added as text.
+          // OnKey either just sent it to the framework to be processed.
+          //
+          // This message will be redispatched if not handled by the framework,
+          // during which the OnText (below) might be reached. However, if the
+          // original message was preceded by dead chars (such as ^ and e
+          // yielding ê), then since the redispatched message is no longer
+          // preceded by the dead char, the text will be wrong. Therefore we
+          // record the text here for the redispached event to use.
+          if (message == WM_CHAR) {
+            text_for_scancode_on_redispatch_[scancode] = text;
+          }
           return 0;
         }
       }
@@ -357,10 +486,15 @@ WindowWin32::HandleMessage(UINT const message,
       // - ASCII control characters, which are sent as WM_CHAR events for all
       //   control key shortcuts.
       if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
-          character >= u' ') {
+          IsPrintable(character)) {
+        auto found_text_iter = text_for_scancode_on_redispatch_.find(scancode);
+        if (found_text_iter != text_for_scancode_on_redispatch_.end()) {
+          text = found_text_iter->second;
+          text_for_scancode_on_redispatch_.erase(found_text_iter);
+        }
         OnText(text);
       }
-      break;
+      return 0;
     }
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
@@ -371,18 +505,26 @@ WindowWin32::HandleMessage(UINT const message,
       // Check if this key produces a character. If so, the key press should
       // be sent with the character produced at WM_CHAR. Store the produced
       // keycode (it's not accessible from WM_CHAR) to be used in WM_CHAR.
-      const unsigned int character = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR);
-      if (character > 0 && is_keydown_message) {
+      //
+      // Messages with Control or Win modifiers down are never considered as
+      // character messages. This allows key combinations such as "CTRL + Digit"
+      // to properly produce key down events even though `MapVirtualKey` returns
+      // a valid character. See https://github.com/flutter/flutter/issues/85587.
+      unsigned int character = Win32MapVkToChar(wparam);
+      UINT next_key_message = PeekNextMessageType(WM_KEYFIRST, WM_KEYLAST);
+      bool has_wm_char =
+          (next_key_message == WM_DEADCHAR ||
+           next_key_message == WM_SYSDEADCHAR || next_key_message == WM_CHAR ||
+           next_key_message == WM_SYSCHAR);
+      if (character > 0 && is_keydown_message && has_wm_char) {
         keycode_for_char_message_ = wparam;
-        break;
+        return 0;
       }
       unsigned int keyCode(wparam);
-      const unsigned int scancode = (lparam >> 16) & 0xff;
+      const uint8_t scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
-      if (keyCode == VK_SHIFT || keyCode == VK_MENU || keyCode == VK_CONTROL) {
-        keyCode = MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX);
-      }
+      keyCode = ResolveKeyCode(keyCode, extended, scancode);
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
       if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
@@ -391,7 +533,7 @@ WindowWin32::HandleMessage(UINT const message,
       break;
   }
 
-  return DefWindowProc(window_handle_, message, wparam, result_lparam);
+  return Win32DefWindowProc(window_handle_, message, wparam, result_lparam);
 }
 
 UINT WindowWin32::GetCurrentDPI() {
@@ -425,16 +567,38 @@ void WindowWin32::HandleResize(UINT width, UINT height) {
   OnResize(width, height);
 }
 
+UINT WindowWin32::PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax) {
+  MSG next_message;
+  BOOL has_msg = Win32PeekMessage(&next_message, window_handle_, wMsgFilterMin,
+                                  wMsgFilterMax, PM_NOREMOVE);
+  if (!has_msg) {
+    return 0;
+  }
+  return next_message.message;
+}
+
 WindowWin32* WindowWin32::GetThisFromHandle(HWND const window) noexcept {
   return reinterpret_cast<WindowWin32*>(
       GetWindowLongPtr(window, GWLP_USERDATA));
 }
 
-LRESULT WindowWin32::DefaultWindowProc(HWND hWnd,
-                                       UINT Msg,
-                                       WPARAM wParam,
-                                       LPARAM lParam) {
+LRESULT WindowWin32::Win32DefWindowProc(HWND hWnd,
+                                        UINT Msg,
+                                        WPARAM wParam,
+                                        LPARAM lParam) {
   return DefWindowProc(hWnd, Msg, wParam, lParam);
+}
+
+BOOL WindowWin32::Win32PeekMessage(LPMSG lpMsg,
+                                   HWND hWnd,
+                                   UINT wMsgFilterMin,
+                                   UINT wMsgFilterMax,
+                                   UINT wRemoveMsg) {
+  return PeekMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+}
+
+uint32_t WindowWin32::Win32MapVkToChar(uint32_t virtual_key) {
+  return MapVirtualKey(virtual_key, MAPVK_VK_TO_CHAR);
 }
 
 }  // namespace flutter

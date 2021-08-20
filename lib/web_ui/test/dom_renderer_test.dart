@@ -118,10 +118,10 @@ void testMain() {
     final DomRenderer renderer = DomRenderer();
     renderer.reset();
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50828
-      skip: (browserEngine == BrowserEngine.firefox ||
-          browserEngine == BrowserEngine.edge));
+      // TODO(ferhat): https://github.com/flutter/flutter/issues/46638
+      // TODO(ferhat): https://github.com/flutter/flutter/issues/50828
+      skip: browserEngine == BrowserEngine.firefox ||
+          browserEngine == BrowserEngine.edge);
 
   test('accesibility placeholder is attached after creation', () {
     final DomRenderer renderer = DomRenderer();
@@ -135,7 +135,7 @@ void testMain() {
   test('renders a shadowRoot by default', () {
     final DomRenderer renderer = DomRenderer();
 
-    HostNode hostNode = renderer.glassPaneShadow!;
+    final HostNode hostNode = renderer.glassPaneShadow!;
 
     expect(hostNode.node, isA<html.ShadowRoot>());
   });
@@ -148,7 +148,7 @@ void testMain() {
 
     final DomRenderer renderer = DomRenderer();
 
-    HostNode hostNode = renderer.glassPaneShadow!;
+    final HostNode hostNode = renderer.glassPaneShadow!;
 
     expect(hostNode.node, isA<html.Element>());
     expect(
@@ -157,6 +157,17 @@ void testMain() {
     );
 
     attachShadow = oldAttachShadow; // Restore ShadowDOM
+  });
+
+  test('should add/remove global resource', () {
+    final DomRenderer renderer = DomRenderer();
+    final html.DivElement resource = html.DivElement();
+    renderer.addResource(resource);
+    final html.Element? resourceRoot = resource.parent;
+    expect(resourceRoot, isNotNull);
+    expect(resourceRoot!.childNodes.length, 1);
+    renderer.removeResource(resource);
+    expect(resourceRoot.childNodes.length, 0);
   });
 }
 

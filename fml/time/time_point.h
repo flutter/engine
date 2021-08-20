@@ -25,6 +25,8 @@ class TimePoint {
 
   static TimePoint Now();
 
+  static TimePoint CurrentWallTime();
+
   static constexpr TimePoint Min() {
     return TimePoint(std::numeric_limits<int64_t>::min());
   }
@@ -35,6 +37,11 @@ class TimePoint {
 
   static constexpr TimePoint FromEpochDelta(TimeDelta ticks) {
     return TimePoint(ticks.ToNanoseconds());
+  }
+
+  // Expects ticks in nanos.
+  static constexpr TimePoint FromTicks(int64_t ticks) {
+    return TimePoint(ticks);
   }
 
   TimeDelta ToEpochDelta() const { return TimeDelta::FromNanoseconds(ticks_); }

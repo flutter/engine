@@ -7,14 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-/// Whether the current browser is Safari on iOS.
-// TODO: https://github.com/flutter/flutter/issues/60040
-bool get isIosSafari =>
-    browserEngine == BrowserEngine.webkit &&
-    operatingSystem == OperatingSystem.iOs;
-
-/// Whether the current browser is Firefox.
-bool get isFirefox => browserEngine == BrowserEngine.firefox;
+export '../common.dart';
 
 /// Used in tests instead of [ProductionCollector] to control Skia object
 /// collection explicitly, and to prevent leaks across tests.
@@ -106,9 +99,9 @@ class TestCollector implements Collector {
 
   /// Deletes all Skia objects scheduled for collection.
   void collectNow() {
-    for (_TestCollection collection in _pendingCollections) {
+    for (final _TestCollection collection in _pendingCollections) {
       late final _TestFinalizerRegistration? activeRegistration;
-      for (_TestFinalizerRegistration registration in _activeRegistrations) {
+      for (final _TestFinalizerRegistration registration in _activeRegistrations) {
         if (identical(registration.deletable, collection.deletable)) {
           activeRegistration = registration;
           break;
@@ -116,7 +109,7 @@ class TestCollector implements Collector {
       }
       if (activeRegistration == null) {
         late final _TestFinalizerRegistration? collectedRegistration;
-        for (_TestFinalizerRegistration registration
+        for (final _TestFinalizerRegistration registration
             in _collectedRegistrations) {
           if (identical(registration.deletable, collection.deletable)) {
             collectedRegistration = registration;
@@ -161,12 +154,12 @@ class TestCollector implements Collector {
   /// This also deletes active objects that have not been scheduled for
   /// collection, to prevent objects leaking across tests.
   void cleanUpAfterTest() {
-    for (_TestCollection collection in _pendingCollections) {
+    for (final _TestCollection collection in _pendingCollections) {
       if (!collection.deletable.isDeleted()) {
         collection.deletable.delete();
       }
     }
-    for (_TestFinalizerRegistration registration in _activeRegistrations) {
+    for (final _TestFinalizerRegistration registration in _activeRegistrations) {
       if (!registration.deletable.isDeleted()) {
         registration.deletable.delete();
       }

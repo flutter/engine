@@ -13,6 +13,7 @@
 #include "flutter/lib/ui/painting/codec.h"
 #include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
+#include "flutter/lib/ui/painting/fragment_shader.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
@@ -33,10 +34,6 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/logging/dart_error.h"
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "flutter/lib/ui/compositing/scene_host.h"  // nogncheck
-#endif
 
 using tonic::ToDart;
 
@@ -70,6 +67,7 @@ void DartUI::InitForGlobal() {
     DartRuntimeHooks::RegisterNatives(g_natives);
     EngineLayer::RegisterNatives(g_natives);
     FontCollection::RegisterNatives(g_natives);
+    FragmentShader::RegisterNatives(g_natives);
     ImageDescriptor::RegisterNatives(g_natives);
     ImageFilter::RegisterNatives(g_natives);
     ImageShader::RegisterNatives(g_natives);
@@ -86,9 +84,6 @@ void DartUI::InitForGlobal() {
     SemanticsUpdateBuilder::RegisterNatives(g_natives);
     Vertices::RegisterNatives(g_natives);
     PlatformConfiguration::RegisterNatives(g_natives);
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-    SceneHost::RegisterNatives(g_natives);
-#endif
   }
 }
 

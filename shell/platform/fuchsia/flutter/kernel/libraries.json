@@ -1,6 +1,6 @@
 {
   "comment:0": "NOTE: THIS FILE IS GENERATED. DO NOT EDIT.",
-  "comment:1": "Instead modify 'shell/platform/fuchsia/flutter/kernel/libraries.yaml' and follow the instructions therein.",
+  "comment:1": "Instead modify 'flutter/shell/platform/fuchsia/flutter/kernel/libraries.yaml' and follow the instructions therein.",
   "flutter_runner": {
     "libraries": {
       "_builtin": {
@@ -146,11 +146,17 @@
         "uri": "../../../../../../third_party/dart/sdk/lib/typed_data/typed_data.dart",
         "patches": "../../../../../../third_party/dart/sdk/lib/_internal/vm/lib/typed_data_patch.dart"
       },
+      "_spirv": {
+        "uri": "../../../../../lib/spirv/lib/spirv.dart"
+      },
       "fuchsia.builtin": {
         "uri": "../../dart_runner/embedder/builtin.dart"
       },
       "zircon": {
         "uri": "../../dart-pkg/zircon/lib/zircon.dart"
+      },
+      "zircon_ffi": {
+        "uri": "../../dart-pkg/zircon_ffi/lib/zircon_ffi.dart"
       },
       "fuchsia": {
         "uri": "../../dart-pkg/fuchsia/lib/fuchsia.dart"

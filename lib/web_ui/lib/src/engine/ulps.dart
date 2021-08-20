@@ -50,13 +50,14 @@ int twosComplimentToSignBit(int x) {
 class _FloatBitConverter {
   final Float32List float32List;
   final Int32List int32List;
-  _FloatBitConverter._(this.float32List, this.int32List);
 
   factory _FloatBitConverter() {
-    Float32List float32List = Float32List(1);
+    final Float32List float32List = Float32List(1);
     return _FloatBitConverter._(
         float32List, float32List.buffer.asInt32List(0, 1));
   }
+
+  _FloatBitConverter._(this.float32List, this.int32List);
 
   int toInt(Float32List source, int index) {
     float32List[0] = source[index];
@@ -101,7 +102,7 @@ int floatAs2sCompliment(double x) =>
 double twosComplimentAsFloat(int x) => bitsToFloat(twosComplimentToSignBit(x));
 
 bool _argumentsDenormalized(double a, double b, int epsilon) {
-  double denormalizedCheck = kFltEpsilon * epsilon / 2;
+  final double denormalizedCheck = kFltEpsilon * epsilon / 2;
   return a.abs() <= denormalizedCheck && b.abs() <= denormalizedCheck;
 }
 
@@ -109,8 +110,8 @@ bool equalUlps(double a, double b, int epsilon, int depsilon) {
   if (_argumentsDenormalized(a, b, depsilon)) {
     return true;
   }
-  int aBits = floatAs2sCompliment(a);
-  int bBits = floatAs2sCompliment(b);
+  final int aBits = floatAs2sCompliment(a);
+  final int bBits = floatAs2sCompliment(b);
   // Find the difference in ULPs.
   return aBits < bBits + epsilon && bBits < aBits + epsilon;
 }
@@ -148,10 +149,10 @@ bool approximatelyEqual(double ax, double ay, double bx, double by) {
   if (!roughlyEqualUlps(ax, bx) || !roughlyEqualUlps(ay, by)) {
     return false;
   }
-  final double dx = (ax - bx);
-  final double dy = (ay - by);
-  double dist = math.sqrt(dx * dx + dy * dy);
-  double tiniest = math.min(math.min(math.min(ax, bx), ay), by);
+  final double dx = ax - bx;
+  final double dy = ay - by;
+  final double dist = math.sqrt(dx * dx + dy * dy);
+  final double tiniest = math.min(math.min(math.min(ax, bx), ay), by);
   double largest = math.max(math.max(math.max(ax, bx), ay), by);
   largest = math.max(largest, -tiniest);
   return almostDequalUlps(largest, largest + dist);
@@ -174,8 +175,8 @@ bool roughlyEqualUlps(double a, double b) {
 }
 
 bool dEqualUlpsEpsilon(double a, double b, int epsilon) {
-  int aBits = floatAs2sCompliment(a);
-  int bBits = floatAs2sCompliment(b);
+  final int aBits = floatAs2sCompliment(a);
+  final int bBits = floatAs2sCompliment(b);
   // Find the difference in ULPs.
   return aBits < bBits + epsilon && bBits < aBits + epsilon;
 }

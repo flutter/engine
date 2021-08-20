@@ -30,6 +30,8 @@ source_set("ui") {
     "painting/color_filter.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
+    "painting/fragment_shader.cc",
+    "painting/fragment_shader.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",
@@ -151,19 +153,6 @@ source_set("ui") {
   if (is_win) {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
-  }
-
-  if (is_fuchsia && flutter_enable_legacy_fuchsia_embedder) {
-    sources += [
-      "compositing/scene_host.cc",
-      "compositing/scene_host.h",
-    ]
-
-    public_deps += [
-      "$fuchsia_sdk_root/pkg:async-cpp",
-      "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
-      "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-    ]
   }
 }
 

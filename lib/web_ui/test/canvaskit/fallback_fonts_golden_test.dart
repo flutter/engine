@@ -6,11 +6,12 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart' as ui;
-import 'package:ui/src/engine.dart';
-
-import 'package:test/test.dart';
 import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
+
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+
 import 'package:web_engine_tester/golden_tester.dart';
 
 import 'common.dart';
@@ -19,7 +20,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect kDefaultRegion = const ui.Rect.fromLTRB(0, 0, 100, 50);
+const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 50);
 
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {ui.Rect region = kDefaultRegion, bool write = false}) async {
@@ -56,24 +57,6 @@ void testMain() {
     });
 
     test('will download Noto Naskh Arabic if Arabic text is added', () async {
-      final Completer<void> fontChangeCompleter = Completer<void>();
-      // Intercept the system font change message.
-      ui.window.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        if (name == 'flutter/system') {
-          const JSONMessageCodec codec = JSONMessageCodec();
-          final dynamic message = codec.decodeMessage(data);
-          if (message is Map) {
-            if (message['type'] == 'fontsChange') {
-              fontChangeCompleter.complete();
-            }
-          }
-        }
-        if (savedCallback != null) {
-          savedCallback!(name, data, callback);
-        }
-      };
-
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           '''
@@ -87,7 +70,7 @@ void testMain() {
 }
 ''';
 
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -98,7 +81,7 @@ void testMain() {
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
-      await fontChangeCompleter.future;
+      await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
           contains('Noto Naskh Arabic UI 0'));
@@ -113,47 +96,88 @@ void testMain() {
       pb.addText('مرحبا');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_arabic.png', recorder.endRecording());
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      // TODO: https://github.com/flutter/flutter/issues/71520
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
-    test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
+    test('will put the Noto Emoji font before other fallback fonts in the list',
         () async {
-      final Completer<void> fontChangeCompleter = Completer<void>();
-      // Intercept the system font change message.
-      ui.window.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        if (name == 'flutter/system') {
-          const JSONMessageCodec codec = JSONMessageCodec();
-          final dynamic message = codec.decodeMessage(data);
-          if (message is Map) {
-            if (message['type'] == 'fontsChange') {
-              fontChangeCompleter.complete();
-            }
-          }
-        }
-        if (savedCallback != null) {
-          savedCallback!(name, data, callback);
-        }
-      };
-
       TestDownloader.mockDownloads[
               'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
           '''
-/* arabic */
 @font-face {
   font-family: 'Noto Color Emoji';
   src: url(packages/ui/assets/NotoColorEmoji.ttf) format('ttf');
 }
 ''';
 
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      TestDownloader.mockDownloads[
+              'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
+          '''
+/* arabic */
+@font-face {
+  font-family: 'Noto Naskh Arabic UI';
+  font-style: normal;
+  font-weight: 400;
+  src: url(packages/ui/assets/NotoNaskhArabic-Regular.ttf) format('ttf');
+  unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
+}
+''';
+
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
+
+      // Creating this paragraph should cause us to start to download the
+      // Arabic fallback font.
+      CkParagraphBuilder pb = CkParagraphBuilder(
+        CkParagraphStyle(),
+      );
+      pb.addText('مرحبا');
+
+      EnginePlatformDispatcher.instance.rasterizer!
+          .debugRunPostFrameCallbacks();
+      await notoDownloadQueue.debugWhenIdle();
+
+      expect(FontFallbackData.instance.globalFontFallbacks,
+          <String>['Roboto', 'Noto Naskh Arabic UI 0']);
+
+      pb = CkParagraphBuilder(
+        CkParagraphStyle(),
+      );
+      pb.pushStyle(ui.TextStyle(fontSize: 26));
+      pb.addText('Hello 😊 مرحبا');
+      pb.pop();
+      final CkParagraph paragraph = pb.build();
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
+
+      EnginePlatformDispatcher.instance.rasterizer!
+          .debugRunPostFrameCallbacks();
+      await notoDownloadQueue.debugWhenIdle();
+
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>[
+        'Roboto',
+        'Noto Color Emoji Compat 0',
+        'Noto Naskh Arabic UI 0',
+      ]);
+    });
+
+    test('will download Noto Emojis and Noto Symbols if no matching Noto Font',
+        () async {
+      TestDownloader.mockDownloads[
+              'https://fonts.googleapis.com/css2?family=Noto+Color+Emoji+Compat'] =
+          '''
+@font-face {
+  font-family: 'Noto Color Emoji';
+  src: url(packages/ui/assets/NotoColorEmoji.ttf) format('ttf');
+}
+''';
+
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
@@ -164,7 +188,7 @@ void testMain() {
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
-      await fontChangeCompleter.future;
+      await notoDownloadQueue.debugWhenIdle();
 
       expect(FontFallbackData.instance.globalFontFallbacks,
           contains('Noto Color Emoji Compat 0'));
@@ -179,14 +203,14 @@ void testMain() {
       pb.addText('Hello 😊');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_emoji.png', recorder.endRecording());
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      // TODO: https://github.com/flutter/flutter/issues/71520
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
@@ -195,11 +219,11 @@ void testMain() {
               'https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic+UI'] =
           'invalid CSS... this should cause our parser to fail';
 
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
-      CkParagraphBuilder pb = CkParagraphBuilder(
+      final CkParagraphBuilder pb = CkParagraphBuilder(
         CkParagraphStyle(),
       );
       pb.addText('مرحبا');
@@ -210,7 +234,7 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
 
       expect(notoDownloadQueue.isPending, isFalse);
-      expect(FontFallbackData.instance.globalFontFallbacks, ['Roboto']);
+      expect(FontFallbackData.instance.globalFontFallbacks, <String>['Roboto']);
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/75836
@@ -260,9 +284,9 @@ void testMain() {
       final Set<int> supportedUniqueCodeUnits = <int>{};
       final IntervalTree<NotoFont> notoTree =
           FontFallbackData.instance.notoTree;
-      for (NotoFont font in notoTree.root.enumerateAllElements()) {
+      for (final NotoFont font in notoTree.root.enumerateAllElements()) {
         testedFonts.add(font.name);
-        for (CodeunitRange range in font.approximateUnicodeRanges) {
+        for (final CodeunitRange range in font.approximateUnicodeRanges) {
           for (int codeUnit = range.start;
               codeUnit < range.end;
               codeUnit += 1) {
@@ -319,8 +343,8 @@ void testMain() {
           codeUnits.add(supportedCodeUnits[i]);
         }
         final Set<NotoFont> fonts = <NotoFont>{};
-        for (int codeUnit in codeUnits) {
-          List<NotoFont> fontsForUnit = notoTree.intersections(codeUnit);
+        for (final int codeUnit in codeUnits) {
+          final List<NotoFont> fontsForUnit = notoTree.intersections(codeUnit);
 
           // All code units are extracted from the same tree, so there must
           // be at least one font supporting each code unit
@@ -334,13 +358,13 @@ void testMain() {
           print(
             'findMinimumFontsForCodeunits failed:\n'
             '  Code units: ${codeUnits.join(', ')}\n'
-            '  Fonts: ${fonts.map((f) => f.name).join(', ')}',
+            '  Fonts: ${fonts.map((NotoFont f) => f.name).join(', ')}',
           );
           rethrow;
         }
       }
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 

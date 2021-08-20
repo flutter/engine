@@ -8,6 +8,10 @@ import 'dart:ui';
 
 void main() {}
 
+/// Mutiple tests use this to signal to the C++ side that they are ready for
+/// validation.
+void _finish() native 'Finish';
+
 @pragma('vm:entry-point')
 void validateSceneBuilderAndScene() {
   final SceneBuilder builder = SceneBuilder();
@@ -60,7 +64,6 @@ Future<void> createSingleFrameCodec() async {
   _finish();
 }
 void _validateCodec(Codec codec) native 'ValidateCodec';
-void _finish() native 'Finish';
 
 @pragma('vm:entry-point')
 void createVertices() {
@@ -232,8 +235,8 @@ void _validateExternal(Uint8List result) native 'ValidateExternal';
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
-  const int width = 6000;
-  const int height = 6000;
+  const int width = 60;
+  const int height = 60;
   final Completer<Image> completer = Completer<Image>();
   decodeImageFromPixels(
     Uint8List.fromList(List<int>.filled(width * height * 4, 0xFF)),
@@ -243,34 +246,37 @@ Future<void> pumpImage() async {
     (Image image) => completer.complete(image),
   );
   final Image image = await completer.future;
+  late Picture picture;
+  late OffsetEngineLayer layer;
 
-  final FrameCallback renderBlank = (Duration duration) {
+  void renderBlank(Duration duration) {
     image.dispose();
+    picture.dispose();
+    layer.dispose();
 
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
-    canvas.drawRect(Rect.largest, Paint());
-    final Picture picture = recorder.endRecording();
-
+    canvas.drawPaint(Paint());
+    picture = recorder.endRecording();
     final SceneBuilder builder = SceneBuilder();
+    layer = builder.pushOffset(0, 0);
     builder.addPicture(Offset.zero, picture);
 
     final Scene scene = builder.build();
     window.render(scene);
     scene.dispose();
-    window.onBeginFrame = (Duration duration) {
-      window.onDrawFrame = _onBeginFrameDone;
-    };
-    window.scheduleFrame();
-  };
 
-  final FrameCallback renderImage = (Duration duration) {
+    _finish();
+  }
+
+  void renderImage(Duration duration) {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     canvas.drawImage(image, Offset.zero, Paint());
-    final Picture picture = recorder.endRecording();
+    picture = recorder.endRecording();
 
     final SceneBuilder builder = SceneBuilder();
+    layer = builder.pushOffset(0, 0);
     builder.addPicture(Offset.zero, picture);
 
     _captureImageAndPicture(image, picture);
@@ -278,15 +284,15 @@ Future<void> pumpImage() async {
     final Scene scene = builder.build();
     window.render(scene);
     scene.dispose();
+
     window.onBeginFrame = renderBlank;
     window.scheduleFrame();
-  };
+  }
 
   window.onBeginFrame = renderImage;
   window.scheduleFrame();
 }
 void _captureImageAndPicture(Image image, Picture picture) native 'CaptureImageAndPicture';
-Future<void> _onBeginFrameDone() native 'OnBeginFrameDone';
 
 @pragma('vm:entry-point')
 void hooksTests() {
@@ -311,6 +317,11 @@ void hooksTests() {
     }
   }
 
+  void expectNotEquals(Object? value, Object? expected) {
+    if (value == expected) {
+      throw 'Expected $value to not be $expected.';
+    }
+  }
 
   test('onMetricsChanged preserves callback zone', () {
     late Zone originalZone;
@@ -328,7 +339,7 @@ void hooksTests() {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      19,
+      20,
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -345,6 +356,7 @@ void hooksTests() {
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
       0.0,    // system gesture inset left
+      22.0,   // physicalTouchSlop
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
@@ -394,7 +406,7 @@ void hooksTests() {
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      19,
+      20,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -402,7 +414,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       0.0, // insetBottom
@@ -411,6 +423,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      22.0, // physicalTouchSlop
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
@@ -423,7 +436,7 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      19,
+      20,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -431,7 +444,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       400.0, // insetBottom
@@ -440,6 +453,7 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      22.0, // physicalTouchSlop
       <double>[],  // display features bounds
       <int>[],     // display features types
       <int>[],     // display features states
@@ -449,6 +463,92 @@ void hooksTests() {
     expectEquals(window.viewPadding.bottom, 40.0);
     expectEquals(window.padding.bottom, 0.0);
     expectEquals(window.systemGestureInsets.bottom, 44.0);
+  });
+
+   test('Window physical touch slop', () {
+    _callHook(
+      '_updateWindowMetrics',
+      20,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // paddingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      0.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      0.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      11.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
+    );
+
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 11.0));
+
+    _callHook(
+      '_updateWindowMetrics',
+      20,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // paddingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      400.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      44.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      -1.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
+    );
+
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: null));
+
+    _callHook(
+      '_updateWindowMetrics',
+      20,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // paddingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      400.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      44.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      22.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
+    );
+
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 22.0));
   });
 
   test('onLocaleChanged preserves callback zone', () {
@@ -482,7 +582,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_beginFrame', 1, 1234);
+    _callHook('_beginFrame', 2, 1234, 1);
     expectIdentical(runZone, innerZone);
     expectEquals(start, const Duration(microseconds: 1234));
   });
@@ -628,6 +728,25 @@ void hooksTests() {
     expectEquals(platformBrightness, Brightness.dark);
   });
 
+  test('onFrameDataChanged preserves callback zone', () {
+    late Zone innerZone;
+    late Zone runZone;
+    late int frameNumber;
+
+    runZoned(() {
+      innerZone = Zone.current;
+      window.onFrameDataChanged = () {
+        runZone = Zone.current;
+        frameNumber = window.frameData.frameNumber;
+      };
+    });
+
+    _callHook('_beginFrame', 2, 0, 2);
+    expectNotEquals(runZone, null);
+    expectIdentical(runZone, innerZone);
+    expectEquals(frameNumber, 2);
+  });
+
   _finish();
 }
 
@@ -653,4 +772,5 @@ void _callHook(
   Object? arg17,
   Object? arg18,
   Object? arg19,
+  Object? arg20,
 ]) native 'CallHook';

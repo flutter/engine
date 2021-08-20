@@ -7,6 +7,7 @@
 import 'dart:io' as io;
 
 import 'package:args/command_runner.dart';
+import 'package:clang_tidy/clang_tidy.dart';
 import 'package:path/path.dart' as path;
 
 /// The command that implements the pre-push githook
@@ -22,37 +23,71 @@ class PrePushCommand extends Command<bool> {
     final Stopwatch sw = Stopwatch()..start();
     final bool verbose = globalResults!['verbose']! as bool;
     final String flutterRoot = globalResults!['flutter']! as String;
-    final List<bool> checkResults = await Future.wait<bool>(<Future<bool>>[
-      _runLinter(flutterRoot, verbose),
-      _runFormatter(flutterRoot, verbose),
-    ]);
+    final List<bool> checkResults = <bool>[
+      await _runClangTidy(flutterRoot, verbose),
+      await _runFormatter(flutterRoot, verbose),
+    ];
     sw.stop();
     io.stdout.writeln('pre-push checks finished in ${sw.elapsed}');
     return !checkResults.contains(false);
   }
 
-  Future<bool> _runLinter(String flutterRoot, bool verbose) async {
-    if (io.Platform.isWindows) {
-      return true;
-    }
-    return _runCheck(
+  Future<bool> _runClangTidy(String flutterRoot, bool verbose) async {
+    io.stdout.writeln('Starting clang-tidy checks.');
+    final Stopwatch sw = Stopwatch()..start();
+    // First ensure that out/host_debug/compile_commands.json exists by running
+    // //flutter/tools/gn.
+    final io.File compileCommands = io.File(path.join(
       flutterRoot,
-      path.join(flutterRoot, 'ci', 'lint.sh'),
-      <String>[],
-      'Linting check',
-      verbose: verbose,
+      '..',
+      'out',
+      'host_debug',
+      'compile_commands.json',
+    ));
+    if (!compileCommands.existsSync()) {
+      final bool gnResult = await _runCheck(
+        flutterRoot,
+        path.join(flutterRoot, 'tools', 'gn'),
+        <String>[],
+        'GN for host_debug',
+        verbose: verbose,
+      );
+      if (!gnResult) {
+        return false;
+      }
+    }
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy(
+      buildCommandsPath: compileCommands,
+      repoPath: io.Directory(flutterRoot),
+      outSink: outBuffer,
+      errSink: errBuffer,
     );
+    final int clangTidyResult = await clangTidy.run();
+    sw.stop();
+    io.stdout.writeln('clang-tidy checks finished in ${sw.elapsed}');
+    if (clangTidyResult != 0) {
+      io.stderr.write(errBuffer);
+      return false;
+    }
+    return true;
   }
 
-  Future<bool> _runFormatter(String flutterRoot, bool verbose) {
+  Future<bool> _runFormatter(String flutterRoot, bool verbose) async {
+    io.stdout.writeln('Starting formatting checks.');
+    final Stopwatch sw = Stopwatch()..start();
     final String ext = io.Platform.isWindows ? '.bat' : '.sh';
-    return _runCheck(
+    final bool result = await _runCheck(
       flutterRoot,
       path.join(flutterRoot, 'ci', 'format$ext'),
       <String>[],
       'Formatting check',
       verbose: verbose,
     );
+    sw.stop();
+    io.stdout.writeln('formatting checks finished in ${sw.elapsed}');
+    return result;
   }
 
   Future<bool> _runCheck(

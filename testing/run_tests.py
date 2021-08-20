@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+#
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -26,22 +27,22 @@ fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*'
 
 
 def PrintDivider(char='='):
-  print '\n'
-  for _ in xrange(4):
-    print(''.join([char for _ in xrange(80)]))
-  print '\n'
+  print('\n')
+  for _ in range(4):
+    print(''.join([char for _ in range(80)]))
+  print('\n')
 
 
-def RunCmd(cmd, forbidden_output=[], expect_failure=False, **kwargs):
+def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
   command_string = ' '.join(cmd)
 
   PrintDivider('>')
-  print 'Running command "%s"' % command_string
+  print('Running command "%s"' % command_string)
 
   start_time = time.time()
   stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
   stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
-  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, **kwargs)
+  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, env=env, **kwargs)
   stdout, stderr = process.communicate()
   end_time = time.time()
 
@@ -69,7 +70,7 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, **kwargs):
       raise Exception('command "%s" contained forbidden string %s' % (command_string, forbidden_string))
 
   PrintDivider('<')
-  print 'Command run successfully in %.2f seconds: %s' % (end_time - start_time, command_string)
+  print('Command run successfully in %.2f seconds: %s' % (end_time - start_time, command_string))
 
 
 def IsMac():
@@ -105,21 +106,65 @@ def FindExecutablePath(path):
 
 
 def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
-                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False):
+                        cwd=buildroot_dir, forbidden_output=[], expect_failure=False, coverage=False):
   if filter is not None and executable_name not in filter:
     print('Skipping %s due to filter.' % executable_name)
     return
 
-  executable = FindExecutablePath(os.path.join(build_dir, executable_name))
+  unstripped_exe = os.path.join(build_dir, 'exe.unstripped', executable_name)
+  # We cannot run the unstripped binaries directly when coverage is enabled.
+  if IsLinux() and os.path.exists(unstripped_exe) and not coverage:
+    # Use unstripped executables in order to get better symbolized crash
+    # stack traces on Linux.
+    executable = unstripped_exe
+    # Some tests depend on the EGL/GLES libraries placed in the build directory.
+    env = os.environ.copy()
+    env['LD_LIBRARY_PATH'] = os.path.join(build_dir, 'lib.unstripped')
+  else:
+    executable = FindExecutablePath(os.path.join(build_dir, executable_name))
+    env = None
+
+  coverage_script = os.path.join(buildroot_dir, 'flutter', 'build', 'generate_coverage.py')
 
   print('Running %s in %s' % (executable_name, cwd))
-  test_command = [ executable ] + flags
-  print(' '.join(test_command))
-  RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure)
+
+  if coverage:
+    coverage_flags = ['-t', executable, '-o', os.path.join(build_dir, 'coverage', executable_name), '-f', 'html']
+    updated_flags = ['--args=%s' % ' '.join(flags)]
+    test_command = [ coverage_script ] + coverage_flags + updated_flags
+  else:
+    test_command = [ executable ] + flags
+
+  if not env:
+    env = os.environ.copy()
+  env['FLUTTER_BUILD_DIRECTORY'] = build_dir
+
+  try:
+    RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
+  except:
+    # The LUCI environment may provide a variable containing a directory path
+    # for additional output files that will be uploaded to cloud storage.
+    # If the command generated a core dump, then run a script to analyze
+    # the dump and output a report that will be uploaded.
+    luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
+    core_path = os.path.join(cwd, 'core')
+    if luci_test_outputs_path and os.path.exists(core_path) and os.path.exists(unstripped_exe):
+      dump_path = os.path.join(luci_test_outputs_path, '%s_%s.txt' % (executable_name, sys.platform))
+      print('Writing core dump analysis to %s' % dump_path)
+      subprocess.call([
+        os.path.join(buildroot_dir, 'flutter', 'testing', 'analyze_core_dump.sh'),
+        buildroot_dir, unstripped_exe, core_path, dump_path,
+      ])
+      os.unlink(core_path)
+    raise
 
 
-def RunCCTests(build_dir, filter):
+def RunCCTests(build_dir, filter, coverage, capture_core_dump):
   print("Running Engine Unit-tests.")
+
+  if capture_core_dump and IsLinux():
+    import resource
+    resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
   # Not all of the engine unit tests are designed to be run more than once.
   non_repeatable_shuffle_flags = [
@@ -129,22 +174,22 @@ def RunCCTests(build_dir, filter):
     "--gtest_repeat=2",
   ]
 
-  RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags, coverage=coverage)
 
-  RunEngineExecutable(build_dir, 'common_cpp_core_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'common_cpp_core_unittests', filter, shuffle_flags, coverage=coverage)
 
-  RunEngineExecutable(build_dir, 'common_cpp_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'common_cpp_unittests', filter, shuffle_flags, coverage=coverage)
 
-  RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags, coverage=coverage)
 
   # https://github.com/flutter/flutter/issues/36294
   if not IsWindows():
-    RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags, coverage=coverage)
   else:
-    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, non_repeatable_shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
 
-    RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags, coverage=coverage)
 
   flow_flags = ['--gtest_filter=-PerformanceOverlayLayer.Gold']
   if IsLinux():
@@ -152,108 +197,68 @@ def RunCCTests(build_dir, filter):
       '--golden-dir=%s' % golden_dir,
       '--font-file=%s' % roboto_font_path,
     ]
-  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + shuffle_flags)
+  RunEngineExecutable(build_dir, 'flow_unittests', filter, flow_flags + shuffle_flags, coverage=coverage)
 
-  # TODO(44614): Re-enable after https://github.com/flutter/flutter/issues/44614 has been addressed.
-  # RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
+  RunEngineExecutable(build_dir, 'fml_unittests', filter, [ fml_unittests_filter ] + shuffle_flags)
 
-  RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'runtime_unittests', filter, shuffle_flags, coverage=coverage)
 
-  RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'tonic_unittests', filter, shuffle_flags, coverage=coverage)
 
   if not IsWindows():
     # https://github.com/flutter/flutter/issues/36295
-    RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'shell_unittests', filter, shuffle_flags, coverage=coverage)
     # https://github.com/google/googletest/issues/2490
-    RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'android_external_view_embedder_unittests', filter, shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'jni_unittests', filter, shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'platform_view_android_delegate_unittests', filter, shuffle_flags, coverage=coverage)
 
   # The image release unit test can take a while on slow machines.
-  RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags + ['--timeout=90'])
+  RunEngineExecutable(build_dir, 'ui_unittests', filter, shuffle_flags + ['--timeout=90'], coverage=coverage)
 
-  RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags)
+  RunEngineExecutable(build_dir, 'testing_unittests', filter, shuffle_flags, coverage=coverage)
 
   # The accessibility library only supports Mac for now.
   if IsMac():
-    RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags)
+    RunEngineExecutable(build_dir, 'accessibility_unittests', filter, shuffle_flags, coverage=coverage)
 
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
-    RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags)
-    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, non_repeatable_shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_unittests', filter, shuffle_flags)
+    icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
+    RunEngineExecutable(build_dir, 'txt_unittests', filter, icu_flags + shuffle_flags, coverage=coverage)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, non_repeatable_shuffle_flags)
-    RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, non_repeatable_shuffle_flags)
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
 
 
 def RunEngineBenchmarks(build_dir, filter):
   print("Running Engine Benchmarks.")
 
-  RunEngineExecutable(build_dir, 'shell_benchmarks', filter)
+  icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
 
-  RunEngineExecutable(build_dir, 'fml_benchmarks', filter)
+  RunEngineExecutable(build_dir, 'shell_benchmarks', filter, icu_flags)
 
-  RunEngineExecutable(build_dir, 'ui_benchmarks', filter)
+  RunEngineExecutable(build_dir, 'fml_benchmarks', filter, icu_flags)
+
+  RunEngineExecutable(build_dir, 'ui_benchmarks', filter, icu_flags)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'txt_benchmarks', filter)
-
-
-def SnapshotTest(build_dir, test_packages, dart_file, kernel_file_output, verbose_dart_snapshot):
-  print("Generating snapshot for test %s" % dart_file)
-
-  dart = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
-  frontend_server = os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot')
-  flutter_patched_sdk = os.path.join(build_dir, 'flutter_patched_sdk')
-
-  assert os.path.exists(dart)
-  assert os.path.exists(frontend_server)
-  assert os.path.exists(flutter_patched_sdk)
-  assert os.path.exists(test_packages)
-
-  snapshot_command = [
-    dart,
-    '--disable-dart-dev',
-    frontend_server,
-    '--enable-experiment=non-nullable',
-    '--no-sound-null-safety',
-    '--sdk-root',
-    flutter_patched_sdk,
-    '--incremental',
-    '--target=flutter',
-    '--packages',
-    test_packages,
-    '--output-dill',
-    kernel_file_output,
-    dart_file
-  ]
-
-  if verbose_dart_snapshot:
-    RunCmd(snapshot_command, cwd=buildroot_dir)
-  else:
-    try:
-      subprocess.check_output(snapshot_command, cwd=buildroot_dir)
-    except subprocess.CalledProcessError as error:
-      # CalledProcessError's string doesn't print the output. Print it before
-      # the crash for easier inspection.
-      print('Error occurred from the subprocess, with the output:')
-      print(error.output)
-      raise
-  assert os.path.exists(kernel_file_output)
+    RunEngineExecutable(build_dir, 'txt_benchmarks', filter, icu_flags)
 
 
 def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, multithreaded,
                 enable_observatory=False, expect_failure=False):
-  kernel_file_name = os.path.basename(dart_file) + '.kernel.dill'
-  kernel_file_output = os.path.join(out_dir, kernel_file_name)
-
-  SnapshotTest(build_dir, test_packages, dart_file, kernel_file_output, verbose_dart_snapshot)
+  kernel_file_name = os.path.basename(dart_file) + '.dill'
+  kernel_file_output = os.path.join(build_dir, 'gen', kernel_file_name)
+  error_message = "%s doesn't exist. Please run the build that populates %s" % (
+      kernel_file_output, build_dir)
+  assert os.path.isfile(kernel_file_output), error_message
 
   command_args = []
   if not enable_observatory:
@@ -266,7 +271,8 @@ def RunDartTest(build_dir, test_packages, dart_file, verbose_dart_snapshot, mult
 
   command_args += [
     '--use-test-fonts',
-    kernel_file_output
+    '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat'),
+    kernel_file_output,
   ]
 
   if multithreaded:
@@ -313,42 +319,40 @@ def EnsureIosTestsAreBuilt(ios_out_dir):
   assert os.path.exists(tmp_out_dir), final_message
 
 
-def AssertExpectedJavaVersion():
-  """Checks that the user has Java 8 which is the supported Java version for Android"""
-  EXPECTED_VERSION = '1.8'
-  # `java -version` is output to stderr. https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4380614
-  version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
-  match = bool(re.compile('version "%s' % EXPECTED_VERSION).search(version_output))
-  message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
+def AssertExpectedXcodeVersion():
+  """Checks that the user has a version of Xcode installed"""
+  version_output = subprocess.check_output(['xcodebuild', '-version'])
+  match = re.match(b"Xcode (\d+)", version_output)
+  message = "Xcode must be installed to run the iOS embedding unit tests"
   assert match, message
 
 
-def AssertExpectedXcodeVersion():
-  """Checks that the user has a recent version of Xcode installed"""
-  EXPECTED_MAJOR_VERSION = ['11', '12']
-  version_output = subprocess.check_output(['xcodebuild', '-version'])
-  match = re.match("Xcode (\d+)", version_output)
-  message = "Xcode must be installed to run the iOS embedding unit tests"
-  assert match.group(1) in EXPECTED_MAJOR_VERSION, message
+def JavaBin():
+  script_path = os.path.dirname(os.path.realpath(__file__))
+  if IsMac():
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home', 'bin', 'java')
+  elif IsWindows():
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'java.exe')
+  else :
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'java')
 
 
 def RunJavaTests(filter, android_variant='android_debug_unopt'):
   """Runs the Java JUnit unit tests for the Android embedding"""
-  AssertExpectedJavaVersion()
   android_out_dir = os.path.join(out_dir, android_variant)
   EnsureJavaTestsAreBuilt(android_out_dir)
 
   embedding_deps_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
-  classpath = map(str, [
-    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-30', 'android.jar'),
+  classpath = list(map(str, [
+    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-31', 'android.jar'),
     os.path.join(embedding_deps_dir, '*'), # Wildcard for all jars in the directory
     os.path.join(android_out_dir, 'flutter.jar'),
     os.path.join(android_out_dir, 'robolectric_tests.jar')
-  ])
+  ]))
 
   test_class = filter if filter else 'io.flutter.FlutterTestSuite'
   command = [
-    'java',
+    JavaBin(),
     '-Drobolectric.offline=true',
     '-Drobolectric.dependency.dir=' + embedding_deps_dir,
     '-classpath', ':'.join(classpath),
@@ -360,7 +364,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   RunCmd(command)
 
 
-def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
+def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
   ios_out_dir = os.path.join(out_dir, ios_variant)
@@ -380,6 +384,8 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt'):
     'test '
     'FLUTTER_ENGINE=' + ios_variant
   ]
+  if test_filter != None:
+    command[0] = command[0] + " -only-testing:%s" % test_filter
   RunCmd(command, cwd=ios_unit_test_dir, shell=True)
 
 def RunDartTests(build_dir, filter, verbose_dart_snapshot):
@@ -439,7 +445,7 @@ def RunFrontEndServerTests(build_dir):
       os.path.join(build_dir, 'flutter_patched_sdk')]
     RunEngineExecutable(
       build_dir,
-      os.path.join('dart-sdk', 'bin', 'dart'),
+      'dart',
       None,
       flags=opts,
       cwd=test_dir)
@@ -452,7 +458,7 @@ def RunConstFinderTests(build_dir):
     os.path.join(test_dir, 'const_finder_test.dart'),
     os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
     os.path.join(build_dir, 'flutter_patched_sdk')]
-  RunEngineExecutable(build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir)
+  RunEngineExecutable(build_dir, 'dart', None, flags=opts, cwd=test_dir)
 
 
 def RunLitetestTests(build_dir):
@@ -464,7 +470,7 @@ def RunLitetestTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      os.path.join('dart-sdk', 'bin', 'dart'),
+      'dart',
       None,
       flags=opts,
       cwd=test_dir)
@@ -479,7 +485,7 @@ def RunBenchmarkTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      os.path.join('dart-sdk', 'bin', 'dart'),
+      'dart',
       None,
       flags=opts,
       cwd=test_dir)
@@ -494,7 +500,7 @@ def RunGithooksTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      os.path.join('dart-sdk', 'bin', 'dart'),
+      'dart',
       None,
       flags=opts,
       cwd=test_dir)
@@ -511,7 +517,7 @@ def RunClangTidyTests(build_dir):
       os.path.join(buildroot_dir, 'flutter')]
     RunEngineExecutable(
       build_dir,
-      os.path.join('dart-sdk', 'bin', 'dart'),
+      'dart',
       None,
       flags=opts,
       cwd=test_dir)
@@ -537,6 +543,14 @@ def main():
       help='The engine build variant to run objective-c tests for')
   parser.add_argument('--verbose-dart-snapshot', dest='verbose_dart_snapshot', action='store_true',
       default=False, help='Show extra dart snapshot logging.')
+  parser.add_argument('--objc-filter', type=str, default=None,
+      help='Filter parameter for which objc tests to run (example: "IosUnitTestsTests/SemanticsObjectTest/testShouldTriggerAnnouncement")')
+  parser.add_argument('--coverage', action='store_true', default=None,
+      help='Generate coverage reports for each unit test framework run.')
+  parser.add_argument('--engine-capture-core-dump', dest='engine_capture_core_dump', action='store_true',
+      default=False, help='Capture core dumps from crashes of engine tests.')
+  parser.add_argument('--use-sanitizer-suppressions', dest='sanitizer_suppressions', action='store_true',
+      default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
 
   args = parser.parse_args()
 
@@ -549,9 +563,21 @@ def main():
   if args.type != 'java':
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
+  if args.sanitizer_suppressions:
+    file_dir = os.path.dirname(os.path.abspath(__file__))
+    command = [
+      "env", "-i", "bash",
+      "-c", "source {}/sanitizer_suppressions.sh >/dev/null && env".format(file_dir)
+    ]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    for line in process.stdout:
+      key, _, value = str(line).partition("=")
+      os.environ[key] = value
+    process.communicate() # Avoid pipe deadlock while waiting for termination.
+
   engine_filter = args.engine_filter.split(',') if args.engine_filter else None
   if 'engine' in types:
-    RunCCTests(build_dir, engine_filter)
+    RunCCTests(build_dir, engine_filter, args.coverage, args.engine_capture_core_dump)
 
   if 'dart' in types:
     assert not IsWindows(), "Dart tests can't be run on windows. https://github.com/flutter/flutter/issues/36301."
@@ -574,7 +600,7 @@ def main():
 
   if 'objc' in types:
     assert IsMac(), "iOS embedding tests can only be run on macOS."
-    RunObjcTests(args.ios_variant)
+    RunObjcTests(args.ios_variant, args.objc_filter)
 
   # https://github.com/flutter/flutter/issues/36300
   if 'benchmarks' in types and not IsWindows():

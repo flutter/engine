@@ -89,6 +89,8 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   String get defaultRouteName => platformDispatcher.defaultRouteName;
 
   void scheduleFrame() => platformDispatcher.scheduleFrame();
+
+  @override
   void render(Scene scene) => platformDispatcher.render(scene, this);
 
   bool get semanticsEnabled => platformDispatcher.semanticsEnabled;
@@ -102,6 +104,11 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   set onSemanticsAction(SemanticsActionCallback? callback) {
     platformDispatcher.onSemanticsAction = callback;
   }
+
+  FrameData get frameData => const FrameData._();
+
+  VoidCallback? get onFrameDataChanged => null;
+  set onFrameDataChanged(VoidCallback? callback) {}
 
   AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
 
@@ -192,7 +199,7 @@ enum Brightness {
 }
 
 // Unimplemented classes.
-// TODO(flutter_web): see https://github.com/flutter/flutter/issues/33614.
+// TODO(dit): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
   CallbackHandle.fromRawHandle(this._handle)
     : assert(_handle != null, "'_handle' must not be null."); // ignore: unnecessary_null_comparison
@@ -205,10 +212,11 @@ class CallbackHandle {
   bool operator ==(Object other) => identical(this, other);
 
   @override
+  // ignore: unnecessary_overrides
   int get hashCode => super.hashCode;
 }
 
-// TODO(flutter_web): see https://github.com/flutter/flutter/issues/33615.
+// TODO(dit): see https://github.com/flutter/flutter/issues/33615.
 class PluginUtilities {
   // This class is only a namespace, and should not be instantiated or
   // extended directly.
@@ -242,3 +250,48 @@ class IsolateNameServer {
 }
 
 SingletonFlutterWindow get window => engine.window;
+
+class FrameData {
+  const FrameData._({this.frameNumber = -1});
+
+  const FrameData.webOnly() : frameNumber = -1;
+
+  final int frameNumber;
+}
+
+class GestureSettings {
+  const GestureSettings({
+    this.physicalTouchSlop,
+    this.physicalDoubleTapSlop,
+  });
+
+  final double? physicalTouchSlop;
+
+  final double? physicalDoubleTapSlop;
+
+  GestureSettings copyWith({
+    double? physicalTouchSlop,
+    double? physicalDoubleTapSlop,
+  }) {
+    return GestureSettings(
+      physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
+      physicalDoubleTapSlop: physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is GestureSettings &&
+      other.physicalTouchSlop == physicalTouchSlop &&
+      other.physicalDoubleTapSlop == physicalDoubleTapSlop;
+  }
+
+  @override
+  int get hashCode => hashValues(physicalTouchSlop, physicalDoubleTapSlop);
+
+  @override
+  String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
+}

@@ -2,7 +2,31 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame, toMatrix32;
+import '../picture.dart';
+import '../profiler.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import '../window.dart';
+import 'backdrop_filter.dart';
+import 'clip.dart';
+import 'color_filter.dart';
+import 'image_filter.dart';
+import 'offset.dart';
+import 'opacity.dart';
+import 'path/path.dart';
+import 'path_to_svg_clip.dart';
+import 'picture.dart';
+import 'platform_view.dart';
+import 'scene.dart';
+import 'shader_mask.dart';
+import 'shaders/shader.dart';
+import 'surface.dart';
+import 'transform.dart';
 
 class SurfaceSceneBuilder implements ui.SceneBuilder {
   SurfaceSceneBuilder() {
@@ -436,30 +460,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _addSurface(PersistedPlatformView(viewId, dx, dy, width, height));
   }
 
-  /// (Fuchsia-only) Adds a scene rendered by another application to the scene
-  /// for this application.
-  @override
-  void addChildScene({
-    ui.Offset offset = ui.Offset.zero,
-    double width = 0.0,
-    double height = 0.0,
-    ui.SceneHost? sceneHost,
-    bool hitTestable = true,
-  }) {
-    _addChildScene(offset.dx, offset.dy, width, height, sceneHost, hitTestable);
-  }
-
-  void _addChildScene(
-    double dx,
-    double dy,
-    double width,
-    double height,
-    ui.SceneHost? sceneHost,
-    bool hitTestable,
-  ) {
-    throw UnimplementedError();
-  }
-
   /// Sets a threshold after which additional debugging information should be
   /// recorded.
   ///
@@ -526,7 +526,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _lastFrameScene?.rootElement?.remove();
     _lastFrameScene = null;
     resetSvgClipIds();
-    _recycledCanvases.clear();
+    recycledCanvases.clear();
   }
 
   /// Finishes building the scene.
@@ -546,14 +546,14 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    _frameTimingsOnBuildFinish();
-    _frameTimingsOnRasterStart();
+    frameTimingsOnBuildFinish();
+    frameTimingsOnRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.
         pop();
       }
-      _persistedScene.preroll();
+      _persistedScene.preroll(PrerollSurfaceContext());
     });
     return timeAction<SurfaceScene>(kProfileApplyFrame, () {
       if (_lastFrameScene == null) {

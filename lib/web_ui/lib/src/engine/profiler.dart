@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'platform_dispatcher.dart';
 
 /// A function that receives a benchmark [value] labeleb by [name].
 typedef OnBenchmark = void Function(String name, double value);
@@ -100,7 +106,7 @@ class Profiler {
     _checkBenchmarkMode();
 
     final OnBenchmark? onBenchmark =
-        js_util.getProperty(html.window, '_flutter_internal_on_benchmark');
+        js_util.getProperty(html.window, '_flutter_internal_on_benchmark') as OnBenchmark?;
     if (onBenchmark != null) {
       onBenchmark(name, value);
     }
@@ -109,7 +115,7 @@ class Profiler {
 
 /// Whether we are collecting [ui.FrameTiming]s.
 bool get _frameTimingsEnabled {
-  return EnginePlatformDispatcher.instance._onReportTimings != null;
+  return EnginePlatformDispatcher.instance.onReportTimings != null;
 }
 
 /// Collects frame timings from frames.
@@ -133,7 +139,7 @@ int _rasterStartMicros = -1;
 int _rasterFinishMicros = -1;
 
 /// Records the vsync timestamp for this frame.
-void _frameTimingsOnVsync() {
+void frameTimingsOnVsync() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -141,7 +147,7 @@ void _frameTimingsOnVsync() {
 }
 
 /// Records the time when the framework started building the frame.
-void _frameTimingsOnBuildStart() {
+void frameTimingsOnBuildStart() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -149,7 +155,7 @@ void _frameTimingsOnBuildStart() {
 }
 
 /// Records the time when the framework finished building the frame.
-void _frameTimingsOnBuildFinish() {
+void frameTimingsOnBuildFinish() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -170,7 +176,7 @@ void _frameTimingsOnBuildFinish() {
 ///
 /// CanvasKit captures everything because we control the rasterization
 /// process, so we know exactly when rasterization starts and ends.
-void _frameTimingsOnRasterStart() {
+void frameTimingsOnRasterStart() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -181,7 +187,7 @@ void _frameTimingsOnRasterStart() {
 ///
 /// See [_frameTimingsOnRasterStart] for more details on what rasterization
 /// timings mean on the web.
-void _frameTimingsOnRasterFinish() {
+void frameTimingsOnRasterFinish() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -193,6 +199,7 @@ void _frameTimingsOnRasterFinish() {
     buildFinish: _buildFinishMicros,
     rasterStart: _rasterStartMicros,
     rasterFinish: _rasterFinishMicros,
+    rasterFinishWallTime: _rasterFinishMicros,
   ));
   _vsyncStartMicros = -1;
   _buildStartMicros = -1;
@@ -291,7 +298,7 @@ class Instrumentation {
           ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
             return a.key.compareTo(b.key);
           });
-        for (MapEntry<String, int> entry in entries) {
+        for (final MapEntry<String, int> entry in entries) {
           message.writeln('  ${entry.key}: ${entry.value}');
         }
         print(message);

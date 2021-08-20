@@ -82,7 +82,6 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
     const Settings& settings,
     std::unique_ptr<PlatformConfiguration> platform_configuration,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
     Flags flags,
@@ -103,7 +102,6 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
       std::move(isolate_configration),                   //
       UIDartState::Context{GetTaskRunners(),             //
                            snapshot_delegate,            //
-                           hint_freed_delegate,          //
                            GetIOManager(),               //
                            GetSkiaUnrefQueue(),          //
                            GetImageDecoder(),            //
@@ -313,6 +311,7 @@ DartIsolate::DartIsolate(const Settings& settings,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate,
                   settings.enable_skparagraph,
+                  settings.enable_display_list,
                   std::move(context)),
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
@@ -361,6 +360,14 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
   Dart_ExitIsolate();
 
   tonic::DartIsolateScope scope(isolate());
+
+  // For the root isolate set the "AppStartUp" as soon as the root isolate
+  // has been initialized. This is to ensure that all the timeline events
+  // that have the set user-tag will be listed user AppStartUp.
+  if (IsRootIsolate()) {
+    tonic::DartApiScope api_scope;
+    Dart_SetCurrentUserTag(Dart_NewUserTag("AppStartUp"));
+  }
 
   SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner());
 
@@ -570,6 +577,7 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
 
 [[nodiscard]] bool DartIsolate::PrepareForRunningFromKernel(
     std::shared_ptr<const fml::Mapping> mapping,
+    bool child_isolate,
     bool last_piece) {
   TRACE_EVENT0("flutter", "DartIsolate::PrepareForRunningFromKernel");
   if (phase_ != Phase::LibrariesSetup) {
@@ -586,11 +594,13 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
 
   tonic::DartState::Scope scope(this);
 
-  // Use root library provided by kernel in favor of one provided by snapshot.
-  Dart_SetRootLibrary(Dart_Null());
+  if (!child_isolate || !Dart_IsVMFlagSet("--enable-isolate-groups")) {
+    // Use root library provided by kernel in favor of one provided by snapshot.
+    Dart_SetRootLibrary(Dart_Null());
 
-  if (!LoadKernel(mapping, last_piece)) {
-    return false;
+    if (!LoadKernel(mapping, last_piece)) {
+      return false;
+    }
   }
 
   if (!last_piece) {
@@ -615,7 +625,9 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
           for (uint64_t i = 0; i < buffers.size(); i++) {
             bool last_piece = i + 1 == buffers.size();
             const std::shared_ptr<const fml::Mapping>& buffer = buffers.at(i);
-            if (!isolate->PrepareForRunningFromKernel(buffer, last_piece)) {
+            if (!isolate->PrepareForRunningFromKernel(buffer,
+                                                      /*child_isolate=*/true,
+                                                      last_piece)) {
               return false;
             }
           }
@@ -643,7 +655,8 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
 
   for (size_t i = 0; i < count; ++i) {
     bool last = (i == (count - 1));
-    if (!PrepareForRunningFromKernel(kernels[i], last)) {
+    if (!PrepareForRunningFromKernel(kernels[i], /*child_isolate=*/false,
+                                     last)) {
       return false;
     }
   }

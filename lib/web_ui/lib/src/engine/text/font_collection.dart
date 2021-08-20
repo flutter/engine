@@ -2,12 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:convert';
+import 'dart:html' as html;
+import 'dart:js_util' as js_util;
+import 'dart:typed_data';
 
-const String _ahemFontFamily = 'Ahem';
-const String _ahemFontUrl = 'packages/ui/assets/ahem.ttf';
-const String _robotoFontFamily = 'Roboto';
-const String _robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+import '../assets.dart';
+import '../browser_detection.dart';
+import '../util.dart';
+import 'layout_service.dart';
+
+const String ahemFontFamily = 'Ahem';
+const String ahemFontUrl = 'packages/ui/assets/ahem.ttf';
+const String robotoFontFamily = 'Roboto';
+const String robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -36,7 +45,7 @@ class FontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -48,16 +57,15 @@ class FontCollection {
       _assetFontManager = _PolyfillFontManager();
     }
 
-    for (Map<String, dynamic> fontFamily
+    for (final Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
-      final String? family = fontFamily['family'];
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+      final String? family = fontFamily.tryString('family');
+      final List<Map<String, dynamic>> fontAssets = fontFamily.castList<Map<String, dynamic>>('fonts');
 
-      for (dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+      for (final Map<String, dynamic> fontAsset in fontAssets) {
+        final String asset = fontAsset.readString('asset');
         final Map<String, String> descriptors = <String, String>{};
-        for (String descriptor in fontAsset.keys) {
+        for (final String descriptor in fontAsset.keys) {
           if (descriptor != 'asset') {
             descriptors[descriptor] = '${fontAsset[descriptor]}';
           }
@@ -76,9 +84,9 @@ class FontCollection {
   void debugRegisterTestFonts() {
     _testFontManager = FontManager();
     _testFontManager!.registerAsset(
-        _ahemFontFamily, 'url($_ahemFontUrl)', const <String, String>{});
-    _testFontManager!.registerAsset(_robotoFontFamily,
-        'url($_robotoTestFontUrl)', const <String, String>{});
+        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
+    _testFontManager!.registerAsset(robotoFontFamily,
+        'url($robotoTestFontUrl)', const <String, String>{});
   }
 
   /// Returns a [Future] that completes when the registered fonts are loaded
@@ -106,11 +114,11 @@ class FontManager {
   // For example font family 'Ahem!' does not fall into this category
   // so the family name will be wrapped in quotes.
   static final RegExp notPunctuation =
-      RegExp(r"[a-z0-9\s]+", caseSensitive: false);
+      RegExp(r'[a-z0-9\s]+', caseSensitive: false);
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
-  static final RegExp startWithDigit = RegExp(r"\b\d");
+  static final RegExp startWithDigit = RegExp(r'\b\d');
 
   factory FontManager() {
     if (supportsFontLoadingApi) {
@@ -187,7 +195,7 @@ class FontManager {
         //
         // TODO(mdebbar): Revert this once the dart:html type is fixed.
         //                https://github.com/dart-lang/sdk/issues/45676
-        js_util.callMethod(html.document.fonts!, 'add', [fontFace]);
+        js_util.callMethod(html.document.fonts!, 'add', <dynamic>[fontFace]);
       }, onError: (dynamic e) {
         printWarning('Error while trying to load font family "$family":\n$e');
       }));
@@ -206,7 +214,6 @@ class FontManager {
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
-      TextMeasurementService.clearCache();
       Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
       // Failures here will throw an html.DomException which confusingly

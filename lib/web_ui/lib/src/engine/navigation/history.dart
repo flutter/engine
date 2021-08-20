@@ -4,12 +4,26 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart' show EnginePlatformDispatcher;
 import 'package:ui/ui.dart' as ui;
 
+import '../platform_dispatcher.dart';
 import '../services/message_codec.dart';
 import '../services/message_codecs.dart';
 import 'url_strategy.dart';
+
+/// Infers the history mode from the existing browser history state, then
+/// creates the appropriate instance of [BrowserHistory] for it.
+///
+/// If it can't infer, it creates a [MultiEntriesBrowserHistory] by default.
+BrowserHistory createHistoryForExistingState(UrlStrategy? urlStrategy) {
+  if (urlStrategy != null) {
+    final Object? state = urlStrategy.getState();
+    if (SingleEntryBrowserHistory._isOriginEntry(state) || SingleEntryBrowserHistory._isFlutterEntry(state)) {
+      return SingleEntryBrowserHistory(urlStrategy: urlStrategy);
+    }
+  }
+  return MultiEntriesBrowserHistory(urlStrategy: urlStrategy);
+}
 
 /// An abstract class that provides the API for [EngineWindow] to delegate its
 /// navigating events.
@@ -117,7 +131,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
   int get _currentSerialCount {
     if (_hasSerialCount(currentState)) {
       final Map<dynamic, dynamic> stateMap =
-          currentState as Map<dynamic, dynamic>;
+          currentState! as Map<dynamic, dynamic>;
       return stateMap['serialCount'] as int;
     }
     return 0;
@@ -190,14 +204,14 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
     // Restores the html browser history.
     assert(_hasSerialCount(currentState));
-    int backCount = _currentSerialCount;
+    final int backCount = _currentSerialCount;
     if (backCount > 0) {
       await urlStrategy!.go(-backCount);
     }
     // Unwrap state.
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
     final Map<dynamic, dynamic> stateMap =
-        currentState as Map<dynamic, dynamic>;
+        currentState! as Map<dynamic, dynamic>;
     urlStrategy!.replaceState(
       stateMap['state'],
       'flutter',
@@ -255,7 +269,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   Object? _unwrapOriginState(Object? state) {
     assert(_isOriginEntry(state));
-    final Map<dynamic, dynamic> originState = state as Map<dynamic, dynamic>;
+    final Map<dynamic, dynamic> originState = state! as Map<dynamic, dynamic>;
     return originState['state'];
   }
 
@@ -263,14 +277,14 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   /// The origin entry is the history entry that the Flutter app landed on. It's
   /// created by the browser when the user navigates to the url of the app.
-  bool _isOriginEntry(Object? state) {
+  static bool _isOriginEntry(Object? state) {
     return state is Map && state[_kOriginTag] == true;
   }
 
   /// The flutter entry is a history entry that we maintain on top of the origin
   /// entry. It allows us to catch popstate events when the user hits the back
   /// button.
-  bool _isFlutterEntry(Object? state) {
+  static bool _isFlutterEntry(Object? state) {
     return state is Map && state[_kFlutterTag] == true;
   }
 

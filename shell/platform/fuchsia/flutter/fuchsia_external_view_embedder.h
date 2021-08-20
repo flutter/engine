@@ -27,13 +27,37 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
-#include "default_session_connection.h"
+#include "gfx_session_connection.h"
 #include "vulkan_surface_producer.h"
 
 namespace flutter_runner {
 
 using ViewCallback = std::function<void()>;
 using ViewIdCallback = std::function<void(scenic::ResourceId)>;
+
+// This struct represents a transformed clip rect.
+struct TransformedClip {
+  SkMatrix transform = SkMatrix::I();
+  SkRect rect = SkRect::MakeEmpty();
+
+  bool operator==(const TransformedClip& other) const {
+    return transform == other.transform && rect == other.rect;
+  }
+};
+
+// This struct represents all the mutators that can be applied to a
+// PlatformView, unpacked from the `MutatorStack`.
+struct ViewMutators {
+  std::vector<TransformedClip> clips;
+  SkMatrix total_transform = SkMatrix::I();
+  SkMatrix transform = SkMatrix::I();
+  SkScalar opacity = 1.f;
+
+  bool operator==(const ViewMutators& other) const {
+    return clips == other.clips && total_transform == other.total_transform &&
+           transform == other.transform && opacity == other.opacity;
+  }
+};
 
 // This class orchestrates interaction with the Scenic compositor on Fuchsia. It
 // ensures that flutter content and platform view content are both rendered
@@ -43,7 +67,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   FuchsiaExternalViewEmbedder(std::string debug_label,
                               fuchsia::ui::views::ViewToken view_token,
                               scenic::ViewRefPair view_ref_pair,
-                              DefaultSessionConnection& session,
+                              GfxSessionConnection& session,
                               VulkanSurfaceProducer& surface_producer,
                               bool intercept_all_input = false);
   ~FuchsiaExternalViewEmbedder();
@@ -104,8 +128,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
                          bool focusable);
 
  private:
-  // Reset state for a new frame.
-  void Reset();
+  void Reset();  // Reset state for a new frame.
 
   struct EmbedderLayer {
     EmbedderLayer(const SkISize& frame_size,
@@ -122,23 +145,24 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     std::unique_ptr<flutter::CanvasSpy> canvas_spy;
     SkISize surface_size;
   };
+  using EmbedderLayerId = std::optional<uint32_t>;
+  constexpr static EmbedderLayerId kRootLayerId = EmbedderLayerId{};
 
   struct ScenicView {
+    std::vector<scenic::EntityNode> clip_nodes;
     scenic::OpacityNodeHACK opacity_node;
-    scenic::EntityNode entity_node;
+    scenic::EntityNode transform_node;
     scenic::ViewHolder view_holder;
 
-    SkPoint offset = SkPoint::Make(0.f, 0.f);
-    SkSize scale = SkSize::MakeEmpty();
+    ViewMutators mutators;
+    float elevation = 0.f;
+
     SkSize size = SkSize::MakeEmpty();
     SkRect occlusion_hint = SkRect::MakeEmpty();
-    float elevation = 0.f;
-    float opacity = 1.f;
-    bool hit_testable = true;
-    bool focusable = true;
-
     SkRect pending_occlusion_hint = SkRect::MakeEmpty();
+    bool hit_testable = true;
     bool pending_hit_testable = true;
+    bool focusable = true;
     bool pending_focusable = true;
   };
 
@@ -147,10 +171,7 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
     scenic::Material material;
   };
 
-  using EmbedderLayerId = std::optional<uint32_t>;
-  constexpr static EmbedderLayerId kRootLayerId = EmbedderLayerId{};
-
-  DefaultSessionConnection& session_;
+  GfxSessionConnection& session_;
   VulkanSurfaceProducer& surface_producer_;
 
   scenic::View root_view_;

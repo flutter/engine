@@ -98,6 +98,11 @@ abstract class PlatformDispatcher {
   set onSemanticsAction(SemanticsActionCallback? callback);
 
   String get defaultRouteName;
+
+  FrameData get frameData;
+
+  VoidCallback? get onFrameDataChanged => null;
+  set onFrameDataChanged(VoidCallback? callback) {}
 }
 
 class PlatformConfiguration {
@@ -150,6 +155,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
   });
 
@@ -162,6 +168,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
@@ -173,6 +180,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
       displayFeatures: displayFeatures ?? this.displayFeatures,
     );
   }
@@ -185,6 +193,7 @@ class ViewConfiguration {
   final WindowPadding viewPadding;
   final WindowPadding systemGestureInsets;
   final WindowPadding padding;
+  final GestureSettings gestureSettings;
   final List<DisplayFeature> displayFeatures;
 
   @override
@@ -199,6 +208,7 @@ enum FramePhase {
   buildFinish,
   rasterStart,
   rasterFinish,
+  rasterFinishWallTime,
 }
 
 class FrameTiming {
@@ -208,6 +218,7 @@ class FrameTiming {
     required int buildFinish,
     required int rasterStart,
     required int rasterFinish,
+    required int rasterFinishWallTime,
     int frameNumber = 1,
   }) {
     return FrameTiming._(<int>[
@@ -216,6 +227,7 @@ class FrameTiming {
       buildFinish,
       rasterStart,
       rasterFinish,
+      rasterFinishWallTime,
       frameNumber,
     ]);
   }

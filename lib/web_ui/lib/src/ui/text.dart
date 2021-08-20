@@ -198,7 +198,7 @@ class TextDecoration {
   const TextDecoration._(this._mask);
   factory TextDecoration.combine(List<TextDecoration> decorations) {
     int mask = 0;
-    for (TextDecoration decoration in decorations) {
+    for (final TextDecoration decoration in decorations) {
       mask |= decoration._mask;
     }
     return TextDecoration._(mask);
@@ -706,12 +706,8 @@ abstract class ParagraphBuilder {
   factory ParagraphBuilder(ParagraphStyle style) {
     if (engine.useCanvasKit) {
       return engine.CkParagraphBuilder(style);
-    } else if (engine.WebExperiments.instance!.useCanvasRichText) {
-      return engine.CanvasParagraphBuilder(
-          style as engine.EngineParagraphStyle);
-    } else {
-      return engine.DomParagraphBuilder(style as engine.EngineParagraphStyle);
     }
+    return engine.CanvasParagraphBuilder(style as engine.EngineParagraphStyle);
   }
   void pushStyle(TextStyle style);
   void pop();

@@ -59,9 +59,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private View flutterView;
 
   // The texture registry maintaining the textures into which the embedded views will be rendered.
-  private TextureRegistry textureRegistry;
+  @Nullable private TextureRegistry textureRegistry;
 
-  private TextInputPlugin textInputPlugin;
+  @Nullable private TextInputPlugin textInputPlugin;
 
   // The system channel used to communicate with the framework about platform views.
   private PlatformViewsChannel platformViewsChannel;
@@ -79,7 +79,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Since each virtual display has it's unique context this allows associating any view with the
   // platform view that
   // it is associated with(e.g if a platform view creates other views in the same virtual display.
-  private final HashMap<Context, View> contextToPlatformView;
+  @VisibleForTesting /* package */ final HashMap<Context, View> contextToPlatformView;
 
   // The views returned by `PlatformView#getView()`.
   //
@@ -104,6 +104,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   // Tracks whether the flutterView has been converted to use a FlutterImageView.
   private boolean flutterViewConvertedToImageView = false;
+
+  // When adding platform views using Hybrid Composition, the engine converts the render surface
+  // to a FlutterImageView to help improve animation synchronization on Android. This flag allows
+  // disabling this conversion through the PlatformView platform channel.
+  private boolean synchronizeToNativeViewHierarchy = true;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
   private HashSet<Integer> currentFrameUsedOverlayLayerIds;
@@ -159,8 +164,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformViews.remove(viewId);
             platformView.dispose();
           }
-
           if (parentView != null) {
+            parentView.unsetOnDescendantFocusChangeListener();
             ((ViewGroup) parentView.getParent()).removeView(parentView);
             platformViewParent.remove(viewId);
           }
@@ -355,6 +360,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + ", required API level is: "
                     + minSdkVersion);
           }
+        }
+
+        @Override
+        public void synchronizeToNativeViewHierarchy(boolean yes) {
+          synchronizeToNativeViewHierarchy = yes;
         }
       };
 
@@ -701,10 +711,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     while (platformViews.size() > 0) {
       channelHandler.disposeAndroidViewForPlatformView(platformViews.keyAt(0));
     }
+
+    if (contextToPlatformView.size() > 0) {
+      contextToPlatformView.clear();
+    }
   }
 
   private void initializeRootImageViewIfNeeded() {
-    if (!flutterViewConvertedToImageView) {
+    if (synchronizeToNativeViewHierarchy && !flutterViewConvertedToImageView) {
       ((FlutterView) flutterView).convertToImageView();
       flutterViewConvertedToImageView = true;
     }
@@ -738,11 +752,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         new FlutterMutatorView(
             context, context.getResources().getDisplayMetrics().density, androidTouchProcessor);
 
-    parentView.addOnFocusChangeListener(
+    parentView.setOnDescendantFocusChangeListener(
         (view, hasFocus) -> {
           if (hasFocus) {
             platformViewsChannel.invokeViewFocused(viewId);
-          } else {
+          } else if (textInputPlugin != null) {
             textInputPlugin.clearPlatformViewClient(viewId);
           }
         });
@@ -890,13 +904,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final int viewId = platformViewParent.keyAt(i);
       final View parentView = platformViewParent.get(viewId);
 
-      // Show platform views only if the surfaces have images available in this frame,
-      // and if the platform view is rendered in this frame.
+      // This should only show platform views that are rendered in this frame and either:
+      //  1. Surface has images available in this frame or,
+      //  2. Surface does not have images available in this frame because the render surface should
+      // not be an ImageView.
+      //
       // The platform view is appended to a mutator view.
       //
       // Otherwise, hide the platform view, but don't remove it from the view hierarchy yet as
       // they are removed when the framework diposes the platform view widget.
-      if (isFrameRenderedUsingImageReaders && currentFrameUsedPlatformViewIds.contains(viewId)) {
+      if (currentFrameUsedPlatformViewIds.contains(viewId)
+          && (isFrameRenderedUsingImageReaders || !synchronizeToNativeViewHierarchy)) {
         parentView.setVisibility(View.VISIBLE);
       } else {
         parentView.setVisibility(View.GONE);

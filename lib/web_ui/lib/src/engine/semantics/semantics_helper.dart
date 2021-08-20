@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:async';
+import 'dart:html' as html;
+
+import 'package:meta/meta.dart';
+
+import '../browser_detection.dart';
+import 'semantics.dart';
 
 /// The maximum [semanticsActivationAttempts] before we give up waiting for
 /// the user to enable semantics.
@@ -15,7 +21,7 @@ const int kMaxSemanticsActivationAttempts = 20;
 /// For example when a 'mousedown' targeting a placeholder received following
 /// 'mouseup' is also not sent to the framework.
 /// Otherwise these events can cause unintended gestures on the framework side.
-const Duration _periodToConsumeEvents = const Duration(milliseconds: 300);
+const Duration _periodToConsumeEvents = Duration(milliseconds: 300);
 
 /// The message in the label for the placeholder element used to enable
 /// accessibility.
@@ -41,7 +47,7 @@ class SemanticsHelper {
 
   @visibleForTesting
   set semanticsEnabler(SemanticsEnabler semanticsEnabler) {
-    this._semanticsEnabler = semanticsEnabler;
+    _semanticsEnabler = semanticsEnabler;
   }
 
   bool shouldEnableSemantics(html.Event event) {
@@ -154,7 +160,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
     }
 
     // Check for the event target.
-    final bool enableConditionPassed = (event.target == _semanticsPlaceholder);
+    final bool enableConditionPassed = event.target == _semanticsPlaceholder;
 
     if (!enableConditionPassed) {
       // This was not a semantics activating event; forward as normal.
@@ -168,7 +174,8 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
   @override
   html.Element prepareAccessibilityPlaceholder() {
-    final html.Element placeholder = _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
+    final html.Element placeholder =
+        _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.
@@ -183,7 +190,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
     // to the assistive technology user.
     placeholder
       ..setAttribute('role', 'button')
-      ..setAttribute('aria-live', 'true')
+      ..setAttribute('aria-live', 'polite')
       ..setAttribute('tabindex', '0')
       ..setAttribute('aria-label', placeholderMessage);
 
@@ -250,10 +257,10 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     if (_schedulePlaceholderRemoval) {
       // The event type can also be click for VoiceOver.
-      final bool removeNow = (browserEngine != BrowserEngine.webkit ||
+      final bool removeNow = browserEngine != BrowserEngine.webkit ||
           event.type == 'touchend' ||
           event.type == 'pointerup' ||
-          event.type == 'click');
+          event.type == 'click';
       if (removeNow) {
         dispose();
       }
@@ -328,7 +335,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
       case 'pointerdown':
       case 'pointerup':
         final html.PointerEvent touch = event as html.PointerEvent;
-        activationPoint = new html.Point(touch.client.x, touch.client.y);
+        activationPoint = html.Point<num>(touch.client.x, touch.client.y);
         break;
       default:
         // The event is not relevant, forward to framework as normal.
@@ -366,7 +373,8 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
   @override
   html.Element prepareAccessibilityPlaceholder() {
-    final html.Element placeholder = _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
+    final html.Element placeholder =
+        _semanticsPlaceholder = html.Element.tag('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.

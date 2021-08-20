@@ -6,9 +6,9 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show WebOnlyImageCodecChunkCallback;
 import 'package:ui/ui.dart' as ui;
 
+import '../html_image_codec.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'skia_object_cache.dart';
@@ -33,6 +33,7 @@ class ImageCodecException implements Exception {
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
 typedef HttpRequestFactory = html.HttpRequest Function();
+// ignore: prefer_function_declarations_over_variables
 HttpRequestFactory httpRequestFactory = () => html.HttpRequest();
 void debugRestoreHttpRequestFactory() {
   httpRequestFactory = () => html.HttpRequest();
@@ -42,7 +43,7 @@ void debugRestoreHttpRequestFactory() {
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, WebOnlyImageCodecChunkCallback? chunkCallback) {
-  Completer<ui.Codec> completer = Completer<ui.Codec>();
+  final Completer<ui.Codec> completer = Completer<ui.Codec>();
 
   final html.HttpRequest request = httpRequestFactory();
   request.open('GET', url, async: true);
@@ -79,7 +80,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
 
     try {
       final Uint8List list =
-          new Uint8List.view((request.response as ByteBuffer));
+          Uint8List.view(request.response as ByteBuffer);
       final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list, url);
       completer.complete(codec);
     } catch (error, stackTrace) {
@@ -307,7 +308,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
   }) {
     assert(_debugCheckIsNotDisposed());
-    ByteData? data = _encodeImage(
+    final ByteData? data = _encodeImage(
       skImage: skImage,
       format: format,
       alphaType: canvasKit.AlphaType.Premul,

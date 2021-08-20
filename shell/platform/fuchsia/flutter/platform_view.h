@@ -14,6 +14,7 @@
 #include <lib/sys/cpp/service_directory.h>
 #include <lib/ui/scenic/cpp/id.h>
 
+#include <array>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -26,6 +27,7 @@
 #include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
 #include "flutter/shell/platform/fuchsia/flutter/keyboard.h"
 #include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
+#include "focus_delegate.h"
 
 namespace flutter_runner {
 
@@ -54,14 +56,9 @@ using OnShaderWarmup = std::function<void(const std::vector<std::string>&,
 // in HandlePlatformMessage.  This communication is bidirectional.  Platform
 // messages are notably responsible for communication related to input and
 // external views / windowing.
-//
-// The PlatformView implements SessionListener and gets Session events but it
-// does *not* actually own the Session itself; that is owned by the
-// FuchsiaExternalViewEmbedder on the raster thread.
-class PlatformView final : public flutter::PlatformView,
-                           private fuchsia::ui::scenic::SessionListener,
-                           private fuchsia::ui::input3::KeyboardListener,
-                           private fuchsia::ui::input::InputMethodEditorClient {
+class PlatformView : public flutter::PlatformView,
+                     private fuchsia::ui::input3::KeyboardListener,
+                     private fuchsia::ui::input::InputMethodEditorClient {
  public:
   PlatformView(flutter::PlatformView::Delegate& delegate,
                std::string debug_label,
@@ -70,12 +67,10 @@ class PlatformView final : public flutter::PlatformView,
                std::shared_ptr<sys::ServiceDirectory> runner_services,
                fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
                    parent_environment_service_provider,
-               fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
-                   session_listener_request,
+               fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> vrf,
                fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
                fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
                    keyboard_listener,
-               fit::closure on_session_listener_error_callback,
                OnEnableWireframe wireframe_enabled_callback,
                OnCreateView on_create_view_callback,
                OnUpdateView on_update_view_callback,
@@ -89,7 +84,7 @@ class PlatformView final : public flutter::PlatformView,
                AwaitVsyncForSecondaryCallbackCallback
                    await_vsync_for_secondary_callback_callback);
 
-  ~PlatformView();
+  virtual ~PlatformView();
 
   // |flutter::PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
@@ -98,7 +93,7 @@ class PlatformView final : public flutter::PlatformView,
   std::shared_ptr<flutter::ExternalViewEmbedder> CreateExternalViewEmbedder()
       override;
 
- private:
+ protected:
   void RegisterPlatformMessageHandlers();
 
   // |fuchsia.ui.input3.KeyboardListener|
@@ -114,10 +109,6 @@ class PlatformView final : public flutter::PlatformView,
 
   // |fuchsia::ui::input::InputMethodEditorClient|
   void OnAction(fuchsia::ui::input::InputMethodAction action) override;
-
-  // |fuchsia::ui::scenic::SessionListener|
-  void OnScenicError(std::string error) override;
-  void OnScenicEvent(std::vector<fuchsia::ui::scenic::Event> events) override;
 
   // ViewHolder event handlers.  These return false if the ViewHolder
   // corresponding to `view_holder_id` could not be found and the evnt was
@@ -159,44 +150,46 @@ class PlatformView final : public flutter::PlatformView,
   // Channel handler for kAccessibilityChannel. This is currently not
   // being used, but it is necessary to handle accessibility messages
   // that are sent by Flutter when semantics is enabled.
-  void HandleAccessibilityChannelPlatformMessage(
+  bool HandleAccessibilityChannelPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kFlutterPlatformChannel
-  void HandleFlutterPlatformChannelPlatformMessage(
+  bool HandleFlutterPlatformChannelPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kTextInputChannel
-  void HandleFlutterTextInputChannelPlatformMessage(
+  bool HandleFlutterTextInputChannelPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kPlatformViewsChannel.
-  void HandleFlutterPlatformViewsChannelPlatformMessage(
+  bool HandleFlutterPlatformViewsChannelPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message);
 
   // Channel handler for kFuchsiaShaderWarmupChannel.
-  static void HandleFuchsiaShaderWarmupChannelPlatformMessage(
+  static bool HandleFuchsiaShaderWarmupChannelPlatformMessage(
       OnShaderWarmup on_shader_warmup,
       std::unique_ptr<flutter::PlatformMessage> message);
+
+  // Utility function for coordinate massaging.
+  std::array<float, 2> ClampToViewSpace(const float x, const float y) const;
 
   const std::string debug_label_;
   // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
   // alive there
   const fuchsia::ui::views::ViewRef view_ref_;
-  fuchsia::ui::views::FocuserPtr focuser_;
+  std::shared_ptr<FocusDelegate> focus_delegate_;
 
-  // Logical size and logical->physical ratio.  These are optional to provide
-  // an "unset" state during program startup, before Scenic has sent any
-  // metrics-related events to provide initial values for these.
+  // Logical size and origin, and logical->physical ratio.  These are optional
+  // to provide an "unset" state during program startup, before Scenic has sent
+  // any metrics-related events to provide initial values for these.
   //
   // The engine internally uses a default size of (0.f 0.f) with a default 1.f
   // ratio, so there is no need to emit events until Scenic has actually sent a
   // valid size and ratio.
-  std::optional<std::pair<float, float>> view_logical_size_;
+  std::optional<std::array<float, 2>> view_logical_size_;
+  std::optional<std::array<float, 2>> view_logical_origin_;
   std::optional<float> view_pixel_ratio_;
 
-  fidl::Binding<fuchsia::ui::scenic::SessionListener> session_listener_binding_;
-  fit::closure session_listener_error_callback_;
   OnEnableWireframe wireframe_enabled_callback_;
   OnCreateView on_create_view_callback_;
   OnUpdateView on_update_view_callback_;
@@ -228,7 +221,7 @@ class PlatformView final : public flutter::PlatformView,
 
   std::set<int> down_pointers_;
   std::map<std::string /* channel */,
-           std::function<void(
+           std::function<bool /* response_handled */ (
                std::unique_ptr<
                    flutter::PlatformMessage> /* message */)> /* handler */>
       platform_message_handlers_;

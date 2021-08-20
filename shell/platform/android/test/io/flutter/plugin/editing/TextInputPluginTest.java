@@ -126,11 +126,7 @@ public class TextInputPluginTest {
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
 
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(bufferCaptor.getValue(), "TextInputClient.requestExistingInputState", null);
   }
@@ -152,6 +148,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -197,6 +194,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
@@ -286,6 +284,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -322,6 +321,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -368,6 +368,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
@@ -426,8 +427,6 @@ public class TextInputPluginTest {
     assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -1, -9));
     assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, -9, -9));
     assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 2, 1));
-    // A collapsed composing range is invalid.
-    assertThrows(IndexOutOfBoundsException.class, () -> new TextEditState("Text", 0, 0, 1, 1));
 
     // Valid values (does not throw):
     // Nothing selected/composing:
@@ -445,6 +444,13 @@ public class TextInputPluginTest {
     state = new TextEditState("REEEE", 4, 2, -1, -1);
     assertEquals(4, state.selectionStart);
     assertEquals(2, state.selectionEnd);
+    // A collapsed selection and composing range.
+    state = new TextEditState("text", 0, 0, 0, 0);
+    assertEquals("text", state.text);
+    assertEquals(0, state.selectionStart);
+    assertEquals(0, state.selectionEnd);
+    assertEquals(0, state.composingStart);
+    assertEquals(0, state.composingEnd);
   }
 
   @Test
@@ -463,6 +469,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -506,6 +513,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
@@ -518,11 +526,7 @@ public class TextInputPluginTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(bufferCaptor.getValue(), "TextInputClient.requestExistingInputState", null);
     InputConnectionAdaptor connection =
@@ -531,11 +535,7 @@ public class TextInputPluginTest {
                 testView, mock(KeyboardManager.class), new EditorInfo());
 
     connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
-    verify(dartExecutor, times(2))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(2)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -544,11 +544,7 @@ public class TextInputPluginTest {
     connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER));
 
     connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_NUMPAD_ENTER));
-    verify(dartExecutor, times(3))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(3)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -584,6 +580,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,
@@ -604,6 +601,61 @@ public class TextInputPluginTest {
 
     assertEquals(-1, testImm.getLastCursorAnchorInfo().getComposingTextStart());
     assertEquals(0, testImm.getLastCursorAnchorInfo().getComposingText().length());
+  }
+
+  @Test
+  public void inputConnection_textInputTypeNone() {
+    View testView = new View(RuntimeEnvironment.application);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.NONE, false, false),
+            null,
+            null,
+            null,
+            null));
+
+    InputConnection connection =
+        textInputPlugin.createInputConnection(
+            testView, mock(KeyboardManager.class), new EditorInfo());
+    assertEquals(connection, null);
+  }
+
+  @Test
+  public void showTextInput_textInputTypeNone() {
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    View testView = new View(RuntimeEnvironment.application);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.NONE, false, false),
+            null,
+            null,
+            null,
+            null));
+
+    textInputPlugin.showTextInput(testView);
+    assertEquals(testImm.isSoftInputVisible(), false);
   }
 
   // -------- Start: Autofill Tests -------
@@ -631,6 +683,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -641,6 +694,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -655,6 +709,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -666,7 +721,7 @@ public class TextInputPluginTest {
     final ViewStructure[] children = {mock(ViewStructure.class), mock(ViewStructure.class)};
 
     when(viewStructure.newChild(anyInt()))
-        .thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
+        .thenAnswer(invocation -> children[(int) invocation.getArgument(0)]);
 
     textInputPlugin.onProvideAutofillVirtualStructure(viewStructure, 0);
 
@@ -703,6 +758,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -714,7 +770,7 @@ public class TextInputPluginTest {
     final ViewStructure[] children = {mock(ViewStructure.class)};
 
     when(viewStructure.newChild(anyInt()))
-        .thenAnswer(invocation -> children[invocation.getArgumentAt(0, int.class)]);
+        .thenAnswer(invocation -> children[(int) invocation.getArgument(0)]);
 
     textInputPlugin.onProvideAutofillVirtualStructure(viewStructure, 0);
 
@@ -754,6 +810,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -764,6 +821,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -778,6 +836,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -820,6 +879,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -875,6 +935,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -885,6 +946,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -897,6 +959,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -960,6 +1023,7 @@ public class TextInputPluginTest {
             false,
             false,
             true,
+            true,
             TextInputChannel.TextCapitalization.NONE,
             null,
             null,
@@ -970,6 +1034,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,
@@ -982,6 +1047,7 @@ public class TextInputPluginTest {
         new TextInputChannel.Configuration(
             false,
             false,
+            true,
             true,
             TextInputChannel.TextCapitalization.NONE,
             null,

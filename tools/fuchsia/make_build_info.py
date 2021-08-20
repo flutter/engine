@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -37,7 +37,7 @@ def GetFuchsiaSdkVersion(buildroot):
         buildroot,
         'fuchsia',
         'sdk',
-        'linux',
+        'linux' if sys.platform.startswith('linux') else 'mac',
         'meta',
         'manifest.json'),
     'r') as fuchsia_sdk_manifest:
@@ -64,13 +64,13 @@ def main():
             i.read()
             .replace(
                 '{{DART_SDK_GIT_REVISION}}',
-                GetDartSdkGitRevision(args.buildroot))
+                GetDartSdkGitRevision(args.buildroot).decode('utf-8'))
             .replace(
                 '{{DART_SDK_SEMANTIC_VERSION}}',
-                GetDartSdkSemanticVersion(args.buildroot))
+                GetDartSdkSemanticVersion(args.buildroot).decode('utf-8'))
             .replace(
                 '{{FLUTTER_ENGINE_GIT_REVISION}}',
-                GetFlutterEngineGitRevision(args.buildroot))
+                GetFlutterEngineGitRevision(args.buildroot).decode('utf-8'))
             .replace(
                 '{{FUCHSIA_SDK_VERSION}}',
                 GetFuchsiaSdkVersion(args.buildroot)))

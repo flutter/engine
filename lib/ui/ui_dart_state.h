@@ -15,7 +15,6 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/lib/ui/hint_freed_delegate.h"
 #include "flutter/lib/ui/io_manager.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
@@ -46,7 +45,6 @@ class UIDartState : public tonic::DartState {
 
     Context(const TaskRunners& task_runners,
             fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-            fml::WeakPtr<HintFreedDelegate> hint_freed_delegate,
             fml::WeakPtr<IOManager> io_manager,
             fml::RefPtr<SkiaUnrefQueue> unref_queue,
             fml::WeakPtr<ImageDecoder> image_decoder,
@@ -64,10 +62,6 @@ class UIDartState : public tonic::DartState {
     /// isolate to gather raster snapshots
     /// of Flutter view hierarchies.
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate;
-
-    /// The delegate used by the isolate to hint the Dart VM when additional
-    /// memory may be freed if a GC ran at the next NotifyIdle.
-    fml::WeakPtr<HintFreedDelegate> hint_freed_delegate;
 
     /// The IO manager used by the isolate for asynchronous texture uploads.
     fml::WeakPtr<IOManager> io_manager;
@@ -126,8 +120,6 @@ class UIDartState : public tonic::DartState {
 
   fml::WeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
-  fml::WeakPtr<HintFreedDelegate> GetHintFreedDelegate() const;
-
   fml::WeakPtr<GrDirectContext> GetResourceContext() const;
 
   fml::WeakPtr<ImageDecoder> GetImageDecoder() const;
@@ -151,6 +143,8 @@ class UIDartState : public tonic::DartState {
 
   bool enable_skparagraph() const;
 
+  bool enable_display_list() const;
+
   template <class T>
   static flutter::SkiaGPUObject<T> CreateGPUObject(sk_sp<T> object) {
     if (!object) {
@@ -171,6 +165,7 @@ class UIDartState : public tonic::DartState {
               std::shared_ptr<IsolateNameServer> isolate_name_server,
               bool is_root_isolate_,
               bool enable_skparagraph,
+              bool enable_display_list,
               const UIDartState::Context& context);
 
   ~UIDartState() override;
@@ -197,6 +192,7 @@ class UIDartState : public tonic::DartState {
   LogMessageCallback log_message_callback_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
   const bool enable_skparagraph_;
+  const bool enable_display_list_;
   UIDartState::Context context_;
 
   void AddOrRemoveTaskObserver(bool add);

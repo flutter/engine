@@ -25,6 +25,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/thread.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/lib/ui/painting/image_generator_registry.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
@@ -228,6 +229,16 @@ class Shell final : public PlatformView::Delegate,
   ///
   const TaskRunners& GetTaskRunners() const override;
 
+  //------------------------------------------------------------------------------
+  /// @brief      Getting the raster thread merger from parent shell, it can be
+  ///             a null RefPtr when it's a root Shell or the
+  ///             embedder_->SupportsDynamicThreadMerging() returns false.
+  ///
+  /// @return     The raster thread merger used by the parent shell.
+  ///
+  const fml::RefPtr<fml::RasterThreadMerger> GetParentRasterThreadMerger()
+      const override;
+
   //----------------------------------------------------------------------------
   /// @brief      Rasterizers may only be accessed on the raster task runner.
   ///
@@ -368,12 +379,28 @@ class Shell final : public PlatformView::Delegate,
   ///
   double GetMainDisplayRefreshRate();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Install a new factory that can match against and decode image
+  ///             data.
+  /// @param[in]  factory   Callback that produces `ImageGenerator`s for
+  ///                       compatible input data.
+  /// @param[in]  priority  The priority used to determine the order in which
+  ///                       factories are tried. Higher values mean higher
+  ///                       priority. The built-in Skia decoders are installed
+  ///                       at priority 0, and so a priority > 0 takes precedent
+  ///                       over the builtin decoders. When multiple decoders
+  ///                       are added with the same priority, those which are
+  ///                       added earlier take precedent.
+  /// @see        `CreateCompatibleGenerator`
+  void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
                          rapidjson::Document*)>;
 
   const TaskRunners task_runners_;
+  const fml::RefPtr<fml::RasterThreadMerger> parent_raster_thread_merger_;
   const Settings settings_;
   DartVMRef vm_;
   mutable std::mutex time_recorder_mutex_;
@@ -437,12 +464,14 @@ class Shell final : public PlatformView::Delegate,
 
   Shell(DartVMRef vm,
         TaskRunners task_runners,
+        fml::RefPtr<fml::RasterThreadMerger> parent_merger,
         Settings settings,
         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
         bool is_gpu_disabled);
 
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
+      fml::RefPtr<fml::RasterThreadMerger> parent_merger,
       TaskRunners task_runners,
       const PlatformData& platform_data,
       Settings settings,
@@ -454,6 +483,7 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> CreateWithSnapshot(
       const PlatformData& platform_data,
       TaskRunners task_runners,
+      fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
       Settings settings,
       DartVMRef vm,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -532,7 +562,8 @@ class Shell final : public PlatformView::Delegate,
       AssetResolver::AssetResolverType type) override;
 
   // |Animator::Delegate|
-  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) override;
+  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+                            uint64_t frame_number) override;
 
   // |Animator::Delegate|
   void OnAnimatorNotifyIdle(int64_t deadline) override;

@@ -26,7 +26,6 @@
 
 #include "engine.h"
 #include "flutter_runner_product_configuration.h"
-#include "thread.h"
 #include "unique_fdio_ns.h"
 
 namespace flutter_runner {
@@ -34,12 +33,12 @@ namespace flutter_runner {
 class Application;
 
 struct ActiveApplication {
-  std::unique_ptr<Thread> thread;
+  std::unique_ptr<fml::Thread> platform_thread;
   std::unique_ptr<Application> application;
 
   ActiveApplication& operator=(ActiveApplication&& other) noexcept {
     if (this != &other) {
-      this->thread.reset(other.thread.release());
+      this->platform_thread.reset(other.platform_thread.release());
       this->application.reset(other.application.release());
     }
     return *this;
@@ -128,6 +127,9 @@ class Application final : public Engine::Delegate,
   void CreateViewWithViewRef(zx::eventpair view_token,
                              fuchsia::ui::views::ViewRefControl control_ref,
                              fuchsia::ui::views::ViewRef view_ref) override;
+
+  // |fuchsia::ui::app::ViewProvider|
+  void CreateView2(fuchsia::ui::app::CreateView2Args view_args) override;
 
   // |flutter::Engine::Delegate|
   void OnEngineTerminate(const Engine* holder) override;

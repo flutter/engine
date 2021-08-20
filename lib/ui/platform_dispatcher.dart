@@ -32,6 +32,9 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
 
 /// Signature for [PlatformDispatcher.onKeyData].
+///
+/// The callback should return true if the key event has been handled by the
+/// framework and should not be propagated further.
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
@@ -52,6 +55,9 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
 /// Signature for [PlatformDispatcher.onConfigurationChanged].
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
+
+// A gesture setting value that indicates it has not been set by the engine.
+const double _kUnsetGestureSetting = -1.0;
 
 /// Platform event dispatcher singleton.
 ///
@@ -176,6 +182,7 @@ class PlatformDispatcher {
     double systemGestureInsetRight,
     double systemGestureInsetBottom,
     double systemGestureInsetLeft,
+    double physicalTouchSlop,
     List<double> displayFeaturesBounds,
     List<int> displayFeaturesType,
     List<int> displayFeaturesState,
@@ -212,6 +219,10 @@ class PlatformDispatcher {
         right: math.max(0.0, systemGestureInsetRight),
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
+      ),
+      // -1 is used as a sentinel for an undefined touch slop
+      gestureSettings: GestureSettings(
+        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
       ),
       displayFeatures: _decodeDisplayFeatures(
         bounds: displayFeaturesBounds,
@@ -382,6 +393,9 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
+  ///
+  /// The callback should return true if the key event has been handled by the
+  /// framework and should not be propagated further.
   KeyDataCallback? get onKeyData => _onKeyData;
   KeyDataCallback? _onKeyData;
   Zone _onKeyDataZone = Zone.root;
@@ -913,6 +927,29 @@ class PlatformDispatcher {
     _onSemanticsActionZone = Zone.current;
   }
 
+  // Called from the engine via hooks.dart.
+  void _updateFrameData(int frameNumber) {
+    final FrameData previous = _frameData;
+    if (previous.frameNumber == frameNumber) {
+      return;
+    }
+    _frameData = FrameData._(frameNumber: frameNumber);
+    _invoke(onFrameDataChanged, _onFrameDataChangedZone);
+  }
+
+  /// The [FrameData] object for the current frame.
+  FrameData get frameData => _frameData;
+  FrameData _frameData = const FrameData._();
+
+  /// A callback that is invoked when the window updates the [FrameData].
+  VoidCallback? get onFrameDataChanged => _onFrameDataChanged;
+  VoidCallback? _onFrameDataChanged;
+  Zone _onFrameDataChangedZone = Zone.root;
+  set onFrameDataChanged(VoidCallback? callback) {
+    _onFrameDataChanged = callback;
+    _onFrameDataChangedZone = Zone.current;
+  }
+
   // Called from the engine, via hooks.dart
   void _dispatchSemanticsAction(int id, int action, ByteData? args) {
     _invoke3<int, SemanticsAction, ByteData?>(
@@ -1033,6 +1070,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
   });
 
@@ -1046,6 +1084,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
@@ -1057,6 +1096,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
       displayFeatures: displayFeatures ?? this.displayFeatures,
     );
   }
@@ -1130,6 +1170,12 @@ class ViewConfiguration {
   /// phone sensor housings).
   final WindowPadding padding;
 
+  /// Additional configuration for touch gestures performed on this view.
+  ///
+  /// For example, the touch slop defined in physical pixels may be provided
+  /// by the gesture settings and should be preferred over the framework
+  /// touch slop constant.
+  final GestureSettings gestureSettings;
 
   /// {@template dart.ui.ViewConfiguration.displayFeatures}
   /// Areas of the display that are obstructed by hardware features.
@@ -1185,6 +1231,12 @@ enum FramePhase {
   ///
   /// See also [FrameTiming.rasterDuration].
   rasterFinish,
+
+  /// When the raster thread finished rasterizing a frame in wall-time.
+  ///
+  /// This is useful for correlating time raster finish time with the system
+  /// clock to integrate with other profiling tools.
+  rasterFinishWallTime,
 }
 
 /// Time-related performance metrics of a frame.
@@ -1213,6 +1265,7 @@ class FrameTiming {
     required int buildFinish,
     required int rasterStart,
     required int rasterFinish,
+    required int rasterFinishWallTime,
     int frameNumber = -1,
   }) {
     return FrameTiming._(<int>[
@@ -1221,6 +1274,7 @@ class FrameTiming {
       buildFinish,
       rasterStart,
       rasterFinish,
+      rasterFinishWallTime,
       frameNumber,
     ]);
   }

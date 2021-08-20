@@ -2,14 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of engine;
+import 'dart:html' as html;
+
+import '../browser_detection.dart';
 
 /// Various types of inputs used in text fields.
 ///
 /// These types are coming from Flutter's [TextInputType]. Currently, we don't
 /// support all the types. We fallback to [EngineInputType.text] when Flutter
 /// sends a type that isn't supported.
-// TODO(flutter_web): Support more types.
+// TODO(mdebbar): Support more types.
 abstract class EngineInputType {
   const EngineInputType();
 
@@ -93,7 +95,7 @@ class NoTextInputType extends EngineInputType {
   const NoTextInputType();
 
   @override
-  final String inputmodeAttribute = 'none';
+  String get inputmodeAttribute => 'none';
 }
 
 /// Single-line text input type.
@@ -101,7 +103,7 @@ class TextInputType extends EngineInputType {
   const TextInputType();
 
   @override
-  final String inputmodeAttribute = 'text';
+  String get inputmodeAttribute => 'text';
 }
 
 /// Numeric input type.
@@ -111,7 +113,7 @@ class NumberInputType extends EngineInputType {
   const NumberInputType();
 
   @override
-  final String inputmodeAttribute = 'numeric';
+  String get inputmodeAttribute => 'numeric';
 }
 
 /// Decimal input type.
@@ -122,7 +124,7 @@ class DecimalInputType extends EngineInputType {
   const DecimalInputType();
 
   @override
-  final String inputmodeAttribute = 'decimal';
+  String get inputmodeAttribute => 'decimal';
 }
 
 /// Phone number input type.
@@ -130,7 +132,7 @@ class PhoneInputType extends EngineInputType {
   const PhoneInputType();
 
   @override
-  final String inputmodeAttribute = 'tel';
+  String get inputmodeAttribute => 'tel';
 }
 
 /// Email address input type.
@@ -138,7 +140,7 @@ class EmailInputType extends EngineInputType {
   const EmailInputType();
 
   @override
-  final String inputmodeAttribute = 'email';
+  String get inputmodeAttribute => 'email';
 }
 
 /// URL input type.
@@ -146,7 +148,7 @@ class UrlInputType extends EngineInputType {
   const UrlInputType();
 
   @override
-  final String inputmodeAttribute = 'url';
+  String get inputmodeAttribute => 'url';
 }
 
 /// Multi-line text input type.
@@ -154,7 +156,7 @@ class MultilineInputType extends EngineInputType {
   const MultilineInputType();
 
   @override
-  final String? inputmodeAttribute = null;
+  String? get inputmodeAttribute => null;
 
   @override
   bool get submitActionOnEnter => false;

@@ -9,6 +9,7 @@
 
 #include <fuchsia/intl/cpp/fidl.h>
 #include <fuchsia/io/cpp/fidl.h>
+#include <fuchsia/ui/composition/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
@@ -21,18 +22,16 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
+#include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
-#include "default_session_connection.h"
+#include "flatland_connection.h"
+#include "flatland_external_view_embedder.h"
 #include "flutter_runner_product_configuration.h"
 #include "fuchsia_external_view_embedder.h"
+#include "gfx_session_connection.h"
 #include "isolate_configurator.h"
-#include "thread.h"
 #include "vulkan_surface_producer.h"
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-#include "flutter/flow/scene_update_context.h"  // nogncheck
-#endif
 
 namespace flutter_runner {
 
@@ -49,6 +48,9 @@ class Engine final {
     virtual void OnEngineTerminate(const Engine* holder) = 0;
   };
 
+  static flutter::ThreadHost CreateThreadHost(const std::string& name_prefix);
+
+  // Gfx connection ctor.
   Engine(Delegate& delegate,
          std::string thread_label,
          std::shared_ptr<sys::ServiceDirectory> svc,
@@ -59,6 +61,19 @@ class Engine final {
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
          FlutterRunnerProductConfiguration product_config);
+
+  // Flatland connection ctor.
+  Engine(Delegate& delegate,
+         std::string thread_label,
+         std::shared_ptr<sys::ServiceDirectory> svc,
+         std::shared_ptr<sys::ServiceDirectory> runner_services,
+         flutter::Settings settings,
+         fuchsia::ui::views::ViewCreationToken view_creation_token,
+         scenic::ViewRefPair view_ref_pair,
+         UniqueFDIONS fdio_ns,
+         fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
+         FlutterRunnerProductConfiguration product_config);
+
   ~Engine();
 
   // Returns the Dart return code for the root isolate if one is present. This
@@ -73,14 +88,21 @@ class Engine final {
   Delegate& delegate_;
 
   const std::string thread_label_;
-  std::array<Thread, 3> threads_;
+  flutter::ThreadHost thread_host_;
 
-  std::shared_ptr<DefaultSessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
+
+  // Gfx specific classes.
+  fuchsia::ui::views::ViewToken view_token_;
+  std::shared_ptr<GfxSessionConnection> session_connection_;
   std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  std::shared_ptr<flutter::SceneUpdateContext> legacy_external_view_embedder_;
-#endif
+
+  // Flatland specific classes.
+  fuchsia::ui::views::ViewCreationToken view_creation_token_;
+  std::shared_ptr<FlatlandConnection> flatland_connection_;
+  std::shared_ptr<FlatlandExternalViewEmbedder> flatland_view_embedder_;
+
+  scenic::ViewRefPair view_ref_pair_;
 
   std::unique_ptr<IsolateConfigurator> isolate_configurator_;
   std::unique_ptr<flutter::Shell> shell_;
@@ -90,12 +112,18 @@ class Engine final {
 
   zx::event vsync_event_;
 
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  bool use_legacy_renderer_ = true;
-#endif
   bool intercept_all_input_ = false;
 
   fml::WeakPtrFactory<Engine> weak_factory_;
+
+  void Initialize(
+      bool use_flatland,
+      std::shared_ptr<sys::ServiceDirectory> svc,
+      std::shared_ptr<sys::ServiceDirectory> runner_services,
+      flutter::Settings settings,
+      UniqueFDIONS fdio_ns,
+      fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
+      FlutterRunnerProductConfiguration product_config);
 
   static void WarmupSkps(
       fml::BasicTaskRunner* concurrent_task_runner,

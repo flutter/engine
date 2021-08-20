@@ -12,7 +12,10 @@ import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine.dart' show domRenderer;
+import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/semantics.dart';
+import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'semantics_tester.dart';
@@ -239,7 +242,7 @@ void _testEngineSemanticsOwner() {
     // Verify the interactions.
     expect(
       mockSemanticsEnabler.shouldEnableSemanticsEvents,
-      [pointerEvent],
+      <html.Event>[pointerEvent],
     );
   });
 
@@ -834,7 +837,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="2" aria-valuemin="1">
 </sem>''');
 
-    final html.InputElement input = appHostNode.querySelector('input') as html.InputElement;
+    final html.InputElement input = appHostNode.querySelector('input')! as html.InputElement;
     input.value = '2';
     input.dispatchEvent(html.Event('change'));
 
@@ -868,7 +871,7 @@ void _testIncrementables() {
   <input aria-valuenow="1" aria-valuetext="d" aria-valuemax="1" aria-valuemin="0">
 </sem>''');
 
-    final html.InputElement input = appHostNode.querySelector('input') as html.InputElement;
+    final html.InputElement input = appHostNode.querySelector('input')! as html.InputElement;
     input.value = '0';
     input.dispatchEvent(html.Event('change'));
 
@@ -877,7 +880,7 @@ void _testIncrementables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a node that can both increment and decrement', () async {
@@ -908,7 +911,7 @@ void _testIncrementables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 }
 
@@ -937,7 +940,7 @@ void _testTextField() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   // TODO(yjbanov): this test will need to be adjusted for Safari when we add
@@ -973,10 +976,10 @@ void _testTextField() {
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  }, // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: (browserEngine != BrowserEngine.blink));
+  }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
+      skip: browserEngine != BrowserEngine.blink);
 }
 
 void _testCheckables() {
@@ -1006,7 +1009,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a switched on disabled switch element', () async {
@@ -1034,7 +1037,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a switched off switch element', () async {
@@ -1062,7 +1065,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a checked checkbox', () async {
@@ -1091,7 +1094,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a checked disabled checkbox', () async {
@@ -1119,7 +1122,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders an unchecked checkbox', () async {
@@ -1147,7 +1150,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a checked radio button', () async {
@@ -1177,7 +1180,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a checked disabled radio button', () async {
@@ -1206,7 +1209,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders an unchecked checkbox', () async {
@@ -1235,7 +1238,7 @@ void _testCheckables() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 }
 
@@ -1264,7 +1267,7 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders a disabled tappable widget', () async {
@@ -1291,7 +1294,7 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 }
 
@@ -1319,7 +1322,7 @@ void _testImage() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders an image with a child node and with a label', () async {
@@ -1352,7 +1355,7 @@ void _testImage() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders an image with no child nodes without a label', () async {
@@ -1376,7 +1379,7 @@ void _testImage() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('renders an image with a child node and without a label', () async {
@@ -1408,7 +1411,7 @@ void _testImage() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 }
 
@@ -1436,7 +1439,7 @@ void _testLiveRegion() {
 
     semantics().semanticsEnabled = false;
   },
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine == BrowserEngine.edge);
 
   test('does not render a live region if there is no label', () async {

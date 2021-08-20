@@ -17,6 +17,24 @@ shell_gpu_configuration("android_gpu_configuration") {
   enable_metal = false
 }
 
+source_set("image_generator") {
+  sources = [
+    "android_image_generator.cc",
+    "android_image_generator.h",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/lib/ui:ui",
+    "//third_party/skia",
+  ]
+
+  libs = [
+    "android",
+    "jnigraphics",
+  ]
+}
+
 shared_library("flutter_shell_native") {
   visibility = [ ":*" ]
 
@@ -54,6 +72,7 @@ shared_library("flutter_shell_native") {
   deps = [
     ":android_gpu_configuration",
     ":icudtl_object",
+    ":image_generator",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/common/graphics",
@@ -241,6 +260,7 @@ android_java_sources = [
   "io/flutter/util/PathUtils.java",
   "io/flutter/util/Preconditions.java",
   "io/flutter/util/Predicate.java",
+  "io/flutter/util/ViewUtils.java",
   "io/flutter/view/AccessibilityBridge.java",
   "io/flutter/view/AccessibilityViewEmbedder.java",
   "io/flutter/view/FlutterCallbackInformation.java",
@@ -315,6 +335,18 @@ action("flutter_shell_java") {
         _rebased_lambda_jar,
       ] + rebase_path(embedding_dependencies_jars, root_build_dir)
 
+  if (host_os == "mac") {
+    _javacbin =
+        rebase_path("//third_party/java/openjdk/Contents/Home/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/Contents/Home/bin/jar")
+  } else if (host_os == "win") {
+    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac.exe")
+    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar.exe")
+  } else {
+    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar")
+  }
+
   args = [
     "--depfile=$_rebased_depfile",
     "--jar-path=$_rebased_jar_path",
@@ -322,6 +354,9 @@ action("flutter_shell_java") {
     "--jar-source-base-dir=$_rebased_current_path",
     "--classpath=$_rebased_classpath",
     "--bootclasspath=$_rebased_android_sdk_jar",
+    "--java-version=1.8",  # Java 8 is required for backward compatibility.
+    "--jar-bin=$_jarbin",
+    "--javac-bin=$_javacbin",
   ]
 
   args += rebase_path(sources, root_build_dir)
@@ -464,10 +499,12 @@ action("robolectric_tests") {
     "test/io/flutter/embedding/android/FlutterAndroidComponentTest.java",
     "test/io/flutter/embedding/android/FlutterFragmentActivityTest.java",
     "test/io/flutter/embedding/android/FlutterFragmentTest.java",
+    "test/io/flutter/embedding/android/FlutterTextureViewTest.java",
     "test/io/flutter/embedding/android/FlutterViewTest.java",
     "test/io/flutter/embedding/android/KeyChannelResponderTest.java",
     "test/io/flutter/embedding/android/KeyboardManagerTest.java",
     "test/io/flutter/embedding/android/RobolectricFlutterActivity.java",
+    "test/io/flutter/embedding/android/SplashShadowResources.java",
     "test/io/flutter/embedding/engine/FlutterEngineCacheTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineConnectionRegistryTest.java",
     "test/io/flutter/embedding/engine/FlutterEngineGroupComponentTest.java",
@@ -503,6 +540,7 @@ action("robolectric_tests") {
     "test/io/flutter/plugins/GeneratedPluginRegistrant.java",
     "test/io/flutter/util/FakeKeyEvent.java",
     "test/io/flutter/util/PreconditionsTest.java",
+    "test/io/flutter/util/ViewUtilsTest.java",
     "test/io/flutter/view/AccessibilityBridgeTest.java",
   ]
 
@@ -528,6 +566,18 @@ action("robolectric_tests") {
   _rebased_srcjars = rebase_path(_jar_dependencies, root_build_dir)
   _rebased_additional_files = rebase_path(additional_jar_files, root_build_dir)
 
+  if (host_os == "mac") {
+    _javacbin =
+        rebase_path("//third_party/java/openjdk/Contents/Home/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/Contents/Home/bin/jar")
+  } else if (host_os == "win") {
+    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac.exe")
+    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar.exe")
+  } else {
+    _javacbin = rebase_path("//third_party/java/openjdk/bin/javac")
+    _jarbin = rebase_path("//third_party/java/openjdk/bin/jar")
+  }
+
   args = [
     "--depfile=$_rebased_depfile",
     "--jar-path=$_rebased_jar_path",
@@ -535,12 +585,14 @@ action("robolectric_tests") {
     "--jar-source-base-dir=$_rebased_current_path",
     "--java-srcjars=$_rebased_srcjars",
     "--additional-jar-files=$_rebased_additional_files",
+    "--jar-bin=$_jarbin",
+    "--javac-bin=$_javacbin",
   ]
 
   args += rebase_path(sources, root_build_dir)
 
   deps = [
-    ":android",
+    ":android_jar",
     ":flutter_shell_java",
   ]
 }
@@ -557,7 +609,7 @@ zip_bundle("android_symbols") {
   deps = [ ":flutter_shell_native" ]
 }
 
-zip_bundle("android") {
+zip_bundle("flutter_jar_zip") {
   output = "$android_zip_archive_dir/artifacts.zip"
   files = [
     {
@@ -566,11 +618,7 @@ zip_bundle("android") {
     },
   ]
 
-  deps = [
-    ":android_jar",
-    ":android_javadoc",
-    ":android_symbols",
-  ]
+  deps = [ ":android_jar" ]
 
   if (current_cpu == "x86" || current_cpu == "x64") {
     files += [
@@ -614,4 +662,47 @@ zip_bundle("android_javadoc") {
     },
   ]
   deps = [ ":gen_android_javadoc" ]
+}
+
+if (target_cpu != "x86") {
+  zip_bundle("gen_snapshot") {
+    gen_snapshot_bin = "gen_snapshot"
+    gen_snapshot_path = rebase_path("$root_out_dir/clang_x64/$gen_snapshot_bin")
+
+    if (host_os == "linux") {
+      output = "$android_zip_archive_dir/linux-x64.zip"
+    } else if (host_os == "mac") {
+      output = "$android_zip_archive_dir/darwin-x64.zip"
+    } else if (host_os == "win") {
+      output = "$android_zip_archive_dir/windows-x64.zip"
+      gen_snapshot_bin = "gen_snapshot.exe"
+      gen_snapshot_path = rebase_path("$root_out_dir/$gen_snapshot_bin")
+    }
+
+    files = [
+      {
+        source = gen_snapshot_path
+        destination = gen_snapshot_bin
+      },
+    ]
+
+    deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+  }
+}
+
+group("android") {
+  deps = [
+    ":android_javadoc",
+    ":android_symbols",
+    ":flutter_jar_zip",
+  ]
+  if (target_cpu != "x86") {
+    deps += [ ":gen_snapshot" ]
+  }
+
+  # We only run the robolectric tests for android_debug_unopt (arm CPU), and
+  # the target is relatively expensive to build.
+  if (flutter_runtime_mode == "debug" && current_cpu == "arm") {
+    deps += [ ":robolectric_tests" ]
+  }
 }

@@ -1,4 +1,4 @@
-Signature: 2dc87702182320195d84ad69ffc1abcf
+Signature: 98f24a251a698f009bfd02b1a2f64472
 
 UNUSED LICENSES:
 
@@ -255,6 +255,7 @@ LIBRARY: abseil-cpp
 LIBRARY: angle
 LIBRARY: boringssl
 LIBRARY: khronos
+LIBRARY: libwebp
 LIBRARY: vulkan
 LIBRARY: vulkan-deps
 LIBRARY: wuffs
@@ -1198,6 +1199,7 @@ FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.json
 FILE: ../../../third_party/khronos/GLES2/gl2platform.h
 FILE: ../../../third_party/khronos/GLES3/gl3platform.h
+FILE: ../../../third_party/libwebp/gradlew
 FILE: ../../../third_party/vulkan/include/vulkan/vk_platform.h
 FILE: ../../../third_party/vulkan/include/vulkan/vulkan.h
 FILE: ../../../third_party/vulkan/include/vulkan/vulkan_android.h
@@ -9785,9 +9787,6 @@ FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_ia32.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/stub_code_compiler_x64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_arm.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_arm64.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/type_testing_stubs_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_arm64.cc
 FILE: ../../../third_party/dart/runtime/vm/constants_ia32.cc
@@ -9904,11 +9903,18 @@ ORIGIN: ../../../third_party/dart/benchmarks/DartCLIStartup/dart/DartCLIStartup.
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/benchmarks/DartCLIStartup/dart/DartCLIStartup.dart
 FILE: ../../../third_party/dart/benchmarks/DartCLIStartup/dart2/DartCLIStartup.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart/EventLoopLatencyRegexp.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart/regexp_benchmark.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart2/regexp_benchmark.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart/IsolateFibonacci.dart
+FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart2/IsolateFibonacci.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/MapLookup.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/MapLookup.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/generate_maps.dart
+FILE: ../../../third_party/dart/benchmarks/ObjectHash/dart/ObjectHash.dart
+FILE: ../../../third_party/dart/benchmarks/ObjectHash/dart2/ObjectHash.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart/SDKArtifactSizes.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart2/SDKArtifactSizes.dart
 FILE: ../../../third_party/dart/benchmarks/SendPort/dart/SendPort.dart
@@ -9922,20 +9928,31 @@ FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool100.dart
 FILE: ../../../third_party/dart/runtime/bin/abstract_socket_test.cc
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory_fuchsia.cc
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory_posix.cc
+FILE: ../../../third_party/dart/runtime/bin/virtual_memory_win.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/asm_intrinsifier_test.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.cc
 FILE: ../../../third_party/dart/runtime/vm/compiler/compiler_timings.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/ffi/range.h
 FILE: ../../../third_party/dart/runtime/vm/compiler/relocation_test.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/safepoint_test.cc
+FILE: ../../../third_party/dart/runtime/vm/message_snapshot.cc
+FILE: ../../../third_party/dart/runtime/vm/message_snapshot.h
+FILE: ../../../third_party/dart/runtime/vm/object_graph_copy.cc
+FILE: ../../../third_party/dart/runtime/vm/object_graph_copy.h
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.cc
 FILE: ../../../third_party/dart/runtime/vm/pending_deopts.h
+FILE: ../../../third_party/dart/runtime/vm/thread_interrupter_android_arm.S
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.cc
 FILE: ../../../third_party/dart/runtime/vm/virtual_memory_compressed.h
 FILE: ../../../third_party/dart/samples/ffi/resource_management/utf8_helpers.dart
 FILE: ../../../third_party/dart/samples_2/ffi/resource_management/utf8_helpers.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_runtime_metrics.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/late_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/core/enum.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/allocation.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/union.dart
 ----------------------------------------------------------------------------------------------------
@@ -9986,6 +10003,9 @@ FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson350KB/dart/latenc
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson350KB/dart2/EventLoopLatencyJson350KB.dart
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson350KB/dart2/json_benchmark.dart
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyJson350KB/dart2/latency.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart/latency.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart2/EventLoopLatencyRegexp.dart
+FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart2/latency.dart
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart/ListCopy.dart
 FILE: ../../../third_party/dart/benchmarks/ListCopy/dart2/ListCopy.dart
 FILE: ../../../third_party/dart/benchmarks/MD5/dart/md5.dart
@@ -10341,7 +10361,6 @@ FILE: ../../../third_party/dart/runtime/vm/cpu_x64.cc
 FILE: ../../../third_party/dart/runtime/vm/cpuinfo_linux.cc
 FILE: ../../../third_party/dart/runtime/vm/cpuinfo_macos.cc
 FILE: ../../../third_party/dart/runtime/vm/dart_api_impl_test.cc
-FILE: ../../../third_party/dart/runtime/vm/dart_api_message.cc
 FILE: ../../../third_party/dart/runtime/vm/dart_api_message.h
 FILE: ../../../third_party/dart/runtime/vm/dart_api_state.h
 FILE: ../../../third_party/dart/runtime/vm/datastream.h
@@ -10420,13 +10439,11 @@ FILE: ../../../third_party/dart/runtime/vm/proccpuinfo.cc
 FILE: ../../../third_party/dart/runtime/vm/proccpuinfo.h
 FILE: ../../../third_party/dart/runtime/vm/raw_object.cc
 FILE: ../../../third_party/dart/runtime/vm/raw_object.h
-FILE: ../../../third_party/dart/runtime/vm/raw_object_snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/scopes.cc
 FILE: ../../../third_party/dart/runtime/vm/scopes.h
 FILE: ../../../third_party/dart/runtime/vm/scopes_test.cc
 FILE: ../../../third_party/dart/runtime/vm/snapshot.cc
 FILE: ../../../third_party/dart/runtime/vm/snapshot.h
-FILE: ../../../third_party/dart/runtime/vm/snapshot_ids.h
 FILE: ../../../third_party/dart/runtime/vm/snapshot_test.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_frame.cc
 FILE: ../../../third_party/dart/runtime/vm/stack_frame_test.cc
@@ -16791,6 +16808,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -16803,7 +16822,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -16917,6 +16938,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -16929,7 +16952,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17048,6 +17073,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17060,7 +17087,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17178,6 +17207,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17190,7 +17221,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17314,6 +17347,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17326,7 +17361,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17449,6 +17486,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17461,7 +17500,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17580,6 +17621,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17592,7 +17635,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17710,6 +17755,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17722,7 +17769,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17813,6 +17862,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17825,7 +17876,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -17983,6 +18036,8 @@ FILE: ../../../third_party/icu/fuzzers/icu_number_format_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_to_case_fuzzer.cc
 FILE: ../../../third_party/icu/fuzzers/icu_ucasemap_fuzzer.cc
 FILE: ../../../third_party/icu/ios/icudtl.dat
+FILE: ../../../third_party/icu/patches/Collator_getKeywordValues.patch
+FILE: ../../../third_party/icu/patches/ICUService_getKey.patch
 FILE: ../../../third_party/icu/patches/ardatepattern.patch
 FILE: ../../../third_party/icu/patches/atomic_template_instantiation.patch
 FILE: ../../../third_party/icu/patches/cjdict.patch
@@ -17995,7 +18050,9 @@ FILE: ../../../third_party/icu/patches/isvalidenum.patch
 FILE: ../../../third_party/icu/patches/khmer-dictbe.patch
 FILE: ../../../third_party/icu/patches/locale1.patch
 FILE: ../../../third_party/icu/patches/locale_google.patch
+FILE: ../../../third_party/icu/patches/locid_operators.patch
 FILE: ../../../third_party/icu/patches/restrace.patch
+FILE: ../../../third_party/icu/patches/ultag_parse_Null.patch
 FILE: ../../../third_party/icu/patches/wordbrk.patch
 FILE: ../../../third_party/icu/patches/wpo.patch
 FILE: ../../../third_party/icu/source/data/in/coll/ucadata-implicithan.icu
@@ -22260,6 +22317,7 @@ ORIGIN: ../../../third_party/libwebp/COPYING
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/libwebp/.mailmap
 FILE: ../../../third_party/libwebp/Makefile.vc
+FILE: ../../../third_party/libwebp/cmake/WebPConfig.cmake.in
 FILE: ../../../third_party/libwebp/cmake/config.h.in
 FILE: ../../../third_party/libwebp/doc/TODO
 FILE: ../../../third_party/libwebp/doc/template.html
@@ -22274,6 +22332,10 @@ FILE: ../../../third_party/libwebp/src/libwebpdecoder.pc.in
 FILE: ../../../third_party/libwebp/src/libwebpdecoder.rc
 FILE: ../../../third_party/libwebp/src/mux/libwebpmux.pc.in
 FILE: ../../../third_party/libwebp/src/mux/libwebpmux.rc
+FILE: ../../../third_party/libwebp/webp_js/index.html
+FILE: ../../../third_party/libwebp/webp_js/index_wasm.html
+FILE: ../../../third_party/libwebp/webp_js/test_webp_js.webp
+FILE: ../../../third_party/libwebp/webp_js/test_webp_wasm.webp
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2010, Google Inc. All rights reserved.
 
@@ -22327,8 +22389,6 @@ FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_sse2.c
 FILE: ../../../third_party/libwebp/src/dsp/lossless_enc_sse41.c
 FILE: ../../../third_party/libwebp/src/dsp/rescaler_neon.c
 FILE: ../../../third_party/libwebp/src/dsp/rescaler_sse2.c
-FILE: ../../../third_party/libwebp/src/enc/delta_palettization_enc.c
-FILE: ../../../third_party/libwebp/src/enc/delta_palettization_enc.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2015 Google Inc. All Rights Reserved.
 
@@ -22374,6 +22434,7 @@ FILE: ../../../third_party/libwebp/imageio/image_enc.h
 FILE: ../../../third_party/libwebp/imageio/imageio_util.c
 FILE: ../../../third_party/libwebp/imageio/imageio_util.h
 FILE: ../../../third_party/libwebp/src/dsp/common_sse2.h
+FILE: ../../../third_party/libwebp/src/dsp/common_sse41.h
 FILE: ../../../third_party/libwebp/src/dsp/dec_msa.c
 FILE: ../../../third_party/libwebp/src/dsp/enc_msa.c
 FILE: ../../../third_party/libwebp/src/dsp/filters_msa.c
@@ -22386,6 +22447,53 @@ FILE: ../../../third_party/libwebp/src/enc/predictor_enc.c
 FILE: ../../../third_party/libwebp/src/mux/animi.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2016 Google Inc. All Rights Reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of Google nor the names of its contributors may
+    be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libwebp
+ORIGIN: ../../../third_party/libwebp/extras/vwebp_sdl.c + ../../../third_party/libwebp/COPYING
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/libwebp/extras/vwebp_sdl.c
+FILE: ../../../third_party/libwebp/extras/webp_to_sdl.c
+FILE: ../../../third_party/libwebp/extras/webp_to_sdl.h
+FILE: ../../../third_party/libwebp/imageio/pnmdec.c
+FILE: ../../../third_party/libwebp/imageio/pnmdec.h
+FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/filters_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/ssim.c
+FILE: ../../../third_party/libwebp/src/dsp/ssim_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv_neon.c
+FILE: ../../../third_party/libwebp/src/enc/backward_references_cost_enc.c
+----------------------------------------------------------------------------------------------------
+Copyright 2017 Google Inc. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -22493,16 +22601,12 @@ FILE: ../../../third_party/libwebp/imageio/webpdec.c
 FILE: ../../../third_party/libwebp/imageio/webpdec.h
 FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_mips_dsp_r2.c
 FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_sse2.c
-FILE: ../../../third_party/libwebp/src/dsp/argb.c
-FILE: ../../../third_party/libwebp/src/dsp/argb_mips_dsp_r2.c
-FILE: ../../../third_party/libwebp/src/dsp/argb_sse2.c
 FILE: ../../../third_party/libwebp/src/dsp/cost.c
 FILE: ../../../third_party/libwebp/src/dsp/cost_mips32.c
 FILE: ../../../third_party/libwebp/src/dsp/cost_mips_dsp_r2.c
 FILE: ../../../third_party/libwebp/src/dsp/dec_clip_tables.c
 FILE: ../../../third_party/libwebp/src/dsp/dec_mips32.c
 FILE: ../../../third_party/libwebp/src/dsp/dec_mips_dsp_r2.c
-FILE: ../../../third_party/libwebp/src/dsp/enc_avx2.c
 FILE: ../../../third_party/libwebp/src/dsp/enc_mips32.c
 FILE: ../../../third_party/libwebp/src/dsp/enc_mips_dsp_r2.c
 FILE: ../../../third_party/libwebp/src/dsp/filters_mips_dsp_r2.c
@@ -22518,6 +22622,7 @@ FILE: ../../../third_party/libwebp/src/dsp/upsampling_mips_dsp_r2.c
 FILE: ../../../third_party/libwebp/src/dsp/yuv_mips32.c
 FILE: ../../../third_party/libwebp/src/dsp/yuv_mips_dsp_r2.c
 FILE: ../../../third_party/libwebp/src/dsp/yuv_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/yuv_sse41.c
 FILE: ../../../third_party/libwebp/src/enc/near_lossless_enc.c
 FILE: ../../../third_party/libwebp/src/enc/picture_csp_enc.c
 FILE: ../../../third_party/libwebp/src/enc/picture_psnr_enc.c
@@ -22620,6 +22725,7 @@ FILE: ../../../third_party/libwebp/src/dsp/filters.c
 FILE: ../../../third_party/libwebp/src/dsp/upsampling.c
 FILE: ../../../third_party/libwebp/src/dsp/upsampling_neon.c
 FILE: ../../../third_party/libwebp/src/dsp/upsampling_sse2.c
+FILE: ../../../third_party/libwebp/src/dsp/upsampling_sse41.c
 FILE: ../../../third_party/libwebp/src/enc/alpha_enc.c
 FILE: ../../../third_party/libwebp/src/enc/analysis_enc.c
 FILE: ../../../third_party/libwebp/src/enc/config_enc.c
@@ -22735,12 +22841,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: libwebp
-ORIGIN: ../../../third_party/libwebp/src/dsp/alpha_processing_neon.c + ../../../third_party/libwebp/COPYING
+ORIGIN: ../../../third_party/libwebp/src/dsp/cost_neon.c + ../../../third_party/libwebp/COPYING
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/libwebp/src/dsp/alpha_processing_neon.c
-FILE: ../../../third_party/libwebp/src/dsp/filters_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/cost_neon.c
+FILE: ../../../third_party/libwebp/src/dsp/quant.h
 ----------------------------------------------------------------------------------------------------
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2018 Google Inc. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -24797,4 +24903,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 375
+Total license count: 376

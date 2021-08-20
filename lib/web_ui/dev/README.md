@@ -31,9 +31,16 @@ If you don't want to add `felt` to your path, you can still invoke it using a re
 
 ## Speeding up your builds and tests
 
-If you are a Google employee, you can use an internal instance of Goma to parallelize your builds. Because Goma compiles code on remote servers, this option is effective even on low-powered laptops.
+If you are a Google employee, you can use an internal instance of Goma (go/ma)
+to parallelize your builds. Because Goma compiles code on remote servers, this
+option is particularly effective for building on low-powered laptops.
 
-By default, when compiling Dart code to JavaScript, we use 8 `dart2js` workers.
+Concurrency of various build steps can be configured via environment variables:
+
+- `FELT_DART2JS_CONCURRENCY` specifies the number of concurrent `dart2js`
+  processes used to compile tests. Default value is 8.
+- `FELT_TEST_CONCURRENCY` specifies the number of tests run concurrently.
+  Default value is 10.
 
 ## Running web engine tests
 
@@ -163,7 +170,9 @@ _**Note**: if `FELT_USE_SNAPSHOT` is omitted or has any value other than "false"
 
 ## Upgrade Browser Version
 
-Since the engine code and infra recipes do not live in the same repository there are few steps to follow in order to upgrade a browser's version. For now these instructins are most relevant to Chrome.
+Since the engine code and infra recipes do not live in the same repository
+there are few steps to follow in order to upgrade a browser's version. For
+now these instructins are most relevant to Chrome.
 
 1. Dowload the binaries for the new browser/driver for each operaing system (macOS, linux, windows).
 2. Create CIPD packages for these packages. (More documentation is available for Googlers. go/cipd-flutter-web)
@@ -174,7 +183,7 @@ Note that for LUCI builders, for Chrome both unit and integration tests are usin
 Some useful links:
 
 1. For Chrome downloads [link](https://commondatastorage.googleapis.com/chromium-browser-snapshots/index.html)
-2. Browser and driver CIPD [packages](https://chrome-infra-packages.appspot.com/p/flutter_internal) (Note: Access rights are restricted for these packages.)
+2. Browser and driver CIPD [packages](https://chrome-infra-packages.appspot.com/p/flutter_internal) (note: access is restricted for these packages)
 3. LUCI web [recipe](https://flutter.googlesource.com/recipes/+/refs/heads/master/recipes/web_engine.py)
 4. More general reading on CIPD packages [link](https://chromium.googlesource.com/chromium/src.git/+/master/docs/cipd.md#What-is-CIPD)
 

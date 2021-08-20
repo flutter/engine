@@ -24,6 +24,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
 #include "flutter/shell/common/pipeline.h"
+#include "flutter/shell/common/snapshot_surface_producer.h"
 
 namespace flutter {
 
@@ -83,6 +84,10 @@ class Rasterizer final : public SnapshotDelegate {
     /// Task runners used by the shell.
     virtual const TaskRunners& GetTaskRunners() const = 0;
 
+    /// The raster thread merger from parent shell's rasterizer.
+    virtual const fml::RefPtr<fml::RasterThreadMerger>
+    GetParentRasterThreadMerger() const = 0;
+
     /// Accessor for the shell's GPU sync switch, which determines whether GPU
     /// operations are allowed on the current thread.
     ///
@@ -98,24 +103,9 @@ class Rasterizer final : public SnapshotDelegate {
   ///             currently only created by the shell (which also sets itself up
   ///             as the rasterizer delegate).
   ///
-  /// @param[in]  delegate            The rasterizer delegate.
+  /// @param[in]  delegate                   The rasterizer delegate.
   ///
   Rasterizer(Delegate& delegate);
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a new instance of a rasterizer. Rasterizers may only
-  ///             be created on the raster task runner. Rasterizers are
-  ///             currently only created by the shell (which also sets itself up
-  ///             as the rasterizer delegate).
-  ///
-  /// @param[in]  delegate            The rasterizer delegate.
-  /// @param[in]  compositor_context  The compositor context used to hold all
-  ///                                 the GPU state used by the rasterizer.
-  ///
-  Rasterizer(Delegate& delegate,
-             std::unique_ptr<flutter::CompositorContext> compositor_context);
-#endif
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
@@ -365,6 +355,17 @@ class Rasterizer final : public SnapshotDelegate {
       const std::shared_ptr<ExternalViewEmbedder>& view_embedder);
 
   //----------------------------------------------------------------------------
+  /// @brief Set the snapshot surface producer. This is done on shell
+  ///        initialization. This is non-null on platforms that support taking
+  ///        GPU accelerated raster snapshots in the background.
+  ///
+  /// @param[in]  producer  A surface producer for raster snapshotting when the
+  ///                       onscreen surface is not available.
+  ///
+  void SetSnapshotSurfaceProducer(
+      std::unique_ptr<SnapshotSurfaceProducer> producer);
+
+  //----------------------------------------------------------------------------
   /// @brief      Returns a pointer to the compositor context used by this
   ///             rasterizer. This pointer will never be `nullptr`.
   ///
@@ -373,6 +374,14 @@ class Rasterizer final : public SnapshotDelegate {
   flutter::CompositorContext* compositor_context() {
     return compositor_context_.get();
   }
+
+  //----------------------------------------------------------------------------
+  /// @brief      Returns the raster thread merger used by this rasterizer.
+  ///             This may be `nullptr`.
+  ///
+  /// @return     The raster thread merger used by this rasterizer.
+  ///
+  fml::RefPtr<fml::RasterThreadMerger> GetRasterThreadMerger();
 
   //----------------------------------------------------------------------------
   /// @brief      Skia has no notion of time. To work around the performance
@@ -437,18 +446,10 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   void DisableThreadMergerIfNeeded();
 
-  /// @brief   Mechanism to stop thread merging when using shared engine
-  ///          components.
-  /// @details This is a temporary workaround until thread merging can be
-  ///          supported correctly.  This should be called on the raster
-  ///          thread.
-  /// @see     https://github.com/flutter/flutter/issues/73620
-  ///
-  void BlockThreadMerging() { shared_engine_block_thread_merging_ = true; }
-
  private:
   Delegate& delegate_;
   std::unique_ptr<Surface> surface_;
+  std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // This is the last successfully rasterized layer tree.
   std::unique_ptr<flutter::LayerTree> last_layer_tree_;
@@ -462,7 +463,10 @@ class Rasterizer final : public SnapshotDelegate {
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
-  bool shared_engine_block_thread_merging_ = false;
+  // |SnapshotDelegate|
+  sk_sp<SkImage> MakeRasterSnapshot(
+      std::function<void(SkCanvas*)> draw_callback,
+      SkISize picture_size) override;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
@@ -485,7 +489,7 @@ class Rasterizer final : public SnapshotDelegate {
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::unique_ptr<flutter::LayerTree> layer_tree);
 
-  RasterStatus DrawToSurface(const fml::TimeDelta frame_build_duration,
+  RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
                              flutter::LayerTree& layer_tree);
 
   void FireNextFrameCallbackIfPresent();

@@ -8,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Insets;
@@ -28,6 +27,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
 import android.view.WindowManager;
@@ -65,6 +65,7 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.util.ViewUtils;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -115,6 +116,7 @@ public class FlutterView extends SurfaceView
     int systemGestureInsetRight = 0;
     int systemGestureInsetBottom = 0;
     int systemGestureInsetLeft = 0;
+    int physicalTouchSlop = -1;
   }
 
   private final DartExecutor dartExecutor;
@@ -162,7 +164,7 @@ public class FlutterView extends SurfaceView
   public FlutterView(Context context, AttributeSet attrs, FlutterNativeView nativeView) {
     super(context, attrs);
 
-    Activity activity = getActivity(getContext());
+    Activity activity = ViewUtils.getActivity(getContext());
     if (activity == null) {
       throw new IllegalArgumentException("Bad context");
     }
@@ -178,6 +180,7 @@ public class FlutterView extends SurfaceView
     mIsSoftwareRenderingEnabled = mNativeView.getFlutterJNI().getIsSoftwareRenderingEnabled();
     mMetrics = new ViewportMetrics();
     mMetrics.devicePixelRatio = context.getResources().getDisplayMetrics().density;
+    mMetrics.physicalTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
     setFocusable(true);
     setFocusableInTouchMode(true);
 
@@ -255,20 +258,6 @@ public class FlutterView extends SurfaceView
     // Send initial platform information to Dart
     mLocalizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendUserPlatformSettingsToDart();
-  }
-
-  private static Activity getActivity(Context context) {
-    if (context == null) {
-      return null;
-    }
-    if (context instanceof Activity) {
-      return (Activity) context;
-    }
-    if (context instanceof ContextWrapper) {
-      // Recurse up chain of base contexts until we find an Activity.
-      return getActivity(((ContextWrapper) context).getBaseContext());
-    }
-    return null;
   }
 
   @NonNull
@@ -777,6 +766,7 @@ public class FlutterView extends SurfaceView
             mMetrics.systemGestureInsetRight,
             mMetrics.systemGestureInsetBottom,
             mMetrics.systemGestureInsetLeft,
+            mMetrics.physicalTouchSlop,
             new int[0],
             new int[0],
             new int[0]);

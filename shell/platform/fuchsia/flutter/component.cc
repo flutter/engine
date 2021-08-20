@@ -27,6 +27,7 @@
 #include <sstream>
 
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/platform/fuchsia/task_observers.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
@@ -36,9 +37,6 @@
 #include "runtime/dart/utils/mapped_resource.h"
 #include "runtime/dart/utils/tempfs.h"
 #include "runtime/dart/utils/vmo.h"
-
-#include "task_observers.h"
-#include "task_runner_adapter.h"
 
 // TODO(kaushikiska): Use these constants from ::llcpp::fuchsia::io
 // Can read from target object.
@@ -186,11 +184,11 @@ ActiveApplication Application::Create(
     fuchsia::sys::StartupInfo startup_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
-  std::unique_ptr<Thread> thread = std::make_unique<Thread>();
+  auto thread = std::make_unique<fml::Thread>();
   std::unique_ptr<Application> application;
 
   fml::AutoResetWaitableEvent latch;
-  async::PostTask(thread->dispatcher(), [&]() mutable {
+  thread->GetTaskRunner()->PostTask([&]() mutable {
     application.reset(
         new Application(std::move(termination_callback), std::move(package),
                         std::move(startup_info), runner_incoming_services,
@@ -199,7 +197,8 @@ ActiveApplication Application::Create(
   });
 
   latch.Wait();
-  return {.thread = std::move(thread), .application = std::move(application)};
+  return {.platform_thread = std::move(thread),
+          .application = std::move(application)};
 }
 
 Application::Application(
@@ -491,11 +490,11 @@ Application::Application(
   settings_.leak_vm = false;
 
   settings_.task_observer_add =
-      std::bind(&CurrentMessageLoopAddAfterTaskObserver, std::placeholders::_1,
-                std::placeholders::_2);
+      std::bind(&fml::CurrentMessageLoopAddAfterTaskObserver,
+                std::placeholders::_1, std::placeholders::_2);
 
   settings_.task_observer_remove = std::bind(
-      &CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
+      &fml::CurrentMessageLoopRemoveAfterTaskObserver, std::placeholders::_1);
 
   settings_.log_message_callback = [](const std::string& tag,
                                       const std::string& message) {
@@ -505,7 +504,7 @@ Application::Application(
     std::cout << message << std::endl;
   };
 
-  settings_.dart_flags = {"--no_causal_async_stacks", "--lazy_async_stacks"};
+  settings_.dart_flags = {"--lazy_async_stacks"};
 
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");
@@ -517,8 +516,7 @@ Application::Application(
 #endif  // defined(__aarch64__)
 
   auto weak_application = weak_factory_.GetWeakPtr();
-  auto platform_task_runner =
-      CreateFMLTaskRunner(async_get_default_dispatcher());
+  auto platform_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
   const std::string component_url = package.resolved_url;
   settings_.unhandled_exception_callback = [weak_application,
                                             platform_task_runner,
@@ -638,6 +636,29 @@ void Application::CreateViewWithViewRef(
       std::move(fdio_ns_),            // FDIO namespace
       std::move(directory_request_),  // outgoing request
       product_config_                 // product configuration
+      ));
+}
+
+void Application::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
+  if (!svc_) {
+    FML_DLOG(ERROR)
+        << "Component incoming services was invalid when attempting to "
+           "create a shell for a view provider request.";
+    return;
+  }
+
+  shell_holders_.emplace(std::make_unique<Engine>(
+      *this,                      // delegate
+      debug_label_,               // thread label
+      svc_,                       // Component incoming services
+      runner_incoming_services_,  // Runner incoming services
+      settings_,                  // settings
+      std::move(
+          *view_args.mutable_view_creation_token()),  // view creation token
+      scenic::ViewRefPair::New(),                     // view ref pair
+      std::move(fdio_ns_),                            // FDIO namespace
+      std::move(directory_request_),                  // outgoing request
+      product_config_                                 // product configuration
       ));
 }
 

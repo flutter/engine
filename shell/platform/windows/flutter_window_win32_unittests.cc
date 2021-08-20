@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_window_win32_test.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
+#include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
@@ -27,34 +28,14 @@ namespace flutter {
 namespace testing {
 
 namespace {
-// Creates a valid Windows LPARAM for WM_KEYDOWN and WM_CHAR from parameters
-// given.
-static LPARAM CreateKeyEventLparam(USHORT scancode,
-                                   bool extended = false,
-                                   bool was_down = 1,
-                                   USHORT repeat_count = 1,
-                                   bool context_code = 0,
-                                   bool transition_state = 1) {
-  return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
-          (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
-          (LPARAM(scancode) << 16) | LPARAM(repeat_count));
-}
-
-// A struc to hold simulated events that will be delivered after the framework
-// response is handled.
-struct SimulatedEvent {
-  UINT message;
-  WPARAM wparam;
-  LPARAM lparam;
-};
+static constexpr int32_t kDefaultPointerDeviceId = 0;
 
 // A key event handler that can be spied on while it forwards calls to the real
 // key event handler.
 class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
  public:
-  SpyKeyboardKeyHandler(
-      flutter::BinaryMessenger* messenger,
-      KeyboardKeyHandler::EventRedispatcher redispatch_event) {
+  SpyKeyboardKeyHandler(flutter::BinaryMessenger* messenger,
+                        KeyboardKeyHandler::EventDispatcher redispatch_event) {
     real_implementation_ =
         std::make_unique<KeyboardKeyHandler>(redispatch_event);
     real_implementation_->AddDelegate(
@@ -124,7 +105,8 @@ class SpyTextInputPlugin : public KeyboardHandlerBase,
   std::unique_ptr<TextInputPlugin> real_implementation_;
 };
 
-class MockFlutterWindowWin32 : public FlutterWindowWin32 {
+class MockFlutterWindowWin32 : public FlutterWindowWin32,
+                               public MockMessageQueue {
  public:
   MockFlutterWindowWin32() : FlutterWindowWin32(800, 600) {
     ON_CALL(*this, GetDpiScale())
@@ -143,20 +125,61 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   LRESULT InjectWindowMessage(UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) {
-    return HandleMessage(message, wparam, lparam);
+    return Win32SendMessage(NULL, message, wparam, lparam);
+  }
+
+  void InjectMessages(int count, Win32Message message1, ...) {
+    Win32Message messages[count];
+    messages[0] = message1;
+    va_list args;
+    va_start(args, message1);
+    for (int i = 1; i < count; i += 1) {
+      messages[i] = va_arg(args, Win32Message);
+    }
+    va_end(args);
+    InjectMessageList(count, messages);
   }
 
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
-  MOCK_METHOD2(OnPointerMove, void(double, double));
-  MOCK_METHOD3(OnPointerDown, void(double, double, UINT));
-  MOCK_METHOD3(OnPointerUp, void(double, double, UINT));
-  MOCK_METHOD0(OnPointerLeave, void());
+  MOCK_METHOD4(OnPointerMove,
+               void(double, double, FlutterPointerDeviceKind, int32_t));
+  MOCK_METHOD5(OnPointerDown,
+               void(double, double, FlutterPointerDeviceKind, int32_t, UINT));
+  MOCK_METHOD5(OnPointerUp,
+               void(double, double, FlutterPointerDeviceKind, int32_t, UINT));
+  MOCK_METHOD2(OnPointerLeave, void(FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD0(OnSetCursor, void());
-  MOCK_METHOD2(OnScroll, void(double, double));
-  MOCK_METHOD4(DefaultWindowProc, LRESULT(HWND, UINT, WPARAM, LPARAM));
+  MOCK_METHOD4(OnScroll,
+               void(double, double, FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD0(GetDpiScale, float());
+  MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
+
+ protected:
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg,
+                                HWND hWnd,
+                                UINT wMsgFilterMin,
+                                UINT wMsgFilterMax,
+                                UINT wRemoveMsg) override {
+    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin,
+                                              wMsgFilterMax, wRemoveMsg);
+  }
+
+  LRESULT Win32DefWindowProc(HWND hWnd,
+                             UINT Msg,
+                             WPARAM wParam,
+                             LPARAM lParam) override {
+    return kWmResultDefault;
+  }
+
+ private:
+  LRESULT Win32SendMessage(HWND hWnd,
+                           UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam) override {
+    return HandleMessage(message, wparam, lparam);
+  }
 };
 
 class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
@@ -170,25 +193,35 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
       MockWindowBindingHandlerDelegate const&) = delete;
 
   MOCK_METHOD2(OnWindowSizeChanged, void(size_t, size_t));
-  MOCK_METHOD3(OnPointerMove, void(double, double, FlutterPointerDeviceKind));
-  MOCK_METHOD4(OnPointerDown,
+  MOCK_METHOD4(OnPointerMove,
+               void(double, double, FlutterPointerDeviceKind, int32_t));
+  MOCK_METHOD5(OnPointerDown,
                void(double,
                     double,
                     FlutterPointerDeviceKind,
+                    int32_t,
                     FlutterPointerMouseButtons));
-  MOCK_METHOD4(OnPointerUp,
+  MOCK_METHOD5(OnPointerUp,
                void(double,
                     double,
                     FlutterPointerDeviceKind,
+                    int32_t,
                     FlutterPointerMouseButtons));
-  MOCK_METHOD1(OnPointerLeave, void(FlutterPointerDeviceKind));
+  MOCK_METHOD2(OnPointerLeave, void(FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD1(OnText, void(const std::u16string&));
   MOCK_METHOD6(OnKey, bool(int, int, int, char32_t, bool, bool));
   MOCK_METHOD0(OnComposeBegin, void());
   MOCK_METHOD0(OnComposeCommit, void());
   MOCK_METHOD0(OnComposeEnd, void());
   MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
-  MOCK_METHOD5(OnScroll, void(double, double, double, double, int));
+  MOCK_METHOD7(OnScroll,
+               void(double,
+                    double,
+                    double,
+                    double,
+                    int,
+                    FlutterPointerDeviceKind,
+                    int32_t));
 };
 
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
@@ -206,16 +239,17 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyTextInputPlugin* text_input_plugin;
 
   void InjectPendingEvents(MockFlutterWindowWin32* win32window) {
-    while (pending_responds_.size() > 0) {
-      SimulatedEvent event = pending_responds_.front();
-      win32window->InjectWindowMessage(event.message, event.wparam,
-                                       event.lparam);
-      pending_responds_.pop_front();
-    }
+    win32window->InjectMessageList(pending_responds_.size(),
+                                   pending_responds_.data());
+    pending_responds_.clear();
   }
 
  protected:
-  void RegisterKeyboardHandlers(flutter::BinaryMessenger* messenger) override {
+  void RegisterKeyboardHandlers(
+      flutter::BinaryMessenger* messenger,
+      flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,
+      flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state)
+      override {
     auto spy_key_event_handler = std::make_unique<SpyKeyboardKeyHandler>(
         messenger, [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
           return this->SendInput(cInputs, pInputs, cbSize);
@@ -235,32 +269,30 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     const KEYBDINPUT kbdinput = pInputs->ki;
     const UINT message =
         (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
+    const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
     const LPARAM lparam = CreateKeyEventLparam(
-        kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY);
+        kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
     // Windows would normally fill in the virtual key code for us, so we
     // simulate it for the test with the key we know is in the test. The
     // KBDINPUT we're passed doesn't have it filled in (on purpose, so that
     // Windows will fill it in).
-    pending_responds_.push_back(SimulatedEvent{message, virtual_key_, lparam});
+    //
+    // TODO(dkwingsmt): Don't check the message results for redispatched
+    // messages for now, because making them work takes non-trivial rework
+    // to our current structure. https://github.com/flutter/flutter/issues/87843
+    // If this is resolved, change them to kWmResultDefault.
+    pending_responds_.push_back(
+        Win32Message{message, virtual_key_, lparam, kWmResultDontCheck});
     if (is_printable_ && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
       pending_responds_.push_back(
-          SimulatedEvent{WM_CHAR, virtual_key_, lparam});
+          Win32Message{WM_CHAR, virtual_key_, lparam, kWmResultDontCheck});
     }
     return 1;
   }
 
-  std::deque<SimulatedEvent> pending_responds_;
+  std::vector<Win32Message> pending_responds_;
   WPARAM virtual_key_;
   bool is_printable_;
-};
-
-// A struct to use as a FlutterPlatformMessageResponseHandle so it can keep the
-// callbacks and user data passed to the engine's
-// PlatformMessageCreateResponseHandle for use in the SendPlatformMessage
-// overridden function.
-struct TestResponseHandle {
-  FlutterDesktopBinaryReply callback;
-  void* user_data;
 };
 
 // The static value to return as the "handled" value from the framework for key
@@ -280,46 +312,9 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   auto engine = std::make_unique<FlutterWindowsEngine>(project);
 
   EngineModifier modifier(engine.get());
-  // Force the non-AOT path unless overridden by the test.
-  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-
-  modifier.embedder_api().PlatformMessageCreateResponseHandle =
-      [](auto engine, auto data_callback, auto user_data, auto response_out) {
-        TestResponseHandle* response_handle = new TestResponseHandle();
-        response_handle->user_data = user_data;
-        response_handle->callback = data_callback;
-        *response_out = reinterpret_cast<FlutterPlatformMessageResponseHandle*>(
-            response_handle);
-        return kSuccess;
-      };
-
-  modifier.embedder_api().SendPlatformMessage =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         const FlutterPlatformMessage* message) {
-        rapidjson::Document document;
-        auto& allocator = document.GetAllocator();
-        document.SetObject();
-        document.AddMember("handled", test_response, allocator);
-        auto encoded =
-            flutter::JsonMessageCodec::GetInstance().EncodeMessage(document);
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(
-                message->response_handle);
-        if (response_handle->callback != nullptr) {
-          response_handle->callback(encoded->data(), encoded->size(),
-                                    response_handle->user_data);
-        }
-        return kSuccess;
-      };
-
-  modifier.embedder_api().PlatformMessageReleaseResponseHandle =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
-         FlutterPlatformMessageResponseHandle* response) {
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(response);
-        delete response_handle;
-        return kSuccess;
-      };
+  MockEmbedderApiForKeyboard(
+      modifier, [] { return test_response; },
+      [](const FlutterKeyEvent* event) { return false; });
 
   return engine;
 }
@@ -339,14 +334,12 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
   constexpr WPARAM scan_code = 10;
   constexpr char32_t character = 0;
   MockFlutterWindowWin32 win32window;
-  std::deque<SimulatedEvent> pending_events;
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   TestFlutterWindowsView flutter_windows_view(
       std::move(window_binding_handler), virtual_key, false /* is_printable */);
   win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code, false /* extended */,
-                                       false /* PrevState */);
+  LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
 
   // Test an event not handled by the framework
   {
@@ -361,15 +354,12 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
                 KeyboardHook(_, _, _, _, _, _, _))
         .Times(1)
         .RetiresOnSaturation();
-    EXPECT_CALL(win32window, DefaultWindowProc(_, _, _, _))
-        .Times(0)
-        .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_, _))
         .Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
+    win32window.InjectMessages(1,
+                               Win32Message{WM_KEYDOWN, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 
@@ -384,8 +374,8 @@ TEST(FlutterWindowWin32Test, NonPrintableKeyDownPropagation) {
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
                 KeyboardHook(_, _, _, _, _, _, _))
         .Times(0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
+    win32window.InjectMessages(1,
+                               Win32Message{WM_KEYDOWN, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 }
@@ -406,16 +396,15 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
   TestFlutterWindowsView flutter_windows_view(
       std::move(window_binding_handler), virtual_key, true /* is_printable */);
   win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code, false /* extended */,
-                                       true /* PrevState */);
+  LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
+  flutter_windows_view.SetEngine(std::move(GetTestEngine()));
 
   // Test an event not handled by the framework
   {
     test_response = false;
-    flutter_windows_view.SetEngine(std::move(GetTestEngine()));
     EXPECT_CALL(*flutter_windows_view.key_event_handler,
                 KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                             false, true))
+                             false, false))
         .Times(2)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
@@ -428,19 +417,17 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(1)
         .RetiresOnSaturation();
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
+    win32window.InjectMessages(2, Win32Message{WM_KEYDOWN, virtual_key, lparam},
+                               Win32Message{WM_CHAR, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
-  return;
 
   // Test an event handled by the framework
   {
     test_response = true;
     EXPECT_CALL(*flutter_windows_view.key_event_handler,
                 KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                             false /* is_printable */, true))
+                             false, false))
         .Times(1)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
@@ -450,28 +437,26 @@ TEST(FlutterWindowWin32Test, CharKeyDownPropagation) {
         .Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_, _))
         .Times(0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_KEYDOWN, virtual_key, lparam),
-              0);
-    EXPECT_EQ(win32window.InjectWindowMessage(WM_CHAR, virtual_key, lparam), 0);
+    win32window.InjectMessages(2, Win32Message{WM_KEYDOWN, virtual_key, lparam},
+                               Win32Message{WM_CHAR, virtual_key, lparam});
     flutter_windows_view.InjectPendingEvents(&win32window);
   }
 }
 
-// Tests key event propagation of modifier key down events. This are different
+// Tests key event propagation of modifier key down events. This is different
 // from non-printable events in that they call MapVirtualKey, resulting in a
 // slightly different code path.
 TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
   constexpr WPARAM virtual_key = VK_LSHIFT;
-  constexpr WPARAM scan_code = 20;
+  constexpr WPARAM scan_code = 0x2a;
   constexpr char32_t character = 0;
   MockFlutterWindowWin32 win32window;
-  std::deque<SimulatedEvent> pending_events;
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   TestFlutterWindowsView flutter_windows_view(
       std::move(window_binding_handler), virtual_key, false /* is_printable */);
   win32window.SetView(&flutter_windows_view);
-  LPARAM lparam = CreateKeyEventLparam(scan_code);
+  LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
 
   // Test an event not handled by the framework
   {
@@ -479,7 +464,7 @@ TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
     flutter_windows_view.SetEngine(std::move(GetTestEngine()));
     EXPECT_CALL(*flutter_windows_view.key_event_handler,
                 KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                             false /* extended */, true))
+                             false /* extended */, false))
         .Times(2)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
@@ -500,7 +485,7 @@ TEST(FlutterWindowWin32Test, ModifierKeyDownPropagation) {
     test_response = true;
     EXPECT_CALL(*flutter_windows_view.key_event_handler,
                 KeyboardHook(_, virtual_key, scan_code, WM_KEYDOWN, character,
-                             false /* extended */, true))
+                             false /* extended */, false))
         .Times(1)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
@@ -547,69 +532,88 @@ TEST(FlutterWindowWin32Test, OnPointerStarSendsDeviceType) {
   win32window.SetView(&delegate);
   // Move
   EXPECT_CALL(delegate,
-              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse))
+              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                            kDefaultPointerDeviceId))
       .Times(1);
   EXPECT_CALL(delegate,
-              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch))
+              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                            kDefaultPointerDeviceId))
       .Times(1);
   EXPECT_CALL(delegate,
-              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus))
+              OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                            kDefaultPointerDeviceId))
       .Times(1);
 
   // Down
-  EXPECT_CALL(delegate,
-              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
-                            kFlutterPointerButtonMousePrimary))
+  EXPECT_CALL(
+      delegate,
+      OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                    kDefaultPointerDeviceId, kFlutterPointerButtonMousePrimary))
       .Times(1);
-  EXPECT_CALL(delegate,
-              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
-                            kFlutterPointerButtonMousePrimary))
+  EXPECT_CALL(
+      delegate,
+      OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                    kDefaultPointerDeviceId, kFlutterPointerButtonMousePrimary))
       .Times(1);
-  EXPECT_CALL(delegate,
-              OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                            kFlutterPointerButtonMousePrimary))
+  EXPECT_CALL(
+      delegate,
+      OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                    kDefaultPointerDeviceId, kFlutterPointerButtonMousePrimary))
       .Times(1);
 
   // Up
   EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                                    kDefaultPointerDeviceId,
                                     kFlutterPointerButtonMousePrimary))
       .Times(1);
   EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                                    kDefaultPointerDeviceId,
                                     kFlutterPointerButtonMousePrimary))
       .Times(1);
   EXPECT_CALL(delegate, OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                                    kDefaultPointerDeviceId,
                                     kFlutterPointerButtonMousePrimary))
       .Times(1);
 
   // Leave
-  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindMouse))
+  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindMouse,
+                                       kDefaultPointerDeviceId))
       .Times(1);
-  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindTouch))
+  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindTouch,
+                                       kDefaultPointerDeviceId))
       .Times(1);
-  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindStylus))
+  EXPECT_CALL(delegate, OnPointerLeave(kFlutterPointerDeviceKindStylus,
+                                       kDefaultPointerDeviceId))
       .Times(1);
 
-  win32window.OnPointerMove(10.0, 10.0);
-  win32window.OnPointerDown(10.0, 10.0, WM_LBUTTONDOWN);
-  win32window.OnPointerUp(10.0, 10.0, WM_LBUTTONDOWN);
-  win32window.OnPointerLeave();
+  win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                            kDefaultPointerDeviceId);
+  win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                            kDefaultPointerDeviceId, WM_LBUTTONDOWN);
+  win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindMouse,
+                          kDefaultPointerDeviceId, WM_LBUTTONDOWN);
+  win32window.OnPointerLeave(kFlutterPointerDeviceKindMouse,
+                             kDefaultPointerDeviceId);
 
   // Touch
-  LPARAM original_lparam = SetMessageExtraInfo(0xFF51578b);
-  win32window.OnPointerMove(10.0, 10.0);
-  win32window.OnPointerDown(10.0, 10.0, WM_LBUTTONDOWN);
-  win32window.OnPointerUp(10.0, 10.0, WM_LBUTTONDOWN);
-  win32window.OnPointerLeave();
+  win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                            kDefaultPointerDeviceId);
+  win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                            kDefaultPointerDeviceId, WM_LBUTTONDOWN);
+  win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
+                          kDefaultPointerDeviceId, WM_LBUTTONDOWN);
+  win32window.OnPointerLeave(kFlutterPointerDeviceKindTouch,
+                             kDefaultPointerDeviceId);
 
   // Pen
-  SetMessageExtraInfo(0xFF515700);
-  win32window.OnPointerMove(10.0, 10.0);
-  win32window.OnPointerDown(10.0, 10.0, WM_LBUTTONDOWN);
-  win32window.OnPointerUp(10.0, 10.0, WM_LBUTTONDOWN);
-  win32window.OnPointerLeave();
-
-  // Reset extra info for other tests.
-  SetMessageExtraInfo(original_lparam);
+  win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                            kDefaultPointerDeviceId);
+  win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                            kDefaultPointerDeviceId, WM_LBUTTONDOWN);
+  win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindStylus,
+                          kDefaultPointerDeviceId, WM_LBUTTONDOWN);
+  win32window.OnPointerLeave(kFlutterPointerDeviceKindStylus,
+                             kDefaultPointerDeviceId);
 }
 
 }  // namespace testing

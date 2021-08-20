@@ -44,18 +44,12 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 }
 
 void CanvasImage::dispose() {
-  // TODO(dnfield): Remove the hint freed delegate once Picture disposal is in
-  // the framework https://github.com/flutter/flutter/issues/81514
-  auto hint_freed_delegate = UIDartState::Current()->GetHintFreedDelegate();
-  if (hint_freed_delegate) {
-    hint_freed_delegate->HintFreed(GetAllocationSize());
-  }
   image_.reset();
   ClearDartWrapper();
 }
 
 size_t CanvasImage::GetAllocationSize() const {
-  if (auto image = image_.get()) {
+  if (auto image = image_.skia_object()) {
     const auto& info = image->imageInfo();
     const auto kMipmapOverhead = 4.0 / 3.0;
     const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;

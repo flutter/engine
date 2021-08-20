@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <fuchsia/scenic/scheduling/cpp/fidl.h>
-#include <fuchsia/ui/policy/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/async-loop/default.h>
 #include <lib/sys/cpp/component_context.h>
@@ -14,7 +12,8 @@
 #include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/shell/common/serialization_callbacks.h"
-#include "flutter/shell/platform/fuchsia/flutter/default_session_connection.h"
+#include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/platform/fuchsia/flutter/gfx_session_connection.h"
 #include "flutter/shell/platform/fuchsia/flutter/logging.h"
 #include "flutter/shell/platform/fuchsia/flutter/runner.h"
 #include "gtest/gtest.h"
@@ -27,6 +26,13 @@ using namespace flutter;
 
 namespace flutter_runner {
 namespace testing {
+namespace {
+
+std::string GetCurrentTestName() {
+  return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+}
+
+}  // namespace
 
 class MockTaskRunner : public fml::BasicTaskRunner {
  public:
@@ -66,8 +72,9 @@ class EngineTest : public ::testing::Test {
 
     context_ = sys::ComponentContext::CreateAndServeOutgoingDirectory();
     scenic_ = context_->svc()->Connect<fuchsia::ui::scenic::Scenic>();
-    scenic::Session session(scenic_.get());
-    surface_producer_ = std::make_unique<VulkanSurfaceProducer>(&session);
+    session_.emplace(scenic_.get());
+    surface_producer_ =
+        std::make_unique<VulkanSurfaceProducer>(&session_.value());
 
     Engine::WarmupSkps(&concurrent_task_runner_, &raster_task_runner_,
                        *surface_producer_, width, height, asset_manager,
@@ -81,7 +88,43 @@ class EngineTest : public ::testing::Test {
 
   std::unique_ptr<sys::ComponentContext> context_;
   fuchsia::ui::scenic::ScenicPtr scenic_;
+  std::optional<scenic::Session> session_;
 };
+
+TEST_F(EngineTest, ThreadNames) {
+  std::string prefix = GetCurrentTestName();
+  flutter::ThreadHost engine_thread_host = Engine::CreateThreadHost(prefix);
+
+  char thread_name[ZX_MAX_NAME_LEN];
+  zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
+                                   sizeof(thread_name));
+  EXPECT_EQ(std::string(thread_name), prefix + std::string(".platform"));
+  EXPECT_EQ(engine_thread_host.platform_thread, nullptr);
+
+  engine_thread_host.raster_thread->GetTaskRunner()->PostTask([&prefix]() {
+    char thread_name[ZX_MAX_NAME_LEN];
+    zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
+                                     sizeof(thread_name));
+    EXPECT_EQ(std::string(thread_name), prefix + std::string(".raster"));
+  });
+  engine_thread_host.raster_thread->Join();
+
+  engine_thread_host.ui_thread->GetTaskRunner()->PostTask([&prefix]() {
+    char thread_name[ZX_MAX_NAME_LEN];
+    zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
+                                     sizeof(thread_name));
+    EXPECT_EQ(std::string(thread_name), prefix + std::string(".ui"));
+  });
+  engine_thread_host.ui_thread->Join();
+
+  engine_thread_host.io_thread->GetTaskRunner()->PostTask([&prefix]() {
+    char thread_name[ZX_MAX_NAME_LEN];
+    zx::thread::self()->get_property(ZX_PROP_NAME, thread_name,
+                                     sizeof(thread_name));
+    EXPECT_EQ(std::string(thread_name), prefix + std::string(".io"));
+  });
+  engine_thread_host.io_thread->Join();
+}
 
 TEST_F(EngineTest, SkpWarmup) {
   SkISize draw_size = SkISize::Make(100, 100);

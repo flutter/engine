@@ -126,6 +126,7 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
       0,                      // gesture inset right
       0,                      // gesture inset bottom
       0,                      // gesture inset left
+      22,                     // physical touch slop
       std::vector<double>(),  // display features bounds
       std::vector<int>(),     // display features type
       std::vector<int>()      // display features state
@@ -167,7 +168,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
                              double width,
                              double height,
                              LayerTreeBuilder builder) {
-  PumpOneFrame(shell, {1.0, width, height}, std::move(builder));
+  PumpOneFrame(shell, {1.0, width, height, 22}, std::move(builder));
 }
 
 void ShellTest::PumpOneFrame(Shell* shell,
