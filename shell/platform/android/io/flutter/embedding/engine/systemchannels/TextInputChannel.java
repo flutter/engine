@@ -188,13 +188,25 @@ public class TextInputChannel {
   }
 
   private static HashMap<Object, Object> createEditingDeltaJSON(
-      String oldTxt, String newTxt, String diffType, int newStart, int newEnd) {
+      String oldTxt,
+      String newTxt,
+      String diffType,
+      int newStart,
+      int newEnd,
+      int selectionStart,
+      int selectionEnd,
+      int composingStart,
+      int composingEnd) {
     HashMap<Object, Object> state = new HashMap<>();
     state.put("oldText", oldTxt);
     state.put("deltaText", newTxt);
     state.put("delta", diffType);
     state.put("deltaStart", newStart);
     state.put("deltaEnd", newEnd);
+    state.put("selectionBase", selectionStart);
+    state.put("selectionExtent", selectionEnd);
+    state.put("composingBase", composingStart);
+    state.put("composingExtent", composingEnd);
     return state;
   }
   /**
@@ -237,7 +249,11 @@ public class TextInputChannel {
       String newText,
       String diffType,
       int newStart,
-      int newExtent) {
+      int newExtent,
+      int selectionStart,
+      int selectionEnd,
+      int composingStart,
+      int composingEnd) {
 
     Log.e(
         "DELTAS",
@@ -255,10 +271,31 @@ public class TextInputChannel {
             + newStart
             + "\n"
             + "delta end: "
-            + newExtent);
+            + newExtent
+            + "\n"
+            + "Selection start: "
+            + selectionStart
+            + "\n"
+            + "Selection end: "
+            + selectionEnd
+            + "\n"
+            + "Composing start: "
+            + composingStart
+            + "\n"
+            + "Composing end: "
+            + composingEnd);
 
     final HashMap<Object, Object> state =
-        createEditingDeltaJSON(oldText, newText, diffType, newStart, newExtent);
+        createEditingDeltaJSON(
+            oldText,
+            newText,
+            diffType,
+            newStart,
+            newExtent,
+            selectionStart,
+            selectionEnd,
+            composingStart,
+            composingEnd);
 
     channel.invokeMethod(
         "TextInputClient.updateEditingStateWithDelta", Arrays.asList(inputClientId, state));
