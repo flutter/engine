@@ -6,6 +6,7 @@ package io.flutter.embedding.android;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
@@ -36,9 +37,13 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Consumer;
-import androidx.window.DisplayFeature;
-import androidx.window.FoldingFeature;
-import androidx.window.WindowLayoutInfo;
+import androidx.window.java.layout.WindowInfoRepositoryCallbackAdapter;
+import androidx.window.layout.DisplayFeature;
+import androidx.window.layout.FoldingFeature;
+import androidx.window.layout.FoldingFeature.OcclusionType;
+import androidx.window.layout.FoldingFeature.State;
+import androidx.window.layout.WindowInfoRepository;
+import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
@@ -119,7 +124,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private AccessibilityBridge accessibilityBridge;
 
   // Provides access to foldable/hinge information
-  @Nullable private androidx.window.WindowManager windowManager;
+  @Nullable private WindowInfoRepositoryCallbackAdapter windowInfoRepo;
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
@@ -154,11 +159,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         }
       };
 
-  private final Consumer<WindowLayoutInfo> windowManagerListener =
+  private final Consumer<WindowLayoutInfo> windowInfoListener =
       new Consumer<WindowLayoutInfo>() {
         @Override
         public void accept(WindowLayoutInfo layoutInfo) {
-          setWindowManagerDisplayFeatures(layoutInfo);
+          setWindowInfoListenerDisplayFeatures(layoutInfo);
         }
       };
 
@@ -445,69 +450,69 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   @VisibleForTesting()
-  protected androidx.window.WindowManager createWindowManager() {
-    return new androidx.window.WindowManager(getContext());
+  protected WindowInfoRepositoryCallbackAdapter createWindowInfoRepo() {
+    return new WindowInfoRepositoryCallbackAdapter(
+        WindowInfoRepository.getOrCreate((Activity) getContext()));
   }
 
   /**
    * Invoked when this is attached to the window.
    *
-   * <p>We register for {@link androidx.window.WindowManager} updates.
+   * <p>We register for {@link androidx.window.layout.WindowInfoRepository} updates.
    */
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
-    this.windowManager = createWindowManager();
-    windowManager.registerLayoutChangeCallback(
-        ContextCompat.getMainExecutor(getContext()), windowManagerListener);
+    this.windowInfoRepo = createWindowInfoRepo();
+    windowInfoRepo.addWindowLayoutInfoListener(
+        ContextCompat.getMainExecutor(getContext()), windowInfoListener);
   }
 
   /**
    * Invoked when this is detached from the window.
    *
-   * <p>We unregister from {@link androidx.window.WindowManager} updates.
+   * <p>We unregister from {@link androidx.window.layout.WindowInfoRepository} updates.
    */
   @Override
   protected void onDetachedFromWindow() {
-    windowManager.unregisterLayoutChangeCallback(windowManagerListener);
-    this.windowManager = null;
+    windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
+    this.windowInfoRepo = null;
     super.onDetachedFromWindow();
   }
 
   /**
-   * Refresh {@link androidx.window.WindowManager} and {@link android.view.DisplayCutout} display
-   * features. Fold, hinge and cutout areas are populated here.
+   * Refresh {@link androidx.window.layout.WindowInfoRepository} and {@link
+   * android.view.DisplayCutout} display features. Fold, hinge and cutout areas are populated here.
    */
   @TargetApi(28)
-  protected void setWindowManagerDisplayFeatures(WindowLayoutInfo layoutInfo) {
+  protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
     List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
 
-    // Data from androidx.window.WindowManager display features. Fold and hinge areas are
+    // Data from WindowInfoRepository display features. Fold and hinge areas are
     // populated here.
     for (DisplayFeature displayFeature : displayFeatures) {
       Log.v(
           TAG,
-          "WindowManager Display Feature reported with bounds = "
+          "WindowInfoRepository Display Feature reported with bounds = "
               + displayFeature.getBounds().toString()
               + " and type = "
               + displayFeature.getClass().getSimpleName());
       if (displayFeature instanceof FoldingFeature) {
         DisplayFeatureType type;
-        DisplayFeatureState state = DisplayFeatureState.UNKNOWN;
+        DisplayFeatureState state;
         final FoldingFeature feature = (FoldingFeature) displayFeature;
-        if (feature.getOcclusionMode() == FoldingFeature.OCCLUSION_NONE) {
-          type = DisplayFeatureType.FOLD;
-        } else {
+        if (feature.getOcclusionType() == OcclusionType.FULL) {
           type = DisplayFeatureType.HINGE;
+        } else {
+          type = DisplayFeatureType.FOLD;
         }
-        switch (feature.getState()) {
-          case FoldingFeature.STATE_FLAT:
-            state = DisplayFeatureState.POSTURE_FLAT;
-            break;
-          case FoldingFeature.STATE_HALF_OPENED:
-            state = DisplayFeatureState.POSTURE_HALF_OPENED;
-            break;
+        if (feature.getState() == State.FLAT) {
+          state = DisplayFeatureState.POSTURE_FLAT;
+        } else if (feature.getState() == State.HALF_OPENED) {
+          state = DisplayFeatureState.POSTURE_HALF_OPENED;
+        } else {
+          state = DisplayFeatureState.UNKNOWN;
         }
         result.add(new FlutterRenderer.DisplayFeature(displayFeature.getBounds(), type, state));
       } else {

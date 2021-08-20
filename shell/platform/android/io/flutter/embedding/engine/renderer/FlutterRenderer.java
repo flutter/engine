@@ -393,7 +393,7 @@ public class FlutterRenderer implements TextureRegistry {
    * visual or touch discontinuity, make some area invisible or create a logical divider or
    * separation in the screen space.
    *
-   * <p>Based on {@link androidx.window.DisplayFeature}, with added support for cutouts.
+   * <p>Based on {@link androidx.window.layout.DisplayFeature}, with added support for cutouts.
    */
   public static final class DisplayFeature {
     public final Rect bounds;
@@ -414,34 +414,34 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   /**
-   * Types of display features that can obstruct the viewport.
+   * Types of display features that can appear on the viewport.
    *
-   * <p>Some, like FOLD, can be reported without actually impeding drawing on the screen. They are
-   * useful for knowing where the display is bent or has a crease. The {@link DisplayFeature} bounds
+   * <p>Some, like {@link #FOLD}, can be reported without actually occluding the screen. They are
+   * useful for knowing where the display is bent or has a crease. The {@link DisplayFeature#bounds}
    * can be 0-width in such cases.
    */
   public enum DisplayFeatureType {
     /**
-     * We do not know this type of display feature yet. This can happen if WindowManager is updated
-     * with new types.
+     * Type of display feature not yet known to Flutter. This can happen if WindowManager is updated
+     * with new types. The {@link DisplayFeature#bounds} is the only known property.
      */
     UNKNOWN(0),
 
     /**
-     * A fold in the flexible screen without a physical gap. Corresponds to {@link
-     * androidx.window.FoldingFeature#TYPE_FOLD}
+     * A fold in the flexible display that does not occlude the screen. Corresponds to {@link
+     * androidx.window.layout.FoldingFeature.OcclusionType#NONE}
      */
     FOLD(1),
 
     /**
-     * A physical separation with a hinge that allows two display panels to fold. Corresponds to
-     * {@link androidx.window.FoldingFeature#TYPE_HINGE}
+     * Splits the display in two separate panels that can fold. Occludes the screen. Corresponds to
+     * {@link androidx.window.layout.FoldingFeature.OcclusionType#FULL}
      */
     HINGE(2),
 
     /**
-     * A non-functional area of the screen, usually housing cameras or sensors. Corresponds to
-     * {@link android.view.DisplayCutout}
+     * Area of the screen that usually houses cameras or sensors. Occludes the screen. Corresponds
+     * to {@link android.view.DisplayCutout}
      */
     CUTOUT(3);
 
@@ -455,7 +455,7 @@ public class FlutterRenderer implements TextureRegistry {
   /**
    * State of the display feature.
    *
-   * <p>For foldables, the state is the posture. For cutouts, this is {@link UNKNOWN}
+   * <p>For foldables, the state is the posture. For cutouts, this property is {@link #UNKNOWN}
    */
   public enum DisplayFeatureState {
     /** The display feature is a cutout or this state is new and not yet known to Flutter. */
@@ -463,14 +463,14 @@ public class FlutterRenderer implements TextureRegistry {
 
     /**
      * The foldable device is completely open. The screen space that is presented to the user is
-     * flat. Corresponds to {@link androidx.window.FoldingFeature#STATE_FLAT}
+     * flat. Corresponds to {@link androidx.window.layout.FoldingFeature.State#FLAT}
      */
     POSTURE_FLAT(1),
 
     /**
      * The foldable device's hinge is in an intermediate position between opened and closed state.
-     * There is a non-flat angle between parts of the flexible screen or between physical screen
-     * panels. Corresponds to {@link androidx.window.FoldingFeature#STATE_HALF_OPENED}
+     * There is a non-flat angle between parts of the flexible screen or between physical display
+     * panels. Corresponds to {@link androidx.window.layout.FoldingFeature.State#HALF_OPENED}
      */
     POSTURE_HALF_OPENED(2);
 

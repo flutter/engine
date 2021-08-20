@@ -131,7 +131,7 @@ public class FlutterRendererTest {
         new FlutterRenderer.DisplayFeature(
             new Rect(10, 20, 30, 40),
             FlutterRenderer.DisplayFeatureType.FOLD,
-            FlutterRenderer.DisplayFeatureState.POSTURE_FLIPPED));
+            FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED));
     metrics.displayFeatures.add(
         new FlutterRenderer.DisplayFeature(
             new Rect(50, 60, 70, 80), FlutterRenderer.DisplayFeatureType.CUTOUT));
@@ -173,7 +173,7 @@ public class FlutterRendererTest {
         typeCaptor.getValue());
     assertArrayEquals(
         new int[] {
-          FlutterRenderer.DisplayFeatureState.POSTURE_FLIPPED.encodedValue,
+          FlutterRenderer.DisplayFeatureState.POSTURE_HALF_OPENED.encodedValue,
           FlutterRenderer.DisplayFeatureState.UNKNOWN.encodedValue
         },
         stateCaptor.getValue());

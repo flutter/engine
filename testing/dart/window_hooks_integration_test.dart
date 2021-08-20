@@ -492,13 +492,13 @@ void main() {
       0.0,   // system gesture inset left
       [0, 0, 100, 100],    // display features bounds
       [2],    // display features types
-      [3],    // display features states
+      [2],    // display features states
     );
 
     // Display feature bounds is measured in logical pixels
     expectEquals(window.displayFeatures[0].bounds, Rect.fromLTRB(0, 0, 50, 50));
     expectEquals(window.displayFeatures[0].type, DisplayFeatureType.hinge);
-    expectEquals(window.displayFeatures[0].state, DisplayFeatureState.postureFlipped);
+    expectEquals(window.displayFeatures[0].state, DisplayFeatureState.postureHalfOpened);
   });
 
   test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {

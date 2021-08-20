@@ -6,6 +6,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -32,8 +33,10 @@ import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.core.util.Consumer;
-import androidx.window.FoldingFeature;
-import androidx.window.WindowLayoutInfo;
+import androidx.window.java.layout.WindowInfoRepositoryCallbackAdapter;
+import androidx.window.layout.FoldingFeature;
+import androidx.window.layout.HardwareFoldingFeature;
+import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.TestUtils;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -654,21 +657,23 @@ public class FlutterViewTest {
             ((WindowManager)
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
-    when(flutterView.getContext()).thenReturn(context);
-    androidx.window.WindowManager windowManager = mock(androidx.window.WindowManager.class);
-    when(flutterView.createWindowManager()).thenReturn(windowManager);
+    WindowInfoRepositoryCallbackAdapter windowInfoRepo =
+        mock(WindowInfoRepositoryCallbackAdapter.class);
+    // For reasoning behing using doReturn instead of when, read "Important gotcha" at
+    // https://www.javadoc.io/doc/org.mockito/mockito-core/1.10.19/org/mockito/Mockito.html#13
+    doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
 
     // When a new FlutterView is attached to the window
     flutterView.onAttachedToWindow();
 
     // Then the WindowManager callback is registered
-    verify(windowManager, times(1)).registerLayoutChangeCallback(any(), any());
+    verify(windowInfoRepo, times(1)).addWindowLayoutInfoListener(any(), any());
 
     // When the FlutterView is detached from the window
     flutterView.onDetachedFromWindow();
 
     // Then the WindowManager callback is unregistered
-    verify(windowManager, times(1)).unregisterLayoutChangeCallback(any());
+    verify(windowInfoRepo, times(1)).removeWindowLayoutInfoListener(any());
   }
 
   @Test
@@ -682,13 +687,15 @@ public class FlutterViewTest {
             ((WindowManager)
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
-    when(flutterView.getContext()).thenReturn(context);
-    androidx.window.WindowManager windowManager = mock(androidx.window.WindowManager.class);
-    when(flutterView.createWindowManager()).thenReturn(windowManager);
+    WindowInfoRepositoryCallbackAdapter windowInfoRepo =
+        mock(WindowInfoRepositoryCallbackAdapter.class);
+    // For reasoning behing using doReturn instead of when, read "Important gotcha" at
+    // https://www.javadoc.io/doc/org.mockito/mockito-core/1.10.19/org/mockito/Mockito.html#13
+    doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
-    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+    doReturn(flutterRenderer).when(flutterEngine).getRenderer();
 
     // When FlutterView is attached to the engine and window, and a cutout exists
     WindowInsets windowInsets = mock(WindowInsets.class);
@@ -705,7 +712,7 @@ public class FlutterViewTest {
     flutterView.onAttachedToWindow();
     ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
         ArgumentCaptor.forClass((Class) Consumer.class);
-    verify(windowManager).registerLayoutChangeCallback(any(), wmConsumerCaptor.capture());
+    verify(windowInfoRepo).addWindowLayoutInfoListener(any(), wmConsumerCaptor.capture());
     Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
 
     wmConsumer.accept(new WindowLayoutInfo.Builder().build());
@@ -732,22 +739,21 @@ public class FlutterViewTest {
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
     when(flutterView.getContext()).thenReturn(context);
-    androidx.window.WindowManager windowManager = mock(androidx.window.WindowManager.class);
-    when(flutterView.createWindowManager()).thenReturn(windowManager);
+    WindowInfoRepositoryCallbackAdapter windowInfoRepo =
+        mock(WindowInfoRepositoryCallbackAdapter.class);
+    doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
     FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
     when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
 
+    FoldingFeature displayFeature = mock(FoldingFeature.class);
+    when(displayFeature.getBounds()).thenReturn(new Rect(0, 0, 100, 100));
+    when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
+    when(displayFeature.getState()).thenReturn(FoldingFeature.State.FLAT);
+
     WindowLayoutInfo testWindowLayout =
-        new WindowLayoutInfo.Builder()
-            .setDisplayFeatures(
-                Arrays.asList(
-                    new FoldingFeature(
-                        new Rect(0, 0, 100, 100),
-                        FoldingFeature.TYPE_HINGE,
-                        FoldingFeature.STATE_FLAT)))
-            .build();
+        new WindowLayoutInfo.Builder().setDisplayFeatures(Arrays.asList(displayFeature)).build();
 
     // When FlutterView is attached to the engine and window, and a hinge display feature exists
     flutterView.attachToFlutterEngine(flutterEngine);
@@ -758,7 +764,7 @@ public class FlutterViewTest {
     flutterView.onAttachedToWindow();
     ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
         ArgumentCaptor.forClass((Class) Consumer.class);
-    verify(windowManager).registerLayoutChangeCallback(any(), wmConsumerCaptor.capture());
+    verify(windowInfoRepo).addWindowLayoutInfoListener(any(), wmConsumerCaptor.capture());
     Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
     wmConsumer.accept(testWindowLayout);
 
