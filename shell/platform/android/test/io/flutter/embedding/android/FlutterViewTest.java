@@ -735,6 +735,31 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void flutterImageView_workaroundWithOnePixelWhenResizeWithZero() {
+    final ImageReader mockReader = mock(ImageReader.class);
+    when(mockReader.getMaxImages()).thenReturn(2);
+
+    final FlutterImageView imageView =
+        spy(
+            new FlutterImageView(
+                RuntimeEnvironment.application,
+                mockReader,
+                FlutterImageView.SurfaceKind.background));
+
+    final FlutterJNI jni = mock(FlutterJNI.class);
+    imageView.attachToRenderer(new FlutterRenderer(jni));
+
+    final Image mockImage = mock(Image.class);
+    when(mockReader.acquireLatestImage()).thenReturn(mockImage);
+
+    final int incorrectWidth = 0;
+    final int incorrectHeight = -100;
+    imageView.resizeIfNeeded(incorrectWidth, incorrectHeight);
+    assertEquals(1, imageView.getImageReader().getWidth());
+    assertEquals(1, imageView.getImageReader().getHeight());
+  }
+
+  @Test
   public void flutterSurfaceView_GathersTransparentRegion() {
     final Region mockRegion = mock(Region.class);
     final FlutterSurfaceView surfaceView = new FlutterSurfaceView(RuntimeEnvironment.application);
@@ -790,6 +815,21 @@ public class FlutterViewTest {
     Integer accessibilityViewId = (Integer) getAccessibilityViewIdMethod.invoke(flutterView);
 
     assertEquals(null, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
+  }
+
+  public void ViewportMetrics_initializedPhysicalTouchSlop() {
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
+        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
+    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
+
+    assertFalse(-1 == viewportMetricsCaptor.getValue().physicalTouchSlop);
   }
 
   /*

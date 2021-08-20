@@ -9,9 +9,9 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../offscreen_canvas.dart';
 import '../../browser_detection.dart';
 import '../../vector_math.dart';
+import '../offscreen_canvas.dart';
 
 /// Compiled and cached gl program.
 class GlProgram {
@@ -88,15 +88,15 @@ class GlContext {
 
   GlProgram cacheProgram(
       String vertexShaderSource, String fragmentShaderSource) {
-    String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
+    final String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
     GlProgram? cachedProgram = _programCache[cacheKey];
     if (cachedProgram == null) {
       // Create and compile shaders.
-      Object vertexShader = compileShader('VERTEX_SHADER', vertexShaderSource);
-      Object fragmentShader =
+      final Object vertexShader = compileShader('VERTEX_SHADER', vertexShaderSource);
+      final Object fragmentShader =
       compileShader('FRAGMENT_SHADER', fragmentShaderSource);
       // Create a gl program and link shaders.
-      Object program = createProgram();
+      final Object program = createProgram();
       attachShader(program, vertexShader);
       attachShader(program, fragmentShader);
       linkProgram(program);
@@ -107,14 +107,17 @@ class GlContext {
   }
 
   Object compileShader(String shaderType, String source) {
-    Object? shader = _createShader(shaderType);
+    final Object? shader = _createShader(shaderType);
     if (shader == null) {
       throw Exception(error);
     }
     js_util.callMethod(glContext, 'shaderSource', <dynamic>[shader, source]);
     js_util.callMethod(glContext, 'compileShader', <dynamic>[shader]);
-    bool shaderStatus = js_util
-        .callMethod(glContext, 'getShaderParameter', <dynamic>[shader, compileStatus]);
+    final bool shaderStatus = js_util.callMethod(
+      glContext,
+      'getShaderParameter',
+      <dynamic>[shader, compileStatus],
+    ) as bool;
     if (!shaderStatus) {
       throw Exception('Shader compilation failed: ${getShaderInfoLog(shader)}');
     }
@@ -122,7 +125,7 @@ class GlContext {
   }
 
   Object createProgram() =>
-      js_util.callMethod(glContext, 'createProgram', const <dynamic>[])!;
+      js_util.callMethod(glContext, 'createProgram', const <dynamic>[]) as Object;
 
   void attachShader(Object? program, Object shader) {
     js_util.callMethod(glContext, 'attachShader', <dynamic>[program, shader]);
@@ -130,8 +133,12 @@ class GlContext {
 
   void linkProgram(Object program) {
     js_util.callMethod(glContext, 'linkProgram', <dynamic>[program]);
-    if (!js_util
-        .callMethod(glContext, 'getProgramParameter', <dynamic>[program, kLinkStatus])) {
+    final bool programStatus = js_util.callMethod(
+      glContext,
+      'getProgramParameter',
+      <dynamic>[program, kLinkStatus],
+    ) as bool;
+    if (!programStatus) {
       throw Exception(getProgramInfoLog(program));
     }
   }
@@ -219,7 +226,11 @@ class GlContext {
 
   /// Destroys gl context.
   void dispose() {
-    js_util.callMethod(_getExtension('WEBGL_lose_context'), 'loseContext', const <dynamic>[]);
+    js_util.callMethod(
+      _getExtension('WEBGL_lose_context') as Object,
+      'loseContext',
+      const <dynamic>[],
+    );
   }
 
   void deleteProgram(Object program) {
@@ -234,7 +245,7 @@ class GlContext {
       js_util.callMethod(glContext, 'getExtension', <dynamic>[extensionName]);
 
   void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
-    dynamic mode = _triangleTypeFromMode(vertexMode);
+    final dynamic mode = _triangleTypeFromMode(vertexMode);
     js_util.callMethod(glContext, 'drawArrays', <dynamic>[mode, 0, triangleCount]);
   }
 
@@ -335,7 +346,7 @@ class GlContext {
 
   /// Returns reference to uniform in program.
   Object getUniformLocation(Object program, String uniformName) {
-    Object? res = js_util
+    final Object? res = js_util
         .callMethod(glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
     if (res == null) {
       throw Exception('$uniformName not found');
@@ -346,14 +357,14 @@ class GlContext {
 
   /// Returns true if uniform exists.
   bool containsUniform(Object program, String uniformName) {
-    Object? res = js_util
+    final Object? res = js_util
         .callMethod(glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
     return res != null;
   }
 
   /// Returns reference to uniform in program.
   Object getAttributeLocation(Object program, String attribName) {
-    Object? res = js_util
+    final Object? res = js_util
         .callMethod(glContext, 'getAttribLocation', <dynamic>[program, attribName]);
     if (res == null) {
       throw Exception('$attribName not found');
@@ -393,13 +404,13 @@ class GlContext {
   ///  Errors that occurred during failed linking or validation of program
   ///  objects. Typically called after [linkProgram].
   String? getProgramInfoLog(Object glProgram) {
-    return js_util.callMethod(glContext, 'getProgramInfoLog', <dynamic>[glProgram]);
+    return js_util.callMethod(glContext, 'getProgramInfoLog', <dynamic>[glProgram]) as String?;
   }
 
   int? get drawingBufferWidth =>
-      js_util.getProperty(glContext, 'drawingBufferWidth');
+      js_util.getProperty(glContext, 'drawingBufferWidth') as int?;
   int? get drawingBufferHeight =>
-      js_util.getProperty(glContext, 'drawingBufferWidth');
+      js_util.getProperty(glContext, 'drawingBufferWidth') as int?;
 
   /// Reads gl contents as image data.
   ///
@@ -434,11 +445,11 @@ class GlContext {
     if (_canvas != null &&
         js_util.hasProperty(_canvas!, 'transferToImageBitmap')) {
       js_util.callMethod(_canvas!, 'getContext', <dynamic>['webgl2']);
-      Object?imageBitmap = js_util.callMethod(_canvas!, 'transferToImageBitmap',
+      final Object? imageBitmap = js_util.callMethod(_canvas!, 'transferToImageBitmap',
           <dynamic>[]);
       return imageBitmap;
     } else {
-      html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
+      final html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
       final html.CanvasRenderingContext2D ctx = canvas.context2D;
       drawImage(ctx, 0, 0);
       return canvas;
@@ -447,7 +458,7 @@ class GlContext {
 
   /// Returns image data in data url format.
   String toImageUrl() {
-    html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
+    final html.CanvasElement canvas = html.CanvasElement(width: _widthInPixels, height: _heightInPixels);
     final html.CanvasRenderingContext2D ctx = canvas.context2D;
     drawImage(ctx, 0, 0);
     final String dataUrl = canvas.toDataUrl();
@@ -457,6 +468,7 @@ class GlContext {
   }
 }
 
+// ignore: avoid_classes_with_only_static_members
 /// Creates gl context from cached OffscreenCanvas for webgl rendering to image.
 class GlContextCache {
   static int _maxPixelWidth = 0;
@@ -494,24 +506,24 @@ void setupVertexTransforms(
     double widthInPixels,
     double heightInPixels,
     Matrix4 transform) {
-  Object transformUniform =
+  final Object transformUniform =
       gl.getUniformLocation(glProgram.program, 'u_ctransform');
-  Matrix4 transformAtOffset = transform.clone()
+  final Matrix4 transformAtOffset = transform.clone()
     ..translate(-offsetX, -offsetY);
   gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
 
   // Set uniform to scale 0..width/height pixels coordinates to -1..1
   // clipspace range and flip the Y axis.
-  Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
+  final Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
   gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
       -2.0 / heightInPixels.toDouble(), 1, 1);
-  Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
+  final Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
   gl.setUniform4f(shift, -1, 1, 0, 0);
 }
 
 void setupTextureTransform(
     GlContext gl, GlProgram glProgram, double offsetx, double offsety, double sx, double sy) {
-  Object scalar = gl.getUniformLocation(glProgram.program, 'u_textransform');
+  final Object scalar = gl.getUniformLocation(glProgram.program, 'u_textransform');
   gl.setUniform4f(scalar, sx, sy, offsetx, offsety);
 }
 
@@ -521,7 +533,7 @@ void bufferVertexData(GlContext gl, Float32List positions,
     gl.bufferData(positions, gl.kStaticDraw);
   } else {
     final int length = positions.length;
-    Float32List scaledList = Float32List(length);
+    final Float32List scaledList = Float32List(length);
     for (int i = 0; i < length; i++) {
       scaledList[i] = positions[i] * devicePixelRatio;
     }

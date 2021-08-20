@@ -144,10 +144,16 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     }
     _maskFilter = value;
     if (value != null) {
-      _ckMaskFilter = CkMaskFilter.blur(
-        value.webOnlyBlurStyle,
-        value.webOnlySigma,
-      );
+      // CanvasKit returns `null` if the sigma is `0` or infinite.
+      if (!(value.webOnlySigma.isFinite && value.webOnlySigma > 0)) {
+        // Don't create a [CkMaskFilter].
+        _ckMaskFilter = null;
+      } else {
+        _ckMaskFilter = CkMaskFilter.blur(
+          value.webOnlyBlurStyle,
+          value.webOnlySigma,
+        );
+      }
     } else {
       _ckMaskFilter = null;
     }
@@ -166,13 +172,12 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     }
     _filterQuality = value;
     skiaObject.setShader(_shader?.withQuality(value));
-    skiaObject.setFilterQuality(toSkFilterQuality(value));
   }
 
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
 
   @override
-  ui.ColorFilter? get colorFilter => _managedColorFilter?.ckColorFilter;
+  ui.ColorFilter? get colorFilter => _managedColorFilter?.colorFilter;
   @override
   set colorFilter(ui.ColorFilter? value) {
     if (colorFilter == value) {
@@ -238,7 +243,6 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
     paint.setColorFilter(_managedColorFilter?.skiaObject);
     paint.setImageFilter(_managedImageFilter?.skiaObject);
-    paint.setFilterQuality(toSkFilterQuality(_filterQuality));
     paint.setStrokeCap(toSkStrokeCap(_strokeCap));
     paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
     paint.setStrokeMiter(_strokeMiterLimit);

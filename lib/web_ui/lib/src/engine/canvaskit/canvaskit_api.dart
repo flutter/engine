@@ -6,6 +6,9 @@
 ///
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
+// ignore_for_file: non_constant_identifier_names
+
+// ignore_for_file: public_member_api_docs
 @JS()
 library canvaskit_api;
 
@@ -15,8 +18,9 @@ import 'dart:js' as js;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+
+import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
@@ -329,7 +333,7 @@ final List<SkTextHeightBehavior> _skTextHeightBehaviors =
 ];
 
 SkTextHeightBehavior toSkTextHeightBehavior(ui.TextHeightBehavior behavior) {
-  int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
+  final int index = (behavior.applyHeightToFirstAscent ? 0 : 1 << 0) |
       (behavior.applyHeightToLastDescent ? 0 : 1 << 1);
   return _skTextHeightBehaviors[index];
 }
@@ -869,7 +873,10 @@ class SkShader {
 
 @JS()
 class SkMaskFilterNamespace {
-  external SkMaskFilter MakeBlur(
+  // Creates a blur MaskFilter.
+  //
+  // Returns `null` if [sigma] is 0 or infinite.
+  external SkMaskFilter? MakeBlur(
       SkBlurStyle blurStyle, double sigma, bool respectCTM);
 }
 
@@ -890,7 +897,6 @@ class SkPaint {
   external void setColorInt(int color);
   external void setShader(SkShader? shader);
   external void setMaskFilter(SkMaskFilter? maskFilter);
-  external void setFilterQuality(SkFilterQuality filterQuality);
   external void setColorFilter(SkColorFilter? colorFilter);
   external void setStrokeMiter(double miterLimit);
   external void setImageFilter(SkImageFilter? imageFilter);

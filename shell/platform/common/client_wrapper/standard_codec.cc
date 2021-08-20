@@ -295,8 +295,8 @@ const StandardMessageCodec& StandardMessageCodec::GetInstance(
   if (!serializer) {
     serializer = &StandardCodecSerializer::GetInstance();
   }
-  auto* sInstances = new std::map<const StandardCodecSerializer*,
-                                  std::unique_ptr<StandardMessageCodec>>;
+  static auto* sInstances = new std::map<const StandardCodecSerializer*,
+                                         std::unique_ptr<StandardMessageCodec>>;
   auto it = sInstances->find(serializer);
   if (it == sInstances->end()) {
     // Uses new due to private constructor (to prevent API clients from
@@ -318,6 +318,9 @@ StandardMessageCodec::~StandardMessageCodec() = default;
 std::unique_ptr<EncodableValue> StandardMessageCodec::DecodeMessageInternal(
     const uint8_t* binary_message,
     size_t message_size) const {
+  if (!binary_message) {
+    return std::make_unique<EncodableValue>();
+  }
   ByteBufferStreamReader stream(binary_message, message_size);
   return std::make_unique<EncodableValue>(serializer_->ReadValue(&stream));
 }
@@ -339,8 +342,8 @@ const StandardMethodCodec& StandardMethodCodec::GetInstance(
   if (!serializer) {
     serializer = &StandardCodecSerializer::GetInstance();
   }
-  auto* sInstances = new std::map<const StandardCodecSerializer*,
-                                  std::unique_ptr<StandardMethodCodec>>;
+  static auto* sInstances = new std::map<const StandardCodecSerializer*,
+                                         std::unique_ptr<StandardMethodCodec>>;
   auto it = sInstances->find(serializer);
   if (it == sInstances->end()) {
     // Uses new due to private constructor (to prevent API clients from

@@ -15,7 +15,7 @@ void main() {
 
 void testMain() {
   group('$SkiaFontCollection', () {
-    List<String> warnings = <String>[];
+    final List<String> warnings = <String>[];
     late void Function(String) oldPrintWarning;
 
     setUpAll(() async {
@@ -72,6 +72,6 @@ void testMain() {
         ),
       );
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

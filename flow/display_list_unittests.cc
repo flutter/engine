@@ -14,6 +14,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/core/SkVertices.h"
+#include "third_party/skia/include/effects/SkBlenders.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
@@ -66,6 +67,12 @@ constexpr SkPoint TestPoints[] = {
 };
 #define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
 
+static const sk_sp<SkBlender> TestBlender1 =
+    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
+static const sk_sp<SkBlender> TestBlender2 =
+    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
+static const sk_sp<SkBlender> TestBlender3 =
+    SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
 static const sk_sp<SkShader> TestShader1 =
     SkGradientShader::MakeLinear(end_points,
                                  colors,
@@ -295,11 +302,11 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kDstIn);}},
     }
   },
-  { "SetFilterQuality", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kNone_SkFilterQuality);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kLow_SkFilterQuality);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kMedium_SkFilterQuality);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setFilterQuality(kHigh_SkFilterQuality);}},
+  { "SetBlender", {
+      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
+      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender1);}},
+      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender2);}},
+      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender3);}},
     }
   },
   { "SetShader", {
@@ -670,11 +677,12 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
   { "DrawShadow", {
       // cv shadows are turned into an opaque ShadowRec which is not exposed
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath2, SK_ColorGREEN, 1.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorBLUE, 1.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 2.0, false);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, true);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath2, SK_ColorGREEN, 1.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorBLUE, 1.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 2.0, false, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, true, 1.0);}},
+      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false, 2.5);}},
     }
   },
 };
@@ -852,6 +860,131 @@ TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
       ASSERT_FALSE(variant_dl->Equals(*missing_dl)) << desc << " != omitted";
       ASSERT_FALSE(missing_dl->Equals(*variant_dl)) << "omitted != " << desc;
     }
+  }
+}
+
+TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
+  SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
+  SkRect save_bounds = SkRect::MakeWH(100, 100);
+  SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
+  // clang-format off
+  const float color_matrix[] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  };
+  // clang-format on
+  sk_sp<SkColorFilter> base_color_filter = SkColorFilters::Matrix(color_matrix);
+  // clang-format off
+  const float alpha_matrix[] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 0, 1,
+  };
+  // clang-format on
+  sk_sp<SkColorFilter> alpha_color_filter =
+      SkColorFilters::Matrix(alpha_matrix);
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.saveLayer(&save_bounds, true);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), rect);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setColorFilter(base_color_filter);
+    builder.saveLayer(&save_bounds, true);
+    builder.setColorFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), rect);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setColorFilter(alpha_color_filter);
+    builder.saveLayer(&save_bounds, true);
+    builder.setColorFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), save_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setColorFilter(alpha_color_filter);
+    builder.saveLayer(nullptr, true);
+    builder.setColorFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), build_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setImageFilter(
+        SkImageFilters::ColorFilter(base_color_filter, nullptr));
+    builder.saveLayer(&save_bounds, true);
+    builder.setImageFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), rect);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setImageFilter(
+        SkImageFilters::ColorFilter(alpha_color_filter, nullptr));
+    builder.saveLayer(&save_bounds, true);
+    builder.setImageFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), save_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setImageFilter(
+        SkImageFilters::ColorFilter(alpha_color_filter, nullptr));
+    builder.saveLayer(nullptr, true);
+    builder.setImageFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), build_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setBlendMode(SkBlendMode::kClear);
+    builder.saveLayer(&save_bounds, true);
+    builder.setBlendMode(SkBlendMode::kSrcOver);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), save_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setBlendMode(SkBlendMode::kClear);
+    builder.saveLayer(nullptr, true);
+    builder.setBlendMode(SkBlendMode::kSrcOver);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), build_bounds);
   }
 }
 

@@ -29,9 +29,9 @@ class LicensesCommand extends Command<bool> {
         'Dart source listing of ${environment.webUiRootDir.path} must not be empty.');
 
     final List<String> allDartPaths =
-        allSourceFiles.map((f) => f.path).toList();
+        allSourceFiles.map((io.File f) => f.path).toList();
 
-    for (String expectedDirectory in const <String>[
+    for (final String expectedDirectory in const <String>[
       'lib',
       'test',
       'dev',
@@ -41,7 +41,7 @@ class LicensesCommand extends Command<bool> {
           path.join(environment.webUiRootDir.path, expectedDirectory);
       _expect(
         allDartPaths
-            .where((p) => p.startsWith(expectedAbsoluteDirectory))
+            .where((String p) => p.startsWith(expectedAbsoluteDirectory))
             .isNotEmpty,
         'Must include the $expectedDirectory/ directory',
       );
@@ -51,11 +51,11 @@ class LicensesCommand extends Command<bool> {
     print('License headers OK!');
   }
 
-  final _copyRegex =
+  final RegExp _copyRegex =
       RegExp(r'// Copyright 2013 The Flutter Authors\. All rights reserved\.');
 
   void _expectLicenseHeader(io.File file) {
-    List<String> head = file.readAsStringSync().split('\n').take(3).toList();
+    final List<String> head = file.readAsStringSync().split('\n').take(3).toList();
 
     _expect(head.length >= 3, 'File too short: ${file.path}');
     _expect(
@@ -75,12 +75,12 @@ class LicensesCommand extends Command<bool> {
 
   void _expect(bool value, String requirement) {
     if (!value) {
-      throw Exception('Test failed: ${requirement}');
+      throw Exception('Test failed: $requirement');
     }
   }
 
   List<io.File> _flatListSourceFiles(io.Directory directory) {
-    return directory.listSync(recursive: true).whereType<io.File>().where((f) {
+    return directory.listSync(recursive: true).whereType<io.File>().where((io.File f) {
       if (!f.path.endsWith('.dart') && !f.path.endsWith('.js')) {
         // Not a source file we're checking.
         return false;

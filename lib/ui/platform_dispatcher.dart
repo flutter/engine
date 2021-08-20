@@ -32,6 +32,9 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
 
 /// Signature for [PlatformDispatcher.onKeyData].
+///
+/// The callback should return true if the key event has been handled by the
+/// framework and should not be propagated further.
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
@@ -52,6 +55,9 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
 /// Signature for [PlatformDispatcher.onConfigurationChanged].
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
+
+// A gesture setting value that indicates it has not been set by the engine.
+const double _kUnsetGestureSetting = -1.0;
 
 /// Platform event dispatcher singleton.
 ///
@@ -176,6 +182,7 @@ class PlatformDispatcher {
     double systemGestureInsetRight,
     double systemGestureInsetBottom,
     double systemGestureInsetLeft,
+    double physicalTouchSlop,
   ) {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
@@ -209,6 +216,10 @@ class PlatformDispatcher {
         right: math.max(0.0, systemGestureInsetRight),
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
+      ),
+      // -1 is used as a sentinel for an undefined touch slop
+      gestureSettings: GestureSettings(
+        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
       ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
@@ -346,6 +357,9 @@ class PlatformDispatcher {
   ///
   /// The framework invokes this callback in the same zone in which the callback
   /// was set.
+  ///
+  /// The callback should return true if the key event has been handled by the
+  /// framework and should not be propagated further.
   KeyDataCallback? get onKeyData => _onKeyData;
   KeyDataCallback? _onKeyData;
   Zone _onKeyDataZone = Zone.root;
@@ -1020,6 +1034,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
   });
 
   /// Copy this configuration with some fields replaced.
@@ -1032,6 +1047,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -1042,6 +1058,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
     );
   }
 
@@ -1114,6 +1131,13 @@ class ViewConfiguration {
   /// phone sensor housings).
   final WindowPadding padding;
 
+  /// Additional configuration for touch gestures performed on this view.
+  ///
+  /// For example, the touch slop defined in physical pixels may be provided
+  /// by the gesture settings and should be preferred over the framework
+  /// touch slop constant.
+  final GestureSettings gestureSettings;
+
   @override
   String toString() {
     return '$runtimeType[window: $window, geometry: $geometry]';
@@ -1182,7 +1206,7 @@ class FrameTiming {
     required int buildFinish,
     required int rasterStart,
     required int rasterFinish,
-    int rasterFinishWallTime = -1,
+    required int rasterFinishWallTime,
     int frameNumber = -1,
   }) {
     return FrameTiming._(<int>[
@@ -1191,7 +1215,7 @@ class FrameTiming {
       buildFinish,
       rasterStart,
       rasterFinish,
-      if (rasterFinishWallTime == -1) rasterFinish else rasterFinishWallTime,
+      rasterFinishWallTime,
       frameNumber,
     ]);
   }

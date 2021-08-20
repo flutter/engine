@@ -1221,10 +1221,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         }
         return texture;
       };
+      external_texture_resolver =
+          std::make_unique<ExternalTextureResolver>(external_texture_callback);
     }
   }
-  external_texture_resolver =
-      std::make_unique<ExternalTextureResolver>(external_texture_callback);
 #endif
 #ifdef SHELL_ENABLE_METAL
   flutter::EmbedderExternalTextureMetal::ExternalTextureCallback
@@ -1244,10 +1244,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         }
         return texture;
       };
+      external_texture_resolver = std::make_unique<ExternalTextureResolver>(
+          external_texture_metal_callback);
     }
   }
-  external_texture_resolver = std::make_unique<ExternalTextureResolver>(
-      external_texture_metal_callback);
 #endif
 
   auto thread_host =
@@ -1601,7 +1601,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
 
   flutter::KeyData key_data;
   key_data.Clear();
-  key_data.timestamp = (uint64_t)SAFE_ACCESS(event, timestamp, 0);
+  key_data.timestamp = static_cast<uint64_t>(SAFE_ACCESS(event, timestamp, 0));
   key_data.type = MapKeyEventType(
       SAFE_ACCESS(event, type, FlutterKeyEventType::kFlutterKeyEventTypeUp));
   key_data.physical = SAFE_ACCESS(event, physical, 0);
@@ -1611,8 +1611,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
   auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
 
   auto response = [callback, user_data](bool handled) {
-    if (callback != nullptr)
+    if (callback != nullptr) {
       callback(handled, user_data);
+    }
   };
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)

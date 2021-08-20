@@ -9,6 +9,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show domRenderer, window;
 import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/dom_renderer.dart';
 import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -26,7 +27,7 @@ void _testEach<T extends _BasicEventContext>(
   String description,
   _ContextTestBody<T> body,
 ) {
-  for (T context in contexts) {
+  for (final T context in contexts) {
     if (context.isSupported) {
       test('${context.name} $description', () {
         body(context);
@@ -36,22 +37,20 @@ void _testEach<T extends _BasicEventContext>(
 }
 
 /// Some methods in this class are skipped for iOS-Safari.
-/// TODO: https://github.com/flutter/flutter/issues/60033
-bool get isIosSafari => (browserEngine == BrowserEngine.webkit &&
-    operatingSystem == OperatingSystem.iOs);
+// TODO(mdebbar): https://github.com/flutter/flutter/issues/60033
+bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  html.Element glassPane = domRenderer.glassPaneElement!;
+  final html.Element glassPane = domRenderer.glassPaneElement!;
   double dpi = 1.0;
 
   setUp(() {
-    // Touching domRenderer creates PointerBinding.instance.
-    domRenderer;
-
+    ensureDomRendererInitialized();
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
   });
@@ -91,7 +90,7 @@ void testMain() {
     expect(event.client.x, equals(110));
     expect(event.client.y, equals(111));
 
-    events = expectCorrectTypes(context.multiTouchDown(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchDown(const <_TouchDetails>[
       _TouchDetails(pointer: 100, clientX: 120, clientY: 121),
       _TouchDetails(pointer: 101, clientX: 122, clientY: 123),
     ]));
@@ -144,7 +143,7 @@ void testMain() {
     expect(event.client.x, equals(214));
     expect(event.client.y, equals(215));
 
-    events = expectCorrectTypes(context.multiTouchMove(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchMove(const <_TouchDetails>[
       _TouchDetails(pointer: 102, clientX: 220, clientY: 221),
       _TouchDetails(pointer: 103, clientX: 222, clientY: 223),
     ]));
@@ -179,7 +178,7 @@ void testMain() {
     expect(event.client.x, equals(310));
     expect(event.client.y, equals(311));
 
-    events = expectCorrectTypes(context.multiTouchUp(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchUp(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
       _TouchDetails(pointer: 105, clientX: 322, clientY: 323),
     ]));
@@ -205,7 +204,7 @@ void testMain() {
     expect(event.client.x, equals(400));
     expect(event.client.y, equals(401));
 
-    events = expectCorrectTypes(context.multiTouchCancel(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchCancel(const <_TouchDetails>[
       _TouchDetails(pointer: 106, clientX: 500, clientY: 501),
       _TouchDetails(pointer: 107, clientX: 502, clientY: 503),
     ]));
@@ -249,7 +248,7 @@ void testMain() {
     expect(event.changedTouches![0].client.x, equals(100));
     expect(event.changedTouches![0].client.y, equals(101));
 
-    events = expectCorrectTypes(context.multiTouchDown(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchDown(const <_TouchDetails>[
       _TouchDetails(pointer: 100, clientX: 120, clientY: 121),
       _TouchDetails(pointer: 101, clientX: 122, clientY: 123),
     ]));
@@ -270,7 +269,7 @@ void testMain() {
     expect(event.changedTouches![0].client.x, equals(200));
     expect(event.changedTouches![0].client.y, equals(201));
 
-    events = expectCorrectTypes(context.multiTouchMove(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchMove(const <_TouchDetails>[
       _TouchDetails(pointer: 102, clientX: 220, clientY: 221),
       _TouchDetails(pointer: 103, clientX: 222, clientY: 223),
     ]));
@@ -291,7 +290,7 @@ void testMain() {
     expect(event.changedTouches![0].client.x, equals(300));
     expect(event.changedTouches![0].client.y, equals(301));
 
-    events = expectCorrectTypes(context.multiTouchUp(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchUp(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
       _TouchDetails(pointer: 105, clientX: 322, clientY: 323),
     ]));
@@ -305,7 +304,7 @@ void testMain() {
     expect(events[0].changedTouches![1].client.x, equals(322));
     expect(events[0].changedTouches![1].client.y, equals(323));
 
-    events = expectCorrectTypes(context.multiTouchCancel(<_TouchDetails>[
+    events = expectCorrectTypes(context.multiTouchCancel(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
       _TouchDetails(pointer: 105, clientX: 322, clientY: 323),
     ]));
@@ -405,7 +404,7 @@ void testMain() {
   // ALL ADAPTERS
 
   _testEach<_BasicEventContext>(
-    [
+    <_BasicEventContext>[
       _PointerEventContext(),
       _MouseEventContext(),
       _TouchEventContext(),
@@ -426,7 +425,7 @@ void testMain() {
   );
 
   _testEach<_BasicEventContext>(
-    [
+    <_BasicEventContext>[
       _PointerEventContext(),
       _MouseEventContext(),
       _TouchEventContext(),
@@ -434,7 +433,7 @@ void testMain() {
     'does create an add event if got a pointerdown',
     (_BasicEventContext context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -450,14 +449,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly detects events on the semantics placeholder',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -524,14 +523,14 @@ void testMain() {
   // BUTTONED ADAPTERS
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'creates an add event if the first pointer activity is a hover',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -548,14 +547,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'sends a pointermove event instead of the second pointerdown in a row',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -585,14 +584,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'does synthesize add or hover or move for scroll',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -704,14 +703,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext()
     ],
     'does calculate delta and pointer identifier correctly',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -832,14 +831,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
     'correctly converts buttons of down, move and up events',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1002,14 +1001,14 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
     'correctly handles button changes during a down sequence',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1067,7 +1066,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
@@ -1077,7 +1076,7 @@ void testMain() {
       // This can happen when the user pops up the context menu by right
       // clicking, then dismisses it with a left click.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1150,7 +1149,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1163,7 +1162,7 @@ void testMain() {
       //  - Clicks LMB;
       //  - Releases RMB.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1223,7 +1222,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
     ],
     'correctly handles missing right mouse button up when followed by move',
@@ -1235,7 +1234,7 @@ void testMain() {
       //  - Clicks LMB to close context menu.
       //  - Moves mouse.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1274,7 +1273,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1285,7 +1284,7 @@ void testMain() {
       // context menu shows up), the browser sends a move event before down.
       // The move event will have "button:-1, buttons:2".
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1310,7 +1309,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1322,7 +1321,7 @@ void testMain() {
       //  - Pops up the context menu by right clicking, but holds RMB;
       //  - Move the pointer to hover.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1367,7 +1366,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1385,7 +1384,7 @@ void testMain() {
       // `pointermove`/`mousemove` events. Then when the LMB click comes in, it
       // could be in a different location without any `*move` events in between.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1436,7 +1435,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1448,7 +1447,7 @@ void testMain() {
       //  - Pops up the context menu by right clicking, but holds RMB;
       //  - Clicks RMB again in a different location;
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1509,7 +1508,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1523,7 +1522,7 @@ void testMain() {
       //
       // This seems to be happening sometimes when using RMB on the Mac trackpad.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1592,7 +1591,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1609,7 +1608,7 @@ void testMain() {
       // cases, the browser actually sends an `up` event for the RMB click even
       // when the context menu is shown.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1662,7 +1661,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       _PointerEventContext(),
       _MouseEventContext(),
     ],
@@ -1675,7 +1674,7 @@ void testMain() {
       //     RMB:              down------------------up
       // Flutter:   down-------move-------move-------up
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1746,7 +1745,7 @@ void testMain() {
   );
 
   _testEach<_ButtonedEventMixin>(
-    [
+    <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
@@ -1756,7 +1755,7 @@ void testMain() {
       // This can happen when the up event occurs while the mouse is outside the
       // browser window.
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -1813,21 +1812,21 @@ void testMain() {
   // MULTIPOINTER ADAPTERS
 
   _testEach<_MultiPointerEventMixin>(
-    [
+    <_MultiPointerEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _TouchEventContext(),
     ],
     'treats each pointer separately',
     (_MultiPointerEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       List<ui.PointerData> data;
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
 
       // Two pointers down
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 100, clientY: 101),
         _TouchDetails(pointer: 3, clientX: 200, clientY: 201),
       ]).forEach(glassPane.dispatchEvent);
@@ -1874,7 +1873,7 @@ void testMain() {
       packets.clear();
 
       // Two pointers move
-      context.multiTouchMove(<_TouchDetails>[
+      context.multiTouchMove(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
         _TouchDetails(pointer: 2, clientX: 400, clientY: 402),
       ]).forEach(glassPane.dispatchEvent);
@@ -1909,7 +1908,7 @@ void testMain() {
       packets.clear();
 
       // One pointer up
-      context.multiTouchUp(<_TouchDetails>[
+      context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -1932,7 +1931,7 @@ void testMain() {
       packets.clear();
 
       // Another pointer up
-      context.multiTouchUp(<_TouchDetails>[
+      context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 400, clientY: 402),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -1955,7 +1954,7 @@ void testMain() {
       packets.clear();
 
       // Again two pointers down (reuse pointer ID)
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 500, clientY: 501),
         _TouchDetails(pointer: 2, clientX: 600, clientY: 601),
       ]).forEach(glassPane.dispatchEvent);
@@ -2004,27 +2003,27 @@ void testMain() {
   );
 
   _testEach<_MultiPointerEventMixin>(
-    [
+    <_MultiPointerEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _TouchEventContext(),
     ],
     'correctly parses cancel event',
     (_MultiPointerEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
 
       // Two pointers down
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 100, clientY: 101),
         _TouchDetails(pointer: 3, clientX: 200, clientY: 201),
       ]).forEach(glassPane.dispatchEvent);
       packets.clear(); // Down event is tested in other tests.
 
       // One pointer cancel
-      context.multiTouchCancel(<_TouchDetails>[
+      context.multiTouchCancel(const <_TouchDetails>[
         _TouchDetails(pointer: 3, clientX: 300, clientY: 302),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets.length, 1);
@@ -2051,18 +2050,18 @@ void testMain() {
   // POINTER ADAPTER
 
   _testEach<_PointerEventContext>(
-    [
+    <_PointerEventContext>[
       if (!isIosSafari) _PointerEventContext(),
     ],
     'does not synthesize pointer up if from different device',
     (_PointerEventContext context) {
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
 
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 100, clientY: 101),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -2075,7 +2074,7 @@ void testMain() {
       expect(packets[0].data[1].device, equals(1));
       packets.clear();
 
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 200, clientY: 202),
       ]).forEach(glassPane.dispatchEvent);
       // An add will be synthesized.
@@ -2091,7 +2090,7 @@ void testMain() {
   );
 
   _testEach<_PointerEventContext>(
-    [
+    <_PointerEventContext>[
       _PointerEventContext(),
     ],
     'handles random pointer id on up events',
@@ -2103,7 +2102,7 @@ void testMain() {
       //
       // For more info, see: https://github.com/flutter/flutter/issues/75559
 
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
@@ -2146,20 +2145,20 @@ void testMain() {
 
   // TOUCH ADAPTER
 
-  _testEach(
-    [
+  _testEach<_TouchEventContext>(
+    <_TouchEventContext>[
       if (!isIosSafari) _TouchEventContext(),
     ],
     'does calculate delta and pointer identifier correctly',
     (_TouchEventContext context) {
       // Mouse and Pointer are in another test since these tests can involve hovering
       PointerBinding.instance!.debugOverrideDetector(context);
-      List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
       ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
         packets.add(packet);
       };
 
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 20, clientY: 20),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -2181,7 +2180,7 @@ void testMain() {
       expect(packets[0].data[1].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      context.multiTouchMove(<_TouchDetails>[
+      context.multiTouchMove(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 40, clientY: 30),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -2195,7 +2194,7 @@ void testMain() {
       expect(packets[0].data[0].physicalDeltaY, equals(10.0 * dpi));
       packets.clear();
 
-      context.multiTouchUp(<_TouchDetails>[
+      context.multiTouchUp(const <_TouchDetails>[
         _TouchDetails(pointer: 1, clientX: 40, clientY: 30),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -2217,7 +2216,7 @@ void testMain() {
       expect(packets[0].data[1].physicalDeltaY, equals(0.0));
       packets.clear();
 
-      context.multiTouchDown(<_TouchDetails>[
+      context.multiTouchDown(const <_TouchDetails>[
         _TouchDetails(pointer: 2, clientX: 20, clientY: 10),
       ]).forEach(glassPane.dispatchEvent);
       expect(packets, hasLength(1));
@@ -2326,7 +2325,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? deltaX,
     required double? deltaY,
   }) {
-    final Function jsWheelEvent = js_util.getProperty(html.window, 'WheelEvent');
+    final Function jsWheelEvent = js_util.getProperty(html.window, 'WheelEvent') as Function;
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
@@ -2337,7 +2336,10 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         'deltaY': deltaY,
       }
     ];
-    return js_util.callConstructor(jsWheelEvent, js_util.jsify(eventArgs));
+    return js_util.callConstructor(
+      jsWheelEvent,
+      js_util.jsify(eventArgs) as List<Object?>,
+    ) as html.Event;
   }
 }
 
@@ -2551,7 +2553,7 @@ class _MouseEventContext extends _BasicEventContext
     double? clientY,
   }) {
     final Function jsMouseEvent =
-        js_util.getProperty(html.window, 'MouseEvent');
+        js_util.getProperty(html.window, 'MouseEvent') as Function;
     final List<dynamic> eventArgs = <dynamic>[
       type,
       <String, dynamic>{
@@ -2561,7 +2563,10 @@ class _MouseEventContext extends _BasicEventContext
         'clientY': clientY,
       }
     ];
-    return js_util.callConstructor(jsMouseEvent, js_util.jsify(eventArgs));
+    return js_util.callConstructor(
+      jsMouseEvent,
+      js_util.jsify(eventArgs) as List<Object?>,
+    ) as html.MouseEvent;
   }
 }
 

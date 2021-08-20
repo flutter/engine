@@ -8,15 +8,6 @@ import("//flutter/common/config.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
-bindings_output_dir = "$root_gen_dir/sky/bindings"
-
-copy("generate_dart_ui") {
-  visibility = [ ":*" ]
-  sources = dart_ui_files
-
-  outputs = [ "$bindings_output_dir/dart_ui/{{source_file_part}}" ]
-}
-
 compiled_action("generate_snapshot_bin") {
   if (target_cpu == "x86" && host_os == "linux") {
     # By default Dart will create a 32-bit gen_snapshot host binary if the target
@@ -251,6 +242,8 @@ compile_platform("strong_platform") {
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
+
+  pool = "//flutter/build/dart:dart_pool"
 
   is_runtime_mode_release =
       flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"

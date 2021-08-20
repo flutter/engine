@@ -7,7 +7,8 @@ import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/src/engine.dart' show EnginePlatformDispatcher;
+
+import 'platform_dispatcher.dart';
 
 /// A function that receives a benchmark [value] labeleb by [name].
 typedef OnBenchmark = void Function(String name, double value);
@@ -105,7 +106,7 @@ class Profiler {
     _checkBenchmarkMode();
 
     final OnBenchmark? onBenchmark =
-        js_util.getProperty(html.window, '_flutter_internal_on_benchmark');
+        js_util.getProperty(html.window, '_flutter_internal_on_benchmark') as OnBenchmark?;
     if (onBenchmark != null) {
       onBenchmark(name, value);
     }
@@ -198,6 +199,7 @@ void frameTimingsOnRasterFinish() {
     buildFinish: _buildFinishMicros,
     rasterStart: _rasterStartMicros,
     rasterFinish: _rasterFinishMicros,
+    rasterFinishWallTime: _rasterFinishMicros,
   ));
   _vsyncStartMicros = -1;
   _buildStartMicros = -1;
@@ -296,7 +298,7 @@ class Instrumentation {
           ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
             return a.key.compareTo(b.key);
           });
-        for (MapEntry<String, int> entry in entries) {
+        for (final MapEntry<String, int> entry in entries) {
           message.writeln('  ${entry.key}: ${entry.value}');
         }
         print(message);

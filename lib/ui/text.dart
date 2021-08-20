@@ -150,7 +150,7 @@ class FontWeight {
 ///               style: TextStyle(
 ///                   fontFamily: 'Cardo',
 ///                   fontSize: 24,
-///                   fontFeatures: const <FontFeature>[FontFeature.oldstyleFigures()])),
+///                   fontFeatures: <FontFeature>[FontFeature.oldstyleFigures()])),
 ///           const Spacer(),
 ///           const Divider(),
 ///           const Spacer(),
@@ -472,7 +472,7 @@ class FontFeature {
   ///  * <https://docs.microsoft.com/en-us/typography/opentype/spec/features_ae#cv01-cv99>
   factory FontFeature.characterVariant(int value) {
     assert(value >= 1);
-    assert(value <= 20);
+    assert(value <= 99);
     return FontFeature('cv${value.toString().padLeft(2, "0")}');
   }
 
@@ -761,7 +761,7 @@ class FontFeature {
   ///   // The Noto family of fonts can be downloaded from Google Fonts (https://www.google.com/fonts).
   ///   return const Text(
   ///     '次 化 刃 直 入 令',
-  ///     locale: const Locale('zh', 'CN'), // or Locale('ja'), Locale('ko'), Locale('zh', 'TW'), etc
+  ///     locale: Locale('zh', 'CN'), // or Locale('ja'), Locale('ko'), Locale('zh', 'TW'), etc
   ///     style: TextStyle(
   ///       fontFamily: 'Noto Sans',
   ///     ),
@@ -3116,7 +3116,7 @@ class LineMetrics {
 /// Paragraphs can be displayed on a [Canvas] using the [Canvas.drawParagraph]
 /// method.
 @pragma('vm:entry-point')
-class Paragraph extends NativeFieldWrapperClass2 {
+class Paragraph extends NativeFieldWrapperClass1 {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
@@ -3253,7 +3253,25 @@ class Paragraph extends NativeFieldWrapperClass2 {
   /// metrics, so use it sparingly.
   TextRange getLineBoundary(TextPosition position) {
     final List<int> boundary = _getLineBoundary(position.offset);
-    return TextRange(start: boundary[0], end: boundary[1]);
+    final TextRange line = TextRange(start: boundary[0], end: boundary[1]);
+
+    final List<int> nextBoundary = _getLineBoundary(position.offset + 1);
+    final TextRange nextLine = TextRange(start: nextBoundary[0], end: nextBoundary[1]);
+    // If there is no next line, because we're at the end of the field, return
+    // line.
+    if (!nextLine.isValid) {
+      return line;
+    }
+
+    // _getLineBoundary only considers the offset and assumes that the
+    // TextAffinity is upstream. In the case that TextPosition is just after a
+    // wordwrap (downstream), we need to return the line for the next offset.
+    if (position.affinity == TextAffinity.downstream && line != nextLine
+        && position.offset == line.end && line.end == nextLine.start) {
+      final List<int> nextBoundary = _getLineBoundary(position.offset + 1);
+      return TextRange(start: nextBoundary[0], end: nextBoundary[1]);
+    }
+    return line;
   }
   List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
 
@@ -3306,7 +3324,7 @@ class Paragraph extends NativeFieldWrapperClass2 {
 ///
 /// After constructing a [Paragraph], call [Paragraph.layout] on it and then
 /// paint it with [Canvas.drawParagraph].
-class ParagraphBuilder extends NativeFieldWrapperClass2 {
+class ParagraphBuilder extends NativeFieldWrapperClass1 {
 
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].

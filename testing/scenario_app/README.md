@@ -84,7 +84,18 @@ In the `android` directory, run:
 ./gradlew app:verifyDebugAndroidTestScreenshotTest
 ```
 
+### Updating Gradle dependencies
+
+If a Gradle dependency is updated, lockfiles must be regenerated.
+
+To generate new lockfiles, run:
+
+```bash
+cd android
+./gradlew generateLockfiles
+```
+
 ## Changing dart:ui code
 
-If you change the dart:ui interface, remember to point the sky_engine and
-sky_services clauses to your local engine's output path before compiling.
+If you change the dart:ui interface, remember to point the sky_engine
+clauses to your local engine's output path before compiling.

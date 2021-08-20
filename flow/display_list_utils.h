@@ -5,16 +5,20 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
 
+#include <optional>
+
 #include "flutter/flow/display_list.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
 
 #include "third_party/skia/include/core/SkMaskFilter.h"
 
 // This file contains various utility classes to ease implementing
 // a Flutter DisplayList Dispatcher, including:
 //
-// IngoreAttributeDispatchHelper:
-// IngoreClipDispatchHelper:
-// IngoreTransformDispatchHelper
+// IgnoreAttributeDispatchHelper:
+// IgnoreClipDispatchHelper:
+// IgnoreTransformDispatchHelper
 //     Empty overrides of all of the associated methods of Dispatcher
 //     for dispatchers that only track some of the rendering operations
 //
@@ -37,7 +41,7 @@ namespace flutter {
 
 // A utility class that will ignore all Dispatcher methods relating
 // to the setting of attributes.
-class IngoreAttributeDispatchHelper : public virtual Dispatcher {
+class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
  public:
   void setAA(bool aa) override {}
   void setDither(bool dither) override {}
@@ -49,7 +53,7 @@ class IngoreAttributeDispatchHelper : public virtual Dispatcher {
   void setMiterLimit(SkScalar limit) override {}
   void setColor(SkColor color) override {}
   void setBlendMode(SkBlendMode mode) override {}
-  void setFilterQuality(SkFilterQuality quality) override {}
+  void setBlender(sk_sp<SkBlender> blender) override {}
   void setShader(sk_sp<SkShader> shader) override {}
   void setImageFilter(sk_sp<SkImageFilter> filter) override {}
   void setColorFilter(sk_sp<SkColorFilter> filter) override {}
@@ -60,7 +64,7 @@ class IngoreAttributeDispatchHelper : public virtual Dispatcher {
 
 // A utility class that will ignore all Dispatcher methods relating
 // to setting a clip.
-class IngoreClipDispatchHelper : public virtual Dispatcher {
+class IgnoreClipDispatchHelper : public virtual Dispatcher {
   void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) override {}
   void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) override {}
   void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) override {}
@@ -68,7 +72,7 @@ class IngoreClipDispatchHelper : public virtual Dispatcher {
 
 // A utility class that will ignore all Dispatcher methods relating
 // to modifying the transform.
-class IngoreTransformDispatchHelper : public virtual Dispatcher {
+class IgnoreTransformDispatchHelper : public virtual Dispatcher {
  public:
   void translate(SkScalar tx, SkScalar ty) override {}
   void scale(SkScalar sx, SkScalar sy) override {}
@@ -106,7 +110,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setMiterLimit(SkScalar limit) override;
   void setColor(SkColor color) override;
   void setBlendMode(SkBlendMode mode) override;
-  void setFilterQuality(SkFilterQuality quality) override;
+  void setBlender(sk_sp<SkBlender> blender) override;
   void setShader(sk_sp<SkShader> shader) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
   void setColorFilter(sk_sp<SkColorFilter> filter) override;
@@ -310,9 +314,13 @@ class DisplayListBoundsCalculator final
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes) override;
+                  bool occludes,
+                  SkScalar dpr) override;
 
-  SkRect getBounds() { return accumulator_->getBounds(); }
+  SkRect getBounds() {
+    FML_DCHECK(accumulator_ == &root_accumulator_);
+    return root_accumulator_.getBounds();
+  }
 
  private:
   // current accumulator based on saveLayer history
@@ -333,6 +341,9 @@ class DisplayListBoundsCalculator final
 
    protected:
     BoundsAccumulator* saved_accumulator_;
+
+   private:
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveInfo);
   };
 
   class SaveLayerInfo : public SaveInfo {
@@ -346,6 +357,9 @@ class DisplayListBoundsCalculator final
    protected:
     BoundsAccumulator layer_accumulator_;
     const SkMatrix matrix_;
+
+   private:
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerInfo);
   };
 
   class SaveLayerWithPaintInfo : public SaveLayerInfo {
@@ -353,6 +367,7 @@ class DisplayListBoundsCalculator final
     SaveLayerWithPaintInfo(DisplayListBoundsCalculator* calculator,
                            BoundsAccumulator* accumulator,
                            const SkMatrix& save_matrix,
+                           const SkRect* bounds,
                            const SkPaint& save_paint);
     virtual ~SaveLayerWithPaintInfo() = default;
 
@@ -361,10 +376,16 @@ class DisplayListBoundsCalculator final
    protected:
     DisplayListBoundsCalculator* calculator_;
 
+    std::optional<SkRect> bounds_;
     SkPaint paint_;
+
+   private:
+    static constexpr SkRect kMissingBounds = SkRect::MakeWH(-1, -1);
+
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerWithPaintInfo);
   };
 
-  std::vector<SaveInfo> saved_infos_;
+  std::vector<std::unique_ptr<SaveInfo>> saved_infos_;
 
   void accumulateRect(const SkRect& rect, bool force_stroke = false);
 };

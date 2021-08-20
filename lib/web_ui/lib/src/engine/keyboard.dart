@@ -6,8 +6,8 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show EnginePlatformDispatcher, registerHotRestartListener;
-
+import '../engine.dart'  show registerHotRestartListener;
+import 'platform_dispatcher.dart';
 import 'services.dart';
 
 /// After a keydown is received, this is the duration we wait for a repeat event
@@ -128,6 +128,7 @@ class Keyboard {
       'keymap': 'web',
       'code': keyboardEvent.code,
       'key': keyboardEvent.key,
+      'location': keyboardEvent.location,
       'metaState': _lastMetaState,
     };
 
@@ -136,7 +137,7 @@ class Keyboard {
         if (data == null) {
           return;
         }
-        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data);
+        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data) as Map<String, dynamic>;
         if (jsonResponse['handled'] as bool) {
           // If the framework handled it, then don't propagate it any further.
           event.preventDefault();
@@ -151,6 +152,7 @@ class Keyboard {
       'keymap': 'web',
       'code': event.code,
       'key': event.key,
+      'location': event.location,
       'metaState': _lastMetaState,
     };
 

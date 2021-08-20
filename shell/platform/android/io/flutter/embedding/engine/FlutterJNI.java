@@ -7,9 +7,12 @@ package io.flutter.embedding.engine;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.ColorSpace;
+import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
@@ -30,6 +33,8 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -407,6 +412,45 @@ public class FlutterJNI {
     flutterUiDisplayListeners.remove(listener);
   }
 
+  public static native void nativeImageHeaderCallback(
+      long imageGeneratorPointer, int width, int height);
+
+  /**
+   * Called by native as a fallback method of image decoding. There are other ways to decode images
+   * on lower API levels, they involve copying the native data _and_ do not support any additional
+   * formats, whereas ImageDecoder supports HEIF images. Unlike most other methods called from
+   * native, this method is expected to be called on a worker thread, since it only uses thread safe
+   * methods and may take multiple frames to complete.
+   */
+  @SuppressWarnings("unused")
+  @VisibleForTesting
+  @Nullable
+  public static Bitmap decodeImage(@NonNull ByteBuffer buffer, long imageGeneratorAddress) {
+    if (Build.VERSION.SDK_INT >= 28) {
+      ImageDecoder.Source source = ImageDecoder.createSource(buffer);
+      try {
+        return ImageDecoder.decodeBitmap(
+            source,
+            (decoder, info, src) -> {
+              // i.e. ARGB_8888
+              decoder.setTargetColorSpace(ColorSpace.get(ColorSpace.Named.SRGB));
+              // TODO(bdero): Switch to ALLOCATOR_HARDWARE for devices that have
+              // `AndroidBitmap_getHardwareBuffer` (API 30+) available once Skia supports
+              // `SkImage::MakeFromAHardwareBuffer` via dynamic lookups:
+              // https://skia-review.googlesource.com/c/skia/+/428960
+              decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
+
+              Size size = info.getSize();
+              nativeImageHeaderCallback(imageGeneratorAddress, size.getWidth(), size.getHeight());
+            });
+      } catch (IOException e) {
+        Log.e(TAG, "Failed to decode image", e);
+        return null;
+      }
+    }
+    return null;
+  }
+
   // Called by native to notify first Flutter frame rendered.
   @SuppressWarnings("unused")
   @VisibleForTesting
@@ -519,7 +563,8 @@ public class FlutterJNI {
       int systemGestureInsetTop,
       int systemGestureInsetRight,
       int systemGestureInsetBottom,
-      int systemGestureInsetLeft) {
+      int systemGestureInsetLeft,
+      int physicalTouchSlop) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeSetViewportMetrics(
@@ -538,7 +583,8 @@ public class FlutterJNI {
         systemGestureInsetTop,
         systemGestureInsetRight,
         systemGestureInsetBottom,
-        systemGestureInsetLeft);
+        systemGestureInsetLeft,
+        physicalTouchSlop);
   }
 
   private native void nativeSetViewportMetrics(
@@ -557,7 +603,8 @@ public class FlutterJNI {
       int systemGestureInsetTop,
       int systemGestureInsetRight,
       int systemGestureInsetBottom,
-      int systemGestureInsetLeft);
+      int systemGestureInsetLeft,
+      int physicalTouchSlop);
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
@@ -710,11 +757,14 @@ public class FlutterJNI {
   public void registerTexture(long textureId, @NonNull SurfaceTextureWrapper textureWrapper) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    nativeRegisterTexture(nativeShellHolderId, textureId, textureWrapper);
+    nativeRegisterTexture(
+        nativeShellHolderId, textureId, new WeakReference<SurfaceTextureWrapper>(textureWrapper));
   }
 
   private native void nativeRegisterTexture(
-      long nativeShellHolderId, long textureId, @NonNull SurfaceTextureWrapper textureWrapper);
+      long nativeShellHolderId,
+      long textureId,
+      @NonNull WeakReference<SurfaceTextureWrapper> textureWrapper);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link

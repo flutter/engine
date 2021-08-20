@@ -155,6 +155,7 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
   });
 
   ViewConfiguration copyWith({
@@ -166,6 +167,7 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -176,6 +178,7 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
     );
   }
 
@@ -187,6 +190,7 @@ class ViewConfiguration {
   final WindowPadding viewPadding;
   final WindowPadding systemGestureInsets;
   final WindowPadding padding;
+  final GestureSettings gestureSettings;
 
   @override
   String toString() {
@@ -210,7 +214,7 @@ class FrameTiming {
     required int buildFinish,
     required int rasterStart,
     required int rasterFinish,
-    int rasterFinishWallTime = -1,
+    required int rasterFinishWallTime,
     int frameNumber = 1,
   }) {
     return FrameTiming._(<int>[
@@ -219,7 +223,7 @@ class FrameTiming {
       buildFinish,
       rasterStart,
       rasterFinish,
-      if (rasterFinishWallTime == -1) rasterFinish else rasterFinishWallTime,
+      rasterFinishWallTime,
       frameNumber,
     ]);
   }

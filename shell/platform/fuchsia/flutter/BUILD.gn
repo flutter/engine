@@ -21,6 +21,10 @@ shell_gpu_configuration("fuchsia_gpu_configuration") {
   enable_metal = false
 }
 
+config("runner_base_config") {
+  defines = [ "FML_USED_ON_EMBEDDER" ]
+}
+
 config("runner_debug_config") {
   defines = [ "DEBUG" ]  # Needed due to direct dart dependencies.
 }
@@ -36,7 +40,7 @@ config("runner_product_config") {
 template("runner_sources") {
   assert(defined(invoker.product), "runner_sources must define product")
 
-  runner_configs = []
+  runner_configs = [ ":runner_base_config" ]
   if (is_debug) {
     runner_configs += [ ":runner_debug_config" ]
   }
@@ -53,10 +57,14 @@ template("runner_sources") {
       "accessibility_bridge.h",
       "component.cc",
       "component.h",
-      "default_session_connection.cc",
-      "default_session_connection.h",
       "engine.cc",
       "engine.h",
+      "flatland_connection.cc",
+      "flatland_connection.h",
+      "flatland_external_view_embedder.cc",
+      "flatland_external_view_embedder.h",
+      "flatland_platform_view.cc",
+      "flatland_platform_view.h",
       "flutter_runner_product_configuration.cc",
       "flutter_runner_product_configuration.h",
       "focus_delegate.cc",
@@ -65,6 +73,10 @@ template("runner_sources") {
       "fuchsia_external_view_embedder.h",
       "fuchsia_intl.cc",
       "fuchsia_intl.h",
+      "gfx_platform_view.cc",
+      "gfx_platform_view.h",
+      "gfx_session_connection.cc",
+      "gfx_session_connection.h",
       "isolate_configurator.cc",
       "isolate_configurator.h",
       "keyboard.cc",
@@ -110,6 +122,7 @@ template("runner_sources") {
     ]
 
     public_deps = [
+                    "$fuchsia_sdk_root/pkg:inspect",
                     "$fuchsia_sdk_root/pkg:scenic_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
                     "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
@@ -124,6 +137,7 @@ template("runner_sources") {
              "$fuchsia_sdk_root/fidl:fuchsia.io",
              "$fuchsia_sdk_root/fidl:fuchsia.sys",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.composition",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
@@ -150,6 +164,14 @@ runner_sources("flutter_runner_sources") {
 runner_sources("flutter_runner_sources_product") {
   product = true
 }
+
+# Loaded via FFI
+_common_runner_libs = common_libs + [
+                        {
+                          name = "libzircon_ffi.so"
+                          path = rebase_path("$root_out_dir")
+                        },
+                      ]
 
 # Things that explicitly being excluded:
 # 1. Kernel snapshot framework mode.
@@ -194,6 +216,9 @@ template("flutter_runner") {
              "$fuchsia_sdk_root/pkg:trace",
              "$fuchsia_sdk_root/pkg:trace-provider-so",
            ] + extra_deps
+
+    # For `libzircon_ffi` see _common_runner_libs.
+    public_deps = [ "../dart-pkg/zircon_ffi:zircon_ffi" ]
 
     # The flags below are needed so that Dart's CPU profiler can walk the
     # C++ stack.
@@ -331,7 +356,7 @@ template("jit_runner") {
     ]
 
     _vulkan_icds = []
-    _libs = common_libs
+    _libs = _common_runner_libs
     if (enable_vulkan_validation_layers) {
       _libs += vulkan_validation_libs
       _vulkan_icds += vulkan_icds
@@ -389,7 +414,7 @@ template("aot_runner") {
     }
 
     _vulkan_icds = []
-    _libs = common_libs
+    _libs = _common_runner_libs
     if (enable_vulkan_validation_layers) {
       _libs += vulkan_validation_libs
       _vulkan_icds += vulkan_icds
@@ -437,6 +462,7 @@ executable("flutter_runner_unittests") {
     "runner_unittest.cc",
     "tests/engine_unittests.cc",
     "tests/flutter_runner_product_configuration_unittests.cc",
+    "tests/gfx_session_connection_unittests.cc",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
@@ -458,6 +484,8 @@ executable("flutter_runner_unittests") {
            "tests/fakes",
            ":flutter_runner_fixtures",
            ":flutter_runner_sources",
+           "tests/fakes",
+           "//build/fuchsia/pkg:async-testing",
            "//build/fuchsia/pkg:sys_cpp_testing",
            "//flutter/testing",
          ] + flutter_deps
@@ -488,32 +516,6 @@ executable("flutter_runner_tzdata_unittests") {
          ] + flutter_deps
 }
 
-executable("flutter_runner_scenic_unittests") {
-  testonly = true
-
-  output_name = "flutter_runner_scenic_tests"
-
-  sources = [ "tests/default_session_connection_unittests.cc" ]
-
-  # This is needed for //third_party/googletest for linking zircon symbols.
-  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
-
-  # The use of these dependencies is temporary and will be moved behind the
-  # embedder API.
-  flutter_deps = [
-    "//flutter/lib/ui",
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
-  ]
-
-  deps = [
-           ":flutter_runner_fixtures",
-           ":flutter_runner_sources",
-           "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
-           "//flutter/testing",
-         ] + flutter_deps
-}
-
 fuchsia_test_archive("flutter_runner_tests") {
   deps = [ ":flutter_runner_unittests" ]
 
@@ -538,21 +540,6 @@ fuchsia_test_archive("flutter_runner_tests") {
       path = rebase_path(
               "//flutter/shell/platform/fuchsia/flutter/tests/tzdata/2019a/44/le/zoneinfo64.res")
       dest = "tzdata/zoneinfo64.res"
-    },
-  ]
-
-  cmx_file = rebase_path("meta/$target_name.cmx")
-}
-
-fuchsia_test_archive("flutter_runner_scenic_tests") {
-  deps = [ ":flutter_runner_scenic_unittests" ]
-
-  binary = "$target_name"
-
-  resources = [
-    {
-      path = rebase_path("//third_party/icu/common/icudtl.dat")
-      dest = "icudtl.dat"
     },
   ]
 
@@ -813,7 +800,6 @@ group("tests") {
     ":dart_utils_tests",
     ":embedder_tests",
     ":flow_tests",
-    ":flutter_runner_scenic_tests",
     ":flutter_runner_tests",
     ":flutter_runner_tzdata_tests",
     ":fml_tests",

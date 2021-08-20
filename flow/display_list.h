@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_H_
 
+#include "third_party/skia/include/core/SkBlender.h"
 #include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -77,8 +78,8 @@ namespace flutter {
   V(SetColor)                       \
   V(SetBlendMode)                   \
                                     \
-  V(SetFilterQuality)               \
-                                    \
+  V(SetBlender)                     \
+  V(ClearBlender)                   \
   V(SetShader)                      \
   V(ClearShader)                    \
   V(SetColorFilter)                 \
@@ -146,7 +147,8 @@ namespace flutter {
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
                                     \
-  V(DrawShadow)
+  V(DrawShadow)                     \
+  V(DrawShadowOccludes)
 
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
@@ -166,8 +168,7 @@ class DisplayList : public SkRefCnt {
   static const SkSamplingOptions CubicSampling;
 
   DisplayList()
-      : ptr_(nullptr),
-        used_(0),
+      : used_(0),
         op_count_(0),
         unique_id_(0),
         bounds_({0, 0, 0, 0}),
@@ -175,7 +176,10 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const { Dispatch(ctx, ptr_, ptr_ + used_); }
+  void Dispatch(Dispatcher& ctx) const {
+    uint8_t* ptr = storage_.get();
+    Dispatch(ctx, ptr, ptr + used_);
+  }
 
   void RenderTo(SkCanvas* canvas) const;
 
@@ -197,7 +201,7 @@ class DisplayList : public SkRefCnt {
  private:
   DisplayList(uint8_t* ptr, size_t used, int op_count, const SkRect& cull_rect);
 
-  uint8_t* ptr_;
+  std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t used_;
   int op_count_;
 
@@ -220,7 +224,7 @@ class DisplayList : public SkRefCnt {
 class Dispatcher {
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
-  static constexpr int MaxDrawPointsCount = ((1 << 29) - 1);
+  static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
 
   virtual void setAA(bool aa) = 0;
   virtual void setDither(bool dither) = 0;
@@ -232,7 +236,7 @@ class Dispatcher {
   virtual void setMiterLimit(SkScalar limit) = 0;
   virtual void setColor(SkColor color) = 0;
   virtual void setBlendMode(SkBlendMode mode) = 0;
-  virtual void setFilterQuality(SkFilterQuality quality) = 0;
+  virtual void setBlender(sk_sp<SkBlender> blender) = 0;
   virtual void setShader(sk_sp<SkShader> shader) = 0;
   virtual void setImageFilter(sk_sp<SkImageFilter> filter) = 0;
   virtual void setColorFilter(sk_sp<SkColorFilter> filter) = 0;
@@ -321,7 +325,8 @@ class Dispatcher {
   virtual void drawShadow(const SkPath& path,
                           const SkColor color,
                           const SkScalar elevation,
-                          bool occludes) = 0;
+                          bool occludes,
+                          SkScalar dpr) = 0;
 };
 
 // The primary class used to build a display list. The list of methods
@@ -331,7 +336,7 @@ class Dispatcher {
 // the DisplayListCanvasRecorder class.
 class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
  public:
-  DisplayListBuilder(const SkRect& cull = SkRect::MakeEmpty());
+  DisplayListBuilder(const SkRect& cull = kMaxCull_);
   ~DisplayListBuilder();
 
   void setAA(bool aa) override;
@@ -344,7 +349,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void setMiterLimit(SkScalar limit) override;
   void setColor(SkColor color) override;
   void setBlendMode(SkBlendMode mode) override;
-  void setFilterQuality(SkFilterQuality quality) override;
+  void setBlender(sk_sp<SkBlender> blender) override;
   void setShader(sk_sp<SkShader> shader) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
   void setColorFilter(sk_sp<SkColorFilter> filter) override;
@@ -435,7 +440,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes) override;
+                  bool occludes,
+                  SkScalar dpr) override;
 
   sk_sp<DisplayList> Build();
 
@@ -447,6 +453,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   int save_level_ = 0;
 
   SkRect cull_;
+  static constexpr SkRect kMaxCull_ =
+      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   template <typename T, typename... Args>
   void* Push(size_t extra, Args&&... args);

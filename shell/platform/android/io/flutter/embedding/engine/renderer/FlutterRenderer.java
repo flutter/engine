@@ -236,8 +236,20 @@ public class FlutterRenderer implements TextureRegistry {
     isDisplayingFlutterUi = false;
   }
 
-  // TODO(mattcarroll): describe the native behavior that this invokes
+  /**
+   * Notifies Flutter that the viewport metrics, e.g. window height and width, have changed.
+   *
+   * <p>If the width, height, or devicePixelRatio are less than or equal to 0, this update is
+   * ignored.
+   *
+   * @param viewportMetrics The metrics to send to the Dart application.
+   */
   public void setViewportMetrics(@NonNull ViewportMetrics viewportMetrics) {
+    // We might get called with just the DPR if width/height aren't available yet.
+    // Just ignore, as it will get called again when width/height are set.
+    if (!viewportMetrics.validate()) {
+      return;
+    }
     Log.v(
         TAG,
         "Setting viewport metrics\n"
@@ -288,7 +300,8 @@ public class FlutterRenderer implements TextureRegistry {
         viewportMetrics.systemGestureInsetTop,
         viewportMetrics.systemGestureInsetRight,
         viewportMetrics.systemGestureInsetBottom,
-        viewportMetrics.systemGestureInsetLeft);
+        viewportMetrics.systemGestureInsetLeft,
+        viewportMetrics.physicalTouchSlop);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -345,6 +358,9 @@ public class FlutterRenderer implements TextureRegistry {
    * pixels, not logical pixels.
    */
   public static final class ViewportMetrics {
+    /** A value that indicates the setting has not been set. */
+    public static final int unsetValue = -1;
+
     public float devicePixelRatio = 1.0f;
     public int width = 0;
     public int height = 0;
@@ -360,5 +376,15 @@ public class FlutterRenderer implements TextureRegistry {
     public int systemGestureInsetRight = 0;
     public int systemGestureInsetBottom = 0;
     public int systemGestureInsetLeft = 0;
+    public int physicalTouchSlop = unsetValue;
+
+    /**
+     * Whether this instance contains valid metrics for the Flutter application.
+     *
+     * @return True if width, height, and devicePixelRatio are > 0; false otherwise.
+     */
+    boolean validate() {
+      return width > 0 && height > 0 && devicePixelRatio > 0;
+    }
   }
 }

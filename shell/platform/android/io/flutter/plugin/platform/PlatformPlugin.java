@@ -7,6 +7,7 @@ package io.flutter.plugin.platform;
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.os.Build;
@@ -124,10 +125,7 @@ public class PlatformPlugin {
 
         @Override
         public boolean clipboardHasStrings() {
-          CharSequence data =
-              PlatformPlugin.this.getClipboardData(
-                  PlatformChannel.ClipboardContentFormat.PLAIN_TEXT);
-          return data != null && data.length() > 0;
+          return PlatformPlugin.this.clipboardHasStrings();
         }
       };
 
@@ -376,15 +374,17 @@ public class PlatformPlugin {
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
     // proper contrast. This can be overridden with
     // SystemChromeStyle.systemStatusBarContrastEnforced.
-    if (systemChromeStyle.statusBarIconBrightness != null && Build.VERSION.SDK_INT >= 23) {
-      switch (systemChromeStyle.statusBarIconBrightness) {
-        case DARK:
-          // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-          flags |= 0x2000;
-          break;
-        case LIGHT:
-          flags &= ~0x2000;
-          break;
+    if (Build.VERSION.SDK_INT >= 23) {
+      if (systemChromeStyle.statusBarIconBrightness != null) {
+        switch (systemChromeStyle.statusBarIconBrightness) {
+          case DARK:
+            // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            flags |= 0x2000;
+            break;
+          case LIGHT:
+            flags &= ~0x2000;
+            break;
+        }
       }
 
       if (systemChromeStyle.statusBarColor != null) {
@@ -405,16 +405,17 @@ public class PlatformPlugin {
     // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
     // bars to ensure proper contrast. This can be overridden with
     // SystemChromeStyle.systemNavigationBarContrastEnforced.
-    if (systemChromeStyle.systemNavigationBarIconBrightness != null
-        && Build.VERSION.SDK_INT >= 26) {
-      switch (systemChromeStyle.systemNavigationBarIconBrightness) {
-        case DARK:
-          // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-          flags |= 0x10;
-          break;
-        case LIGHT:
-          flags &= ~0x10;
-          break;
+    if (Build.VERSION.SDK_INT >= 26) {
+      if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
+        switch (systemChromeStyle.systemNavigationBarIconBrightness) {
+          case DARK:
+            // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            flags |= 0x10;
+            break;
+          case LIGHT:
+            flags &= ~0x10;
+            break;
+        }
       }
 
       if (systemChromeStyle.systemNavigationBarColor != null) {
@@ -489,5 +490,21 @@ public class PlatformPlugin {
         (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
     ClipData clip = ClipData.newPlainText("text label?", text);
     clipboard.setPrimaryClip(clip);
+  }
+
+  private boolean clipboardHasStrings() {
+    ClipboardManager clipboard =
+        (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+    // Android 12 introduces a toast message that appears when an app reads the clipboard. To avoid
+    // unintended access, call the appropriate APIs to receive information about the current content
+    // that's on the clipboard (rather than the actual content itself).
+    if (!clipboard.hasPrimaryClip()) {
+      return false;
+    }
+    ClipDescription description = clipboard.getPrimaryClipDescription();
+    if (description == null) {
+      return false;
+    }
+    return description.hasMimeType("text/*");
   }
 }

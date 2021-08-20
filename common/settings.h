@@ -111,7 +111,7 @@ struct Settings {
   bool start_paused = false;
   bool trace_skia = false;
   std::vector<std::string> trace_allowlist;
-  std::vector<std::string> trace_skia_allowlist;
+  std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
   bool dump_skp_on_shader_compilation = false;
@@ -166,7 +166,7 @@ struct Settings {
   bool enable_skparagraph = false;
 
   // Selects the DisplayList for storage of rendering operations.
-  bool enable_display_list = false;
+  bool enable_display_list = true;
 
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on

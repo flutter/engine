@@ -5,8 +5,8 @@
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
@@ -390,7 +390,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// We need this in [BitmapCanvas] and [RecordingCanvas] to swallow this
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
-bool isNsErrorFailureException(dynamic e) {
+bool isNsErrorFailureException(Object e) {
   return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
@@ -451,7 +451,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
 /// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   final int length = offsetList.length;
-  final floatList = Float32List(length * 2);
+  final Float32List floatList = Float32List(length * 2);
   for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
     floatList[destIndex] = offsetList[i].dx;
     floatList[destIndex + 1] = offsetList[i].dy;
@@ -554,4 +554,89 @@ bool listEquals<T>(List<T>? a, List<T>? b) {
 // average the two radii together for a single compromise value.
 String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
+}
+
+/// Checks if the dynamic [object] is equal to null.
+bool unsafeIsNull(dynamic object) {
+  return object == null;
+}
+
+/// A typed variant of [html.Window.fetch].
+Future<html.Body> httpFetch(String url) async {
+  final dynamic result = await html.window.fetch(url);
+  return result as html.Body;
+}
+
+/// Extensions to [Map] that make it easier to treat it as a JSON object. The
+/// keys are `dynamic` because when JSON is deserialized from method channels
+/// it arrives as `Map<dynamic, dynamic>`.
+// TODO(yjbanov): use Json typedef when type aliases are shipped
+extension JsonExtensions on Map<dynamic, dynamic> {
+  Map<String, dynamic> readJson(String propertyName) {
+    return this[propertyName] as Map<String, dynamic>;
+  }
+
+  Map<String, dynamic>? tryJson(String propertyName) {
+    return this[propertyName] as Map<String, dynamic>?;
+  }
+
+  Map<dynamic, dynamic> readDynamicJson(String propertyName) {
+    return this[propertyName] as Map<dynamic, dynamic>;
+  }
+
+  Map<dynamic, dynamic>? tryDynamicJson(String propertyName) {
+    return this[propertyName] as Map<dynamic, dynamic>?;
+  }
+
+  List<dynamic> readList(String propertyName) {
+    return this[propertyName] as List<dynamic>;
+  }
+
+  List<dynamic>? tryList(String propertyName) {
+    return this[propertyName] as List<dynamic>?;
+  }
+
+  List<T> castList<T>(String propertyName) {
+    return (this[propertyName] as List<dynamic>).cast<T>();
+  }
+
+  List<T>? tryCastList<T>(String propertyName) {
+    final List<dynamic>? rawList = tryList(propertyName);
+    if (rawList == null) {
+      return null;
+    }
+    return rawList.cast<T>();
+  }
+
+  String readString(String propertyName) {
+    return this[propertyName] as String;
+  }
+
+  String? tryString(String propertyName) {
+    return this[propertyName] as String?;
+  }
+
+  bool readBool(String propertyName) {
+    return this[propertyName] as bool;
+  }
+
+  bool? tryBool(String propertyName) {
+    return this[propertyName] as bool?;
+  }
+
+  int readInt(String propertyName) {
+    return this[propertyName] as int;
+  }
+
+  int? tryInt(String propertyName) {
+    return this[propertyName] as int?;
+  }
+
+  double readDouble(String propertyName) {
+    return this[propertyName] as double;
+  }
+
+  double? tryDouble(String propertyName) {
+    return this[propertyName] as double?;
+  }
 }

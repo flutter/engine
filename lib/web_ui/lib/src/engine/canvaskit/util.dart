@@ -5,9 +5,10 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' show transformRect, Matrix4;
 import 'package:ui/ui.dart' as ui;
 
+import '../util.dart';
+import '../vector_math.dart';
 import 'canvaskit_api.dart';
 import 'path.dart';
 
@@ -165,9 +166,9 @@ void drawSkShadow(
       ? SkiaShadowFlags.kTransparentOccluderShadowFlags
       : SkiaShadowFlags.kDefaultShadowFlags;
 
-  ui.Color inAmbient =
+  final ui.Color inAmbient =
       color.withAlpha((color.alpha * ckShadowAmbientAlpha).round());
-  ui.Color inSpot = color.withAlpha((color.alpha * ckShadowSpotAlpha).round());
+  final ui.Color inSpot = color.withAlpha((color.alpha * ckShadowSpotAlpha).round());
 
   final SkTonalColors inTonalColors = SkTonalColors(
     ambient: makeFreshSkColor(inAmbient),

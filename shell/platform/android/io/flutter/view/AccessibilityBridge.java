@@ -1020,27 +1020,38 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
       case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS:
         {
+          // Focused semantics node must be reset before sending the
+          // TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED event. Otherwise,
+          // TalkBack may think the node is still focused.
+          if (accessibilityFocusedSemanticsNode != null
+              && accessibilityFocusedSemanticsNode.id == virtualViewId) {
+            accessibilityFocusedSemanticsNode = null;
+          }
+          if (embeddedAccessibilityFocusedNodeId != null
+              && embeddedAccessibilityFocusedNodeId == virtualViewId) {
+            embeddedAccessibilityFocusedNodeId = null;
+          }
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
           sendAccessibilityEvent(
               virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-          accessibilityFocusedSemanticsNode = null;
-          embeddedAccessibilityFocusedNodeId = null;
           return true;
         }
       case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS:
         {
-          accessibilityChannel.dispatchSemanticsAction(
-              virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
-          sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
-
           if (accessibilityFocusedSemanticsNode == null) {
             // When Android focuses a node, it doesn't invalidate the view.
             // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
             // we only have to worry about this when the focused node is null.)
             rootAccessibilityView.invalidate();
           }
+          // Focused semantics node must be set before sending the TYPE_VIEW_ACCESSIBILITY_FOCUSED
+          // event. Otherwise, TalkBack may think the node is not focused yet.
           accessibilityFocusedSemanticsNode = semanticsNode;
+
+          accessibilityChannel.dispatchSemanticsAction(
+              virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
+          sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
           if (semanticsNode.hasAction(Action.INCREASE)
               || semanticsNode.hasAction(Action.DECREASE)) {
@@ -1566,7 +1577,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (lastAdded != null
         && (lastAdded.id != previousRouteId || newRoutes.size() != flutterNavigationStack.size())) {
       previousRouteId = lastAdded.id;
-      sendWindowChangeEvent(lastAdded);
+      onWindowNameChange(lastAdded);
     }
     flutterNavigationStack.clear();
     for (SemanticsNode semanticsNode : newRoutes) {
@@ -1778,15 +1789,17 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   }
 
   /**
-   * Creates a {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends the event to Android's
-   * accessibility system.
+   * Informs the TalkBack user about window name changes.
+   *
+   * <p>This method sets accessibility panel title if the API level >= 28, otherwise, it creates a
+   * {@link AccessibilityEvent#TYPE_WINDOW_STATE_CHANGED} and sends the event to Android's
+   * accessibility system. In both cases, TalkBack announces the label of the route and re-addjusts
+   * the accessibility focus.
    *
    * <p>The given {@code route} should be a {@link SemanticsNode} that represents a navigation route
    * in the Flutter app.
    */
-  private void sendWindowChangeEvent(@NonNull SemanticsNode route) {
-    AccessibilityEvent event =
-        obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+  private void onWindowNameChange(@NonNull SemanticsNode route) {
     String routeName = route.getRouteName();
     if (routeName == null) {
       // The routeName will be null when there is no semantics node that represnets namesRoute in
@@ -1799,8 +1812,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // next.
       routeName = " ";
     }
-    event.getText().add(routeName);
-    sendAccessibilityEvent(event);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      setAccessibilityPaneTitle(routeName);
+    } else {
+      AccessibilityEvent event =
+          obtainAccessibilityEvent(route.id, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+      event.getText().add(routeName);
+      sendAccessibilityEvent(event);
+    }
+  }
+
+  @TargetApi(28)
+  @RequiresApi(28)
+  private void setAccessibilityPaneTitle(String title) {
+    rootAccessibilityView.setAccessibilityPaneTitle(title);
   }
 
   /**
@@ -2678,7 +2703,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           switch (attribute.type) {
             case SPELLOUT:
               {
-                final TtsSpan ttsSpan = new TtsSpan.Builder(TtsSpan.TYPE_VERBATIM).build();
+                final TtsSpan ttsSpan = new TtsSpan.Builder<>(TtsSpan.TYPE_VERBATIM).build();
                 spannableString.setSpan(ttsSpan, attribute.start, attribute.end, 0);
                 break;
               }

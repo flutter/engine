@@ -232,8 +232,9 @@ void PlatformConfiguration::DidCreateIsolate() {
                   Dart_GetField(library, tonic::ToDart("_drawFrame")));
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
-  windows_.insert(std::make_pair(0, std::unique_ptr<Window>(new Window{
-                                        0, ViewportMetrics{1.0, 0.0, 0.0}})));
+  windows_.insert(
+      std::make_pair(0, std::unique_ptr<Window>(new Window{
+                            0, ViewportMetrics{1.0, 0.0, 0.0, -1}})));
 }
 
 void PlatformConfiguration::UpdateLocales(
@@ -455,7 +456,13 @@ void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id,
   }
   KeyDataResponse callback = std::move(it->second);
   pending_key_responses_.erase(it);
-  callback(handled);
+  // The key result callback must be called on the platform thread. This is
+  // mainly because iOS needs to block the platform message loop with a nested
+  // loop to respond to key events synchronously, and if the callback is called
+  // from another thread, it won't stop the nested message loop, causing a
+  // deadlock.
+  UIDartState::Current()->GetTaskRunners().GetPlatformTaskRunner()->PostTask(
+      [handled, callback]() { callback(handled); });
 }
 
 Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {

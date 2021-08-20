@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -96,10 +97,11 @@ public class PlatformPluginTest {
     assertEquals(dataInputStream.read(), uriInputStream.read());
   }
 
+  @Config(sdk = 28)
   @Test
   public void platformPlugin_hasStrings() {
     ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+        spy(RuntimeEnvironment.application.getSystemService(ClipboardManager.class));
 
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
@@ -110,13 +112,44 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
+    // Plain text
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
+    // Empty plain text
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
+    // Without actually accessing clipboard data (preferred behavior), it is not possible to
+    // distinguish between empty and non-empty string contents.
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    // HTML text
+    clip = ClipData.newHtmlText("motto", "Don't be evil", "<b>Don't</b> be evil");
+    clipboardManager.setPrimaryClip(clip);
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    // Text MIME type
+    clip = new ClipData("label", new String[] {"text/something"}, new ClipData.Item("content"));
+    clipboardManager.setPrimaryClip(clip);
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    // Other MIME type
+    clip =
+        new ClipData(
+            "label", new String[] {"application/octet-stream"}, new ClipData.Item("content"));
+    clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+
+    if (Build.VERSION.SDK_INT >= 28) {
+      // Empty clipboard
+      clipboardManager.clearPrimaryClip();
+      assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    }
+
+    // Verify that the clipboard contents are never accessed.
+    verify(clipboardManager, never()).getPrimaryClip();
+    verify(clipboardManager, never()).getText();
   }
 
   @Config(sdk = 29)
@@ -129,15 +162,41 @@ public class PlatformPluginTest {
     when(fakeActivity.getWindow()).thenReturn(fakeWindow);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+    // Default style test
     SystemChromeStyle style =
-        new SystemChromeStyle(0XFF000000, null, true, 0XFFC70039, null, 0XFF006DB3, true);
+        new SystemChromeStyle(
+            0XFF000000, // statusBarColor
+            null, // statusBarIconBrightness
+            true, // systemStatusBarContrastEnforced
+            0XFFC70039, // systemNavigationBarColor
+            null, // systemNavigationBarIconBrightness
+            0XFF006DB3, // systemNavigationBarDividerColor
+            true); // systemNavigationBarContrastEnforced
 
     if (Build.VERSION.SDK_INT >= 28) {
       platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
+      assertEquals(0XFF000000, fakeActivity.getWindow().getStatusBarColor());
+      assertEquals(0XFFC70039, fakeActivity.getWindow().getNavigationBarColor());
       assertEquals(0XFF006DB3, fakeActivity.getWindow().getNavigationBarDividerColor());
+
+      // Regression test for https://github.com/flutter/flutter/issues/88431
+      // A null brightness should not affect changing color settings.
+      style =
+          new SystemChromeStyle(
+              0XFF006DB3, // statusBarColor
+              null, // statusBarIconBrightness
+              true, // systemStatusBarContrastEnforced
+              0XFF000000, // systemNavigationBarColor
+              null, // systemNavigationBarIconBrightness
+              0XFF006DB3, // systemNavigationBarDividerColor
+              true); // systemNavigationBarContrastEnforced
+
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+
       assertEquals(0XFFC70039, fakeActivity.getWindow().getStatusBarColor());
       assertEquals(0XFF000000, fakeActivity.getWindow().getNavigationBarColor());
+      assertEquals(0XFF006DB3, fakeActivity.getWindow().getNavigationBarDividerColor());
     }
   }
 

@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:test_api/src/backend/runtime.dart';
 
 import 'browser.dart';
+import 'browser_lock.dart';
 import 'common.dart';
 import 'edge_installation.dart';
 
@@ -15,7 +16,7 @@ import 'edge_installation.dart';
 class EdgeEnvironment implements BrowserEnvironment {
   @override
   Browser launchBrowserInstance(Uri url, {bool debug = false}) {
-    return Edge(url, debug: debug);
+    return Edge(url);
   }
 
   @override
@@ -42,33 +43,32 @@ class EdgeEnvironment implements BrowserEnvironment {
 /// Any errors starting or running the process are reported through [onExit].
 class Edge extends Browser {
   @override
-  final name = 'Edge';
+  final String name = 'Edge';
 
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Edge(Uri url, {bool debug = false}) {
-    final String version = EdgeArgParser.instance.version;
-
+  factory Edge(Uri url) {
     return Edge._(() async {
-      // TODO(nurhan): Configure info log for LUCI.
       final BrowserInstallation installation = await getEdgeInstallation(
-        version,
+        browserLock.edgeLock.launcherVersion,
         infoLog: DevNull(),
       );
 
       // Debug is not a valid option for Edge. Remove it.
       String pathToOpen = url.toString();
       if(pathToOpen.contains('debug')) {
-        int index = pathToOpen.indexOf('debug');
+        final int index = pathToOpen.indexOf('debug');
         pathToOpen = pathToOpen.substring(0, index-1);
       }
 
-      var process =
-          await Process.start(installation.executable, ['$pathToOpen','-k']);
+      final Process process = await Process.start(
+        installation.executable,
+        <String>[pathToOpen,'-k'],
+      );
 
       return process;
     });
   }
 
-  Edge._(Future<Process> startBrowser()) : super(startBrowser);
+  Edge._(Future<Process> Function() startBrowser) : super(startBrowser);
 }

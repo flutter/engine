@@ -162,19 +162,6 @@ struct SetBlendModeOp final : DLOp {
   void dispatch(Dispatcher& dispatcher) const { dispatcher.setBlendMode(mode); }
 };
 
-// 4 byte header + 4 byte payload packs into minimum 8 bytes
-struct SetFilterQualityOp final : DLOp {
-  static const auto kType = DisplayListOpType::kSetFilterQuality;
-
-  SetFilterQualityOp(SkFilterQuality quality) : quality(quality) {}
-
-  const SkFilterQuality quality;
-
-  void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.setFilterQuality(quality);
-  }
-};
-
 // Clear: 4 byte header + unused 4 byte payload uses 8 bytes
 //        (4 bytes unused)
 // Set: 4 byte header + an sk_sp (ptr) uses 16 bytes due to the
@@ -201,6 +188,7 @@ struct SetFilterQualityOp final : DLOp {
       dispatcher.set##name(field);                                    \
     }                                                                 \
   };
+DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
 DEFINE_SET_CLEAR_SKREF_OP(Shader, shader)
 DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(ColorFilter, filter)
@@ -809,24 +797,28 @@ struct DrawTextBlobOp final : DLOp {
 };
 
 // 4 byte header + 28 byte payload packs evenly into 32 bytes
-struct DrawShadowOp final : DLOp {
-  static const auto kType = DisplayListOpType::kDrawShadow;
-
-  DrawShadowOp(const SkPath& path,
-               SkColor color,
-               SkScalar elevation,
-               bool occludes)
-      : color(color), elevation(elevation), occludes(occludes), path(path) {}
-
-  const SkColor color;
-  const SkScalar elevation;
-  const bool occludes;
-  const SkPath path;
-
-  void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawShadow(path, color, elevation, occludes);
-  }
-};
+#define DEFINE_DRAW_SHADOW_OP(name, occludes)                         \
+  struct Draw##name##Op final : DLOp {                                \
+    static const auto kType = DisplayListOpType::kDraw##name;         \
+                                                                      \
+    Draw##name##Op(const SkPath& path,                                \
+                   SkColor color,                                     \
+                   SkScalar elevation,                                \
+                   SkScalar dpr)                                      \
+        : color(color), elevation(elevation), dpr(dpr), path(path) {} \
+                                                                      \
+    const SkColor color;                                              \
+    const SkScalar elevation;                                         \
+    const SkScalar dpr;                                               \
+    const SkPath path;                                                \
+                                                                      \
+    void dispatch(Dispatcher& dispatcher) const {                     \
+      dispatcher.drawShadow(path, color, elevation, occludes, dpr);   \
+    }                                                                 \
+  };
+DEFINE_DRAW_SHADOW_OP(Shadow, false)
+DEFINE_DRAW_SHADOW_OP(ShadowOccludes, true)
+#undef DEFINE_DRAW_SHADOW_OP
 
 #pragma pack(pop, DLOp_Alignment)
 
@@ -875,7 +867,7 @@ static void DisposeOps(uint8_t* ptr, uint8_t* end) {
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
 
-#undef DL_OP_DISPATCH
+#undef DL_OP_DISPOSE
 
       default:
         FML_DCHECK(false);
@@ -913,7 +905,7 @@ static bool CompareOps(uint8_t* ptrA,
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_EQUALS)
 
-#undef DL_OP_DISPATCH
+#undef DL_OP_EQUALS
 
       default:
         FML_DCHECK(false);
@@ -959,17 +951,19 @@ bool DisplayList::Equals(const DisplayList& other) const {
   if (used_ != other.used_ || op_count_ != other.op_count_) {
     return false;
   }
-  if (ptr_ == other.ptr_) {
+  uint8_t* ptr = storage_.get();
+  uint8_t* o_ptr = other.storage_.get();
+  if (ptr == o_ptr) {
     return true;
   }
-  return CompareOps(ptr_, ptr_ + used_, other.ptr_, other.ptr_ + other.used_);
+  return CompareOps(ptr, ptr + used_, o_ptr, o_ptr + other.used_);
 }
 
 DisplayList::DisplayList(uint8_t* ptr,
                          size_t used,
                          int op_count,
                          const SkRect& cull)
-    : ptr_(ptr),
+    : storage_(ptr),
       used_(used),
       op_count_(op_count),
       bounds_({0, 0, -1, -1}),
@@ -981,7 +975,8 @@ DisplayList::DisplayList(uint8_t* ptr,
 }
 
 DisplayList::~DisplayList() {
-  DisposeOps(ptr_, ptr_ + used_);
+  uint8_t* ptr = storage_.get();
+  DisposeOps(ptr, ptr + used_);
 }
 
 #define DL_BUILDER_PAGE 4096
@@ -1072,8 +1067,10 @@ void DisplayListBuilder::setColor(SkColor color) {
 void DisplayListBuilder::setBlendMode(SkBlendMode mode) {
   Push<SetBlendModeOp>(0, mode);
 }
-void DisplayListBuilder::setFilterQuality(SkFilterQuality quality) {
-  Push<SetFilterQualityOp>(0, quality);
+void DisplayListBuilder::setBlender(sk_sp<SkBlender> blender) {
+  blender  //
+      ? Push<SetBlenderOp>(0, std::move(blender))
+      : Push<ClearBlenderOp>(0);
 }
 void DisplayListBuilder::setShader(sk_sp<SkShader> shader) {
   shader  //
@@ -1252,7 +1249,7 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
                                     uint32_t count,
                                     const SkPoint pts[]) {
   void* data_ptr;
-  FML_DCHECK(count < MaxDrawPointsCount);
+  FML_DCHECK(count < kMaxDrawPointsCount);
   int bytes = count * sizeof(SkPoint);
   switch (mode) {
     case SkCanvas::PointMode::kPoints_PointMode:
@@ -1367,8 +1364,11 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const SkColor color,
                                     const SkScalar elevation,
-                                    bool occludes) {
-  Push<DrawShadowOp>(0, path, color, elevation, occludes);
+                                    bool occludes,
+                                    SkScalar dpr) {
+  occludes  //
+      ? Push<DrawShadowOccludesOp>(0, path, color, elevation, dpr)
+      : Push<DrawShadowOp>(0, path, color, elevation, dpr);
 }
 
 }  // namespace flutter

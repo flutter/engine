@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: public_member_api_docs
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -126,7 +127,7 @@ class CkCanvas {
   }
 
   void drawImage(CkImage image, ui.Offset offset, CkPaint paint) {
-    ui.FilterQuality filterQuality = paint.filterQuality;
+    final ui.FilterQuality filterQuality = paint.filterQuality;
     if (filterQuality == ui.FilterQuality.high) {
       skCanvas.drawImageCubic(
         image.skImage,
@@ -149,7 +150,7 @@ class CkCanvas {
   }
 
   void drawImageRect(CkImage image, ui.Rect src, ui.Rect dst, CkPaint paint) {
-    ui.FilterQuality filterQuality = paint.filterQuality;
+    final ui.FilterQuality filterQuality = paint.filterQuality;
     if (filterQuality == ui.FilterQuality.high) {
       skCanvas.drawImageRectCubic(
         image.skImage,
@@ -978,12 +979,12 @@ class CkDrawImageCommand extends CkPaintCommand {
   final ui.Offset offset;
   final CkPaint paint;
 
-  CkDrawImageCommand(CkImage image, this.offset, this.paint)
-      : this.image = image.clone();
+  CkDrawImageCommand(CkImage ckImage, this.offset, this.paint)
+      : image = ckImage.clone();
 
   @override
   void apply(SkCanvas canvas) {
-    ui.FilterQuality filterQuality = paint.filterQuality;
+    final ui.FilterQuality filterQuality = paint.filterQuality;
     if (filterQuality == ui.FilterQuality.high) {
       canvas.drawImageCubic(
         image.skImage,
@@ -1017,12 +1018,12 @@ class CkDrawImageRectCommand extends CkPaintCommand {
   final ui.Rect dst;
   final CkPaint paint;
 
-  CkDrawImageRectCommand(CkImage image, this.src, this.dst, this.paint)
-      : this.image = image.clone();
+  CkDrawImageRectCommand(CkImage ckImage, this.src, this.dst, this.paint)
+      : image = ckImage.clone();
 
   @override
   void apply(SkCanvas canvas) {
-    ui.FilterQuality filterQuality = paint.filterQuality;
+    final ui.FilterQuality filterQuality = paint.filterQuality;
     if (filterQuality == ui.FilterQuality.high) {
       canvas.drawImageRectCubic(
         image.skImage,
@@ -1051,8 +1052,8 @@ class CkDrawImageRectCommand extends CkPaintCommand {
 }
 
 class CkDrawImageNineCommand extends CkPaintCommand {
-  CkDrawImageNineCommand(CkImage image, this.center, this.dst, this.paint)
-      : this.image = image.clone();
+  CkDrawImageNineCommand(CkImage ckImage, this.center, this.dst, this.paint)
+      : image = ckImage.clone();
 
   final CkImage image;
   final ui.Rect center;

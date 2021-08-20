@@ -6,22 +6,21 @@ import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-final MethodCodec codec = StandardMethodCodec();
+const MethodCodec codec = StandardMethodCodec();
 
 void testMain() {
   group('PlatformViewMessageHandler', () {
     group('handlePlatformViewCall', () {
-      final String viewType = 'forTest';
-      final int viewId = 6;
+      const String viewType = 'forTest';
+      const int viewId = 6;
       late PlatformViewManager contentManager;
       late Completer<ByteData?> completer;
       late Completer<html.Element> contentCompleter;
@@ -35,7 +34,7 @@ void testMain() {
       group('"create" message', () {
         test('unregistered viewType, fails with descriptive exception',
             () async {
-          final messageHandler = PlatformViewMessageHandler(
+          final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
             contentManager: contentManager,
           );
           final ByteData? message = _getCreateMessage(viewType, viewId);
@@ -55,7 +54,7 @@ void testMain() {
           contentManager.registerFactory(
               viewType, (int id) => html.DivElement());
           contentManager.renderContent(viewType, viewId, null);
-          final messageHandler = PlatformViewMessageHandler(
+          final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
             contentManager: contentManager,
           );
           final ByteData? message = _getCreateMessage(viewType, viewId);
@@ -75,7 +74,7 @@ void testMain() {
             () async {
           contentManager.registerFactory(
               viewType, (int id) => html.DivElement()..id = 'success');
-          final messageHandler = PlatformViewMessageHandler(
+          final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
             contentManager: contentManager,
           );
           final ByteData? message = _getCreateMessage(viewType, viewId);
@@ -92,7 +91,7 @@ void testMain() {
             () async {
           contentManager.registerFactory(
               viewType, (int id) => html.DivElement()..id = 'success');
-          final messageHandler = PlatformViewMessageHandler(
+          final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
             contentManager: contentManager,
             contentHandler: contentCompleter.complete,
           );
@@ -120,7 +119,7 @@ void testMain() {
         });
 
         test('never fails, even for unknown viewIds', () async {
-          final messageHandler = PlatformViewMessageHandler(
+          final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
             contentManager: contentManager,
           );
           final ByteData? message = _getDisposeMessage(viewId);
@@ -134,7 +133,7 @@ void testMain() {
         });
 
         test('never fails, even for unknown viewIds', () async {
-          final messageHandler = PlatformViewMessageHandler(
+          final PlatformViewMessageHandler messageHandler = PlatformViewMessageHandler(
             contentManager: _FakePlatformViewManager(viewIdCompleter.complete),
           );
           final ByteData? message = _getDisposeMessage(viewId);
@@ -153,7 +152,7 @@ void testMain() {
 
 class _FakePlatformViewManager extends PlatformViewManager {
   _FakePlatformViewManager(void Function(int) clearFunction)
-      : this._clearPlatformView = clearFunction;
+      : _clearPlatformView = clearFunction;
 
   void Function(int) _clearPlatformView;
 
@@ -166,7 +165,7 @@ class _FakePlatformViewManager extends PlatformViewManager {
 ByteData? _getCreateMessage(String viewType, int viewId) {
   return codec.encodeMethodCall(MethodCall(
     'create',
-    {
+    <String, dynamic>{
       'id': viewId,
       'viewType': viewType,
     },

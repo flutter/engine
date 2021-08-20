@@ -24,6 +24,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.util.ViewUtils;
 
 /**
  * {@code Fragment} which displays a Flutter UI that takes up all available {@code Fragment} space.
@@ -64,8 +65,6 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
  * FlutterEngine} are:
  *
- * <p>
- *
  * <ul>
  *   <li>When {@code FlutterFragment} is in the first {@code Activity} displayed by the app, because
  *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in
@@ -88,11 +87,20 @@ import io.flutter.plugin.platform.PlatformPlugin;
  * }</pre>
  *
  * <p>If Flutter is needed in a location that can only use a {@code View}, consider using a {@link
- * FlutterView}. Using a {@link FlutterView} requires forwarding some calls from an {@code
+ * io.flutter.embedding.android.FlutterView}. Using a {@link
+ * io.flutter.embedding.android.FlutterView} requires forwarding some calls from an {@code
  * Activity}, as well as forwarding lifecycle calls from an {@code Activity} or a {@code Fragment}.
  */
 public class FlutterFragment extends Fragment
     implements FlutterActivityAndFragmentDelegate.Host, ComponentCallbacks2 {
+  /**
+   * The ID of the {@code FlutterView} created by this activity.
+   *
+   * <p>This ID can be used to lookup {@code FlutterView} in the Android view hierarchy. For more,
+   * see {@link android.view.View#findViewById}.
+   */
+  public static final int FLUTTER_VIEW_ID = ViewUtils.generateViewId(0xF1F2);
+
   private static final String TAG = "FlutterFragment";
 
   /** The Dart entrypoint method name that is executed upon initialization. */
@@ -103,12 +111,20 @@ public class FlutterFragment extends Fragment
   protected static final String ARG_HANDLE_DEEPLINKING = "handle_deeplinking";
   /** Path to Flutter's Dart code. */
   protected static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
+  /** Whether to delay the Android drawing pass till after the Flutter UI has been displayed. */
+  protected static final String ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW =
+      "should_delay_first_android_view_draw";
+
   /** Flutter shell arguments. */
   protected static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
-  /** {@link RenderMode} to be used for the {@link FlutterView} in this {@code FlutterFragment} */
+  /**
+   * {@link RenderMode} to be used for the {@link io.flutter.embedding.android.FlutterView} in this
+   * {@code FlutterFragment}
+   */
   protected static final String ARG_FLUTTERVIEW_RENDER_MODE = "flutterview_render_mode";
   /**
-   * {@link TransparencyMode} to be used for the {@link FlutterView} in this {@code FlutterFragment}
+   * {@link TransparencyMode} to be used for the {@link io.flutter.embedding.android.FlutterView} in
+   * this {@code FlutterFragment}
    */
   protected static final String ARG_FLUTTERVIEW_TRANSPARENCY_MODE = "flutterview_transparency_mode";
   /** See {@link #shouldAttachEngineToActivity()}. */
@@ -215,6 +231,7 @@ public class FlutterFragment extends Fragment
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
+    private boolean shouldDelayFirstAndroidViewDraw = false;
 
     /**
      * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
@@ -290,8 +307,9 @@ public class FlutterFragment extends Fragment
     }
 
     /**
-     * Support a {@link TransparencyMode#transparent} background within {@link FlutterView}, or
-     * force an {@link TransparencyMode#opaque} background.
+     * Support a {@link TransparencyMode#transparent} background within {@link
+     * io.flutter.embedding.android.FlutterView}, or force an {@link TransparencyMode#opaque}
+     * background.
      *
      * <p>See {@link TransparencyMode} for implications of this selection.
      */
@@ -368,6 +386,18 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether to delay the Android drawing pass till after the Flutter UI has been displayed.
+     *
+     * <p>See {#link FlutterActivityAndFragmentDelegate#onCreateView} for more details.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder shouldDelayFirstAndroidViewDraw(
+        boolean shouldDelayFirstAndroidViewDraw) {
+      this.shouldDelayFirstAndroidViewDraw = shouldDelayFirstAndroidViewDraw;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -395,6 +425,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
       args.putBoolean(
           ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
+      args.putBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW, shouldDelayFirstAndroidViewDraw);
       return args;
     }
 
@@ -481,6 +512,7 @@ public class FlutterFragment extends Fragment
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
+    private boolean shouldDelayFirstAndroidViewDraw = false;
 
     private CachedEngineFragmentBuilder(@NonNull String engineId) {
       this(FlutterFragment.class, engineId);
@@ -517,8 +549,9 @@ public class FlutterFragment extends Fragment
     }
 
     /**
-     * Support a {@link TransparencyMode#transparent} background within {@link FlutterView}, or
-     * force an {@link TransparencyMode#opaque} background.
+     * Support a {@link TransparencyMode#transparent} background within {@link
+     * io.flutter.embedding.android.FlutterView}, or force an {@link TransparencyMode#opaque}
+     * background.
      *
      * <p>See {@link TransparencyMode} for implications of this selection.
      */
@@ -606,6 +639,18 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether to delay the Android drawing pass till after the Flutter UI has been displayed.
+     *
+     * <p>See {#link FlutterActivityAndFragmentDelegate#onCreateView} for more details.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder shouldDelayFirstAndroidViewDraw(
+        @NonNull boolean shouldDelayFirstAndroidViewDraw) {
+      this.shouldDelayFirstAndroidViewDraw = shouldDelayFirstAndroidViewDraw;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -626,6 +671,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
       args.putBoolean(
           ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
+      args.putBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW, shouldDelayFirstAndroidViewDraw);
       return args;
     }
 
@@ -659,7 +705,7 @@ public class FlutterFragment extends Fragment
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
-  @VisibleForTesting /* package */ FlutterActivityAndFragmentDelegate delegate;
+  @VisibleForTesting @Nullable /* package */ FlutterActivityAndFragmentDelegate delegate;
 
   private final OnBackPressedCallback onBackPressedCallback =
       new OnBackPressedCallback(true) {
@@ -710,7 +756,12 @@ public class FlutterFragment extends Fragment
   @Override
   public View onCreateView(
       LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-    return delegate.onCreateView(inflater, container, savedInstanceState);
+    return delegate.onCreateView(
+        inflater,
+        container,
+        savedInstanceState,
+        /*flutterViewId=*/ FLUTTER_VIEW_ID,
+        shouldDelayFirstAndroidViewDraw());
   }
 
   @Override
@@ -1002,8 +1053,8 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Returns the desired {@link RenderMode} for the {@link FlutterView} displayed in this {@code
-   * FlutterFragment}.
+   * Returns the desired {@link RenderMode} for the {@link io.flutter.embedding.android.FlutterView}
+   * displayed in this {@code FlutterFragment}.
    *
    * <p>Defaults to {@link RenderMode#surface}.
    *
@@ -1018,8 +1069,8 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Returns the desired {@link TransparencyMode} for the {@link FlutterView} displayed in this
-   * {@code FlutterFragment}.
+   * Returns the desired {@link TransparencyMode} for the {@link
+   * io.flutter.embedding.android.FlutterView} displayed in this {@code FlutterFragment}.
    *
    * <p>Defaults to {@link TransparencyMode#transparent}.
    *
@@ -1176,8 +1227,8 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Invoked after the {@link FlutterView} within this {@code FlutterFragment} starts rendering
-   * pixels to the screen.
+   * Invoked after the {@link io.flutter.embedding.android.FlutterView} within this {@code
+   * FlutterFragment} starts rendering pixels to the screen.
    *
    * <p>This method forwards {@code onFlutterUiDisplayed()} to its attached {@code Activity}, if the
    * attached {@code Activity} implements {@link FlutterUiDisplayListener}.
@@ -1195,8 +1246,8 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Invoked after the {@link FlutterView} within this {@code FlutterFragment} stops rendering
-   * pixels to the screen.
+   * Invoked after the {@link io.flutter.embedding.android.FlutterView} within this {@code
+   * FlutterFragment} stops rendering pixels to the screen.
    *
    * <p>This method forwards {@code onFlutterUiNoLongerDisplayed()} to its attached {@code
    * Activity}, if the attached {@code Activity} implements {@link FlutterUiDisplayListener}.
@@ -1248,6 +1299,12 @@ public class FlutterFragment extends Fragment
     }
     // Hook for subclass. No-op if returns false.
     return false;
+  }
+
+  @VisibleForTesting
+  @NonNull
+  boolean shouldDelayFirstAndroidViewDraw() {
+    return getArguments().getBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW);
   }
 
   private boolean stillAttachedForEvent(String event) {

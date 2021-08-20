@@ -6,19 +6,22 @@ import 'dart:html' as html;
 
 import 'package:ui/ui.dart' as ui;
 
-import 'package:ui/src/engine.dart' show BitmapCanvas, canonicalizeFontFamily, domRenderer, DomRenderer;
-
+import '../dom_renderer.dart';
+import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../util.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
 import 'paragraph.dart';
 import 'word_breaker.dart';
 
+const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
+
 /// A paragraph made up of a flat list of text spans and placeholders.
 ///
-/// As opposed to [DomParagraph], a [CanvasParagraph] doesn't use a DOM element
-/// to represent the structure of its spans and styles. Instead it uses a flat
-/// list of [ParagraphSpan] objects.
+/// [CanvasParagraph] doesn't use a DOM element to represent the structure of
+/// its spans and styles. Instead it uses a flat list of [ParagraphSpan]
+/// objects.
 class CanvasParagraph implements EngineParagraph {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -573,7 +576,7 @@ class RootStyleNode extends StyleNode {
   final EngineParagraphStyle paragraphStyle;
 
   @override
-  final ui.Color _color = defaultTextColor;
+  final ui.Color _color = _defaultTextColor;
 
   @override
   ui.TextDecoration? get _decoration => null;
@@ -670,11 +673,9 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     // - https://github.com/flutter/engine/blob/c0f7e8acf9318d264ad6a235facd097de597ffcc/third_party/txt/src/txt/paragraph_txt.cc#L325-L350
 
     // Require a baseline to be specified if using a baseline-based alignment.
-    assert((alignment == ui.PlaceholderAlignment.aboveBaseline ||
+    assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
             alignment == ui.PlaceholderAlignment.belowBaseline ||
-            alignment == ui.PlaceholderAlignment.baseline)
-        ? baseline != null
-        : true);
+            alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
 
     _placeholderCount++;
     _placeholderScales.add(scale);
