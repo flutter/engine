@@ -131,29 +131,27 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
       [](const uint8_t* reply, size_t reply_size) {}));
 }
 
-/*
 TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
-  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
-  auto& allocator = args->GetAllocator();
-  args->PushBack("madeup/contenttype", allocator);
-  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
-      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
-                                      std::move(args)));
+  std::ostringstream jsonStringStream;
+  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod << "\",\"args\":\"" << kFakeContentType << "\"}";
+  std::string jsonString = jsonStringStream.str();
+  unsigned char json [256];
+  std::copy(jsonString.begin(), jsonString.end(), json);
+  unsigned char* data = &json[0];
 
   MockMethodResult result;
   // Requsting an unknow content type is an error.
   EXPECT_CALL(result, ErrorInternal(_, _, _));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, encoded->data(), encoded->size(),
+      kChannelName, data, strlen((char*)data),
       [&](const uint8_t* reply, size_t reply_size) {
         JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
             reply, reply_size, &result);
       }));
 }
-*/
 
 TEST(PlatformHandler, SettingTextCallsThrough) {
   TestBinaryMessenger messenger;
