@@ -90,24 +90,20 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           | Action.SCROLL_LEFT.value
           | Action.SCROLL_UP.value
           | Action.SCROLL_DOWN.value;
-  // Flags that do not make a node accessibilty focusable by themselves.
-  private static final int TRIVIAL_FLAGS =
-      Flag.IS_BUTTON.value
-          | Flag.IS_HEADER.value
-          | Flag.IS_OBSCURED.value
-          | Flag.SCOPES_ROUTE.value
-          | Flag.NAMES_ROUTE.value
-          | Flag.IS_HIDDEN.value
-          | Flag.IS_IMAGE.value
-          | Flag.IS_LIVE_REGION.value
+  // Flags that make a node accessibilty focusable.
+  private static final int FOCUSABLE_FLAGS =
+      Flag.HAS_CHECKED_STATE.value
+          | Flag.IS_CHECKED.value
+          | Flag.IS_SELECTED.value
+          | Flag.IS_TEXT_FIELD.value
+          | Flag.IS_FOCUSED.value
+          | Flag.HAS_ENABLED_STATE.value
+          | Flag.IS_ENABLED.value
+          | Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP.value
           | Flag.HAS_TOGGLED_STATE.value
           | Flag.IS_TOGGLED.value
-          | Flag.HAS_IMPLICIT_SCROLLING.value
-          | Flag.IS_READ_ONLY.value
           | Flag.IS_FOCUSABLE.value
-          | Flag.IS_LINK.value
-          | Flag.IS_SLIDER.value
-          | Flag.IS_KEYBOARD_KEY.value;
+          | Flag.IS_SLIDER.value;
 
   // The minimal ID for an engine generated AccessibilityNodeInfo.
   //
@@ -2568,7 +2564,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // algorithm. Once all focusable widgets have a Focus widget, then
       // this won't be needed.
       return (actions & ~SCROLLABLE_ACTIONS) != 0
-          || (flags & ~TRIVIAL_FLAGS) != 0
+          || (flags & FOCUSABLE_FLAGS) != 0
           || (label != null && !label.isEmpty())
           || (value != null && !value.isEmpty())
           || (hint != null && !hint.isEmpty());
