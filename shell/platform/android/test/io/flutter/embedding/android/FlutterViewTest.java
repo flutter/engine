@@ -35,7 +35,6 @@ import android.widget.FrameLayout;
 import androidx.core.util.Consumer;
 import androidx.window.java.layout.WindowInfoRepositoryCallbackAdapter;
 import androidx.window.layout.FoldingFeature;
-import androidx.window.layout.HardwareFoldingFeature;
 import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.TestUtils;
 import io.flutter.embedding.engine.FlutterEngine;
