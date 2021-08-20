@@ -465,8 +465,8 @@ size_t fl_value_get_length(FlValue* value);
  * @value: an #FlValue of type #FL_VALUE_TYPE_UINT8_LIST.
  *
  * Gets the array of unisigned 8 bit integers @value contains. The data
- * contains fl_value_get_length() elements. Calling this with an #FlValue that is
- * not of type #FL_VALUE_TYPE_UINT8_LIST is a programming error.
+ * contains fl_value_get_length() elements. Calling this with an #FlValue that
+ * is not of type #FL_VALUE_TYPE_UINT8_LIST is a programming error.
  *
  * Returns: an array of unsigned 8 bit integers.
  */
@@ -501,8 +501,8 @@ const int64_t* fl_value_get_int64_list(FlValue* value);
  * @value: an #FlValue of type #FL_VALUE_TYPE_FLOAT32_LIST.
  *
  * Gets the array of floating point numbers @value contains. The data
- * contains fl_value_get_length() elements. Calling this with an #FlValue that is
- * not of type #FL_VALUE_TYPE_FLOAT32_LIST is a programming error.
+ * contains fl_value_get_length() elements. Calling this with an #FlValue that
+ * is not of type #FL_VALUE_TYPE_FLOAT32_LIST is a programming error.
  *
  * Returns: an array of floating point numbers.
  */
@@ -513,8 +513,8 @@ const float* fl_value_get_float32_list(FlValue* value);
  * @value: an #FlValue of type #FL_VALUE_TYPE_FLOAT_LIST.
  *
  * Gets the array of floating point numbers @value contains. The data
- * contains fl_value_get_length() elements. Calling this with an #FlValue that is
- * not of type #FL_VALUE_TYPE_FLOAT_LIST is a programming error.
+ * contains fl_value_get_length() elements. Calling this with an #FlValue that
+ * is not of type #FL_VALUE_TYPE_FLOAT_LIST is a programming error.
  *
  * Returns: an array of floating point numbers.
  */
