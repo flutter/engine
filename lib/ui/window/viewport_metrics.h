@@ -32,6 +32,8 @@ struct ViewportMetrics {
                   double p_physical_system_gesture_inset_left,
                   double p_physical_touch_slop);
 
+  void ResetForSpawn();
+
   double device_pixel_ratio = 1.0;
   double physical_width = 0;
   double physical_height = 0;
