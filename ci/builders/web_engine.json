@@ -1,6 +1,15 @@
 [
     {
-        "archives": [],
+        "archives": [
+             {
+                     "name": "windows_host_debug_unopt",
+                     "include_paths": ["out/host_debug_unopt"],
+                     "exclude_paths": [
+			     "out/host_debug_unopt/obj",
+                             "out/host_debug_unopt/exe.unstripped"
+                     ]
+              }
+        ],
         "drone_dimensions": [
             "device_type=none",
             "os=Windows-10"
@@ -21,7 +30,24 @@
         "tests": []
     },
     {
-        "archives": [],
+        "archives": [
+		{
+			"name": "linux_host_debug_unopt",
+			"include_paths": ["out/host_debug_unopt"],
+			"exclude_paths": [
+				"out/host_debug_unopt/obj",
+				"out/host_debug_unopt/exe.unstripped"
+			]
+		},
+		{
+			"name": "javascript_tests",
+			"include_paths": [
+				"flutter/lib/web_ui/build/test",
+				"flutter/web_sdk/web_engine_tester/lib/static"
+			],
+			"exclude_paths": []
+		}
+	],
         "drone_dimensions": [
             "device_type=none",
             "os=Linux"
@@ -77,7 +103,16 @@
         "tests": []
     },
     {
-        "archives": [],
+        "archives": [
+            {
+                "name": "mac_host_debug_unopt",
+                "include_paths": ["out/host_debug_unopt"],
+                "exclude_paths": [
+                    "out/host_debug_unopt/obj",
+                    "out/host_debug_unopt/exe.unstripped"
+                ]
+            }
+        ],
         "drone_dimensions": [
             "device_type=none",
             "os=Mac"
