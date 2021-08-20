@@ -106,17 +106,16 @@ TEST(PlatformHandler, RejectsGettingUnknownTypes) {
       }));
 }
 
-/*
 TEST(PlatformHandler, HasStringsCallsThrough) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
-  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
-  auto& allocator = args->GetAllocator();
-  args->PushBack(kTextPlainFormat, allocator);
-  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
-      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
-                                      std::move(args)));
+  std::ostringstream jsonStringStream;
+  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod << "\",\"args\":\"" << kTextPlainFormat << "\"}";
+  std::string jsonString = jsonStringStream.str();
+  unsigned char json [256];
+  std::copy(jsonString.begin(), jsonString.end(), json);
+  unsigned char* data = &json[0];
 
   // Set up a handler to call a response on |result| so that it doesn't log
   // on destruction about leaking.
@@ -128,10 +127,11 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
 
   EXPECT_CALL(platform_handler, HasStrings(_));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, encoded->data(), encoded->size(),
+      kChannelName, data, strlen((char*)data),
       [](const uint8_t* reply, size_t reply_size) {}));
 }
 
+/*
 TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
