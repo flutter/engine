@@ -269,7 +269,7 @@ TEST_F(EngineTest, SpawnSharesFontLibrary) {
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
     auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
-                               std::string());
+                               std::string(), io_manager_);
     EXPECT_TRUE(spawn != nullptr);
     EXPECT_EQ(&engine->GetFontCollection(), &spawn->GetFontCollection());
   });
@@ -294,8 +294,8 @@ TEST_F(EngineTest, SpawnWithCustomInitialRoute) {
         /*font_collection=*/std::make_shared<FontCollection>(),
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
-    auto spawn =
-        engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr, "/foo");
+    auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
+                               "/foo", io_manager_);
     EXPECT_TRUE(spawn != nullptr);
     ASSERT_EQ("/foo", spawn->InitialRoute());
   });
