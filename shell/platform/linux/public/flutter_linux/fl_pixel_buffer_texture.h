@@ -23,21 +23,24 @@ struct _FlPixelBufferTextureClass {
   FlTextureClass parent_class;
 
   /**
-   * Virtual method called when Flutter wants to copy pixel buffer for
-   * populating this texture.
+   * FlPixelBufferTexture::copy_pixels:
    * @texture: an #FlPixelBufferTexture.
    * @buffer: (out): pixel data.
-   * @format: (out): pixel buffer format (example GL_RGBA).
    * @width: (inout): width of the texture in pixels.
    * @height: (inout): height of the texture in pixels.
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL to ignore.
    *
+   * Retrieve pixel buffer in RGBA format.
+   *
+   * As this method is usually invoked from the render thread, you must
+   * take care of proper synchronization. It also needs to be ensured that
+   * the returned buffer is not released prior to unregistering this texture.
+   *
    * Returns: %TRUE on success.
    */
   gboolean (*copy_pixels)(FlPixelBufferTexture* texture,
                           const uint8_t** buffer,
-                          uint32_t* format,
                           uint32_t* width,
                           uint32_t* height,
                           GError** error);

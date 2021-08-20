@@ -37,7 +37,7 @@ static void fl_pixel_buffer_texture_dispose(GObject* object) {
 static void check_gl_error(int line) {
   GLenum err = glGetError();
   if (err) {
-    g_warning("glGetError %x (%s:%d)\n", err, __FILE__, __LINE__);
+    g_warning("glGetError %x (%s:%d)\n", err, __FILE__, line);
   }
 }
 
@@ -51,10 +51,9 @@ gboolean fl_pixel_buffer_texture_populate(FlPixelBufferTexture* texture,
       reinterpret_cast<FlPixelBufferTexturePrivate*>(
           fl_pixel_buffer_texture_get_instance_private(self));
 
-  uint32_t format = 0;
   const uint8_t* buffer = nullptr;
   if (!FL_PIXEL_BUFFER_TEXTURE_GET_CLASS(self)->copy_pixels(
-          self, &buffer, &format, &width, &height, error)) {
+          self, &buffer, &width, &height, error)) {
     return FALSE;
   }
 
@@ -75,7 +74,7 @@ gboolean fl_pixel_buffer_texture_populate(FlPixelBufferTexture* texture,
     glBindTexture(GL_TEXTURE_2D, priv->texture_id);
     check_gl_error(__LINE__);
   }
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, format,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA,
                GL_UNSIGNED_BYTE, buffer);
   check_gl_error(__LINE__);
 

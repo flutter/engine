@@ -35,17 +35,18 @@ G_DEFINE_TYPE(FlTestPixelBufferTexture,
 static gboolean fl_test_pixel_buffer_texture_copy_pixels(
     FlPixelBufferTexture* texture,
     const uint8_t** out_buffer,
-    uint32_t* format,
     uint32_t* width,
     uint32_t* height,
     GError** error) {
   EXPECT_TRUE(FL_IS_TEST_PIXEL_BUFFER_TEXTURE(texture));
 
-  static const uint8_t buffer[] = {0x7a, 0x8a, 0x9a, 0xaa};
+  // RGBA
+  static const uint8_t buffer[] = {0x0a, 0x1a, 0x2a, 0x3a, 0x4a, 0x5a,
+                                   0x6a, 0x7a, 0x8a, 0x9a, 0xaa, 0xba,
+                                   0xca, 0xda, 0xea, 0xfa};
   EXPECT_EQ(*width, BUFFER_WIDTH);
   EXPECT_EQ(*height, BUFFER_HEIGHT);
   *out_buffer = buffer;
-  *format = GL_R8;
   *width = REAL_BUFFER_WIDTH;
   *height = REAL_BUFFER_HEIGHT;
 
