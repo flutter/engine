@@ -48,7 +48,9 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data) const {
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    fml::WeakPtr<IOManager> io_manager,
+    fml::WeakPtr<ImageDecoder> image_decoder) const {
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -59,6 +61,8 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           p_isolate_shutdown_callback,   //
                                           p_persistent_isolate_data,     //
                                           context_);                     //
+  result->context_.io_manager = std::move(io_manager);
+  result->context_.image_decoder = std::move(image_decoder);
   result->spawning_isolate_ = root_isolate_;
   return result;
 }

@@ -500,7 +500,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           return engine->Spawn(/*delegate=*/delegate,
                                /*dispatcher_maker=*/dispatcher_maker,
                                /*settings=*/settings,
-                               /*animator=*/std::move(animator));
+                               /*animator=*/std::move(animator),
+                               /*io_manager=*/std::move(io_manager));
         },
         is_gpu_disabled));
     return result;
