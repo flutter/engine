@@ -65,7 +65,8 @@ TEST(PlatformHandler, GettingTextCallsThrough) {
   TestPlatformHandler platform_handler(&messenger);
 
   std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod << "\",\"args\":\"" << kTextPlainFormat << "\"}";
+  jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod 
+      << "\",\"args\":\"" << kTextPlainFormat << "\"}";
   std::string jsonString = jsonStringStream.str();
   unsigned char json [256];
   std::copy(jsonString.begin(), jsonString.end(), json);
@@ -89,7 +90,8 @@ TEST(PlatformHandler, RejectsGettingUnknownTypes) {
   TestPlatformHandler platform_handler(&messenger);
 
   std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod << "\",\"args\":\"" << kFakeContentType << "\"}";
+  jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod 
+      << "\",\"args\":\"" << kFakeContentType << "\"}";
   std::string jsonString = jsonStringStream.str();
   unsigned char json [256];
   std::copy(jsonString.begin(), jsonString.end(), json);
@@ -111,7 +113,8 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
   TestPlatformHandler platform_handler(&messenger);
 
   std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod << "\",\"args\":\"" << kTextPlainFormat << "\"}";
+  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod 
+      << "\",\"args\":\"" << kTextPlainFormat << "\"}";
   std::string jsonString = jsonStringStream.str();
   unsigned char json [256];
   std::copy(jsonString.begin(), jsonString.end(), json);
@@ -136,7 +139,8 @@ TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
   TestPlatformHandler platform_handler(&messenger);
 
   std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod << "\",\"args\":\"" << kFakeContentType << "\"}";
+  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod 
+      << "\",\"args\":\"" << kFakeContentType << "\"}";
   std::string jsonString = jsonStringStream.str();
   unsigned char json [256];
   std::copy(jsonString.begin(), jsonString.end(), json);
