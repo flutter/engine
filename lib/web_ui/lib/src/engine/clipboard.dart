@@ -25,7 +25,7 @@ class ClipboardMessageHandler {
     const MethodCodec codec = JSONMethodCodec();
     bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'])
+        .setData(methodCall.arguments['text'] as String?)
         .then((bool success) {
       if (success) {
         callback!(codec.encodeSuccessEnvelope(true));
@@ -203,7 +203,7 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
 class ExecCommandPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() {
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/48581
+    // TODO(mdebbar): https://github.com/flutter/flutter/issues/48581
     return Future<String>.error(
         UnimplementedError('Paste is not implemented for this browser.'));
   }

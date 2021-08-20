@@ -26,7 +26,48 @@ constexpr size_t kCharacterCacheSize = 8;
 constexpr SHORT kStateMaskToggled = 0x01;
 constexpr SHORT kStateMaskPressed = 0x80;
 
+const char* empty_character = "";
+
+// Revert the "character" for a dead key to its normal value, or the argument
+// unchanged otherwise.
+//
+// When a dead key is pressed, the WM_KEYDOWN's lParam is mapped to a special
+// value: the "normal character" | 0x80000000.  For example, when pressing
+// "dead key caret" (one that makes the following e into ê), its mapped
+// character is 0x8000005E. "Reverting" it gives 0x5E, which is character '^'.
+uint32_t _UndeadChar(uint32_t ch) {
+  return ch & ~0x80000000;
+}
+
+// Get some bits of the char, from the start'th bit from the right (excluded)
+// to the end'th bit from the right (included).
+//
+// For example, _GetBit(0x1234, 8, 4) => 0x3.
+char _GetBit(char32_t ch, size_t start, size_t end) {
+  return (ch >> end) & ((1 << (start - end)) - 1);
+}
 }  // namespace
+
+std::string ConvertChar32ToUtf8(char32_t ch) {
+  std::string result;
+  assert(0 <= ch && ch <= 0x10FFFF);
+  if (ch <= 0x007F) {
+    result.push_back(ch);
+  } else if (ch <= 0x07FF) {
+    result.push_back(0b11000000 + _GetBit(ch, 11, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  } else if (ch <= 0xFFFF) {
+    result.push_back(0b11100000 + _GetBit(ch, 16, 12));
+    result.push_back(0b10000000 + _GetBit(ch, 12, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  } else {
+    result.push_back(0b11110000 + _GetBit(ch, 21, 18));
+    result.push_back(0b10000000 + _GetBit(ch, 18, 12));
+    result.push_back(0b10000000 + _GetBit(ch, 12, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  }
+  return result;
+}
 
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
     SendEvent send_event,
@@ -141,6 +182,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   bool next_has_record = true;
   char character_bytes[kCharacterCacheSize];
 
+  character = _UndeadChar(character);
+
   if (is_physical_down) {
     if (had_record) {
       if (was_down) {
@@ -155,6 +198,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
         // as a currently pressed one, usually indicating multiple keyboards are
         // pressing keys with the same physical key, or the up event was lost
         // during a loss of focus. The down event is ignored.
+        sendEvent_(CreateEmptyEvent(), nullptr, nullptr);
         callback(true);
         return;
       }
@@ -171,6 +215,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
       // The physical key has been released before. It might indicate a missed
       // event due to loss of focus, or multiple keyboards pressed keys with the
       // same physical key. Ignore the up event.
+      sendEvent_(CreateEmptyEvent(), nullptr, nullptr);
       callback(true);
       return;
     } else {
@@ -200,6 +245,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     // presses are considered handled and not sent to Flutter. These events must
     // be filtered by result_logical_key because the key up event of such
     // presses uses the "original" logical key.
+    sendEvent_(CreateEmptyEvent(), nullptr, nullptr);
     callback(true);
     return;
   }
@@ -263,16 +309,15 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = get_key_state_(virtual_key);
 
     // Check toggling state first, because it might alter pressing state.
     if (key_info.check_toggled) {
+      SHORT state = get_key_state_(virtual_key);
       bool should_toggled = state & kStateMaskToggled;
       if (virtual_key == toggle_virtual_key) {
         key_info.toggled_on = !key_info.toggled_on;
       }
       if (key_info.toggled_on != should_toggled) {
-        const char* empty_character = "";
         // If the key is pressed, release it first.
         if (pressingRecords_.find(key_info.physical_key) !=
             pressingRecords_.end()) {
@@ -309,8 +354,8 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = get_key_state_(virtual_key);
     if (key_info.check_pressed) {
+      SHORT state = get_key_state_(virtual_key);
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
       bool should_pressed = state & kStateMaskPressed;
@@ -385,9 +430,23 @@ void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {
     out[0] = '\0';
     return;
   }
-  // TODO: Correctly handle UTF-32
-  std::wstring text({static_cast<wchar_t>(ch)});
-  strcpy_s(out, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
+  std::string result = ConvertChar32ToUtf8(ch);
+  strcpy_s(out, kCharacterCacheSize, result.c_str());
+}
+
+FlutterKeyEvent KeyboardKeyEmbedderHandler::CreateEmptyEvent() {
+  return FlutterKeyEvent{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .timestamp = static_cast<double>(
+          std::chrono::duration_cast<std::chrono::microseconds>(
+              std::chrono::high_resolution_clock::now().time_since_epoch())
+              .count()),
+      .type = kFlutterKeyEventTypeDown,
+      .physical = 0,
+      .logical = 0,
+      .character = empty_character,
+      .synthesized = false,
+  };
 }
 
 FlutterKeyEvent KeyboardKeyEmbedderHandler::SynthesizeSimpleEvent(

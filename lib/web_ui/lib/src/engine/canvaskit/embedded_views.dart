@@ -101,14 +101,14 @@ class HtmlViewEmbedder {
         // Only initialize the picture recorder for the backup surface once.
         final CkPictureRecorder pictureRecorder = CkPictureRecorder();
         pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-        pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+        pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
         _backupPictureRecorder = pictureRecorder;
       }
       _pictureRecorders[viewId] = _backupPictureRecorder!;
     } else {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(ui.Color(0x00000000));
+      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
       _pictureRecorders[viewId] = pictureRecorder;
     }
     _compositionOrder.add(viewId);
@@ -373,12 +373,12 @@ class HtmlViewEmbedder {
         frame.submit();
       }
     }
-    _pictureRecorders.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
 
+    SurfaceFactory.instance.removeSurfacesFromDom();
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
@@ -403,10 +403,14 @@ class HtmlViewEmbedder {
       skiaSceneHost!.append(overlay);
       _activeCompositionOrder.add(viewId);
     }
+    if (_didPaintBackupSurface) {
+      skiaSceneHost!.append(SurfaceFactory.instance.backupSurface.htmlElement);
+    }
 
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
+    _releaseOverlays();
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -424,12 +428,18 @@ class HtmlViewEmbedder {
       final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
       clipChain?.root.remove();
       // More cleanup
-      _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
       _viewsToRecomposite.remove(viewId);
       _cleanUpClipDefs(viewId);
       _svgClipDefs.remove(viewId);
     }
+  }
+
+  void _releaseOverlays() {
+    _pictureRecorders.clear();
+    _overlays.clear();
+    _viewsUsingBackupSurface.clear();
+    SurfaceFactory.instance.releaseSurfaces();
   }
 
   void _releaseOverlay(int viewId) {

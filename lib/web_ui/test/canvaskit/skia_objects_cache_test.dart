@@ -19,7 +19,7 @@ void main() {
 void testMain() {
   group('skia_objects_cache', () {
     _tests();
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 
@@ -141,8 +141,7 @@ void _tests() {
         expect(
           spy.printLog,
           <String>[
-            'Engine counters:\n'
-                '  TestSkDeletable created: 1\n'
+            'Engine counters:\n  TestSkDeletable created: 1\n'
           ],
         );
 
@@ -168,9 +167,7 @@ void _tests() {
         expect(
           spy.printLog,
           <String>[
-            'Engine counters:\n'
-                '  TestSkDeletable created: 1\n'
-                '  TestSkDeletable deleted: 1\n'
+            'Engine counters:\n  TestSkDeletable created: 1\n  TestSkDeletable deleted: 1\n'
           ],
         );
         Instrumentation.enabled = false;

@@ -96,14 +96,14 @@ void testMain() {
       pb.addText('مرحبا');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_arabic.png', recorder.endRecording());
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      // TODO: https://github.com/flutter/flutter/issues/71520
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
     test('will put the Noto Emoji font before other fallback fonts in the list',
@@ -153,7 +153,7 @@ void testMain() {
       pb.addText('Hello 😊 مرحبا');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       EnginePlatformDispatcher.instance.rasterizer!
           .debugRunPostFrameCallbacks();
@@ -203,14 +203,14 @@ void testMain() {
       pb.addText('Hello 😊');
       pb.pop();
       final CkParagraph paragraph = pb.build();
-      paragraph.layout(ui.ParagraphConstraints(width: 1000));
+      paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
-      canvas.drawParagraph(paragraph, ui.Offset(0, 0));
+      canvas.drawParagraph(paragraph, const ui.Offset(0, 0));
 
       await matchPictureGolden(
           'canvaskit_font_fallback_emoji.png', recorder.endRecording());
-      // TODO: https://github.com/flutter/flutter/issues/60040
-      // TODO: https://github.com/flutter/flutter/issues/71520
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+      // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     }, skip: isIosSafari || isFirefox);
 
     test('will gracefully fail if we cannot parse the Google Fonts CSS',
@@ -364,7 +364,7 @@ void testMain() {
         }
       }
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 

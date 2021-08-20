@@ -8,7 +8,11 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
+import '../../common.dart';
 import '../screenshot.dart';
+
+// TODO(yjbanov): unskip Firefox tests when Firefox implements WebGL in headless mode.
+// https://github.com/flutter/flutter/issues/86623
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -33,7 +37,7 @@ Future<void> testMain() async {
     final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
-        <Color>[Color(0xFFcfdfd2), Color(0xFF042a85)]);
+        const <Color>[Color(0xFFcfdfd2), Color(0xFF042a85)]);
     rc.drawRect(shaderRect, paint);
     expect(rc.renderStrategy.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_rect',
@@ -59,12 +63,12 @@ Future<void> testMain() async {
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.right, shaderRect.bottom),
-            <Color>[Color(0xFFFF0000), Color(0xFF042a85)],
+            const <Color>[Color(0xFFFF0000), Color(0xFF042a85)],
             null,
             TileMode.clamp,
             matrix.toFloat64());
       rc.drawRect(shaderRect, SurfacePaint()
-        ..color = Color(0xFF000000));
+        ..color = const Color(0xFF000000));
       rc.drawOval(shaderRect, paint);
       yOffset += 120;
     }
@@ -82,8 +86,8 @@ Future<void> testMain() async {
     final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
-        <Color>[Color(0xFFcfdfd2), Color(0xFF042a85)]);
-    rc.drawRRect(RRect.fromRectAndRadius(shaderRect, Radius.circular(16)), paint);
+        const <Color>[Color(0xFFcfdfd2), Color(0xFF042a85)]);
+    rc.drawRRect(RRect.fromRectAndRadius(shaderRect, const Radius.circular(16)), paint);
     expect(rc.renderStrategy.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_rounded_rect',
         region: screenRect,
@@ -101,21 +105,21 @@ Future<void> testMain() async {
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.left + shaderRect.width / 2, shaderRect.top),
-            <Color>[Color(0xFFFF0000), Color(0xFF042a85)],
+            const <Color>[Color(0xFFFF0000), Color(0xFF042a85)],
             null,
             TileMode.repeated,
             Matrix4
                 .rotationZ((angle / 180) * math.pi)
                 .toFloat64());
       rc.drawRect(shaderRect, SurfacePaint()
-        ..color = Color(0xFF000000));
+        ..color = const Color(0xFF000000));
       rc.drawOval(shaderRect, paint);
       yOffset += 120;
     }
     expect(rc.renderStrategy.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_tiled_repeated_rect',
         region: screenRect);
-  });
+  }, skip: isFirefox);
 
   test('Should draw tiled mirrored linear gradient with transform.', () async {
     final RecordingCanvas rc =
@@ -128,19 +132,19 @@ Future<void> testMain() async {
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.left + shaderRect.width / 2, shaderRect.top),
-            <Color>[Color(0xFFFF0000), Color(0xFF042a85)],
+            const <Color>[Color(0xFFFF0000), Color(0xFF042a85)],
             null,
             TileMode.mirror,
             Matrix4
                 .rotationZ((angle / 180) * math.pi)
                 .toFloat64());
       rc.drawRect(shaderRect, SurfacePaint()
-        ..color = Color(0xFF000000));
+        ..color = const Color(0xFF000000));
       rc.drawOval(shaderRect, paint);
       yOffset += 120;
     }
     expect(rc.renderStrategy.hasArbitraryPaint, isTrue);
     await canvasScreenshot(rc, 'linear_gradient_tiled_mirrored_rect',
         region: screenRect);
-  });
+  }, skip: isFirefox);
 }

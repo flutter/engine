@@ -168,8 +168,7 @@ class DisplayList : public SkRefCnt {
   static const SkSamplingOptions CubicSampling;
 
   DisplayList()
-      : ptr_(nullptr),
-        used_(0),
+      : used_(0),
         op_count_(0),
         unique_id_(0),
         bounds_({0, 0, 0, 0}),
@@ -177,7 +176,10 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const { Dispatch(ctx, ptr_, ptr_ + used_); }
+  void Dispatch(Dispatcher& ctx) const {
+    uint8_t* ptr = storage_.get();
+    Dispatch(ctx, ptr, ptr + used_);
+  }
 
   void RenderTo(SkCanvas* canvas) const;
 
@@ -199,7 +201,7 @@ class DisplayList : public SkRefCnt {
  private:
   DisplayList(uint8_t* ptr, size_t used, int op_count, const SkRect& cull_rect);
 
-  uint8_t* ptr_;
+  std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t used_;
   int op_count_;
 
@@ -222,7 +224,7 @@ class DisplayList : public SkRefCnt {
 class Dispatcher {
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
-  static constexpr int MaxDrawPointsCount = ((1 << 29) - 1);
+  static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
 
   virtual void setAA(bool aa) = 0;
   virtual void setDither(bool dither) = 0;
@@ -334,7 +336,7 @@ class Dispatcher {
 // the DisplayListCanvasRecorder class.
 class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
  public:
-  DisplayListBuilder(const SkRect& cull = SkRect::MakeEmpty());
+  DisplayListBuilder(const SkRect& cull = kMaxCull_);
   ~DisplayListBuilder();
 
   void setAA(bool aa) override;
@@ -451,6 +453,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   int save_level_ = 0;
 
   SkRect cull_;
+  static constexpr SkRect kMaxCull_ =
+      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   template <typename T, typename... Args>
   void* Push(size_t extra, Args&&... args);

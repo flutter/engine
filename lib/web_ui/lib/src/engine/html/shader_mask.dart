@@ -102,7 +102,7 @@ class PersistedShaderMask extends PersistedContainerSurface
       }
       return;
     }
-    // TODO: Implement _applyImageShader();
+    // TODO(ferhat): Implement _applyImageShader();
     throw Exception('Shader type not supported for ShaderMask');
   }
 
@@ -230,11 +230,8 @@ String? svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.luminosity:
     case ui.BlendMode.multiply:
     case ui.BlendMode.screen:
-    case ui.BlendMode.overlay:
     case ui.BlendMode.darken:
     case ui.BlendMode.lighten:
-    case ui.BlendMode.colorDodge:
-    case ui.BlendMode.colorBurn:
     case ui.BlendMode.hardLight:
     case ui.BlendMode.softLight:
     case ui.BlendMode.difference:
@@ -242,7 +239,6 @@ String? svgMaskFilterFromImageAndBlendMode(
       svgFilter = _blendImageToSvg(
           imageUrl, stringForBlendMode(blendMode), width, height);
       break;
-    case ui.BlendMode.src:
     case ui.BlendMode.dst:
     case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:

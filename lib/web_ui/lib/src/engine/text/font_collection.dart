@@ -12,7 +12,6 @@ import '../assets.dart';
 import '../browser_detection.dart';
 import '../util.dart';
 import 'layout_service.dart';
-import 'measurement.dart';
 
 const String ahemFontFamily = 'Ahem';
 const String ahemFontUrl = 'packages/ui/assets/ahem.ttf';
@@ -46,7 +45,7 @@ class FontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -60,12 +59,11 @@ class FontCollection {
 
     for (final Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
-      final String? family = fontFamily['family'];
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+      final String? family = fontFamily.tryString('family');
+      final List<Map<String, dynamic>> fontAssets = fontFamily.castList<Map<String, dynamic>>('fonts');
 
-      for (final dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+      for (final Map<String, dynamic> fontAsset in fontAssets) {
+        final String asset = fontAsset.readString('asset');
         final Map<String, String> descriptors = <String, String>{};
         for (final String descriptor in fontAsset.keys) {
           if (descriptor != 'asset') {
@@ -116,11 +114,11 @@ class FontManager {
   // For example font family 'Ahem!' does not fall into this category
   // so the family name will be wrapped in quotes.
   static final RegExp notPunctuation =
-      RegExp(r"[a-z0-9\s]+", caseSensitive: false);
+      RegExp(r'[a-z0-9\s]+', caseSensitive: false);
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
-  static final RegExp startWithDigit = RegExp(r"\b\d");
+  static final RegExp startWithDigit = RegExp(r'\b\d');
 
   factory FontManager() {
     if (supportsFontLoadingApi) {
@@ -216,7 +214,6 @@ class FontManager {
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
-      TextMeasurementService.clearCache();
       Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
       // Failures here will throw an html.DomException which confusingly

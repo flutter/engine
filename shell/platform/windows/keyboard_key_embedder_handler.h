@@ -15,12 +15,18 @@
 
 namespace flutter {
 
-namespace {}  // namespace
+std::string ConvertChar32ToUtf8(char32_t ch);
 
 // A delegate of |KeyboardKeyHandler| that handles events by sending
 // converted |FlutterKeyEvent|s through the embedder API.
 //
 // This class communicates with the HardwareKeyboard API in the framework.
+//
+// Every key event must result in at least one FlutterKeyEvent, even an empty
+// one (both logical and physical IDs are 0). This ensures that raw key
+// messages are always preceded by key data so that the transit mode is
+// correctly inferred. (Technically only the first key event needs so, but for
+// simplicity.)
 class KeyboardKeyEmbedderHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
@@ -117,6 +123,11 @@ class KeyboardKeyEmbedderHandler
   static uint64_t GetLogicalKey(int key, bool extended, int scancode);
   static void HandleResponse(bool handled, void* user_data);
   static void ConvertUtf32ToUtf8_(char* out, char32_t ch);
+  // Create an empty event.
+  //
+  // This is used when no key data needs to be sent. For the reason, see the
+  // |KeyboardKeyEmbedderHandler| class.
+  static FlutterKeyEvent CreateEmptyEvent();
   static FlutterKeyEvent SynthesizeSimpleEvent(FlutterKeyEventType type,
                                                uint64_t physical,
                                                uint64_t logical,

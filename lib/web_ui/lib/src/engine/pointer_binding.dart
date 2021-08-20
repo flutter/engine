@@ -204,9 +204,9 @@ abstract class _BaseAdapter {
     html.EventListener handler, {
     bool acceptOutsideGlasspane = false,
   }) {
-    final html.EventListener loggedHandler = (html.Event event) {
+    dynamic loggedHandler(html.Event event) {
       if (!acceptOutsideGlasspane && !glassPaneElement.contains(event.target as html.Node?)) {
-        return;
+        return null;
       }
 
       if (_debugLogPointerEvents) {
@@ -224,7 +224,7 @@ abstract class _BaseAdapter {
       if (EngineSemanticsOwner.instance.receiveGlobalEvent(event)) {
         handler(event);
       }
-    };
+    }
     _listeners[eventName] = loggedHandler;
     // We have to attach the event listener on the window instead of the
     // glasspane element. That's because "up" events that occur outside the
@@ -293,7 +293,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(html.EventListener handler) {
-    final dynamic eventOptions = js_util.newObject();
+    final Object eventOptions = js_util.newObject() as Object;
     final html.EventListener jsHandler = js.allowInterop((html.Event event) => handler(event));
     _BaseAdapter._nativeListeners['wheel'] = jsHandler;
     js_util.setProperty(eventOptions, 'passive', false);

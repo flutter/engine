@@ -54,7 +54,9 @@ CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[reference bridge]->view() window] screen].scale;
+  UIScreen* screen = [[[reference bridge]->view() window] screen];
+  // Screen can be nil if the FlutterView is covered by another native view.
+  CGFloat scale = screen == nil ? [UIScreen mainScreen].scale : screen.scale;
   auto result = CGPointMake(point.x() / scale, point.y() / scale);
   return [[reference bridge]->view() convertPoint:result toView:nil];
 }
@@ -80,7 +82,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[reference bridge]->view() window] screen].scale;
+  UIScreen* screen = [[[reference bridge]->view() window] screen];
+  // Screen can be nil if the FlutterView is covered by another native view.
+  CGFloat scale = screen == nil ? [UIScreen mainScreen].scale : screen.scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, [reference bridge]->view());
@@ -207,6 +211,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (id)accessibilityContainer {
+  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+    return nil;
+  }
+
   if ([_semanticsObject hasChildren] || [_semanticsObject uid] == kRootNodeId) {
     if (_container == nil) {
       _container.reset([[SemanticsObjectContainer alloc]
@@ -368,6 +376,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
+  BOOL _inDealloc;
 }
 
 #pragma mark - Override base class designated initializers
@@ -409,6 +418,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   _parent = nil;
   _container.get().semanticsObject = nil;
   [_platformViewSemanticsContainer release];
+  _inDealloc = YES;
   [super dealloc];
 }
 
@@ -682,6 +692,18 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (id)accessibilityContainer {
+  if (_inDealloc) {
+    // In iOS9, `accessibilityContainer` will be called by `[UIAccessibilityElementSuperCategory
+    // dealloc]` during `[super dealloc]`. And will crash when accessing `_children` which has
+    // called `[_children release]` in `[SemanticsObject dealloc]`.
+    // https://github.com/flutter/flutter/issues/87247
+    return nil;
+  }
+
+  if (![self isAccessibilityBridgeAlive]) {
+    return nil;
+  }
+
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
       _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:self

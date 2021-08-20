@@ -5,42 +5,12 @@
 import 'dart:async';
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 
+import 'browser_lock.dart';
 import 'common.dart';
 import 'environment.dart';
-
-class EdgeArgParser extends BrowserArgParser {
-  static final EdgeArgParser _singletonInstance = EdgeArgParser._();
-
-  /// The [EdgeArgParser] singleton.
-  static EdgeArgParser get instance => _singletonInstance;
-
-  late String _version;
-
-  EdgeArgParser._();
-
-  @override
-  void populateOptions(ArgParser argParser) {
-    argParser.addOption(
-        'edge-version',
-        defaultsTo: 'system',
-        help: 'The Edge version to use while running tests. The Edge '
-            'browser installed on the system is used as the only option now.',
-      );
-  }
-
-  @override
-  void parseOptions(ArgResults argResults) {
-    _version = argResults['edge-version'] as String;
-    assert(_version == 'system');
-  }
-
-  @override
-  String get version => _version;
-}
 
 /// Returns the installation of Edge.
 ///
@@ -50,7 +20,7 @@ class EdgeArgParser extends BrowserArgParser {
 /// exclusively with Windows 10 and cannot be downloaded or installed separately.`
 /// See: https://support.microsoft.com/en-us/help/17171/microsoft-edge-get-to-know
 ///
-// TODO(nurhan): Investigate running tests for the tech preview downloads
+// TODO(yjbanov): Investigate running tests for the tech preview downloads
 // from the beta channel.
 Future<BrowserInstallation> getEdgeInstallation(
   String requestedVersion, {
@@ -112,7 +82,7 @@ class EdgeLauncher {
   bool get isInstalled => executable.existsSync();
 
   /// Version number launcher executable  `MicrosoftEdgeLauncher`.
-  final String version;
+  String get version => browserLock.edgeLock.launcherVersion;
 
   /// Url for downloading  `MicrosoftEdgeLauncher`.
   ///
@@ -120,9 +90,7 @@ class EdgeLauncher {
   String get windowsEdgeLauncherDownloadUrl =>
       'https://github.com/MicrosoftEdge/edge-launcher/releases/download/$version/MicrosoftEdgeLauncher.exe';
 
-  EdgeLauncher()
-      : version =
-            BrowserLock.instance.configuration['edge']['launcher_version'] as String;
+  EdgeLauncher();
 
   /// Install the launcher if it does not exist in this system.
   Future<void> install() async {
