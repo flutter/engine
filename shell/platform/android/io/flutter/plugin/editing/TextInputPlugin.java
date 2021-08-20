@@ -31,6 +31,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
@@ -626,13 +627,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
 
-    // Deltas
-    final TextEditingDelta delta = mEditable.getTextEditingDelta();
-    final CharSequence oldText = delta.getOldText();
-    final CharSequence newText = delta.getDeltaText();
-    final CharSequence deltaType = delta.getDeltaType();
-    final int newStart = delta.getDeltaStart();
-    final int newEnd = delta.getDeltaEnd();
+    final ArrayList<TextEditingDelta> batchTextEditingDeltas = mEditable.getBatchTextEditingDeltas();
     final boolean skipFrameworkUpdate =
         // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null
@@ -651,17 +646,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
           selectionEnd,
           composingStart,
           composingEnd);
-      textInputChannel.updateEditingStateWithDelta(
-          inputTarget.id,
-          oldText.toString(),
-          newText.toString(),
-          deltaType.toString(),
-          newStart,
-          newEnd,
-          selectionStart,
-          selectionEnd,
-          composingStart,
-          composingEnd);
+      textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
+      mEditable.clearBatchDeltas();
       // TODO: Update TextEditState with deltas?
       mLastKnownFrameworkTextEditingState =
           new TextEditState(

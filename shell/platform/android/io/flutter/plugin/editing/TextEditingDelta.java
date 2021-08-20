@@ -5,6 +5,8 @@
 package io.flutter.plugin.editing;
 
 import io.flutter.Log;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class TextEditingDelta {
   private CharSequence oldText;
@@ -12,46 +14,26 @@ public class TextEditingDelta {
   private CharSequence deltaType;
   private int deltaStart;
   private int deltaEnd;
+  private int newSelectionStart;
+  private int newSelectionEnd;
+  private int newComposingStart;
+  private int newComposingEnd;
 
-  public TextEditingDelta() {
-    oldText = "";
-    deltaText = "";
-    deltaType = "EQUALITY";
-    deltaStart = -1;
-    deltaEnd = -1;
-  }
-
-  public CharSequence getOldText() {
-    return oldText;
-  }
-
-  public CharSequence getDeltaText() {
-    return deltaText;
-  }
-
-  public CharSequence getDeltaType() {
-    return deltaType;
-  }
-
-  public int getDeltaStart() {
-    return deltaStart;
-  }
-
-  public int getDeltaEnd() {
-    return deltaEnd;
-  }
-
-  private void setDeltas(
-      CharSequence oldTxt, CharSequence newTxt, CharSequence type, int newStart, int newExtent) {
-    oldText = oldTxt;
-    deltaText = newTxt;
-    deltaStart = newStart;
-    deltaEnd = newExtent;
-    deltaType = type;
-  }
-
-  public void reasonDeltas(
-      CharSequence currentEditable, int start, int end, CharSequence tb, int tbstart, int tbend) {
+  public TextEditingDelta(
+      CharSequence currentEditable,
+      int start,
+      int end,
+      CharSequence tb,
+      int tbstart,
+      int tbend,
+      int selectionStart,
+      int selectionEnd,
+      int composingStart,
+      int composingEnd) {
+    newSelectionStart = selectionStart;
+    newSelectionEnd = selectionEnd;
+    newComposingStart = composingStart;
+    newComposingEnd = composingEnd;
     final boolean isDeletionGreaterThanOne = end - (start + tbend) > 1;
     final boolean isCalledFromDelete = tb == "" && tbstart == 0 && tbstart == tbend;
 
@@ -68,9 +50,9 @@ public class TextEditingDelta {
     final boolean isOriginalComposingRegionTextChanged =
         (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
             || !currentEditable
-                .subSequence(start, end)
-                .toString()
-                .equals(tb.subSequence(tbstart, end - start).toString());
+            .subSequence(start, end)
+            .toString()
+            .equals(tb.subSequence(tbstart, end - start).toString());
 
     final boolean isEqual =
         currentEditable.subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
@@ -102,5 +84,34 @@ public class TextEditingDelta {
       setDeltas(
           currentEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
     }
+  }
+
+  public JSONObject toJSON() {
+    JSONObject delta = new JSONObject();
+
+    try {
+      delta.put("oldText", oldText.toString());
+      delta.put("deltaText", deltaText.toString());
+      delta.put("delta", deltaType.toString());
+      delta.put("deltaStart", deltaStart);
+      delta.put("deltaEnd", deltaEnd);
+      delta.put("selectionBase", newSelectionStart);
+      delta.put("selectionExtent", newSelectionEnd);
+      delta.put("composingBase", newComposingStart);
+      delta.put("composingExtent", newComposingEnd);
+    } catch (JSONException e) {
+
+    }
+
+    return delta;
+  }
+
+  private void setDeltas(
+      CharSequence oldTxt, CharSequence newTxt, CharSequence type, int newStart, int newExtent) {
+    oldText = oldTxt;
+    deltaText = newTxt;
+    deltaStart = newStart;
+    deltaEnd = newExtent;
+    deltaType = type;
   }
 }

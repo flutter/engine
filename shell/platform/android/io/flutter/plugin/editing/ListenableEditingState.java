@@ -41,6 +41,7 @@ class ListenableEditingState extends SpannableStringBuilder {
   private int mChangeNotificationDepth = 0;
   private ArrayList<EditingStateWatcher> mListeners = new ArrayList<>();
   private ArrayList<EditingStateWatcher> mPendingListeners = new ArrayList<>();
+  private ArrayList<TextEditingDelta> mBatchTextEditingDeltas = new ArrayList<>();
 
   private String mToStringCache;
 
@@ -52,8 +53,6 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   private BaseInputConnection mDummyConnection;
 
-  private TextEditingDelta mTextEditingDelta;
-
   // The View is only used for creating a dummy BaseInputConnection for setComposingRegion. The View
   // needs to have a non-null Context.
   public ListenableEditingState(TextInputChannel.TextEditState initalState, View view) {
@@ -61,8 +60,6 @@ class ListenableEditingState extends SpannableStringBuilder {
     if (initalState != null) {
       setEditingState(initalState);
     }
-
-    mTextEditingDelta = new TextEditingDelta();
 
     Editable self = this;
     mDummyConnection =
@@ -72,6 +69,14 @@ class ListenableEditingState extends SpannableStringBuilder {
             return self;
           }
         };
+  }
+  
+  public ArrayList<TextEditingDelta> getBatchTextEditingDeltas() {
+    return mBatchTextEditingDeltas;
+  }
+
+  public void clearBatchDeltas() {
+    mBatchTextEditingDeltas.clear();
   }
 
   /// Starts a new batch edit during which change notifications will be put on hold until all batch
@@ -230,7 +235,7 @@ class ListenableEditingState extends SpannableStringBuilder {
         "DELTAS",
         "replace(" + start + ", " + end + ", " + tb + ", " + tbstart + ", " + tbend + ")");
 
-    mTextEditingDelta.reasonDeltas(toString(), start, end, tb, tbstart, tbend);
+    final CharSequence oldText = toString();
 
     boolean textChanged = end - start != tbend - tbstart;
     for (int i = 0; i < end - start && !textChanged; i++) {
@@ -246,6 +251,20 @@ class ListenableEditingState extends SpannableStringBuilder {
     final int composingEnd = getComposingEnd();
 
     final SpannableStringBuilder editable = super.replace(start, end, tb, tbstart, tbend);
+    
+    mBatchTextEditingDeltas.add(
+        new TextEditingDelta(
+            oldText,
+            start,
+            end,
+            tb,
+            tbstart,
+            tbend,
+            getSelectionStart(),
+            getSelectionEnd(),
+            getComposingStart(),
+            getComposingEnd()));
+
     if (mBatchEditNestDepth > 0) {
       return editable;
     }
@@ -291,10 +310,6 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   public final int getComposingEnd() {
     return BaseInputConnection.getComposingSpanEnd(this);
-  }
-
-  public TextEditingDelta getTextEditingDelta() {
-    return mTextEditingDelta;
   }
 
   @Override

@@ -12,6 +12,8 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.editing.TextEditingDelta;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -188,25 +190,16 @@ public class TextInputChannel {
   }
 
   private static HashMap<Object, Object> createEditingDeltaJSON(
-      String oldTxt,
-      String newTxt,
-      String diffType,
-      int newStart,
-      int newEnd,
-      int selectionStart,
-      int selectionEnd,
-      int composingStart,
-      int composingEnd) {
+      ArrayList<TextEditingDelta> batchDeltas) {
     HashMap<Object, Object> state = new HashMap<>();
-    state.put("oldText", oldTxt);
-    state.put("deltaText", newTxt);
-    state.put("delta", diffType);
-    state.put("deltaStart", newStart);
-    state.put("deltaEnd", newEnd);
-    state.put("selectionBase", selectionStart);
-    state.put("selectionExtent", selectionEnd);
-    state.put("composingBase", composingStart);
-    state.put("composingExtent", composingEnd);
+
+    JSONArray deltas = new JSONArray();
+    for (TextEditingDelta delta : batchDeltas) {
+      deltas.put(delta.toJSON());
+    }
+    
+    state.put("batchDeltas", deltas);
+    
     return state;
   }
   /**
@@ -243,62 +236,16 @@ public class TextInputChannel {
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
   }
 
-  public void updateEditingStateWithDelta(
+  public void updateEditingStateWithDeltas(
       int inputClientId,
-      String oldText,
-      String newText,
-      String diffType,
-      int newStart,
-      int newExtent,
-      int selectionStart,
-      int selectionEnd,
-      int composingStart,
-      int composingEnd) {
+      ArrayList<TextEditingDelta> batchDeltas) {
 
-    Log.e(
-        "DELTAS",
-        "Sending message to update editing state with delta: \n"
-            + "old text: "
-            + oldText
-            + "\n"
-            + "delta text: "
-            + newText
-            + "\n"
-            + "diff type: "
-            + diffType
-            + "\n"
-            + "delta start: "
-            + newStart
-            + "\n"
-            + "delta end: "
-            + newExtent
-            + "\n"
-            + "Selection start: "
-            + selectionStart
-            + "\n"
-            + "Selection end: "
-            + selectionEnd
-            + "\n"
-            + "Composing start: "
-            + composingStart
-            + "\n"
-            + "Composing end: "
-            + composingEnd);
+    Log.e("DELTAS", "Sending message to update editing state with delta");
 
-    final HashMap<Object, Object> state =
-        createEditingDeltaJSON(
-            oldText,
-            newText,
-            diffType,
-            newStart,
-            newExtent,
-            selectionStart,
-            selectionEnd,
-            composingStart,
-            composingEnd);
+    final HashMap<Object, Object> state = createEditingDeltaJSON(batchDeltas);
 
     channel.invokeMethod(
-        "TextInputClient.updateEditingStateWithDelta", Arrays.asList(inputClientId, state));
+        "TextInputClient.updateEditingStateWithDeltas", Arrays.asList(inputClientId, state));
   }
 
   public void updateEditingStateWithTag(
