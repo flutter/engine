@@ -127,6 +127,9 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
     FlutterRenderer.ViewportMetrics metrics = new FlutterRenderer.ViewportMetrics();
+    metrics.width = 1000;
+    metrics.height = 1000;
+    metrics.devicePixelRatio = 2;
     metrics.displayFeatures.add(
         new FlutterRenderer.DisplayFeature(
             new Rect(10, 20, 30, 40),

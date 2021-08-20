@@ -452,8 +452,18 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
   @VisibleForTesting()
   protected WindowInfoRepositoryCallbackAdapter createWindowInfoRepo() {
-    return new WindowInfoRepositoryCallbackAdapter(
-        WindowInfoRepository.getOrCreate((Activity) getContext()));
+    try {
+      return new WindowInfoRepositoryCallbackAdapter(
+          WindowInfoRepository.getOrCreate((Activity) getContext()));
+    } catch (NoClassDefFoundError noClassDefFoundError) {
+      // Testing environment uses gn/javac, which does not work with aar files. This is why aar
+      // are converted to jar files, losing resources and other android-specific files.
+      // androidx.window does contain resources, which causes it to fail during testing, since the
+      // class androidx.window.R is not found.
+      // This method is mocked in the tests involving androidx.window, but this catch block is
+      // needed for other tests, which would otherwise fail during onAttachedToWindow().
+      return null;
+    }
   }
 
   /**
@@ -465,8 +475,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
     this.windowInfoRepo = createWindowInfoRepo();
-    windowInfoRepo.addWindowLayoutInfoListener(
-        ContextCompat.getMainExecutor(getContext()), windowInfoListener);
+    if (windowInfoRepo != null) {
+      windowInfoRepo.addWindowLayoutInfoListener(
+          ContextCompat.getMainExecutor(getContext()), windowInfoListener);
+    }
   }
 
   /**
@@ -476,7 +488,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    */
   @Override
   protected void onDetachedFromWindow() {
-    windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
+    if (windowInfoRepo != null) {
+      windowInfoRepo.removeWindowLayoutInfoListener(windowInfoListener);
+    }
     this.windowInfoRepo = null;
     super.onDetachedFromWindow();
   }
