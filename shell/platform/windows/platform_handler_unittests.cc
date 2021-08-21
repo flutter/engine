@@ -68,9 +68,6 @@ TEST(PlatformHandler, GettingTextCallsThrough) {
   jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod
                    << "\",\"args\":\"" << kTextPlainFormat << "\"}";
   std::string jsonString = jsonStringStream.str();
-  unsigned char json[256];
-  std::copy(jsonString.begin(), jsonString.end(), json);
-  unsigned char* data = &json[0];
 
   // Set up a handler to call a response on |result| so that it doesn't log
   // on destruction about leaking.
@@ -81,8 +78,8 @@ TEST(PlatformHandler, GettingTextCallsThrough) {
 
   EXPECT_CALL(platform_handler, GetPlainText(_, ::testing::StrEq("text")));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, data, strlen((char*)data),
-      [](const uint8_t* reply, size_t reply_size) {}));
+      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
+      jsonString.size(), [](const uint8_t* reply, size_t reply_size) {}));
 }
 
 TEST(PlatformHandler, RejectsGettingUnknownTypes) {
@@ -93,16 +90,13 @@ TEST(PlatformHandler, RejectsGettingUnknownTypes) {
   jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod
                    << "\",\"args\":\"" << kFakeContentType << "\"}";
   std::string jsonString = jsonStringStream.str();
-  unsigned char json[256];
-  std::copy(jsonString.begin(), jsonString.end(), json);
-  unsigned char* data = &json[0];
 
   MockMethodResult result;
   // Requsting an unknow content type is an error.
   EXPECT_CALL(result, ErrorInternal(_, _, _));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, data, strlen((char*)data),
-      [&](const uint8_t* reply, size_t reply_size) {
+      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
+      jsonString.size(), [&](const uint8_t* reply, size_t reply_size) {
         JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
             reply, reply_size, &result);
       }));
@@ -116,9 +110,6 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
   jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod
                    << "\",\"args\":\"" << kTextPlainFormat << "\"}";
   std::string jsonString = jsonStringStream.str();
-  unsigned char json[256];
-  std::copy(jsonString.begin(), jsonString.end(), json);
-  unsigned char* data = &json[0];
 
   // Set up a handler to call a response on |result| so that it doesn't log
   // on destruction about leaking.
@@ -130,8 +121,8 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
 
   EXPECT_CALL(platform_handler, HasStrings(_));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, data, strlen((char*)data),
-      [](const uint8_t* reply, size_t reply_size) {}));
+      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
+      jsonString.size(), [](const uint8_t* reply, size_t reply_size) {}));
 }
 
 TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
@@ -142,16 +133,13 @@ TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
   jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod
                    << "\",\"args\":\"" << kFakeContentType << "\"}";
   std::string jsonString = jsonStringStream.str();
-  unsigned char json[256];
-  std::copy(jsonString.begin(), jsonString.end(), json);
-  unsigned char* data = &json[0];
 
   MockMethodResult result;
   // Requsting an unknow content type is an error.
   EXPECT_CALL(result, ErrorInternal(_, _, _));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, data, strlen((char*)data),
-      [&](const uint8_t* reply, size_t reply_size) {
+      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
+      jsonString.size(), [&](const uint8_t* reply, size_t reply_size) {
         JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
             reply, reply_size, &result);
       }));
