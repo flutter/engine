@@ -50,9 +50,9 @@ public class TextEditingDelta {
     final boolean isOriginalComposingRegionTextChanged =
         (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
             || !currentEditable
-            .subSequence(start, end)
-            .toString()
-            .equals(tb.subSequence(tbstart, end - start).toString());
+                .subSequence(start, end)
+                .toString()
+                .equals(tb.subSequence(tbstart, end - start).toString());
 
     final boolean isEqual =
         currentEditable.subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));

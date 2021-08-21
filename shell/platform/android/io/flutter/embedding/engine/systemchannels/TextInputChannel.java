@@ -197,9 +197,7 @@ public class TextInputChannel {
     for (TextEditingDelta delta : batchDeltas) {
       deltas.put(delta.toJSON());
     }
-    
     state.put("batchDeltas", deltas);
-    
     return state;
   }
   /**
@@ -237,8 +235,7 @@ public class TextInputChannel {
   }
 
   public void updateEditingStateWithDeltas(
-      int inputClientId,
-      ArrayList<TextEditingDelta> batchDeltas) {
+      int inputClientId, ArrayList<TextEditingDelta> batchDeltas) {
 
     Log.e("DELTAS", "Sending message to update editing state with delta");
 

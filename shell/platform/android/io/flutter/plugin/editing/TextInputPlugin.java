@@ -30,8 +30,8 @@ import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
@@ -627,7 +627,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
 
-    final ArrayList<TextEditingDelta> batchTextEditingDeltas = mEditable.getBatchTextEditingDeltas();
+    final ArrayList<TextEditingDelta> batchTextEditingDeltas =
+        mEditable.getBatchTextEditingDeltas();
     final boolean skipFrameworkUpdate =
         // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null

@@ -252,7 +252,6 @@ class ListenableEditingState extends SpannableStringBuilder {
     final int composingEnd = getComposingEnd();
 
     final SpannableStringBuilder editable = super.replace(start, end, tb, tbstart, tbend);
-    
     mBatchTextEditingDeltas.add(
         new TextEditingDelta(
             oldText,
