@@ -70,7 +70,6 @@ class ListenableEditingState extends SpannableStringBuilder {
           }
         };
   }
-  
   public ArrayList<TextEditingDelta> getBatchTextEditingDeltas() {
     return mBatchTextEditingDeltas;
   }
