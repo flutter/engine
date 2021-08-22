@@ -640,16 +640,18 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
       Log.e("DELTAS", "send EditingState to flutter: " + mEditable.toString());
-      textInputChannel.updateEditingState(
-          inputTarget.id,
-          mEditable.toString(),
-          selectionStart,
-          selectionEnd,
-          composingStart,
-          composingEnd);
-      textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
-      mEditable.clearBatchDeltas();
-      // TODO: Update TextEditState with deltas?
+      if (configuration.enableDeltaModel) {
+        textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
+        mEditable.clearBatchDeltas();
+      } else {
+        textInputChannel.updateEditingState(
+            inputTarget.id,
+            mEditable.toString(),
+            selectionStart,
+            selectionEnd,
+            composingStart,
+            composingEnd);
+      }
       mLastKnownFrameworkTextEditingState =
           new TextEditState(
               mEditable.toString(), selectionStart, selectionEnd, composingStart, composingEnd);
