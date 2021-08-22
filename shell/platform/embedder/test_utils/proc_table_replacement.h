@@ -19,7 +19,8 @@
   ([&]() {                                                                     \
     static std::function<                                                      \
         std::remove_pointer_t<decltype(FlutterEngineProcTable::proc)>>         \
-        closure = mock_impl;                                                   \
+        closure;                                                               \
+    closure = mock_impl;                                                       \
     static auto non_capturing = [](auto... args) { return closure(args...); }; \
     return non_capturing;                                                      \
   })()
