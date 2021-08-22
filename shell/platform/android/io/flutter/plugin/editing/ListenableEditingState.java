@@ -153,8 +153,8 @@ class ListenableEditingState extends SpannableStringBuilder {
       Selection.removeSelection(this);
     }
     setComposingRange(newState.composingStart, newState.composingEnd);
-    clearBatchDeltas();
     endBatchEdit();
+    clearBatchDeltas();
   }
 
   public void addEditingStateListener(EditingStateWatcher listener) {

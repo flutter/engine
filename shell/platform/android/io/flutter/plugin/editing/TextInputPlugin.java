@@ -805,31 +805,60 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       return;
     }
 
-    final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
-    for (int i = 0; i < values.size(); i++) {
-      int virtualId = values.keyAt(i);
+    if (configuration.enableDeltaModel) {
+      final HashMap<String, TextEditingDelta> editingDeltas = new HashMap<>();
+      for (int i = 0; i < values.size(); i++) {
+        int virtualId = values.keyAt(i);
 
-      final TextInputChannel.Configuration config = mAutofillConfigurations.get(virtualId);
-      if (config == null || config.autofill == null) {
-        continue;
+        final TextInputChannel.Configuration config = mAutofillConfigurations.get(virtualId);
+        if (config == null || config.autofill == null) {
+          continue;
+        }
+
+        final TextInputChannel.Configuration.Autofill autofill = config.autofill;
+        final String value = values.valueAt(i).getTextValue().toString();
+        final TextInputChannel.TextEditState newState =
+            new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
+        final TextEditingDelta newDelta =
+            new TextEditingDelta(
+                "", 0, 0, value, 0, value.length(), value.length(), value.length(), -1, -1);
+
+        if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
+          // Autofilling the current client is the same as handling user input
+          // from the virtual keyboard. Setting the editable to newState and an
+          // update will be sent to the framework.
+          mEditable.setEditingState(newState);
+        } else {
+          editingDeltas.put(autofill.uniqueIdentifier, newDelta);
+        }
       }
+      textInputChannel.updateEditingStateWithDeltasWithTag(inputTarget.id, editingDeltas);
+    } else {
+      final HashMap<String, TextInputChannel.TextEditState> editingValues = new HashMap<>();
+      for (int i = 0; i < values.size(); i++) {
+        int virtualId = values.keyAt(i);
 
-      final TextInputChannel.Configuration.Autofill autofill = config.autofill;
-      final String value = values.valueAt(i).getTextValue().toString();
-      final TextInputChannel.TextEditState newState =
-          new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
+        final TextInputChannel.Configuration config = mAutofillConfigurations.get(virtualId);
+        if (config == null || config.autofill == null) {
+          continue;
+        }
 
-      if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
-        // Autofilling the current client is the same as handling user input
-        // from the virtual keyboard. Setting the editable to newState and an
-        // update will be sent to the framework.
-        mEditable.setEditingState(newState);
-      } else {
-        editingValues.put(autofill.uniqueIdentifier, newState);
+        final TextInputChannel.Configuration.Autofill autofill = config.autofill;
+        final String value = values.valueAt(i).getTextValue().toString();
+        final TextInputChannel.TextEditState newState =
+            new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
+
+        if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
+          // Autofilling the current client is the same as handling user input
+          // from the virtual keyboard. Setting the editable to newState and an
+          // update will be sent to the framework.
+          mEditable.setEditingState(newState);
+        } else {
+          editingValues.put(autofill.uniqueIdentifier, newState);
+        }
       }
+      textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
     }
-
-    textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
   // -------- End: Autofill -------
 }

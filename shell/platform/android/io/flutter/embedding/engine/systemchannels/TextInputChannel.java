@@ -264,6 +264,25 @@ public class TextInputChannel {
         "TextInputClient.updateEditingStateWithTag", Arrays.asList(inputClientId, json));
   }
 
+  public void updateEditingStateWithDeltasWithTag(
+      int inputClientId, HashMap<String, TextEditingDelta> editDeltas) {
+    Log.v(
+        TAG,
+        "Sending message to update editing state for "
+            + String.valueOf(editDeltas.size())
+            + " field(s).");
+
+    final HashMap<String, Object> json = new HashMap<>();
+    for (Map.Entry<String, TextEditingDelta> element : editDeltas.entrySet()) {
+      final TextEditingDelta delta = element.getValue();
+      json.put(
+          element.getKey(),
+          delta.toJSON());
+    }
+    channel.invokeMethod(
+        "TextInputClient.updateEditingStateWithDeltasWithTag", Arrays.asList(inputClientId, json));
+  }
+
   /** Instructs Flutter to execute a "newline" action. */
   public void newline(int inputClientId) {
     Log.v(TAG, "Sending 'newline' message.");
