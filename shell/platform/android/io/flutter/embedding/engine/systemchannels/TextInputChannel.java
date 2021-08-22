@@ -275,9 +275,7 @@ public class TextInputChannel {
     final HashMap<String, Object> json = new HashMap<>();
     for (Map.Entry<String, TextEditingDelta> element : editDeltas.entrySet()) {
       final TextEditingDelta delta = element.getValue();
-      json.put(
-          element.getKey(),
-          delta.toJSON());
+      json.put(element.getKey(), delta.toJSON());
     }
     channel.invokeMethod(
         "TextInputClient.updateEditingStateWithDeltasWithTag", Arrays.asList(inputClientId, json));
