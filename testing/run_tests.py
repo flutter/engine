@@ -166,8 +166,6 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     import resource
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
-  # Not all of the engine unit tests are designed to be run more than once.
-
   shuffle_flags = [
     "--gtest_repeat=2",
     "--gtest_shuffle",
