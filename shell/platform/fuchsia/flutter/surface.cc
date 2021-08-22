@@ -6,7 +6,6 @@
 
 #include <fcntl.h>
 #include <lib/fdio/watcher.h>
-#include <lib/zx/time.h>
 #include <unistd.h>
 
 #include "flutter/fml/unique_fd.h"
