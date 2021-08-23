@@ -231,7 +231,7 @@ void PlatformHandlerWin32::GetPlainText(
   result->Success(document);
 }
 
-void PlatformHandlerWin32::HasStrings(
+void PlatformHandlerWin32::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   ScopedClipboard clipboard;
   if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {

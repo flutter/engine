@@ -55,7 +55,7 @@ void PlatformHandler::HandleMethodCall(
       result->Error(kClipboardError, kUnknownClipboardFormatMessage);
       return;
     }
-    HasStrings(std::move(result));
+    GetHasStrings(std::move(result));
   } else if (method.compare(kSetClipboardDataMethod) == 0) {
     const rapidjson::Value& document = *method_call.arguments();
     rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);

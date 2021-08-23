@@ -33,7 +33,7 @@ class PlatformHandler {
 
   // Provides a boolean to |result| as the value in a dictionary at key
   // "value" representing whether or not the clipboard has a non-empty string.
-  virtual void HasStrings(
+  virtual void GetHasStrings(
       std::unique_ptr<MethodResult<rapidjson::Document>> result) = 0;
 
   // Sets the clipboard's plain text to |text|, and reports the result (either

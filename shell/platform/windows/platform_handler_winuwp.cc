@@ -28,7 +28,7 @@ void PlatformHandlerWinUwp::GetPlainText(
   result->NotImplemented();
 }
 
-void PlatformHandlerWinUwp::HasStrings(
+void PlatformHandlerWinUwp::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   // TODO: Implement. See https://github.com/flutter/flutter/issues/70214.
   result->NotImplemented();

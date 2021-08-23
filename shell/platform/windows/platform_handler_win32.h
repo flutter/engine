@@ -29,7 +29,7 @@ class PlatformHandlerWin32 : public PlatformHandler {
                     std::string_view key) override;
 
   // |PlatformHandler|
-  void HasStrings(
+  void GetHasStrings(
       std::unique_ptr<MethodResult<rapidjson::Document>> result) override;
 
   // |PlatformHandler|

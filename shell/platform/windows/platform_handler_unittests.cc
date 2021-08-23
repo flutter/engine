@@ -40,7 +40,7 @@ class TestPlatformHandler : public PlatformHandler {
   MOCK_METHOD2(GetPlainText,
                void(std::unique_ptr<MethodResult<rapidjson::Document>>,
                     std::string_view key));
-  MOCK_METHOD1(HasStrings,
+  MOCK_METHOD1(GetHasStrings,
                void(std::unique_ptr<MethodResult<rapidjson::Document>>));
   MOCK_METHOD2(SetPlainText,
                void(const std::string&,
@@ -102,7 +102,7 @@ TEST(PlatformHandler, RejectsGettingUnknownTypes) {
       }));
 }
 
-TEST(PlatformHandler, HasStringsCallsThrough) {
+TEST(PlatformHandler, GetHasStringsCallsThrough) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
@@ -113,19 +113,19 @@ TEST(PlatformHandler, HasStringsCallsThrough) {
 
   // Set up a handler to call a response on |result| so that it doesn't log
   // on destruction about leaking.
-  ON_CALL(platform_handler, HasStrings)
+  ON_CALL(platform_handler, GetHasStrings)
       .WillByDefault(
           [](std::unique_ptr<MethodResult<rapidjson::Document>> result) {
             result->NotImplemented();
           });
 
-  EXPECT_CALL(platform_handler, HasStrings(_));
+  EXPECT_CALL(platform_handler, GetHasStrings(_));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
       kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
       jsonString.size(), [](const uint8_t* reply, size_t reply_size) {}));
 }
 
-TEST(PlatformHandler, RejectsHasStringsOnUnknownTypes) {
+TEST(PlatformHandler, RejectsGetHasStringsOnUnknownTypes) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
