@@ -135,6 +135,10 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
   else:
     test_command = [ executable ] + flags
 
+  if not env:
+    env = os.environ.copy()
+  env['FLUTTER_BUILD_DIRECTORY'] = build_dir
+
   try:
     RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
   except:
@@ -560,6 +564,7 @@ def main():
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
   if args.sanitizer_suppressions:
+    assert IsLinux() or IsMac(), "The sanitizer suppressions flag is only supported on Linux and Mac."
     file_dir = os.path.dirname(os.path.abspath(__file__))
     command = [
       "env", "-i", "bash",
