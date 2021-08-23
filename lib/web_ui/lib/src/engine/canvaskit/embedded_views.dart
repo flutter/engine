@@ -100,8 +100,7 @@ class HtmlViewEmbedder {
     // backup overlay, so that draw commands after the platform view will
     // correctly paint to the backup surface.
     _viewsUsingBackupSurface.remove(viewId);
-    if (_compositionOrder.length >=
-        SurfaceFactory.instance.maximumSurfaces - 1) {
+    if (_compositionOrder.length >= SurfaceFactory.instance.maximumOverlays) {
       _viewsUsingBackupSurface.add(viewId);
     }
 
@@ -359,6 +358,12 @@ class HtmlViewEmbedder {
   }
 
   void submitFrame() {
+    final ViewListDiffResult? diffResult =
+        (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
+            ? null
+            : diffViewList(_activeCompositionOrder, _compositionOrder);
+    final Map<int, int>? insertBeforeMap = _updateOverlays(diffResult);
+
     bool _didPaintBackupSurface = false;
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
@@ -390,11 +395,6 @@ class HtmlViewEmbedder {
     }
 
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
-    final ViewListDiffResult? diffResult =
-        (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
-            ? null
-            : diffViewList(_activeCompositionOrder, _compositionOrder);
-    _updateOverlays(diffResult);
     _viewsUsingBackupSurface.clear();
     _activeCompositionOrder.clear();
 
@@ -422,20 +422,30 @@ class HtmlViewEmbedder {
         if (diffResult.addToBeginning) {
           final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost!.insertBefore(platformViewRoot, elementToInsertBefore);
-          final Surface overlay = _overlays[viewId]!;
-          if (overlay != SurfaceFactory.instance.backupSurface) {
+          final Surface? overlay = _overlays[viewId];
+          if (overlay != null) {
             skiaSceneHost!
                 .insertBefore(overlay.htmlElement, elementToInsertBefore);
           }
         } else {
           final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost!.append(platformViewRoot);
-          final Surface overlay = _overlays[viewId]!;
-          if (overlay != SurfaceFactory.instance.backupSurface) {
+          final Surface? overlay = _overlays[viewId];
+          if (overlay != null) {
             skiaSceneHost!.append(overlay.htmlElement);
           }
         }
       }
+      insertBeforeMap!.forEach((int viewId, int viewIdToInsertBefore) {
+        final html.Element overlay = _overlays[viewId]!.htmlElement;
+        if (viewIdToInsertBefore != -1) {
+          final html.Element nextSibling =
+              _viewClipChains[viewIdToInsertBefore]!.root;
+          skiaSceneHost!.insertBefore(overlay, nextSibling);
+        } else {
+          skiaSceneHost!.append(overlay);
+        }
+      });
       if (_didPaintBackupSurface) {
         skiaSceneHost!
             .append(SurfaceFactory.instance.backupSurface.htmlElement);
@@ -454,9 +464,9 @@ class HtmlViewEmbedder {
         }
 
         final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
-        final Surface overlay = _overlays[viewId]!;
+        final Surface? overlay = _overlays[viewId];
         skiaSceneHost!.append(platformViewRoot);
-        if (overlay != SurfaceFactory.instance.backupSurface) {
+        if (overlay != null) {
           skiaSceneHost!.append(overlay.htmlElement);
         }
         _activeCompositionOrder.add(viewId);
@@ -508,26 +518,29 @@ class HtmlViewEmbedder {
   //
   // [_compositionOrder] and [_activeComposition] order should contain the
   // composition order of the current and previous frame, respectively.
-  void _updateOverlays(ViewListDiffResult? diffResult) {
+  Map<int, int>? _updateOverlays(ViewListDiffResult? diffResult) {
+    if (diffResult != null &&
+        diffResult.viewsToAdd.isEmpty &&
+        diffResult.viewsToRemove.isEmpty) {
+      return null;
+    }
     if (diffResult == null) {
       // Everything is going to be explicitly recomposited anyway. Release all
       // the surfaces and assign an overlay to the first N surfaces where
-      // N = [SurfaceFactory.instance.maximumSurfaces] - 2 and assign the rest
+      // N = [SurfaceFactory.instance.maximumOverlays] and assign the rest
       // to the backup surface.
       SurfaceFactory.instance.releaseSurfaces();
       _overlays.clear();
       final int numOverlays = math.min(
-        SurfaceFactory.instance.maximumSurfaces - 2,
+        SurfaceFactory.instance.maximumOverlays,
         _compositionOrder.length,
       );
       for (int i = 0; i < numOverlays; i++) {
         final int viewId = _compositionOrder[i];
-        if (_viewsUsingBackupSurface.contains(viewId)) {
-          continue;
-        }
-        final Surface surface = SurfaceFactory.instance.getSurface();
-        _overlays[viewId] = surface;
+        assert(!_viewsUsingBackupSurface.contains(viewId));
+        _initializeOverlay(viewId);
       }
+      return null;
     } else {
       // We want to preserve the overlays in the "unchanged" section of the
       // diff result as much as possible. If `addToBeginning` is `false`, then
@@ -538,37 +551,66 @@ class HtmlViewEmbedder {
       // views and from the unchanged segment and assign the newly added views
       // to them.
       diffResult.viewsToRemove.forEach(_releaseOverlay);
-      int availableOverlays = SurfaceFactory.instance.numAvailableOverlays;
+      final int availableOverlays =
+          SurfaceFactory.instance.numAvailableOverlays;
       if (diffResult.addToBeginning) {
         // If we have enough overlays for the newly added views, then just use
         // them. Otherwise, we will need to release overlays from the unchanged
         // segment of view ids.
         if (diffResult.viewsToAdd.length > availableOverlays) {
           int viewsToDispose = availableOverlays - diffResult.viewsToAdd.length;
+          // The first `maximumSurfaces` views in the previous composition order
+          // had an overlay.
+          int index = SurfaceFactory.instance.maximumOverlays;
+          while (viewsToDispose > 0) {
+            _releaseOverlay(_activeCompositionOrder[index--]);
+            viewsToDispose--;
+          }
         }
+
+        // Now assign an overlay to the newly added views.
+        final int overlaysToAssign = math.min(diffResult.viewsToAdd.length,
+            SurfaceFactory.instance.numAvailableOverlays);
+        for (int i = 0; i < overlaysToAssign; i++) {
+          _initializeOverlay(diffResult.viewsToAdd[i]);
+        }
+        return null;
+      } else {
+        // Use the overlays we just released for any platform views at the
+        // beginning of the list which previously used the backup surface.
+        int overlaysToAssign =
+            math.min(_compositionOrder.length, availableOverlays);
+        int index = 0;
+        final int lastOriginalIndex =
+            _activeCompositionOrder.length - diffResult.viewsToRemove.length;
+        final Map<int, int> insertBeforeMap = <int, int>{};
+        while (overlaysToAssign > 0) {
+          final bool activeView = index < lastOriginalIndex;
+          final int viewId = _compositionOrder[index];
+          if (!_overlays.containsKey(viewId)) {
+            _initializeOverlay(viewId);
+            overlaysToAssign--;
+            if (activeView) {
+              if (index + 1 < _compositionOrder.length) {
+                insertBeforeMap[viewId] = _compositionOrder[index + 1];
+              } else {
+                insertBeforeMap[viewId] = -1;
+              }
+            }
+          }
+          index++;
+        }
+        return insertBeforeMap;
       }
     }
   }
 
-  void _ensureOverlayInitialized(int viewId) {
-    // If there's an active overlay for the view ID, continue using it.
-    Surface? overlay = _overlays[viewId];
-    if (overlay != null && !_viewsUsingBackupSurface.contains(viewId)) {
-      overlay.createOrUpdateSurfaces(_frameSize);
-      return;
-    }
-
-    // If this view was using the backup surface, try to release the backup
-    // surface and see if a non-backup surface became available.
-    if (_viewsUsingBackupSurface.contains(viewId)) {
-      _releaseOverlay(viewId);
-    }
+  void _initializeOverlay(int viewId) {
+    assert(!_overlays.containsKey(viewId) &&
+        !_viewsUsingBackupSurface.contains(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    overlay = SurfaceFactory.instance.getSurface();
-    if (overlay == SurfaceFactory.instance.backupSurface) {
-      _viewsUsingBackupSurface.add(viewId);
-    }
+    final Surface overlay = SurfaceFactory.instance.getOverlay()!;
     overlay.createOrUpdateSurfaces(_frameSize);
     _overlays[viewId] = overlay;
   }
