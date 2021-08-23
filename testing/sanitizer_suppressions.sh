@@ -1,8 +1,14 @@
-TESTING_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")
+TESTING_DIRECTORY=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd -P)
+ENGINE_BUILDROOT=$(cd $TESTING_DIRECTORY/../..; pwd -P)
 
-pushd $TESTING_DIRECTORY/../.. >/dev/null
-ENGINE_BUILDROOT=$(pwd)
-popd >/dev/null
+case "$(uname -s)" in
+  Linux)
+    BUILDTOOLS_DIRECTORY="${ENGINE_BUILDROOT}/buildtools/linux-x64"
+    ;;
+  Darwin)
+    BUILDTOOLS_DIRECTORY="${ENGINE_BUILDROOT}/buildtools/mac-x64"
+    ;;
+esac
 
 TSAN_SUPPRESSIONS_FILE="${TESTING_DIRECTORY}/tsan_suppressions.txt"
 export TSAN_OPTIONS="suppressions=${TSAN_SUPPRESSIONS_FILE}"
@@ -18,4 +24,4 @@ echo "Using Undefined Behavior suppressions in ${UBSAN_SUPPRESSIONS_FILE}"
 
 
 export ASAN_OPTIONS="symbolize=1:detect_leaks=0:detect_container_overflow=0"
-export ASAN_SYMBOLIZER_PATH=$ENGINE_BUILDROOT/buildtools/linux-x64/clang/bin/llvm-symbolizer
+export ASAN_SYMBOLIZER_PATH="${BUILDTOOLS_DIRECTORY}/clang/bin/llvm-symbolizer"
