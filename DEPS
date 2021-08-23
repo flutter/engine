@@ -450,7 +450,7 @@ deps = {
   'src/third_party/pkg/when':
   Var('dart_git') + '/when.git' + '@' + '0.2.0',
 
-  'src/third_party/gradle': {
+  'src/gradle': {
     'packages': [
       {
         'version': 'version:7.0.2',

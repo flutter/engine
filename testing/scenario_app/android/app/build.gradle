@@ -76,7 +76,7 @@ dependencies {
 
 tasks.register('generateLockfiles') {
     rootProject.subprojects.each { subproject ->
-        def gradle = "${rootProject.projectDir}/../../../../third_party/gradle/bin/gradle"
+        def gradle = "${rootProject.projectDir}/../../../../gradle/bin/gradle"
         rootProject.exec {
             workingDir rootProject.projectDir
             executable gradle
