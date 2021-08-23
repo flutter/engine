@@ -29,8 +29,8 @@ void FlutterCompositor::StartFrame() {
   SetFrameStatus(FrameStatus::kStarted);
 }
 
-bool FlutterCompositor::EndFrame(bool have_flutter_content) {
-  bool status = present_callback_(have_flutter_content);
+bool FlutterCompositor::EndFrame(bool has_flutter_content) {
+  bool status = present_callback_(has_flutter_content);
   SetFrameStatus(FrameStatus::kEnded);
   return status;
 }

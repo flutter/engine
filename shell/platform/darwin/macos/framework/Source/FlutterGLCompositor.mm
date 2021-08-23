@@ -77,7 +77,7 @@ bool FlutterGLCompositor::CollectBackingStore(const FlutterBackingStore* backing
 bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
   SetFrameStatus(FrameStatus::kPresenting);
 
-  bool have_flutter_content = false;
+  bool has_flutter_content = false;
 
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
@@ -95,7 +95,7 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
           // and needs to be flipped vertically
           InsertCALayerForIOSurface(io_surface, CATransform3DMakeScale(1, -1, 1));
         }
-        have_flutter_content = true;
+        has_flutter_content = true;
         break;
       }
       case kFlutterLayerContentTypePlatformView:
@@ -105,7 +105,7 @@ bool FlutterGLCompositor::Present(const FlutterLayer** layers, size_t layers_cou
     };
   }
 
-  return EndFrame(have_flutter_content);
+  return EndFrame(has_flutter_content);
 }
 
 }  // namespace flutter

@@ -76,7 +76,7 @@ bool FlutterMetalCompositor::CollectBackingStore(const FlutterBackingStore* back
 bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_count) {
   SetFrameStatus(FrameStatus::kPresenting);
 
-  bool have_flutter_content = false;
+  bool has_flutter_content = false;
 
   for (size_t i = 0; i < layers_count; ++i) {
     const auto* layer = layers[i];
@@ -90,7 +90,7 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
           IOSurfaceRef io_surface = [io_surface_holder ioSurface];
           InsertCALayerForIOSurface(io_surface);
         }
-        have_flutter_content = true;
+        has_flutter_content = true;
         break;
       }
       case kFlutterLayerContentTypePlatformView:
@@ -100,7 +100,7 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
     };
   }
 
-  return EndFrame(have_flutter_content);
+  return EndFrame(has_flutter_content);
 }
 
 }  // namespace flutter

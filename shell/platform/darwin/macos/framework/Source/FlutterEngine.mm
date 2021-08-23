@@ -340,8 +340,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
     _macOSCompositor =
         std::make_unique<flutter::FlutterMetalCompositor>(_viewController, metalRenderer.device);
-    _macOSCompositor->SetPresentCallback([weakSelf](bool have_flutter_content) {
-      if (have_flutter_content) {
+    _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+      if (has_flutter_content) {
         FlutterMetalRenderer* metalRenderer =
             reinterpret_cast<FlutterMetalRenderer*>(weakSelf.renderer);
         return [metalRenderer present:0 /*=textureID*/] == YES;
@@ -355,8 +355,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     _macOSCompositor = std::make_unique<flutter::FlutterGLCompositor>(_viewController,
                                                                       openGLRenderer.openGLContext);
 
-    _macOSCompositor->SetPresentCallback([weakSelf](bool have_flutter_content) {
-      if (have_flutter_content) {
+    _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+      if (has_flutter_content) {
         FlutterOpenGLRenderer* openGLRenderer =
             reinterpret_cast<FlutterOpenGLRenderer*>(weakSelf.renderer);
         return [openGLRenderer glPresent] == YES;
