@@ -6,7 +6,6 @@
 
 #include <gmodule.h>
 
-#include "flutter/shell/platform/linux/fl_method_call_private.h"
 #include "flutter/shell/platform/linux/fl_method_channel_private.h"
 #include "flutter/shell/platform/linux/fl_method_codec_private.h"
 

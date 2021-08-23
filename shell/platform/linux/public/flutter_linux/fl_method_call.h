@@ -26,6 +26,23 @@ G_DECLARE_FINAL_TYPE(FlMethodCall, fl_method_call, FL, METHOD_CALL, GObject)
  */
 
 /**
+ * fl_method_call_new:
+ * @name: a method name.
+ * @args: arguments provided to a method.
+ * @channel: channel call received on.
+ * @response_handle: handle to respond with.
+ *
+ * Creates a method call.
+ *
+ * Returns: a new #FlMethodCall.
+ */
+FlMethodCall* fl_method_call_new(
+    const gchar* name,
+    FlValue* args,
+    FlMethodChannel* channel,
+    FlBinaryMessengerResponseHandle* response_handle);
+
+/**
  * fl_method_call_get_name:
  * @method_call: an #FlMethodCall.
  *
