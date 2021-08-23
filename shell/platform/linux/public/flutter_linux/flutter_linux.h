@@ -27,6 +27,7 @@
 #include <flutter_linux/fl_standard_method_codec.h>
 #include <flutter_linux/fl_string_codec.h>
 #include <flutter_linux/fl_texture.h>
+#include <flutter_linux/fl_texture_gl.h>
 #include <flutter_linux/fl_texture_registrar.h>
 #include <flutter_linux/fl_value.h>
 #include <flutter_linux/fl_view.h>
