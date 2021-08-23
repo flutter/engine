@@ -367,6 +367,8 @@ class HtmlViewEmbedder {
     bool _didPaintBackupSurface = false;
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
+      assert(_viewsUsingBackupSurface.contains(viewId) ||
+          _overlays[viewId] != null);
       if (_viewsUsingBackupSurface.contains(viewId)) {
         // Only draw the picture to the backup surface once.
         if (!_didPaintBackupSurface) {
@@ -388,14 +390,13 @@ class HtmlViewEmbedder {
       }
     }
     _pictureRecorders.clear();
+    _viewsUsingBackupSurface.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
-      _viewsUsingBackupSurface.clear();
       _compositionOrder.clear();
       return;
     }
 
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
-    _viewsUsingBackupSurface.clear();
     _activeCompositionOrder.clear();
 
     List<int>? debugInvalidViewIds;
@@ -436,7 +437,7 @@ class HtmlViewEmbedder {
           }
         }
       }
-      insertBeforeMap!.forEach((int viewId, int viewIdToInsertBefore) {
+      insertBeforeMap?.forEach((int viewId, int viewIdToInsertBefore) {
         final html.Element overlay = _overlays[viewId]!.htmlElement;
         if (viewIdToInsertBefore != -1) {
           final html.Element nextSibling =
@@ -519,6 +520,10 @@ class HtmlViewEmbedder {
   // [_compositionOrder] and [_activeComposition] order should contain the
   // composition order of the current and previous frame, respectively.
   Map<int, int>? _updateOverlays(ViewListDiffResult? diffResult) {
+    if (_viewsUsingBackupSurface.isEmpty) {
+      SurfaceFactory.instance
+          .releaseSurface(SurfaceFactory.instance.backupSurface);
+    }
     if (diffResult != null &&
         diffResult.viewsToAdd.isEmpty &&
         diffResult.viewsToRemove.isEmpty) {
@@ -540,6 +545,7 @@ class HtmlViewEmbedder {
         assert(!_viewsUsingBackupSurface.contains(viewId));
         _initializeOverlay(viewId);
       }
+      _assertOverlaysInitialized();
       return null;
     } else {
       // We want to preserve the overlays in the "unchanged" section of the
@@ -558,12 +564,15 @@ class HtmlViewEmbedder {
         // them. Otherwise, we will need to release overlays from the unchanged
         // segment of view ids.
         if (diffResult.viewsToAdd.length > availableOverlays) {
-          int viewsToDispose = availableOverlays - diffResult.viewsToAdd.length;
+          int viewsToDispose = diffResult.viewsToAdd.length - availableOverlays;
           // The first `maximumSurfaces` views in the previous composition order
           // had an overlay.
-          int index = SurfaceFactory.instance.maximumOverlays;
+          int index = SurfaceFactory.instance.maximumOverlays -
+              diffResult.viewsToAdd.length;
           while (viewsToDispose > 0) {
-            _releaseOverlay(_activeCompositionOrder[index--]);
+            // The first [maxOverlays - viewsAdded] active views should have
+            // overlays. The rest should be removed.
+            _releaseOverlay(_activeCompositionOrder[index++]);
             viewsToDispose--;
           }
         }
@@ -574,6 +583,7 @@ class HtmlViewEmbedder {
         for (int i = 0; i < overlaysToAssign; i++) {
           _initializeOverlay(diffResult.viewsToAdd[i]);
         }
+        _assertOverlaysInitialized();
         return null;
       } else {
         // Use the overlays we just released for any platform views at the
@@ -584,7 +594,7 @@ class HtmlViewEmbedder {
         final int lastOriginalIndex =
             _activeCompositionOrder.length - diffResult.viewsToRemove.length;
         final Map<int, int> insertBeforeMap = <int, int>{};
-        while (overlaysToAssign > 0) {
+        while (overlaysToAssign > 0 && index < _compositionOrder.length) {
           final bool activeView = index < lastOriginalIndex;
           final int viewId = _compositionOrder[index];
           if (!_overlays.containsKey(viewId)) {
@@ -600,7 +610,18 @@ class HtmlViewEmbedder {
           }
           index++;
         }
+        _assertOverlaysInitialized();
         return insertBeforeMap;
+      }
+    }
+  }
+
+  void _assertOverlaysInitialized() {
+    if (assertionsEnabled) {
+      for (int i = 0; i < _compositionOrder.length; i++) {
+        int viewId = _compositionOrder[i];
+        assert(_viewsUsingBackupSurface.contains(viewId) ||
+            _overlays[viewId] != null);
       }
     }
   }
