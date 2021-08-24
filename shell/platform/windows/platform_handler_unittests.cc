@@ -79,7 +79,6 @@ TEST(PlatformHandler, GettingTextCallsThrough) {
              auto key) { result->NotImplemented(); });
 
   EXPECT_CALL(platform_handler, GetPlainText(_, ::testing::StrEq("text")));
-  printf("justin make the call");
   EXPECT_TRUE(messenger.SimulateEngineMessage(
       kChannelName, encoded->data(), encoded->size(),
       [](const uint8_t* reply, size_t reply_size) {}));
