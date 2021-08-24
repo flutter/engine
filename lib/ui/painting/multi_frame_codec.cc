@@ -140,6 +140,9 @@ sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
               result = SkImage::MakeCrossContextFromPixmap(
                   resourceContext.get(), pixmap, true);
             } else {
+              // Defer decoding until time of draw later on the raster thread.
+              // Can happen when GL operations are currently forbidden such as
+              // in the background on iOS.
               result = SkImage::MakeFromBitmap(bitmap);
             }
           }));
