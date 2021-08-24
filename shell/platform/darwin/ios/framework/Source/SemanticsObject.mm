@@ -54,7 +54,9 @@ CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[reference bridge]->view() window] screen].scale;
+  UIScreen* screen = [[[reference bridge]->view() window] screen];
+  // Screen can be nil if the FlutterView is covered by another native view.
+  CGFloat scale = screen == nil ? [UIScreen mainScreen].scale : screen.scale;
   auto result = CGPointMake(point.x() / scale, point.y() / scale);
   return [[reference bridge]->view() convertPoint:result toView:nil];
 }
@@ -80,7 +82,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[reference bridge]->view() window] screen].scale;
+  UIScreen* screen = [[[reference bridge]->view() window] screen];
+  // Screen can be nil if the FlutterView is covered by another native view.
+  CGFloat scale = screen == nil ? [UIScreen mainScreen].scale : screen.scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, [reference bridge]->view());
@@ -606,10 +610,15 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (NSString*)accessibilityLabel {
   if (![self isAccessibilityBridgeAlive])
     return nil;
-
-  if ([self node].label.empty())
-    return nil;
-  return @([self node].label.data());
+  NSString* label = nil;
+  if (![self node].label.empty()) {
+    label = @([self node].label.data());
+  }
+  if (![self node].tooltip.empty()) {
+    label = label ? [NSString stringWithFormat:@"%@\n%@", label, @([self node].tooltip.data())]
+                  : @([self node].tooltip.data());
+  }
+  return label;
 }
 
 - (NSAttributedString*)accessibilityAttributedLabel {
