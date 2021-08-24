@@ -649,7 +649,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         // composing region. We do not have access to the new composing region until after
         // the restart has completed.
         if (mEditable.getBatchTextEditingDeltas().size() - 1 >= 0) {
-          TextEditingDelta delta = mEditable.getBatchTextEditingDeltas().get(mEditable.getBatchTextEditingDeltas().size() - 1);
+          TextEditingDelta delta =
+              mEditable
+                  .getBatchTextEditingDeltas()
+                  .get(mEditable.getBatchTextEditingDeltas().size() - 1);
           delta.setNewComposingStart(composingStart);
           delta.setNewComposingEnd(composingEnd);
           mEditable.popTextEditingDeltaFromList();
@@ -657,17 +660,19 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         } else if (mEditable.getBatchTextEditingDeltas().size() == 0) {
           // Make sure we always have at least one delta when triggering a framework update, in
           // this case an equality delta that has the most up to date selection/composing regions.
-          mEditable.addTextEditingDeltaToList(new TextEditingDelta(
-              mEditable.toString(),
-              0,
-              mEditable.toString().length(),
-              mEditable.toString(),
-              0,
-              mEditable.toString().length(),
-              selectionStart,
-              selectionEnd,
-              composingStart,
-              composingEnd));
+          CharSequence text = mEditable.toString();
+          mEditable.addTextEditingDeltaToList(
+              new TextEditingDelta(
+                  text,
+                  0,
+                  text.length(),
+                  text,
+                  0,
+                  text.length(),
+                  selectionStart,
+                  selectionEnd,
+                  composingStart,
+                  composingEnd));
         }
 
         textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
