@@ -64,10 +64,12 @@ TEST(PlatformHandler, GettingTextCallsThrough) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
-  std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod
-                   << "\",\"args\":\"" << kTextPlainFormat << "\"}";
-  std::string jsonString = jsonStringStream.str();
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kTextPlainFormat);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kGetClipboardDataMethod,
+                                      std::move(args)));
 
   // Set up a handler to call a response on |result| so that it doesn't log
   // on destruction about leaking.
@@ -77,26 +79,29 @@ TEST(PlatformHandler, GettingTextCallsThrough) {
              auto key) { result->NotImplemented(); });
 
   EXPECT_CALL(platform_handler, GetPlainText(_, ::testing::StrEq("text")));
+  printf("justin make the call");
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
-      jsonString.size(), [](const uint8_t* reply, size_t reply_size) {}));
+      kChannelName, encoded->data(), encoded->size(),
+      [](const uint8_t* reply, size_t reply_size) {}));
 }
 
 TEST(PlatformHandler, RejectsGettingUnknownTypes) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
-  std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kGetClipboardDataMethod
-                   << "\",\"args\":\"" << kFakeContentType << "\"}";
-  std::string jsonString = jsonStringStream.str();
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kFakeContentType);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kGetClipboardDataMethod,
+                                      std::move(args)));
 
   MockMethodResult result;
   // Requsting an unknow content type is an error.
   EXPECT_CALL(result, ErrorInternal(_, _, _));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
-      jsonString.size(), [&](const uint8_t* reply, size_t reply_size) {
+      kChannelName, encoded->data(), encoded->size(),
+      [&](const uint8_t* reply, size_t reply_size) {
         JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
             reply, reply_size, &result);
       }));
@@ -106,10 +111,12 @@ TEST(PlatformHandler, GetHasStringsCallsThrough) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
-  std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod
-                   << "\",\"args\":\"" << kTextPlainFormat << "\"}";
-  std::string jsonString = jsonStringStream.str();
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kTextPlainFormat);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
+                                      std::move(args)));
 
   // Set up a handler to call a response on |result| so that it doesn't log
   // on destruction about leaking.
@@ -121,25 +128,27 @@ TEST(PlatformHandler, GetHasStringsCallsThrough) {
 
   EXPECT_CALL(platform_handler, GetHasStrings(_));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
-      jsonString.size(), [](const uint8_t* reply, size_t reply_size) {}));
+      kChannelName, encoded->data(), encoded->size(),
+      [](const uint8_t* reply, size_t reply_size) {}));
 }
 
 TEST(PlatformHandler, RejectsGetHasStringsOnUnknownTypes) {
   TestBinaryMessenger messenger;
   TestPlatformHandler platform_handler(&messenger);
 
-  std::ostringstream jsonStringStream;
-  jsonStringStream << "{\"method\":\"" << kHasStringsClipboardMethod
-                   << "\",\"args\":\"" << kFakeContentType << "\"}";
-  std::string jsonString = jsonStringStream.str();
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kStringType);
+  auto& allocator = args->GetAllocator();
+  args->SetString(kFakeContentType);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kHasStringsClipboardMethod,
+                                      std::move(args)));
 
   MockMethodResult result;
   // Requsting an unknow content type is an error.
   EXPECT_CALL(result, ErrorInternal(_, _, _));
   EXPECT_TRUE(messenger.SimulateEngineMessage(
-      kChannelName, reinterpret_cast<const unsigned char*>(jsonString.c_str()),
-      jsonString.size(), [&](const uint8_t* reply, size_t reply_size) {
+      kChannelName, encoded->data(), encoded->size(),
+      [&](const uint8_t* reply, size_t reply_size) {
         JsonMethodCodec::GetInstance().DecodeAndProcessResponseEnvelope(
             reply, reply_size, &result);
       }));
