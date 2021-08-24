@@ -677,13 +677,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
         textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
         mEditable.clearBatchDeltas();
-        textInputChannel.updateEditingState(
-            inputTarget.id,
-            mEditable.toString(),
-            selectionStart,
-            selectionEnd,
-            composingStart,
-            composingEnd);
       } else {
         textInputChannel.updateEditingState(
             inputTarget.id,
