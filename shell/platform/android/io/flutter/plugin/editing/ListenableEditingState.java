@@ -76,6 +76,7 @@ class ListenableEditingState extends SpannableStringBuilder {
   }
 
   public void clearBatchDeltas() {
+    Log.e("DELTAS", "clearing batch deltas size: " + mBatchTextEditingDeltas.size());
     mBatchTextEditingDeltas.clear();
   }
 
@@ -145,6 +146,7 @@ class ListenableEditingState extends SpannableStringBuilder {
   public void setEditingState(TextInputChannel.TextEditState newState) {
     beginBatchEdit();
     Log.e("DELTAS", "setEditingState updating from FRAMEWORK");
+    final CharSequence oldText = toString();
     replace(0, length(), newState.text);
 
     if (newState.hasSelection()) {
@@ -152,9 +154,24 @@ class ListenableEditingState extends SpannableStringBuilder {
     } else {
       Selection.removeSelection(this);
     }
+
     setComposingRange(newState.composingStart, newState.composingEnd);
-    endBatchEdit();
+
     clearBatchDeltas();
+    mBatchTextEditingDeltas.add(
+        new TextEditingDelta(
+            oldText,
+            0,
+            length(),
+            newState.text,
+            0,
+            newState.text.length(),
+            getSelectionStart(),
+            getSelectionEnd(),
+            getComposingStart(),
+            getComposingEnd()));
+
+    endBatchEdit();
   }
 
   public void addEditingStateListener(EditingStateWatcher listener) {
@@ -182,46 +199,12 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
   }
 
-  @Override
-  public SpannableStringBuilder append(char text) {
-    Log.e("DELTAS", "insert #1 is called");
-    return append(String.valueOf(text));
+  public void addTextEditingDeltaToList(TextEditingDelta delta) {
+    mBatchTextEditingDeltas.add(delta);
   }
 
-  @Override
-  public SpannableStringBuilder append(CharSequence text, Object what, int flags) {
-    Log.e("DELTAS", "append #2 is called");
-    return super.append(text, what, flags);
-  }
-
-  @Override
-  public SpannableStringBuilder append(CharSequence text, int start, int end) {
-    Log.e("DELTAS", "append #3 is called");
-    return replace(text.length(), text.length(), text, start, end);
-  }
-
-  @Override
-  public SpannableStringBuilder append(CharSequence text) {
-    Log.e("DELTAS", "append #4 is called");
-    return replace(text.length(), text.length(), text, 0, text.length());
-  }
-
-  @Override
-  public SpannableStringBuilder insert(int where, CharSequence tb) {
-    Log.e("DELTAS", "insert #1 is called");
-    return replace(where, where, tb, 0, tb.length());
-  }
-
-  @Override
-  public SpannableStringBuilder insert(int where, CharSequence tb, int start, int end) {
-    Log.e("DELTAS", "insert #2 is called");
-    return replace(where, where, tb, start, end);
-  }
-
-  @Override
-  public SpannableStringBuilder delete(int start, int end) {
-    Log.e("DELTAS", "delete is called");
-    return replace(start, end, "", 0, 0);
+  public void popTextEditingDeltaFromList() {
+    mBatchTextEditingDeltas.remove(mBatchTextEditingDeltas.size() - 1);
   }
 
   @Override

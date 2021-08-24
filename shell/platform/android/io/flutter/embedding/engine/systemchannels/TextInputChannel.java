@@ -210,7 +210,7 @@ public class TextInputChannel {
       int selectionEnd,
       int composingStart,
       int composingEnd) {
-    Log.v(
+    Log.e(
         TAG,
         "Sending message to update editing state: \n"
             + "Text: "
@@ -237,7 +237,7 @@ public class TextInputChannel {
   public void updateEditingStateWithDeltas(
       int inputClientId, ArrayList<TextEditingDelta> batchDeltas) {
 
-    Log.e("DELTAS", "Sending message to update editing state with delta");
+    Log.e("DELTAS", "Sending message to update editing state with deltas number: " + batchDeltas.size());
 
     final HashMap<Object, Object> state = createEditingDeltaJSON(batchDeltas);
 

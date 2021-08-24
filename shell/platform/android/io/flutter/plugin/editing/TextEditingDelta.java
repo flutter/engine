@@ -86,6 +86,14 @@ public class TextEditingDelta {
     }
   }
 
+  public void setNewComposingStart(int newStart) {
+    newComposingStart = newStart;
+  }
+
+  public void setNewComposingEnd(int newEnd) {
+    newComposingEnd = newEnd;
+  }
+
   public JSONObject toJSON() {
     JSONObject delta = new JSONObject();
 
