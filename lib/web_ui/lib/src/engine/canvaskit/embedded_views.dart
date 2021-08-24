@@ -619,7 +619,7 @@ class HtmlViewEmbedder {
   void _assertOverlaysInitialized() {
     if (assertionsEnabled) {
       for (int i = 0; i < _compositionOrder.length; i++) {
-        int viewId = _compositionOrder[i];
+        final int viewId = _compositionOrder[i];
         assert(_viewsUsingBackupSurface.contains(viewId) ||
             _overlays[viewId] != null);
       }
