@@ -1085,6 +1085,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterRenderer.setSemanticsEnabled(false);
     renderSurface.detachFromRenderer();
 
+    // Revert the image view to previous surface
+    if (previousRenderSurface != null && renderSurface == flutterImageView) {
+      renderSurface = previousRenderSurface;
+    }
+
     flutterImageView = null;
     previousRenderSurface = null;
     flutterEngine = null;
