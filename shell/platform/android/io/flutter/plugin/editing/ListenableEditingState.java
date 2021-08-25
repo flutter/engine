@@ -146,7 +146,6 @@ class ListenableEditingState extends SpannableStringBuilder {
   public void setEditingState(TextInputChannel.TextEditState newState) {
     beginBatchEdit();
     Log.e("DELTAS", "setEditingState updating from FRAMEWORK");
-    final CharSequence oldText = toString();
     replace(0, length(), newState.text);
 
     if (newState.hasSelection()) {
@@ -160,7 +159,7 @@ class ListenableEditingState extends SpannableStringBuilder {
     clearBatchDeltas();
     mBatchTextEditingDeltas.add(
         new TextEditingDelta(
-            oldText,
+            newState.text,
             0,
             length(),
             newState.text,
