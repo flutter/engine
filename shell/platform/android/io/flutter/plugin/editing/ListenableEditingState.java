@@ -213,9 +213,7 @@ class ListenableEditingState extends SpannableStringBuilder {
       Log.e(TAG, "editing state should not be changed in a listener callback");
     }
 
-    Log.v(
-        TAG,
-        "replace(" + start + ", " + end + ", " + tb + ", " + tbstart + ", " + tbend + ")");
+    Log.v(TAG, "replace(" + start + ", " + end + ", " + tb + ", " + tbstart + ", " + tbend + ")");
 
     final CharSequence oldText = toString();
 
