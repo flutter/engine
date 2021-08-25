@@ -27,8 +27,8 @@ class HtmlViewEmbedder {
   HtmlViewEmbedder._();
 
   /// The maximum number of overlay surfaces that can be live at once.
-  static const int maximumOverlaySurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_OVERLAYS',
+  static const int maximumSurfaces = int.fromEnvironment(
+    'FLUTTER_WEB_MAXIMUM_SURFACES',
     defaultValue: 8,
   );
 
@@ -37,10 +37,7 @@ class HtmlViewEmbedder {
   /// This causes all drawing to go to a single canvas, with all of the platform
   /// views rendered over top. This may result in incorrect rendering with
   /// platform views.
-  static const bool disableOverlays = bool.fromEnvironment(
-    'FLUTTER_WEB_DISABLE_OVERLAYS',
-    defaultValue: false,
-  );
+  static const bool disableOverlays = maximumSurfaces <= 1;
 
   /// The picture recorder shared by all platform views which paint to the
   /// backup surface.
