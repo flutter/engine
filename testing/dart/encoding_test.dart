@@ -61,14 +61,6 @@ void main() {
     expect(bytes, GrayscaleImage.bytesUnmodified);
   });
 
-  test('Image.toByteData Unmodified format works with transparent image', () async {
-    final Image image = await TransparentImage.load();
-    final ByteData data = (await image.toByteData(format: ImageByteFormat.rawUnmodified))!;
-    final Uint8List bytes = data.buffer.asUint8List();
-    expect(bytes, hasLength(64));
-    expect(bytes, TransparentImage.bytesAsPremultipliedRgba);
-  });
-
   test('Image.toByteData PNG format works with simple image', () async {
     final Image image = await Square4x4Image.image;
     final ByteData data = (await image.toByteData(format: ImageByteFormat.png))!;
