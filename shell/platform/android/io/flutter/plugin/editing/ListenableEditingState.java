@@ -76,7 +76,6 @@ class ListenableEditingState extends SpannableStringBuilder {
   }
 
   public void clearBatchDeltas() {
-    Log.e("DELTAS", "clearing batch deltas size: " + mBatchTextEditingDeltas.size());
     mBatchTextEditingDeltas.clear();
   }
 
@@ -145,7 +144,6 @@ class ListenableEditingState extends SpannableStringBuilder {
   /// This method will also update the composing region if it has changed.
   public void setEditingState(TextInputChannel.TextEditState newState) {
     beginBatchEdit();
-    Log.e("DELTAS", "setEditingState updating from FRAMEWORK");
     replace(0, length(), newState.text);
 
     if (newState.hasSelection()) {
@@ -156,6 +154,7 @@ class ListenableEditingState extends SpannableStringBuilder {
 
     setComposingRange(newState.composingStart, newState.composingEnd);
 
+    // Make sure the TextEditingDelta has the most up to date selection and composing regions.
     clearBatchDeltas();
     mBatchTextEditingDeltas.add(
         new TextEditingDelta(
@@ -214,8 +213,8 @@ class ListenableEditingState extends SpannableStringBuilder {
       Log.e(TAG, "editing state should not be changed in a listener callback");
     }
 
-    Log.e(
-        "DELTAS",
+    Log.v(
+        TAG,
         "replace(" + start + ", " + end + ", " + tb + ", " + tbstart + ", " + tbend + ")");
 
     final CharSequence oldText = toString();

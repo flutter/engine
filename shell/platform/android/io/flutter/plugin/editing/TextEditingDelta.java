@@ -8,6 +8,8 @@ import io.flutter.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+/// A representation of the change that occured to an editing state, along with the resulting
+/// composing and selection regions.
 public class TextEditingDelta {
   private CharSequence oldText;
   private CharSequence deltaText;
@@ -18,6 +20,8 @@ public class TextEditingDelta {
   private int newSelectionEnd;
   private int newComposingStart;
   private int newComposingEnd;
+
+  private static final String TAG = "TextEditingDelta";
 
   public TextEditingDelta(
       CharSequence currentEditable,
@@ -64,10 +68,10 @@ public class TextEditingDelta {
             && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
 
     if (isEqual) {
-      Log.e("DELTAS", "EQUALITY");
+      Log.v(TAG, "A extEditingDelta for an EQUALITY has been created.");
       setDeltas(currentEditable, "", "EQUALITY", -1, -1);
     } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
-      Log.e("DELTAS", "DELETION");
+      Log.v(TAG, "A TextEditingDelta for a DELETION has been created.");
       setDeltas(
           currentEditable,
           currentEditable.subSequence(start + tbend, end).toString(),
@@ -76,11 +80,11 @@ public class TextEditingDelta {
           end);
     } else if ((start == end || isInsertingInsideComposingRegion)
         && !isOriginalComposingRegionTextChanged) {
-      Log.e("DELTAS", "INSERTION");
+      Log.v(TAG, "A TextEditingDelta for an INSERTION has been created.");
       setDeltas(
           currentEditable, tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
     } else if (isReplaced) {
-      Log.e("DELTAS", "REPLACEMENT");
+      Log.v(TAG, "A TextEditingDelta for a REPLACEMENT has been created.");
       setDeltas(
           currentEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
     }
@@ -108,7 +112,7 @@ public class TextEditingDelta {
       delta.put("composingBase", newComposingStart);
       delta.put("composingExtent", newComposingEnd);
     } catch (JSONException e) {
-
+      Log.e(TAG, "unable to create JSONObject: " + e);
     }
 
     return delta;

@@ -466,7 +466,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-    Log.e("DELTAS", "RECEIVING FROM FRAMEWORK");
     if (!mRestartInputPending
         && mLastKnownFrameworkTextEditingState != null
         && mLastKnownFrameworkTextEditingState.hasComposing()) {
@@ -641,7 +640,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
                 && composingEnd == mLastKnownFrameworkTextEditingState.composingEnd);
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
-      Log.e("DELTAS", "send EditingState to flutter: " + mEditable.toString());
 
       if (configuration.enableDeltaModel) {
         // Make sure last delta has the most up to date composing region.
