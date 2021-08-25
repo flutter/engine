@@ -95,6 +95,10 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
       winrt::Windows::UI::ViewManagement::ApplicationView const& appView,
       winrt::Windows::Foundation::IInspectable const&);
 
+  // Notifies current |WindowBindingHandlerDelegate| of pointer left events.
+  void OnPointerExited(winrt::Windows::Foundation::IInspectable const&,
+                       winrt::Windows::UI::Core::PointerEventArgs const& args);
+
   // Notifies current |WindowBindingHandlerDelegate| of pointer moved events.
   void OnPointerMoved(winrt::Windows::Foundation::IInspectable const&,
                       winrt::Windows::UI::Core::PointerEventArgs const& args);

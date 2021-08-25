@@ -158,15 +158,13 @@ void FlutterWindowWinUWP::SetEventHandlers() {
 
   window_.PointerPressed({this, &FlutterWindowWinUWP::OnPointerPressed});
   window_.PointerReleased({this, &FlutterWindowWinUWP::OnPointerReleased});
+  window_.PointerExited({this, &FlutterWindowWinUWP::OnPointerExited});
   window_.PointerMoved({this, &FlutterWindowWinUWP::OnPointerMoved});
   window_.PointerWheelChanged(
       {this, &FlutterWindowWinUWP::OnPointerWheelChanged});
 
   ui_settings_.ColorValuesChanged(
       {this, &FlutterWindowWinUWP::OnColorValuesChanged});
-
-  // TODO(clarkezone) support mouse leave handling
-  // https://github.com/flutter/flutter/issues/70199
 
   // TODO(clarkezone) support system font changed
   // https://github.com/flutter/flutter/issues/70198
@@ -230,6 +228,15 @@ void FlutterWindowWinUWP::OnPointerReleased(
   binding_handler_delegate_->OnPointerUp(x, y, device_kind, pointer_id,
                                          mouse_button);
   ReleasePointer(args);
+}
+
+void FlutterWindowWinUWP::OnPointerExited(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+
+  binding_handler_delegate_->OnPointerLeave(device_kind,
+                                            kDefaultPointerDeviceId);
 }
 
 void FlutterWindowWinUWP::OnPointerMoved(
