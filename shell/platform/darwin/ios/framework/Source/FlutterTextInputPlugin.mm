@@ -944,11 +944,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (_enableDeltaModel) {
     NSMutableString* empty = [@"" mutableCopy];
     NSMutableString* type = [@"EQUALITY" mutableCopy];
-    [self setDeltas:[self.text mutableCopy]
-            newText:empty
-               type:type
-         deltaStart:-1
-           deltaEnd:-1];
+    [self setDeltas:[self.text mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1017,11 +1013,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     NSLog(@"We have no changes, reporting equality");
     NSMutableString* empty = [@"" mutableCopy];
     NSMutableString* type = [@"EQUALITY" mutableCopy];
-    [self setDeltas:[self.text mutableCopy]
-            newText:empty
-               type:type
-         deltaStart:-1
-           deltaEnd:-1];
+    [self setDeltas:[self.text mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
   } else if (isDeletingByReplacingWithEmpty) {  // Deletion.
     NSMutableString* deleted = [[self.text substringWithRange:range] mutableCopy];
     NSLog(@"We have a deletion");
