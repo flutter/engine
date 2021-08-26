@@ -225,6 +225,8 @@ def to_gn_args(args):
       gn_args['target_cpu'] = args.fuchsia_cpu
     elif args.target_os == 'win':
       gn_args['target_cpu'] = args.windows_cpu
+    elif args.target_os == 'web':
+      gn_args['target_cpu'] = 'wasm'
     else:
         # Building host artifacts
         gn_args['target_cpu'] = 'x64'
@@ -295,7 +297,43 @@ def to_gn_args(args):
       # attributes in release modes till the toolchain is updated.
       gn_args['skia_enable_api_available_macro'] = args.runtime_mode != "release"
 
-    if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia']:
+    # Set up GN args for web builds.
+    if args.target_os == 'web':
+      gn_args['skia_use_angle'] = False
+      gn_args['skia_use_dng_sdk'] = False
+      gn_args['skia_use_webgl'] = True
+      gn_args['skia_use_fontconfig'] = False
+      gn_args['skia_use_freetype'] = True
+      gn_args['skia_use_libheif'] = False
+      gn_args['skia_use_libjpeg_turbo_decode'] = True
+      gn_args['skia_use_libpng_decode'] = True
+      gn_args['skia_use_libwebp_decode'] = True
+      gn_args['skia_use_libjpeg_turbo_encode'] = False
+      gn_args['skia_use_libpng_encode'] = True
+      gn_args['skia_use_libwebp_encode'] = False
+      gn_args['skia_use_lua'] = False
+      gn_args['skia_use_piex'] = False
+      #gn_args['skia_use_system_freetype2'] = False
+      #gn_args['skia_use_system_libjpeg_turbo'] = False
+      #gn_args['skia_use_system_libpng'] = False
+      #gn_args['skia_use_system_libwebp'] = False
+      #gn_args['skia_use_system_zlib'] = False
+      gn_args['skia_use_vulkan'] = False
+      gn_args['skia_use_wuffs'] = True
+      gn_args['skia_use_zlib'] = True
+      gn_args['skia_use_icu'] = True
+      #gn_args['skia_use_system_icu'] = False
+      gn_args['skia_use_harfbuzz'] = True
+      #gn_args['skia_use_system_harfbuzz'] = False
+      gn_args['skia_enable_gpu'] = True
+      gn_args['skia_gl_standard'] = 'webgl'
+      gn_args['skia_enable_fontmgr_custom_directory'] = False
+      #gn_args['skia_use_freetype_woff2'] = True
+      gn_args['skia_enable_skshaper'] = True
+      gn_args['skia_enable_skparagraph'] = True
+      gn_args['skia_enable_pdf'] = False
+
+    if sys.platform == 'darwin' and args.target_os not in ['android', 'fuchsia', 'web']:
       # OpenGL is deprecated on macOS > 10.11.
       # This is not necessarily needed but enabling this until we have a way to
       # build a macOS metal only shell and a gl only shell.
@@ -384,7 +422,7 @@ def to_gn_args(args):
 
 def parse_args(args):
   args = args[1:]
-  parser = argparse.ArgumentParser(description='A script run` gn gen`.')
+  parser = argparse.ArgumentParser(description='A script to run `gn gen`.')
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
@@ -397,7 +435,7 @@ def parse_args(args):
   parser.add_argument('--full-dart-debug', default=False, action='store_true', help='Implies --dart-debug ' +
       'and also disables optimizations in the Dart VM making it easier to step through VM code in the debugger.')
 
-  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'win', 'winuwp'])
+  parser.add_argument('--target-os', type=str, choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'web', 'win', 'winuwp'])
   parser.add_argument('--android', dest='target_os', action='store_const', const='android')
   parser.add_argument('--android-cpu', type=str, choices=['arm', 'x64', 'x86', 'arm64'], default='arm')
   parser.add_argument('--ios', dest='target_os', action='store_const', const='ios')
@@ -407,6 +445,7 @@ def parse_args(args):
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument('--linux', dest='target_os', action='store_const', const='linux')
   parser.add_argument('--fuchsia', dest='target_os', action='store_const', const='fuchsia')
+  parser.add_argument('--web', dest='target_os', action='store_const', const='web')
   parser.add_argument('--winuwp', dest='target_os', action='store_const', const='winuwp')
 
   parser.add_argument('--linux-cpu', type=str, choices=['x64', 'x86', 'arm64', 'arm'])

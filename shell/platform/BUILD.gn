@@ -22,6 +22,8 @@ group("platform") {
     }
   } else if (is_fuchsia) {
     deps = [ "fuchsia" ]
+  } else if (is_wasm) {
+    deps = []
   } else {
     assert(false, "Unknown/Unsupported platform.")
   }
