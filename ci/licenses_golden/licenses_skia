@@ -1,4 +1,4 @@
-Signature: d03ac0ea0594e2efc517abbcfce9e808
+Signature: 3a5f7c35ac76ae0f34464f6daf7b9316
 
 UNUSED LICENSES:
 
@@ -2900,7 +2900,6 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLTypesPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLASTFile.h
-FILE: ../../../third_party/skia/src/sksl/SkSLASTNode.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLASTNode.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalFunction.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalFunctionCall.h
@@ -3663,6 +3662,8 @@ FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_float_cap
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_int_capabilities.cpp
 FILE: ../../../third_party/skia/samplecode/SampleMaterialShadows.cpp
 FILE: ../../../third_party/skia/src/core/SkASAN.h
+FILE: ../../../third_party/skia/src/core/SkBlockAllocator.cpp
+FILE: ../../../third_party/skia/src/core/SkBlockAllocator.h
 FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixProvider.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffectPriv.h
@@ -3674,8 +3675,6 @@ FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableState.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.h
-FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
-FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrDDLTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDDLTask.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.cpp
@@ -4048,6 +4047,7 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Surface.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Surface.h
 FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.h
+FILE: ../../../third_party/skia/modules/androidkit/src/Text.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
@@ -4075,8 +4075,8 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlFramebuffer.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlFramebuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlPipeline.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.h
+FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrCullTest.h
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
@@ -5618,8 +5618,6 @@ FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.h
 FILE: ../../../third_party/skia/src/gpu/GrImageContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrImageContextPriv.h
-FILE: ../../../third_party/skia/src/gpu/GrOpsTask.cpp
-FILE: ../../../third_party/skia/src/gpu/GrOpsTask.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrSPIRVUniformHandler.cpp
@@ -5655,6 +5653,8 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlDepthStencil.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.mm
+FILE: ../../../third_party/skia/src/gpu/ops/OpsTask.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/OpsTask.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
 FILE: ../../../third_party/skia/src/image/SkSurface_GpuMtl.mm
@@ -6503,6 +6503,7 @@ FILE: ../../../third_party/skia/src/core/SkImageInfo.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.h
+FILE: ../../../third_party/skia/src/core/SkTBlockList.h
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.h
 FILE: ../../../third_party/skia/src/gpu/GrClip.h
@@ -6512,7 +6513,6 @@ FILE: ../../../third_party/skia/src/gpu/GrGlyph.h
 FILE: ../../../third_party/skia/src/gpu/GrGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRectanizer.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizerPow2.cpp
-FILE: ../../../third_party/skia/src/gpu/GrTBlockList.h
 FILE: ../../../third_party/skia/src/gpu/GrVertexWriter.h
 FILE: ../../../third_party/skia/src/gpu/SkGr.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrRect.h
@@ -6755,6 +6755,7 @@ ORIGIN: ../../../third_party/skia/modules/canvaskit/npm_build/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/example.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/extra.html
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/multicanvas.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/node.example.js
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package-lock.json
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package.json
