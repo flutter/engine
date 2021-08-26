@@ -633,6 +633,26 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Autofill - Tests
 
+- (void)testDisablingAutofillOnInputClient {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@"YES" forKey:@"obscureText"];
+
+  [self setClientId:123 configuration:config];
+
+  FlutterTextInputView* inputView = self.installedInputViews[0];
+  XCTAssertEqualObjects(inputView.contentType, @"");
+}
+
+- (void)testAutofillEnabledByDefault {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [config setValue:@"NO" forKey:@"obscureText"];
+
+  [self setClientId:123 configuration:config];
+
+  FlutterTextInputView* inputView = self.installedInputViews[0];
+  XCTAssertNil(inputView.contentType);
+}
+
 - (void)testAutofillContext {
   NSMutableDictionary* field1 = self.mutableTemplateCopy;
 

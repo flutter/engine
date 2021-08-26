@@ -159,7 +159,7 @@ static UIReturnKeyType ToUIReturnKeyType(NSString* inputType) {
 }
 
 static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
-  if (!hints || hits.count == 0) {
+  if (!hints || hints.count == 0) {
     // If no hints are specified, use the default content type nil.
     return nil;
   }
@@ -347,13 +347,15 @@ typedef NS_ENUM(NSInteger, FlutterAutofillType) {
 
 static BOOL isFieldPasswordRelated(NSDictionary* configuration) {
   if (@available(iOS 10.0, *)) {
+    // Autofill is explicitly disabled if the id isn't present.
+    if (!autofillIdFromDictionary(configuration)) {
+      return NO;
+    }
+
     BOOL isSecureTextEntry = [configuration[kSecureTextEntry] boolValue];
     if (isSecureTextEntry)
       return YES;
 
-    if (!autofillIdFromDictionary(configuration)) {
-      return NO;
-    }
     NSDictionary* autofill = configuration[kAutofillProperties];
     UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
 
