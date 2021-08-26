@@ -58,6 +58,12 @@ FLUTTER_DARWIN_EXPORT
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
 
 /**
+ * Called if this has been registered for `UIApplicationDelegate` callbacks.
+ */
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
+
+/**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  */
 - (void)application:(UIApplication*)application
