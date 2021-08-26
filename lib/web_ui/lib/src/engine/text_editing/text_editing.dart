@@ -129,8 +129,9 @@ void _hideAutofillElements(html.HtmlElement domElement,
 
 /// Form that contains all the fields in the same AutofillGroup.
 ///
-/// These values are to be used when autofill is enabled and there is a group of
-/// text fields with more than one text field.
+/// These values are to be used when autofill is enabled (the default) on the
+/// current input field and there is a group of text fields with more than one
+/// text field.
 class EngineAutofillForm {
   EngineAutofillForm(
       {required this.formElement,
@@ -153,12 +154,23 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
+  /// Creates an [EngineAutofillFrom] from the JSON representation of a flutter
+  /// framework `TextInputConfiguration` object.
+  ///
+  /// The `focusedElementAutofill` argument corresponds to the "autofill" field
+  /// in a `TextInputConfiguration`. Not having this field indicates autofill
+  /// is explicitly disabled on the text field by the developer.
+  ///
+  /// The `fields` argument corresponds to the "filds" field in a
+  /// `TextInputConfiguration`.
+  ///
+  /// Returns null if the input field is not within an autofill group.
   static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
-    // Autofill value can be null if focused text element does not have an
-    // autofill hint set.
+    // Autofill value is null if the developer explicitly disables it on the
+    // input field.
     if (focusedElementAutofill == null) {
       return null;
     }
@@ -333,8 +345,9 @@ class AutofillInfo {
   AutofillInfo(
       {required this.editingState,
       required this.uniqueIdentifier,
-      required this.hint,
-      required this.textCapitalization});
+      required this.autofillHint,
+      required this.textCapitalization,
+      this.placeholder});
 
   /// The current text and selection state of a text field.
   final EditingState editingState;
@@ -364,7 +377,14 @@ class AutofillInfo {
   /// Used as a guidance to the browser as to the type of information expected
   /// in the field.
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
-  final String hint;
+  final String? autofillHint;
+
+  /// The optional hint text placed on the view that typically suggests what
+  /// sort of input the field accepts, for example "enter your password here".
+  ///
+  /// If the developer does not specify any [autofillHints], the [placeholder] can
+  /// be a useful indication to the platform autofill service.
+  final String? placeholder;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
       {TextCapitalizationConfig textCapitalization =
@@ -376,30 +396,45 @@ class AutofillInfo {
         EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
     return AutofillInfo(
       uniqueIdentifier: uniqueIdentifier,
-      hint: BrowserAutofillHints.instance.flutterToEngine(hintsList[0] as String),
+      autofillHint: hintsList.isNotEmpty ? BrowserAutofillHints.instance.flutterToEngine(hintsList[0] as String) : null,
       editingState: editingState,
+      placeholder: autofill.tryString('hintText'),
       textCapitalization: textCapitalization,
     );
   }
 
   void applyToDomElement(html.HtmlElement domElement,
       {bool focusedElement = false}) {
-    domElement.id = hint;
+    final String? autofillHint = this.autofillHint;
+    final String? placeholder = this.placeholder;
+    if (autofillHint != null) {
+      domElement.id = autofillHint;
+    }
     if (domElement is html.InputElement) {
       final html.InputElement element = domElement;
-      element.name = hint;
-      element.id = hint;
-      element.autocomplete = hint;
-      if (hint.contains('password')) {
+      element.name = autofillHint;
+      if (placeholder != null) {
+        element.placeholder = placeholder;
+      }
+      element.autocomplete = autofillHint ?? 'on';
+      if (autofillHint == null) {
+        return;
+      }
+      element.id = autofillHint;
+      if (autofillHint.contains('password')) {
         element.type = 'password';
       } else {
         element.type = 'text';
       }
     } else if (domElement is html.TextAreaElement) {
-      final html.TextAreaElement element = domElement;
-      element.name = hint;
-      element.id = hint;
-      element.setAttribute('autocomplete', hint);
+      if (placeholder != null) {
+        domElement.placeholder = placeholder;
+      }
+      if (autofillHint != null) {
+        domElement.name = autofillHint;
+        domElement.id = autofillHint;
+      }
+      domElement.setAttribute('autocomplete', autofillHint ?? 'on');
     }
   }
 }
@@ -888,7 +923,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       activeDomElement.setAttribute('inputmode', 'none');
     }
 
-    config.autofill?.applyToDomElement(activeDomElement, focusedElement: true);
+    final AutofillInfo? autofill = config.autofill;
+    if (autofill != null) {
+      autofill.applyToDomElement(activeDomElement, focusedElement: true);
+    } else {
+      activeDomElement.setAttribute('autocomplete', 'off');
+    }
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
     activeDomElement.setAttribute('autocorrect', autocorrectValue);

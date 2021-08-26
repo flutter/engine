@@ -188,6 +188,23 @@ void testMain() {
       editingStrategy!.disable();
     });
 
+    test('Knows to turn autofill off', () {
+      final InputConfiguration config = InputConfiguration(
+        autofill: null,
+      );
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final Element input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
+      expect(input.getAttribute('autocomplete'), 'off');
+
+      editingStrategy!.disable();
+    });
+
     test('Can read editing state correctly', () {
       editingStrategy!.enable(
         singlelineConfig,
@@ -1816,7 +1833,7 @@ void testMain() {
 
       // Hint sent from the framework is converted to the hint compatible with
       // browsers.
-      expect(autofillInfo.hint,
+      expect(autofillInfo.autofillHint,
           BrowserAutofillHints.instance.flutterToEngine(testHint));
       expect(autofillInfo.uniqueIdentifier, testId);
     });
@@ -1877,6 +1894,39 @@ void testMain() {
       expect(testInputElement.type, 'password');
       expect(testInputElement.getAttribute('autocomplete'),
           BrowserAutofillHints.instance.flutterToEngine(testPasswordHint));
+    });
+
+    test('autofill with no hints', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(null, testId));
+
+      final InputElement testInputElement = InputElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      expect(testInputElement.autocomplete,'on');
+      expect(testInputElement.placeholder, isEmpty);
+    });
+
+    test('TextArea autofill with no hints', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(null, testId));
+
+      final TextAreaElement testInputElement = TextAreaElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      expect(testInputElement.getAttribute('autocomplete'),'on');
+      expect(testInputElement.placeholder, isEmpty);
+    });
+
+    test('autofill with only placeholder', () {
+      final AutofillInfo autofillInfo = AutofillInfo.fromFrameworkMessage(
+          createAutofillInfo(null, testId, placeholder: 'enter your password'));
+
+      final TextAreaElement testInputElement = TextAreaElement();
+      autofillInfo.applyToDomElement(testInputElement);
+
+      expect(testInputElement.getAttribute('autocomplete'),'on');
+      expect(testInputElement.placeholder, 'enter your password');
     });
   });
 
@@ -2097,7 +2147,9 @@ Map<String, dynamic> createFlutterConfig(
   bool autocorrect = true,
   String textCapitalization = 'TextCapitalization.none',
   String? inputAction,
+  bool autofillEnabled = true,
   String? autofillHint,
+  String? placeholderText,
   List<String>? autofillHintsForFields,
   bool decimal = false,
 }) {
@@ -2111,18 +2163,19 @@ Map<String, dynamic> createFlutterConfig(
     'autocorrect': autocorrect,
     'inputAction': inputAction ?? 'TextInputAction.done',
     'textCapitalization': textCapitalization,
-    if (autofillHint != null)
-      'autofill': createAutofillInfo(autofillHint, autofillHint),
-    if (autofillHintsForFields != null)
+    if (autofillEnabled)
+      'autofill': createAutofillInfo(autofillHint, autofillHint ?? 'bogusId', placeholder: placeholderText),
+    if (autofillEnabled && autofillHintsForFields != null)
       'fields':
           createFieldValues(autofillHintsForFields, autofillHintsForFields),
   };
 }
 
-Map<String, dynamic> createAutofillInfo(String hint, String uniqueId) =>
+Map<String, dynamic> createAutofillInfo(String? hint, String uniqueId, { String? placeholder }) =>
     <String, dynamic>{
       'uniqueIdentifier': uniqueId,
-      'hints': <String>[hint],
+      if (hint != null) 'hints': <String>[hint],
+      if (placeholder != null) 'hintText': placeholder,
       'editingValue': <String, dynamic>{
         'text': 'Test',
         'selectionBase': 0,

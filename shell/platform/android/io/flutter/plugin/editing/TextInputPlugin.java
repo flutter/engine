@@ -761,6 +761,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       child.setAutofillHints(autofill.hints);
       child.setAutofillType(View.AUTOFILL_TYPE_TEXT);
       child.setVisibility(View.VISIBLE);
+      if (autofill.hintText != null) {
+        child.setHint(autofill.hintText);
+      }
 
       // For some autofill services, only visible input fields are eligible for autofill.
       // Reports the real size of the child if it's the current client, or 1x1 if we don't
