@@ -391,12 +391,13 @@ class AutofillInfo {
           const TextCapitalizationConfig.defaultCapitalization()}) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
     final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
-    final List<dynamic> hintsList = autofill.readList('hints');
+    final List<dynamic>? hintsList = autofill.tryList('hints');
+    final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
     final EditingState editingState =
         EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
     return AutofillInfo(
       uniqueIdentifier: uniqueIdentifier,
-      autofillHint: hintsList.isNotEmpty ? BrowserAutofillHints.instance.flutterToEngine(hintsList[0] as String) : null,
+      autofillHint: (firstHint != null) ? BrowserAutofillHints.instance.flutterToEngine(firstHint) : null,
       editingState: editingState,
       placeholder: autofill.tryString('hintText'),
       textCapitalization: textCapitalization,
