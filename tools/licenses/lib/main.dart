@@ -927,6 +927,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
             entry.name != 'javatests' &&
             entry.name != 'test' &&
             entry.name != 'test.disabled' &&
+            entry.name != 'test_runner' &&
             entry.name != 'test_support' &&
             entry.name != 'testdata' &&
             entry.name != 'tests' &&
@@ -2350,6 +2351,7 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
     return entry.name != 'build' // only used by build
         && entry.name != 'buildtools' // only used by build
         && entry.name != 'build_overrides' // only used by build
+        && entry.name != 'gradle' // only used by build
         && entry.name != 'ios_tools' // only used by build
         && entry.name != 'tools' // not distributed in binary
         && entry.name != 'out' // output of build
