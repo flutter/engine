@@ -469,10 +469,11 @@ public class TextInputChannel {
         final JSONObject editingState = json.getJSONObject("editingValue");
         final String[] autofillHints = new String[hints.length()];
 
-        for (int i = 0; i < hintList.length; i++) {
+        for (int i = 0; i < hints.length(); i++) {
           autofillHints[i] = translateAutofillHint(hints.getString(i));
         }
-        return new Autofill(uniqueIdentifier, autofillHints, hintText, TextEditState.fromJson(editingState));
+        return new Autofill(
+            uniqueIdentifier, autofillHints, hintText, TextEditState.fromJson(editingState));
       }
 
       public final String uniqueIdentifier;
