@@ -735,6 +735,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), @{tag : state} ]];
 }
 
+- (void)updateEditingClient:(int)client withDelta:(NSDictionary*)state {
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithDeltas"
+                              arguments:@[ @(client), state ]];
+}
+
 - (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)position {
