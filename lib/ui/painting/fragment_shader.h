@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 #include "third_party/tonic/dart_library_natives.h"
@@ -35,7 +36,7 @@ class FragmentShader : public Shader {
 
   void init(std::string sksl, bool debugPrintSksl);
 
-  void update(const tonic::Float32List& uniforms, Dart_Handle children);
+  void update(Dart_Handle uniforms, Dart_Handle samplers);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -50,6 +51,14 @@ class FragmentShader : public Shader {
 
   // A new shader is created every time update is called.
   sk_sp<SkShader> shader_;
+
+  // Samplers provided in the Dart constructor of FragmentShader, or updated
+  // with the update method.
+  std::vector<sk_sp<SkShader>> samplers_;
+
+  // Cached float values, provided via the Dart constructor of FragmentShader
+  // or via the update method.
+  sk_sp<SkData> float_uniform_data_;
 };
 
 }  // namespace flutter

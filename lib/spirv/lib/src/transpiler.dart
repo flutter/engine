@@ -69,6 +69,15 @@ class _Transpiler {
   /// Uniform declarations.
   final Map<int, String> uniformDeclarations = <int, String>{};
 
+  /// Declarations for sampler sizes in SkSL.
+  ///
+  /// This is because the SkSL sample function uses texel coordinates when
+  /// sampling an ImageShader, and SkSL does not support the textureSize 
+  /// function. These uniforms allow adding support for normalized
+  /// coordinates for [opImageSampleImplicitLod] as well as supporting
+  /// [opImageQuerySize].
+  final Map<int, String> samplerSizeDeclarations = <int, String>{};
+
   /// ID mapped to numerical types.
   final Map<int, _Type> types = <int, _Type>{};
 
@@ -188,6 +197,16 @@ class _Transpiler {
       locations.sort((int a, int b) => a - b);
       for (final location in locations) {
         header.writeln(uniformDeclarations[location]);
+      }
+    }
+
+    // Add SkSL sampler size declarations to header.
+    if (samplerSizeDeclarations.isNotEmpty) {
+      header.writeln();
+      final List<int> locations = samplerSizeDeclarations.keys.toList();
+      locations.sort((int a, int b) => a - b);
+      for (final location in locations) {
+        header.writeln(samplerSizeDeclarations[location]);
       }
     }
 
@@ -415,6 +434,9 @@ class _Transpiler {
         break;
       case _opImageSampleImplicitLod:
         opImageSampleImplicitLod();
+        break;
+      case _opImageQuerySize:
+        opImageQuerySize();
         break;
       case _opFNegate:
         opFNegate();
@@ -832,6 +854,9 @@ class _Transpiler {
         }
         if (t == _Type.sampledImage) {
           samplerCount++;
+          if (target == TargetLanguage.sksl) {
+            samplerSizeDeclarations[location] = 'uniform half2 ${name}_size;';
+          }
         } else {
           uniformFloatCount += _typeFloatCounts[t]!;
         }
@@ -964,6 +989,9 @@ class _Transpiler {
     final String coordinate = resolveName(readWord());
     final String fn = _textureFunctionName(target);
     out.writeln('$indent$type $name = $fn($sampledImage, $coordinate);');
+  }
+
+  void opImageQuerySize() {
   }
 
   void opFNegate() {

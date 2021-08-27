@@ -59,22 +59,30 @@ void FragmentShader::init(std::string sksl, bool debugPrintSksl) {
   }
 }
 
-void FragmentShader::update(const tonic::Float32List& uniforms,
-                            Dart_Handle children) {
-  std::vector<Shader*> shaders =
-      tonic::DartConverter<std::vector<Shader*>>::FromDart(children);
-  std::vector<sk_sp<SkShader>> sk_children(shaders.size());
-  for (size_t i = 0; i < shaders.size(); i++) {
-    // The default value for SkSamplingOptions is used because ImageShader
-    // uses a cached value set by the user, it is ignored by Gradient,
-    // and because it is not necessary for FragmentShader (shaders should
-    // implement their own optimal filtering).
-    sk_children[i] = shaders[i]->shader(SkSamplingOptions());
+void FragmentShader::update(Dart_Handle uniforms, Dart_Handle samplers) {
+  bool should_update = false;
+  if (!Dart_IsNull(uniforms)) {
+    tonic::Float32List uniformList(uniforms);
+    float_uniform_data_ = SkData::MakeWithCopy(
+        uniformList.data(), uniformList.num_elements() * sizeof(float));
+    should_update = true;
   }
-  shader_ = runtime_effect_->makeShader(
-      SkData::MakeWithCopy(uniforms.data(),
-                           uniforms.num_elements() * sizeof(float)),
-      sk_children.data(), sk_children.size(), nullptr, false);
+  if (!Dart_IsNull(samplers)) {
+    std::vector<Shader*> shaders =
+        tonic::DartConverter<std::vector<Shader*>>::FromDart(samplers);
+    samplers_.resize(shaders.size());
+    for (size_t i = 0; i < shaders.size(); i++) {
+      // The default value for SkSamplingOptions is used because ImageShader
+      // uses a cached value set by the user in the Dart constructor.
+      // Users are instructed to make use of this in the Dart docs.
+      samplers_[i] = shaders[i]->shader(SkSamplingOptions());
+    }
+  }
+  if (should_update) {
+    shader_ = runtime_effect_->makeShader(
+        float_uniform_data_, samplers_.data(), samplers_.size(), nullptr, false);
+  }
+  FML_DCHECK(!!shader_);
 }
 
 fml::RefPtr<FragmentShader> FragmentShader::Create() {

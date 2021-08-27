@@ -3787,6 +3787,20 @@ class ImageShader extends Shader {
 /// c: [4, 5, 6]
 /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
 ///
+/// `samplers` must also be sized correctly, matching the number of UniformConstant
+/// variables of type SampledImage specified in the SPIR-V code.
+///
+/// Consider the following snippit of GLSL code.
+///
+/// ```
+/// layout (location = 0) uniform sampler2D a;
+/// layout (location = 1) uniform sampler2D b;
+/// ```
+///
+/// After being compiled to SPIR-V using [shaderc](https://github.com/google/shaderc)
+/// and provided to the constructor, `samplers` must have a length
+/// of 2. One per sampler2D uniform.
+///
 class FragmentShader extends Shader {
 
   /// Creates a fragment shader from SPIR-V byte data as an input.
@@ -3798,8 +3812,12 @@ class FragmentShader extends Shader {
   /// uniforms. If they are not initially set, they will default
   /// to 0. They can later be updated by invoking the [update] method.
   ///
-  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShader] docs for details.
+  /// `floatUniforms` and `samplers`  must be sized correctly, or an
+  /// [ArgumentError] will be thrown. See [FragmentShader] docs for details.
+  ///
+  /// [ImageShader] objects provided to the `samplers` field will use the [FilterQuality]
+  /// specified in the constructor of [ImageShader], not the [FilterQuality] assigned
+  /// to the local painting context.
   ///
   /// The compilation of a shader gets more expensive the more complicated the source is.
   /// Because of this, it is reccommended to construct a FragmentShader asynchrounously,
@@ -3808,7 +3826,7 @@ class FragmentShader extends Shader {
   FragmentShader({
     required ByteBuffer spirv,
     Float32List? floatUniforms,
-    List<Shader> children = const <Shader>[],
+    List<ImageShader> samplers = const <ImageShader>[],
     bool debugPrint = false,
   }) : super._() {
     _constructor();
@@ -3818,15 +3836,21 @@ class FragmentShader extends Shader {
     );
     _uniformFloatCount = result.uniformFloatCount;
     _samplerCount = result.samplerCount;
-    _assertChildrenSize(children);
-    _children = children;
     _init(result.src, debugPrint);
-    update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
+    _spirvHash = hashList(spirv.asUint32List());
+    update(
+      floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount),
+      samplers: samplers,
+    );
   }
 
   late final int _uniformFloatCount;
   late final int _samplerCount;
-  late final List<Shader> _children;
+  late final int _spirvHash;
+
+  int _samplerHash = 0;
+  int _floatUniformsHash = 0;
+  int _fragmentShaderHash = 0;
 
   void _constructor() native 'FragmentShader_constructor';
   void _init(String sksl, bool debugPrint) native 'FragmentShader_init';
@@ -3834,36 +3858,51 @@ class FragmentShader extends Shader {
   /// Updates the uniform values that are supplied to the [FragmentShader]
   /// and refreshes the shader.
   ///
-  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShader] docs for details.
+  /// `floatUniforms` and `samplers`, if not omitted, must be sized correctly,
+  /// otherwise [ArgumentError] will be thrown. See [FragmentShader] docs for
+  /// details.
   ///
   /// This method will aquire additional fields as [FragmentShader] is
   /// implemented further.
   void update({
-    required Float32List floatUniforms,
-    List<Shader>? children,
+    Float32List? floatUniforms,
+    List<ImageShader>? samplers,
   }) {
-    if (children != null) {
-      _assertChildrenSize(children);
-      for (int i = 0; i < children.length; i++) {
-        _children[i] = children[i];
+    bool shouldUpdate = false;
+    if (samplers != null) {
+      if (samplers.length != _samplerCount) {
+        throw ArgumentError(
+            'FragmentShader sampler count (${samplers.length}) must match SPIR-V sampler count ($_samplerCount)');
       }
+      _samplerHash = hashList(samplers);
+      shouldUpdate = true;
     }
-    if (floatUniforms.length != _uniformFloatCount) {
-      throw ArgumentError(
-        'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
+    if (floatUniforms != null) {
+      if (floatUniforms.length != _uniformFloatCount) {
+        throw ArgumentError(
+          'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
+      }
+      _floatUniformsHash = hashList(floatUniforms);
+      shouldUpdate = true;
     }
-    _update(floatUniforms, _children);
+    if (shouldUpdate) {
+      _fragmentShaderHash = hashValues(_spirvHash, _floatUniformsHash, _samplerHash);
+      _update(floatUniforms, samplers);
+    }
   }
 
-  void _update(Float32List floatUniforms, List<Shader> children) native 'FragmentShader_update';
+  @override
+  int get hashCode => _fragmentShaderHash;
 
-  void _assertChildrenSize(List<Shader> children) {
-    if (children.length != _samplerCount) {
-      throw ArgumentError(
-          'FragmentShader children size: ${children.length} must match given shader children size: $_samplerCount');
-    }
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other))
+      return true;
+    return other is FragmentShader
+        && other._fragmentShaderHash == _fragmentShaderHash;
   }
+
+  void _update(Float32List? floatUniforms, List<ImageShader>? samplers) native 'FragmentShader_update';
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
