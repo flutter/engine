@@ -88,12 +88,10 @@ public class TextEditingDelta {
     } else if ((start == end || isInsertingInsideComposingRegion)
         && !isOriginalComposingRegionTextChanged) {
       Log.v(TAG, "A TextEditingDelta for an INSERTION has been created.");
-      setDeltas(
-          oldEditable, tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
+      setDeltas(oldEditable, tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
     } else if (isReplaced) {
       Log.v(TAG, "A TextEditingDelta for a REPLACEMENT has been created.");
-      setDeltas(
-          oldEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
+      setDeltas(oldEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
     }
   }
 
