@@ -121,11 +121,27 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     if (value == _invertColors) {
       return;
     }
-    _invertSkPaintColors(skiaObject, _managedColorFilter?.skiaObject);
+    if (!value) {
+      _managedColorFilter = _originalColorFilter;
+      _originalColorFilter = null;
+    } else {
+      _originalColorFilter = _managedColorFilter;
+      if (_managedColorFilter == null) {
+        _managedColorFilter = _invertColorFilter;
+      } else {
+        _managedColorFilter = ManagedSkColorFilter(
+            CkComposeColorFilter(_invertColorFilter, _managedColorFilter!));
+      }
+    }
+    skiaObject.setColorFilter(_managedColorFilter?.skiaObject);
     _invertColors = value;
   }
 
   bool _invertColors = false;
+  // The original color filter before we inverted colors. If we set
+  // `invertColors` back to `false`, then restore this filter rather than
+  // invert the color filter again.
+  ManagedSkColorFilter? _originalColorFilter;
 
   @override
   ui.Shader? get shader => _shader;
@@ -189,11 +205,22 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
       return;
     }
 
+    _originalColorFilter = null;
     if (value == null) {
       _managedColorFilter = null;
     } else {
       _managedColorFilter = ManagedSkColorFilter(value as CkColorFilter);
     }
+    if (invertColors) {
+      _originalColorFilter = _managedColorFilter;
+      if (_managedColorFilter == null) {
+        _managedColorFilter = _invertColorFilter;
+      } else {
+        _managedColorFilter = ManagedSkColorFilter(
+            CkComposeColorFilter(_invertColorFilter, _managedColorFilter!));
+      }
+    }
+
     skiaObject.setColorFilter(_managedColorFilter?.skiaObject);
   }
 
@@ -248,9 +275,8 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
     paint.setColorFilter(_managedColorFilter?.skiaObject);
     paint.setImageFilter(_managedImageFilter?.skiaObject);
-    if (_invertColors) {
-      _invertSkPaintColors(paint, _managedColorFilter?.skiaObject);
-    }
+    // No need to do anything for `invertColors`. If it was set, then it
+    // updated `_managedColorFilter` and it has already been applied.
     paint.setStrokeCap(toSkStrokeCap(_strokeCap));
     paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
     paint.setStrokeMiter(_strokeMiterLimit);
@@ -270,14 +296,5 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
   1.0, 1.0, 1.0, 1.0, 0
 ]);
 
-final SkColorFilter _invertColorFilter =
-    canvasKit.ColorFilter.MakeMatrix(_invertColorMatrix);
-
-void _invertSkPaintColors(SkPaint paint, SkColorFilter? currentColorFilter) {
-  SkColorFilter invertFilter = _invertColorFilter;
-  if (currentColorFilter != null) {
-    invertFilter =
-        canvasKit.ColorFilter.MakeCompose(invertFilter, currentColorFilter);
-  }
-  paint.setColorFilter(invertFilter);
-}
+final ManagedSkColorFilter _invertColorFilter =
+    ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
