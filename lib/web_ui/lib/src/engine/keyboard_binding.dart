@@ -76,15 +76,6 @@ const int _kDeadKeyShift = 0x20000000;
 const int _kDeadKeyAlt = 0x40000000;
 const int _kDeadKeyMeta = 0x80000000;
 
-const ui.KeyData _emptyKeyData = ui.KeyData(
-  type: ui.KeyEventType.down,
-  timeStamp: Duration.zero,
-  logical: 0,
-  physical: 0,
-  character: null,
-  synthesized: false,
-);
-
 typedef DispatchKeyData = bool Function(ui.KeyData data);
 
 /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
@@ -335,17 +326,8 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
   }
 
-  // Parse the HTML event, update states, and dispatch Flutter key data through
-  // [dispatchKeyData].
-  //
-  //  * The method might dispatch some synthesized key data first to update states,
-  //    results discarded.
-  //  * Then it dispatches exactly one non-synthesized key data that corresponds
-  //    to the `event`, i.e. the primary key data. If this dispatching returns
-  //    true, then this event will be invoked `preventDefault`.
-  //  * Some key data might be synthesized to update states after the main key
-  //    data. They are always scheduled asynchronously with results discarded.
-  void handleEvent(FlutterHtmlKeyboardEvent event) {
+  List<ui.KeyData> _convertEvent(FlutterHtmlKeyboardEvent event) {
+    final List<ui.KeyData> result = <ui.KeyData>[];
     final Duration timeStamp = _eventTimeStampToDuration(event.timeStamp!);
 
     final String eventKey = event.key!;
@@ -411,9 +393,8 @@ class KeyboardConverter {
           // a currently pressed one, usually indicating multiple keyboards are
           // pressing keys with the same physical key, or the up event was lost
           // during a loss of focus. The down event is ignored.
-          dispatchKeyData(_emptyKeyData);
           event.preventDefault();
-          return;
+          return result;
         }
       } else {
         // This physical key is not being pressed according to the record. It's a
@@ -425,9 +406,8 @@ class KeyboardConverter {
       if (lastLogicalRecord == null) {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
-        dispatchKeyData(_emptyKeyData);
         event.preventDefault();
-        return;
+        return result;
       }
 
       type = ui.KeyEventType.up;
@@ -456,16 +436,15 @@ class KeyboardConverter {
 
     // After updating _pressingRecords, synchronize modifier states. The
     // `event.***Key` fields can be used to reduce some omitted modifier key
-    // events. We can deduce key cancel events if they are false. Key sync
-    // events can not be deduced since we don't know which physical key they
-    // represent.
+    // events. We can deduce key up events if they are false. Key down events
+    // can not be deduced since we don't know which physical key they represent.
     _kLogicalKeyToModifierGetter.forEach((int logicalKey, _ModifierGetter getModifier) {
       if (_pressingRecords.containsValue(logicalKey) && !getModifier(event)) {
         _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
           if (logicalRecord != logicalKey)
             return false;
 
-          dispatchKeyData(ui.KeyData(
+          result.add(ui.KeyData(
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
             physical: physicalKey,
@@ -488,16 +467,47 @@ class KeyboardConverter {
       }
     }
 
-    final ui.KeyData keyData = ui.KeyData(
+    result.add(ui.KeyData(
       timeStamp: timeStamp,
       type: type,
       physical: physicalKey,
       logical: lastLogicalRecord ?? logicalKey,
       character: type == ui.KeyEventType.up ? null : character,
       synthesized: false,
-    );
+    ));
+    return result;
+  }
 
-    final bool primaryHandled = dispatchKeyData(keyData);
+  // Parse the HTML event, update states, and dispatch Flutter key data through
+  // [dispatchKeyData].
+  //
+  //  * The method might dispatch some synthesized key data first to update states,
+  //    results discarded.
+  //  * Then it dispatches exactly one non-synthesized key data that corresponds
+  //    to the `event`, i.e. the primary key data. If this dispatching returns
+  //    true, then this event will be invoked `preventDefault`.
+  //  * Some key data might be synthesized to update states after the main key
+  //    data. They are always scheduled asynchronously with results discarded.
+  void handleEvent(FlutterHtmlKeyboardEvent event) {
+    final List<ui.KeyData> result = _convertEvent(event);
+    // Add an empty event for the framework to correctly infer KeyDataTransitMode.
+    if (result.isEmpty) {
+      result.add(const ui.KeyData(
+        type: ui.KeyEventType.down,
+        timeStamp: Duration.zero,
+        logical: 0,
+        physical: 0,
+        character: null,
+        synthesized: false,
+      ));
+    }
+    bool primaryHandled = false;
+    for (final ui.KeyData keyData in result) {
+      // Only count if the primary event is handled.
+      final bool thisHandled = dispatchKeyData(keyData);
+      if (!keyData.synthesized)
+        primaryHandled = thisHandled;
+    }
     if (primaryHandled) {
       event.preventDefault();
     }
