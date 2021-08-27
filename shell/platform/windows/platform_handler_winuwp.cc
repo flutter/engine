@@ -10,6 +10,9 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
+
+static constexpr char kValueKey[] = "value";
+
 namespace flutter {
 
 // static
@@ -25,16 +28,20 @@ PlatformHandlerWinUwp::PlatformHandlerWinUwp(BinaryMessenger* messenger,
 
 PlatformHandlerWinUwp::~PlatformHandlerWinUwp() = default;
 
-void PlatformHandlerWinUwp::GetPlainText(
-    std::unique_ptr<MethodResult<rapidjson::Document>> result,
-    std::string_view key) {
+bool isWindowInForeground() {
   auto activation_mode =
       winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread()
           .ActivationMode();
+  return activation_mode == winrt::Windows::UI::Core::CoreWindowActivationMode::
+                                ActivatedInForeground;
+}
+
+void PlatformHandlerWinUwp::GetPlainText(
+    std::unique_ptr<MethodResult<rapidjson::Document>> result,
+    std::string_view key) {
   // We call `Clipboard::GetContent()` when the application window is in
   // focus, otherwise calling this will throw an error.
-  if (activation_mode == winrt::Windows::UI::Core::CoreWindowActivationMode::
-                             ActivatedInForeground) {
+  if (isWindowInForeground()) {
     auto content =
         winrt::Windows::ApplicationModel::DataTransfer::Clipboard::GetContent();
     // Calling `DataPackageView::GetTextAsync()` when the clipboard has no text
@@ -68,8 +75,23 @@ void PlatformHandlerWinUwp::GetPlainText(
 
 void PlatformHandlerWinUwp::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  // TODO: Implement. See https://github.com/flutter/flutter/issues/70214.
-  result->NotImplemented();
+  bool has_string = false;
+
+  // We call `Clipboard::GetContent()` when the application window is in
+  // focus, otherwise calling this will throw an error.
+  if (isWindowInForeground()) {
+    has_string =
+        winrt::Windows::ApplicationModel::DataTransfer::Clipboard::GetContent()
+            .Contains(winrt::Windows::ApplicationModel::DataTransfer::
+                          StandardDataFormats::Text());
+  }
+
+  rapidjson::Document document;
+  document.SetObject();
+  rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+  document.AddMember(rapidjson::Value(kValueKey, allocator),
+                     rapidjson::Value(has_string), allocator);
+  result->Success(document);
 }
 
 void PlatformHandlerWinUwp::SetPlainText(
