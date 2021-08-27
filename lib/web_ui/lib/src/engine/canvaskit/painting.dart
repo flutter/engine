@@ -211,6 +211,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     } else {
       _managedColorFilter = ManagedSkColorFilter(value as CkColorFilter);
     }
+
     if (invertColors) {
       _originalColorFilter = _managedColorFilter;
       if (_managedColorFilter == null) {
