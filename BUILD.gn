@@ -76,9 +76,7 @@ group("flutter") {
 
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
-    public_deps += [
-      "//flutter/lib/snapshot:generate_snapshot_bins",
-    ]
+    public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
     if (_build_engine_artifacts) {
       public_deps += [
