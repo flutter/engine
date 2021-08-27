@@ -21,7 +21,9 @@
 
 @interface TestExternalTexture : NSObject <FlutterTexture>
 
-- (nonnull instancetype)initWidth:(size_t)width height:(size_t)height pixelFormatType:(OSType)pixelFormatType;
+- (nonnull instancetype)initWidth:(size_t)width
+                           height:(size_t)height
+                  pixelFormatType:(OSType)pixelFormatType;
 
 @end
 
@@ -31,7 +33,9 @@
   OSType _pixelFormatType;
 }
 
-- (nonnull instancetype)initWidth:(size_t)width height:(size_t)height pixelFormatType:(OSType)pixelFormatType {
+- (nonnull instancetype)initWidth:(size_t)width
+                           height:(size_t)height
+                  pixelFormatType:(OSType)pixelFormatType {
   if (self = [super init]) {
     _width = width;
     _height = height;
@@ -50,9 +54,8 @@
     (NSString*)kCVPixelBufferMetalCompatibilityKey : @YES
   };
   CVPixelBufferRef pxbuffer = NULL;
-  CVReturn status =
-      CVPixelBufferCreate(kCFAllocatorDefault, _width, _width, _pixelFormatType,
-                          (__bridge CFDictionaryRef)options, &pxbuffer);
+  CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, _width, _width, _pixelFormatType,
+                                        (__bridge CFDictionaryRef)options, &pxbuffer);
   NSAssert(status == kCVReturnSuccess && pxbuffer != NULL, @"Failed to create pixel buffer.");
   return pxbuffer;
 }
@@ -129,9 +132,10 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestPopulateExternalTexture) {
   sk_sp<SkSurface> gpuSurface(SkSurface::MakeRenderTarget(grContext, SkBudgeted::kNo, info));
 
   // Create a texture.
-  TestExternalTexture* testExternalTexture = [[TestExternalTexture alloc] initWidth:width
-                                                                             height:height
-                                             pixelFormatType:kCVPixelFormatType_32BGRA];
+  TestExternalTexture* testExternalTexture =
+      [[TestExternalTexture alloc] initWidth:width
+                                      height:height
+                             pixelFormatType:kCVPixelFormatType_32BGRA];
   FlutterExternalTextureMetal* textureHolder =
       [[FlutterExternalTextureMetal alloc] initWithFlutterTexture:testExternalTexture
                                                darwinMetalContext:darwinContextMetal];
@@ -176,9 +180,10 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestPopulateExternalTextureYUVA) {
   sk_sp<SkSurface> gpuSurface(SkSurface::MakeRenderTarget(grContext, SkBudgeted::kNo, info));
 
   // Create a texture.
-  TestExternalTexture* testExternalTexture = [[TestExternalTexture alloc] initWidth:width
-                                                                             height:height
-                                                                    pixelFormatType:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange];
+  TestExternalTexture* testExternalTexture =
+      [[TestExternalTexture alloc] initWidth:width
+                                      height:height
+                             pixelFormatType:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange];
   FlutterExternalTextureMetal* textureHolder =
       [[FlutterExternalTextureMetal alloc] initWithFlutterTexture:testExternalTexture
                                                darwinMetalContext:darwinContextMetal];
@@ -223,9 +228,10 @@ TEST(FlutterEmbedderExternalTextureUnittests, TestPopulateExternalTextureYUVA2) 
   sk_sp<SkSurface> gpuSurface(SkSurface::MakeRenderTarget(grContext, SkBudgeted::kNo, info));
 
   // Create a texture.
-  TestExternalTexture* testExternalTexture = [[TestExternalTexture alloc] initWidth:width
-                                                                             height:height
-                                                                    pixelFormatType:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange];
+  TestExternalTexture* testExternalTexture =
+      [[TestExternalTexture alloc] initWidth:width
+                                      height:height
+                             pixelFormatType:kCVPixelFormatType_420YpCbCr8BiPlanarFullRange];
   FlutterExternalTextureMetal* textureHolder =
       [[FlutterExternalTextureMetal alloc] initWithFlutterTexture:testExternalTexture
                                                darwinMetalContext:darwinContextMetal];
