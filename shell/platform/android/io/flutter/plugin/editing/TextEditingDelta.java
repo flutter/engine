@@ -24,7 +24,8 @@ public class TextEditingDelta {
   private static final String TAG = "TextEditingDelta";
 
   public TextEditingDelta(
-      CharSequence currentEditable,
+      CharSequence oldEditable,
+      CharSequence newEditable,
       int start,
       int end,
       CharSequence tb,
@@ -53,13 +54,12 @@ public class TextEditingDelta {
     // one, but changes more than one character.
     final boolean isOriginalComposingRegionTextChanged =
         (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
-            || !currentEditable
+            || !oldEditable
                 .subSequence(start, end)
                 .toString()
                 .equals(tb.subSequence(tbstart, end - start).toString());
 
-    final boolean isEqual =
-        currentEditable.subSequence(start, end).equals(tb.toString().subSequence(tbstart, tbend));
+    final boolean isEqual = oldEditable.equals(newEditable);
 
     // A replacement means the original composing region has changed, anything else will be
     // considered an insertion.
@@ -68,25 +68,32 @@ public class TextEditingDelta {
             && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
 
     if (isEqual) {
-      Log.v(TAG, "A extEditingDelta for an EQUALITY has been created.");
-      setDeltas(currentEditable, "", "EQUALITY", -1, -1);
+      Log.v(TAG, "A TextEditingDelta for an EQUALITY has been created.");
+      setDeltas(oldEditable, "", "EQUALITY", -1, -1);
     } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
       Log.v(TAG, "A TextEditingDelta for a DELETION has been created.");
+      final int startOfDelete;
+      if (isDeletionGreaterThanOne) {
+        startOfDelete = start;
+      } else {
+        startOfDelete = end;
+      }
+
       setDeltas(
-          currentEditable,
-          currentEditable.subSequence(start + tbend, end).toString(),
+          oldEditable,
+          oldEditable.subSequence(start + tbend, end).toString(),
           "DELETION",
-          end,
+          startOfDelete,
           end);
     } else if ((start == end || isInsertingInsideComposingRegion)
         && !isOriginalComposingRegionTextChanged) {
       Log.v(TAG, "A TextEditingDelta for an INSERTION has been created.");
       setDeltas(
-          currentEditable, tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
+          oldEditable, tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
     } else if (isReplaced) {
       Log.v(TAG, "A TextEditingDelta for a REPLACEMENT has been created.");
       setDeltas(
-          currentEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
+          oldEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
     }
   }
 

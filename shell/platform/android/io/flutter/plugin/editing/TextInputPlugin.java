@@ -662,6 +662,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
           mEditable.addTextEditingDeltaToList(
               new TextEditingDelta(
                   text,
+                  text,
                   0,
                   text.length(),
                   text,
@@ -853,7 +854,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             new TextInputChannel.TextEditState(value, value.length(), value.length(), -1, -1);
         final TextEditingDelta newDelta =
             new TextEditingDelta(
-                "", 0, 0, value, 0, value.length(), value.length(), value.length(), -1, -1);
+                "", value, 0, 0, value, 0, value.length(), value.length(), value.length(), -1, -1);
 
         if (autofill.uniqueIdentifier.equals(currentAutofill.uniqueIdentifier)) {
           // Autofilling the current client is the same as handling user input
