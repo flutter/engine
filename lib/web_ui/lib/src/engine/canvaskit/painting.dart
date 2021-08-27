@@ -122,18 +122,18 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
       return;
     }
     if (!value) {
-      _managedColorFilter = _originalColorFilter;
+      _effectiveColorFilter = _originalColorFilter;
       _originalColorFilter = null;
     } else {
-      _originalColorFilter = _managedColorFilter;
-      if (_managedColorFilter == null) {
-        _managedColorFilter = _invertColorFilter;
+      _originalColorFilter = _effectiveColorFilter;
+      if (_effectiveColorFilter == null) {
+        _effectiveColorFilter = _invertColorFilter;
       } else {
-        _managedColorFilter = ManagedSkColorFilter(
-            CkComposeColorFilter(_invertColorFilter, _managedColorFilter!));
+        _effectiveColorFilter = ManagedSkColorFilter(
+            CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
       }
     }
-    skiaObject.setColorFilter(_managedColorFilter?.skiaObject);
+    skiaObject.setColorFilter(_effectiveColorFilter?.skiaObject);
     _invertColors = value;
   }
 
@@ -198,7 +198,7 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
   ui.FilterQuality _filterQuality = ui.FilterQuality.none;
 
   @override
-  ui.ColorFilter? get colorFilter => _managedColorFilter?.colorFilter;
+  ui.ColorFilter? get colorFilter => _effectiveColorFilter?.colorFilter;
   @override
   set colorFilter(ui.ColorFilter? value) {
     if (colorFilter == value) {
@@ -207,25 +207,28 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
 
     _originalColorFilter = null;
     if (value == null) {
-      _managedColorFilter = null;
+      _effectiveColorFilter = null;
     } else {
-      _managedColorFilter = ManagedSkColorFilter(value as CkColorFilter);
+      _effectiveColorFilter = ManagedSkColorFilter(value as CkColorFilter);
     }
 
     if (invertColors) {
-      _originalColorFilter = _managedColorFilter;
-      if (_managedColorFilter == null) {
-        _managedColorFilter = _invertColorFilter;
+      _originalColorFilter = _effectiveColorFilter;
+      if (_effectiveColorFilter == null) {
+        _effectiveColorFilter = _invertColorFilter;
       } else {
-        _managedColorFilter = ManagedSkColorFilter(
-            CkComposeColorFilter(_invertColorFilter, _managedColorFilter!));
+        _effectiveColorFilter = ManagedSkColorFilter(
+            CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
       }
     }
 
-    skiaObject.setColorFilter(_managedColorFilter?.skiaObject);
+    skiaObject.setColorFilter(_effectiveColorFilter?.skiaObject);
   }
 
-  ManagedSkColorFilter? _managedColorFilter;
+  /// The effective color filter.
+  ///
+  /// This is a combination of the `colorFilter` and `invertColors` properties.
+  ManagedSkColorFilter? _effectiveColorFilter;
 
   @override
   double get strokeMiterLimit => _strokeMiterLimit;
@@ -267,6 +270,8 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
   @override
   SkPaint resurrect() {
     final SkPaint paint = SkPaint();
+    // No need to do anything for `invertColors`. If it was set, then it
+    // updated `_managedColorFilter`.
     paint.setBlendMode(toSkBlendMode(_blendMode));
     paint.setStyle(toSkPaintStyle(_style));
     paint.setStrokeWidth(_strokeWidth);
@@ -274,10 +279,8 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     paint.setColorInt(_color.value);
     paint.setShader(_shader?.withQuality(_filterQuality));
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
-    paint.setColorFilter(_managedColorFilter?.skiaObject);
+    paint.setColorFilter(_effectiveColorFilter?.skiaObject);
     paint.setImageFilter(_managedImageFilter?.skiaObject);
-    // No need to do anything for `invertColors`. If it was set, then it
-    // updated `_managedColorFilter` and it has already been applied.
     paint.setStrokeCap(toSkStrokeCap(_strokeCap));
     paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
     paint.setStrokeMiter(_strokeMiterLimit);
