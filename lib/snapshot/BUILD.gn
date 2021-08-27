@@ -8,6 +8,13 @@ import("//flutter/common/config.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
+group("generate_snapshot_bins") {
+  deps = [:"generate_snapshot_bin"]
+  if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
+    deps += [ ":create_arm_gen_snapshot" ]
+  }
+}
+
 compiled_action("generate_snapshot_bin") {
   if (target_cpu == "x86" && host_os == "linux") {
     # By default Dart will create a 32-bit gen_snapshot host binary if the target
@@ -22,7 +29,7 @@ compiled_action("generate_snapshot_bin") {
   platform_kernel = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
 
   inputs = [ platform_kernel ]
-  deps = [ ":kernel_platform_files" ]
+  deps = [ ":strong_platform" ]
 
   vm_snapshot_data = "$target_gen_dir/vm_isolate_snapshot.bin"
   vm_snapshot_instructions = "$target_gen_dir/vm_snapshot_instructions.bin"
@@ -221,9 +228,6 @@ source_set("snapshot") {
     ":vm_snapshot_data_linkable",
     ":vm_snapshot_instructions_linkable",
   ]
-  if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
-    deps += [ ":create_arm_gen_snapshot" ]
-  }
 
   sources = get_target_outputs(":isolate_snapshot_data_linkable") +
             get_target_outputs(":isolate_snapshot_instructions_linkable") +
@@ -254,9 +258,4 @@ compile_platform("strong_platform") {
     "-Ddart.isVM=true",
     "dart:core",
   ]
-}
-
-# Fuchsia's snapshot requires a different platform with extra dart: libraries.
-group("kernel_platform_files") {
-  public_deps = [ ":strong_platform" ]
 }
