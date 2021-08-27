@@ -47,6 +47,7 @@
     return [self populateTextureFromRGBAPixelBuffer:textureOut pixelBuffer:pixelBuffer];
   }
 }
+
 - (BOOL)populateTextureFromYUVAPixelBuffer:(FlutterMetalExternalTexture*)textureOut
                            pixelBuffer:(nonnull CVPixelBufferRef) pixelBuffer {
   CVMetalTextureRef yCVMetalTexture = nullptr;
