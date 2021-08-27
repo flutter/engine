@@ -105,8 +105,7 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, invertedCircle);
 
-      await matchSceneGolden('canvaskit_invertcolors.png', builder.build(),
-          write: true);
+      await matchSceneGolden('canvaskit_invertcolors.png', builder.build());
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
