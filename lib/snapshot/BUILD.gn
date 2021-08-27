@@ -11,7 +11,7 @@ import("//third_party/dart/utils/compile_platform.gni")
 group("generate_snapshot_bins") {
   deps = [
     ":generate_snapshot_bin",
-    kernel_platform_files
+    ":kernel_platform_files"
   ]
   if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
     deps += [ ":create_arm_gen_snapshot" ]
