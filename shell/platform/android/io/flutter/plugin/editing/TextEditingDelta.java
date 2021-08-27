@@ -109,7 +109,7 @@ public class TextEditingDelta {
     try {
       delta.put("oldText", oldText.toString());
       delta.put("deltaText", deltaText.toString());
-      delta.put("delta", deltaType.toString());
+      delta.put("deltaType", deltaType.toString());
       delta.put("deltaStart", deltaStart);
       delta.put("deltaEnd", deltaEnd);
       delta.put("selectionBase", newSelectionStart);
