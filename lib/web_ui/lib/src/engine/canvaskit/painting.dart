@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:ui/ui.dart' as ui;
 
 import 'canvaskit_api.dart';
@@ -112,11 +114,14 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
 
   ui.Color _color = _defaultPaintColor;
 
-  // TODO(yjbanov): implement
   @override
   bool get invertColors => _invertColors;
   @override
   set invertColors(bool value) {
+    if (value == _invertColors) {
+      return;
+    }
+    _invertSkPaintColors(skiaObject, _managedColorFilter?.skiaObject);
     _invertColors = value;
   }
 
@@ -243,6 +248,9 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
     paint.setMaskFilter(_ckMaskFilter?.skiaObject);
     paint.setColorFilter(_managedColorFilter?.skiaObject);
     paint.setImageFilter(_managedImageFilter?.skiaObject);
+    if (_invertColors) {
+      _invertSkPaintColors(paint, _managedColorFilter?.skiaObject);
+    }
     paint.setStrokeCap(toSkStrokeCap(_strokeCap));
     paint.setStrokeJoin(toSkStrokeJoin(_strokeJoin));
     paint.setStrokeMiter(_strokeMiterLimit);
@@ -253,4 +261,23 @@ class CkPaint extends ManagedSkiaObject<SkPaint> implements ui.Paint {
   void delete() {
     rawSkiaObject?.delete();
   }
+}
+
+final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
+  -1.0, 0, 0, 1.0, 0, // row
+  0, -1.0, 0, 1.0, 0, // row
+  0, 0, -1.0, 1.0, 0, // row
+  1.0, 1.0, 1.0, 1.0, 0
+]);
+
+final SkColorFilter _invertColorFilter =
+    canvasKit.ColorFilter.MakeMatrix(_invertColorMatrix);
+
+void _invertSkPaintColors(SkPaint paint, SkColorFilter? currentColorFilter) {
+  SkColorFilter invertFilter = _invertColorFilter;
+  if (currentColorFilter != null) {
+    invertFilter =
+        canvasKit.ColorFilter.MakeCompose(invertFilter, currentColorFilter);
+  }
+  paint.setColorFilter(invertFilter);
 }
