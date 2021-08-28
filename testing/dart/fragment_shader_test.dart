@@ -15,8 +15,7 @@ import 'shader_test_file_utils.dart';
 
 void main() {
   test('throws exception for invalid shader', () {
-    final ByteBuffer invalidBytes =
-        Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
+    final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
     expect(() => FragmentShader(spirv: invalidBytes), throws);
   });
 
