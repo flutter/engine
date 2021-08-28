@@ -19,6 +19,43 @@ void main() {
     expect(() => FragmentShader(spirv: invalidBytes), throws);
   });
 
+  test('equality depends on floatUniforms', () {
+    final ByteBuffer spirv = spvFile('general_shaders', 'simple.spv')
+        .readAsBytesSync().buffer;
+    final FragmentShader a = FragmentShader(spirv: spirv);
+    final FragmentShader b = FragmentShader(spirv: spirv);
+    expect(a, b);
+    expect(a.hashCode, b.hashCode);
+    b.update(floatUniforms: Float32List.fromList(<double>[1]));
+    expect(a, notEquals(b));
+    expect(a.hashCode, notEquals(b.hashCode));
+    b.update(floatUniforms: Float32List.fromList(<double>[0]));
+    expect(a, b);
+    expect(a.hashCode, b.hashCode);
+  });
+
+  test('equality depends on spirv', () {
+     final ByteBuffer spirvA = spvFile('general_shaders', 'simple.spv')
+         .readAsBytesSync().buffer;
+     final ByteBuffer spirvB = spvFile('general_shaders', 'uniforms.spv')
+         .readAsBytesSync().buffer;
+    final FragmentShader a = FragmentShader(spirv: spirvA);
+    final FragmentShader b = FragmentShader(spirv: spirvB);
+    expect(a, notEquals(b));
+    expect(a.hashCode, notEquals(b.hashCode));
+   });
+
+  test('hashCode changes with floatUniforms', () {
+    final ByteBuffer spirv = spvFile('general_shaders', 'simple.spv')
+        .readAsBytesSync().buffer;
+    final FragmentShader shader = FragmentShader(spirv: spirv);
+    final firstHash = shader.hashCode;
+    shader.update(floatUniforms: Float32List.fromList(<double>[1]));
+    expect(shader.hashCode, notEquals(firstHash));
+    shader.update(floatUniforms: Float32List.fromList(<double>[0]));
+    expect(shader.hashCode, firstHash);
+  });
+
   test('simple shader renders correctly', () async {
     final Uint8List shaderBytes = await spvFile('general_shaders', 'simple.spv').readAsBytes();
     _expectShaderRendersGreen(shaderBytes.buffer.asUint32List());

@@ -3826,10 +3826,13 @@ class FragmentShader extends Shader {
     );
     _uniformFloatCount = result.uniformFloatCount;
     _init(result.src, debugPrint);
+    _spirvHash = hashList(spirv.asUint32List());
     update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
 
   late final int _uniformFloatCount;
+  late final int _spirvHash;
+  int _hashCode = 0;
 
   void _constructor() native 'FragmentShader_constructor';
   void _init(String sksl, bool debugPrint) native 'FragmentShader_init';
@@ -3850,7 +3853,19 @@ class FragmentShader extends Shader {
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
     _update(floatUniforms);
+    _hashCode = hashValues(_spirvHash, hashList(floatUniforms));
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is FragmentShader && other._hashCode == _hashCode;
+  }
+
+  @override
+  int get hashCode => _hashCode;
 
   void _update(Float32List floatUniforms) native 'FragmentShader_update';
 }
