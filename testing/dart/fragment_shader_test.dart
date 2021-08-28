@@ -21,8 +21,7 @@ void main() {
   });
 
   test('simple shader renders correctly', () async {
-    final Uint8List shaderBytes =
-        await spvFile('general_shaders', 'functions.spv').readAsBytes();
+    final Uint8List shaderBytes = await spvFile('general_shaders', 'functions.spv').readAsBytes();
     final FragmentShader shader = FragmentShader(
       spirv: shaderBytes.buffer,
       floatUniforms: Float32List.fromList(<double>[1]),
@@ -31,8 +30,7 @@ void main() {
   });
 
   test('shader with functions renders green', () {
-    final ByteBuffer spirv =
-        spvFile('general_shaders', 'functions.spv').readAsBytesSync().buffer;
+    final ByteBuffer spirv = spvFile('general_shaders', 'functions.spv').readAsBytesSync().buffer;
     final FragmentShader shader = FragmentShader(
       spirv: spirv,
       floatUniforms: Float32List.fromList(<double>[1]),
@@ -41,8 +39,7 @@ void main() {
   });
 
   test('shader with uniforms renders and updates correctly', () async {
-    final Uint8List shaderBytes =
-        await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
+    final Uint8List shaderBytes = await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
     final FragmentShader shader = FragmentShader(spirv: shaderBytes.buffer);
 
     shader.update(
