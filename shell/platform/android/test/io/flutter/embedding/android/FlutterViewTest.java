@@ -33,7 +33,6 @@ import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import androidx.core.util.Consumer;
-import androidx.window.java.layout.WindowInfoRepositoryCallbackAdapter;
 import androidx.window.layout.FoldingFeature;
 import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.TestUtils;
@@ -655,8 +654,8 @@ public class FlutterViewTest {
             ((WindowManager)
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
-    WindowInfoRepositoryCallbackAdapter windowInfoRepo =
-        mock(WindowInfoRepositoryCallbackAdapter.class);
+    WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
+        mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
     // For reasoning behing using doReturn instead of when, read "Important gotcha" at
     // https://www.javadoc.io/doc/org.mockito/mockito-core/1.10.19/org/mockito/Mockito.html#13
     doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
@@ -675,59 +674,6 @@ public class FlutterViewTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
-  public void itSendsCutoutDisplayFeatureToFlutter() {
-    Context context = Robolectric.setupActivity(Activity.class);
-    FlutterView flutterView = spy(new FlutterView(context));
-    ShadowDisplay display =
-        Shadows.shadowOf(
-            ((WindowManager)
-                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay());
-    WindowInfoRepositoryCallbackAdapter windowInfoRepo =
-        mock(WindowInfoRepositoryCallbackAdapter.class);
-    // For reasoning behing using doReturn instead of when, read "Important gotcha" at
-    // https://www.javadoc.io/doc/org.mockito/mockito-core/1.10.19/org/mockito/Mockito.html#13
-    doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
-    FlutterEngine flutterEngine =
-        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
-    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
-    doReturn(flutterRenderer).when(flutterEngine).getRenderer();
-
-    // When FlutterView is attached to the engine and window, and a cutout exists
-    WindowInsets windowInsets = mock(WindowInsets.class);
-    DisplayCutout displayCutout = mock(DisplayCutout.class);
-    when(displayCutout.getBoundingRects()).thenReturn(Arrays.asList(new Rect(0, 0, 100, 100)));
-    when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
-    when(flutterView.getRootWindowInsets()).thenReturn(windowInsets);
-
-    flutterView.attachToFlutterEngine(flutterEngine);
-    ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
-        ArgumentCaptor.forClass(FlutterRenderer.ViewportMetrics.class);
-    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(Arrays.asList(), viewportMetricsCaptor.getValue().displayFeatures);
-    flutterView.onAttachedToWindow();
-    ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
-        ArgumentCaptor.forClass((Class) Consumer.class);
-    verify(windowInfoRepo).addWindowLayoutInfoListener(any(), wmConsumerCaptor.capture());
-    Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
-
-    wmConsumer.accept(new WindowLayoutInfo.Builder().build());
-
-    // Then the Renderer receives the display feature
-    verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(
-        FlutterRenderer.DisplayFeatureType.CUTOUT,
-        viewportMetricsCaptor.getValue().displayFeatures.get(0).type);
-    assertEquals(
-        FlutterRenderer.DisplayFeatureState.UNKNOWN,
-        viewportMetricsCaptor.getValue().displayFeatures.get(0).state);
-    assertEquals(
-        new Rect(0, 0, 100, 100), viewportMetricsCaptor.getValue().displayFeatures.get(0).bounds);
-  }
-
-  @Test
   public void itSendsHingeDisplayFeatureToFlutter() {
     Context context = Robolectric.setupActivity(Activity.class);
     FlutterView flutterView = spy(new FlutterView(context));
@@ -737,8 +683,8 @@ public class FlutterViewTest {
                     RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay());
     when(flutterView.getContext()).thenReturn(context);
-    WindowInfoRepositoryCallbackAdapter windowInfoRepo =
-        mock(WindowInfoRepositoryCallbackAdapter.class);
+    WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo =
+        mock(WindowInfoRepositoryCallbackAdapterWrapper.class);
     doReturn(windowInfoRepo).when(flutterView).createWindowInfoRepo();
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));

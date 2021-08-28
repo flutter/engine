@@ -125,7 +125,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private AccessibilityBridge accessibilityBridge;
 
   // Provides access to foldable/hinge information
-  @Nullable private WindowInfoRepositoryCallbackAdapter windowInfoRepo;
+  @Nullable private WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo;
   // Directly implemented View behavior that communicates with Flutter.
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
@@ -451,10 +451,11 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   @VisibleForTesting()
-  protected WindowInfoRepositoryCallbackAdapter createWindowInfoRepo() {
+  protected WindowInfoRepositoryCallbackAdapterWrapper createWindowInfoRepo() {
     try {
-      return new WindowInfoRepositoryCallbackAdapter(
-          WindowInfoRepository.getOrCreate((Activity) getContext()));
+      return new WindowInfoRepositoryCallbackAdapterWrapper(
+          new WindowInfoRepositoryCallbackAdapter(
+              WindowInfoRepository.getOrCreate((Activity) getContext())));
     } catch (NoClassDefFoundError noClassDefFoundError) {
       // Testing environment uses gn/javac, which does not work with aar files. This is why aar
       // are converted to jar files, losing resources and other android-specific files.
