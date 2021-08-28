@@ -299,7 +299,7 @@ class EngineAutofillForm {
             element.onInput.listen((html.Event e) {
               if (items![key] == null) {
                 throw StateError(
-                    'Autofill would not work withuot Autofill value set');
+                    'Autofill would not work without Autofill value set');
               } else {
                 final AutofillInfo autofillInfo = items![key]!;
                 handleChange(element, autofillInfo);
@@ -391,12 +391,13 @@ class AutofillInfo {
           const TextCapitalizationConfig.defaultCapitalization()}) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
     final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
-    final List<dynamic> hintsList = autofill.readList('hints');
+    final List<dynamic>? hintsList = autofill.tryList('hints');
+    final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
     final EditingState editingState =
         EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
     return AutofillInfo(
       uniqueIdentifier: uniqueIdentifier,
-      autofillHint: hintsList.isNotEmpty ? BrowserAutofillHints.instance.flutterToEngine(hintsList[0] as String) : null,
+      autofillHint: (firstHint != null) ? BrowserAutofillHints.instance.flutterToEngine(firstHint) : null,
       editingState: editingState,
       placeholder: autofill.tryString('hintText'),
       textCapitalization: textCapitalization,
@@ -699,6 +700,8 @@ abstract class TextEditingStrategy {
   /// 'TextInput.setEditableSizeAndTransform' message.
   void updateElementPlacement(EditableTextGeometry geometry);
 
+  void requestAutofill();
+
   /// Set editing state of the element.
   ///
   /// This includes text and selection relelated states. The editing state will
@@ -715,6 +718,83 @@ abstract class TextEditingStrategy {
   void disable();
 }
 
+mixin AutofillTextEditingStrategy on TextEditingStrategy {
+  List<StreamSubscription<html.Event>>? _subscriptions;
+  EditableTextGeometry? _geometry;
+  EngineAutofillForm? _autofillGroup;
+
+  html.HtmlElement get activeDomElement;
+
+  /// Whether the focused input element has been inserted into a form for
+  /// autofill.
+  bool _appendedToForm = false;
+
+  @override
+  void initializeTextEditing(
+    InputConfiguration inputConfig, {
+      required OnChangeCallback onChange,
+      required OnActionCallback onAction,
+  }) {
+    assert(!_appendedToForm);
+    super.initializeTextEditing(inputConfig, onChange: onChange, onAction: onAction);
+    _autofillGroup = inputConfig.autofillGroup;
+  }
+
+  @override
+  void initializeElementPlacement() {
+    super.initializeElementPlacement();
+  }
+
+  @override
+  void updateElementPlacement(EditableTextGeometry textGeometry) {
+    super.updateElementPlacement(textGeometry);
+    if (autofillGroup == null)
+      return;
+    _geometry = textGeometry;
+  }
+
+  @override
+  void requestAutofill() {
+    final EngineAutofillForm? autofillGroup = this._autofillGroup;
+    if (autofillGroup == null)
+      return;
+    assert(_geometry != null);
+    autofillGroup.placeForm(activeDomElement);
+    _appendedToForm = true;
+  }
+
+  @override
+  void addEventHandlers() {
+    assert(_subscriptions == null);
+    _subscriptions = _autofillGroup?.addInputEventListeners();
+  }
+
+  @override
+  void disable() {
+    if (_autofillGroup == null)
+      return;
+    _subscriptions?.forEach((StreamSubscription<html.Event> listener) => listener.cancel());
+    _subscriptions = null;
+    _autofillGroup = null;
+    _geometry = null;
+
+    if (!_appendedToForm) {
+      return;
+    }
+
+    assert(_autofillGroup != null);
+    activeDomElement.blur();
+    _hideAutofillElements(activeDomElement, isOffScreen: true);
+    _autofillGroup?.storeForm();
+    _appendedToForm = false;
+  }
+
+  void placeForm() {
+    autofillGroup!.placeForm(activeDomElement);
+    _appendedToForm = true;
+  }
+}
+
 /// A [TextEditingStrategy] that places its [domElement] assuming no
 /// prior transform or sizing is applied to it.
 ///
@@ -726,15 +806,13 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void placeElement() {
+    geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
-      geometry?.applyToDomElement(focusedFormElement!);
       placeForm();
       // Set the last editing state if it exists, this is critical for a
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
-      if (lastEditingState != null) {
-        lastEditingState!.applyToDomElement(domElement);
-      }
+      lastEditingState?.applyToDomElement(domElement);
       // On Chrome, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -747,9 +825,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
       activeDomElement.focus();
-    } else {
-      geometry?.applyToDomElement(activeDomElement);
-    }
+    } 
   }
 }
 
@@ -819,6 +895,9 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
 /// 2. `<textarea>`.
 /// 3. `<span contenteditable="true">`.
 ///
+/// The backing DOM element will be placed inside of a Form element described by. Depending
+/// on whether autofill is enabled, the
+///
 /// This class includes all the default behaviour for an editing element as
 /// well as the common properties such as [domElement].
 ///
@@ -869,10 +948,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   bool get hasAutofillGroup => inputConfiguration.autofillGroup != null;
 
-  /// Whether the focused input element is part of a form.
-  bool get appendedToForm => _appendedToForm;
-  bool _appendedToForm = false;
-
   html.FormElement? get focusedFormElement =>
       inputConfiguration.autofillGroup?.formElement;
 
@@ -896,7 +971,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
       defaultTextEditingRoot.append(activeDomElement);
-      _appendedToForm = false;
     }
 
     initializeElementPlacement();
@@ -1017,11 +1091,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void placeElement() {
     activeDomElement.focus();
-  }
-
-  void placeForm() {
-    inputConfiguration.autofillGroup!.placeForm(activeDomElement);
-    _appendedToForm = true;
   }
 
   void handleChange(html.Event event) {
@@ -1406,9 +1475,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to
     // the transform.
-    if (lastEditingState != null) {
-      lastEditingState!.applyToDomElement(activeDomElement);
-    }
+    lastEditingState?.applyToDomElement(activeDomElement);
   }
 }
 
@@ -1576,7 +1643,7 @@ class TextInputRequestAutofill extends TextInputCommand {
 
   @override
   void run(HybridTextEditing textEditing) {
-    // No-op: not supported on this platform.
+    textEditing.strategy.requestAutofill();
   }
 }
 
@@ -1793,11 +1860,9 @@ class HybridTextEditing {
   ///
   /// The constructor also decides which text editing strategy to use depending
   /// on the operating system and browser engine.
-  HybridTextEditing() {
-    channel = TextEditingChannel(this);
-  }
+  HybridTextEditing();
 
-  late TextEditingChannel channel;
+  late final TextEditingChannel channel = TextEditingChannel(this);
 
   /// A CSS class name used to identify all elements used for text editing.
   @visibleForTesting

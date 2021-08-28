@@ -640,7 +640,7 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
 
   FlutterTextInputView* inputView = self.installedInputViews[0];
-  XCTAssertEqualObjects(inputView.contentType, @"");
+  XCTAssertEqualObjects(inputView.textContentType, @"");
 }
 
 - (void)testAutofillEnabledByDefault {
@@ -650,7 +650,7 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
 
   FlutterTextInputView* inputView = self.installedInputViews[0];
-  XCTAssertNil(inputView.contentType);
+  XCTAssertNil(inputView.textContentType);
 }
 
 - (void)testAutofillContext {
