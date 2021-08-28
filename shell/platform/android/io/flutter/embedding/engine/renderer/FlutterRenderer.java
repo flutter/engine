@@ -177,20 +177,29 @@ public class FlutterRenderer implements TextureRegistry {
           return;
         }
 
-        handler.post(
-            new Runnable() {
-              public void run() {
-                if (released || !flutterJNI.isAttached()) {
-                  return;
-                }
-                Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
-                unregisterTexture(id);
-                released = true;
-              }
-            });
+        handler.post(new SurfaceTextureFinalizerRunnable(id, flutterJNI));
       } finally {
         super.finalize();
       }
+    }
+  }
+
+  static final class SurfaceTextureFinalizerRunnable implements Runnable {
+    private final long id;
+    private final FlutterJNI flutterJNI;
+
+    SurfaceTextureFinalizerRunnable(long id, @NonNull FlutterJNI flutterJNI) {
+      this.id = id;
+      this.flutterJNI = flutterJNI;
+    }
+
+    @Override
+    public void run() {
+      if (!flutterJNI.isAttached()) {
+        return;
+      }
+      Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
+      flutterJNI.unregisterTexture(id);
     }
   }
   // ------ END TextureRegistry IMPLEMENTATION ----
