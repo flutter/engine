@@ -181,6 +181,7 @@ class HtmlImage implements ui.Image {
       final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
       return Future<ByteData?>.value(imageData.data.buffer.asByteData());
     } else if (format == ui.ImageByteFormat.rawStraightRgba) {
+      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89094
       throw UnsupportedError(
         'Image.toByteData(format: ui.ImageByteFormat.rawStraightRgba) not yet implemented for HTML');
     }
