@@ -209,17 +209,24 @@ public class TextInputPluginTest {
             null));
 
     textInputPlugin.setTextInputEditingState(
-        testView, new TextInputChannel.TextEditState("receiving initial input from framework", 0, 0, -1, -1));
-    assertTrue(textInputPlugin.getEditable().toString().equals("receiving initial input from framework"));
+        testView,
+        new TextInputChannel.TextEditState("receiving initial input from framework", 0, 0, -1, -1));
+    assertTrue(
+        textInputPlugin.getEditable().toString().equals("receiving initial input from framework"));
 
     verify(textInputChannel, times(0))
         .updateEditingStateWithDeltas(anyInt(), any());
 
     textInputPlugin.setTextInputEditingState(
         testView,
-        new TextInputChannel.TextEditState("receiving more updates from the framework", 1, 2, -1, -1));
+        new TextInputChannel.TextEditState(
+            "receiving more updates from the framework", 1, 2, -1, -1));
 
-    assertTrue(textInputPlugin.getEditable().toString().equals("receiving more updates from the framework"));
+    assertTrue(
+        textInputPlugin
+            .getEditable()
+            .toString()
+            .equals("receiving more updates from the framework"));
     verify(textInputChannel, times(0))
         .updateEditingStateWithDeltas(anyInt(), any());
   }
