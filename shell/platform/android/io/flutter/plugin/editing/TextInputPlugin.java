@@ -470,19 +470,19 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         TAG,
         "Receiving update from framework: \n"
             + "Text: "
-            + newState.text
+            + state.text
             + "\n"
             + "Selection start: "
-            + newState.selectionStart
+            + state.selectionStart
             + "\n"
             + "Selection end: "
-            + newState.selectionEnd
+            + state.selectionEnd
             + "\n"
             + "Composing start: "
-            + newState.composingStart
+            + state.composingStart
             + "\n"
             + "Composing end: "
-            + newState.composingEnd);
+            + state.composingEnd);
     if (!mRestartInputPending
         && mLastKnownFrameworkTextEditingState != null
         && mLastKnownFrameworkTextEditingState.hasComposing()) {
