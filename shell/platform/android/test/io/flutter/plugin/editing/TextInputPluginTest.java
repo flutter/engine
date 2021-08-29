@@ -214,8 +214,7 @@ public class TextInputPluginTest {
     assertTrue(
         textInputPlugin.getEditable().toString().equals("receiving initial input from framework"));
 
-    verify(textInputChannel, times(0))
-        .updateEditingStateWithDeltas(anyInt(), any());
+    verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
 
     textInputPlugin.setTextInputEditingState(
         testView,
@@ -227,8 +226,7 @@ public class TextInputPluginTest {
             .getEditable()
             .toString()
             .equals("receiving more updates from the framework"));
-    verify(textInputChannel, times(0))
-        .updateEditingStateWithDeltas(anyInt(), any());
+    verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
   }
 
   @Test
