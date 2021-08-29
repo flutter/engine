@@ -96,6 +96,12 @@ public class FlutterRenderer implements TextureRegistry {
   public SurfaceTextureEntry createSurfaceTexture() {
     Log.v(TAG, "Creating a SurfaceTexture.");
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+    return registerSurfaceTexture(surfaceTexture);
+  }
+
+  /** Registers and returns a {@link SurfaceTexture} that is also made available to Flutter code. */
+  @Override
+  public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
