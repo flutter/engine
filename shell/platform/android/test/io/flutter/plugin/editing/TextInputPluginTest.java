@@ -182,6 +182,49 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void setTextInputEditingState_doesNotInvokeUpdateEditingStateWithDeltas() {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            true, // Enable delta model.
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null));
+
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("receiving initial input from framework", 0, 0, -1, -1));
+    assertTrue(textInputPlugin.getEditable().toString().equals("receiving initial input from framework"));
+
+    verify(textInputChannel, times(0))
+        .updateEditingStateWithDeltas(anyInt(), any());
+
+    textInputPlugin.setTextInputEditingState(
+        testView,
+        new TextInputChannel.TextEditState("receiving more updates from the framework", 1, 2, -1, -1));
+
+    assertTrue(textInputPlugin.getEditable().toString().equals("receiving more updates from the framework"));
+    verify(textInputChannel, times(0))
+        .updateEditingStateWithDeltas(anyInt(), any());
+  }
+
+  @Test
   public void inputConnectionAdaptor_RepeatFilter() throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
