@@ -56,7 +56,6 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import org.json.JSONArray;
@@ -279,7 +278,8 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.setComposingText(newText, 1);
 
-    final ArrayList<TextEditingDelta> actualDeltas = textInputPlugin.getEditable().getBatchTextEditingDeltas();
+    final ArrayList<TextEditingDelta> actualDeltas =
+        textInputPlugin.getEditable().getBatchTextEditingDeltas();
 
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.endBatchEdit();
