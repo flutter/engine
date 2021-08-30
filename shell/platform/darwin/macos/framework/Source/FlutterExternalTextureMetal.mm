@@ -42,14 +42,14 @@
   OSType pixel_format = CVPixelBufferGetPixelFormatType(pixelBuffer);
   if (pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
       pixel_format == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
-    return [self populateTextureFromYUVAPixelBuffer:textureOut pixelBuffer:pixelBuffer];
+    return [self populateTextureFromYUVAPixelBuffer:pixelBuffer textureOut:textureOut];
   } else {
-    return [self populateTextureFromRGBAPixelBuffer:textureOut pixelBuffer:pixelBuffer];
+    return [self populateTextureFromRGBAPixelBuffer:pixelBuffer textureOut:textureOut];
   }
 }
 
 - (BOOL)populateTextureFromYUVAPixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer
-                              metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture {
+                                textureOut:(nonnull FlutterMetalExternalTexture*)textureOut {
   CVMetalTextureRef yCVMetalTexture = nullptr;
   CVMetalTextureRef uvCVMetalTextureRef = nullptr;
   SkISize textureSize =
@@ -102,8 +102,8 @@
   return YES;
 }
 
-- (BOOL)populateTextureFromRGBAPixelBuffer: (nonnull CVPixelBufferRef)pixelBuffer
-                              metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture {
+- (BOOL)populateTextureFromRGBAPixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer
+                                textureOut:(nonnull FlutterMetalExternalTexture*)textureOut {
   SkISize textureSize =
       SkISize::Make(CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer));
 
