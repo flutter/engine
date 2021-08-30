@@ -105,6 +105,25 @@ public class TextEditingDelta {
     }
   }
 
+  @VisibleForTesting
+  public TextEditingDelta(
+      CharSequence oldText,
+      CharSequence deltaText,
+      CharSequence deltaType,
+      int deltaStart,
+      int deltaEnd,
+      int selectionStart,
+      int selectionEnd,
+      int composingStart,
+      int composingEnd) {
+    newSelectionStart = selectionStart;
+    newSelectionEnd = selectionEnd;
+    newComposingStart = composingStart;
+    newComposingEnd = composingEnd;
+
+    setDeltas(oldText, deltaText, deltaType, deltaStart, deltaEnd);
+  }
+
   public void setNewComposingStart(int newStart) {
     newComposingStart = newStart;
   }

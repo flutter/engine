@@ -246,10 +246,8 @@ public class TextInputPluginTest {
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     CharSequence newText = "I do not fear computers. I fear the lack of them.";
-    final TextEditingDelta delta =
-        new TextEditingDelta("", newText, 0, 0, newText, 0, newText.length(), -1, -1, -1, -1);
-    final ArrayList<TextEditingDelta> batchDeltas =
-        new Arraylist<TextEditingDelta>(Arrays.asList(delta));
+    final TextEditingDelta expectedDelta =
+        new TextEditingDelta("", newText, "TextEditingDelta.replacement", 0, 0, -1, -1, -1, -1);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
@@ -271,6 +269,7 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
+    assertEquals(0, textInputPlugin.getEditable().getBatchTextEditingDeltas().size());
 
     InputConnectionAdaptor inputConnectionAdaptor =
         (InputConnectionAdaptor)
@@ -279,9 +278,25 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.beginBatchEdit();
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.setComposingText(newText, 1);
+
+    final ArrayList<TextEditingDelta> actualDeltas = textInputPlugin.getEditable().getBatchTextEditingDeltas();
+
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.endBatchEdit();
-    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
+
+    // Verify delta is what we expect.
+    final TextEditingDelta delta = actualDeltas.get(0);
+    assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
+    assertEquals(expectedDelta.getOldText(), delta.getOldText());
+    assertEquals(textAfterChange.getDeltaText(), delta.getDeltaText());
+    assertEquals(oldComposingEnd.getDeltaStart(), delta.getDeltaStart());
+    assertEquals(oldComposingEnd.getDeltaEnd(), delta.getDeltaEnd());
+    assertEquals(newSelectionStart.getNewSelectionStart(), delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd.getNewSelectionEnd(), delta.getNewSelectionEnd());
+    assertEquals(newComposingStart.getNewComposingStart(), delta.getNewComposingStart());
+    assertEquals(newComposingEnd.getNewComposingEnd(), delta.getNewComposingEnd());
+
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
 
     inputConnectionAdaptor.beginBatchEdit();
 
@@ -305,7 +320,7 @@ public class TextInputPluginTest {
 
     inputConnectionAdaptor.endBatchEdit();
 
-    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
   }
 
   @Test
