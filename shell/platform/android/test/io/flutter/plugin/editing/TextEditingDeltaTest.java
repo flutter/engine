@@ -149,7 +149,7 @@ public class TextEditingDeltaTest {
     final CharSequence oldText = "hello";
     final CharSequence textAfterChange = "hllo";
 
-    final int oldComposingStart = 2;
+    final int oldComposingStart = 1;
     final int oldComposingEnd = 2;
 
     final int startOfReplacementText = 0;
