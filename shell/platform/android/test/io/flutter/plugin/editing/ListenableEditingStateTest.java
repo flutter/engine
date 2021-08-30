@@ -273,10 +273,10 @@ public class ListenableEditingStateTest {
             text,
             0,
             text.length(),
-            selectionStart,
-            selectionEnd,
-            composingStart,
-            composingEnd));
+            -1,
+            -1,
+            -1,
+            -1));
 
     assertEquals(2, editingState.getBatchTextEditingDeltas().size());
   }
@@ -300,10 +300,10 @@ public class ListenableEditingStateTest {
             text,
             0,
             text.length(),
-            selectionStart,
-            selectionEnd,
-            composingStart,
-            composingEnd));
+            -1,
+            -1,
+            -1,
+            -1));
 
     assertEquals(2, editingState.getBatchTextEditingDeltas().size());
     editingState.popTextEditingDeltaFromList();
