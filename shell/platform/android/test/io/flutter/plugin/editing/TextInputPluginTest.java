@@ -230,6 +230,86 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void textEditingDelta_TestDeltaIsCreatedWhenComposingTextSet() throws NullPointerException {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(RuntimeEnvironment.application);
+    EditorInfo outAttrs = new EditorInfo();
+    outAttrs.inputType = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    CharSequence newText = "I do not fear computers. I fear the lack of them.";
+    final TextEditingDelta delta =
+        new TextEditingDelta("", newText, 0, 0, newText, 0, newText.length(), -1, -1, -1, -1);
+
+    // Change InputTarget to FRAMEWORK_CLIENT.
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            true, // Enable delta model.
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            null,
+            null,
+            null,
+            null));
+
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
+
+    InputConnectionAdaptor inputConnectionAdaptor =
+        (InputConnectionAdaptor)
+            textInputPlugin.createInputConnection(testView, mock(KeyboardManager.class), outAttrs);
+
+    inputConnectionAdaptor.beginBatchEdit();
+    verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
+    inputConnectionAdaptor.setComposingText(newText, 1);
+    verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
+    inputConnectionAdaptor.endBatchEdit();
+    verify(textInputChannel, times(1))
+        .updateEditingStateWithDeltas(anyInt(), aryEq(new TextEditingDelta[] {delta}));
+
+    inputConnectionAdaptor.beginBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingStateWithDeltas(anyInt(), any());
+
+    inputConnectionAdaptor.endBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingStateWithDeltas(anyInt(), any());
+
+    inputConnectionAdaptor.beginBatchEdit();
+
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
+
+    inputConnectionAdaptor.setSelection(3, 4);
+    assertEquals(Selection.getSelectionStart(textInputPlugin.getEditable()), 3);
+    assertEquals(Selection.getSelectionEnd(textInputPlugin.getEditable()), 4);
+
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
+
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
+
+    inputConnectionAdaptor.endBatchEdit();
+
+    verify(textInputChannel, times(1))
+        .updateEditingStateWithDeltas(
+            anyInt(), aryEq(new TextEditingDelta[] {delta}));
+  }
+
+  @Test
   public void inputConnectionAdaptor_RepeatFilter() throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
