@@ -268,7 +268,8 @@ public class TextInputPluginTest {
     textInputPlugin.setTextInputEditingState(
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
-    assertEquals(0, textInputPlugin.getEditable().getBatchTextEditingDeltas().size());
+    assertEquals(
+        0, ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas().size());
 
     InputConnectionAdaptor inputConnectionAdaptor =
         (InputConnectionAdaptor)
@@ -279,7 +280,7 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.setComposingText(newText, 1);
 
     final ArrayList<TextEditingDelta> actualDeltas =
-        textInputPlugin.getEditable().getBatchTextEditingDeltas();
+        ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
 
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.endBatchEdit();
@@ -288,13 +289,13 @@ public class TextInputPluginTest {
     final TextEditingDelta delta = actualDeltas.get(0);
     assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
-    assertEquals(textAfterChange.getDeltaText(), delta.getDeltaText());
-    assertEquals(oldComposingEnd.getDeltaStart(), delta.getDeltaStart());
-    assertEquals(oldComposingEnd.getDeltaEnd(), delta.getDeltaEnd());
-    assertEquals(newSelectionStart.getNewSelectionStart(), delta.getNewSelectionStart());
-    assertEquals(newSelectionEnd.getNewSelectionEnd(), delta.getNewSelectionEnd());
-    assertEquals(newComposingStart.getNewComposingStart(), delta.getNewComposingStart());
-    assertEquals(newComposingEnd.getNewComposingEnd(), delta.getNewComposingEnd());
+    assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
+    assertEquals(expectedDelta.getDeltaStart(), delta.getDeltaStart());
+    assertEquals(expectedDelta.getDeltaEnd(), delta.getDeltaEnd());
+    assertEquals(expectedDelta.getNewSelectionStart(), delta.getNewSelectionStart());
+    assertEquals(expectedDelta.getNewSelectionEnd(), delta.getNewSelectionEnd());
+    assertEquals(expectedDelta.getNewComposingStart(), delta.getNewComposingStart());
+    assertEquals(expectedDelta.getNewComposingEnd(), delta.getNewComposingEnd());
 
     verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
 
