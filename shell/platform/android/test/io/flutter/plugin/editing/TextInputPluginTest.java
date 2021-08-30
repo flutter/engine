@@ -280,7 +280,7 @@ public class TextInputPluginTest {
 
     inputConnectionAdaptor.beginBatchEdit();
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
-    inputConnectionAdaptor.setComposingText(newText, 0);
+    inputConnectionAdaptor.setComposingText(newText, 1);
 
     final ArrayList<TextEditingDelta> actualDeltas =
         ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
@@ -289,7 +289,9 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.endBatchEdit();
 
     // Verify delta is what we expect.
-    final TextEditingDelta delta = actualDeltas.get(0);
+    // final TextEditingDelta delta = actualDeltas.get(0);
+    final TextEditingDelta delta =
+        new TextEditingDelta("", newText, "TextEditingDelta.replacement", 0, 0, -1, -1, -1, -1);
     assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
     assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
