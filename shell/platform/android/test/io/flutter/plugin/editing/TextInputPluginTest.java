@@ -269,7 +269,10 @@ public class TextInputPluginTest {
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     assertEquals(
-        0, ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas().size());
+        0,
+        ((ListenableEditingState) textInputPlugin.getEditable())
+            .getBatchTextEditingDeltas()
+            .size());
 
     InputConnectionAdaptor inputConnectionAdaptor =
         (InputConnectionAdaptor)
