@@ -281,8 +281,7 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.setComposingText(newText, 1);
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.endBatchEdit();
-    verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
 
     inputConnectionAdaptor.beginBatchEdit();
 
@@ -306,8 +305,7 @@ public class TextInputPluginTest {
 
     inputConnectionAdaptor.endBatchEdit();
 
-    verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
   }
 
   @Test
