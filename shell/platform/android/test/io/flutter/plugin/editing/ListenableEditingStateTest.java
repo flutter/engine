@@ -265,18 +265,7 @@ public class ListenableEditingStateTest {
     CharSequence text = "This will be an equality delta.";
 
     editingState.addTextEditingDeltaToList(
-        new TextEditingDelta(
-            text,
-            text,
-            0,
-            text.length(),
-            text,
-            0,
-            text.length(),
-            -1,
-            -1,
-            -1,
-            -1));
+        new TextEditingDelta(text, text, 0, text.length(), text, 0, text.length(), -1, -1, -1, -1));
 
     assertEquals(2, editingState.getBatchTextEditingDeltas().size());
   }
@@ -292,18 +281,7 @@ public class ListenableEditingStateTest {
     CharSequence text = "This will be an equality delta.";
 
     editingState.addTextEditingDeltaToList(
-        new TextEditingDelta(
-            text,
-            text,
-            0,
-            text.length(),
-            text,
-            0,
-            text.length(),
-            -1,
-            -1,
-            -1,
-            -1));
+        new TextEditingDelta(text, text, 0, text.length(), text, 0, text.length(), -1, -1, -1, -1));
 
     assertEquals(2, editingState.getBatchTextEditingDeltas().size());
     editingState.popTextEditingDeltaFromList();
