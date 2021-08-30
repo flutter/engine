@@ -1,20 +1,13 @@
 package io.flutter.plugin.editing;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
-import android.view.View;
 import dalvik.annotation.TestTarget;
-import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
@@ -110,7 +103,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testDeletionTextEditingDeltaAtEndOfComposing(){
+  public void testDeletionTextEditingDeltaAtEndOfComposing() {
     // Here we are simulating deleting an "o" at the end of "hello".
     final CharSequence oldText = "hello";
     final CharSequence textAfterChange = "hell";
@@ -152,7 +145,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testDeletionTextEditingDeltaInsideComposing(){
+  public void testDeletionTextEditingDeltaInsideComposing() {
     // Here we are simulating deleting an "e" in the world "hello".
     final CharSequence oldText = "hello";
     final CharSequence textAfterChange = "hllo";
@@ -194,7 +187,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testDeletionTextEditingDeltaForSelection(){
+  public void testDeletionTextEditingDeltaForSelection() {
     // Here we are simulating deleting "llo" in the word "hello".
     final CharSequence oldText = "hello";
     final CharSequence textAfterChange = "he";
@@ -236,7 +229,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testEqualityTextEditingDelta(){
+  public void testEqualityTextEditingDelta() {
     // Here we are simulating a change of the selection without a change to the text value.
     final CharSequence oldText = "hello";
     final CharSequence textAfterChange = "hello";
@@ -278,7 +271,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testReplacementSameTextEditingDelta(){
+  public void testReplacementSameTextEditingDelta() {
     // Here we are simulating a replacement of a range of text that could for example happen
     // when the word "worfd" is autocorrected to the word "world".
     final CharSequence oldText = "worfd";
@@ -321,7 +314,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testReplacementShorterTextEditingDelta(){
+  public void testReplacementShorterTextEditingDelta() {
     // Here we are simulating a replacement of a range of text that could for example happen
     // when the word "world" is replaced with a single character "h".
     final CharSequence oldText = "world";
@@ -364,7 +357,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testReplacementLongerTextEditingDelta(){
+  public void testReplacementLongerTextEditingDelta() {
     // Here we are simulating a replacement of a range of text that could for example happen
     // when the word "wolkin" is autocorrected to "walking".
     final CharSequence oldText = "wolkin";

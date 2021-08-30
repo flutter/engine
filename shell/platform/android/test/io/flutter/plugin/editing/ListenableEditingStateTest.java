@@ -10,7 +10,6 @@ import android.text.Selection;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
-import dalvik.annotation.TestTarget;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import java.util.ArrayList;
@@ -234,7 +233,7 @@ public class ListenableEditingStateTest {
     final ListenableEditingState editingState =
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
     editingState.replace(0, editingState.length(), "text");
-    editingState.delete(0,1);
+    editingState.delete(0, 1);
     editingState.insert(0, "This is t");
     assertEquals(3, editingState.getBatchTextEditingDeltas().size());
     editingState.clearBatchDeltas();
@@ -248,7 +247,7 @@ public class ListenableEditingStateTest {
 
     // Creating some deltas.
     editingState.replace(0, editingState.length(), "test");
-    editingState.delete(0,1);
+    editingState.delete(0, 1);
     editingState.insert(0, "This is a t");
 
     ArrayList<TextEditingDeltas> batchDeltas = editingState.getBatchTextEditingDeltas();
@@ -256,7 +255,7 @@ public class ListenableEditingStateTest {
   }
 
   @Test
-  public void testAddTextEditingDeltaToList(){
+  public void testAddTextEditingDeltaToList() {
     final ListenableEditingState editingState =
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
 
@@ -283,7 +282,7 @@ public class ListenableEditingStateTest {
   }
 
   @Test
-  public void testPopTextEditingDeltaFromList(){
+  public void testPopTextEditingDeltaFromList() {
     final ListenableEditingState editingState =
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
 

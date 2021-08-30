@@ -69,8 +69,7 @@ public class TextEditingDelta {
 
     if (isEqual) {
       Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.equality has been created.");
-      setDeltas(
-          oldEditable, "", "TextEditingDeltaType.equality", -1, -1);
+      setDeltas(oldEditable, "", "TextEditingDeltaType.equality", -1, -1);
     } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
       Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.deletion has been created.");
       final int startOfDelete;
@@ -90,11 +89,19 @@ public class TextEditingDelta {
         && !isOriginalComposingRegionTextChanged) {
       Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.insertion has been created.");
       setDeltas(
-          oldEditable, tb.subSequence(end - start, tbend).toString(), "TextEditingDeltaType.insertion", end, end);
+          oldEditable,
+          tb.subSequence(end - start, tbend).toString(),
+          "TextEditingDeltaType.insertion",
+          end,
+          end);
     } else if (isReplaced) {
       Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.replacement has been created.");
       setDeltas(
-          oldEditable, tb.subSequence(tbstart, tbend).toString(), "TextEditingDeltaType.replacement", start, end);
+          oldEditable,
+          tb.subSequence(tbstart, tbend).toString(),
+          "TextEditingDeltaType.replacement",
+          start,
+          end);
     }
   }
 
