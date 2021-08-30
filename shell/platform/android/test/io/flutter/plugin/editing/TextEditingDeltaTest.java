@@ -53,10 +53,10 @@ public class TextEditingDeltaTest {
     assertEquals("o", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -95,10 +95,10 @@ public class TextEditingDeltaTest {
     assertEquals("l", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -137,10 +137,10 @@ public class TextEditingDeltaTest {
     assertEquals("o", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -179,10 +179,10 @@ public class TextEditingDeltaTest {
     assertEquals("e", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -221,10 +221,10 @@ public class TextEditingDeltaTest {
     assertEquals("llo", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -263,10 +263,10 @@ public class TextEditingDeltaTest {
     assertEquals("", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -306,10 +306,10 @@ public class TextEditingDeltaTest {
     assertEquals("world", delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -349,10 +349,10 @@ public class TextEditingDeltaTest {
     assertEquals(textAfterChange, delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
@@ -392,10 +392,10 @@ public class TextEditingDeltaTest {
     assertEquals(textAfterChange, delta.getDeltaText());
     assertEquals(oldComposingEnd, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
-    assertEquals(newSelectionStart, delta.getSelectionStart());
-    assertEquals(newSelectionEnd, delta.getSelectionEnd());
-    assertEquals(newComposingStart, delta.getComposingStart());
-    assertEquals(newComposingEnd, delta.getComposingEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
 
   @Test
