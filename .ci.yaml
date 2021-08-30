@@ -14,9 +14,23 @@ enabled_branches:
 platform_properties:
   linux:
     properties:
+      build_host: "false"
+      build_fuchsia: "false"
+      build_android_debug: "false"
+      build_android_aot: "false"
+      build_android_vulkan: "false"
+      build_ios: "false"
+      build_windows_uwp: "false"
+      build_android_jit_release: "false"
+      gcs_goldens_bucket: ""
+      ios_debug: "false"
+      ios_profile: "false"
+      ios_release: "false"
+      no_bitcode: "false"
       caches: >-
         [
           {"name":"builder_linux_engine","path":"builder"},
+          {"name":"gradle","path":"gradle"},
           {"name":"openjdk","path":"java"}
         ]
       # CIPD flutter_internal/java/openjdk/$platform
@@ -24,9 +38,23 @@ platform_properties:
         [
           {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
         ]
+      device_type: none
       os: Linux
   mac:
     properties:
+      build_host: "false"
+      build_fuchsia: "false"
+      build_android_debug: "false"
+      build_android_aot: "false"
+      build_android_vulkan: "false"
+      build_ios: "false"
+      build_windows_uwp: "false"
+      build_android_jit_release: "false"
+      gcs_goldens_bucket: ""
+      ios_debug: "false"
+      ios_profile: "false"
+      ios_release: "false"
+      no_bitcode: "false"
       caches: >-
         [
           {"name":"flutter_cocoapods","path":"cocoapods"},
@@ -39,10 +67,25 @@ platform_properties:
         [
           {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
         ]
+      device_type: none
+      mac_model: "Macmini8,1"
       os: Mac-10.15
       xcode: 12a7209 # xcode 12
   windows:
     properties:
+      build_host: "false"
+      build_fuchsia: "false"
+      build_android_debug: "false"
+      build_android_aot: "false"
+      build_android_vulkan: "false"
+      build_ios: "false"
+      build_windows_uwp: "false"
+      build_android_jit_release: "false"
+      gcs_goldens_bucket: ""
+      ios_debug: "false"
+      ios_profile: "false"
+      ios_release: "false"
+      no_bitcode: "false"
       caches: >-
         [
           {"name":"builder_win_engine","path":"builder"},
@@ -53,6 +96,7 @@ platform_properties:
         [
           {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
         ]
+      device_type: none
       os: Windows-10
 
 targets:
@@ -185,15 +229,6 @@ targets:
     timeout: 60
     scheduler: luci
 
-  - name: Mac Android Debug Engine
-    recipe: engine
-    properties:
-      android_sdk_license: \n24333f8a63b6825ea9c5514f83c2829b004d1fee
-      android_sdk_preview_license: \n84831b9409646a918e30573bab4c9c91346d8abd
-      build_android_debug: "true"
-    timeout: 60
-    scheduler: luci
-
   - name: Mac Host Engine
     recipe: engine
     properties:
@@ -297,6 +332,5 @@ targets:
 
   - name: Linux ci_yaml engine roller
     bringup: true
-    presubmit: false
     recipe: infra/ci_yaml
     scheduler: luci

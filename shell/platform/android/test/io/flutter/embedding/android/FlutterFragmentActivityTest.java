@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.test.core.app.ActivityScenario;
 import io.flutter.FlutterInjector;
 import io.flutter.TestUtils;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
@@ -92,26 +93,30 @@ public class FlutterFragmentActivityTest {
 
   @Test
   public void itRegistersPluginsAtConfigurationTime() {
-    FlutterFragmentActivity activity =
-        Robolectric.buildActivity(FlutterFragmentActivity.class).get();
-    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
-
-    // Calling onCreate on the FlutterFragmentActivity will create a FlutterFragment and
-    // commit it to the fragment manager. This attaches the fragment to the FlutterFragmentActivity
-    // creating and configuring the engine.
-    activity.onCreate(null);
-
-    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
-    assertEquals(1, registeredEngines.size());
-    assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
+    try (ActivityScenario<FlutterFragmentActivity> scenario =
+        ActivityScenario.launch(FlutterFragmentActivity.class)) {
+      scenario.onActivity(
+          activity -> {
+            List<FlutterEngine> registeredEngines =
+                GeneratedPluginRegistrant.getRegisteredEngines();
+            assertEquals(1, registeredEngines.size());
+            assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
+          });
+    }
   }
 
   @Test
   public void itDoesNotRegisterPluginsTwiceWhenUsingACachedEngine() {
-    FlutterFragmentActivity activity =
-        Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
-    activity.onCreate(null);
-    activity.configureFlutterEngine(activity.getFlutterEngine());
+    try (ActivityScenario<FlutterFragmentActivity> scenario =
+        ActivityScenario.launch(FlutterFragmentActivity.class)) {
+      scenario.onActivity(
+          activity -> {
+            List<FlutterEngine> registeredEngines =
+                GeneratedPluginRegistrant.getRegisteredEngines();
+            assertEquals(1, registeredEngines.size());
+            assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
+          });
+    }
 
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
@@ -180,14 +185,14 @@ public class FlutterFragmentActivityTest {
 
   @Test
   public void itCreatesAValidFlutterFragment() {
-    FlutterFragmentActivityWithProvidedEngine activity =
-        Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
-
-    // Creating the FlutterFragmentActivity will create and attach the FlutterFragment, causing
-    // a FlutterEngine to be created.
-    activity.onCreate(null);
-    assertNotNull(activity.getFlutterEngine());
-    assertEquals(1, activity.numberOfEnginesCreated);
+    try (ActivityScenario<FlutterFragmentActivityWithProvidedEngine> scenario =
+        ActivityScenario.launch(FlutterFragmentActivityWithProvidedEngine.class)) {
+      scenario.onActivity(
+          activity -> {
+            assertNotNull(activity.getFlutterEngine());
+            assertEquals(1, activity.numberOfEnginesCreated);
+          });
+    }
   }
 
   @Test

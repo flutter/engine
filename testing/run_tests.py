@@ -12,7 +12,6 @@ import argparse
 import glob
 import os
 import re
-import shutil
 import subprocess
 import sys
 import time
@@ -136,6 +135,10 @@ def RunEngineExecutable(build_dir, executable_name, filter, flags=[],
   else:
     test_command = [ executable ] + flags
 
+  if not env:
+    env = os.environ.copy()
+  env['FLUTTER_BUILD_DIRECTORY'] = build_dir
+
   try:
     RunCmd(test_command, cwd=cwd, forbidden_output=forbidden_output, expect_failure=expect_failure, env=env)
   except:
@@ -163,12 +166,9 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     import resource
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
-  # Not all of the engine unit tests are designed to be run more than once.
-  non_repeatable_shuffle_flags = [
-    "--gtest_shuffle",
-  ]
-  shuffle_flags = non_repeatable_shuffle_flags + [
+  shuffle_flags = [
     "--gtest_repeat=2",
+    "--gtest_shuffle",
   ]
 
   RunEngineExecutable(build_dir, 'client_wrapper_glfw_unittests', filter, shuffle_flags, coverage=coverage)
@@ -184,7 +184,7 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags, coverage=coverage)
     RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags, coverage=coverage)
   else:
-    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags, coverage=coverage)
 
     RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags, coverage=coverage)
 
@@ -222,7 +222,7 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
   # These unit-tests are Objective-C and can only run on Darwin.
   if IsMac():
     RunEngineExecutable(build_dir, 'flutter_channels_unittests', filter, shuffle_flags, coverage=coverage)
-    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'flutter_desktop_darwin_unittests', filter, shuffle_flags, coverage=coverage)
 
   # https://github.com/flutter/flutter/issues/36296
   if IsLinux():
@@ -230,8 +230,8 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
     RunEngineExecutable(build_dir, 'txt_unittests', filter, icu_flags + shuffle_flags, coverage=coverage)
 
   if IsLinux():
-    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
-    RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, non_repeatable_shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'flutter_linux_unittests', filter, shuffle_flags, coverage=coverage)
+    RunEngineExecutable(build_dir, 'flutter_glfw_unittests', filter, shuffle_flags, coverage=coverage)
 
 
 def RunEngineBenchmarks(build_dir, filter):
@@ -294,17 +294,6 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
   assert os.path.exists(variant_out_dir), final_message
 
 
-def EnsureJavaTestsAreBuilt(android_out_dir):
-  """Builds the engine variant and the test jar containing the JUnit tests"""
-  tmp_out_dir = os.path.join(out_dir, android_out_dir)
-  message = []
-  message.append('gn --android --unoptimized --runtime-mode=debug --no-lto')
-  message.append('ninja -C %s flutter/shell/platform/android:robolectric_tests' % android_out_dir)
-  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
-      android_out_dir, '\n'.join(message))
-  assert os.path.exists(tmp_out_dir), final_message
-
-
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
   tmp_out_dir = os.path.join(out_dir, ios_out_dir)
@@ -316,16 +305,6 @@ def EnsureIosTestsAreBuilt(ios_out_dir):
   assert os.path.exists(tmp_out_dir), final_message
 
 
-def AssertExpectedJavaVersion():
-  """Checks that the user has Java 8 which is the supported Java version for Android"""
-  EXPECTED_VERSION = '1.8'
-  # `java -version` is output to stderr. https://bugs.java.com/bugdatabase/view_bug.do?bug_id=4380614
-  version_output = subprocess.check_output(['java', '-version'], stderr=subprocess.STDOUT)
-  match = bool(re.compile('version "%s' % EXPECTED_VERSION).search(version_output))
-  message = "JUnit tests need to be run with Java %s. Check the `java -version` on your PATH." % EXPECTED_VERSION
-  assert match, message
-
-
 def AssertExpectedXcodeVersion():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
@@ -334,32 +313,42 @@ def AssertExpectedXcodeVersion():
   assert match, message
 
 
+def JavaHome():
+  script_path = os.path.dirname(os.path.realpath(__file__))
+  if IsMac():
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home')
+  else:
+    return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk')
+
+
+def JavaBin():
+  return os.path.join(JavaHome(), 'bin', 'java.exe' if IsWindows() else 'java')
+
+
 def RunJavaTests(filter, android_variant='android_debug_unopt'):
   """Runs the Java JUnit unit tests for the Android embedding"""
-  AssertExpectedJavaVersion()
-  android_out_dir = os.path.join(out_dir, android_variant)
-  EnsureJavaTestsAreBuilt(android_out_dir)
-
-  embedding_deps_dir = os.path.join(buildroot_dir, 'third_party', 'android_embedding_dependencies', 'lib')
-  classpath = list(map(str, [
-    os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk', 'platforms', 'android-30', 'android.jar'),
-    os.path.join(embedding_deps_dir, '*'), # Wildcard for all jars in the directory
-    os.path.join(android_out_dir, 'flutter.jar'),
-    os.path.join(android_out_dir, 'robolectric_tests.jar')
-  ]))
+  test_runner_dir = os.path.join(buildroot_dir, 'flutter', 'shell', 'platform', 'android', 'test_runner')
+  gradle_bin = os.path.join(buildroot_dir, 'gradle', 'bin', 'gradle.bat' if IsWindows() else 'gradle')
+  flutter_jar = os.path.join(out_dir, android_variant, 'flutter.jar')
+  android_home = os.path.join(buildroot_dir, 'third_party', 'android_tools', 'sdk')
+  build_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', 'build')
+  gradle_cache_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', '.gradle')
 
   test_class = filter if filter else 'io.flutter.FlutterTestSuite'
   command = [
-    'java',
-    '-Drobolectric.offline=true',
-    '-Drobolectric.dependency.dir=' + embedding_deps_dir,
-    '-classpath', ':'.join(classpath),
-    '-Drobolectric.logging=stdout',
-    'org.junit.runner.JUnitCore',
-    test_class
+    gradle_bin,
+    '-Pflutter_jar=%s' % flutter_jar,
+    '-Pbuild_dir=%s' % build_dir,
+    'testDebugUnitTest',
+    '--tests=%s' % test_class,
+    '--rerun-tasks',
+    '--no-daemon',
+    '--project-cache-dir=%s' % gradle_cache_dir,
+    '--gradle-user-home=%s' % gradle_cache_dir,
   ]
 
-  RunCmd(command)
+  env = dict(os.environ, ANDROID_HOME=android_home, JAVA_HOME=JavaHome())
+  RunCmd(command, cwd=test_runner_dir, env=env)
 
 
 def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
@@ -547,6 +536,8 @@ def main():
       help='Generate coverage reports for each unit test framework run.')
   parser.add_argument('--engine-capture-core-dump', dest='engine_capture_core_dump', action='store_true',
       default=False, help='Capture core dumps from crashes of engine tests.')
+  parser.add_argument('--use-sanitizer-suppressions', dest='sanitizer_suppressions', action='store_true',
+      default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
 
   args = parser.parse_args()
 
@@ -558,6 +549,19 @@ def main():
   build_dir = os.path.join(out_dir, args.variant)
   if args.type != 'java':
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
+
+  if args.sanitizer_suppressions:
+    assert IsLinux() or IsMac(), "The sanitizer suppressions flag is only supported on Linux and Mac."
+    file_dir = os.path.dirname(os.path.abspath(__file__))
+    command = [
+      "env", "-i", "bash",
+      "-c", "source {}/sanitizer_suppressions.sh >/dev/null && env".format(file_dir)
+    ]
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    for line in process.stdout:
+      key, _, value = line.decode('ascii').strip().partition("=")
+      os.environ[key] = value
+    process.communicate() # Avoid pipe deadlock while waiting for termination.
 
   engine_filter = args.engine_filter.split(',') if args.engine_filter else None
   if 'engine' in types:

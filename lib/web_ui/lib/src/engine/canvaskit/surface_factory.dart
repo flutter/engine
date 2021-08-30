@@ -12,11 +12,11 @@ import 'surface.dart';
 class SurfaceFactory {
   /// The cache singleton.
   static final SurfaceFactory instance =
-      SurfaceFactory(HtmlViewEmbedder.maximumOverlaySurfaces);
+      SurfaceFactory(HtmlViewEmbedder.maximumSurfaces);
 
   SurfaceFactory(this.maximumSurfaces)
-      : assert(maximumSurfaces >= 2,
-            'The maximum number of surfaces must be at least 2');
+      : assert(maximumSurfaces >= 1,
+            'The maximum number of surfaces must be at least 1');
 
   /// The base surface to paint on. This is the default surface which will be
   /// painted to. If there are no platform views, then this surface will receive
@@ -79,6 +79,31 @@ class SurfaceFactory {
       }
       return backupSurface;
     }
+  }
+
+  /// Releases all surfaces so they can be reused in the next frame.
+  ///
+  /// If a released surface is in the DOM, it is not removed. This allows the
+  /// engine to release the surfaces at the end of the frame so they are ready
+  /// to be used in the next frame, but still used for painting in the current
+  /// frame.
+  void releaseSurfaces() {
+    _cache.addAll(_liveSurfaces);
+    _liveSurfaces.clear();
+  }
+
+  /// Removes all surfaces except the base surface from the DOM.
+  ///
+  /// This is called at the beginning of the frame to prepare for painting into
+  /// the new surfaces.
+  void removeSurfacesFromDom() {
+    _cache.forEach(_removeFromDom);
+    _removeFromDom(backupSurface);
+  }
+
+  // Removes [surface] from the DOM.
+  void _removeFromDom(Surface surface) {
+    surface.htmlElement.remove();
   }
 
   /// Signals that a surface is no longer being used. It can be reused.

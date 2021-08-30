@@ -85,6 +85,25 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   private static final float SCROLL_EXTENT_FOR_INFINITY = 100000.0f;
   private static final float SCROLL_POSITION_CAP_FOR_INFINITY = 70000.0f;
   private static final int ROOT_NODE_ID = 0;
+  private static final int SCROLLABLE_ACTIONS =
+      Action.SCROLL_RIGHT.value
+          | Action.SCROLL_LEFT.value
+          | Action.SCROLL_UP.value
+          | Action.SCROLL_DOWN.value;
+  // Flags that make a node accessibilty focusable.
+  private static final int FOCUSABLE_FLAGS =
+      Flag.HAS_CHECKED_STATE.value
+          | Flag.IS_CHECKED.value
+          | Flag.IS_SELECTED.value
+          | Flag.IS_TEXT_FIELD.value
+          | Flag.IS_FOCUSED.value
+          | Flag.HAS_ENABLED_STATE.value
+          | Flag.IS_ENABLED.value
+          | Flag.IS_IN_MUTUALLY_EXCLUSIVE_GROUP.value
+          | Flag.HAS_TOGGLED_STATE.value
+          | Flag.IS_TOGGLED.value
+          | Flag.IS_FOCUSABLE.value
+          | Flag.IS_SLIDER.value;
 
   // The minimal ID for an engine generated AccessibilityNodeInfo.
   //
@@ -266,6 +285,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         /** The user has opened a tooltip. */
         @Override
         public void onTooltip(@NonNull String message) {
+          // Native Android tooltip is no longer announced when it pops up after API 28 and is
+          // handled by
+          // AccessibilityNodeInfo.setTooltipText instead.
+          //
+          // To reproduce native behavior, see
+          // https://developer.android.com/guide/topics/ui/tooltips.
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return;
+          }
           AccessibilityEvent e =
               obtainAccessibilityEvent(ROOT_NODE_ID, AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
           e.getText().add(message);
@@ -820,12 +848,28 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
     }
 
+    // Scopes routes are not focusable, only need to set the content
+    // for non-scopes-routes semantics nodes.
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
       result.setText(semanticsNode.getValueLabelHint());
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       CharSequence content = semanticsNode.getValueLabelHint();
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        if (semanticsNode.tooltip != null) {
+          // For backward compatibility with Flutter SDK before Android API
+          // level 28, the tooltip is appended at the end of content description.
+          content = content != null ? content : "";
+          content = content + "\n" + semanticsNode.tooltip;
+        }
+      }
       if (content != null) {
         result.setContentDescription(content);
+      }
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      if (semanticsNode.tooltip != null) {
+        result.setTooltipText(semanticsNode.tooltip);
       }
     }
 
@@ -1020,27 +1064,38 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
       case AccessibilityNodeInfo.ACTION_CLEAR_ACCESSIBILITY_FOCUS:
         {
+          // Focused semantics node must be reset before sending the
+          // TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED event. Otherwise,
+          // TalkBack may think the node is still focused.
+          if (accessibilityFocusedSemanticsNode != null
+              && accessibilityFocusedSemanticsNode.id == virtualViewId) {
+            accessibilityFocusedSemanticsNode = null;
+          }
+          if (embeddedAccessibilityFocusedNodeId != null
+              && embeddedAccessibilityFocusedNodeId == virtualViewId) {
+            embeddedAccessibilityFocusedNodeId = null;
+          }
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_LOSE_ACCESSIBILITY_FOCUS);
           sendAccessibilityEvent(
               virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUS_CLEARED);
-          accessibilityFocusedSemanticsNode = null;
-          embeddedAccessibilityFocusedNodeId = null;
           return true;
         }
       case AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS:
         {
-          accessibilityChannel.dispatchSemanticsAction(
-              virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
-          sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
-
           if (accessibilityFocusedSemanticsNode == null) {
             // When Android focuses a node, it doesn't invalidate the view.
             // (It does when it sends ACTION_CLEAR_ACCESSIBILITY_FOCUS, so
             // we only have to worry about this when the focused node is null.)
             rootAccessibilityView.invalidate();
           }
+          // Focused semantics node must be set before sending the TYPE_VIEW_ACCESSIBILITY_FOCUSED
+          // event. Otherwise, TalkBack may think the node is not focused yet.
           accessibilityFocusedSemanticsNode = semanticsNode;
+
+          accessibilityChannel.dispatchSemanticsAction(
+              virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
+          sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
           if (semanticsNode.hasAction(Action.INCREASE)
               || semanticsNode.hasAction(Action.DECREASE)) {
@@ -2177,6 +2232,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     private String hint;
     private List<StringAttribute> hintAttributes;
 
+    // The textual description of the backing widget's tooltip.
+    //
+    // The tooltip is attached through AccessibilityNodInfo.setTooltipText if
+    // API level >= 28; otherwise, this is attached to the end of content description.
+    @Nullable private String tooltip;
+
     // The id of the sibling node that is before this node in traversal
     // order.
     //
@@ -2379,6 +2440,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
       hintAttributes = getStringAttributesFromBuffer(buffer, stringAttributeArgs);
 
+      stringIndex = buffer.getInt();
+      tooltip = stringIndex == -1 ? null : strings[stringIndex];
+
       textDirection = TextDirection.fromInt(buffer.getInt());
 
       left = buffer.getFloat();
@@ -2533,13 +2597,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // If not explicitly set as focusable, then use our legacy
       // algorithm. Once all focusable widgets have a Focus widget, then
       // this won't be needed.
-      int scrollableActions =
-          Action.SCROLL_RIGHT.value
-              | Action.SCROLL_LEFT.value
-              | Action.SCROLL_UP.value
-              | Action.SCROLL_DOWN.value;
-      return (actions & ~scrollableActions) != 0
-          || flags != 0
+      return (actions & ~SCROLLABLE_ACTIONS) != 0
+          || (flags & FOCUSABLE_FLAGS) != 0
           || (label != null && !label.isEmpty())
           || (value != null && !value.isEmpty())
           || (hint != null && !hint.isEmpty());
@@ -2692,7 +2751,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           switch (attribute.type) {
             case SPELLOUT:
               {
-                final TtsSpan ttsSpan = new TtsSpan.Builder(TtsSpan.TYPE_VERBATIM).build();
+                final TtsSpan ttsSpan = new TtsSpan.Builder<>(TtsSpan.TYPE_VERBATIM).build();
                 spannableString.setSpan(ttsSpan, attribute.start, attribute.end, 0);
                 break;
               }

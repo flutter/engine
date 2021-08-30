@@ -27,10 +27,17 @@ class HtmlViewEmbedder {
   HtmlViewEmbedder._();
 
   /// The maximum number of overlay surfaces that can be live at once.
-  static const int maximumOverlaySurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_OVERLAYS',
+  static const int maximumSurfaces = int.fromEnvironment(
+    'FLUTTER_WEB_MAXIMUM_SURFACES',
     defaultValue: 8,
   );
+
+  /// If `true`, overlay canvases are disabled.
+  ///
+  /// This causes all drawing to go to a single canvas, with all of the platform
+  /// views rendered over top. This may result in incorrect rendering with
+  /// platform views.
+  static const bool disableOverlays = maximumSurfaces <= 1;
 
   /// The picture recorder shared by all platform views which paint to the
   /// backup surface.
@@ -86,6 +93,9 @@ class HtmlViewEmbedder {
   }
 
   List<CkCanvas> getCurrentCanvases() {
+    if (disableOverlays) {
+      return const <CkCanvas>[];
+    }
     final Set<CkCanvas> canvases = <CkCanvas>{};
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
@@ -95,21 +105,23 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    _ensureOverlayInitialized(viewId);
-    if (_viewsUsingBackupSurface.contains(viewId)) {
-      if (_backupPictureRecorder == null) {
-        // Only initialize the picture recorder for the backup surface once.
+    if (!disableOverlays) {
+      _ensureOverlayInitialized(viewId);
+      if (_viewsUsingBackupSurface.contains(viewId)) {
+        if (_backupPictureRecorder == null) {
+          // Only initialize the picture recorder for the backup surface once.
+          final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+          pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
+          pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
+          _backupPictureRecorder = pictureRecorder;
+        }
+        _pictureRecorders[viewId] = _backupPictureRecorder!;
+      } else {
         final CkPictureRecorder pictureRecorder = CkPictureRecorder();
         pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
         pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
-        _backupPictureRecorder = pictureRecorder;
+        _pictureRecorders[viewId] = pictureRecorder;
       }
-      _pictureRecorders[viewId] = _backupPictureRecorder!;
-    } else {
-      final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-      pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
-      _pictureRecorders[viewId] = pictureRecorder;
     }
     _compositionOrder.add(viewId);
 
@@ -121,14 +133,26 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.add(viewId);
   }
 
+  /// Prepares to composite [viewId].
+  ///
+  /// If this returns a [CkCanvas], then that canvas should be the new leaf
+  /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
     // Do nothing if this view doesn't need to be composited.
     if (!_viewsToRecomposite.contains(viewId)) {
-      return _pictureRecorders[viewId]!.recordingCanvas;
+      if (!disableOverlays) {
+        return _pictureRecorders[viewId]!.recordingCanvas;
+      } else {
+        return null;
+      }
     }
     _compositeWithParams(viewId, _currentCompositionParams[viewId]!);
     _viewsToRecomposite.remove(viewId);
-    return _pictureRecorders[viewId]!.recordingCanvas;
+    if (!disableOverlays) {
+      return _pictureRecorders[viewId]!.recordingCanvas;
+    } else {
+      return null;
+    }
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
@@ -351,34 +375,37 @@ class HtmlViewEmbedder {
 
   void submitFrame() {
     bool _didPaintBackupSurface = false;
-    for (int i = 0; i < _compositionOrder.length; i++) {
-      final int viewId = _compositionOrder[i];
-      if (_viewsUsingBackupSurface.contains(viewId)) {
-        // Only draw the picture to the backup surface once.
-        if (!_didPaintBackupSurface) {
-          final SurfaceFrame backupFrame =
-              SurfaceFactory.instance.backupSurface.acquireFrame(_frameSize);
-          backupFrame.skiaCanvas
-              .drawPicture(_backupPictureRecorder!.endRecording());
-          _backupPictureRecorder = null;
-          backupFrame.submit();
-          _didPaintBackupSurface = true;
+    if (!disableOverlays) {
+      for (int i = 0; i < _compositionOrder.length; i++) {
+        final int viewId = _compositionOrder[i];
+        if (_viewsUsingBackupSurface.contains(viewId)) {
+          // Only draw the picture to the backup surface once.
+          if (!_didPaintBackupSurface) {
+            final SurfaceFrame backupFrame =
+                SurfaceFactory.instance.backupSurface.acquireFrame(_frameSize);
+            backupFrame.skiaCanvas
+                .drawPicture(_backupPictureRecorder!.endRecording());
+            _backupPictureRecorder = null;
+            backupFrame.submit();
+            _didPaintBackupSurface = true;
+          }
+        } else {
+          final SurfaceFrame frame =
+              _overlays[viewId]!.acquireFrame(_frameSize);
+          final CkCanvas canvas = frame.skiaCanvas;
+          canvas.drawPicture(
+            _pictureRecorders[viewId]!.endRecording(),
+          );
+          frame.submit();
         }
-      } else {
-        final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
-        final CkCanvas canvas = frame.skiaCanvas;
-        canvas.drawPicture(
-          _pictureRecorders[viewId]!.endRecording(),
-        );
-        frame.submit();
       }
     }
-    _pictureRecorders.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
 
+    SurfaceFactory.instance.removeSurfacesFromDom();
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
@@ -396,17 +423,23 @@ class HtmlViewEmbedder {
 
       unusedViews.remove(viewId);
       final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
-      final html.Element overlay = _overlays[viewId]!.htmlElement;
       platformViewRoot.remove();
       skiaSceneHost!.append(platformViewRoot);
-      overlay.remove();
-      skiaSceneHost!.append(overlay);
+      if (!disableOverlays) {
+        final html.Element overlay = _overlays[viewId]!.htmlElement;
+        overlay.remove();
+        skiaSceneHost!.append(overlay);
+      }
       _activeCompositionOrder.add(viewId);
+    }
+    if (_didPaintBackupSurface) {
+      skiaSceneHost!.append(SurfaceFactory.instance.backupSurface.htmlElement);
     }
 
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
+    _releaseOverlays();
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -424,12 +457,18 @@ class HtmlViewEmbedder {
       final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
       clipChain?.root.remove();
       // More cleanup
-      _releaseOverlay(viewId);
       _currentCompositionParams.remove(viewId);
       _viewsToRecomposite.remove(viewId);
       _cleanUpClipDefs(viewId);
       _svgClipDefs.remove(viewId);
     }
+  }
+
+  void _releaseOverlays() {
+    _pictureRecorders.clear();
+    _overlays.clear();
+    _viewsUsingBackupSurface.clear();
+    SurfaceFactory.instance.releaseSurfaces();
   }
 
   void _releaseOverlay(int viewId) {
