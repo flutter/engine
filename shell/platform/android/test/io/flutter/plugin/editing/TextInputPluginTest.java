@@ -230,7 +230,8 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void textEditingDelta_TestDeltaIsCreatedWhenComposingTextSet() throws NullPointerException {
+  public void textEditingDelta_TestDeltaIsCreatedWhenComposingTextSet()
+      throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
     TestImm testImm =
@@ -282,13 +283,11 @@ public class TextInputPluginTest {
 
     inputConnectionAdaptor.beginBatchEdit();
 
-    verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), any());
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
 
     inputConnectionAdaptor.endBatchEdit();
 
-    verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), any());
+    verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
 
     inputConnectionAdaptor.beginBatchEdit();
 
@@ -305,8 +304,7 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.endBatchEdit();
 
     verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(
-            anyInt(), aryEq(new TextEditingDelta[] {delta}));
+        .updateEditingStateWithDeltas(anyInt(), aryEq(new TextEditingDelta[] {delta}));
   }
 
   @Test
