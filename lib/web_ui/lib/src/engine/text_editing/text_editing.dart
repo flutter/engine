@@ -161,7 +161,7 @@ class EngineAutofillForm {
   /// in a `TextInputConfiguration`. Not having this field indicates autofill
   /// is explicitly disabled on the text field by the developer.
   ///
-  /// The `fields` argument corresponds to the "filds" field in a
+  /// The `fields` argument corresponds to the "fields" field in a
   /// `TextInputConfiguration`.
   ///
   /// Returns null if the input field is not within an autofill group.
@@ -169,8 +169,8 @@ class EngineAutofillForm {
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
-    // Autofill value is null if the developer explicitly disables it on the
-    // input field.
+    // Autofill value will be null if the developer explicitly disables it on
+    // the input field.
     if (focusedElementAutofill == null) {
       return null;
     }
@@ -413,20 +413,19 @@ class AutofillInfo {
     }
     if (domElement is html.InputElement) {
       final html.InputElement element = domElement;
-      element.name = autofillHint;
       if (placeholder != null) {
         element.placeholder = placeholder;
       }
+      if (autofillHint != null) {
+        element.name = autofillHint;
+        element.id = autofillHint;
+        if (autofillHint.contains('password')) {
+          element.type = 'password';
+        } else {
+          element.type = 'text';
+        }
+      }
       element.autocomplete = autofillHint ?? 'on';
-      if (autofillHint == null) {
-        return;
-      }
-      element.id = autofillHint;
-      if (autofillHint.contains('password')) {
-        element.type = 'password';
-      } else {
-        element.type = 'text';
-      }
     } else if (domElement is html.TextAreaElement) {
       if (placeholder != null) {
         domElement.placeholder = placeholder;
@@ -800,13 +799,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void initializeElementPlacement() {
-    if (geometry != null) {
-      placeElement();
-    } else {
-      // If the geometry infomation is not yet available, the input element
-      // probably hasn't been added to the DOM yet.
-      activeDomElement.focus();
-    }
+    activeDomElement.focus();
   }
 }
 
@@ -900,9 +893,9 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       _appendedToForm = false;
     }
 
-    isEnabled = true;
     initializeElementPlacement();
 
+    isEnabled = true;
     this.onChange = onChange;
     this.onAction = onAction;
   }

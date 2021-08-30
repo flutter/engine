@@ -646,6 +646,8 @@ FLUTTER_ASSERT_ARC
 - (void)testAutofillEnabledByDefault {
   NSDictionary* config = self.mutableTemplateCopy;
   [config setValue:@"NO" forKey:@"obscureText"];
+  [config setValue:@{@"uniqueIdentifier" : @"field1", @"editingValue" : @{@"text" : @""}}
+            forKey:@"autofill"];
 
   [self setClientId:123 configuration:config];
 

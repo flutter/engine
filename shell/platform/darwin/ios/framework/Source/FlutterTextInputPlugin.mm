@@ -324,10 +324,10 @@ static NSString* autofillIdFromDictionary(NSDictionary* dictionary) {
 // have an autofill type of FlutterAutofillTypeRegular.
 //
 // The text input plugin creates a new UIView for every FlutterAutofillTypeNone
-// text field. The UIView is released and not reused since the software keyboard
-// may use the identity of a UIView to distinguish different views and provides
-// the same predictive text suggestions or restore the composing region if a
-// UIView is reused for a different flutter text field.
+// text field. The UIView instance is never reused for other flutter text fields
+// since the software keyboard often uses the identity of a UIView to distinguish
+// different views and provides the same predictive text suggestions or restore
+// the composing region if a UIView is reused for a different flutter text field.
 //
 // The text input plugin creates a new "autofill context" if the text field has
 // the type of FlutterAutofillTypePassword, to represent the AutofillGroup of
@@ -389,7 +389,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (@available(iOS 10.0, *)) {
     NSDictionary* autofill = configuration[kAutofillProperties];
     UITextContentType contentType = ToUITextContentType(autofill[kAutofillHints]);
-    return [contentType isEqualToString:@""] ? FlutterAutofillTypeNone : FlutterAutofillTypeRegular;
+    return !autofill || [contentType isEqualToString:@""] ? FlutterAutofillTypeNone
+                                                          : FlutterAutofillTypeRegular;
   }
 
   return FlutterAutofillTypeNone;
