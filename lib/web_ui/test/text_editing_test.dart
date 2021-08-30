@@ -476,6 +476,11 @@ void testMain() {
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
 
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
@@ -517,6 +522,11 @@ void testMain() {
 
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -591,6 +601,11 @@ void testMain() {
       // Editing shouldn't have started yet.
       expect(defaultTextEditingRoot.activeElement, null);
 
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
@@ -627,6 +642,11 @@ void testMain() {
 
       // Editing shouldn't have started yet.
       expect(defaultTextEditingRoot.activeElement, null);
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -840,6 +860,11 @@ void testMain() {
       // Editing shouldn't have started yet.
       expect(document.activeElement, document.body);
 
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
@@ -872,6 +897,11 @@ void testMain() {
         'selectionExtent': 3,
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -957,6 +987,11 @@ void testMain() {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
 
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(10, 10,
+              Matrix4.translationValues(10.0, 10.0, 10.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
@@ -975,10 +1010,10 @@ void testMain() {
 
       // The transform is changed. For example after a validation error, red
       // line appeared under the input field.
-      final MethodCall setSizeAndTransform =
+      final MethodCall updateSizeAndTransform =
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
-      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+      sendFrameworkMessage(codec.encodeMethodCall(updateSizeAndTransform));
 
       // Check the element still has focus. User can keep editing.
       expect(defaultTextEditingRoot.activeElement,
@@ -1325,6 +1360,11 @@ void testMain() {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
 
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
 
@@ -1492,6 +1532,11 @@ void testMain() {
 
       // Editing shouldn't have started yet.
       expect(defaultTextEditingRoot.activeElement, null);
+
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
