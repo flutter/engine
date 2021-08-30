@@ -56,6 +56,7 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import org.json.JSONArray;
@@ -247,6 +248,8 @@ public class TextInputPluginTest {
     CharSequence newText = "I do not fear computers. I fear the lack of them.";
     final TextEditingDelta delta =
         new TextEditingDelta("", newText, 0, 0, newText, 0, newText.length(), -1, -1, -1, -1);
+    final ArrayList<TextEditingDelta> batchDeltas =
+        new Arraylist<TextEditingDelta>(Arrays.asList(delta));
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
@@ -279,7 +282,7 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.endBatchEdit();
     verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), aryEq(new TextEditingDelta[] {delta}));
+        .updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas);
 
     inputConnectionAdaptor.beginBatchEdit();
 
@@ -304,7 +307,7 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.endBatchEdit();
 
     verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), aryEq(new TextEditingDelta[] {delta}));
+        .updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
   }
 
   @Test
