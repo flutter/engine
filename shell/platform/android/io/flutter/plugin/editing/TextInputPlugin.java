@@ -701,7 +701,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
             selectionEnd,
             composingStart,
             composingEnd);
-        mEditable.clearBatchDeltas();
       }
       mLastKnownFrameworkTextEditingState =
           new TextEditState(
