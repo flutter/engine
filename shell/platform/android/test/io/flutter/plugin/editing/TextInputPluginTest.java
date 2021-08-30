@@ -280,7 +280,7 @@ public class TextInputPluginTest {
 
     inputConnectionAdaptor.beginBatchEdit();
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
-    inputConnectionAdaptor.setComposingText(newText, 1);
+    inputConnectionAdaptor.setComposingText(newText, 0);
 
     final ArrayList<TextEditingDelta> actualDeltas =
         ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
