@@ -282,7 +282,7 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnectionAdaptor.endBatchEdit();
     verify(textInputChannel, times(1))
-        .updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas);
+        .updateEditingStateWithDeltas(anyInt(), aryEq(batchDeltas));
 
     inputConnectionAdaptor.beginBatchEdit();
 
