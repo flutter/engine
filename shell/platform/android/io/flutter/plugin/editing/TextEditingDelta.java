@@ -121,7 +121,7 @@ public class TextEditingDelta {
     return deltaText;
   }
 
-  public void getDeltaType() {
+  public CharSequence getDeltaType() {
     return deltaType;
   }
 
