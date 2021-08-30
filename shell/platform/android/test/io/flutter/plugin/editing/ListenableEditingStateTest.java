@@ -10,6 +10,7 @@ import android.text.Selection;
 import android.view.View;
 import android.view.inputmethod.BaseInputConnection;
 import android.view.inputmethod.EditorInfo;
+import dalvik.annotation.TestTarget;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import java.util.ArrayList;
@@ -226,6 +227,90 @@ public class ListenableEditingStateTest {
     editingState.setComposingRange(0, editingState.length());
     assertEquals(0, editingState.getComposingStart());
     assertEquals(editingState.length(), editingState.getComposingEnd());
+  }
+
+  @Test
+  public void testClearBatchDeltas() {
+    final ListenableEditingState editingState =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+    editingState.replace(0, editingState.length(), "text");
+    editingState.delete(0,1);
+    editingState.insert(0, "This is t");
+    assertEquals(3, editingState.getBatchTextEditingDeltas().size());
+    editingState.clearBatchDeltas();
+    assertEquals(0, editingState.getBatchTextEditingDeltas().size());
+  }
+
+  @Test
+  public void testGetBatchTextEditingDeltas() {
+    final ListenableEditingState editingState =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+
+    // Creating some deltas.
+    editingState.replace(0, editingState.length(), "test");
+    editingState.delete(0,1);
+    editingState.insert(0, "This is a t");
+
+    ArrayList<TextEditingDeltas> batchDeltas = editingState.getBatchTextEditingDeltas();
+    assertEquals(3, batchDeltas.size());
+  }
+
+  @Test
+  public void testAddTextEditingDeltaToList(){
+    final ListenableEditingState editingState =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+
+    editingState.replace(0, editingState.length(), "Some initial text.");
+    assertEquals(1, editingState.getBatchTextEditingDeltas().size());
+
+    CharSequence text = "This will be an equality delta.";
+
+    editingState.addTextEditingDeltaToList(
+        new TextEditingDelta(
+            text,
+            text,
+            0,
+            text.length(),
+            text,
+            0,
+            text.length(),
+            selectionStart,
+            selectionEnd,
+            composingStart,
+            composingEnd));
+
+    assertEquals(2, editingState.getBatchTextEditingDeltas().size());
+  }
+
+  @Test
+  public void testPopTextEditingDeltaFromList(){
+    final ListenableEditingState editingState =
+        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
+
+    editingState.replace(0, editingState.length(), "Some initial text.");
+    assertEquals(1, editingState.getBatchTextEditingDeltas().size());
+
+    CharSequence text = "This will be an equality delta.";
+
+    editingState.addTextEditingDeltaToList(
+        new TextEditingDelta(
+            text,
+            text,
+            0,
+            text.length(),
+            text,
+            0,
+            text.length(),
+            selectionStart,
+            selectionEnd,
+            composingStart,
+            composingEnd));
+
+    assertEquals(2, editingState.getBatchTextEditingDeltas().size());
+    editingState.popTextEditingDeltaFromList();
+    assertEquals(1, editingState.getBatchTextEditingDeltas().size());
+    editingState.popTextEditingDeltaFromList();
+    assertEquals(0, editingState.getBatchTextEditingDeltas().size());
   }
 
   // -------- Start: Test InputMethods actions   -------

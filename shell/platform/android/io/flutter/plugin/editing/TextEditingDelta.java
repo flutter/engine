@@ -68,10 +68,11 @@ public class TextEditingDelta {
             && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
 
     if (isEqual) {
-      Log.v(TAG, "A TextEditingDelta for an EQUALITY has been created.");
-      setDeltas(oldEditable, "", "EQUALITY", -1, -1);
+      Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.equality has been created.");
+      setDeltas(
+          oldEditable, "", "TextEditingDeltaType.equality", -1, -1);
     } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
-      Log.v(TAG, "A TextEditingDelta for a DELETION has been created.");
+      Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.deletion has been created.");
       final int startOfDelete;
       if (isDeletionGreaterThanOne) {
         startOfDelete = start;
@@ -82,16 +83,18 @@ public class TextEditingDelta {
       setDeltas(
           oldEditable,
           oldEditable.subSequence(start + tbend, end).toString(),
-          "DELETION",
+          "TextEditingDeltaType.deletion",
           startOfDelete,
           end);
     } else if ((start == end || isInsertingInsideComposingRegion)
         && !isOriginalComposingRegionTextChanged) {
-      Log.v(TAG, "A TextEditingDelta for an INSERTION has been created.");
-      setDeltas(oldEditable, tb.subSequence(end - start, tbend).toString(), "INSERTION", end, end);
+      Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.insertion has been created.");
+      setDeltas(
+          oldEditable, tb.subSequence(end - start, tbend).toString(), "TextEditingDeltaType.insertion", end, end);
     } else if (isReplaced) {
-      Log.v(TAG, "A TextEditingDelta for a REPLACEMENT has been created.");
-      setDeltas(oldEditable, tb.subSequence(tbstart, tbend).toString(), "REPLACEMENT", start, end);
+      Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.replacement has been created.");
+      setDeltas(
+          oldEditable, tb.subSequence(tbstart, tbend).toString(), "TextEditingDeltaType.replacement", start, end);
     }
   }
 
@@ -101,6 +104,51 @@ public class TextEditingDelta {
 
   public void setNewComposingEnd(int newEnd) {
     newComposingEnd = newEnd;
+  }
+
+  public CharSequence getOldText() {
+    return oldText;
+  }
+
+  public CharSequence getDeltaText() {
+    return deltaText;
+  }
+
+  public void getDeltaType() {
+    return deltaType;
+  }
+
+  public int getDeltaStart() {
+    return deltaStart;
+  }
+
+  public int getDeltaEnd() {
+    return deltaEnd;
+  }
+
+  public int getNewSelectionStart() {
+    return newSelectionStart;
+  }
+
+  public int getNewSelectionEnd() {
+    return newSelectionEnd;
+  }
+
+  public int getNewComposingStart() {
+    return newComposingStart;
+  }
+
+  public int getNewComposingEnd() {
+    return newComposingEnd;
+  }
+
+  private void setDeltas(
+      CharSequence oldTxt, CharSequence newTxt, CharSequence type, int newStart, int newExtent) {
+    oldText = oldTxt;
+    deltaText = newTxt;
+    deltaStart = newStart;
+    deltaEnd = newExtent;
+    deltaType = type;
   }
 
   public JSONObject toJSON() {
@@ -121,14 +169,5 @@ public class TextEditingDelta {
     }
 
     return delta;
-  }
-
-  private void setDeltas(
-      CharSequence oldTxt, CharSequence newTxt, CharSequence type, int newStart, int newExtent) {
-    oldText = oldTxt;
-    deltaText = newTxt;
-    deltaStart = newStart;
-    deltaEnd = newExtent;
-    deltaType = type;
   }
 }

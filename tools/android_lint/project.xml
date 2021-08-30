@@ -52,6 +52,7 @@
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/common/StandardMethodCodecTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/ListenableEditingStateTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/TextInputPluginTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/TextEditingDeltaTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/InputConnectionAdaptorTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/localization/LocalizationPluginTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/view/AccessibilityBridgeTest.java" />
