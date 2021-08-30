@@ -289,7 +289,7 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.endBatchEdit();
 
     // Verify delta is what we expect.
-    final TextEditingDelta delta = actualDeltas.get(1);
+    final TextEditingDelta delta = actualDeltas.get(0);
     assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
     assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
