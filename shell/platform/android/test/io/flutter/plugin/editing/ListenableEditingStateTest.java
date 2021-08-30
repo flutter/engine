@@ -250,7 +250,7 @@ public class ListenableEditingStateTest {
     editingState.delete(0, 1);
     editingState.insert(0, "This is a t");
 
-    ArrayList<TextEditingDeltas> batchDeltas = editingState.getBatchTextEditingDeltas();
+    ArrayList<TextEditingDelta> batchDeltas = editingState.getBatchTextEditingDeltas();
     assertEquals(3, batchDeltas.size());
   }
 
