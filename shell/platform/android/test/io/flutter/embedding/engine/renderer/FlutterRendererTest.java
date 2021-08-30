@@ -131,12 +131,7 @@ public class FlutterRendererTest {
 
     fakeFlutterJNI.detachFromNativeAndReleaseResources();
 
-    SurfaceTexture surfaceTexture;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      surfaceTexture = new SurfaceTexture(0, true);
-    } else {
-      surfaceTexture = new SurfaceTexture(0);
-    }
+    SurfaceTexture surfaceTexture = new SurfaceTexture(0);
 
     // Execute the behavior under test.
     FlutterRenderer.SurfaceTextureRegistryEntry entry =
