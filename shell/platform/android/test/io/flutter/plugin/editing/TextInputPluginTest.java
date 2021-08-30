@@ -269,7 +269,7 @@ public class TextInputPluginTest {
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     assertEquals(
-        0,
+        1,
         ((ListenableEditingState) textInputPlugin.getEditable())
             .getBatchTextEditingDeltas()
             .size());
@@ -289,7 +289,7 @@ public class TextInputPluginTest {
     inputConnectionAdaptor.endBatchEdit();
 
     // Verify delta is what we expect.
-    final TextEditingDelta delta = actualDeltas.get(0);
+    final TextEditingDelta delta = actualDeltas.get(1);
     assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
     assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
