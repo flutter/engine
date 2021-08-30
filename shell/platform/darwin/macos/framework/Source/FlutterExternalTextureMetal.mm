@@ -48,8 +48,8 @@
   }
 }
 
-- (BOOL)populateTextureFromYUVAPixelBuffer:(FlutterMetalExternalTexture*)textureOut
-                               pixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer {
+- (BOOL)populateTextureFromYUVAPixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer
+                              metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture {
   CVMetalTextureRef yCVMetalTexture = nullptr;
   CVMetalTextureRef uvCVMetalTextureRef = nullptr;
   SkISize textureSize =
@@ -102,8 +102,8 @@
   return YES;
 }
 
-- (BOOL)populateTextureFromRGBAPixelBuffer:(FlutterMetalExternalTexture*)textureOut
-                               pixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer {
+- (BOOL)populateTextureFromRGBAPixelBuffer: (nonnull CVPixelBufferRef)pixelBuffer
+                              metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture {
   SkISize textureSize =
       SkISize::Make(CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer));
 
