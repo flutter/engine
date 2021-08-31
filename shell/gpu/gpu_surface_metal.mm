@@ -184,8 +184,8 @@ std::unique_ptr<GLContextResult> GPUSurfaceMetal::MakeRenderContextCurrent() {
   return std::make_unique<GLContextDefaultResult>(true);
 }
 
-bool GPUSurfaceMetal::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
-  return delegate_->IsAllowDrawingToSurfaceWhenGpuDisabled();
+bool GPUSurfaceMetal::AllowsDrawingWhenGpuDisabled() const {
+  return delegate_->AllowsDrawingWhenGpuDisabled();
 }
 
 void GPUSurfaceMetal::ReleaseUnusedDrawableIfNecessary() {

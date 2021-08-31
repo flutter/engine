@@ -99,7 +99,7 @@ GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);
 }
 
-bool GPUSurfaceGLDelegate::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+bool GPUSurfaceGLDelegate::AllowsDrawingWhenGpuDisabled() const {
   return true;
 }
 

@@ -99,7 +99,7 @@ bool IOSSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-bool IOSSurfaceMetal::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+bool IOSSurfaceMetal::AllowsDrawingWhenGpuDisabled() const {
   return false;
 }
 

@@ -47,7 +47,7 @@ class IOSSurfaceGL final : public IOSSurface, public GPUSurfaceGLDelegate {
   bool SurfaceSupportsReadback() const override;
 
   // |GPUSurfaceGLDelegate|
-  bool IsAllowDrawingToSurfaceWhenGpuDisabled() const override;
+  bool AllowsDrawingWhenGpuDisabled() const override;
 
  private:
   std::unique_ptr<IOSRenderTargetGL> render_target_;

@@ -177,7 +177,7 @@ void Rasterizer::Draw(
             return;
           }
 
-          if (surface_->IsAllowDrawingToSurfaceWhenGpuDisabled()) {
+          if (surface_->AllowsDrawingWhenGpuDisabled()) {
             raster_status = DoDraw(std::move(frame_timings_recorder),
                                    std::move(layer_tree));
           } else {

@@ -71,7 +71,7 @@ class GPUSurfaceGLDelegate {
   virtual GLProcResolver GetGLProcResolver() const;
 
   // Whether to allow drawing to the surface when the GPU is disabled
-  virtual bool IsAllowDrawingToSurfaceWhenGpuDisabled() const;
+  virtual bool AllowsDrawingWhenGpuDisabled() const;
 };
 
 }  // namespace flutter

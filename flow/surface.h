@@ -33,7 +33,7 @@ class Surface {
 
   virtual bool ClearRenderContext();
 
-  virtual bool IsAllowDrawingToSurfaceWhenGpuDisabled() const;
+  virtual bool AllowsDrawingWhenGpuDisabled() const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

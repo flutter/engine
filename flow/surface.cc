@@ -18,7 +18,7 @@ bool Surface::ClearRenderContext() {
   return false;
 }
 
-bool Surface::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+bool Surface::AllowsDrawingWhenGpuDisabled() const {
   return true;
 }
 

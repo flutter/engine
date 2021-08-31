@@ -90,7 +90,7 @@ bool IOSSurfaceGL::GLContextPresent(uint32_t fbo_id) {
 }
 
 // |GPUSurfaceGLDelegate|
-bool IOSSurfaceGL::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+bool IOSSurfaceGL::AllowsDrawingWhenGpuDisabled() const {
   return false;
 }
 
