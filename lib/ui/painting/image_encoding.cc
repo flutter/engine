@@ -143,14 +143,14 @@ void ConvertImageToRaster(
   // to prevent concurrent usage of the image on both the IO and raster threads.
   raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
                                 resource_context, snapshot_delegate,
-                                io_task_runner, &gpu_disable_sync_switch]() {
+                                io_task_runner, gpu_disable_sync_switch]() {
     sk_sp<SkImage> raster_image =
         snapshot_delegate->ConvertToRasterImage(image);
 
     io_task_runner->PostTask([image, encode_task = std::move(encode_task),
                               raster_image = std::move(raster_image),
                               resource_context,
-                              &gpu_disable_sync_switch]() mutable {
+                              gpu_disable_sync_switch]() mutable {
       if (!raster_image) {
         // The rasterizer was unable to render the cross-context image
         // (presumably because it does not have a GrContext).  In that case,
