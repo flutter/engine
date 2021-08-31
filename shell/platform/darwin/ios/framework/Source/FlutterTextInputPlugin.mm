@@ -631,7 +631,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _keyboardType = UIKeyboardTypeDefault;
     _returnKeyType = UIReturnKeyDone;
     _secureTextEntry = NO;
-    _enableDeltaModel = NO;
+    _enableDeltaModel = YES;
     _accessibilityEnabled = NO;
     _decommissioned = NO;
     if (@available(iOS 11.0, *)) {
@@ -1012,22 +1012,28 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (isEqual) {
     NSLog(@"We have no changes, reporting equality");
     NSMutableString* empty = [@"" mutableCopy];
-    NSMutableString* type = [@"EQUALITY" mutableCopy];
+    NSMutableString* type = [@"TextEditingDeltaType.equality" mutableCopy];
     [self setDeltas:[self.text mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
   } else if (isDeletingByReplacingWithEmpty) {  // Deletion.
     NSMutableString* deleted = [[self.text substringWithRange:range] mutableCopy];
     NSLog(@"We have a deletion");
     NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, start, end);
-    NSMutableString* type = [@"DELETION" mutableCopy];
+    NSMutableString* type = [@"TextEditingDeltaType.deletion" mutableCopy];
+    NSInteger actualStart = start;
+
+    if (end - start == 1) {
+      actualStart = end;
+    }
+
     [self setDeltas:[self.text mutableCopy]
             newText:deleted
                type:type
-         deltaStart:start
+         deltaStart:actualStart
            deltaEnd:end];
   } else if (start == end) {  // Insertion.
     NSLog(@"We have an insertion");
     NSLog(@"We are inserting %@ at start position: %lu and end position: %lu", text, start, end);
-    NSMutableString* type = [@"INSERTION" mutableCopy];
+    NSMutableString* type = [@"TextEditingDeltaType.insertion" mutableCopy];
     NSMutableString* textBeforeInsertion = [self.text mutableCopy];
     [self setDeltas:textBeforeInsertion
             newText:[text mutableCopy]
@@ -1039,12 +1045,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     NSLog(@"We have a replacement");
     NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
           start, end, text);
-    NSMutableString* type = [@"REPLACEMENT" mutableCopy];
+    NSMutableString* type = [@"TextEditingDeltaType.replacement" mutableCopy];
     [self setDeltas:replaced
             newText:[text mutableCopy]
                type:type
          deltaStart:start
-           deltaEnd:start + tbend];
+           deltaEnd:end];
   }
 
   NSRange selectedRange = _selectedTextRange.range;
@@ -1155,7 +1161,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:[FlutterTextRange
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
-  [self updateEditingState];
+  if (_enableDeltaModel) {
+    [self updateEditingStateWithDelta];
+  } else {
+    [self updateEditingState];
+  }
 }
 
 - (void)unmarkText {
@@ -1163,7 +1173,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     return;
   NSLog(@"unmarkText");
   self.markedTextRange = nil;
-  [self updateEditingState];
+  if (_enableDeltaModel) {
+    [self updateEditingStateWithDelta];
+  } else {
+    [self updateEditingState];
+  }
 }
 
 - (UITextRange*)textRangeFromPosition:(UITextPosition*)fromPosition
@@ -1512,7 +1526,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSDictionary* state = @{
     @"oldText" : [NSString stringWithString:self.oldText],
     @"deltaText" : [NSString stringWithString:self.newText],
-    @"delta" : [NSString stringWithString:self.deltaType],
+    @"deltaType" : [NSString stringWithString:self.deltaType],
     @"deltaStart" : @(_newRangeStart),
     @"deltaEnd" : @(_newRangeExtent),
     @"selectionBase" : @(selectionBase),
@@ -1707,6 +1721,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
     result(nil);
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
+    NSLog(@"receiving update from framework");
     [self setTextInputEditingState:args];
     result(nil);
   } else if ([method isEqualToString:kClearClientMethod]) {
