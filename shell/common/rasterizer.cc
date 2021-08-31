@@ -174,10 +174,7 @@ void Rasterizer::Draw(
         } else {
           if (!layer_tree || !surface_) {
             raster_status = RasterStatus::kFailed;
-            return;
-          }
-
-          if (surface_->AllowsDrawingWhenGpuDisabled()) {
+          } else if (surface_->AllowsDrawingWhenGpuDisabled()) {
             raster_status = DoDraw(std::move(frame_timings_recorder),
                                    std::move(layer_tree));
           } else {
@@ -383,10 +380,6 @@ RasterStatus Rasterizer::DoDraw(
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
-
-  if (!layer_tree || !surface_) {
-    return RasterStatus::kFailed;
-  }
 
   frame_timings_recorder->RecordRasterStart(fml::TimePoint::Now());
 
