@@ -11,9 +11,9 @@ import 'package:fuchsia_services/services.dart';
 import 'package:zircon/zircon.dart';
 
 const _kChildAppUrl =
-    'fuchsia-pkg://fuchsia.com/child-view#meta/child_view.cmx';
+    'fuchsia-pkg://fuchsia.com/child-view#meta/child-view.cmx';
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   // WidgetsFlutterBinding.ensureInitialized();
   final parser = ArgParser()
     ..addFlag('showOverlay', defaultsTo: false)

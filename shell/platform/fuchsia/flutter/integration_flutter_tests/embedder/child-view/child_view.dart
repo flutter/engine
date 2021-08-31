@@ -5,7 +5,7 @@
 import 'dart:async';
 // import 'package:flutter/material.dart';
 
-void main(List<String> args) async {
+Future<void> main(List<String> args) async {
   // final app = MaterialApp(home: TestApp(), debugShowCheckedModeBanner: false);
   // runApp(app);
 }

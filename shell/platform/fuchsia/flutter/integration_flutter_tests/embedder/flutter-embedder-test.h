@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_FLUTTER_SCENIC_EMBEDDER_TEST_H_
-#define SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_FLUTTER_SCENIC_EMBEDDER_TEST_H_
+#ifndef SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test_H_
+#define SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test_H_
 
 #include <fuchsia/ui/policy/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
@@ -25,7 +25,7 @@
 #include "src/ui/testing/views/color.h"
 #include "src/ui/testing/views/embedder_view.h"
 
-namespace flutter_scenic_embedder_test {
+namespace flutter_embedder_test {
 
 /// Defines a list of services that are injected into the test environment.
 /// Unlike the injected-services in CMX which are injected per test package,
@@ -63,7 +63,7 @@ class FlutterScenicEmbedderTestsBase : public sys::testing::TestWithEnvironment,
     }
 
     environment_ = CreateNewEnclosingEnvironment(
-        "flutter-scenic-embedder-tests", std::move(services),
+        "flutter-embedder-tests", std::move(services),
         {.inherit_parent_services = true});
     WaitForEnclosingEnvToStart(environment());
 
@@ -143,52 +143,10 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
       FAIL() << "Lost connection to Scenic: " << zx_status_get_string(status);
     });
 
-    // TODO(richkadel): remove this log
-    FML_VLOG(fml::LOG_INFO)
-        << "Launching flutter_runner, component_url=" << component_url;
     scenic::EmbeddedViewInfo flutter_runner =
         scenic::LaunchComponentAndCreateView(environment()->launcher_ptr(),
                                              component_url, component_args);
-    /*
-
-    [2021-08-16 21:58:31][15084][15086][pkg-resolver] INFO: Fetching blobs for
-    fuchsia-pkg://google3-devhost/parent-view/0: [] [2021-08-16
-    21:58:31][15084][15086][pkg-resolver] INFO: resolved
-    fuchsia-pkg://fuchsia.com/parent-view/0 as
-    fuchsia-pkg://google3-devhost/parent-view/0 to
-    22634f985109075d736ca3c3090350c4cb04c093d512ceea84f5520742ed1640 with TUF
-    [2021-08-16 21:58:31][20145][20147][sysmgr.cmx] ERROR:
-    [src/sys/sysmgr/package_updating_loader.cc(86)] Could not load package
-    resource meta/parent_view.cmx from
-    fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx
-
-    but the FML_VLOG above prints:
-    [259863.637267][36607967][36607969][flutter_scenic_embedder_test.cm] INFO:
-    [flutter-scenic-embedder-test.h(146)] Launching flutter_runner,
-    component_url=fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx
-
-    fuchsia-pkg://google3-devhost/parent-view/0
-    fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx
-
-    Compare to these successful logs, JUST before trying to resolve parent_view:
-
-    [2021-08-16 22:24:22][15084][15086][pkg-resolver] INFO: Fetching blobs for
-    fuchsia-pkg://google3-devhost/ktrace_provider/0: [] [2021-08-16
-    22:24:22][15084][15086][pkg-resolver] INFO: resolved
-    fuchsia-pkg://fuchsia.com/ktrace_provider/0 as
-    fuchsia-pkg://google3-devhost/ktrace_provider/0 to
-    53eba946b3fb22d0347755e88eaa7ef10cc8552809017363337e8b98fb0e9e41 with TUF
-    */
-    // flutter_runner.controller.events().OnTerminated = [](auto...) { FAIL();
-    // };
-    // TODO(richkadel): remove this assignment to OnTerminated and uncomment
-    // above
-    flutter_runner.controller.events().OnTerminated = [](auto...) {
-      // TODO(richkadel): remove this log
-      FML_VLOG(fml::LOG_INFO)
-          << "flutter_runner.controller terminated. Failing test.";
-      FAIL();
-    };
+    flutter_runner.controller.events().OnTerminated = [](auto...) { FAIL(); };
 
     // Present the view.
     embedder_view_.emplace(scenic::ViewContext{
@@ -307,6 +265,6 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
   std::optional<scenic::EmbedderView> embedder_view_;
 };
 
-}  // namespace flutter_scenic_embedder_test
+}  // namespace flutter_embedder_test
 
-#endif  // SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_FLUTTER_SCENIC_EMBEDDER_TEST_H_
+#endif  // SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test_H_
