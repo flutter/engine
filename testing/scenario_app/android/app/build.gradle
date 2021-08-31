@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.facebook.testing.screenshot'
+apply plugin: 'kotlin-android'
 
 def leakcanary_version = '2.7'
 
@@ -84,6 +85,8 @@ tasks.register('generateLockfiles') {
     }
 }
 
+// Override the kotlin language/api version to avoid warnings from
+// usages in leakcanaary.
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
