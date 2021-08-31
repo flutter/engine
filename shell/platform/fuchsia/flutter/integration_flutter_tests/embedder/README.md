@@ -1,5 +1,13 @@
 # `flutter scenic embedder tests`
 
+<!-- TODO(richkadel): FIX OR REMOVE INVALID INSTRUCTIONS
+-->
+# THESE INSTRUCTIONS ARE A WORK IN PROGRESS. I'VE BEEN TOLD THIS MAY NOT WORK
+# (FOR INSTANCE, DUE TO DART COMPILER DIFFERENCES) AND IF IT DOES WORK, THE
+# CHANGES VALIDATED BETWEEN VERSIONS OF FLUTTER, FUCHSIA, AND FUCHSIA_SDK MAY
+# STILL BE INCOMPATIBLE WITH OTHER DEPENDENT REPOSITORIES IN FUCHSIA'S RELEASE-
+# AND-ROLL WORKFLOW. TAKE THESE WITH A GRAIN OF SALT FOR NOW, AS THEY EVOLVE.
+
 To run the tests:
 
 ## Sync your fuchsia.git checkout to your current Fuchsia SDK version
@@ -137,11 +145,13 @@ $ fx set core.<board> --with //bundles:tests --with-base //topaz/bundles:buildbo
 $ fx build
 $ fx reboot -r
 
-$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" \
-    -f "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter_scenic_embedder_test-0.far
+$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
+    "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test-0.far \
+    $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far) \
+    $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name child-view.far)
 
 $ fx shell run-test-component \
-    fuchsia-pkg://fuchsia.com/flutter_scenic_embedder_test#meta/flutter_scenic_embedder_test.cmx
+    fuchsia-pkg://fuchsia.com/flutter-embedder-test#meta/flutter-embedder-test.cmx
 ```
 
 From here, you can modify the Flutter test, rebuild flutter, and usually rerun the test without

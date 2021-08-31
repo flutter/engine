@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter-scenic-embedder-test.h"
+#include "flutter-embedder-test.h"
 
-namespace flutter_scenic_embedder_test {
+namespace flutter_embedder_test {
 
 constexpr char kParentViewUrl[] =
-    "fuchsia-pkg://fuchsia.com/parent-view#meta/parent_view.cmx";
+    "fuchsia-pkg://fuchsia.com/parent-view#meta/parent-view.cmx";
 
 constexpr scenic::Color kParentBackgroundColor = {0x00, 0x00, 0xFF,
                                                   0xFF};  // Blue
@@ -239,4 +239,4 @@ size_t> histogram) {
 
 */
 
-}  // namespace flutter_scenic_embedder_test
+}  // namespace flutter_embedder_test

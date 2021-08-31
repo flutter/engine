@@ -7,9 +7,10 @@ import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
 import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
-dart_library("lib") {
+dart_library("parent-view_dart_library") {
   package_name = "parent-view"
-  sources = [ "main.dart" ]
+  source_dir = "."
+  sources = [ "parent_view.dart" ]
 
   deps = [
     "//flutter/tools/fuchsia/dart:fuchsia_services",
@@ -21,12 +22,23 @@ dart_library("lib") {
   ]
 }
 
-flutter_component("parent-view-component") {
-  manifest = "meta/parent_view.cmx"
+flutter_component("parent-view_flutter_component") {
   main_package = "parent-view"
-  deps = [ ":lib" ]
+  component_name = "parent-view"
+  main_dart = "parent_view.dart"
+  manifest = rebase_path("meta/parent-view.cmx")
+  deps = [ ":parent-view_dart_library" ]
 }
 
-fuchsia_package("parent-view") {
-  deps = [ ":parent-view-component" ]
+# TODO(richkadel): The target name is set differently compared to fuchsia.git's flutter_app().
+# Unlike in fuchsia.git's version of fuchsia_component, the Fuchsia GN SDK
+# version passes the component name to fuchsia_component via it's target_name only.
+# GN SDK's fuchsia_component doesn't have a `component_name` argument! So I'm forced to set
+# the component name via "target_name". This is a problem in fuchsia_package, which uses
+# the target_name to name the fuchsia_pm_tool target, creating duplicate target IDs!
+# So I have to change the fuchsia_package name to something that is NOT the component name,
+# and then set the package_name (which fuchsia_package does support).
+fuchsia_package("package") {
+  package_name = "parent-view"
+  deps = [ ":parent-view_flutter_component" ]
 }
