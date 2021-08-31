@@ -1046,11 +1046,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
           start, end, text);
     NSMutableString* type = [@"TextEditingDeltaType.replacement" mutableCopy];
-    [self setDeltas:replaced
-            newText:[text mutableCopy]
-               type:type
-         deltaStart:start
-           deltaEnd:end];
+    [self setDeltas:replaced newText:[text mutableCopy] type:type deltaStart:start deltaEnd:end];
   }
 
   NSRange selectedRange = _selectedTextRange.range;
