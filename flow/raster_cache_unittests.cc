@@ -4,6 +4,9 @@
 
 #include "flutter/flow/raster_cache.h"
 
+#include <memory>
+
+#include "flutter/flow/testing/mock_raster_cache.h"
 #include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPaint.h"
@@ -39,20 +42,20 @@ TEST(RasterCache, ThresholdIsRespected) {
 
   auto picture = GetSamplePicture();
 
-  sk_sp<SkImage> image;
-
   SkCanvas dummy_canvas;
 
-  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(
-      cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true, false));
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             picture.get(), matrix));
   // 1st access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
 
-  ASSERT_FALSE(
-      cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true, false));
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             picture.get(), matrix));
 
   // 2nd access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
@@ -60,8 +63,8 @@ TEST(RasterCache, ThresholdIsRespected) {
   cache.SweepAfterFrame();
 
   // Now Prepare should cache it.
-  ASSERT_TRUE(
-      cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true, false));
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            picture.get(), matrix));
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 }
 
@@ -69,38 +72,22 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCaching) {
   size_t threshold = 0;
   flutter::RasterCache cache(threshold);
 
-  SkMatrix matrix = SkMatrix::I();
-
   auto picture = GetSamplePicture();
 
-  sk_sp<SkImage> image;
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  SkCanvas dummy_canvas;
-
-  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(
-      cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true, false));
-
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(cache.PreCheckWillCache(picture.get(), true, false));
 }
 
 TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZero) {
   size_t picture_cache_limit_per_frame = 0;
   flutter::RasterCache cache(3, picture_cache_limit_per_frame);
 
-  SkMatrix matrix = SkMatrix::I();
-
   auto picture = GetSamplePicture();
 
-  sk_sp<SkImage> image;
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  SkCanvas dummy_canvas;
-
-  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(
-      cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true, false));
-
-  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
+  ASSERT_FALSE(cache.PreCheckWillCache(picture.get(), true, false));
 }
 
 TEST(RasterCache, SweepsRemoveUnusedFrames) {
@@ -111,19 +98,19 @@ TEST(RasterCache, SweepsRemoveUnusedFrames) {
 
   auto picture = GetSamplePicture();
 
-  sk_sp<SkImage> image;
-
   SkCanvas dummy_canvas;
 
-  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
-                             false));  // 1
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             picture.get(), matrix));  // 1
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
 
-  ASSERT_TRUE(cache.Prepare(NULL, picture.get(), matrix, srgb.get(), true,
-                            false));  // 2
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            picture.get(), matrix));  // 2
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
@@ -152,12 +139,16 @@ TEST(RasterCache, DeviceRectRoundOut) {
   SkCanvas canvas(100, 100, nullptr);
   canvas.setMatrix(ctm);
 
-  sk_sp<SkColorSpace> srgb = SkColorSpace::MakeSRGB();
-  ASSERT_FALSE(
-      cache.Prepare(NULL, picture.get(), ctm, srgb.get(), true, false));
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             picture.get(), ctm));
   ASSERT_FALSE(cache.Draw(*picture, canvas));
   cache.SweepAfterFrame();
-  ASSERT_TRUE(cache.Prepare(NULL, picture.get(), ctm, srgb.get(), true, false));
+  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            picture.get(), ctm));
   ASSERT_TRUE(cache.Draw(*picture, canvas));
 
   canvas.translate(248, 0);

@@ -5,6 +5,7 @@
 #ifndef FLOW_TESTING_MOCK_RASTER_CACHE_H_
 #define FLOW_TESTING_MOCK_RASTER_CACHE_H_
 
+#include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/testing/mock_canvas.h"
@@ -46,9 +47,9 @@ class MockRasterCacheResult : public RasterCacheResult {
  */
 class MockRasterCache : public RasterCache {
  public:
-  explicit MockRasterCache(
-      size_t access_threshold = 3,
-      size_t picture_cache_limit_per_frame = kDefaultPictureCacheLimitPerFrame)
+  explicit MockRasterCache(size_t access_threshold = 3,
+                           size_t picture_cache_limit_per_frame =
+                               kDefaultPictureAndDispLayListCacheLimitPerFrame)
       : RasterCache(access_threshold, picture_cache_limit_per_frame) {}
 
   std::unique_ptr<RasterCacheResult> RasterizePicture(
@@ -91,6 +92,13 @@ class MockRasterCache : public RasterCache {
       false,             /* has_texture_layer */
   };
 };
+
+struct PrerollContextHolder {
+  PrerollContext preroll_context;
+  sk_sp<SkColorSpace> srgb;
+};
+
+PrerollContextHolder GetSamplePrerollContextHolder();
 
 }  // namespace testing
 }  // namespace flutter

@@ -37,9 +37,10 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 }
 
 RasterCache::RasterCache(size_t access_threshold,
-                         size_t picture_cache_limit_per_frame)
+                         size_t picture_and_display_list_cache_limit_per_frame)
     : access_threshold_(access_threshold),
-      picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
+      picture_and_display_list_cache_limit_per_frame_(
+          picture_and_display_list_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
 static bool CanRasterizePicture(SkPicture* picture) {
@@ -238,24 +239,39 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
       });
 }
 
-bool RasterCache::Prepare(GrDirectContext* context,
-                          SkPicture* picture,
-                          const SkMatrix& transformation_matrix,
-                          SkColorSpace* dst_color_space,
-                          bool is_complex,
-                          bool will_change) {
-  // Disabling caching when access_threshold is zero is historic behavior.
-  if (access_threshold_ == 0) {
+bool RasterCache::PreCheckWillCache(SkPicture* picture,
+                                    bool is_complex,
+                                    bool will_change) {
+  if (!GenerateNewCacheInthisFrame()) {
     return false;
   }
-  if (picture_cached_this_frame_ >= picture_cache_limit_per_frame_) {
-    return false;
-  }
+
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
     // We only deal with pictures that are worthy of rasterization.
     return false;
   }
 
+  return true;
+}
+
+bool RasterCache::PreCheckWillCache(DisplayList* display_list,
+                                    bool is_complex,
+                                    bool will_change) {
+  if (!GenerateNewCacheInthisFrame()) {
+    return false;
+  }
+
+  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex)) {
+    // We only deal with display lists that are worthy of rasterization.
+    return false;
+  }
+
+  return true;
+}
+
+bool RasterCache::Prepare(PrerollContext* context,
+                          SkPicture* picture,
+                          const SkMatrix& transformation_matrix) {
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
   const MatrixDecomposition matrix(transformation_matrix);
@@ -275,31 +291,17 @@ bool RasterCache::Prepare(GrDirectContext* context,
   }
 
   if (!entry.image) {
-    entry.image = RasterizePicture(picture, context, transformation_matrix,
-                                   dst_color_space, checkerboard_images_);
+    entry.image =
+        RasterizePicture(picture, context->gr_context, transformation_matrix,
+                         context->dst_color_space, checkerboard_images_);
     picture_cached_this_frame_++;
   }
   return true;
 }
 
-bool RasterCache::Prepare(GrDirectContext* context,
+bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
-                          const SkMatrix& transformation_matrix,
-                          SkColorSpace* dst_color_space,
-                          bool is_complex,
-                          bool will_change) {
-  // Disabling caching when access_threshold is zero is historic behavior.
-  if (access_threshold_ == 0) {
-    return false;
-  }
-  if (picture_cached_this_frame_ >= picture_cache_limit_per_frame_) {
-    return false;
-  }
-  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex)) {
-    // We only deal with display lists that are worthy of rasterization.
-    return false;
-  }
-
+                          const SkMatrix& transformation_matrix) {
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
   const MatrixDecomposition matrix(transformation_matrix);
@@ -320,10 +322,10 @@ bool RasterCache::Prepare(GrDirectContext* context,
   }
 
   if (!entry.image) {
-    entry.image =
-        RasterizeDisplayList(display_list, context, transformation_matrix,
-                             dst_color_space, checkerboard_images_);
-    picture_cached_this_frame_++;
+    entry.image = RasterizeDisplayList(
+        display_list, context->gr_context, transformation_matrix,
+        context->dst_color_space, checkerboard_images_);
+    display_list_cached_this_frame_++;
   }
   return true;
 }
@@ -395,6 +397,7 @@ void RasterCache::SweepAfterFrame() {
   SweepOneCacheAfterFrame(display_list_cache_);
   SweepOneCacheAfterFrame(layer_cache_);
   picture_cached_this_frame_ = 0;
+  display_list_cached_this_frame_ = 0;
   sweep_count_++;
 }
 
