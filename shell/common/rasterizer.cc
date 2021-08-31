@@ -174,6 +174,7 @@ void Rasterizer::Draw(
         } else {
           if (!layer_tree || !surface_) {
             raster_status = RasterStatus::kFailed;
+            return;
           }
 
           if (surface_->IsAllowDrawingToSurfaceWhenGpuDisabled()) {
