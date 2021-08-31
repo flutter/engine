@@ -99,4 +99,8 @@ GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);
 }
 
+bool GPUSurfaceGLDelegate::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+  return true;
+}
+
 }  // namespace flutter

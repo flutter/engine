@@ -172,8 +172,23 @@ void Rasterizer::Draw(
         if (discardCallback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
-          raster_status =
-              DoDraw(std::move(frame_timings_recorder), std::move(layer_tree));
+          if (!layer_tree || !surface_) {
+            raster_status = RasterStatus::kFailed;
+          }
+
+          if (surface_->IsAllowDrawingToSurfaceWhenGpuDisabled()) {
+            raster_status = DoDraw(std::move(frame_timings_recorder),
+                                   std::move(layer_tree));
+          } else {
+            delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
+                fml::SyncSwitch::Handlers()
+                    .SetIfTrue(
+                        [&] { raster_status = RasterStatus::kDiscarded; })
+                    .SetIfFalse([&] {
+                      raster_status = DoDraw(std::move(frame_timings_recorder),
+                                             std::move(layer_tree));
+                    }));
+          }
         }
       };
 

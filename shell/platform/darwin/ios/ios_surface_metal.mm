@@ -98,4 +98,9 @@ bool IOSSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
   return false;
 }
 
+// |GPUSurfaceMetalDelegate|
+bool IOSSurfaceMetal::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+  return false;
+}
+
 }  // namespace flutter

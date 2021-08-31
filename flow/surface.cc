@@ -18,4 +18,8 @@ bool Surface::ClearRenderContext() {
   return false;
 }
 
+bool Surface::IsAllowDrawingToSurfaceWhenGpuDisabled() const {
+  return true;
+}
+
 }  // namespace flutter
