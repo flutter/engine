@@ -22,6 +22,38 @@ TEST(SyncSwitchTest, Basic) {
   EXPECT_TRUE(switchValue);
 }
 
+TEST(SyncSwitchTest, Recursive) {
+  SyncSwitch syncSwitch;
+  bool switchValue = false;
+  syncSwitch.Execute(
+      SyncSwitch::Handlers()
+          .SetIfTrue([&] {
+            syncSwitch.Execute(SyncSwitch::Handlers()
+                                   .SetIfTrue([&] { switchValue = true; })
+                                   .SetIfFalse([&] { switchValue = false; }));
+          })
+          .SetIfFalse([&] {
+            syncSwitch.Execute(SyncSwitch::Handlers()
+                                   .SetIfTrue([&] { switchValue = true; })
+                                   .SetIfFalse([&] { switchValue = false; }));
+          }));
+  EXPECT_FALSE(switchValue);
+  syncSwitch.SetSwitch(true);
+  syncSwitch.Execute(
+      SyncSwitch::Handlers()
+          .SetIfTrue([&] {
+            syncSwitch.Execute(SyncSwitch::Handlers()
+                                   .SetIfTrue([&] { switchValue = true; })
+                                   .SetIfFalse([&] { switchValue = false; }));
+          })
+          .SetIfFalse([&] {
+            syncSwitch.Execute(SyncSwitch::Handlers()
+                                   .SetIfTrue([&] { switchValue = true; })
+                                   .SetIfFalse([&] { switchValue = false; }));
+          }));
+  EXPECT_TRUE(switchValue);
+}
+
 TEST(SyncSwitchTest, NoopIfUndefined) {
   SyncSwitch syncSwitch;
   bool switchValue = false;

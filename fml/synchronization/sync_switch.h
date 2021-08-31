@@ -53,7 +53,7 @@ class SyncSwitch {
   void SetSwitch(bool value);
 
  private:
-  mutable std::mutex mutex_;
+  mutable std::recursive_mutex mutex_;
   bool value_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SyncSwitch);
