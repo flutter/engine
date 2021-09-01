@@ -284,7 +284,6 @@ class ListenableEditingState extends SpannableStringBuilder {
   @Override
   public void setSpan(Object what, int start, int end, int flags) {
     super.setSpan(what, start, end, flags);
-    
     // Setting a span does not involve mutating the text value in the editing state. Here we create
     // an equality delta with any updated selection and composing regions.
     mBatchTextEditingDeltas.add(
