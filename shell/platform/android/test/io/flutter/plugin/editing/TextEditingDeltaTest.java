@@ -135,7 +135,7 @@ public class TextEditingDeltaTest {
     assertEquals("TextEditingDeltaType.deletion", delta.getDeltaType());
     assertEquals(oldText, delta.getOldText());
     assertEquals("o", delta.getDeltaText());
-    assertEquals(oldComposingEnd, delta.getDeltaStart());
+    assertEquals(oldComposingEnd - 1, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
     assertEquals(newSelectionStart, delta.getNewSelectionStart());
     assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
@@ -177,7 +177,7 @@ public class TextEditingDeltaTest {
     assertEquals("TextEditingDeltaType.deletion", delta.getDeltaType());
     assertEquals(oldText, delta.getOldText());
     assertEquals("e", delta.getDeltaText());
-    assertEquals(oldComposingEnd, delta.getDeltaStart());
+    assertEquals(oldComposingEnd - 1, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
     assertEquals(newSelectionStart, delta.getNewSelectionStart());
     assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
