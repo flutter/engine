@@ -503,8 +503,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (mRestartInputPending) {
       mImm.restartInput(view);
       mRestartInputPending = false;
-    } else {
-      mEditable.clearBatchDeltas();
     }
   }
 
@@ -659,38 +657,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
 
       if (configuration.enableDeltaModel) {
-        // Make sure last delta has the most up to date composing region.
-        // This can happen when the IME is restarted because the framework has changed the
-        // composing region. We do not have access to the new composing region until after
-        // the restart has completed.
-        if (mEditable.getBatchTextEditingDeltas().size() - 1 >= 0) {
-          TextEditingDelta delta =
-              mEditable
-                  .getBatchTextEditingDeltas()
-                  .get(mEditable.getBatchTextEditingDeltas().size() - 1);
-          delta.setNewComposingStart(composingStart);
-          delta.setNewComposingEnd(composingEnd);
-          mEditable.popTextEditingDeltaFromList();
-          mEditable.addTextEditingDeltaToList(delta);
-        } else if (mEditable.getBatchTextEditingDeltas().size() == 0) {
-          // Make sure we always have at least one delta when triggering a framework update, in
-          // this case an equality delta that has the most up to date selection/composing regions.
-          CharSequence text = mEditable.toString();
-          mEditable.addTextEditingDeltaToList(
-              new TextEditingDelta(
-                  text,
-                  text,
-                  0,
-                  text.length(),
-                  text,
-                  0,
-                  text.length(),
-                  selectionStart,
-                  selectionEnd,
-                  composingStart,
-                  composingEnd));
-        }
-
         textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
         mEditable.clearBatchDeltas();
       } else {
@@ -705,6 +671,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       mLastKnownFrameworkTextEditingState =
           new TextEditState(
               mEditable.toString(), selectionStart, selectionEnd, composingStart, composingEnd);
+    } else {
+      // Don't accumulate deltas if they are not sent to the framework.
+      mEditable.clearBatchDeltas();
     }
   }
 

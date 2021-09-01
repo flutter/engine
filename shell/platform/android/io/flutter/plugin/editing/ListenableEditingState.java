@@ -154,21 +154,9 @@ class ListenableEditingState extends SpannableStringBuilder {
 
     setComposingRange(newState.composingStart, newState.composingEnd);
 
-    // Make sure the TextEditingDelta has the most up to date selection and composing regions.
+    // Updates from the framework should not have a delta created for it as they have already been
+    // applied on the framework side.
     clearBatchDeltas();
-    mBatchTextEditingDeltas.add(
-        new TextEditingDelta(
-            newState.text,
-            newState.text,
-            0,
-            length(),
-            newState.text,
-            0,
-            newState.text.length(),
-            getSelectionStart(),
-            getSelectionEnd(),
-            getComposingStart(),
-            getComposingEnd()));
 
     endBatchEdit();
   }
@@ -291,6 +279,25 @@ class ListenableEditingState extends SpannableStringBuilder {
 
   public final int getComposingEnd() {
     return BaseInputConnection.getComposingSpanEnd(this);
+  }
+
+  @Override
+  public void setSpan(Object what, int start, int end, int flags) {
+    super.setSpan(what, start, end, flags);
+    
+    // Setting a span does not involve mutating the text value in the editing state. Here we create
+    // an equality delta with any updated selection and composing regions.
+    mBatchTextEditingDeltas.add(
+        new TextEditingDelta(
+            toString(),
+            "",
+            "TextEditingDeltaType.equality",
+            -1,
+            -1,
+            getSelectionStart(),
+            getSelectionEnd(),
+            getComposingStart(),
+            getComposingEnd()));
   }
 
   @Override
