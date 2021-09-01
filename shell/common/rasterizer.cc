@@ -172,21 +172,8 @@ void Rasterizer::Draw(
         if (discardCallback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
-          if (!layer_tree || !surface_) {
-            raster_status = RasterStatus::kFailed;
-          } else if (surface_->AllowsDrawingWhenGpuDisabled()) {
-            raster_status = DoDraw(std::move(frame_timings_recorder),
-                                   std::move(layer_tree));
-          } else {
-            delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
-                fml::SyncSwitch::Handlers()
-                    .SetIfTrue(
-                        [&] { raster_status = RasterStatus::kDiscarded; })
-                    .SetIfFalse([&] {
-                      raster_status = DoDraw(std::move(frame_timings_recorder),
-                                             std::move(layer_tree));
-                    }));
-          }
+          raster_status =
+              DoDraw(std::move(frame_timings_recorder), std::move(layer_tree));
         }
       };
 
@@ -381,6 +368,10 @@ RasterStatus Rasterizer::DoDraw(
                  .GetRasterTaskRunner()
                  ->RunsTasksOnCurrentThread());
 
+  if (!layer_tree || !surface_) {
+    return RasterStatus::kFailed;
+  }
+
   frame_timings_recorder->RecordRasterStart(fml::TimePoint::Now());
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
@@ -393,6 +384,8 @@ RasterStatus Rasterizer::DoDraw(
   } else if (raster_status == RasterStatus::kResubmit ||
              raster_status == RasterStatus::kSkipAndRetry) {
     resubmitted_layer_tree_ = std::move(layer_tree);
+    return raster_status;
+  } else if (raster_status == RasterStatus::kDiscarded) {
     return raster_status;
   }
 
@@ -472,6 +465,28 @@ RasterStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
+  FML_DCHECK(surface_);
+
+  RasterStatus raster_status;
+  if (surface_->AllowsDrawingWhenGpuDisabled()) {
+    raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+  } else {
+    delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers()
+            .SetIfTrue([&] { raster_status = RasterStatus::kDiscarded; })
+            .SetIfFalse([&] {
+              raster_status =
+                  DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+            }));
+  }
+
+  return raster_status;
+}
+
+RasterStatus Rasterizer::DrawToSurfaceUnsafe(
+    FrameTimingsRecorder& frame_timings_recorder,
+    flutter::LayerTree& layer_tree) {
+  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurfaceUnsafe");
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
