@@ -66,11 +66,11 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
 sk_sp<SkImage> ConvertToRasterUsingResourceContext(
     sk_sp<SkImage> image,
     fml::WeakPtr<GrDirectContext> resource_context,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   sk_sp<SkSurface> surface;
   SkImageInfo surface_info = SkImageInfo::MakeN32Premul(image->dimensions());
 
-  gpu_disable_sync_switch->Execute(
+  is_gpu_disabled_sync_switch->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&surface, &surface_info] {
             surface = SkSurface::MakeRaster(surface_info);
@@ -109,7 +109,7 @@ void ConvertImageToRaster(
     fml::RefPtr<fml::TaskRunner> io_task_runner,
     fml::WeakPtr<GrDirectContext> resource_context,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   // Check validity of the image.
   if (image == nullptr) {
     FML_LOG(ERROR) << "Image was null.";
@@ -143,20 +143,20 @@ void ConvertImageToRaster(
   // to prevent concurrent usage of the image on both the IO and raster threads.
   raster_task_runner->PostTask([image, encode_task = std::move(encode_task),
                                 resource_context, snapshot_delegate,
-                                io_task_runner, gpu_disable_sync_switch]() {
+                                io_task_runner, is_gpu_disabled_sync_switch]() {
     sk_sp<SkImage> raster_image =
         snapshot_delegate->ConvertToRasterImage(image);
 
     io_task_runner->PostTask([image, encode_task = std::move(encode_task),
                               raster_image = std::move(raster_image),
                               resource_context,
-                              gpu_disable_sync_switch]() mutable {
+                              is_gpu_disabled_sync_switch]() mutable {
       if (!raster_image) {
         // The rasterizer was unable to render the cross-context image
         // (presumably because it does not have a GrContext).  In that case,
         // convert the image on the IO thread using the resource context.
         raster_image = ConvertToRasterUsingResourceContext(
-            image, resource_context, gpu_disable_sync_switch);
+            image, resource_context, is_gpu_disabled_sync_switch);
       }
       encode_task(raster_image);
     });
@@ -245,7 +245,7 @@ void EncodeImageAndInvokeDataCallback(
     fml::RefPtr<fml::TaskRunner> io_task_runner,
     fml::WeakPtr<GrDirectContext> resource_context,
     fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   auto callback_task = fml::MakeCopyable(
       [callback = std::move(callback)](sk_sp<SkData> encoded) mutable {
         InvokeDataCallback(std::move(callback), std::move(encoded));
@@ -262,7 +262,7 @@ void EncodeImageAndInvokeDataCallback(
 
   ConvertImageToRaster(std::move(image), encode_task, raster_task_runner,
                        io_task_runner, resource_context, snapshot_delegate,
-                       gpu_disable_sync_switch);
+                       is_gpu_disabled_sync_switch);
 }
 
 }  // namespace
