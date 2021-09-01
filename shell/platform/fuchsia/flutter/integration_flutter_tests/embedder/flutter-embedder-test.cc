@@ -70,7 +70,14 @@ const std::vector<std::pair<const char*, const char*>> GetInjectedServices() {
       "fuchsia-pkg://fuchsia.com/fonts#meta/fonts.cmx"
     },{
       "fuchsia.hardware.display.Provider",
-      "fuchsia-pkg://fake-fuchsia.com/fake-hardware-display-controller-provider#meta/hdcp.cmx"
+      // TODO(richkadel): make sure this is never "fake-fuchsia.com"
+      "fuchsia-pkg://fuchsia.com/fake-hardware-display-controller-provider#meta/hdcp.cmx"
+      // TODO(richkadel): Delete the following comment block:
+      // "fuchsia-pkg://fuchsia.com/hardware-display-controller-provider#meta/hdcp.cmx"
+      // This failed with:
+      //   [pkg-resolver] WARNING: error resolving fuchsia-pkg://fuchsia.com/hardware-display-controller-provider/0
+      //   as fuchsia-pkg://google3-devhost/hardware-display-controller-provider/0: while caching the package:
+      //   while looking up merkle root for package: the package was not found in the repository
     },{
       "fuchsia.intl.PropertyProvider",
       "fuchsia-pkg://fuchsia.com/intl_property_manager#meta/intl_property_manager.cmx"
