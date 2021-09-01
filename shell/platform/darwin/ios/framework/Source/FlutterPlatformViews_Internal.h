@@ -175,12 +175,6 @@ class FlutterPlatformViewsController {
                    std::shared_ptr<IOSContext> ios_context,
                    std::unique_ptr<SurfaceFrame> frame);
 
-  // Invoked at the very end of a frame.
-  // After invoking this method, nothing should happen on the current TaskRunner during the same
-  // frame.
-  void EndFrame(bool should_resubmit_frame,
-                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
-
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
 
  private:

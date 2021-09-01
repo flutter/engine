@@ -980,8 +980,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
   XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
                                                             std::move(mock_surface_submit_false)));
-
-  flutterPlatformViewsController->Reset();
 }
 
 - (void)
