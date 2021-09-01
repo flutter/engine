@@ -37,8 +37,6 @@ class MockDelegate : public Rasterizer::Delegate {
 
 class MockSurface : public Surface {
  public:
-  MockSurface(bool allows_drawing_when_gpu_disabled = true)
-      : allows_drawing_when_gpu_disabled_(allows_drawing_when_gpu_disabled){};
   MOCK_METHOD0(IsValid, bool());
   MOCK_METHOD1(AcquireFrame,
                std::unique_ptr<SurfaceFrame>(const SkISize& size));
@@ -47,12 +45,7 @@ class MockSurface : public Surface {
   MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
   MOCK_METHOD0(MakeRenderContextCurrent, std::unique_ptr<GLContextResult>());
   MOCK_METHOD0(ClearRenderContext, bool());
-  bool AllowsDrawingWhenGpuDisabled() const override {
-    return allows_drawing_when_gpu_disabled_;
-  }
-
- private:
-  const bool allows_drawing_when_gpu_disabled_;
+  MOCK_CONST_METHOD0(AllowsDrawingWhenGpuDisabled, bool());
 };
 
 class MockExternalViewEmbedder : public ExternalViewEmbedder {
@@ -148,6 +141,7 @@ TEST(RasterizerTest,
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
@@ -208,6 +202,7 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
@@ -268,6 +263,7 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
@@ -349,13 +345,14 @@ TEST(RasterizerTest,
   EXPECT_CALL(delegate, OnFrameRasterized(_));
 
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
-  auto surface = std::make_unique<MockSurface>(true);
+  auto surface = std::make_unique<MockSurface>();
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(false);
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
@@ -396,13 +393,14 @@ TEST(
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
-  auto surface = std::make_unique<MockSurface>(true);
+  auto surface = std::make_unique<MockSurface>();
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(true);
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
@@ -420,7 +418,9 @@ TEST(
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    RasterStatus status =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    EXPECT_EQ(status, RasterStatus::kSuccess);
     latch.Signal();
   });
   latch.Wait();
@@ -443,13 +443,14 @@ TEST(
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_));
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
-  auto surface = std::make_unique<MockSurface>(false);
+  auto surface = std::make_unique<MockSurface>();
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(false);
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -466,7 +467,9 @@ TEST(
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    RasterStatus status =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    EXPECT_EQ(status, RasterStatus::kSuccess);
     latch.Signal();
   });
   latch.Wait();
@@ -489,13 +492,14 @@ TEST(
       .WillRepeatedly(ReturnRef(task_runners));
   EXPECT_CALL(delegate, OnFrameRasterized(_)).Times(0);
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
-  auto surface = std::make_unique<MockSurface>(false);
+  auto surface = std::make_unique<MockSurface>();
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(true);
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
       .WillOnce(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(*surface, AcquireFrame(SkISize())).Times(0);
@@ -511,7 +515,9 @@ TEST(
     bool result = pipeline->Produce().Complete(std::move(layer_tree));
     EXPECT_TRUE(result);
     auto no_discard = [](LayerTree&) { return false; };
-    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    RasterStatus status =
+        rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    EXPECT_EQ(status, RasterStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();

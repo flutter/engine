@@ -233,9 +233,10 @@ class Rasterizer final : public SnapshotDelegate {
   /// @param[in]  discardCallback if specified and returns true, the layer tree
   ///                             is discarded instead of being rendered
   ///
-  void Draw(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
-            std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-            LayerTreeDiscardCallback discardCallback = NoDiscard);
+  RasterStatus Draw(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
+      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+      LayerTreeDiscardCallback discardCallback = NoDiscard);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously

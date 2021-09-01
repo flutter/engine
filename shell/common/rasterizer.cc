@@ -147,7 +147,7 @@ void Rasterizer::DrawLastLayerTree(
   DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
 }
 
-void Rasterizer::Draw(
+RasterStatus Rasterizer::Draw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
     LayerTreeDiscardCallback discardCallback) {
@@ -156,7 +156,7 @@ void Rasterizer::Draw(
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
-    return;
+    return RasterStatus::kYielded;
   }
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
@@ -217,6 +217,8 @@ void Rasterizer::Draw(
     default:
       break;
   }
+
+  return raster_status;
 }
 
 namespace {
@@ -483,6 +485,9 @@ RasterStatus Rasterizer::DrawToSurface(
   return raster_status;
 }
 
+/// Unsafe because it assumes we have access to the GPU which isn't the case
+/// when iOS is backgrounded, for example.
+/// \see Rasterizer::DrawToSurface
 RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
