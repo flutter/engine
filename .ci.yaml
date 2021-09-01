@@ -128,7 +128,7 @@ targets:
     properties:
       dependencies: >-
         [
-          {"dependency": "android_avd", "version": "31"}
+          {"dependency": "android_virtual_device", "version": "31"}
         ]
       upload_packages: "true"
       clobber: "true"
