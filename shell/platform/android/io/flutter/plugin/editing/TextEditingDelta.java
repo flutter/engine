@@ -77,7 +77,7 @@ public class TextEditingDelta {
       if (isDeletionGreaterThanOne) {
         startOfDelete = start;
       } else {
-        startOfDelete = end;
+        startOfDelete = end - 1;
       }
 
       setDeltas(
