@@ -356,6 +356,8 @@ TEST(RasterizerTest,
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
+      .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
@@ -401,6 +403,8 @@ TEST(
   auto surface_frame = std::make_unique<SurfaceFrame>(
       /*surface=*/nullptr, /*supports_readback=*/true,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
+      .WillByDefault(Return(is_gpu_disabled_sync_switch));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame))));
