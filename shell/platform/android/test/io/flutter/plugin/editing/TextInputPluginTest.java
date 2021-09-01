@@ -278,13 +278,7 @@ public class TextInputPluginTest {
         testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     assertEquals(
-        "TextEditingDeltaType.equality",
-        ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
-            .get(0)
-            .getDeltaType());
-    assertEquals(
-        1,
+        0,
         ((ListenableEditingState) textInputPlugin.getEditable())
             .getBatchTextEditingDeltas()
             .size());
@@ -399,13 +393,7 @@ public class TextInputPluginTest {
         testView, new TextInputChannel.TextEditState(newText.toString(), 49, 49, 0, 49));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     assertEquals(
-        "TextEditingDeltaType.equality",
-        ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
-            .get(0)
-            .getDeltaType());
-    assertEquals(
-        1,
+        0,
         ((ListenableEditingState) textInputPlugin.getEditable())
             .getBatchTextEditingDeltas()
             .size());
@@ -517,13 +505,7 @@ public class TextInputPluginTest {
         testView, new TextInputChannel.TextEditState(newText.toString(), 5, 5, 0, 5));
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     assertEquals(
-        "TextEditingDeltaType.equality",
-        ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
-            .get(0)
-            .getDeltaType());
-    assertEquals(
-        1,
+        0,
         ((ListenableEditingState) textInputPlugin.getEditable())
             .getBatchTextEditingDeltas()
             .size());
