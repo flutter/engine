@@ -71,25 +71,10 @@ void FlatlandPlatformView::OnGetLayout(
                         static_cast<float>(info.logical_size().height)};
 
   // TODO(fxbug.dev/64201): Set device pixel ratio.
-
-  SetViewportMetrics({
-      1,                              // device_pixel_ratio
-      view_logical_size_.value()[0],  // physical_width
-      view_logical_size_.value()[1],  // physical_height
-      0.0f,                           // physical_padding_top
-      0.0f,                           // physical_padding_right
-      0.0f,                           // physical_padding_bottom
-      0.0f,                           // physical_padding_left
-      0.0f,                           // physical_view_inset_top
-      0.0f,                           // physical_view_inset_right
-      0.0f,                           // physical_view_inset_bottom
-      0.0f,                           // physical_view_inset_left
-      0.0f,                           // p_physical_system_gesture_inset_top
-      0.0f,                           // p_physical_system_gesture_inset_right
-      0.0f,                           // p_physical_system_gesture_inset_bottom
-      0.0f,                           // p_physical_system_gesture_inset_left,
-      -1.0,                           // p_physical_touch_slop,
-  });
+  viewport_state_.device_pixel_ratio = 1;
+  viewport_state_.physical_width = view_logical_size_.value()[0];
+  viewport_state_.physical_height = view_logical_size_.value()[1];
+  SetViewportMetrics(viewport_state_);
 
   parent_viewport_watcher_->GetLayout(
       fit::bind_member(this, &FlatlandPlatformView::OnGetLayout));

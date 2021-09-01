@@ -11,11 +11,13 @@
 #include <cstring>
 #include <limits>
 #include <sstream>
+#include <variant>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/window/pointer_data.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/shell/platform/common/client_wrapper/byte_buffer_streams.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/encodable_value.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
@@ -33,6 +35,7 @@ static constexpr char kTextInputChannel[] = "flutter/textinput";
 static constexpr char kKeyEventChannel[] = "flutter/keyevent";
 static constexpr char kAccessibilityChannel[] = "flutter/accessibility";
 static constexpr char kFlutterPlatformViewsChannel[] = "flutter/platform_views";
+static constexpr char kFlutterInsetsChannel[] = "flutter/insets";
 static constexpr char kFuchsiaShaderWarmupChannel[] = "fuchsia/shader_warmup";
 
 // FL(77): Terminate engine if Fuchsia system FIDL connections have error.
@@ -139,6 +142,9 @@ void PlatformView::RegisterPlatformMessageHandlers() {
   platform_message_handlers_[kFlutterPlatformViewsChannel] =
       std::bind(&PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage,
                 this, std::placeholders::_1);
+  platform_message_handlers_[kFlutterInsetsChannel] =
+      std::bind(&PlatformView::HandleFlutterInsetsChannelPlatformMessage, this,
+                std::placeholders::_1);
   platform_message_handlers_[kFuchsiaShaderWarmupChannel] =
       std::bind(&HandleFuchsiaShaderWarmupChannelPlatformMessage,
                 on_shader_warmup_, std::placeholders::_1);
@@ -903,6 +909,70 @@ bool PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
   } else {
     FML_DLOG(ERROR) << "Unknown " << message->channel() << " method " << method;
   }
+  // Complete with an empty response by default.
+  return false;
+}
+
+double GetNonNegativeDouble(const flutter::EncodableMap& args,
+                            const std::string& member) {
+  auto value_it = args.find(flutter::EncodableValue(member));
+  if (value_it == args.end()) {
+    FML_LOG(ERROR) << "Argument '" << member << "' does not exist";
+    return -1;
+  }
+
+  auto value_variant = value_it->second;
+  if (!std::holds_alternative<double>(value_variant)) {
+    FML_LOG(ERROR) << "Argument '" << member << "' is not a double";
+    return -1;
+  }
+
+  auto value = std::get<double>(value_variant);
+  if (value < 0) {
+    FML_LOG(ERROR) << "Argument '" << member << "' is a negative double";
+    return -1;
+  }
+  return value;
+}
+
+bool PlatformView::HandleFlutterInsetsChannelPlatformMessage(
+    std::unique_ptr<flutter::PlatformMessage> message) {
+  FML_DCHECK(message->channel() == kFlutterInsetsChannel);
+  const auto& data = message->data();
+  flutter::ByteBufferStreamReader reader(data.GetMapping(), data.GetSize());
+  auto& serializer = flutter::StandardCodecSerializer::GetInstance();
+  auto method_variant = serializer.ReadValue(&reader);
+  auto args_variant = serializer.ReadValue(&reader);
+  if (!std::holds_alternative<std::string>(method_variant) ||
+      !std::holds_alternative<flutter::EncodableMap>(args_variant)) {
+    FML_LOG(ERROR) << "Malformed flutter/insets request.";
+    return false;
+  }
+  auto method = std::get<std::string>(method_variant);
+  auto args = std::get<flutter::EncodableMap>(args_variant);
+
+  if (method == "setInsets") {
+    double top = GetNonNegativeDouble(args, "top");
+    double right = GetNonNegativeDouble(args, "right");
+    double bottom = GetNonNegativeDouble(args, "bottom");
+    double left = GetNonNegativeDouble(args, "left");
+    if (top < 0 || right < 0 || bottom < 0 || left < 0) {
+      return false;
+    }
+
+    viewport_state_.physical_view_inset_top = top;
+    viewport_state_.physical_view_inset_right = right;
+    viewport_state_.physical_view_inset_bottom = bottom;
+    viewport_state_.physical_view_inset_left = left;
+    FML_LOG(ERROR) << "CHANDARREN pixel ratio: "
+                   << viewport_state_.device_pixel_ratio;
+    FML_LOG(ERROR) << "CHANDARREN insets: { " << top << ", " << right << ", "
+                   << bottom << ", " << left << " }";
+    SetViewportMetrics(viewport_state_);
+  } else {
+    FML_DLOG(ERROR) << "Unknown " << message->channel() << " method " << method;
+  }
+
   // Complete with an empty response by default.
   return false;
 }

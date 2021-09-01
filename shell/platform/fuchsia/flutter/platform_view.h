@@ -165,6 +165,10 @@ class PlatformView : public flutter::PlatformView,
   bool HandleFlutterPlatformViewsChannelPlatformMessage(
       std::unique_ptr<flutter::PlatformMessage> message);
 
+  // Channel handler for kFlutterInsetsChannel.
+  bool HandleFlutterInsetsChannelPlatformMessage(
+      std::unique_ptr<flutter::PlatformMessage> message);
+
   // Channel handler for kFuchsiaShaderWarmupChannel.
   static bool HandleFuchsiaShaderWarmupChannelPlatformMessage(
       OnShaderWarmup on_shader_warmup,
@@ -202,6 +206,8 @@ class PlatformView : public flutter::PlatformView,
 
   OnShaderWarmup on_shader_warmup_;
   std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder_;
+
+  flutter::ViewportMetrics viewport_state_;
 
   int current_text_input_client_ = 0;
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;
