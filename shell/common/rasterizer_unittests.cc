@@ -37,6 +37,8 @@ class MockDelegate : public Rasterizer::Delegate {
 
 class MockSurface : public Surface {
  public:
+
+  MockSurface(bool allows_drawing_when_gpu_disabled = true):allows_drawing_when_gpu_disabled_(allows_drawing_when_gpu_disabled) {};
   MOCK_METHOD0(IsValid, bool());
   MOCK_METHOD1(AcquireFrame,
                std::unique_ptr<SurfaceFrame>(const SkISize& size));
@@ -45,6 +47,11 @@ class MockSurface : public Surface {
   MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
   MOCK_METHOD0(MakeRenderContextCurrent, std::unique_ptr<GLContextResult>());
   MOCK_METHOD0(ClearRenderContext, bool());
+  bool AllowsDrawingWhenGpuDisabled() const override {
+      return allows_drawing_when_gpu_disabled_;
+  }
+ private:
+    const bool allows_drawing_when_gpu_disabled_;
 };
 
 class MockExternalViewEmbedder : public ExternalViewEmbedder {
@@ -323,4 +330,179 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   });
   latch.Wait();
 }
+
+
+TEST(RasterizerTest,
+     drawWithGpuEnabledAndSurfaceAllowsDrawingWhenGpuDisabledDoesAcquireFrame) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  EXPECT_CALL(delegate, OnFrameRasterized(_));
+
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>(true);
+  auto is_gpu_disabled_sync_switch = std::make_shared<const fml::SyncSwitch>(false);
+
+  auto surface_frame = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
+  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+      .WillOnce(Return(ByMove(std::move(surface_frame))));
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    auto pipeline = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+                                                  /*device_pixel_ratio=*/2.0f);
+    bool result = pipeline->Produce().Complete(std::move(layer_tree));
+    EXPECT_TRUE(result);
+    auto no_discard = [](LayerTree&) { return false; };
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+TEST(RasterizerTest,
+     drawWithGpuDisabledAndSurfaceAllowsDrawingWhenGpuDisabledDoesAcquireFrame) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  EXPECT_CALL(delegate, OnFrameRasterized(_));
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>(true);
+  auto is_gpu_disabled_sync_switch = std::make_shared<const fml::SyncSwitch>(true);
+
+  auto surface_frame = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).Times(0);
+  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+      .WillOnce(Return(ByMove(std::move(surface_frame))));
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    auto pipeline = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+                                                  /*device_pixel_ratio=*/2.0f);
+    bool result = pipeline->Produce().Complete(std::move(layer_tree));
+    EXPECT_TRUE(result);
+    auto no_discard = [](LayerTree&) { return false; };
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+TEST(RasterizerTest,
+     drawWithGpuEnabledAndSurfaceDisallowsDrawingWhenGpuDisabledDoesAcquireFrame) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  EXPECT_CALL(delegate, OnFrameRasterized(_));
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>(false);
+  auto is_gpu_disabled_sync_switch = std::make_shared<const fml::SyncSwitch>(false);
+
+  auto surface_frame = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).WillOnce(Return(is_gpu_disabled_sync_switch));
+  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+      .WillOnce(Return(ByMove(std::move(surface_frame))));
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    auto pipeline = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+                                                  /*device_pixel_ratio=*/2.0f);
+    bool result = pipeline->Produce().Complete(std::move(layer_tree));
+    EXPECT_TRUE(result);
+    auto no_discard = [](LayerTree&) { return false; };
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+
+TEST(RasterizerTest,
+     drawWithGpuDisabledAndSurfaceDisallowsDrawingWhenGpuDisabledDoesntAcquireFrame) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  EXPECT_CALL(delegate, OnFrameRasterized(_)).Times(0);
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>(false);
+  auto is_gpu_disabled_sync_switch = std::make_shared<const fml::SyncSwitch>(true);
+
+  auto surface_frame = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch()).WillOnce(Return(is_gpu_disabled_sync_switch));
+  EXPECT_CALL(*surface, AcquireFrame(SkISize())).Times(0);    
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    auto pipeline = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+    auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+                                                  /*device_pixel_ratio=*/2.0f);
+    bool result = pipeline->Produce().Complete(std::move(layer_tree));
+    EXPECT_TRUE(result);
+    auto no_discard = [](LayerTree&) { return false; };
+    rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
 }  // namespace flutter
