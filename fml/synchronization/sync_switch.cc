@@ -27,11 +27,26 @@ void SyncSwitch::Execute(const SyncSwitch::Handlers& handlers) const {
   } else {
     handlers.false_handler();
   }
+#if !FLUTTER_RELEASE
+  was_executed_flag_ = true;
+#endif  // FLUTTER_RELEASE
 }
 
 void SyncSwitch::SetSwitch(bool value) {
   std::scoped_lock guard(mutex_);
   value_ = value;
 }
+
+#if !FLUTTER_RELEASE
+bool SyncSwitch::WasExecuted() const {
+  std::scoped_lock guard(mutex_);
+  return was_executed_flag_;
+}
+
+void SyncSwitch::ClearWasExecutedFlag() const {
+  std::scoped_lock guard(mutex_);
+  was_executed_flag_ = false;
+}
+#endif  // FLUTTER_RELEASE
 
 }  // namespace fml

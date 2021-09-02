@@ -28,3 +28,14 @@ TEST(SyncSwitchTest, NoopIfUndefined) {
   syncSwitch.Execute(SyncSwitch::Handlers());
   EXPECT_FALSE(switchValue);
 }
+
+#if !FLUTTER_RELEASE
+TEST(SyncSwitchTest, WasExecuted) {
+  SyncSwitch syncSwitch;
+  EXPECT_FALSE(syncSwitch.WasExecuted());
+  syncSwitch.Execute(SyncSwitch::Handlers());
+  EXPECT_TRUE(syncSwitch.WasExecuted());
+  syncSwitch.ClearWasExecutedFlag();
+  EXPECT_FALSE(syncSwitch.WasExecuted());
+}
+#endif  // FLUTTER_RELEASE

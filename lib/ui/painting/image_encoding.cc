@@ -304,4 +304,17 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
   return Dart_Null();
 }
 
+#if !FLUTTER_RELEASE
+namespace testing {
+
+sk_sp<SkImage> ConvertToRasterUsingResourceContextForTest(
+    sk_sp<SkImage> image,
+    fml::WeakPtr<GrDirectContext> resource_context,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
+  return ConvertToRasterUsingResourceContext(image, resource_context,
+                                             is_gpu_disabled_sync_switch);
+}
+}  // namespace testing
+#endif  // FLUTTER_RELEASE
+
 }  // namespace flutter
