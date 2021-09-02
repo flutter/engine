@@ -59,8 +59,8 @@
              deltaEnd:-1];
     } else if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) {  // Deletion.
       NSMutableString* deleted = [[textBeforeChange
-         substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))]
-         mutableCopy];
+          substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))]
+          mutableCopy];
       NSLog(@"We have a deletion");
       NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, start,
             end);

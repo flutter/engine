@@ -987,8 +987,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   _currentTextEditingDelta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:[textBeforeChange mutableCopy]
            textAfterChange:[self.text mutableCopy]
-             replacedRange:[self clampSelection:range
-                   forText:textBeforeChange]
+             replacedRange:[self clampSelection:range forText:textBeforeChange]
                updatedText:[text mutableCopy]];
 }
 
