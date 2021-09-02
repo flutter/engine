@@ -55,7 +55,7 @@
              replacedRange:[self clampSelection:range forText:oldText]
                updatedText:replacementText];
 
-  NSLog(@"%a", delta.deltaText);
+  NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqual(delta.deltaText, replacementText);
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.insertion");
@@ -78,7 +78,7 @@
              replacedRange:[self clampSelection:range forText:oldText]
                updatedText:replacementText];
 
-  NSLog(@"%a", delta.deltaText);
+  NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqual(delta.deltaText, @"o");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
@@ -99,7 +99,7 @@
              replacedRange:[self clampSelection:range forText:oldText]
                updatedText:replacementText];
 
-  NSLog(@"%a", delta.deltaText);
+  NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqual(delta.deltaText, @"e");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
@@ -120,7 +120,7 @@
              replacedRange:[self clampSelection:range forText:oldText]
                updatedText:replacementText];
 
-  NSLog(@"%a", delta.oldText);
+  NSLog(@"%@", delta.oldText);
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqual(delta.deltaText, @"llo");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
