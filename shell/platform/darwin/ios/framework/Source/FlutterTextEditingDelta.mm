@@ -100,8 +100,6 @@
                  type:@"TextEditingDeltaType.replacement"
            deltaStart:start
              deltaEnd:end];
-    } else {
-      NSLog(@"shit");
     }
   }
 
