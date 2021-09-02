@@ -610,7 +610,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _isFloatingCursorActive = false;
 
     // Delta
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[@"" mutableCopy]];
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:@""];
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -933,7 +933,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   if (_enableDeltaModel) {
     _currentTextEditingDelta =
-        [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
+        [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -985,10 +985,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
   _currentTextEditingDelta = [[FlutterTextEditingDelta alloc]
-      initTextEditingDelta:[textBeforeChange mutableCopy]
-           textAfterChange:[self.text mutableCopy]
+      initTextEditingDelta:textBeforeChange
+           textAfterChange:self.text
              replacedRange:[self clampSelection:range forText:textBeforeChange]
-               updatedText:[text mutableCopy]];
+               updatedText:text];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1093,7 +1093,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
     _currentTextEditingDelta =
-        [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
+        [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1464,7 +1464,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   } else {
     [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
     _currentTextEditingDelta =
-        [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
+        [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
   }
 }
 

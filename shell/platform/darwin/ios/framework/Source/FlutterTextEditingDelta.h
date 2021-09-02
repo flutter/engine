@@ -9,22 +9,22 @@
 
 @interface FlutterTextEditingDelta : NSObject
 
-@property(nonatomic, readonly) NSMutableString* oldText;
-@property(nonatomic, readonly) NSMutableString* deltaText;
-@property(nonatomic, readonly) NSMutableString* deltaType;
+@property(nonatomic, readonly) NSString* oldText;
+@property(nonatomic, readonly) NSString* deltaText;
+@property(nonatomic, readonly) NSString* deltaType;
 @property(nonatomic, readonly) NSInteger deltaStart;
 @property(nonatomic, readonly) NSInteger deltaEnd;
 
-- (instancetype)initTextEditingDelta:(NSMutableString*)textBeforeChange
-                     textAfterChange:(NSMutableString*)textAfterChange
+- (instancetype)initTextEditingDelta:(NSString*)textBeforeChange
+                     textAfterChange:(NSString*)textAfterChange
                        replacedRange:(NSRange)range
-                         updatedText:(NSMutableString*)text;
+                         updatedText:(NSString*)text;
 
-- (instancetype)initWithEquality:(NSMutableString*)text;
+- (instancetype)initWithEquality:(NSString*)text;
 
-- (void)setDeltas:(NSMutableString*)oldText
-          newText:(NSMutableString*)newTxt
-             type:(NSMutableString*)deltaType
+- (void)setDeltas:(NSString*)oldText
+          newText:(NSString*)newTxt
+             type:(NSString*)deltaType
        deltaStart:(NSInteger)newStart
          deltaEnd:(NSInteger)newEnd;
 

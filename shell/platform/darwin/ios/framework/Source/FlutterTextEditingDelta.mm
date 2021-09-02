@@ -6,10 +6,10 @@
 
 @implementation FlutterTextEditingDelta
 
-- (instancetype)initTextEditingDelta:(NSMutableString*)textBeforeChange
-                     textAfterChange:(NSMutableString*)textAfterChange
+- (instancetype)initTextEditingDelta:(NSString*)textBeforeChange
+                     textAfterChange:(NSString*)textAfterChange
                        replacedRange:(NSRange)range
-                         updatedText:(NSMutableString*)text {
+                         updatedText:(NSString*)text {
   self = [super init];
 
   if (self) {
@@ -50,28 +50,27 @@
 
     if (isEqual) {
       NSLog(@"We have no changes, reporting equality");
-      NSMutableString* empty = [@"" mutableCopy];
-      NSMutableString* type = [@"TextEditingDeltaType.equality" mutableCopy];
-      [self setDeltas:[textBeforeChange mutableCopy]
+      NSString* empty = @"";
+      NSString* type = @"TextEditingDeltaType.equality";
+      [self setDeltas:textBeforeChange
               newText:empty
                  type:type
            deltaStart:-1
              deltaEnd:-1];
     } else if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) {  // Deletion.
-      NSMutableString* deleted = [[textBeforeChange
-          substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))]
-          mutableCopy];
+      NSString* deleted = [textBeforeChange
+          substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))];
       NSLog(@"We have a deletion");
       NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, start,
             end);
-      NSMutableString* type = [@"TextEditingDeltaType.deletion" mutableCopy];
+      NSString* type = @"TextEditingDeltaType.deletion";
       NSInteger actualStart = start;
 
       if (!isDeletionGreaterThanOne) {
         actualStart = end - 1;
       }
 
-      [self setDeltas:[textBeforeChange mutableCopy]
+      [self setDeltas:textBeforeChange
               newText:deleted
                  type:type
            deltaStart:actualStart
@@ -82,23 +81,22 @@
       NSLog(@"We are inserting %@ at start position: %lu and end position: %lu",
             [text substringWithRange:NSMakeRange(end - start, text.length - (end - start))], start,
             end);
-      NSMutableString* type = [@"TextEditingDeltaType.insertion" mutableCopy];
-      NSMutableString* textBeforeInsertion = [textBeforeChange mutableCopy];
+      NSString* type = @"TextEditingDeltaType.insertion";
+      NSString* textBeforeInsertion = textBeforeChange;
       [self setDeltas:textBeforeInsertion
-              newText:[[text
+              newText:[text
                           substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
-                          mutableCopy]
                  type:type
            deltaStart:end
              deltaEnd:end];
     } else if (isReplaced) {  // Replacement.
-      NSMutableString* replaced = [[textBeforeChange substringWithRange:range] mutableCopy];
+      NSString* replaced = [textBeforeChange substringWithRange:range];
       NSLog(@"We have a replacement");
       NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
             start, end, text);
-      NSMutableString* type = [@"TextEditingDeltaType.replacement" mutableCopy];
-      [self setDeltas:[textBeforeChange mutableCopy]
-              newText:[text mutableCopy]
+      NSString* type = @"TextEditingDeltaType.replacement";
+      [self setDeltas:textBeforeChange
+              newText:text
                  type:type
            deltaStart:start
              deltaEnd:end];
@@ -108,22 +106,22 @@
   return self;
 }
 
-- (instancetype)initWithEquality:(NSMutableString*)text {
+- (instancetype)initWithEquality:(NSString*)text {
   self = [super init];
 
   if (self) {
     NSLog(@"We have no changes, reporting equality");
-    NSMutableString* empty = [@"" mutableCopy];
-    NSMutableString* type = [@"TextEditingDeltaType.equality" mutableCopy];
-    [self setDeltas:[text mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
+    NSString* empty = @"";
+    NSString* type = @"TextEditingDeltaType.equality";
+    [self setDeltas:text newText:empty type:type deltaStart:-1 deltaEnd:-1];
   }
 
   return self;
 }
 
-- (void)setDeltas:(NSMutableString*)oldText
-          newText:(NSMutableString*)newTxt
-             type:(NSMutableString*)deltaType
+- (void)setDeltas:(NSString*)oldText
+          newText:(NSString*)newTxt
+             type:(NSString*)deltaType
        deltaStart:(NSInteger)newStart
          deltaEnd:(NSInteger)newEnd {
   _oldText = oldText;
