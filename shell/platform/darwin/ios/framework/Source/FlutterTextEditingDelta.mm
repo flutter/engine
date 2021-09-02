@@ -82,9 +82,9 @@
       [self
            setDeltas:textBeforeInsertion
              newText:[text substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
-                 type:type
-           deltaStart:end
-             deltaEnd:end];
+                type:type
+          deltaStart:end
+            deltaEnd:end];
     } else if (isReplaced) {  // Replacement.
       NSString* replaced = [textBeforeChange substringWithRange:range];
       NSLog(@"We have a replacement");
