@@ -13,8 +13,7 @@
 @interface FlutterTextEditingDeltaTest : XCTestCase
 @end
 
-@implementation FlutterEditingDeltaTest {
-}
+@implementation FlutterTextEditingDeltaTest
 
 - (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
   int start = MIN(MAX(range.location, 0), text.length);
@@ -41,36 +40,6 @@
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.insertion");
   XCTAssertEqual(delta.deltaStart, 4);
   XCTAssertEqual(delta.deltaEnd, 4);
-}
-
-- (void)testInsertionTextEditingDeltaInsideOfComposing() {
-}
-
-#pragma mark - TextEditingDelta Deletion tests
-
-- (void)testDeletionTextEditingDeltaAtEndOfComposing() {
-}
-
-- (void)testDeletionTextEditingDeltaInsideOfComposing() {
-}
-
-- (void)testDeletionTextEditingDeltaForSelection() {
-}
-
-#pragma mark - TextEditingDelta Replacement tests
-
-- (void)testReplacementSameTextEditingDelta() {
-}
-
-- (void)testReplacementLongerTextEditingDelta() {
-}
-
-- (void)testReplacementShorterTextEditingDelta() {
-}
-
-#pragma mark - TextEditingDelta Equality tests
-
-- (void)testEqualityTextEditingDelta() {
 }
 
 @end
