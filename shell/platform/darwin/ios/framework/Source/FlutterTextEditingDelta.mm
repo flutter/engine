@@ -100,9 +100,7 @@
 
   if (self) {
     NSLog(@"We have no changes, reporting equality");
-    NSString* empty = @"";
-    NSString* type = @"TextEditingDeltaType.equality";
-    [self setDeltas:text newText:empty type:type deltaStart:-1 deltaEnd:-1];
+    [self setDeltas:text newText:@"" type:@"TextEditingDeltaType.equality" deltaStart:-1 deltaEnd:-1];
   }
 
   return self;
