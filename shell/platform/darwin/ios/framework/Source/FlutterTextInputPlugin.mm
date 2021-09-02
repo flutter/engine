@@ -588,12 +588,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // The view has reached end of life, and is no longer
   // allowed to access its textInputDelegate.
   BOOL _decommissioned;
-
-  NSMutableString* _oldText;
-  NSMutableString* _newText;
-  NSMutableString* _deltaType;
-  NSInteger _newRangeStart;
-  NSInteger _newRangeExtent;
 }
 
 @synthesize tokenizer = _tokenizer;
@@ -616,11 +610,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _isFloatingCursorActive = false;
 
     // Delta
-    _oldText = [[NSMutableString alloc] init];
-    _newText = [[NSMutableString alloc] init];
-    _deltaType = [[NSMutableString alloc] init];
-    _newRangeStart = -1;
-    _newRangeExtent = -1;
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[@"" mutableCopy]];
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -942,9 +932,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:selectedTextRange];
 
   if (_enableDeltaModel) {
-    NSMutableString* empty = [@"" mutableCopy];
-    NSMutableString* type = [@"EQUALITY" mutableCopy];
-    [self setDeltas:[self.text mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -973,82 +961,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return [self.text substringWithRange:safeRange];
 }
 
-- (void)setDeltas:(NSMutableString*)oldText
-          newText:(NSMutableString*)newTxt
-             type:(NSMutableString*)deltaType
-       deltaStart:(NSInteger)newStart
-         deltaEnd:(NSInteger)newEnd {
-  _oldText = oldText;
-  _newText = newTxt;
-  _deltaType = deltaType;
-  _newRangeStart = newStart;
-  _newRangeExtent = newEnd;
-}
-
 // Replace the text within the specified range with the given text,
 // without notifying the framework.
 - (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
-  // NSRange(start, length).
-  // The start indicates the starting position of the range.
-  // The length indicates how far the range extends from the start position.
-  // NSRange(10, 5) means that we want the range from position 10 to position 15.
-  // We start at position 10 and add 5 to get the final position 15.
-  NSInteger start = range.location;
-  NSInteger end = range.location + range.length;
-  NSInteger tbstart = 0;
-  NSInteger tbend = text.length;
-
-  NSLog(@"replaceRangeLocal range start: %lu to end: %lu character: %@ tbstart: %lu tbend: %lu",
-        start, end, text, tbstart, tbend);
-  NSLog(@"Word being edited (before edits): %@", self.text);
-
-  BOOL isDeletingByReplacingWithEmpty = text.length == 0 && tbstart == 0 && tbstart == tbend;
-  BOOL isReplacedByShorter = tbend - tbstart < end - start;
-  BOOL isReplacedByLonger = tbend - tbstart > end - start;
-  BOOL isReplacedBySame = tbend - tbstart == end - start;
-  BOOL isReplaced = isReplacedByLonger || isReplacedByShorter || isReplacedBySame;
-  BOOL isEqual = text == self.text;
-
-  if (isEqual) {
-    NSLog(@"We have no changes, reporting equality");
-    NSMutableString* empty = [@"" mutableCopy];
-    NSMutableString* type = [@"TextEditingDeltaType.equality" mutableCopy];
-    [self setDeltas:[self.text mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
-  } else if (isDeletingByReplacingWithEmpty) {  // Deletion.
-    NSMutableString* deleted = [[self.text substringWithRange:range] mutableCopy];
-    NSLog(@"We have a deletion");
-    NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, start, end);
-    NSMutableString* type = [@"TextEditingDeltaType.deletion" mutableCopy];
-    NSInteger actualStart = start;
-
-    if (end - start == 1) {
-      actualStart = end;
-    }
-
-    [self setDeltas:[self.text mutableCopy]
-            newText:deleted
-               type:type
-         deltaStart:actualStart
-           deltaEnd:end];
-  } else if (start == end) {  // Insertion.
-    NSLog(@"We have an insertion");
-    NSLog(@"We are inserting %@ at start position: %lu and end position: %lu", text, start, end);
-    NSMutableString* type = [@"TextEditingDeltaType.insertion" mutableCopy];
-    NSMutableString* textBeforeInsertion = [self.text mutableCopy];
-    [self setDeltas:textBeforeInsertion
-            newText:[text mutableCopy]
-               type:type
-         deltaStart:start
-           deltaEnd:end];
-  } else if (isReplaced) {  // Replacement.
-    NSMutableString* replaced = [[self.text substringWithRange:range] mutableCopy];
-    NSLog(@"We have a replacement");
-    NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
-          start, end, text);
-    NSMutableString* type = [@"TextEditingDeltaType.replacement" mutableCopy];
-    [self setDeltas:replaced newText:[text mutableCopy] type:type deltaStart:start deltaEnd:end];
-  }
-
+  NSString* textBeforeChange = [self.text copy];
   NSRange selectedRange = _selectedTextRange.range;
 
   // Adjust the text selection:
@@ -1067,6 +983,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:[FlutterTextRange
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
+  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initTextEditingDelta:[textBeforeChange mutableCopy] textAfterChange:[self.text mutableCopy] replacedRange:[self clampSelection:range forText:textBeforeChange] updatedText:[text mutableCopy]];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1170,6 +1087,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSLog(@"unmarkText");
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1520,11 +1438,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 
   NSDictionary* state = @{
-    @"oldText" : [NSString stringWithString:self.oldText],
-    @"deltaText" : [NSString stringWithString:self.newText],
-    @"deltaType" : [NSString stringWithString:self.deltaType],
-    @"deltaStart" : @(_newRangeStart),
-    @"deltaEnd" : @(_newRangeExtent),
+    @"oldText" : [NSString stringWithString:_currentTextEditingDelta.oldText],
+    @"deltaText" : [NSString stringWithString:_currentTextEditingDelta.deltaText],
+    @"deltaType" : [NSString stringWithString:_currentTextEditingDelta.deltaType],
+    @"deltaStart" : @(_currentTextEditingDelta.deltaStart),
+    @"deltaEnd" : @(_currentTextEditingDelta.deltaEnd),
     @"selectionBase" : @(selectionBase),
     @"selectionExtent" : @(selectionExtent),
     @"selectionAffinity" : @(_selectionAffinity),
@@ -1534,6 +1452,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   };
 
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
+  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
 }
 
 - (BOOL)hasText {

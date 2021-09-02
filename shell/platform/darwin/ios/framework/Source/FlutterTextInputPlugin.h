@@ -10,6 +10,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextEditingDelta.h"
 
 @interface FlutterTextInputPlugin : NSObject <FlutterKeySecondaryResponder>
 
@@ -62,12 +63,8 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
 
-// Deltas
-@property(nonatomic, readonly) NSMutableString* oldText;
-@property(nonatomic, readonly, getter=newerText) NSMutableString* newText;
-@property(nonatomic, readonly) NSMutableString* deltaType;
-@property(nonatomic, readonly) NSInteger newRangeStart;
-@property(nonatomic, readonly) NSInteger newRangeEnd;
+// Delta
+@property(nonatomic, readonly) FlutterTextEditingDelta* currentTextEditingDelta;
 
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
