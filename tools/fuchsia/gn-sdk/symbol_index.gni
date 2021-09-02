@@ -39,7 +39,7 @@ template("fuchsia_symbol_index_tool") {
 
     # tool path
     _tool_path = "${fuchsia_tool_dir}/symbol-index"
-    script = "${fuchsia_sdk}/build/gn_run_binary.py"
+    script = "//build/gn_run_binary.py"
 
     inputs = [
       # Depend on the SDK hash, to ensure rebuild if the SDK tools change.
