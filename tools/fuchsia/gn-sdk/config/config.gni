@@ -2,10 +2,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+# TODO(richkadel): added this import and modified the fuchsia_sdk assignment.
+# See below.
+import("//build/fuchsia/sdk.gni")
 declare_args() {
   # Path to the fuchsia SDK. This is intended for use in other templates & rules
   # to reference the contents of the fuchsia SDK.
-  fuchsia_sdk = get_path_info("../..", "abspath")
+  fuchsia_sdk = "$fuchsia_sdk_path"
+
+  # TODO(richkadel): Since flutter needs build rules from the GN SDK, but also
+  # requires the Fuchsia _Core_ SDK (for dart libraries, in the core SDK, but
+  # excluded from the GN SDK), the Fuchsia SDK assumption that the build files
+  # are in the same SDK directory path as the APIs does not hold true. (And
+  # there are are a couple of other minor tweaks that appear to be needed, at
+  # this time.) This use case will be discussed with the SDK team, to see if we
+  # can come up with a cleaner solution.
 
   # Build ID uniquely identifying the Fuchsia IDK. This is exposed as a property so
   # it can be used to locate images and packages on GCS and as a marker to indicate the

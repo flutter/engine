@@ -52,7 +52,7 @@ template("fuchsia_pm_tool") {
 
     # tool path
     _pm_tool_path = "${fuchsia_tool_dir}/pm"
-    script = "${fuchsia_sdk}/build/gn_run_binary.py"
+    script = "//build/gn_run_binary.py"
 
     # output files
     _pkg_out_dir = "${target_gen_dir}/${package_name}"
