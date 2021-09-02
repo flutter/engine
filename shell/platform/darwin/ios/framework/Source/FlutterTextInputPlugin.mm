@@ -932,7 +932,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:selectedTextRange];
 
   if (_enableDeltaModel) {
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
+    _currentTextEditingDelta =
+        [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -983,7 +984,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:[FlutterTextRange
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
-  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initTextEditingDelta:[textBeforeChange mutableCopy] textAfterChange:[self.text mutableCopy] replacedRange:[self clampSelection:range forText:textBeforeChange] updatedText:[text mutableCopy]];
+  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc]
+      initTextEditingDelta:[textBeforeChange mutableCopy]
+           textAfterChange:[self.text mutableCopy]
+             replacedRange:[self clampSelection:range
+                   forText:textBeforeChange]
+               updatedText:[text mutableCopy]];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
@@ -1087,7 +1093,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSLog(@"unmarkText");
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
+    _currentTextEditingDelta =
+        [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1452,7 +1459,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   };
 
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
-  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
+  _currentTextEditingDelta =
+      [[FlutterTextEditingDelta alloc] initWithEquality:[self.text mutableCopy]];
 }
 
 - (BOOL)hasText {

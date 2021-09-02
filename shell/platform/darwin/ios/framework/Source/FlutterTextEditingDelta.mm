@@ -39,20 +39,31 @@
     BOOL isInsertingInsideMarkedText = start + tbend > end;
 
     NSString* originalMarkedText = [textBeforeChange substringWithRange:range];
-    NSString* newMarkedText = (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText || isReplacedByShorter) ? @"" : [text substringWithRange:NSMakeRange(tbstart, end - start)];
+    NSString* newMarkedText =
+        (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText || isReplacedByShorter)
+            ? @""
+            : [text substringWithRange:NSMakeRange(tbstart, end - start)];
     BOOL isOriginalComposingRegionTextChanged = ![originalMarkedText isEqualToString:newMarkedText];
 
-    BOOL isReplaced = isOriginalComposingRegionTextChanged && (isReplacedByLonger || isReplacedByShorter || isReplacedBySame);
+    BOOL isReplaced = isOriginalComposingRegionTextChanged &&
+                      (isReplacedByLonger || isReplacedByShorter || isReplacedBySame);
 
     if (isEqual) {
       NSLog(@"We have no changes, reporting equality");
       NSMutableString* empty = [@"" mutableCopy];
       NSMutableString* type = [@"TextEditingDeltaType.equality" mutableCopy];
-      [self setDeltas:[textBeforeChange mutableCopy] newText:empty type:type deltaStart:-1 deltaEnd:-1];
+      [self setDeltas:[textBeforeChange mutableCopy]
+              newText:empty
+                 type:type
+           deltaStart:-1
+             deltaEnd:-1];
     } else if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) {  // Deletion.
-      NSMutableString* deleted = [[textBeforeChange substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))] mutableCopy];
+      NSMutableString* deleted = [[textBeforeChange
+         substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))]
+         mutableCopy];
       NSLog(@"We have a deletion");
-      NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, start, end);
+      NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, start,
+            end);
       NSMutableString* type = [@"TextEditingDeltaType.deletion" mutableCopy];
       NSInteger actualStart = start;
 
@@ -65,13 +76,18 @@
                  type:type
            deltaStart:actualStart
              deltaEnd:end];
-    } else if ((start == end || isInsertingInsideMarkedText) && !isOriginalComposingRegionTextChanged) {  // Insertion.
+    } else if ((start == end || isInsertingInsideMarkedText) &&
+               !isOriginalComposingRegionTextChanged) {  // Insertion.
       NSLog(@"We have an insertion");
-      NSLog(@"We are inserting %@ at start position: %lu and end position: %lu", [text substringWithRange:NSMakeRange(end - start, text.length - (end - start))], start, end);
+      NSLog(@"We are inserting %@ at start position: %lu and end position: %lu",
+            [text substringWithRange:NSMakeRange(end - start, text.length - (end - start))], start,
+            end);
       NSMutableString* type = [@"TextEditingDeltaType.insertion" mutableCopy];
       NSMutableString* textBeforeInsertion = [textBeforeChange mutableCopy];
       [self setDeltas:textBeforeInsertion
-              newText:[[text substringWithRange:NSMakeRange(end - start, text.length - (end - start))] mutableCopy]
+              newText:[[text
+                          substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
+                          mutableCopy]
                  type:type
            deltaStart:end
              deltaEnd:end];
@@ -81,7 +97,11 @@
       NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
             start, end, text);
       NSMutableString* type = [@"TextEditingDeltaType.replacement" mutableCopy];
-      [self setDeltas:[textBeforeChange mutableCopy] newText:[text mutableCopy] type:type deltaStart:start deltaEnd:end];
+      [self setDeltas:[textBeforeChange mutableCopy]
+              newText:[text mutableCopy]
+                 type:type
+           deltaStart:start
+             deltaEnd:end];
     }
   }
 
