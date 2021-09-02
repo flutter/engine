@@ -19,7 +19,7 @@
     NSInteger tbend = text.length;
 
     NSLog(@"replaceRangeLocal range start: %lu to end: %lu character: %@ tbstart: %lu tbend: %lu",
-          (long) start, (long) end, text, (long) tbstart, (long) tbend);
+          (long)start, (long)end, text, (long)tbstart, (long)tbend);
     NSLog(@"Word being edited (before edits): %@", textBeforeChange);
     BOOL isEqual = [textBeforeChange isEqualToString:textAfterChange];
 
@@ -54,8 +54,8 @@
       NSString* deleted = [textBeforeChange
           substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))];
       NSLog(@"We have a deletion");
-      NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted, (long) start,
-            (long) end);
+      NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted,
+            (long)start, (long)end);
       NSInteger actualStart = start;
 
       if (!isDeletionGreaterThanOne) {
@@ -71,8 +71,8 @@
                !isOriginalComposingRegionTextChanged) {  // Insertion.
       NSLog(@"We have an insertion");
       NSLog(@"We are inserting %@ at start position: %lu and end position: %lu",
-            [text substringWithRange:NSMakeRange(end - start, text.length - (end - start))], (long) start,
-            (long) end);
+            [text substringWithRange:NSMakeRange(end - start, text.length - (end - start))],
+            (long)start, (long)end);
       [self
            setDeltas:textBeforeChange
              newText:[text substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
@@ -83,7 +83,7 @@
       NSString* replaced = [textBeforeChange substringWithRange:range];
       NSLog(@"We have a replacement");
       NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
-            (long) start, (long) end, text);
+            (long)start, (long)end, text);
       [self setDeltas:textBeforeChange
               newText:text
                  type:@"TextEditingDeltaType.replacement"
