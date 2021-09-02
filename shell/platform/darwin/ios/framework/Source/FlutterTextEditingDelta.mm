@@ -52,11 +52,7 @@
       NSLog(@"We have no changes, reporting equality");
       NSString* empty = @"";
       NSString* type = @"TextEditingDeltaType.equality";
-      [self setDeltas:textBeforeChange
-              newText:empty
-                 type:type
-           deltaStart:-1
-             deltaEnd:-1];
+      [self setDeltas:textBeforeChange newText:empty type:type deltaStart:-1 deltaEnd:-1];
     } else if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) {  // Deletion.
       NSString* deleted = [textBeforeChange
           substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))];
@@ -83,9 +79,9 @@
             end);
       NSString* type = @"TextEditingDeltaType.insertion";
       NSString* textBeforeInsertion = textBeforeChange;
-      [self setDeltas:textBeforeInsertion
-              newText:[text
-                          substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
+      [self
+           setDeltas:textBeforeInsertion
+             newText:[text substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
                  type:type
            deltaStart:end
              deltaEnd:end];
@@ -95,11 +91,7 @@
       NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
             start, end, text);
       NSString* type = @"TextEditingDeltaType.replacement";
-      [self setDeltas:textBeforeChange
-              newText:text
-                 type:type
-           deltaStart:start
-             deltaEnd:end];
+      [self setDeltas:textBeforeChange newText:text type:type deltaStart:start deltaEnd:end];
     }
   }
 
