@@ -88,7 +88,7 @@
   // Here we are simulating deleting an "e" in the world "hello".
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"hllo";
-  NSString* replacementText = @"e";
+  NSString* replacementText = @"";
   NSRange range = NSMakeRange(1, 1);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
@@ -108,7 +108,7 @@
   // Here we are simulating deleting "llo" in the word "hello".
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"he";
-  NSString* replacementText = @"llo";
+  NSString* replacementText = @"";
   NSRange range = NSMakeRange(2, 3);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
