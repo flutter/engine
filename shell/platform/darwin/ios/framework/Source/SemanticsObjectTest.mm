@@ -276,6 +276,46 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
                                     CGPointMake(0, scrollPosition * effectivelyScale)));
 }
 
+- (void)testVerticalFlutterScrollableSemanticsObjectNoWindow {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::MockAccessibilityBridgeNoWindow());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  float transformScale = 0.5f;
+  float screenScale =
+      [UIScreen mainScreen].scale;  // Flutter view without window uses [UIScreen mainScreen];
+  float effectivelyScale = transformScale / screenScale;
+  float x = 10;
+  float y = 10;
+  float w = 100;
+  float h = 200;
+  float scrollExtentMax = 500.0;
+  float scrollPosition = 150.0;
+
+  flutter::SemanticsNode node;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kVerticalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(x, y, w, h);
+  node.scrollExtentMax = scrollExtentMax;
+  node.scrollPosition = scrollPosition;
+  node.transform = {
+      transformScale, 0, 0, 0, 0, transformScale, 0, 0, 0, 0, transformScale, 0, 0, 0, 0, 1.0};
+  FlutterSemanticsObject* delegate = [[FlutterSemanticsObject alloc] initWithBridge:bridge uid:0];
+  FlutterScrollableSemanticsObject* scrollable =
+      [[FlutterScrollableSemanticsObject alloc] initWithSemanticsObject:delegate];
+  SemanticsObject* scrollable_object = static_cast<SemanticsObject*>(scrollable);
+  [scrollable_object setSemanticsNode:&node];
+  [scrollable_object accessibilityBridgeDidFinishUpdate];
+  XCTAssertTrue(
+      CGRectEqualToRect(scrollable.frame, CGRectMake(x * effectivelyScale, y * effectivelyScale,
+                                                     w * effectivelyScale, h * effectivelyScale)));
+  XCTAssertTrue(CGSizeEqualToSize(
+      scrollable.contentSize,
+      CGSizeMake(w * effectivelyScale, (h + scrollExtentMax) * effectivelyScale)));
+  XCTAssertTrue(CGPointEqualToPoint(scrollable.contentOffset,
+                                    CGPointMake(0, scrollPosition * effectivelyScale)));
+}
+
 - (void)testHorizontalFlutterScrollableSemanticsObject {
   fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
       new flutter::MockAccessibilityBridge());
