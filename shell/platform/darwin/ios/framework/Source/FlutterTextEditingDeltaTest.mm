@@ -44,41 +44,33 @@
 }
 
 - (void)testInsertionTextEditingDeltaInsideOfComposing() {
-
 }
 
 #pragma mark - TextEditingDelta Deletion tests
 
 - (void)testDeletionTextEditingDeltaAtEndOfComposing() {
-
 }
 
 - (void)testDeletionTextEditingDeltaInsideOfComposing() {
-
 }
 
 - (void)testDeletionTextEditingDeltaForSelection() {
-
 }
 
 #pragma mark - TextEditingDelta Replacement tests
 
 - (void)testReplacementSameTextEditingDelta() {
-
 }
 
 - (void)testReplacementLongerTextEditingDelta() {
-
 }
 
 - (void)testReplacementShorterTextEditingDelta() {
-
 }
 
 #pragma mark - TextEditingDelta Equality tests
 
 - (void)testEqualityTextEditingDelta() {
-
 }
 
 @end
