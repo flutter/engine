@@ -247,6 +247,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterKeyboardManagerTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
     "framework/Source/FlutterRestorationPluginTest.mm",
+    "framework/Source/FlutterTextEditingDeltaTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
