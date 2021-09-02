@@ -45,7 +45,11 @@
 
     if (isEqual) {
       NSLog(@"We have no changes, reporting equality");
-      [self setDeltas:textBeforeChange newText:@"" type:@"TextEditingDeltaType.equality" deltaStart:-1 deltaEnd:-1];
+      [self setDeltas:textBeforeChange
+              newText:@""
+                 type:@"TextEditingDeltaType.equality"
+           deltaStart:-1
+             deltaEnd:-1];
     } else if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) {  // Deletion.
       NSString* deleted = [textBeforeChange
           substringWithRange:NSMakeRange(start + tbend, textBeforeChange.length - (start + tbend))];
@@ -80,7 +84,11 @@
       NSLog(@"We have a replacement");
       NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
             start, end, text);
-      [self setDeltas:textBeforeChange newText:text type:@"TextEditingDeltaType.replacement" deltaStart:start deltaEnd:end];
+      [self setDeltas:textBeforeChange
+              newText:text
+                 type:@"TextEditingDeltaType.replacement"
+           deltaStart:start
+             deltaEnd:end];
     }
   }
 
