@@ -47,7 +47,7 @@
   NSString* oldText = @"helo";
   NSString* textAfterChange = @"hello";
   NSString* replacementText = @"l";
-  NSRange range = NSMakeRange(3,0);
+  NSRange range = NSMakeRange(3, 0);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:oldText
@@ -89,7 +89,7 @@
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"hllo";
   NSString* replacementText = @"e";
-  NSRange range = NSMakeRange(1,1);
+  NSRange range = NSMakeRange(1, 1);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:oldText
@@ -109,7 +109,7 @@
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"he";
   NSString* replacementText = @"llo";
-  NSRange range = NSMakeRange(2,3);
+  NSRange range = NSMakeRange(2, 3);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:oldText
@@ -132,7 +132,7 @@
   NSString* oldText = @"worfd";
   NSString* textAfterChange = @"world";
   NSString* replacementText = textAfterChange;
-  NSRange range = NSMakeRange(0,5);
+  NSRange range = NSMakeRange(0, 5);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:oldText
@@ -153,7 +153,7 @@
   NSString* oldText = @"wolkin";
   NSString* textAfterChange = @"walking";
   NSString* replacementText = textAfterChange;
-  NSRange range = NSMakeRange(0,6);
+  NSRange range = NSMakeRange(0, 6);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:oldText
@@ -174,7 +174,7 @@
   NSString* oldText = @"world";
   NSString* textAfterChange = @"h";
   NSString* replacementText = textAfterChange;
-  NSRange range = NSMakeRange(0,5);
+  NSRange range = NSMakeRange(0, 5);
 
   FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
       initTextEditingDelta:oldText
