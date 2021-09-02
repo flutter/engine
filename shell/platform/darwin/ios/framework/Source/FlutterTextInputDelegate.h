@@ -34,6 +34,8 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state;
 - (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag;
 - (void)updateEditingClient:(int)client withDelta:(NSDictionary*)state;
+- (void)updateEditingClient:(int)client withDelta:(NSDictionary*)state
+    withTag:(NSString*)tag;
 - (void)performAction:(FlutterTextInputAction)action withClient:(int)client;
 - (void)updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
