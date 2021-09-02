@@ -23,22 +23,31 @@
     NSLog(@"Word being edited (before edits): %@", textBeforeChange);
     BOOL isEqual = [textBeforeChange isEqualToString:textAfterChange];
 
-    BOOL isDeletionGreaterThanOne = end - (start + tbend) > 1;
     BOOL isDeletingByReplacingWithEmpty = text.length == 0 && tbstart == 0 && tbstart == tbend;
 
-    BOOL isReplacedByShorter = isDeletionGreaterThanOne && (tbend - tbstart < end - start);
+    BOOL isReplacedByShorter = tbend - tbstart < end - start;
     BOOL isReplacedByLonger = tbend - tbstart > end - start;
     BOOL isReplacedBySame = tbend - tbstart == end - start;
 
     BOOL isInsertingInsideMarkedText = start + tbend > end;
     BOOL isDeletingInsideMarkedText = !isReplacedByShorter && start + tbend < end;
 
-    NSString* originalMarkedText = [textBeforeChange substringWithRange:range];
-    NSString* newMarkedText =
-        (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText || isReplacedByShorter)
-            ? @""
-            : [text substringWithRange:NSMakeRange(tbstart, end - start)];
+    NSString* newMarkedText;
+    NSString* originalMarkedText;
+
+    if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText || isReplacedByShorter) {
+      originalMarkedText = [textBeforeChange substringWithRange:NSMakeRange(range.location, tbend)];
+      newMarkedText = [text substringWithRange:NSMakeRange(tbstart, tbend)];
+    } else {
+      newMarkedText = [text substringWithRange:NSMakeRange(tbstart, end - start)];
+      originalMarkedText = [textBeforeChange substringWithRange:range];
+    }
+
+    NSLog(@"comparing %@ with %@", originalMarkedText, newMarkedText);
+
     BOOL isOriginalComposingRegionTextChanged = ![originalMarkedText isEqualToString:newMarkedText];
+
+    NSLog(@"the original composing text has changed? %d", isOriginalComposingRegionTextChanged);
 
     BOOL isReplaced = isOriginalComposingRegionTextChanged &&
                       (isReplacedByLonger || isReplacedByShorter || isReplacedBySame);
@@ -50,12 +59,14 @@
                  type:@"TextEditingDeltaType.equality"
            deltaStart:-1
              deltaEnd:-1];
-    } else if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) {  // Deletion.
+    } else if ((isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) &&
+               !isOriginalComposingRegionTextChanged) {  // Deletion.
       NSString* deleted =
           [textBeforeChange substringWithRange:NSMakeRange(start + tbend, end - start)];
       NSLog(@"We have a deletion");
       NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted,
             (long)start, (long)end);
+      BOOL isDeletionGreaterThanOne = end - (start + tbend) > 1;
       NSInteger actualStart = start;
 
       if (!isDeletionGreaterThanOne) {
@@ -80,8 +91,8 @@
           deltaStart:end
             deltaEnd:end];
     } else if (isReplaced) {  // Replacement.
-      NSString* replaced = [textBeforeChange substringWithRange:range];
       NSLog(@"We have a replacement");
+      NSString* replaced = [textBeforeChange substringWithRange:range];
       NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
             (long)start, (long)end, text);
       [self setDeltas:textBeforeChange
@@ -89,6 +100,8 @@
                  type:@"TextEditingDeltaType.replacement"
            deltaStart:start
              deltaEnd:end];
+    } else {
+      NSLog(@"shit");
     }
   }
 
