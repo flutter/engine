@@ -723,6 +723,9 @@ class CanvasCompareTester {
         if (!dl_bounds.contains(ref_bounds)) {
           FML_LOG(ERROR) << "DisplayList bounds are too small!";
         }
+        if (!ref_bounds.roundOut().contains(dl_bounds.roundOut())) {
+          FML_LOG(ERROR) << "###### DisplayList bounds are larger than reference!";
+        }
       }
 #endif  // DISPLAY_LIST_BOUNDS_ACCURACY_CHECKING
 

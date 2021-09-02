@@ -387,7 +387,28 @@ class DisplayListBoundsCalculator final
 
   std::vector<std::unique_ptr<SaveInfo>> saved_infos_;
 
-  void accumulateRect(const SkRect& rect, bool force_stroke = false);
+  // Some operations are defined as stroking some geometry and
+  // need to always consider stroke attributes regardless of the
+  // setting of the drawing style in the paint.
+  static constexpr int kForceStroke = 1;
+
+  // Some operations are defined as filling some geometry and
+  // should never consider stroke attributes regardless of the
+  // setting of the drawing style in the paint.
+  static constexpr int kIgnoreStroke = 2;
+
+  // Some operations are defined as closed paths and will never
+  // have any segment end points which might be decorated with
+  // a square cap that expands the geometry.
+  static constexpr int kIgnoreCap = 4;
+
+  // Some operations are defined as smooth paths or paths that
+  // never exceed 90 degrees at the corners.  Such paths will
+  // never have a corner that extends outside of the box defined
+  // by (path_bounds + stroke_width/2).
+  static constexpr int kIgnoreJoin = 8;
+
+  void accumulateRect(const SkRect& rect, int flags = 0);
 };
 
 }  // namespace flutter

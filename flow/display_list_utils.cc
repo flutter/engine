@@ -210,25 +210,27 @@ void DisplayListBoundsCalculator::drawColor(SkColor color, SkBlendMode mode) {
 void DisplayListBoundsCalculator::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
   SkRect bounds = SkRect::MakeLTRB(p0.fX, p0.fY, p1.fX, p1.fY).makeSorted();
-  accumulateRect(bounds, true);
+  accumulateRect(bounds, kForceStroke | kIgnoreJoin);
 }
 void DisplayListBoundsCalculator::drawRect(const SkRect& rect) {
-  accumulateRect(rect);
+  // Right angle paths can ignore miter joins.
+  accumulateRect(rect, kIgnoreJoin | kIgnoreCap);
 }
 void DisplayListBoundsCalculator::drawOval(const SkRect& bounds) {
-  accumulateRect(bounds);
+  accumulateRect(bounds, kIgnoreJoin | kIgnoreCap);
 }
 void DisplayListBoundsCalculator::drawCircle(const SkPoint& center,
                                              SkScalar radius) {
   accumulateRect(SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
-                                  center.fX + radius, center.fY + radius));
+                                  center.fX + radius, center.fY + radius),
+                 kIgnoreJoin | kIgnoreCap);
 }
 void DisplayListBoundsCalculator::drawRRect(const SkRRect& rrect) {
-  accumulateRect(rrect.getBounds());
+  accumulateRect(rrect.getBounds(), kIgnoreJoin | kIgnoreCap);
 }
 void DisplayListBoundsCalculator::drawDRRect(const SkRRect& outer,
                                              const SkRRect& inner) {
-  accumulateRect(outer.getBounds());
+  accumulateRect(outer.getBounds(), kIgnoreJoin | kIgnoreCap);
 }
 void DisplayListBoundsCalculator::drawPath(const SkPath& path) {
   accumulateRect(path.getBounds());
@@ -250,19 +252,23 @@ void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
     for (size_t i = 0; i < count; i++) {
       ptBounds.accumulate(pts[i]);
     }
-    accumulateRect(ptBounds.getBounds(), true);
+    int flags = kForceStroke;
+    if (mode != SkCanvas::PointMode::kPolygon_PointMode) {
+      flags |= kIgnoreJoin;
+    }
+    accumulateRect(ptBounds.getBounds(), flags);
   }
 }
 void DisplayListBoundsCalculator::drawVertices(const sk_sp<SkVertices> vertices,
                                                SkBlendMode mode) {
-  accumulateRect(vertices->bounds());
+  accumulateRect(vertices->bounds(), kIgnoreStroke);
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
                                             const SkPoint point,
                                             const SkSamplingOptions& sampling) {
   SkRect bounds = SkRect::Make(image->bounds());
   bounds.offset(point);
-  accumulateRect(bounds);
+  accumulateRect(bounds, kIgnoreStroke);
 }
 void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<SkImage> image,
@@ -270,13 +276,13 @@ void DisplayListBoundsCalculator::drawImageRect(
     const SkRect& dst,
     const SkSamplingOptions& sampling,
     SkCanvas::SrcRectConstraint constraint) {
-  accumulateRect(dst);
+  accumulateRect(dst, kIgnoreStroke);
 }
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
                                                 SkFilterMode filter) {
-  accumulateRect(dst);
+  accumulateRect(dst, kIgnoreStroke);
 }
 void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<SkImage> image,
@@ -304,7 +310,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
     }
   }
   if (atlasBounds.isNotEmpty()) {
-    accumulateRect(atlasBounds.getBounds());
+    accumulateRect(atlasBounds.getBounds(), kIgnoreStroke);
   }
 }
 void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
@@ -318,7 +324,7 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
     pic_matrix->mapRect(&bounds);
   }
   if (with_save_layer) {
-    accumulateRect(bounds);
+    accumulateRect(bounds, kIgnoreStroke);
   } else {
     matrix().mapRect(&bounds);
     accumulator_->accumulate(bounds);
@@ -326,7 +332,7 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  accumulateRect(display_list->bounds());
+  accumulateRect(display_list->bounds(), kIgnoreStroke);
 }
 void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,
@@ -339,18 +345,28 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              bool occludes,
                                              SkScalar dpr) {
   accumulateRect(
-      PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix()));
+      PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix()),
+      kIgnoreStroke);
 }
 
 void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,
-                                                 bool forceStroke) {
+                                                 int flags) {
   SkRect dstRect = rect;
-  const SkPaint& p = paint();
-  if (forceStroke) {
-    if (p.getStyle() == SkPaint::kFill_Style) {
-      setDrawStyle(SkPaint::kStroke_Style);
-    } else {
-      forceStroke = false;
+  SkPaint p = paint();
+  if ((flags & kIgnoreStroke) != 0) {
+    FML_DCHECK((flags & kForceStroke) == 0);
+    p.setStyle(SkPaint::kFill_Style);
+  } else {
+    if ((flags & kForceStroke) != 0) {
+      p.setStyle(SkPaint::kStroke_Style);
+    }
+    if (p.getStyle() != SkPaint::kFill_Style) {
+      if ((flags & kIgnoreCap) != 0) {
+        p.setStrokeCap(SkPaint::kRound_Cap);
+      }
+      if ((flags & kIgnoreJoin) != 0) {
+        p.setStrokeJoin(SkPaint::kRound_Join);
+      }
     }
   }
   if (p.canComputeFastBounds()) {
@@ -359,9 +375,6 @@ void DisplayListBoundsCalculator::accumulateRect(const SkRect& rect,
     accumulator_->accumulate(dstRect);
   } else {
     root_accumulator_.accumulate(bounds_cull_);
-  }
-  if (forceStroke) {
-    setDrawStyle(SkPaint::kFill_Style);
   }
 }
 
