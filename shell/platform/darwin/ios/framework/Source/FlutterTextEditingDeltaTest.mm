@@ -42,7 +42,7 @@
   XCTAssertEqual(delta.deltaEnd, 4);
 }
 
-- (void)testInsertionTextEditingDeltaInsideOfComposing() {
+- (void)testInsertionTextEditingDeltaInsideOfComposing {
   // Here we are simulating inserting an "l" after the "l" in "helo".
   NSString* oldText = @"helo";
   NSString* textAfterChange = @"hello";
@@ -64,7 +64,7 @@
 
 #pragma mark - TextEditingDelta Deletion tests
 
-- (void)testDeletionTextEditingDeltaAtEndOfComposing() {
+- (void)testDeletionTextEditingDeltaAtEndOfComposing {
   // Here we are simulating deleting an "o" at the end of "hello".
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"hell";
@@ -84,7 +84,7 @@
   XCTAssertEqual(delta.deltaEnd, 5);
 }
 
-- (void)testDeletionTextEditingDeltaInsideOfComposing() {
+- (void)testDeletionTextEditingDeltaInsideOfComposing {
   // Here we are simulating deleting an "e" in the world "hello".
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"hllo";
@@ -104,7 +104,7 @@
   XCTAssertEqual(delta.deltaEnd, 2);
 }
 
-- (void)testDeletionTextEditingDeltaForSelection() {
+- (void)testDeletionTextEditingDeltaForSelection {
   // Here we are simulating deleting "llo" in the word "hello".
   NSString* oldText = @"hello";
   NSString* textAfterChange = @"he";
@@ -126,7 +126,7 @@
 
 #pragma mark - TextEditingDelta Replacement tests
 
-- (void)testReplacementSameTextEditingDelta() {
+- (void)testReplacementSameTextEditingDelta {
   // Here we are simulating a replacement of a range of text that could for example happen
   // when the word "worfd" is autocorrected to the word "world".
   NSString* oldText = @"worfd";
@@ -147,7 +147,7 @@
   XCTAssertEqual(delta.deltaEnd, 5);
 }
 
-- (void)testReplacementLongerTextEditingDelta() {
+- (void)testReplacementLongerTextEditingDelta {
   // Here we are simulating a replacement of a range of text that could for example happen
   // when the word "wolkin" is autocorrected to "walking".
   NSString* oldText = @"wolkin";
@@ -168,7 +168,7 @@
   XCTAssertEqual(delta.deltaEnd, 6);
 }
 
-- (void)testReplacementShorterTextEditingDelta() {
+- (void)testReplacementShorterTextEditingDelta {
   // Here we are simulating a replacement of a range of text that could for example happen
   // when the word "world" is replaced with a single character "h".
   NSString* oldText = @"world";
