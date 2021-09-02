@@ -32,7 +32,7 @@ class SurfaceFactory {
   /// The maximum number of assignable overlays.
   ///
   /// This is just `maximumSurfaces - 2` (the maximum number of surfaces minus
-  /// the base surface and overlay surface).
+  /// the base surface and backup surface).
   int get maximumOverlays => maximumSurfaces - 2;
 
   /// Surfaces created by this factory which are currently in use.
