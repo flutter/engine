@@ -151,7 +151,6 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterJNI fakeFlutterJNI = mock(FlutterJNI.class);
     when(fakeFlutterJNI.isAttached()).thenReturn(true);
-
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
     fakeFlutterJNI.detachFromNativeAndReleaseResources();
