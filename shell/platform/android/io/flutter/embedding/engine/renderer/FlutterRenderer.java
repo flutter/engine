@@ -90,7 +90,8 @@ public class FlutterRenderer implements TextureRegistry {
 
   // ------ START TextureRegistry IMPLEMENTATION -----
   /**
-   * Creates and returns a new {@link SurfaceTexture} that is also made available to Flutter code.
+   * Creates and returns a new {@link SurfaceTexture} managed by the Flutter engine that is also
+   * made available to Flutter code.
    */
   @Override
   public SurfaceTextureEntry createSurfaceTexture() {
@@ -99,7 +100,10 @@ public class FlutterRenderer implements TextureRegistry {
     return registerSurfaceTexture(surfaceTexture);
   }
 
-  /** Registers and returns a {@link SurfaceTexture} that is also made available to Flutter code. */
+  /**
+   * Registers and returns a {@link SurfaceTexture} managed by the Flutter engine that is also made
+   * available to Flutter code.
+   */
   @Override
   public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
