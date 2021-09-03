@@ -933,6 +933,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:selectedTextRange];
 
   if (_enableDeltaModel) {
+    _previousTextEditingDelta = [_currentTextEditingDelta copy];
     _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
     [self updateEditingStateWithDelta];
   } else {
@@ -995,6 +996,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSRange replaceRange = ((FlutterTextRange*)range).range;
   [self replaceRangeLocal:replaceRange withText:text];
   if (_enableDeltaModel) {
+    _previousTextEditingDelta = [_currentTextEditingDelta copy];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1079,6 +1081,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
   if (_enableDeltaModel) {
+    _previousTextEditingDelta = [_currentTextEditingDelta copy];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1091,6 +1094,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSLog(@"unmarkText");
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
+    _previousTextEditingDelta = [_currentTextEditingDelta copy];
     _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
     [self updateEditingStateWithDelta];
   } else {
@@ -1463,8 +1467,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
     _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
   }
-
-  _previousTextEditingDelta = [_currentTextEditingDelta copy];
 }
 
 - (BOOL)hasText {
