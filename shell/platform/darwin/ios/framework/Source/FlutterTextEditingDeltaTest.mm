@@ -36,7 +36,7 @@
                updatedText:replacementText];
 
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqual(delta.deltaText, @"o");
+  XCTAssertEqualObjects(delta.deltaText, @"o");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.insertion");
   XCTAssertEqual(delta.deltaStart, 4);
   XCTAssertEqual(delta.deltaEnd, 4);
@@ -101,7 +101,7 @@
 
   NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqual(delta.deltaText, @"e");
+  XCTAssertEqualObjects(delta.deltaText, @"e");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(delta.deltaStart, 1);
   XCTAssertEqual(delta.deltaEnd, 2);
@@ -122,7 +122,7 @@
 
   NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqual(delta.deltaText, @"llo");
+  XCTAssertEqualObjects(delta.deltaText, @"llo");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(delta.deltaStart, 2);
   XCTAssertEqual(delta.deltaEnd, 5);
