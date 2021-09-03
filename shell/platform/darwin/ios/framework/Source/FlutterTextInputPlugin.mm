@@ -611,6 +611,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
     // Delta
     _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:@""];
+    _previousTextEditingDelta = nil;
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -1462,6 +1463,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
     _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
   }
+
+  _previousTextEditingDelta = [_currentTextEditingDelta copy];
 }
 
 - (BOOL)hasText {
