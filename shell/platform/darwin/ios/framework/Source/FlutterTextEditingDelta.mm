@@ -48,8 +48,8 @@
     NSString* originalMarkedText;
 
     if (isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText || isReplacedByShorter) {
-      originalMarkedText = [textBeforeChange substringWithRange:NSMakeRange(range.location, tbend)];
       newMarkedText = [text substringWithRange:NSMakeRange(tbstart, tbend)];
+      originalMarkedText = [textBeforeChange substringWithRange:NSMakeRange(range.location, tbend)];
     } else {
       newMarkedText = [text substringWithRange:NSMakeRange(tbstart, end - start)];
       originalMarkedText = [textBeforeChange substringWithRange:range];
