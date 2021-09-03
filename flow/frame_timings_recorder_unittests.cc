@@ -96,48 +96,10 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   const auto raster_start = fml::TimePoint::Now();
   recorder->RecordRasterStart(raster_start, &cache);
 
-  MockCanvas mock_canvas;
-  SkColorSpace* color_space = mock_canvas.imageInfo().colorSpace();
-  SkMatrix ctm = SkMatrix::I();
-  SkPath path;
-  path.addRect(100, 100, 200, 200);
-  MockLayer layer = MockLayer(path);
-  MutatorsStack mutators_stack;
-  Stopwatch raster_time;
-  Stopwatch ui_time;
-  TextureRegistry texture_registry;
-  PrerollContext preroll_context = {
-      nullptr,          /* raster_cache */
-      nullptr,          /* gr_context */
-      nullptr,          /* external_view_embedder */
-      mutators_stack,   /* mutators_stack */
-      color_space,      /* color_space */
-      kGiantRect,       /* cull_rect */
-      false,            /* layer reads from surface */
-      raster_time,      /* raster stopwatch */
-      ui_time,          /* frame build stopwatch */
-      texture_registry, /* texture_registry */
-      false,            /* checkerboard_offscreen_layers */
-      1.0f,             /* frame_device_pixel_ratio */
-      false,            /* has_platform_view */
-      false,            /* has_texture_layer */
-  };
-  layer.Preroll(&preroll_context, ctm);
-  cache.Prepare(&preroll_context, &layer, ctm);
+  cache.AddMockLayer(100, 100);
   size_t layer_bytes = cache.EstimateLayerCacheByteSize();
   EXPECT_GT(layer_bytes, 0u);
-  SkPictureRecorder skp_recorder;
-  SkRTreeFactory rtree_factory;
-  SkCanvas* recorder_canvas = skp_recorder.beginRecording(
-      SkRect::MakeLTRB(0, 0, 400, 400), &rtree_factory);
-  recorder_canvas->drawPath(path, SkPaint());
-  sk_sp<SkPicture> picture = skp_recorder.finishRecordingAsPicture();
-  EXPECT_FALSE(
-      cache.Prepare(nullptr, picture.get(), ctm, color_space, true, false));
-  EXPECT_FALSE(cache.Draw(*picture, mock_canvas));
-  EXPECT_TRUE(
-      cache.Prepare(nullptr, picture.get(), ctm, color_space, true, false));
-  EXPECT_TRUE(cache.Draw(*picture, mock_canvas));
+  cache.AddMockPicture(100, 100);
   size_t picture_bytes = cache.EstimatePictureCacheByteSize();
   EXPECT_GT(picture_bytes, 0u);
 
@@ -305,6 +267,45 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEnd) {
   ASSERT_EQ(recorder->GetRasterStartTime(), cloned->GetRasterStartTime());
   ASSERT_EQ(recorder->GetRasterEndTime(), cloned->GetRasterEndTime());
   ASSERT_EQ(recorder->GetRasterEndWallTime(), cloned->GetRasterEndWallTime());
+  ASSERT_EQ(recorder->GetLayerCacheCount(), cloned->GetLayerCacheCount());
+  ASSERT_EQ(recorder->GetLayerCacheBytes(), cloned->GetLayerCacheBytes());
+  ASSERT_EQ(recorder->GetPictureCacheCount(), cloned->GetPictureCacheCount());
+  ASSERT_EQ(recorder->GetPictureCacheBytes(), cloned->GetPictureCacheBytes());
+}
+
+TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
+  auto recorder = std::make_unique<FrameTimingsRecorder>();
+  MockRasterCache cache(1, 10);
+  cache.SweepAfterFrame();
+
+  const auto now = fml::TimePoint::Now();
+  recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
+  recorder->RecordBuildStart(fml::TimePoint::Now());
+  recorder->RecordBuildEnd(fml::TimePoint::Now());
+  recorder->RecordRasterStart(fml::TimePoint::Now(), &cache);
+
+  cache.AddMockLayer(100, 100);
+  size_t layer_bytes = cache.EstimateLayerCacheByteSize();
+  EXPECT_GT(layer_bytes, 0u);
+  cache.AddMockPicture(100, 100);
+  size_t picture_bytes = cache.EstimatePictureCacheByteSize();
+  EXPECT_GT(picture_bytes, 0u);
+
+  recorder->RecordRasterEnd(&cache);
+
+  auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kRasterEnd);
+  ASSERT_EQ(recorder->GetFrameNumber(), cloned->GetFrameNumber());
+  ASSERT_EQ(recorder->GetVsyncStartTime(), cloned->GetVsyncStartTime());
+  ASSERT_EQ(recorder->GetVsyncTargetTime(), cloned->GetVsyncTargetTime());
+  ASSERT_EQ(recorder->GetBuildStartTime(), cloned->GetBuildStartTime());
+  ASSERT_EQ(recorder->GetBuildEndTime(), cloned->GetBuildEndTime());
+  ASSERT_EQ(recorder->GetRasterStartTime(), cloned->GetRasterStartTime());
+  ASSERT_EQ(recorder->GetRasterEndTime(), cloned->GetRasterEndTime());
+  ASSERT_EQ(recorder->GetRasterEndWallTime(), cloned->GetRasterEndWallTime());
+  ASSERT_EQ(recorder->GetLayerCacheCount(), cloned->GetLayerCacheCount());
+  ASSERT_EQ(recorder->GetLayerCacheBytes(), cloned->GetLayerCacheBytes());
+  ASSERT_EQ(recorder->GetPictureCacheCount(), cloned->GetPictureCacheCount());
+  ASSERT_EQ(recorder->GetPictureCacheBytes(), cloned->GetPictureCacheBytes());
 }
 
 TEST(FrameTimingsRecorderTest, FrameNumberTraceArgIsValid) {

@@ -197,11 +197,16 @@ std::unique_ptr<FrameTimingsRecorder> FrameTimingsRecorder::CloneUntil(
 
   if (state >= State::kRasterStart) {
     recorder->raster_start_ = raster_start_;
+    recorder->sweep_count_at_raster_start_ = sweep_count_at_raster_start_;
   }
 
   if (state >= State::kRasterEnd) {
     recorder->raster_end_ = raster_end_;
     recorder->raster_end_wall_time_ = raster_end_wall_time_;
+    recorder->layer_cache_count_ = layer_cache_count_;
+    recorder->layer_cache_bytes_ = layer_cache_bytes_;
+    recorder->picture_cache_count_ = picture_cache_count_;
+    recorder->picture_cache_bytes_ = picture_cache_bytes_;
   }
 
   return recorder;

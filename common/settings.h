@@ -37,6 +37,8 @@ class FrameTiming {
       kVsyncStart,  kBuildStart,   kBuildFinish,
       kRasterStart, kRasterFinish, kRasterFinishWallTime};
 
+  static constexpr int kStatisticsCount = kCount + 5;
+
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
     return data_[phase] = value;
@@ -44,6 +46,10 @@ class FrameTiming {
 
   uint64_t GetFrameNumber() const { return frame_number_; }
   void SetFrameNumber(uint64_t frame_number) { frame_number_ = frame_number; }
+  uint64_t GetLayerCacheCount() const { return layer_cache_count_; }
+  uint64_t GetLayerCacheBytes() const { return layer_cache_bytes_; }
+  uint64_t GetPictureCacheCount() const { return picture_cache_count_; }
+  uint64_t GetPictureCacheBytes() const { return picture_cache_bytes_; }
   void SetCacheStatistics(size_t layer_cache_count,
                           size_t layer_cache_bytes,
                           size_t picture_cache_count,
