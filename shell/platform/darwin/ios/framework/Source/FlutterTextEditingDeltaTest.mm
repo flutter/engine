@@ -120,7 +120,7 @@
              replacedRange:[self clampSelection:range forText:oldText]
                updatedText:replacementText];
 
-  NSLog(@"%@", delta.oldText);
+  NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqual(delta.deltaText, @"llo");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
