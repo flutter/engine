@@ -996,7 +996,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (_enableDeltaModel) {
     [self updateEditingStateWithDelta];
   } else {
-    NSLog(@"We should never be here");
     [self updateEditingState];
   }
 }

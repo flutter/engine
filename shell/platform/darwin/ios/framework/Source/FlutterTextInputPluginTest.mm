@@ -304,6 +304,82 @@ FLUTTER_ASSERT_ARC
   }
 }
 
+#pragma mark - TextEditingDelta tests
+- (void)testTextEditingDeltasAreGeneratedOnTextInput {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+  inputView.enableDeltaModel = YES;
+
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withState:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView insertText:@"text to insert"];
+  // Update the framework exactly once.
+  XCTAssertEqual(updateCount, 1);
+
+  // Verify correct delta is generated.
+  FlutterTextEditingDelta* currentDelta = inputView.currentTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"text to insert");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.insertion");
+  XCTAssertEqual(currentDelta.deltaStart, 0);
+  XCTAssertEqual(currentDelta.deltaEnd, 0);
+
+  [inputView deleteBackward];
+  XCTAssertEqual(updateCount, 2);
+
+  currentDelta = inputView.currentTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"text to insert");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"t");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.deletion");
+  XCTAssertEqual(currentDelta.deltaStart, 13);
+  XCTAssertEqual(currentDelta.deltaEnd, 14);
+
+  inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
+  XCTAssertEqual(updateCount, 3);
+
+  currentDelta = inputView.currentTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"text to inser");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.equality");
+  XCTAssertEqual(currentDelta.deltaStart, -1);
+  XCTAssertEqual(currentDelta.deltaEnd, -1);
+
+  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
+                 withText:@"replace text"];
+  XCTAssertEqual(updateCount, 4);
+
+  currentDelta = inputView.currentTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"replace textext to inser");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.replacement");
+  XCTAssertEqual(currentDelta.deltaStart, 0);
+  XCTAssertEqual(currentDelta.deltaEnd, 1);
+
+  [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
+  XCTAssertEqual(updateCount, 5);
+
+  currentDelta = inputView.currentTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"marked texteplace textext to inser");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.replacement");
+  XCTAssertEqual(currentDelta.deltaStart, 0);
+  XCTAssertEqual(currentDelta.deltaEnd, 1);
+
+  [inputView unmarkText];
+  XCTAssertEqual(updateCount, 6);
+
+  currentDelta = inputView.currentTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"marked texteplace textext to inser");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.equality");
+  XCTAssertEqual(currentDelta.deltaStart, -1);
+  XCTAssertEqual(currentDelta.deltaEnd, -1);
+}
+
 #pragma mark - EditingState tests
 
 - (void)testUITextInputCallsUpdateEditingStateOnce {
