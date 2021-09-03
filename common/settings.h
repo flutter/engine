@@ -44,10 +44,23 @@ class FrameTiming {
 
   uint64_t GetFrameNumber() const { return frame_number_; }
   void SetFrameNumber(uint64_t frame_number) { frame_number_ = frame_number; }
+  void SetCacheStatistics(size_t layer_cache_count,
+                          size_t layer_cache_bytes,
+                          size_t picture_cache_count,
+                          size_t picture_cache_bytes) {
+    layer_cache_count_ = layer_cache_count;
+    layer_cache_bytes_ = layer_cache_bytes;
+    picture_cache_count_ = picture_cache_count;
+    picture_cache_bytes_ = picture_cache_bytes;
+  }
 
  private:
   fml::TimePoint data_[kCount];
   uint64_t frame_number_;
+  size_t layer_cache_count_;
+  size_t layer_cache_bytes_;
+  size_t picture_cache_count_;
+  size_t picture_cache_bytes_;
 };
 
 using TaskObserverAdd =

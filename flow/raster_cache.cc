@@ -394,6 +394,7 @@ void RasterCache::SweepAfterFrame() {
   SweepOneCacheAfterFrame(display_list_cache_);
   SweepOneCacheAfterFrame(layer_cache_);
   picture_cached_this_frame_ = 0;
+  sweep_count_++;
   TraceStatsToTimeline();
 }
 

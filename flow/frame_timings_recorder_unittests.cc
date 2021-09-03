@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/frame_timings.h"
+#include "flutter/flow/testing/layer_test.h"
+#include "flutter/flow/testing/mock_layer.h"
+#include "flutter/flow/testing/mock_raster_cache.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 #include <thread>
 
@@ -66,11 +70,122 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimes) {
   ASSERT_GT(recorder->GetRasterEndWallTime(), before_raster_end_wall_time);
   ASSERT_LT(recorder->GetRasterEndWallTime(), after_raster_end_wall_time);
   ASSERT_EQ(recorder->GetFrameNumber(), timing.GetFrameNumber());
+  ASSERT_EQ(recorder->GetLayerCacheCount(), 0u);
+  ASSERT_EQ(recorder->GetLayerCacheBytes(), 0u);
+  ASSERT_EQ(recorder->GetPictureCacheCount(), 0u);
+  ASSERT_EQ(recorder->GetPictureCacheBytes(), 0u);
+}
+
+TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
+  auto recorder = std::make_unique<FrameTimingsRecorder>();
+
+  const auto st = fml::TimePoint::Now();
+  const auto en = st + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordVsync(st, en);
+
+  const auto build_start = fml::TimePoint::Now();
+  const auto build_end = build_start + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordBuildStart(build_start);
+  recorder->RecordBuildEnd(build_end);
+
+  using namespace std::chrono_literals;
+
+  MockRasterCache cache(1, 10);
+  cache.SweepAfterFrame();
+
+  const auto raster_start = fml::TimePoint::Now();
+  recorder->RecordRasterStart(raster_start, &cache);
+
+  MockCanvas mock_canvas;
+  SkColorSpace* color_space = mock_canvas.imageInfo().colorSpace();
+  SkMatrix ctm = SkMatrix::I();
+  SkPath path;
+  path.addRect(100, 100, 200, 200);
+  MockLayer layer = MockLayer(path);
+  MutatorsStack mutators_stack;
+  Stopwatch raster_time;
+  Stopwatch ui_time;
+  TextureRegistry texture_registry;
+  PrerollContext preroll_context = {
+      nullptr,          /* raster_cache */
+      nullptr,          /* gr_context */
+      nullptr,          /* external_view_embedder */
+      mutators_stack,   /* mutators_stack */
+      color_space,      /* color_space */
+      kGiantRect,       /* cull_rect */
+      false,            /* layer reads from surface */
+      raster_time,      /* raster stopwatch */
+      ui_time,          /* frame build stopwatch */
+      texture_registry, /* texture_registry */
+      false,            /* checkerboard_offscreen_layers */
+      1.0f,             /* frame_device_pixel_ratio */
+      false,            /* has_platform_view */
+      false,            /* has_texture_layer */
+  };
+  layer.Preroll(&preroll_context, ctm);
+  cache.Prepare(&preroll_context, &layer, ctm);
+  size_t layer_bytes = cache.EstimateLayerCacheByteSize();
+  EXPECT_GT(layer_bytes, 0u);
+  SkPictureRecorder skp_recorder;
+  SkRTreeFactory rtree_factory;
+  SkCanvas* recorder_canvas = skp_recorder.beginRecording(
+      SkRect::MakeLTRB(0, 0, 400, 400), &rtree_factory);
+  recorder_canvas->drawPath(path, SkPaint());
+  sk_sp<SkPicture> picture = skp_recorder.finishRecordingAsPicture();
+  EXPECT_FALSE(
+      cache.Prepare(nullptr, picture.get(), ctm, color_space, true, false));
+  EXPECT_FALSE(cache.Draw(*picture, mock_canvas));
+  EXPECT_TRUE(
+      cache.Prepare(nullptr, picture.get(), ctm, color_space, true, false));
+  EXPECT_TRUE(cache.Draw(*picture, mock_canvas));
+  size_t picture_bytes = cache.EstimatePictureCacheByteSize();
+  EXPECT_GT(picture_bytes, 0u);
+
+  const auto before_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
+  std::this_thread::sleep_for(1ms);
+  const auto timing = recorder->RecordRasterEnd(&cache);
+  std::this_thread::sleep_for(1ms);
+  const auto after_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
+
+  ASSERT_EQ(raster_start, recorder->GetRasterStartTime());
+  ASSERT_GT(recorder->GetRasterEndWallTime(), before_raster_end_wall_time);
+  ASSERT_LT(recorder->GetRasterEndWallTime(), after_raster_end_wall_time);
+  ASSERT_EQ(recorder->GetFrameNumber(), timing.GetFrameNumber());
+  ASSERT_EQ(recorder->GetLayerCacheCount(), 1u);
+  ASSERT_EQ(recorder->GetLayerCacheBytes(), layer_bytes);
+  ASSERT_EQ(recorder->GetPictureCacheCount(), 1u);
+  ASSERT_EQ(recorder->GetPictureCacheBytes(), picture_bytes);
 }
 
 // Windows and Fuchsia don't allow testing with killed by signal.
 #if !defined(OS_FUCHSIA) && !defined(OS_WIN) && \
     (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+
+TEST(FrameTimingsRecorderTest, ThrowAfterUnexpectedCacheSweep) {
+  auto recorder = std::make_unique<FrameTimingsRecorder>();
+
+  const auto st = fml::TimePoint::Now();
+  const auto en = st + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordVsync(st, en);
+
+  const auto build_start = fml::TimePoint::Now();
+  const auto build_end = build_start + fml::TimeDelta::FromMillisecondsF(16);
+  recorder->RecordBuildStart(build_start);
+  recorder->RecordBuildEnd(build_end);
+
+  using namespace std::chrono_literals;
+
+  MockRasterCache cache;
+
+  const auto raster_start = fml::TimePoint::Now();
+  recorder->RecordRasterStart(raster_start, &cache);
+  std::this_thread::sleep_for(1ms);
+  cache.SweepAfterFrame();
+  EXPECT_EXIT(recorder->RecordRasterEnd(&cache),
+              ::testing::KilledBySignal(SIGABRT),
+              "Check failed: sweep_count_at_raster_start_ == \\(cache \\? "
+              "cache->sweep_count\\(\\) : -1\\).");
+}
 
 TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
