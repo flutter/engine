@@ -31,7 +31,8 @@
     BOOL isReplacedBySame = tbend - tbstart == end - start;
 
     BOOL isInsertingInsideMarkedText = start + tbend > end;
-    BOOL isDeletingInsideMarkedText = !isReplacedByShorter && !isDeletingByReplacingWithEmpty && start + tbend < end;
+    BOOL isDeletingInsideMarkedText =
+        !isReplacedByShorter && !isDeletingByReplacingWithEmpty && start + tbend < end;
 
     NSLog(@"isEqual? %d", isEqual);
     NSLog(@"isDeletionGreaterThanOne? %d", isDeletionGreaterThanOne);
@@ -77,11 +78,10 @@
       NSLog(@"We have a deletion");
       NSString* deleted;
       if (isDeletingInsideMarkedText) {
-        deleted =
-            [textBeforeChange substringWithRange:NSMakeRange(start + tbend, (end - start) - (start + tbend))];
+        deleted = [textBeforeChange
+            substringWithRange:NSMakeRange(start + tbend, (end - start) - (start + tbend))];
       } else {
-        deleted =
-            [textBeforeChange substringWithRange:NSMakeRange(start + tbend, end - start)];
+        deleted = [textBeforeChange substringWithRange:NSMakeRange(start + tbend, end - start)];
       }
 
       NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted,
