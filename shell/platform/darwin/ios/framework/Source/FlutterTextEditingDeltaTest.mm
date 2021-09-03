@@ -80,7 +80,7 @@
 
   NSLog(@"%@", delta.deltaText);
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqual(delta.deltaText, @"o");
+  XCTAssertEqualObjects(delta.deltaText, @"o");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(delta.deltaStart, 4);
   XCTAssertEqual(delta.deltaEnd, 5);
