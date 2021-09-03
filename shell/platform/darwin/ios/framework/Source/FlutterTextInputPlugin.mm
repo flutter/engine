@@ -1464,7 +1464,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
   }
 
-  _previousTextEditingDelta = _currentTextEditingDelta;
+  _previousTextEditingDelta = [_currentTextEditingDelta copy];
 }
 
 - (BOOL)hasText {
