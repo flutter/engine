@@ -50,10 +50,10 @@ class FrameTiming {
   uint64_t GetLayerCacheBytes() const { return layer_cache_bytes_; }
   uint64_t GetPictureCacheCount() const { return picture_cache_count_; }
   uint64_t GetPictureCacheBytes() const { return picture_cache_bytes_; }
-  void SetCacheStatistics(size_t layer_cache_count,
-                          size_t layer_cache_bytes,
-                          size_t picture_cache_count,
-                          size_t picture_cache_bytes) {
+  void SetRasterCacheStatistics(size_t layer_cache_count,
+                                size_t layer_cache_bytes,
+                                size_t picture_cache_count,
+                                size_t picture_cache_bytes) {
     layer_cache_count_ = layer_cache_count;
     layer_cache_bytes_ = layer_cache_bytes;
     picture_cache_count_ = picture_cache_count;

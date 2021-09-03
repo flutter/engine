@@ -280,7 +280,7 @@ class FrameTiming {
 
   int get frameNumber => _data.last;
 
-  final List<int> _data; // in microseconds
+  final List<int> _data;  // some elements in microseconds, some in bytes, some are counts
 
   String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
 
