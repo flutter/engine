@@ -154,7 +154,11 @@
 
 - (id)copyWithZone:(NSZone*)zone {
   FlutterTextEditingDelta* copyOfObject = [[FlutterTextEditingDelta alloc] initWithEquality:@""];
-  [copyOfObject setDeltas: _oldText newText: _deltaText type: _deltaType deltaStart: _deltaStart deltaEnd: _deltaEnd];
+  [copyOfObject setDeltas: _oldText
+                  newText: _deltaText
+                     type: _deltaType
+               deltaStart: _deltaStart
+                 deltaEnd: _deltaEnd];
   return copyOfObject;
 }
 
