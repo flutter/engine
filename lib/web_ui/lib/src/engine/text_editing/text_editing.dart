@@ -129,15 +129,16 @@ void _hideAutofillElements(html.HtmlElement domElement,
 
 /// Form that contains all the fields in the same AutofillGroup.
 ///
-/// These values are to be used when autofill is enabled (the default) on the
-/// current input field and there is a group of text fields with more than one
-/// text field.
+/// An [EngineAutofillForm] will only be constructed when autofill is enabled
+/// (the default) on the current input field. See the [fromFrameworkMessage]
+/// static method.
 class EngineAutofillForm {
-  EngineAutofillForm(
-      {required this.formElement,
-      this.elements,
-      this.items,
-      this.formIdentifier = ''});
+  EngineAutofillForm({
+    required this.formElement,
+    this.elements,
+    this.items,
+    this.formIdentifier = '',
+  });
 
   final html.FormElement formElement;
 
@@ -154,7 +155,7 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
-  /// Creates an [EngineAutofillFrom] from the JSON representation of a flutter
+  /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
   /// framework `TextInputConfiguration` object.
   ///
   /// The `focusedElementAutofill` argument corresponds to the "autofill" field
@@ -164,7 +165,7 @@ class EngineAutofillForm {
   /// The `fields` argument corresponds to the "fields" field in a
   /// `TextInputConfiguration`.
   ///
-  /// Returns null if the input field is not within an autofill group.
+  /// Returns null if autofill is disabled for the input field.
   static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
@@ -299,7 +300,7 @@ class EngineAutofillForm {
             element.onInput.listen((html.Event e) {
               if (items![key] == null) {
                 throw StateError(
-                    'Autofill would not work without Autofill value set');
+                    'AutofillInfo must have a valid uniqueIdentifier.');
               } else {
                 final AutofillInfo autofillInfo = items![key]!;
                 handleChange(element, autofillInfo);
@@ -342,12 +343,13 @@ class EngineAutofillForm {
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
 class AutofillInfo {
-  AutofillInfo(
-      {required this.editingState,
-      required this.uniqueIdentifier,
-      required this.autofillHint,
-      required this.textCapitalization,
-      this.placeholder});
+  AutofillInfo({
+    required this.editingState,
+    required this.uniqueIdentifier,
+    required this.autofillHint,
+    required this.textCapitalization,
+    this.placeholder,
+  });
 
   /// The current text and selection state of a text field.
   final EditingState editingState;
@@ -372,7 +374,7 @@ class AutofillInfo {
   /// other the focused field, we need to use this information.
   final TextCapitalizationConfig textCapitalization;
 
-  /// Attribute used for autofill.
+  /// The type of information expected in the field, specified by the developer.
   ///
   /// Used as a guidance to the browser as to the type of information expected
   /// in the field.
@@ -382,8 +384,9 @@ class AutofillInfo {
   /// The optional hint text placed on the view that typically suggests what
   /// sort of input the field accepts, for example "enter your password here".
   ///
-  /// If the developer does not specify any [autofillHints], the [placeholder] can
-  /// be a useful indication to the platform autofill service.
+  /// If the developer does not specify any [autofillHints], the [placeholder]
+  /// can be a useful indication to the platform autofill service as to what
+  /// information is expected in this field.
   final String? placeholder;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
@@ -408,9 +411,6 @@ class AutofillInfo {
       {bool focusedElement = false}) {
     final String? autofillHint = this.autofillHint;
     final String? placeholder = this.placeholder;
-    if (autofillHint != null) {
-      domElement.id = autofillHint;
-    }
     if (domElement is html.InputElement) {
       final html.InputElement element = domElement;
       if (placeholder != null) {
