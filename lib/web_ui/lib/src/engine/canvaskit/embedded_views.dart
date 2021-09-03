@@ -899,6 +899,8 @@ class ViewListDiffResult {
 /// to the beginning of the list, and one or more views will be removed from
 /// the end of the list, with the order of the unchanged middle views
 /// remaining the same.
+// TODO(hterkelsen): Refactor to use [longestIncreasingSubsequence] and logic
+// similar to `Surface._insertChildDomNodes` to efficiently handle more cases.
 ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
   assert(active.isNotEmpty && next.isNotEmpty,
       'diffViewList called with empty view list');
