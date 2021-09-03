@@ -410,6 +410,48 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 1);
 }
 
+- (void)testTextChangesDoNotTriggerUpdateEditingClientWithDelta {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+  inputView.enableDeltaModel = YES;
+
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withDelta:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView.text setString:@"BEFORE"];
+  XCTAssertEqual(updateCount, 0);
+
+  inputView.markedTextRange = nil;
+  inputView.selectedTextRange = nil;
+  XCTAssertEqual(updateCount, 1);
+
+  // Text changes don't trigger an update.
+  XCTAssertEqual(updateCount, 1);
+  [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView setTextInputState:@{@"text" : @"AFTER"}];
+  XCTAssertEqual(updateCount, 1);
+
+  // Selection changes don't trigger an update.
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @0, @"selectionExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView
+      setTextInputState:@{@"text" : @"SELECTION", @"selectionBase" : @1, @"selectionExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
+
+  // Composing region changes don't trigger an update.
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @2}];
+  XCTAssertEqual(updateCount, 1);
+  [inputView
+      setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
+  XCTAssertEqual(updateCount, 1);
+}
+
 - (void)testUITextInputAvoidUnnecessaryUndateEditingClientCalls {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
