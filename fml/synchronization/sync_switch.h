@@ -52,19 +52,9 @@ class SyncSwitch {
   /// @param[in]  value  New value for the |SyncSwitch|.
   void SetSwitch(bool value);
 
-#if !FLUTTER_RELEASE
-  bool WasExecuted() const;
-
-  void ClearWasExecutedFlag() const;
-#endif  // FLUTTER_RELEASE
-
  private:
   mutable std::mutex mutex_;
   bool value_;
-
-#if !FLUTTER_RELEASE
-  mutable bool was_executed_flag_ = false;
-#endif  // FLUTTER_RELEASE
 
   FML_DISALLOW_COPY_AND_ASSIGN(SyncSwitch);
 };
