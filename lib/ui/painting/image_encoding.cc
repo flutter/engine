@@ -12,11 +12,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/painting/image.h"
-#include "flutter/lib/ui/ui_dart_state.h"
-#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/typed_list.h"
@@ -61,45 +57,6 @@ void InvokeDataCallback(std::unique_ptr<DartPersistentValue> callback,
   Dart_Handle dart_data = Dart_NewExternalTypedDataWithFinalizer(
       Dart_TypedData_kUint8, bytes, length, peer, length, FinalizeSkData);
   DartInvoke(callback->value(), {dart_data});
-}
-
-sk_sp<SkImage> ConvertToRasterUsingResourceContext(
-    sk_sp<SkImage> image,
-    fml::WeakPtr<GrDirectContext> resource_context,
-    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
-  sk_sp<SkSurface> surface;
-  SkImageInfo surface_info = SkImageInfo::MakeN32Premul(image->dimensions());
-
-  is_gpu_disabled_sync_switch->Execute(
-      fml::SyncSwitch::Handlers()
-          .SetIfTrue([&surface, &surface_info] {
-            surface = SkSurface::MakeRaster(surface_info);
-          })
-          .SetIfFalse([&surface, &surface_info, resource_context] {
-            if (resource_context) {
-              surface = SkSurface::MakeRenderTarget(
-                  resource_context.get(), SkBudgeted::kNo, surface_info);
-            } else {
-              surface = SkSurface::MakeRaster(surface_info);
-            }
-          }));
-
-  if (surface == nullptr || surface->getCanvas() == nullptr) {
-    FML_LOG(ERROR) << "Could not create a surface to copy the texture into.";
-    return nullptr;
-  }
-
-  surface->getCanvas()->drawImage(image, 0, 0);
-  surface->getCanvas()->flush();
-
-  auto snapshot = surface->makeImageSnapshot();
-
-  if (snapshot == nullptr) {
-    FML_LOG(ERROR) << "Could not snapshot image to encode.";
-    return nullptr;
-  }
-
-  return snapshot->makeRasterImage();
 }
 
 void ConvertImageToRaster(
@@ -155,7 +112,7 @@ void ConvertImageToRaster(
         // The rasterizer was unable to render the cross-context image
         // (presumably because it does not have a GrContext).  In that case,
         // convert the image on the IO thread using the resource context.
-        raster_image = ConvertToRasterUsingResourceContext(
+        raster_image = ConvertToRasterUsingResourceContext<fml::SyncSwitch>(
             image, resource_context, is_gpu_disabled_sync_switch);
       }
       encode_task(raster_image);
