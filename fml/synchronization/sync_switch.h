@@ -53,14 +53,8 @@ class SyncSwitch {
   void SetSwitch(bool value);
 
 #if !FLUTTER_RELEASE
-  /// Whether the method |Execute| was executed after |SyncSwitch| is
-  /// initialized or |ClearWasExecutedFlag| is called.
-  ///
   bool WasExecuted() const;
 
-  /// Clear the flag that the method |Execute| was executed. |WasExecuted|
-  /// returns false after |ClearWasExecutedFlag| is called.
-  ///
   void ClearWasExecutedFlag() const;
 #endif  // FLUTTER_RELEASE
 
