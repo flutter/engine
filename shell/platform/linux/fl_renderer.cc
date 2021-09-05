@@ -179,3 +179,10 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
   return FL_RENDERER_GET_CLASS(self)->present_layers(self, layers,
                                                      layers_count);
 }
+
+gboolean fl_renderer_is_blocking_main_thread(FlRenderer* self) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  return priv->blocking_main_thread;
+}

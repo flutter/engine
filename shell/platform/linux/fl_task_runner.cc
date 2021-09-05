@@ -24,7 +24,7 @@ struct _FlTaskRunner {
 typedef struct _FlTaskRunnerTask {
   // absolute time of task (based on g_get_monotonic_time)
   gint64 task_time_micros;
-  FlutterTask task;
+  std::function<void()> delegate;
 } FlTaskRunnerTask;
 
 G_DEFINE_TYPE(FlTaskRunner, fl_task_runner, G_TYPE_OBJECT)
@@ -54,7 +54,7 @@ static void fl_task_runner_process_expired_tasks_locked(FlTaskRunner* self) {
   l = expired_tasks;
   while (l != nullptr && self->engine) {
     FlTaskRunnerTask* task = static_cast<FlTaskRunnerTask*>(l->data);
-    fl_engine_execute_task(self->engine, &task->task);
+    task->delegate();
     l = l->next;
   }
 
@@ -167,13 +167,13 @@ FlTaskRunner* fl_task_runner_new(FlEngine* engine) {
 }
 
 void fl_task_runner_post_task(FlTaskRunner* self,
-                              FlutterTask task,
+                              std::function<void()> delegate,
                               uint64_t target_time_nanos) {
   g_autoptr(GMutexLocker) locker = g_mutex_locker_new(&self->mutex);
   (void)locker;  // unused variable
 
   FlTaskRunnerTask* runner_task = g_new0(FlTaskRunnerTask, 1);
-  runner_task->task = task;
+  runner_task->delegate = std::move(delegate);
   runner_task->task_time_micros =
       target_time_nanos / kMicrosecondsPerNanosecond;
 

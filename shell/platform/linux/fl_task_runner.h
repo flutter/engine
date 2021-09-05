@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_TASK_RUNNER_H_
 
 #include <glib-object.h>
+#include <functional>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -27,14 +28,14 @@ FlTaskRunner* fl_task_runner_new(FlEngine* engine);
 /**
  * fl_task_runner_post_task:
  * @task_runner: an #FlTaskRunner.
- * @task: Flutter task being scheduled
+ * @delegate: The callback to be scheduled
  * @target_time_nanos: absolute time in nanoseconds
  *
  * Posts a Flutter task to be executed on main thread. This function is thread
  * safe and may be called from any thread.
  */
 void fl_task_runner_post_task(FlTaskRunner* task_runner,
-                              FlutterTask task,
+                              std::function<void()> delegate,
                               uint64_t target_time_nanos);
 
 /**

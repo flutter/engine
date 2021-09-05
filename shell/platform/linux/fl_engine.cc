@@ -6,6 +6,7 @@
 
 #include <gmodule.h>
 
+#include <atomic>
 #include <cstring>
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
@@ -19,6 +20,8 @@
 
 // Unique number associated with platform tasks.
 static constexpr size_t kPlatformTaskRunnerIdentifier = 1;
+
+static constexpr int kMicrosecondsPerNanosecond = 1000;
 
 struct _FlEngine {
   GObject parent_instance;
@@ -44,6 +47,9 @@ struct _FlEngine {
   FlEngineUpdateSemanticsNodeHandler update_semantics_node_handler;
   gpointer update_semantics_node_handler_data;
   GDestroyNotify update_semantics_node_handler_destroy_notify;
+
+  // Stored baton for plumbing vsync callbacks.
+  intptr_t vsync_baton;
 };
 
 G_DEFINE_QUARK(fl_engine_error_quark, fl_engine_error)
@@ -214,6 +220,57 @@ static bool fl_engine_gl_make_resource_current(void* user_data) {
   return result;
 }
 
+static void fl_engine_handle_frame_clock_update(GdkFrameClock* clk,
+                                                void* user_data) {
+  FlEngine* self = static_cast<FlEngine*>(user_data);
+  if (self->vsync_baton != 0) {
+    // Note: it's crucial to reset the vsync_baton before we call OnVsync, since
+    // OnVsync (either synchronous or ran on another thread) might request
+    // another vsync callback inside it.
+    auto btn = self->vsync_baton;
+    self->vsync_baton = 0;
+    gint64 frame_time = gdk_frame_clock_get_frame_time(clk);
+    gint64 refresh_interval;
+    gint64 presentation_time;
+    gdk_frame_clock_get_refresh_info(clk, frame_time, &refresh_interval,
+                                     &presentation_time);
+    if (presentation_time == 0) {
+      // GDK could not predict next presentation due to lack of history.
+      // A fallback is used.
+      presentation_time = frame_time + refresh_interval;
+    }
+    self->embedder_api.OnVsync(self->engine, btn,
+                               frame_time * kMicrosecondsPerNanosecond,
+                               presentation_time * kMicrosecondsPerNanosecond);
+  }
+}
+
+static gboolean fl_engine_request_vsync(FlEngine* self) {
+  GdkFrameClock* clk = gtk_widget_get_frame_clock(
+      GTK_WIDGET(fl_renderer_get_view(self->renderer)));
+  if (fl_renderer_is_blocking_main_thread(self->renderer)) {
+    // Layout updates happens inside the "layout" phase of frame clock; if
+    // blocking is in progress, then we never advance to the next "update" phase
+    // where the vsync callback is usually called. Hence we just issue the
+    // callback immediately if blocking is in progress.
+    fl_engine_handle_frame_clock_update(clk, self);
+  } else {
+    gdk_frame_clock_request_phase(clk, GDK_FRAME_CLOCK_PHASE_UPDATE);
+  }
+  return false;
+}
+
+static void fl_engine_vsync_callback(void* user_data, intptr_t btn) {
+  FlEngine* self = static_cast<FlEngine*>(user_data);
+  // Thread safety: only one of vsync_callback or handle_frame_clock_update can
+  // execute at one time. This is because VSync callback can only be requested
+  // upon the completion of the previous VSync callback.
+  self->vsync_baton = btn;
+  // Run frame clock operations on the main thread to synchronize the accesses.
+  std::function<void()> delegate = [=] { fl_engine_request_vsync(self); };
+  fl_task_runner_post_task(self->task_runner, std::move(delegate), 0);
+}
+
 // Called by the engine to determine if it is on the GTK thread.
 static bool fl_engine_runs_task_on_current_thread(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
@@ -225,8 +282,11 @@ static void fl_engine_post_task(FlutterTask task,
                                 uint64_t target_time_nanos,
                                 void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
+  std::function<void()> delegate = [=] {
+    self->embedder_api.RunTask(self->engine, &task);
+  };
 
-  fl_task_runner_post_task(self->task_runner, task, target_time_nanos);
+  fl_task_runner_post_task(self->task_runner, delegate, target_time_nanos);
 }
 
 // Called when a platform message is received from the engine.
@@ -326,6 +386,7 @@ static void fl_engine_class_init(FlEngineClass* klass) {
 
 static void fl_engine_init(FlEngine* self) {
   self->thread = g_thread_self();
+  self->vsync_baton = 0;
 
   self->embedder_api.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&self->embedder_api);
@@ -401,6 +462,11 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
       dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
   args.dart_entrypoint_argv =
       reinterpret_cast<const char* const*>(dart_entrypoint_args);
+  args.vsync_callback = fl_engine_vsync_callback;
+  GdkFrameClock* clk = gtk_widget_get_frame_clock(
+      GTK_WIDGET(fl_renderer_get_view(self->renderer)));
+  g_signal_connect(clk, "update",
+                   G_CALLBACK(fl_engine_handle_frame_clock_update), self);
 
   FlutterCompositor compositor = {};
   compositor.struct_size = sizeof(FlutterCompositor);
@@ -682,9 +748,4 @@ G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
 FlTaskRunner* fl_engine_get_task_runner(FlEngine* self) {
   g_return_val_if_fail(FL_IS_ENGINE(self), nullptr);
   return self->task_runner;
-}
-
-void fl_engine_execute_task(FlEngine* self, FlutterTask* task) {
-  g_return_if_fail(FL_IS_ENGINE(self));
-  self->embedder_api.RunTask(self->engine, task);
 }

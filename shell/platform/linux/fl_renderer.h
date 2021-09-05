@@ -256,6 +256,15 @@ void fl_renderer_wait_for_frame(FlRenderer* renderer,
                                 int target_width,
                                 int target_height);
 
+/**
+ * fl_renderer_is_blocking_main_thread:
+ * @renderer: an #FlRenderer.
+ *
+ * Returns %TRUE if we are currently blocking the main thread waiting for a
+ * frame to arrive.
+ */
+gboolean fl_renderer_is_blocking_main_thread(FlRenderer* self);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_RENDERER_H_
