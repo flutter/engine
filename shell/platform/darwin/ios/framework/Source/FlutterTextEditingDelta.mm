@@ -67,7 +67,7 @@
     NSLog(@"isReplaced? %d", isReplaced);
 
     if (isEqual) {
-      NSLog(@"We have no changes, reporting equality");
+      NSLog(@"equality");
       [self setDeltas:textBeforeChange
               newText:@""
                  type:@"TextEditingDeltaType.equality"
@@ -75,17 +75,8 @@
              deltaEnd:-1];
     } else if ((isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) &&
                !isOriginalComposingRegionTextChanged) {  // Deletion.
-      NSLog(@"We have a deletion");
-      NSString* deleted;
-      if (isDeletingInsideMarkedText) {
-        deleted = [textBeforeChange
-            substringWithRange:NSMakeRange(start + tbend, (end - start) - (start + tbend))];
-      } else {
-        deleted = [textBeforeChange substringWithRange:NSMakeRange(start + tbend, end - start)];
-      }
-
-      NSLog(@"We are deletion %@ at start position: %lu and end position: %lu", deleted,
-            (long)start, (long)end);
+      NSLog(@"deletion");
+      NSString* deleted = @"";
       NSInteger actualStart = start;
 
       if (!isDeletionGreaterThanOne) {
@@ -99,10 +90,7 @@
              deltaEnd:end];
     } else if ((start == end || isInsertingInsideMarkedText) &&
                !isOriginalComposingRegionTextChanged) {  // Insertion.
-      NSLog(@"We have an insertion");
-      NSLog(@"We are inserting %@ at start position: %lu and end position: %lu",
-            [text substringWithRange:NSMakeRange(end - start, text.length - (end - start))],
-            (long)start, (long)end);
+      NSLog(@"insertion");
       [self
            setDeltas:textBeforeChange
              newText:[text substringWithRange:NSMakeRange(end - start, text.length - (end - start))]
@@ -110,10 +98,7 @@
           deltaStart:end
             deltaEnd:end];
     } else if (isReplaced) {  // Replacement.
-      NSLog(@"We have a replacement");
-      NSString* replaced = [textBeforeChange substringWithRange:range];
-      NSLog(@"We are replacing %@ at start position: %lu and end position: %lu with %@", replaced,
-            (long)start, (long)end, text);
+      NSLog(@"replacement");
       [self setDeltas:textBeforeChange
               newText:text
                  type:@"TextEditingDeltaType.replacement"
@@ -129,7 +114,6 @@
   self = [super init];
 
   if (self) {
-    NSLog(@"We have no changes, reporting equality");
     [self setDeltas:text
             newText:@""
                type:@"TextEditingDeltaType.equality"
