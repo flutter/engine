@@ -17,6 +17,8 @@ source_set("testing_lib") {
 
   sources = [
     "assertions.h",
+    "post_task_sync.cc",
+    "post_task_sync.h",
     "testing.cc",
     "testing.h",
     "thread_test.cc",
@@ -24,6 +26,7 @@ source_set("testing_lib") {
   ]
 
   public_deps = [
+    "//flutter/common:common",
     "//flutter/fml",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
