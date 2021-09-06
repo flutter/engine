@@ -47,6 +47,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/platform/embedder/common.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
@@ -649,36 +650,6 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 #else
   return nullptr;
 #endif
-}
-
-static inline SkColorType getSkColorType(FlutterSoftwarePixelFormat pixfmt) {
-  switch (pixfmt) {
-    case kGray8:
-      return kGray_8_SkColorType;
-    case kRGB565:
-      return kRGB_565_SkColorType;
-    case kRGBA4444:
-      return kARGB_4444_SkColorType;
-    case kRGBA8888:
-      return kRGBA_8888_SkColorType;
-    case kRGBX8888:
-      return kRGB_888x_SkColorType;
-    case kBGRA8888:
-      return kBGRA_8888_SkColorType;
-    case kNative32:
-      return kN32_SkColorType;
-    default:
-      FML_LOG(ERROR) << "Invalid software rendering pixel format";
-      return kN32_SkColorType;
-  }
-}
-
-static inline SkColorInfo getSkColorInfo(FlutterSoftwarePixelFormat pixfmt) {
-  auto ct = getSkColorType(pixfmt);
-  auto at =
-      SkColorTypeIsAlwaysOpaque(ct) ? kOpaque_SkAlphaType : kPremul_SkAlphaType;
-
-  return SkColorInfo(ct, at, SkColorSpace::MakeSRGB());
 }
 
 static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(

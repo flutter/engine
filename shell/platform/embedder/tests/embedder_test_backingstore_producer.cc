@@ -10,6 +10,7 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "common.h"
 
 #include <cstdlib>
 #include <memory>
@@ -215,19 +216,9 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
 bool EmbedderTestBackingStoreProducer::CreateSoftware2(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
-  SkColorType color_type;
-  if (software_pixfmt_ == kNative32) {
-    color_type = kN32_SkColorType;
-  } else {
-    color_type = (SkColorType)software_pixfmt_;
-  }
-
-  auto alpha_type = SkColorTypeIsAlwaysOpaque(color_type) ? kOpaque_SkAlphaType
-                                                          : kPremul_SkAlphaType;
-
-  auto surface = SkSurface::MakeRaster(SkImageInfo::Make(
-      SkISize::Make(config->size.width, config->size.height),
-      SkColorInfo(color_type, alpha_type, SkColorSpace::MakeSRGB())));
+  auto surface = SkSurface::MakeRaster(
+      SkImageInfo::Make(SkISize::Make(config->size.width, config->size.height),
+                        getSkColorInfo(software_pixfmt_)));
   if (!surface) {
     FML_LOG(ERROR)
         << "Could not create the render target for compositor layer.";
