@@ -19,6 +19,62 @@ G_DECLARE_DERIVABLE_TYPE(FlPixelBufferTexture,
                          PIXEL_BUFFER_TEXTURE,
                          FlTexture)
 
+/**
+ * FlPixelBufferTexture:
+ *
+ * #FlPixelBufferTexture represents an OpenGL texture generated from a pixel
+ * buffer.
+ *
+ * The following example shows how to implement an #FlPixelBufferTexture.
+ * ![<!-- language="C" -->
+ *   // Type definition, constructor, init, destructor and class_init are
+ *   // omitted.
+ *   struct _VideoPixelBufferTexture {  // extends FlPixelBufferTexture
+ *     FlPixelBufferTexture parent_instance;
+ *
+ *     uint8_t *buffer;  // your pixel buffer.
+ *   }
+ *
+ *   G_DEFINE_TYPE(VideoTexture,
+ *                 video_texture,
+ *                 fl_pixel_buffer_texture_get_type ())
+ *
+ *   static gboolean
+ *   video_texture_copy_pixels (FlPixelBufferTexture* texture,
+ *                              const uint8_t** out_buffer,
+ *                              uint32_t* width,
+ *                              uint32_t* height,
+ *                              GError** error) {
+ *     // This method is called on Render Thread. Be careful with your
+ *     // cross-thread operation.
+ *
+ *     // @width and @height are initially stored the canvas size in Flutter.
+ *
+ *     // You must prepare your pixel buffer in RGBA format.
+ *     // So you may do some format conversion first if your original pixel
+ *     // buffer is not in RGBA format.
+ *     manage_your_pixel_buffer_here ();
+ *
+ *     if (your_operations_are_successfully_finished) {
+ *       // Directly return pointer to your pixel buffer here.
+ *       // Flutter takes content of your pixel buffer after this function
+ *       // is finished. So you must make the buffer live long enough until
+ *       // next tick of Render Thread.
+ *       // If it is hard to manage lifetime of your pixel buffer, you should
+ *       // take look into #FlTextureGL.
+ *
+ *       *out_buffer = buffer;
+ *       *width = real_width_of_buffer;
+ *       *height = real_height_of_buffer;
+ *       return TRUE;
+ *     } else {
+ *       // set @error to report failure.
+ *       return FALSE;
+ *     }
+ *   }
+ * ]|
+ */
+
 struct _FlPixelBufferTextureClass {
   FlTextureClass parent_class;
 
@@ -45,13 +101,6 @@ struct _FlPixelBufferTextureClass {
                           uint32_t* height,
                           GError** error);
 };
-
-/**
- * FlPixelBufferTexture:
- *
- * #FlPixelBufferTexture represents an OpenGL texture generated from a pixel
- * buffer.
- */
 
 G_END_DECLS
 

@@ -32,7 +32,7 @@ G_DEFINE_TYPE(FlTestTexture, fl_test_texture, fl_texture_get_type())
 
 static gboolean fl_test_texture_populate(FlTextureGL* texture,
                                          uint32_t* target,
-                                         uint32_t* format,
+                                         uint32_t* name,
                                          uint32_t* width,
                                          uint32_t* height,
                                          GError** error) {
@@ -41,7 +41,7 @@ static gboolean fl_test_texture_populate(FlTextureGL* texture,
   EXPECT_EQ(*width, BUFFER_WIDTH);
   EXPECT_EQ(*height, BUFFER_HEIGHT);
   *target = GL_TEXTURE_2D;
-  *format = GL_R8;
+  *name = 1;
   *width = REAL_BUFFER_WIDTH;
   *height = REAL_BUFFER_HEIGHT;
 

@@ -25,6 +25,53 @@ G_DECLARE_DERIVABLE_TYPE(FlTextureGL, fl_texture_gl, FL, TEXTURE_GL, FlTexture)
  * If you want to render textures in other OpenGL context, create and use the
  * #GdkGLContext by calling gdk_window_create_gl_context () with the #GdkWindow
  * of #FlView. The context will be shared with the one used by Flutter.
+ *
+ * The following example shows how to implement an #FlTextureGL.
+ * ![<!-- language="C" -->
+ *   #include <epoxy/gl.h>
+ *
+ *   // Type definition, constructor, init, destructor, and class_init are
+ *   // omitted.
+ *   struct _VideoTextureGL { // extends FlTextureGL
+ *     FlTextureGL parent_instance;
+ *
+ *     GLuint texture_id;
+ *   };
+ *
+ *   G_DEFINE_TYPE(VideoTexture,
+ *                 video_texture,
+ *                 fl_texture_gl_get_type ())
+ *
+ *   static gboolean
+ *   video_texture_populate (FlTextureGL *texture,
+ *                           uint32_t *target,
+ *                           uint32_t *name,
+ *                           uint32_t *width,
+ *                           uint32_t *height,
+ *                           GError **error) {
+ *     VideoTextureGL *self = VIDEO_TEXTURE_GL (texture);
+ *     if (self->texture_id == 0) {
+ *       glGenTextures (1, &self->texture_id);
+ *       glBindTexture (GL_TEXTURE_2D, self->texture_id);
+ *       // further configuration here.
+ *     } else {
+ *       glBindTexture (GL_TEXTURE_2D, self->texture_id);
+ *     }
+ *
+ *     // For example, we render pixel buffer here.
+ *     // Note that Flutter only accepts textures in GL_RGBA8 format.
+ *     static char buffer[] = { 0x1f, 0x2f, 0x3f, 0x4f };  // 1x1 pixel.
+ *     glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA,
+ *                   GL_UNSIGNED_BYTE, buffer);
+ *
+ *     *target = GL_TEXTURE_2D;
+ *     *name = self->texture_id;
+ *     *width = 1;
+ *     *height = 1;
+ *
+ *     return TRUE;
+ *   }
+ * ]|
  */
 
 struct _FlTextureGLClass {

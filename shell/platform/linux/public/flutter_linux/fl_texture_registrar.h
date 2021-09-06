@@ -26,6 +26,11 @@ G_DECLARE_FINAL_TYPE(FlTextureRegistrar,
  * FlTextureRegistrar:
  *
  * #FlTextureRegistrar is used when registering textures.
+ *
+ * Flutter Framework accesses your texture by the related unique texture ID. To
+ * draw your texture in Dart, you should add Texture widget in your widget tree
+ * with the same texture ID. Use platform channels to send this unique texture
+ * ID to the Dart side.
  */
 
 /**
