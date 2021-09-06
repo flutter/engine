@@ -1,4 +1,4 @@
-Signature: c92c149ea57d3835c7413bcb15d5bb9e
+Signature: 4c382c129f3123ea631cc653ec75b3e5
 
 UNUSED LICENSES:
 
@@ -1090,22 +1090,16 @@ FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
 FILE: ../../../third_party/skia/src/ports/SkTLS_pthread.cpp
 FILE: ../../../third_party/skia/src/ports/SkTLS_win.cpp
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_geom.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_gpu.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_interp.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_public.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_blend.dehydrated.sksl
-FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_colorfilter.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_rt_shader.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_runtime.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_vert.dehydrated.sksl
 FILE: ../../../third_party/skia/src/sksl/lex/sksl.lex
 FILE: ../../../third_party/skia/src/sksl/sksl_frag.sksl
-FILE: ../../../third_party/skia/src/sksl/sksl_geom.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
-FILE: ../../../third_party/skia/src/sksl/sksl_rt_blend.sksl
-FILE: ../../../third_party/skia/src/sksl/sksl_rt_colorfilter.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
 ----------------------------------------------------------------------------------------------------
@@ -1576,8 +1570,8 @@ FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLFragmentShaderBuilder.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLFragmentShaderBuilder.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLShaderBuilder.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLShaderBuilder.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrDashOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrDashOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/DashOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/DashOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/SmallPathRenderer.h
 FILE: ../../../third_party/skia/src/image/SkReadPixelsRec.h
 FILE: ../../../third_party/skia/src/image/SkSurface_Gpu.h
@@ -1880,10 +1874,10 @@ FILE: ../../../third_party/skia/src/gpu/gl/glfw/GrGLMakeNativeInterface_glfw.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLColorSpaceXformHelper.h
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLProgramDataManager.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrPathStencilSettings.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrRegionOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrShadowRRectOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrShadowRRectOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/RegionOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/RegionOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/ShadowRRectOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/ShadowRRectOp.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkDescriptorPool.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkDescriptorPool.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkDescriptorSet.cpp
@@ -2492,16 +2486,16 @@ FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLVarying.cpp
 FILE: ../../../third_party/skia/src/gpu/glsl/GrGLSLVarying.h
 FILE: ../../../third_party/skia/src/gpu/ops/AALinearizingConvexPathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/AALinearizingConvexPathRenderer.h
+FILE: ../../../third_party/skia/src/gpu/ops/AtlasTextOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/AtlasTextOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/ClearOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/DashLinePathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/DashLinePathRenderer.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrAtlasTextOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrAtlasTextOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrClearOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrDrawAtlasOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrDrawAtlasOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/DrawAtlasOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/DrawAtlasOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/DrawVerticesOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/DrawVerticesOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrDrawOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrDrawVerticesOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrDrawVerticesOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrLatticeOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrLatticeOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrMeshDrawOp.cpp
@@ -2900,7 +2894,6 @@ FILE: ../../../third_party/skia/src/gpu/gl/GrGLTypesPriv.cpp
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/mock/GrMockTypes.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLASTFile.h
-FILE: ../../../third_party/skia/src/sksl/SkSLASTNode.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLASTNode.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalFunction.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExternalFunctionCall.h
@@ -3032,8 +3025,10 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLExpressionStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFieldAccess.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLForStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionCall.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionDefinition.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLIfStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLIndexExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLMethodReference.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPostfixExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwizzle.cpp
@@ -3261,16 +3256,16 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlUniformHandler.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlUniformHandler.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlVaryingHandler.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlVaryingHandler.mm
-FILE: ../../../third_party/skia/src/gpu/ops/GrDrawableOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrDrawableOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrFillRRectOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrFillRRectOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrFillRectOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrFillRectOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/DrawableOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/DrawableOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/FillRRectOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/FillRRectOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/FillRectOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/FillRectOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrQuadPerEdgeAA.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrQuadPerEdgeAA.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrStrokeRectOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrStrokeRectOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/StrokeRectOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/StrokeRectOp.h
 FILE: ../../../third_party/skia/src/gpu/text/GrAtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrAtlasManager.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFMaskFilter.cpp
@@ -3537,11 +3532,11 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlTrampoline.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlTrampoline.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlUtil.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlUtil.mm
-FILE: ../../../third_party/skia/src/gpu/ops/GrClearOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/ClearOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelper.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelper.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrTextureOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrTextureOp.h
+FILE: ../../../third_party/skia/src/gpu/ops/TextureOp.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/TextureOp.h
 FILE: ../../../third_party/skia/src/gpu/v1/StencilClip.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSemaphore.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSemaphore.h
@@ -3645,9 +3640,8 @@ FILE: ../../../third_party/skia/include/gpu/GrBackendSurfaceMutableState.h
 FILE: ../../../third_party/skia/include/gpu/GrYUVABackendTextures.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypes.h
-FILE: ../../../third_party/skia/include/gpu/d3d/GrD3DTypesMinimal.h
 FILE: ../../../third_party/skia/include/ports/SkImageGeneratorNDK.h
-FILE: ../../../third_party/skia/include/private/GrD3DTypesPriv.h
+FILE: ../../../third_party/skia/include/private/GrD3DTypesMinimal.h
 FILE: ../../../third_party/skia/include/private/SkIDChangeListener.h
 FILE: ../../../third_party/skia/include/private/SkSLSampleUsage.h
 FILE: ../../../third_party/skia/include/sksl/DSL.h
@@ -3663,6 +3657,8 @@ FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_float_cap
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_int_capabilities.cpp
 FILE: ../../../third_party/skia/samplecode/SampleMaterialShadows.cpp
 FILE: ../../../third_party/skia/src/core/SkASAN.h
+FILE: ../../../third_party/skia/src/core/SkBlockAllocator.cpp
+FILE: ../../../third_party/skia/src/core/SkBlockAllocator.h
 FILE: ../../../third_party/skia/src/core/SkIDChangeListener.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixProvider.h
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffectPriv.h
@@ -3674,8 +3670,6 @@ FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableState.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendSurfaceMutableStateImpl.h
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBackendUtils.h
-FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.cpp
-FILE: ../../../third_party/skia/src/gpu/GrBlockAllocator.h
 FILE: ../../../third_party/skia/src/gpu/GrDDLTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrDDLTask.h
 FILE: ../../../third_party/skia/src/gpu/GrManagedResource.cpp
@@ -3733,7 +3727,7 @@ FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureRenderTarget.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureRenderTarget.h
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureResource.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTextureResource.h
-FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTypesPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DTypesMinimal.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DUtil.cpp
 FILE: ../../../third_party/skia/src/gpu/d3d/GrD3DUtil.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrMatrixEffect.cpp
@@ -4048,6 +4042,7 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Surface.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Surface.h
 FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.h
+FILE: ../../../third_party/skia/modules/androidkit/src/Text.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
@@ -4075,8 +4070,8 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlFramebuffer.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlFramebuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlPipeline.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrAtlasRenderTask.h
+FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrCullTest.h
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
@@ -5618,8 +5613,6 @@ FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/GrGpuBuffer.h
 FILE: ../../../third_party/skia/src/gpu/GrImageContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrImageContextPriv.h
-FILE: ../../../third_party/skia/src/gpu/GrOpsTask.cpp
-FILE: ../../../third_party/skia/src/gpu/GrOpsTask.h
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContext.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRecordingContextPriv.h
 FILE: ../../../third_party/skia/src/gpu/GrSPIRVUniformHandler.cpp
@@ -5655,6 +5648,8 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlCommandBuffer.mm
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlDepthStencil.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlSemaphore.mm
+FILE: ../../../third_party/skia/src/gpu/ops/OpsTask.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/OpsTask.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkSecondaryCBDrawContext.h
 FILE: ../../../third_party/skia/src/image/SkSurface_GpuMtl.mm
@@ -6503,6 +6498,7 @@ FILE: ../../../third_party/skia/src/core/SkImageInfo.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.h
+FILE: ../../../third_party/skia/src/core/SkTBlockList.h
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.h
 FILE: ../../../third_party/skia/src/gpu/GrClip.h
@@ -6512,7 +6508,6 @@ FILE: ../../../third_party/skia/src/gpu/GrGlyph.h
 FILE: ../../../third_party/skia/src/gpu/GrGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRectanizer.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizerPow2.cpp
-FILE: ../../../third_party/skia/src/gpu/GrTBlockList.h
 FILE: ../../../third_party/skia/src/gpu/GrVertexWriter.h
 FILE: ../../../third_party/skia/src/gpu/SkGr.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrRect.h
@@ -6755,6 +6750,7 @@ ORIGIN: ../../../third_party/skia/modules/canvaskit/npm_build/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/example.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/extra.html
+FILE: ../../../third_party/skia/modules/canvaskit/npm_build/multicanvas.html
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/node.example.js
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package-lock.json
 FILE: ../../../third_party/skia/modules/canvaskit/npm_build/package.json

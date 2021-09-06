@@ -1,4 +1,4 @@
-#!/usr/bin/env vpython3
+#!/usr/bin/env python3
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -53,9 +53,6 @@ def get_out_dir(args):
 
     if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
       target_dir.append(args.fuchsia_cpu)
-
-    if args.enable_vulkan:
-        target_dir.append('vulkan')
 
     # This exists for backwards compatibility of tests that are being run
     # on LUCI. This can be removed in coordination with a LUCI change:
@@ -122,9 +119,6 @@ def to_gn_args(args):
     if args.simulator:
         if args.target_os == 'android':
             raise Exception('--simulator is not supported on Android')
-
-    if args.target_os != 'android' and args.enable_vulkan:
-      raise Exception('--enable-vulkan is only supported on Android')
 
     runtime_mode = args.runtime_mode
 
@@ -308,12 +302,6 @@ def to_gn_args(args):
       gn_args['allow_deprecated_api_calls'] = True
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
-
-    if args.enable_vulkan:
-      # Enable vulkan in the Flutter shell.
-      gn_args['shell_enable_vulkan'] = True
-      # Configure Skia for Vulkan support.
-      gn_args['skia_use_vulkan'] = True
 
     if sys.platform.startswith(('cygwin', 'win')):
       # The buildroot currently isn't set up to support Vulkan in the
@@ -505,6 +493,9 @@ def parse_args(args):
   parser.add_argument('--trace-gn', default=False, action='store_true',
                        help='Write a GN trace log (gn_trace.json) in the Chromium tracing format in the build directory.')
 
+  # Verbose output.
+  parser.add_argument('--verbose', default=False, action='store_true')
+
   return parser.parse_args(args)
 
 def main(argv):
@@ -537,6 +528,9 @@ def main(argv):
 
   if args.trace_gn:
     command.append('--tracelog=%s/gn_trace.json' % out_dir)
+
+  if args.verbose:
+    command.append('-v')
 
   print("Generating GN files in: %s" % out_dir)
   try:
