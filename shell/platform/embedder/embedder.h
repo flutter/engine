@@ -311,8 +311,10 @@ typedef enum {
 ///   can get the p for a RGBA8888 formatted buffer like this:
 ///   const uint8_t *p = ((const uint8_t*) allocation) + row_bytes*y + x*4;
 typedef enum {
-  /// pixel with 8 bit alpha value.
-  kAlpha8 = 1,
+  /// pixel with 8 bit grayscale value.
+  /// The grayscale value is the luma value calculated from r, g, b
+  /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
+  kGray8,
 
   /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
   ///   r = p & 0x3F; g = (p>>5) & 0x3F; b = p>>11;
@@ -333,27 +335,6 @@ typedef enum {
   /// pixel with 8 bits for blue, green, red and alpha.
   ///   r = p[2]; g = p[1]; b = p[0]; a = p[3];
   kBGRA8888,
-
-  /// pixel with 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
-  ///   r = p & 0x3FF; g = (p>>10) & 0x3FF; b = (p>>20) & 0x3FF; a = p>>30;
-  kRGBA1010102,
-
-  /// pixel with 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
-  ///   r = (p>>20) & 0x3FF; g = (p>>10) & 0x3FF; b = p & 0x3FF; a = p>>30;
-  kBGRA1010102,
-
-  /// pixel with 10 bits for red, green, blue and 2 unused bits; in 32-bit word
-  ///   r = p & 0x3FF; g = (p>>10) & 0x3FF; b = (p>>20) & 0x3FF;
-  kRGBX1010102,
-
-  /// pixel with 10 bits for red, green, blue and 2 unused bits; in 32-bit word
-  ///   r = (p>>20) & 0x3FF; g = (p>>10) & 0x3FF; b = p & 0x3FF;
-  kBGRX1010102,
-
-  /// pixel with 8 bit grayscale value.
-  /// The grayscale value is the luma value calculated from r, g, b
-  /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
-  kGray8,
 
   /// either kBGRA8888 or kRGBA8888 depending on CPU endianess and OS
   kNative32,

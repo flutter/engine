@@ -1405,7 +1405,6 @@ static void expectSoftwareRenderingOutputMatches(
 
 // Don't test the pixel formats that contain padding (so an X) and the kNative32
 // pixel format here, so we don't add any flakiness.
-SW_PIXFMT_TEST_F(draw_solid_red, kAlpha8, (uint8_t)0xFF)
 SW_PIXFMT_TEST_F(draw_solid_red, kRGB565, (uint16_t)0xF800);
 SW_PIXFMT_TEST_F(draw_solid_red, kRGBA4444, (uint16_t)0xF00F);
 SW_PIXFMT_TEST_F(draw_solid_red,
@@ -1414,11 +1413,8 @@ SW_PIXFMT_TEST_F(draw_solid_red,
 SW_PIXFMT_TEST_F(draw_solid_red,
                  kBGRA8888,
                  (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_red, kRGBA1010102, (uint32_t)0xC00003FF);
-SW_PIXFMT_TEST_F(draw_solid_red, kBGRA1010102, (uint32_t)0xFFF00000);
 SW_PIXFMT_TEST_F(draw_solid_red, kGray8, (uint8_t)0x36);
 
-SW_PIXFMT_TEST_F(draw_solid_green, kAlpha8, (uint8_t)0xFF)
 SW_PIXFMT_TEST_F(draw_solid_green, kRGB565, (uint16_t)0x07E0);
 SW_PIXFMT_TEST_F(draw_solid_green, kRGBA4444, (uint16_t)0x0F0F);
 SW_PIXFMT_TEST_F(draw_solid_green,
@@ -1427,11 +1423,8 @@ SW_PIXFMT_TEST_F(draw_solid_green,
 SW_PIXFMT_TEST_F(draw_solid_green,
                  kBGRA8888,
                  (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_green, kRGBA1010102, (uint32_t)0xC00FFC00);
-SW_PIXFMT_TEST_F(draw_solid_green, kBGRA1010102, (uint32_t)0xC00FFC00);
 SW_PIXFMT_TEST_F(draw_solid_green, kGray8, (uint8_t)0xB6);
 
-SW_PIXFMT_TEST_F(draw_solid_blue, kAlpha8, (uint8_t)0xFF)
 SW_PIXFMT_TEST_F(draw_solid_blue, kRGB565, (uint16_t)0x001F);
 SW_PIXFMT_TEST_F(draw_solid_blue, kRGBA4444, (uint16_t)0x00FF);
 SW_PIXFMT_TEST_F(draw_solid_blue,
@@ -1440,8 +1433,6 @@ SW_PIXFMT_TEST_F(draw_solid_blue,
 SW_PIXFMT_TEST_F(draw_solid_blue,
                  kBGRA8888,
                  (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_blue, kRGBA1010102, (uint32_t)0xFFF00000);
-SW_PIXFMT_TEST_F(draw_solid_blue, kBGRA1010102, (uint32_t)0xC00003FF);
 SW_PIXFMT_TEST_F(draw_solid_blue, kGray8, (uint8_t)0x12);
 
 //------------------------------------------------------------------------------

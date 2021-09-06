@@ -652,10 +652,24 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 }
 
 static inline SkColorType getSkColorType(FlutterSoftwarePixelFormat pixfmt) {
-  if (pixfmt == kNative32) {
-    return kN32_SkColorType;
-  } else {
-    return (SkColorType)pixfmt;
+  switch (pixfmt) {
+    case kGray8:
+      return kGray_8_SkColorType;
+    case kRGB565:
+      return kRGB_565_SkColorType;
+    case kRGBA4444:
+      return kARGB_4444_SkColorType;
+    case kRGBA8888:
+      return kRGBA_8888_SkColorType;
+    case kRGBX8888:
+      return kRGB_888x_SkColorType;
+    case kBGRA8888:
+      return kBGRA_8888_SkColorType;
+    case kNative32:
+      return kN32_SkColorType;
+    default:
+      FML_LOG(ERROR) << "Invalid software rendering pixel format";
+      return kN32_SkColorType;
   }
 }
 

@@ -355,8 +355,8 @@ inline std::string FlutterOpenGLTargetTypeToString(
 inline std::string FlutterSoftwarePixelFormatToString(
     FlutterSoftwarePixelFormat pixfmt) {
   switch (pixfmt) {
-    case kAlpha8:
-      return "kAlpha8";
+    case kGray8:
+      return "kGray8";
     case kRGB565:
       return "kRGB565";
     case kRGBA4444:
@@ -367,18 +367,10 @@ inline std::string FlutterSoftwarePixelFormatToString(
       return "kRGBX8888";
     case kBGRA8888:
       return "kBGRA8888";
-    case kRGBA1010102:
-      return "kRGBA1010102";
-    case kBGRA1010102:
-      return "kBGRA1010102";
-    case kRGBX1010102:
-      return "kRGBX1010102";
-    case kBGRX1010102:
-      return "kBGRX1010102";
-    case kGray8:
-      return "kGray8";
     case kNative32:
       return "kNative32";
+    default:
+      FML_LOG(ERROR) << "Invalid software rendering pixel format";
   }
   return "Unknown";
 }
