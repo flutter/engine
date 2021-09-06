@@ -208,9 +208,11 @@ RasterStatus Rasterizer::Draw(
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
           fml::MakeCopyable(
               [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               resubmit_recorder = std::move(resubmit_recorder)]() mutable {
+               resubmit_recorder = std::move(resubmit_recorder),
+               discardCallback = std::move(discardCallback)]() mutable {
                 if (weak_this) {
-                  weak_this->Draw(std::move(resubmit_recorder), pipeline);
+                  weak_this->Draw(std::move(resubmit_recorder), pipeline,
+                                  std::move(discardCallback));
                 }
               }));
       break;
