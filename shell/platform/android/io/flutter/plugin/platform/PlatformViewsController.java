@@ -473,7 +473,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (platformViewsChannel != null) {
       platformViewsChannel.setPlatformViewsHandler(null);
     }
-    destroyOverlaySurfaces();
     platformViewsChannel = null;
     context = null;
     textureRegistry = null;
@@ -501,7 +500,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * the previously attached {@code View}.
    */
   public void detachFromView() {
-    destroyOverlaySurfaces();
     this.flutterView = null;
 
     // Inform all existing platform views that they are no longer associated with
@@ -827,7 +825,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     initializeRootImageViewIfNeeded();
 
     final FlutterImageView overlayView = overlayLayerViews.get(id);
-    if (overlayView.getParent() == null) {
+    FlutterView overlayViewParent = (FlutterView) overlayView.getParent();
+    if (overlayViewParent != flutterView) {
+      if (overlayViewParent != null) {
+        overlayViewParent.removeView(overlayView);
+      }
       ((FlutterView) flutterView).addView(overlayView);
     }
 
