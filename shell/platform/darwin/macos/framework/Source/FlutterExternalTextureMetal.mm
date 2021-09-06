@@ -96,7 +96,6 @@
   textureOut->height = textureSize.height();
   textureOut->width = textureSize.width();
   textureOut->pixel_format = FlutterMetalExternalTexturePixelFormat::kYUVA;
-  ;
   textureOut->textures = _textures.data();
 
   return YES;

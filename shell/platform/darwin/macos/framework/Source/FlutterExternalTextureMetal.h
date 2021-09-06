@@ -27,15 +27,4 @@
  */
 - (BOOL)populateTexture:(nonnull FlutterMetalExternalTexture*)metalTexture;
 
-/**
- * Create FlutterMetalExternalTexture from YUV pixelbuffer.
- */
-- (BOOL)populateTextureFromYUVAPixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer
-                                textureOut:(nonnull FlutterMetalExternalTexture*)textureOut;
-/**
- * Create FlutterMetalExternalTexture from RGBA pixelbuffer.
- */
-- (BOOL)populateTextureFromRGBAPixelBuffer:(nonnull CVPixelBufferRef)pixelBuffer
-                                textureOut:(nonnull FlutterMetalExternalTexture*)textureOut;
-
 @end
