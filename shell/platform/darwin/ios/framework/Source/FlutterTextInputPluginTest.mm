@@ -324,7 +324,6 @@ FLUTTER_ASSERT_ARC
   FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"");
   XCTAssertEqualObjects(currentDelta.deltaText, @"text to insert");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.insertion");
   XCTAssertEqual(currentDelta.deltaStart, 0);
   XCTAssertEqual(currentDelta.deltaEnd, 0);
 
@@ -334,7 +333,6 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"text to insert");
   XCTAssertEqualObjects(currentDelta.deltaText, @"");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(currentDelta.deltaStart, 13);
   XCTAssertEqual(currentDelta.deltaEnd, 14);
 
@@ -344,7 +342,6 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"text to inser");
   XCTAssertEqualObjects(currentDelta.deltaText, @"");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.nonTextUpdate");
   XCTAssertEqual(currentDelta.deltaStart, -1);
   XCTAssertEqual(currentDelta.deltaEnd, -1);
 
@@ -355,7 +352,6 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"text to inser");
   XCTAssertEqualObjects(currentDelta.deltaText, @"replace text");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.replacement");
   XCTAssertEqual(currentDelta.deltaStart, 0);
   XCTAssertEqual(currentDelta.deltaEnd, 1);
 
@@ -365,7 +361,6 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"replace textext to inser");
   XCTAssertEqualObjects(currentDelta.deltaText, @"marked text");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.insertion");
   XCTAssertEqual(currentDelta.deltaStart, 12);
   XCTAssertEqual(currentDelta.deltaEnd, 12);
 
@@ -375,12 +370,11 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"replace textmarked textext to inser");
   XCTAssertEqualObjects(currentDelta.deltaText, @"");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.nonTextUpdate");
   XCTAssertEqual(currentDelta.deltaStart, -1);
   XCTAssertEqual(currentDelta.deltaEnd, -1);
 }
 
-- (void)testReplacementTextEditingDeltasAreGeneratedOnSetMarkedText {
+- (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextReplacement {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
   inputView.enableDeltaModel = YES;
@@ -405,12 +399,11 @@ FLUTTER_ASSERT_ARC
   FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
   XCTAssertEqualObjects(currentDelta.deltaText, @"new marked text.");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.replacement");
   XCTAssertEqual(currentDelta.deltaStart, 13);
   XCTAssertEqual(currentDelta.deltaEnd, 17);
 }
 
-- (void)testInsertionTextEditingDeltasAreGeneratedOnSetMarkedText {
+- (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextInsertion {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
   inputView.enableDeltaModel = YES;
@@ -434,13 +427,12 @@ FLUTTER_ASSERT_ARC
 
   FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
-  XCTAssertEqualObjects(currentDelta.deltaText, @".");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.insertion");
-  XCTAssertEqual(currentDelta.deltaStart, 17);
+  XCTAssertEqualObjects(currentDelta.deltaText, @"text.");
+  XCTAssertEqual(currentDelta.deltaStart, 13);
   XCTAssertEqual(currentDelta.deltaEnd, 17);
 }
 
-- (void)testDeletionTextEditingDeltasAreGeneratedOnSetMarkedText {
+- (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextDeletion {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
   inputView.textInputDelegate = engine;
   inputView.enableDeltaModel = YES;
@@ -464,9 +456,8 @@ FLUTTER_ASSERT_ARC
 
   FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
-  XCTAssertEqualObjects(currentDelta.deltaText, @"");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.deletion");
-  XCTAssertEqual(currentDelta.deltaStart, 16);
+  XCTAssertEqualObjects(currentDelta.deltaText, @"tex");
+  XCTAssertEqual(currentDelta.deltaStart, 13);
   XCTAssertEqual(currentDelta.deltaEnd, 17);
 }
 
