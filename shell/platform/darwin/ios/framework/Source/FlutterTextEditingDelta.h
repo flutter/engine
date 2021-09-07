@@ -20,7 +20,7 @@
                        replacedRange:(NSRange)range
                          updatedText:(NSString*)text;
 
-- (instancetype)initWithEquality:(NSString*)text;
+- (instancetype)initWithNonText:(NSString*)text;
 
 - (void)setDeltas:(NSString*)oldText
           newText:(NSString*)newTxt

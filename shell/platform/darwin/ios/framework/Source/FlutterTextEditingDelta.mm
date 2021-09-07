@@ -87,13 +87,13 @@
   return self;
 }
 
-- (instancetype)initWithEquality:(NSString*)text {
+- (instancetype)initWithNonText:(NSString*)text {
   self = [super init];
 
   if (self) {
     [self setDeltas:text
             newText:@""
-               type:@"TextEditingDeltaType.equality"
+               type:@"TextEditingDeltaType.nonTextUpdate"
          deltaStart:-1
            deltaEnd:-1];
   }

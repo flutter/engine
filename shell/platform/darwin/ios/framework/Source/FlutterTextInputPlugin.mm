@@ -610,7 +610,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _isFloatingCursorActive = false;
 
     // Delta
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:@""];
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:@""];
     _previousTextEditingDelta = nil;
 
     // UITextInputTraits
@@ -933,7 +933,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   if (_enableDeltaModel) {
     _previousTextEditingDelta = [_currentTextEditingDelta copy];
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:self.text];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1092,7 +1092,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
     _previousTextEditingDelta = [_currentTextEditingDelta copy];
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
+    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:self.text];
     [self updateEditingStateWithDelta];
   } else {
     [self updateEditingState];
@@ -1455,7 +1455,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   };
 
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
-  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
+  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:self.text];
 }
 
 - (BOOL)hasText {
