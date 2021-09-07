@@ -730,11 +730,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), state ]];
 }
 
-- (void)updateEditingClient:(int)client withState:(NSDictionary*)state withTag:(NSString*)tag {
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithTag"
-                              arguments:@[ @(client), @{tag : state} ]];
-}
-
 - (void)updateEditingClient:(int)client withDelta:(NSDictionary*)state {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithDeltas"
                               arguments:@[ @(client), state ]];

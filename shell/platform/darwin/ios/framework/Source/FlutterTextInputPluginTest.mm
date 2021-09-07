@@ -344,7 +344,7 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"text to inser");
   XCTAssertEqualObjects(currentDelta.deltaText, @"");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.equality");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.nonTextUpdate");
   XCTAssertEqual(currentDelta.deltaStart, -1);
   XCTAssertEqual(currentDelta.deltaEnd, -1);
 
@@ -375,7 +375,7 @@ FLUTTER_ASSERT_ARC
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"replace textmarked textext to inser");
   XCTAssertEqualObjects(currentDelta.deltaText, @"");
-  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.equality");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.nonTextUpdate");
   XCTAssertEqual(currentDelta.deltaStart, -1);
   XCTAssertEqual(currentDelta.deltaEnd, -1);
 }

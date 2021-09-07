@@ -1459,14 +1459,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"composingExtent" : @(composingExtent),
   };
 
-  if (_textInputClient == 0 && _autofillId != nil) {
-    [self.textInputDelegate updateEditingClient:_textInputClient
-                                      withDelta:state
-                                        withTag:_autofillId];
-  } else {
-    [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
-  }
+  [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
+  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithEquality:self.text];
 }
 
 - (BOOL)hasText {
