@@ -39,8 +39,6 @@ public class TextEditingDeltaTest {
             oldComposingStart,
             oldComposingEnd,
             textAfterChange,
-            startOfReplacementText,
-            endOfReplacementText,
             newSelectionStart,
             newSelectionEnd,
             newComposingStart,
