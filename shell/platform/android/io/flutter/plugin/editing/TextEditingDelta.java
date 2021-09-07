@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 /// A representation of the change that occured to an editing state, along with the resulting
 /// composing and selection regions.
-public class TextEditingDelta {
+public final class TextEditingDelta {
   private CharSequence oldText;
   private CharSequence deltaText;
   private CharSequence deltaType;
@@ -69,8 +69,8 @@ public class TextEditingDelta {
             && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
 
     if (isEqual) {
-      Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.equality has been created.");
-      setDeltas(oldEditable, "", "TextEditingDeltaType.equality", -1, -1);
+      Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.nonTextUpdate has been created.");
+      setDeltas(oldEditable, "", "TextEditingDeltaType.nonTextUpdate", -1, -1);
     } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
       Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.deletion has been created.");
       final int startOfDelete;
@@ -82,7 +82,7 @@ public class TextEditingDelta {
 
       setDeltas(
           oldEditable,
-          oldEditable.subSequence(start + tbend, end).toString(),
+          "",
           "TextEditingDeltaType.deletion",
           startOfDelete,
           end);
@@ -123,14 +123,6 @@ public class TextEditingDelta {
     newComposingEnd = composingEnd;
 
     setDeltas(oldText, deltaText, deltaType, deltaStart, deltaEnd);
-  }
-
-  public void setNewComposingStart(int newStart) {
-    newComposingStart = newStart;
-  }
-
-  public void setNewComposingEnd(int newEnd) {
-    newComposingEnd = newEnd;
   }
 
   public CharSequence getOldText() {

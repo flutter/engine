@@ -235,7 +235,6 @@ public class ListenableEditingStateTest {
     editingState.replace(0, editingState.length(), "text");
     editingState.delete(0, 1);
     editingState.insert(0, "This is t");
-    assertEquals(3, editingState.getBatchTextEditingDeltas().size());
     editingState.clearBatchDeltas();
     assertEquals(0, editingState.getBatchTextEditingDeltas().size());
   }
@@ -252,42 +251,6 @@ public class ListenableEditingStateTest {
 
     ArrayList<TextEditingDelta> batchDeltas = editingState.getBatchTextEditingDeltas();
     assertEquals(3, batchDeltas.size());
-  }
-
-  @Test
-  public void testAddTextEditingDeltaToList() {
-    final ListenableEditingState editingState =
-        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
-
-    editingState.replace(0, editingState.length(), "Some initial text.");
-    assertEquals(1, editingState.getBatchTextEditingDeltas().size());
-
-    CharSequence text = "This will be an equality delta.";
-
-    editingState.addTextEditingDeltaToList(
-        new TextEditingDelta(text, text, 0, text.length(), text, 0, text.length(), -1, -1, -1, -1));
-
-    assertEquals(2, editingState.getBatchTextEditingDeltas().size());
-  }
-
-  @Test
-  public void testPopTextEditingDeltaFromList() {
-    final ListenableEditingState editingState =
-        new ListenableEditingState(null, new View(RuntimeEnvironment.application));
-
-    editingState.replace(0, editingState.length(), "Some initial text.");
-    assertEquals(1, editingState.getBatchTextEditingDeltas().size());
-
-    CharSequence text = "This will be an equality delta.";
-
-    editingState.addTextEditingDeltaToList(
-        new TextEditingDelta(text, text, 0, text.length(), text, 0, text.length(), -1, -1, -1, -1));
-
-    assertEquals(2, editingState.getBatchTextEditingDeltas().size());
-    editingState.popTextEditingDeltaFromList();
-    assertEquals(1, editingState.getBatchTextEditingDeltas().size());
-    editingState.popTextEditingDeltaFromList();
-    assertEquals(0, editingState.getBatchTextEditingDeltas().size());
   }
 
   // -------- Start: Test InputMethods actions   -------

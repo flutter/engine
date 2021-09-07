@@ -72,7 +72,9 @@ class ListenableEditingState extends SpannableStringBuilder {
   }
 
   public ArrayList<TextEditingDelta> getBatchTextEditingDeltas() {
-    return mBatchTextEditingDeltas;
+    ArrayList<TextEditingDelta> currentBatchDeltas = new ArrayList<TextEditingDelta>(mBatchTextEditingDeltas);
+    mBatchTextEditingDeltas.clear();
+    return currentBatchDeltas;
   }
 
   public void clearBatchDeltas() {
@@ -186,14 +188,6 @@ class ListenableEditingState extends SpannableStringBuilder {
     }
   }
 
-  public void addTextEditingDeltaToList(TextEditingDelta delta) {
-    mBatchTextEditingDeltas.add(delta);
-  }
-
-  public void popTextEditingDeltaFromList() {
-    mBatchTextEditingDeltas.remove(mBatchTextEditingDeltas.size() - 1);
-  }
-
   @Override
   public SpannableStringBuilder replace(
       int start, int end, CharSequence tb, int tbstart, int tbend) {
@@ -285,12 +279,12 @@ class ListenableEditingState extends SpannableStringBuilder {
   public void setSpan(Object what, int start, int end, int flags) {
     super.setSpan(what, start, end, flags);
     // Setting a span does not involve mutating the text value in the editing state. Here we create
-    // an equality delta with any updated selection and composing regions.
+    // a non text update delta with any updated selection and composing regions.
     mBatchTextEditingDeltas.add(
         new TextEditingDelta(
             toString(),
             "",
-            "TextEditingDeltaType.equality",
+            "TextEditingDeltaType.nonTextUpdate",
             -1,
             -1,
             getSelectionStart(),

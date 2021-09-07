@@ -134,7 +134,7 @@ public class TextEditingDeltaTest {
 
     assertEquals("TextEditingDeltaType.deletion", delta.getDeltaType());
     assertEquals(oldText, delta.getOldText());
-    assertEquals("o", delta.getDeltaText());
+    assertEquals("", delta.getDeltaText());
     assertEquals(oldComposingEnd - 1, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
     assertEquals(newSelectionStart, delta.getNewSelectionStart());
@@ -176,7 +176,7 @@ public class TextEditingDeltaTest {
 
     assertEquals("TextEditingDeltaType.deletion", delta.getDeltaType());
     assertEquals(oldText, delta.getOldText());
-    assertEquals("e", delta.getDeltaText());
+    assertEquals("", delta.getDeltaText());
     assertEquals(oldComposingEnd - 1, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
     assertEquals(newSelectionStart, delta.getNewSelectionStart());
@@ -218,7 +218,7 @@ public class TextEditingDeltaTest {
 
     assertEquals("TextEditingDeltaType.deletion", delta.getDeltaType());
     assertEquals(oldText, delta.getOldText());
-    assertEquals("llo", delta.getDeltaText());
+    assertEquals("", delta.getDeltaText());
     assertEquals(oldComposingStart, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
     assertEquals(newSelectionStart, delta.getNewSelectionStart());
@@ -228,7 +228,7 @@ public class TextEditingDeltaTest {
   }
 
   @Test
-  public void testEqualityTextEditingDelta() {
+  public void testNonTextUpdateTextEditingDelta() {
     // Here we are simulating a change of the selection without a change to the text value.
     final CharSequence oldText = "hello";
     final CharSequence textAfterChange = "hello";
@@ -258,7 +258,7 @@ public class TextEditingDeltaTest {
             newComposingStart,
             newComposingEnd);
 
-    assertEquals("TextEditingDeltaType.equality", delta.getDeltaType());
+    assertEquals("TextEditingDeltaType.nonTextUpdate", delta.getDeltaType());
     assertEquals(oldText, delta.getOldText());
     assertEquals("", delta.getDeltaText());
     assertEquals(-1, delta.getDeltaStart());
@@ -396,52 +396,5 @@ public class TextEditingDeltaTest {
     assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
     assertEquals(newComposingStart, delta.getNewComposingStart());
     assertEquals(newComposingEnd, delta.getNewComposingEnd());
-  }
-
-  @Test
-  public void testSetNewComposingRegion() {
-    final CharSequence oldText = "helfo";
-    final CharSequence textAfterChange = "hello";
-
-    final int oldComposingStart = 0;
-    final int oldComposingEnd = 5;
-
-    final int startOfReplacementText = 0;
-    final int endOfReplacementText = textAfterChange.length();
-
-    final int newSelectionStart = 5;
-    final int newSelectionEnd = 5;
-    final int newComposingStart = 0;
-    final int newComposingEnd = 5;
-
-    final TextEditingDelta delta =
-        new TextEditingDelta(
-            oldText,
-            textAfterChange,
-            oldComposingStart,
-            oldComposingEnd,
-            textAfterChange,
-            startOfReplacementText,
-            endOfReplacementText,
-            newSelectionStart,
-            newSelectionEnd,
-            newComposingStart,
-            newComposingEnd);
-
-    assertEquals(0, delta.getNewComposingStart());
-    assertEquals(5, delta.getNewComposingEnd());
-
-    // (-1, -1) clears the composing region.
-    delta.setNewComposingStart(-1);
-    delta.setNewComposingEnd(-1);
-
-    assertEquals(-1, delta.getNewComposingStart());
-    assertEquals(-1, delta.getNewComposingEnd());
-
-    delta.setNewComposingStart(0);
-    delta.setNewComposingEnd(5);
-
-    assertEquals(0, delta.getNewComposingStart());
-    assertEquals(5, delta.getNewComposingEnd());
   }
 }

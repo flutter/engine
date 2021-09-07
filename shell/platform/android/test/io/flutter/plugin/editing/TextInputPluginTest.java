@@ -370,7 +370,7 @@ public class TextInputPluginTest {
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     CharSequence newText = "I do not fear computers. I fear the lack of them.";
     final TextEditingDelta expectedDelta =
-        new TextEditingDelta(newText, ".", "TextEditingDeltaType.deletion", 48, 49, 48, 48, 0, 48);
+        new TextEditingDelta(newText, "", "TextEditingDeltaType.deletion", 48, 49, 48, 48, 0, 48);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
