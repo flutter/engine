@@ -230,7 +230,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void textEditingDelta_TestInsertionDeltaIsCreatedWhenComposingTextSet()
+  public void textEditingDelta_TestDeltaIsCreatedWhenComposingTextSetIsInserting()
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
@@ -249,7 +249,6 @@ public class TextInputPluginTest {
         new TextEditingDelta(
             "",
             newText,
-            "TextEditingDeltaType.insertion",
             0,
             0,
             newText.length(),
@@ -303,7 +302,6 @@ public class TextInputPluginTest {
             .size());
 
     // Verify delta is what we expect.
-    assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
     assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
     assertEquals(expectedDelta.getDeltaStart(), delta.getDeltaStart());
@@ -350,7 +348,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void textEditingDelta_TestDeletionDeltaIsCreatedWhenComposingTextSet()
+  public void textEditingDelta_TestDeltaIsCreatedWhenComposingTextSetIsDeleting()
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
@@ -366,7 +364,7 @@ public class TextInputPluginTest {
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     CharSequence newText = "I do not fear computers. I fear the lack of them.";
     final TextEditingDelta expectedDelta =
-        new TextEditingDelta(newText, "", "TextEditingDeltaType.deletion", 48, 49, 48, 48, 0, 48);
+        new TextEditingDelta(newText, "", 48, 49, 48, 48, 0, 48);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
@@ -414,7 +412,6 @@ public class TextInputPluginTest {
             .size());
 
     // Verify delta is what we expect.
-    assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
     assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
     assertEquals(expectedDelta.getDeltaStart(), delta.getDeltaStart());
@@ -461,7 +458,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  public void textEditingDelta_TestReplacementDeltaIsCreatedWhenComposingTextSet()
+  public void textEditingDelta_TestDeltaIsCreatedWhenComposingTextSetIsReplacing()
       throws NullPointerException {
     // Initialize a general TextInputPlugin.
     InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
@@ -478,7 +475,7 @@ public class TextInputPluginTest {
     CharSequence newText = "helfo";
     final TextEditingDelta expectedDelta =
         new TextEditingDelta(
-            newText, "hello", "TextEditingDeltaType.replacement", 0, 5, 5, 5, 0, 5);
+            newText, "hello", 0, 5, 5, 5, 0, 5);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
@@ -526,7 +523,6 @@ public class TextInputPluginTest {
             .size());
 
     // Verify delta is what we expect.
-    assertEquals(expectedDelta.getDeltaType(), delta.getDeltaType());
     assertEquals(expectedDelta.getOldText(), delta.getOldText());
     assertEquals(expectedDelta.getDeltaText(), delta.getDeltaText());
     assertEquals(expectedDelta.getDeltaStart(), delta.getDeltaStart());
