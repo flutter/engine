@@ -86,8 +86,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   @Nullable private FlutterSurfaceView flutterSurfaceView;
   @Nullable private FlutterTextureView flutterTextureView;
   @Nullable private FlutterImageView flutterImageView;
-  // This member is not intended for public use and is only visible for testing.
-  @Nullable RenderSurface renderSurface;
+  @Nullable @VisibleForTesting /* package */ RenderSurface renderSurface;
   @Nullable private RenderSurface previousRenderSurface;
   private final Set<FlutterUiDisplayListener> flutterUiDisplayListeners = new HashSet<>();
   private boolean isFlutterUiDisplayed;
