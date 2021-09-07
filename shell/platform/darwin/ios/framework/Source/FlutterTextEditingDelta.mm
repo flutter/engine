@@ -16,10 +16,7 @@
     NSInteger start = range.location;
     NSInteger end = range.location + range.length;
     
-    [self setDeltas:textBeforeChange
-            newText:text
-         deltaStart:start
-           deltaEnd:end];
+    [self setDeltas:textBeforeChange newText:text deltaStart:start deltaEnd:end];
   }
 
   return self;
@@ -29,10 +26,7 @@
   self = [super init];
 
   if (self) {
-    [self setDeltas:text
-            newText:@""
-         deltaStart:-1
-           deltaEnd:-1];
+    [self setDeltas:text newText:@"" deltaStart:-1 deltaEnd:-1];
   }
 
   return self;
@@ -50,10 +44,7 @@
 
 - (id)copyWithZone:(NSZone*)zone {
   FlutterTextEditingDelta* copyOfObject = [[FlutterTextEditingDelta alloc] initWithNonText:@""];
-  [copyOfObject setDeltas:_oldText
-                  newText:_deltaText
-               deltaStart:_deltaStart
-                 deltaEnd:_deltaEnd];
+  [copyOfObject setDeltas:_oldText newText:_deltaText deltaStart:_deltaStart deltaEnd:_deltaEnd];
   return copyOfObject;
 }
 
