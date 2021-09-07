@@ -333,7 +333,7 @@ FLUTTER_ASSERT_ARC
 
   currentDelta = inputView.previousTextEditingDelta;
   XCTAssertEqualObjects(currentDelta.oldText, @"text to insert");
-  XCTAssertEqualObjects(currentDelta.deltaText, @"t");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"");
   XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(currentDelta.deltaStart, 13);
   XCTAssertEqual(currentDelta.deltaEnd, 14);
