@@ -80,12 +80,7 @@ public final class TextEditingDelta {
         startOfDelete = end - 1;
       }
 
-      setDeltas(
-          oldEditable,
-          "",
-          "TextEditingDeltaType.deletion",
-          startOfDelete,
-          end);
+      setDeltas(oldEditable, "", "TextEditingDeltaType.deletion", startOfDelete, end);
     } else if ((start == end || isInsertingInsideComposingRegion)
         && !isOriginalComposingRegionTextChanged) {
       Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.insertion has been created.");
