@@ -218,12 +218,9 @@ class ListenableEditingState extends SpannableStringBuilder {
     mBatchTextEditingDeltas.add(
         new TextEditingDelta(
             oldText,
-            toString(),
             start,
             end,
             tb,
-            tbstart,
-            tbend,
             getSelectionStart(),
             getSelectionEnd(),
             getComposingStart(),
@@ -285,7 +282,6 @@ class ListenableEditingState extends SpannableStringBuilder {
         new TextEditingDelta(
             toString(),
             "",
-            "TextEditingDeltaType.nonTextUpdate",
             -1,
             -1,
             getSelectionStart(),

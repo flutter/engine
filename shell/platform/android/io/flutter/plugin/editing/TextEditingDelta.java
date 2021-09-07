@@ -14,7 +14,6 @@ import org.json.JSONObject;
 public final class TextEditingDelta {
   private CharSequence oldText;
   private CharSequence deltaText;
-  private CharSequence deltaType;
   private int deltaStart;
   private int deltaEnd;
   private int newSelectionStart;
@@ -26,12 +25,9 @@ public final class TextEditingDelta {
 
   public TextEditingDelta(
       CharSequence oldEditable,
-      CharSequence newEditable,
       int start,
       int end,
       CharSequence tb,
-      int tbstart,
-      int tbend,
       int selectionStart,
       int selectionEnd,
       int composingStart,
@@ -40,72 +36,14 @@ public final class TextEditingDelta {
     newSelectionEnd = selectionEnd;
     newComposingStart = composingStart;
     newComposingEnd = composingEnd;
-    final boolean isDeletionGreaterThanOne = end - (start + tbend) > 1;
-    final boolean isCalledFromDelete = tb == "" && tbstart == 0 && tbstart == tbend;
 
-    final boolean isReplacedByShorter = isDeletionGreaterThanOne && (tbend - tbstart < end - start);
-    final boolean isReplacedByLonger = tbend - tbstart > end - start;
-    final boolean isReplacedBySame = tbend - tbstart == end - start;
-
-    // Is deleting/inserting at the end of a composing region.
-    final boolean isDeletingInsideComposingRegion = !isReplacedByShorter && start + tbend < end;
-    final boolean isInsertingInsideComposingRegion = start + tbend > end;
-
-    // To consider the cases when autocorrect increases the length of the text being composed by
-    // one, but changes more than one character.
-    final boolean isOriginalComposingRegionTextChanged =
-        (isCalledFromDelete || isDeletingInsideComposingRegion || isReplacedByShorter)
-            || !oldEditable
-                .subSequence(start, end)
-                .toString()
-                .equals(tb.subSequence(tbstart, end - start).toString());
-
-    final boolean isEqual = oldEditable.equals(newEditable);
-
-    // A replacement means the original composing region has changed, anything else will be
-    // considered an insertion.
-    final boolean isReplaced =
-        isOriginalComposingRegionTextChanged
-            && (isReplacedByLonger || isReplacedBySame || isReplacedByShorter);
-
-    if (isEqual) {
-      Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.nonTextUpdate has been created.");
-      setDeltas(oldEditable, "", "TextEditingDeltaType.nonTextUpdate", -1, -1);
-    } else if (isCalledFromDelete || isDeletingInsideComposingRegion) {
-      Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.deletion has been created.");
-      final int startOfDelete;
-      if (isDeletionGreaterThanOne) {
-        startOfDelete = start;
-      } else {
-        startOfDelete = end - 1;
-      }
-
-      setDeltas(oldEditable, "", "TextEditingDeltaType.deletion", startOfDelete, end);
-    } else if ((start == end || isInsertingInsideComposingRegion)
-        && !isOriginalComposingRegionTextChanged) {
-      Log.v(TAG, "A TextEditingDelta for an TextEditingDeltaType.insertion has been created.");
-      setDeltas(
-          oldEditable,
-          tb.subSequence(end - start, tbend).toString(),
-          "TextEditingDeltaType.insertion",
-          end,
-          end);
-    } else if (isReplaced) {
-      Log.v(TAG, "A TextEditingDelta for a TextEditingDeltaType.replacement has been created.");
-      setDeltas(
-          oldEditable,
-          tb.subSequence(tbstart, tbend).toString(),
-          "TextEditingDeltaType.replacement",
-          start,
-          end);
-    }
+    setDeltas(oldEditable, tb.toString(), start, end);
   }
 
   @VisibleForTesting
   public TextEditingDelta(
       CharSequence oldText,
       CharSequence deltaText,
-      CharSequence deltaType,
       int deltaStart,
       int deltaEnd,
       int selectionStart,
@@ -117,7 +55,7 @@ public final class TextEditingDelta {
     newComposingStart = composingStart;
     newComposingEnd = composingEnd;
 
-    setDeltas(oldText, deltaText, deltaType, deltaStart, deltaEnd);
+    setDeltas(oldText, deltaText, deltaStart, deltaEnd);
   }
 
   public CharSequence getOldText() {
@@ -126,10 +64,6 @@ public final class TextEditingDelta {
 
   public CharSequence getDeltaText() {
     return deltaText;
-  }
-
-  public CharSequence getDeltaType() {
-    return deltaType;
   }
 
   public int getDeltaStart() {
@@ -156,13 +90,11 @@ public final class TextEditingDelta {
     return newComposingEnd;
   }
 
-  private void setDeltas(
-      CharSequence oldTxt, CharSequence newTxt, CharSequence type, int newStart, int newExtent) {
+  private void setDeltas(CharSequence oldTxt, CharSequence newTxt, int newStart, int newExtent) {
     oldText = oldTxt;
     deltaText = newTxt;
     deltaStart = newStart;
     deltaEnd = newExtent;
-    deltaType = type;
   }
 
   public JSONObject toJSON() {
@@ -171,7 +103,6 @@ public final class TextEditingDelta {
     try {
       delta.put("oldText", oldText.toString());
       delta.put("deltaText", deltaText.toString());
-      delta.put("deltaType", deltaType.toString());
       delta.put("deltaStart", deltaStart);
       delta.put("deltaEnd", deltaEnd);
       delta.put("selectionBase", newSelectionStart);
