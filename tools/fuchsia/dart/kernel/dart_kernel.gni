@@ -275,11 +275,14 @@ template("dart_kernel") {
       rebase_path(_kernel_path, root_build_dir),
     ]
 
-    # TODO(richkadel): Chase said these are not needed in flutter/engine tests,
-    # but I believe they are needed (at least for non-AOT builds; I haven't
-    # tested AOT yet) because the generated manifest is used to produce the
-    # Fuchsia package manifest... the list of Dart libraries, etc. to be added
-    # to the Fuchsia package.
+    # TODO(richkadel): It should be possible to remove all of the build rules
+    # related to `generate_manifest`. Without the following two flags, the
+    # `gen_kernel` step will produce one large `.dil` file, instead of multiple
+    # `.dilp` files with a `.dilplist`. But the Fuchsia flutter runner
+    # _currently_ only looks for a `.dilplist`. If the runner is changed to
+    # support loading a single `.dil` for the Dart Fuchsia component code, then
+    # consider removing all code supporting `generate_manifest` (and remove
+    # `convert_manifest_to_json.py`).
     if (_generate_manifest) {
       args += [
         "--split-output-by-packages",

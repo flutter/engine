@@ -1,4 +1,4 @@
-# Copyright 2019 The Fuchsia Authors. All rights reserved.
+# Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -92,7 +92,6 @@ template("fuchsia_package") {
     deps = _package_deps
   }
 
-  #
   # A generated file that lists all of the .fidl.json files
   # used in this package. This is useful for tools that need
   # to decode fidl.

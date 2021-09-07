@@ -277,6 +277,11 @@ template("flutter_dart_component") {
   }
 
   group(target_name) {
+    forward_variables_from(invoker,
+                           [
+                             "testonly",
+                             "visibility",
+                           ])
     deps = [ ":" + _component_name ]
   }
 }
