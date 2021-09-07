@@ -15,7 +15,6 @@
   if (self) {
     NSInteger start = range.location;
     NSInteger end = range.location + range.length;
-    
     [self setDeltas:textBeforeChange newText:text deltaStart:start deltaEnd:end];
   }
 
