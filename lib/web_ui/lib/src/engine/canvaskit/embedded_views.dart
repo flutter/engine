@@ -900,7 +900,8 @@ class ViewListDiffResult {
 /// the end of the list, with the order of the unchanged middle views
 /// remaining the same.
 // TODO(hterkelsen): Refactor to use [longestIncreasingSubsequence] and logic
-// similar to `Surface._insertChildDomNodes` to efficiently handle more cases.
+// similar to `Surface._insertChildDomNodes` to efficiently handle more cases,
+// https://github.com/flutter/flutter/issues/89611.
 ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
   assert(active.isNotEmpty && next.isNotEmpty,
       'diffViewList called with empty view list');
