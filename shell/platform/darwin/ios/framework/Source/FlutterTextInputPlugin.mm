@@ -929,7 +929,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setSelectedTextRange:(UITextRange*)selectedTextRange {
-  NSLog(@"setSelectedTextRange");
   [self setSelectedTextRangeLocal:selectedTextRange];
 
   if (_enableDeltaModel) {
@@ -1055,7 +1054,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
-  NSLog(@"setMarkedText");
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
 
@@ -1091,7 +1089,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 - (void)unmarkText {
   if (!self.markedTextRange)
     return;
-  NSLog(@"unmarkText");
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
     _previousTextEditingDelta = [_currentTextEditingDelta copy];
@@ -1401,7 +1398,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 #pragma mark - UIKeyInput Overrides
 
 - (void)updateEditingState {
-  NSLog(@"Update Editing State");
   NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
   NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
@@ -1433,7 +1429,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)updateEditingStateWithDelta {
-  NSLog(@"Update Editing State With Delta");
   NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
   NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
@@ -1644,7 +1639,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [self setTextInputClient:[args[0] intValue] withConfiguration:args[1]];
     result(nil);
   } else if ([method isEqualToString:kSetEditingStateMethod]) {
-    NSLog(@"receiving update from framework");
     [self setTextInputEditingState:args];
     result(nil);
   } else if ([method isEqualToString:kClearClientMethod]) {
