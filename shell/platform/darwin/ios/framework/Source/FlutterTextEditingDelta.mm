@@ -70,7 +70,7 @@
       NSLog(@"equality");
       [self setDeltas:textBeforeChange
               newText:@""
-                 type:@"TextEditingDeltaType.equality"
+                 type:@"TextEditingDeltaType.nonTextUpdate"
            deltaStart:-1
              deltaEnd:-1];
     } else if ((isDeletingByReplacingWithEmpty || isDeletingInsideMarkedText) &&
