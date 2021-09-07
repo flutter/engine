@@ -71,7 +71,7 @@ class ListenableEditingState extends SpannableStringBuilder {
         };
   }
 
-  public ArrayList<TextEditingDelta> getBatchTextEditingDeltas() {
+  public ArrayList<TextEditingDelta> extractBatchTextEditingDeltas() {
     ArrayList<TextEditingDelta> currentBatchDeltas =
         new ArrayList<TextEditingDelta>(mBatchTextEditingDeltas);
     mBatchTextEditingDeltas.clear();

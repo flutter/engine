@@ -644,7 +644,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int composingEnd = mEditable.getComposingEnd();
 
     final ArrayList<TextEditingDelta> batchTextEditingDeltas =
-        mEditable.getBatchTextEditingDeltas();
+        mEditable.extractBatchTextEditingDeltas();
     final boolean skipFrameworkUpdate =
         // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null

@@ -236,11 +236,11 @@ public class ListenableEditingStateTest {
     editingState.delete(0, 1);
     editingState.insert(0, "This is t");
     editingState.clearBatchDeltas();
-    assertEquals(0, editingState.getBatchTextEditingDeltas().size());
+    assertEquals(0, editingState.extractBatchTextEditingDeltas().size());
   }
 
   @Test
-  public void testGetBatchTextEditingDeltas() {
+  public void testExtractBatchTextEditingDeltas() {
     final ListenableEditingState editingState =
         new ListenableEditingState(null, new View(RuntimeEnvironment.application));
 
@@ -249,7 +249,7 @@ public class ListenableEditingStateTest {
     editingState.delete(0, 1);
     editingState.insert(0, "This is a t");
 
-    ArrayList<TextEditingDelta> batchDeltas = editingState.getBatchTextEditingDeltas();
+    ArrayList<TextEditingDelta> batchDeltas = editingState.extractBatchTextEditingDeltas();
     assertEquals(3, batchDeltas.size());
   }
 

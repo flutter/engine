@@ -271,7 +271,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     InputConnection inputConnection =
@@ -281,7 +281,7 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnection.setComposingText(newText, newText.length());
     final ArrayList<TextEditingDelta> actualDeltas =
-        ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
+        ((ListenableEditingState) textInputPlugin.getEditable()).extractBatchTextEditingDeltas();
     assertEquals(2, actualDeltas.size());
     final TextEditingDelta delta = actualDeltas.get(1);
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
@@ -290,7 +290,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     // Verify delta is what we expect.
@@ -314,7 +314,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
@@ -382,7 +382,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     InputConnection inputConnection =
@@ -392,7 +392,7 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnection.setComposingText("I do not fear computers. I fear the lack of them", 48);
     final ArrayList<TextEditingDelta> actualDeltas =
-        ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
+        ((ListenableEditingState) textInputPlugin.getEditable()).extractBatchTextEditingDeltas();
     final TextEditingDelta delta = actualDeltas.get(1);
     System.out.println(delta.getDeltaText());
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
@@ -401,7 +401,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     // Verify delta is what we expect.
@@ -425,7 +425,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
@@ -491,7 +491,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     InputConnection inputConnection =
@@ -501,7 +501,7 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnection.setComposingText("hello", 5);
     final ArrayList<TextEditingDelta> actualDeltas =
-        ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
+        ((ListenableEditingState) textInputPlugin.getEditable()).extractBatchTextEditingDeltas();
     final TextEditingDelta delta = actualDeltas.get(1);
     System.out.println(delta.getDeltaText());
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
@@ -510,7 +510,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     // Verify delta is what we expect.
@@ -534,7 +534,7 @@ public class TextInputPluginTest {
     assertEquals(
         0,
         ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
+            .extractBatchTextEditingDeltas()
             .size());
 
     verify(textInputChannel, times(1)).updateEditingStateWithDeltas(anyInt(), any());
