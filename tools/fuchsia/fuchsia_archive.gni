@@ -129,7 +129,11 @@ template("_fuchsia_archive") {
              ":${target_name}_dir",
              ":${_dbg_symbols_target}",
            ]
+
     sources = copy_outputs
+    if (defined(invoker.cml_file)) {
+      sources += [ invoker.cml_file ]
+    }
 
     inputs = []
     if (defined(invoker.inputs)) {
