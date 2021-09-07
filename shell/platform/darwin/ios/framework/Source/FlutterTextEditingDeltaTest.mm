@@ -21,10 +21,10 @@
   NSString* replacementText = @"hello";
   NSRange range = NSMakeRange(0, 4);
 
-  FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc]
-      initTextEditingDelta:oldText
-             replacedRange:range
-               updatedText:replacementText];
+  FlutterTextEditingDelta* delta =
+      [[FlutterTextEditingDelta alloc] initTextEditingDelta:oldText
+                                              replacedRange:range
+                                                updatedText:replacementText];
 
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqualObjects(delta.deltaText, @"hello");
@@ -36,7 +36,7 @@
   // Here we are simulating inserting an "o" at the end of "hell".
   NSString* oldText = @"hello";
 
-  FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc] initWithNonText: oldText];
+  FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc] initWithNonText:oldText];
 
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqualObjects(delta.deltaText, @"");
