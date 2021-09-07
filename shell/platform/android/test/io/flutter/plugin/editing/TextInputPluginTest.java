@@ -246,15 +246,7 @@ public class TextInputPluginTest {
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     CharSequence newText = "I do not fear computers. I fear the lack of them.";
     final TextEditingDelta expectedDelta =
-        new TextEditingDelta(
-            "",
-            newText,
-            0,
-            0,
-            newText.length(),
-            newText.length(),
-            0,
-            49);
+        new TextEditingDelta("", newText, 0, 0, newText.length(), newText.length(), 0, 49);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
@@ -363,8 +355,7 @@ public class TextInputPluginTest {
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     CharSequence newText = "I do not fear computers. I fear the lack of them.";
-    final TextEditingDelta expectedDelta =
-        new TextEditingDelta(newText, "", 48, 49, 48, 48, 0, 48);
+    final TextEditingDelta expectedDelta = new TextEditingDelta(newText, "", 48, 49, 48, 48, 0, 48);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
@@ -473,9 +464,7 @@ public class TextInputPluginTest {
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     CharSequence newText = "helfo";
-    final TextEditingDelta expectedDelta =
-        new TextEditingDelta(
-            newText, "hello", 0, 5, 5, 5, 0, 5);
+    final TextEditingDelta expectedDelta = new TextEditingDelta(newText, "hello", 0, 5, 5, 5, 0, 5);
 
     // Change InputTarget to FRAMEWORK_CLIENT.
     textInputPlugin.setTextInputClient(
