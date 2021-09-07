@@ -2,18 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/testing/fixtures_base.h"
+#include "flutter/testing/dart_fixture.h"
 
 namespace flutter::testing {
 
-FixturesBase::FixturesBase()
-    : FixturesBase("kernel_blob.bin",
-                   kDefaultAOTAppELFFileName,
-                   kDefaultAOTAppELFSplitFileName) {}
+DartFixture::DartFixture()
+    : DartFixture("kernel_blob.bin",
+                  kDefaultAOTAppELFFileName,
+                  kDefaultAOTAppELFSplitFileName) {}
 
-FixturesBase::FixturesBase(std::string kernel_filename,
-                           std::string elf_filename,
-                           std::string elf_split_filename)
+DartFixture::DartFixture(std::string kernel_filename,
+                         std::string elf_filename,
+                         std::string elf_split_filename)
     : native_resolver_(std::make_shared<TestDartNativeResolver>()),
       split_aot_symbols_(
           LoadELFSplitSymbolFromFixturesIfNeccessary(elf_split_filename)),
@@ -23,7 +23,7 @@ FixturesBase::FixturesBase(std::string kernel_filename,
                                      fml::FilePermission::kRead)),
       aot_symbols_(LoadELFSymbolFromFixturesIfNeccessary(elf_filename)) {}
 
-Settings FixturesBase::CreateSettingsForFixture() {
+Settings DartFixture::CreateSettingsForFixture() {
   Settings settings;
   settings.leak_vm = false;
   settings.task_observer_add = [](intptr_t, fml::closure) {};
@@ -36,7 +36,7 @@ Settings FixturesBase::CreateSettingsForFixture() {
   return settings;
 }
 
-void FixturesBase::SetSnapshotsAndAssets(Settings& settings) {
+void DartFixture::SetSnapshotsAndAssets(Settings& settings) {
   if (!assets_dir_.is_valid()) {
     return;
   }
@@ -64,8 +64,8 @@ void FixturesBase::SetSnapshotsAndAssets(Settings& settings) {
   }
 }
 
-void FixturesBase::AddNativeCallback(std::string name,
-                                     Dart_NativeFunction callback) {
+void DartFixture::AddNativeCallback(std::string name,
+                                    Dart_NativeFunction callback) {
   native_resolver_->AddNativeCallback(std::move(name), callback);
 }
 

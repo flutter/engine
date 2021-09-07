@@ -5,12 +5,12 @@
 #ifndef FLUTTER_TESTING_FIXTURE_TEST_H_
 #define FLUTTER_TESTING_FIXTURE_TEST_H_
 
-#include "flutter/testing/fixtures_base.h"
+#include "flutter/testing/dart_fixture.h"
 
 namespace flutter {
 namespace testing {
 
-class FixtureTest : public FixturesBase, public ThreadTest {
+class FixtureTest : public DartFixture, public ThreadTest {
  public:
   // Uses the default filenames from the fixtures generator.
   FixtureTest();

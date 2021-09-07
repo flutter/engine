@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_TESTING_FIXTURES_BASE_H_
-#define FLUTTER_TESTING_FIXTURES_BASE_H_
+#ifndef FLUTTER_TESTING_DART_FIXTURE_H_
+#define FLUTTER_TESTING_DART_FIXTURE_H_
 
 #include <memory>
 
@@ -16,15 +16,15 @@
 
 namespace flutter::testing {
 
-class FixturesBase {
+class DartFixture {
  public:
   // Uses the default filenames from the fixtures generator.
-  FixturesBase();
+  DartFixture();
 
   // Allows to customize the kernel, ELF and split ELF filenames.
-  FixturesBase(std::string kernel_filename,
-               std::string elf_filename,
-               std::string elf_split_filename);
+  DartFixture(std::string kernel_filename,
+              std::string elf_filename,
+              std::string elf_split_filename);
 
   virtual Settings CreateSettingsForFixture();
 
@@ -41,9 +41,9 @@ class FixturesBase {
   ELFAOTSymbols aot_symbols_;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(FixturesBase);
+  FML_DISALLOW_COPY_AND_ASSIGN(DartFixture);
 };
 
 }  // namespace flutter::testing
 
-#endif  // FLUTTER_TESTING_FIXTURES_BASE_H_
+#endif  // FLUTTER_TESTING_DART_FIXTURE_H_
