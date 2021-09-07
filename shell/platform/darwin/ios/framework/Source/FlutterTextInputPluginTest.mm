@@ -380,6 +380,37 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(currentDelta.deltaEnd, -1);
 }
 
+- (void)testInsertionTextEditingDeltasAreGeneratedOnSetMarkedText {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  inputView.textInputDelegate = engine;
+  inputView.enableDeltaModel = YES;
+
+  __block int updateCount = 0;
+  OCMStub([engine updateEditingClient:0 withDelta:[OCMArg isNotNil]])
+      .andDo(^(NSInvocation* invocation) {
+        updateCount++;
+      });
+
+  [inputView.text setString:@"Some initial text"];
+  XCTAssertEqual(updateCount, 0);
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
+  inputView.markedTextRange = range;
+  inputView.selectedTextRange = nil;
+  XCTAssertEqual(updateCount, 1);
+
+  [inputView setMarkedText:@"new marked text." selectedRange:NSMakeRange(0, 1)];
+  XCTAssertEqual(updateCount, 2);
+
+  currentDelta = inputView.previousTextEditingDelta;
+  XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
+  XCTAssertEqualObjects(currentDelta.deltaText, @"new marked text.");
+  XCTAssertEqualObjects(currentDelta.deltaType, @"TextEditingDeltaType.replacement");
+  XCTAssertEqual(currentDelta.deltaStart, 13);
+  XCTAssertEqual(currentDelta.deltaEnd, 17);
+}
+
+
 #pragma mark - EditingState tests
 
 - (void)testUITextInputCallsUpdateEditingStateOnce {
