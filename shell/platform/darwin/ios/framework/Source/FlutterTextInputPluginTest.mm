@@ -410,7 +410,6 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(currentDelta.deltaEnd, 17);
 }
 
-
 #pragma mark - EditingState tests
 
 - (void)testUITextInputCallsUpdateEditingStateOnce {
