@@ -78,7 +78,7 @@
                updatedText:replacementText];
 
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqualObjects(delta.deltaText, @"o");
+  XCTAssertEqualObjects(delta.deltaText, @"");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(delta.deltaStart, 4);
   XCTAssertEqual(delta.deltaEnd, 5);
@@ -98,7 +98,7 @@
                updatedText:replacementText];
 
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqualObjects(delta.deltaText, @"e");
+  XCTAssertEqualObjects(delta.deltaText, @"");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(delta.deltaStart, 1);
   XCTAssertEqual(delta.deltaEnd, 2);
@@ -118,7 +118,7 @@
                updatedText:replacementText];
 
   XCTAssertEqual(delta.oldText, oldText);
-  XCTAssertEqualObjects(delta.deltaText, @"llo");
+  XCTAssertEqualObjects(delta.deltaText, @"");
   XCTAssertEqual(delta.deltaType, @"TextEditingDeltaType.deletion");
   XCTAssertEqual(delta.deltaStart, 2);
   XCTAssertEqual(delta.deltaEnd, 5);
