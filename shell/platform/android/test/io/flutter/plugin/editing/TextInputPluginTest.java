@@ -289,13 +289,9 @@ public class TextInputPluginTest {
     inputConnection.beginBatchEdit();
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnection.setComposingText(newText, newText.length());
-    assertEquals(
-        2,
-        ((ListenableEditingState) textInputPlugin.getEditable())
-            .getBatchTextEditingDeltas()
-            .size());
     final ArrayList<TextEditingDelta> actualDeltas =
         ((ListenableEditingState) textInputPlugin.getEditable()).getBatchTextEditingDeltas();
+    assertEquals(2, actualDeltas.size());
     final TextEditingDelta delta = actualDeltas.get(1);
     verify(textInputChannel, times(0)).updateEditingStateWithDeltas(anyInt(), any());
     inputConnection.endBatchEdit();
