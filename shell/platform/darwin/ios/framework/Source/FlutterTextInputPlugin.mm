@@ -1443,7 +1443,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSDictionary* state = @{
     @"oldText" : [NSString stringWithString:_currentTextEditingDelta.oldText],
     @"deltaText" : [NSString stringWithString:_currentTextEditingDelta.deltaText],
-    @"deltaType" : [NSString stringWithString:_currentTextEditingDelta.deltaType],
     @"deltaStart" : @(_currentTextEditingDelta.deltaStart),
     @"deltaEnd" : @(_currentTextEditingDelta.deltaEnd),
     @"selectionBase" : @(selectionBase),

@@ -24,7 +24,6 @@
 
 - (void)setDeltas:(NSString*)oldText
           newText:(NSString*)newTxt
-             type:(NSString*)deltaType
        deltaStart:(NSInteger)newStart
          deltaEnd:(NSInteger)newEnd;
 
