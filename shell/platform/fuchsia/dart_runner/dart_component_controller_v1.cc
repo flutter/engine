@@ -51,7 +51,7 @@ void DartComponentControllerV1::SendReturnCode() {
 }
 
 fdio_ns_t* DartComponentControllerV1::PrepareNamespace() {
-  fdio_ns_t* ns;
+  fdio_ns_t* ns = nullptr;
   zx_status_t status = fdio_ns_create(&ns);
   if (status != ZX_OK) {
     return nullptr;
@@ -145,6 +145,5 @@ std::vector<std::string> DartComponentControllerV1::GetArguments() {
   return startup_info_.launch_info.arguments.value_or(
       std::vector<std::string>());
 }
-
 
 }  // namespace dart_runner
