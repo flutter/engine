@@ -299,7 +299,8 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
 
   auto rtree_factory = RTreeFactory();
   platform_view_rtrees_[view_id] = rtree_factory.getInstance();
-  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_), &rtree_factory);
+  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_),
+                                              platform_view_rtrees_[view_id]);
 
   composition_order_.push_back(view_id);
 
@@ -422,7 +423,6 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
-
   // Do nothing if the view doesn't need to be composited.
   if (views_to_recomposite_.count(view_id) == 0) {
     return picture_recorders_[view_id]->getRecordingCanvas();

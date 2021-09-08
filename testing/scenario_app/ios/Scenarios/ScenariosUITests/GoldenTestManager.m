@@ -32,6 +32,7 @@ NSDictionary* launchArgsMap;
         @"--platform-view-clippath" : @"platform_view_clippath",
         @"--platform-view-transform" : @"platform_view_transform",
         @"--platform-view-opacity" : @"platform_view_opacity",
+        @"--platform-view-with-other-backdrop-filter" : @"platform_view_with_other_backdrop_filter",
         @"--platform-view-rotate" : @"platform_view_rotate",
         @"--non-full-screen-flutter-view-platform-view" :
             @"non_full_screen_flutter_view_platform_view",
