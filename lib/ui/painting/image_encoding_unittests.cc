@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/image_encoding.h"
+#include "flutter/lib/ui/painting/image_encoding_impl.h"
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -40,7 +41,7 @@ class MockSyncSwitch {
 };
 
 TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
-  auto nativeEncodeImage = [&](Dart_NativeArguments args) {
+  auto native_encode_image = [&](Dart_NativeArguments args) {
     auto image_handle = Dart_GetNativeArgument(args, 0);
     image_handle =
         Dart_GetField(image_handle, Dart_NewStringFromCString("_image"));
@@ -80,7 +81,7 @@ TEST_F(ShellTest, EncodeImageGivesExternalTypedData) {
                            CreateNewThread()        // io
   );
 
-  AddNativeCallback("EncodeImage", CREATE_NATIVE_ENTRY(nativeEncodeImage));
+  AddNativeCallback("EncodeImage", CREATE_NATIVE_ENTRY(native_encode_image));
   AddNativeCallback("ValidateExternal",
                     CREATE_NATIVE_ENTRY(nativeValidateExternal));
 
@@ -108,7 +109,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
                            CreateNewThread()        // io
   );
 
-  auto nativeEncodeImage = [&](Dart_NativeArguments args) {
+  auto native_encode_image = [&](Dart_NativeArguments args) {
     auto image_handle = Dart_GetNativeArgument(args, 0);
     image_handle =
         Dart_GetField(image_handle, Dart_NewStringFromCString("_image"));
@@ -130,8 +131,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
     fml::AutoResetWaitableEvent latch;
 
     task_runners.GetIOTaskRunner()->PostTask([&]() {
-      const std::shared_ptr<const MockSyncSwitch>& is_gpu_disabled_sync_switch =
-          std::make_shared<MockSyncSwitch>();
+      auto is_gpu_disabled_sync_switch = std::make_shared<MockSyncSwitch>();
       EXPECT_CALL(*is_gpu_disabled_sync_switch, Execute)
           .WillOnce([](const MockSyncSwitch::Handlers& handlers) {
             handlers.true_handler();
@@ -147,7 +147,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
     message_latch.Signal();
   };
 
-  AddNativeCallback("EncodeImage", CREATE_NATIVE_ENTRY(nativeEncodeImage));
+  AddNativeCallback("EncodeImage", CREATE_NATIVE_ENTRY(native_encode_image));
 
   std::unique_ptr<Shell> shell =
       CreateShell(std::move(settings), std::move(task_runners));

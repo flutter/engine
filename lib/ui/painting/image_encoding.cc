@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/lib/ui/painting/image_encoding.h"
+#include "flutter/lib/ui/painting/image_encoding_impl.h"
 
 #include <memory>
 #include <utility>
@@ -112,7 +113,7 @@ void ConvertImageToRaster(
         // The rasterizer was unable to render the cross-context image
         // (presumably because it does not have a GrContext).  In that case,
         // convert the image on the IO thread using the resource context.
-        raster_image = ConvertToRasterUsingResourceContext<fml::SyncSwitch>(
+        raster_image = ConvertToRasterUsingResourceContext(
             image, resource_context, is_gpu_disabled_sync_switch);
       }
       encode_task(raster_image);
