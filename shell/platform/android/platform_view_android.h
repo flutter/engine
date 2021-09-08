@@ -150,6 +150,9 @@ class PlatformViewAndroid final : public PlatformView {
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
+  void ReleaseSurfaceContext() override;
+
+  // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|

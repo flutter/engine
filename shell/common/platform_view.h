@@ -812,6 +812,16 @@ class PlatformView {
   virtual std::unique_ptr<SnapshotSurfaceProducer>
   CreateSnapshotSurfaceProducer();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Used by the shell to notify the embedder that all the
+  ///             rendering surface previously obtained via a call to
+  ///             `CreateRenderingSurface()` are being collected. The embedder
+  ///             should collect the shared context of surfaces
+  ///
+  /// @attention  This should be called on the rasterizer task runner.
+  ///
+  virtual void ReleaseSurfaceContext();
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;

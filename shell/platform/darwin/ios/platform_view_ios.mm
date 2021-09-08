@@ -152,6 +152,14 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 }
 
 // |PlatformView|
+void PlatformViewIOS::ReleaseSurfaceContext() {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  if (ios_context_) {
+    ios_context_->ReleaseMainContext();
+  }
+}
+
+// |PlatformView|
 std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedder() {
   return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_, ios_context_);
 }

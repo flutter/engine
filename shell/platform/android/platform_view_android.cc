@@ -298,6 +298,14 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
 }
 
 // |PlatformView|
+void PlatformViewAndroid::ReleaseSurfaceContext() {
+  FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  if (android_context_) {
+    android_context_->ReleaseMainSkiaContext();
+  }
+}
+
+// |PlatformView|
 std::shared_ptr<ExternalViewEmbedder>
 PlatformViewAndroid::CreateExternalViewEmbedder() {
   return std::make_shared<AndroidExternalViewEmbedder>(

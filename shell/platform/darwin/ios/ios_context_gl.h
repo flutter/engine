@@ -41,6 +41,9 @@ class IOSContextGL final : public IOSContext {
   // |IOSContext|
   sk_sp<GrDirectContext> GetMainContext() const override;
 
+  // |IOSContext|
+  void ReleaseMainContext() override;
+
  private:
   fml::scoped_nsobject<EAGLContext> context_;
   fml::scoped_nsobject<EAGLContext> resource_context_;

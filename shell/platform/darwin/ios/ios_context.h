@@ -120,6 +120,13 @@ class IOSContext {
   ///
   virtual sk_sp<GrDirectContext> GetMainContext() const = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Release the Skia context associated with IOSSurfaces and
+  ///             the raster thread.
+  /// @attention  The should be called on the rasterizer task runner.
+  ///
+  virtual void ReleaseMainContext();
+
  protected:
   IOSContext();
 

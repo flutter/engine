@@ -141,6 +141,10 @@ std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
   return nullptr;
 }
 
+void PlatformView::ReleaseSurfaceContext() {
+  // Do nothing by default
+}
+
 std::shared_ptr<ExternalViewEmbedder>
 PlatformView::CreateExternalViewEmbedder() {
   FML_DLOG(WARNING)
