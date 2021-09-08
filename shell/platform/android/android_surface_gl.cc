@@ -57,7 +57,6 @@ std::unique_ptr<Surface> AndroidSurfaceGL::CreateGPUSurface(
     if (!main_skia_context) {
       main_skia_context = GPUSurfaceGL::MakeGLContext(this);
       GLContextPtr()->SetMainSkiaContext(main_skia_context);
-      return std::make_unique<GPUSurfaceGL>(main_skia_context, true);
     }
     return std::make_unique<GPUSurfaceGL>(main_skia_context, this, true);
   }
