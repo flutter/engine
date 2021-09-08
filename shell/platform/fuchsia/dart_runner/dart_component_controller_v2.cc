@@ -81,12 +81,10 @@ fdio_ns_t* DartComponentControllerV2::PrepareNamespace() {
 }
 
 int DartComponentControllerV2::GetStdoutFileDescriptor() {
-  
   return fileno(stdout);
 }
 
 int DartComponentControllerV2::GetStderrFileDescriptor() {
-  
   return fileno(stderr);
 }
 
