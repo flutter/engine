@@ -62,27 +62,34 @@ static BOOL performBoolSelector(id target, SEL selector) {
 
   [flutterView tap];
   // Initial add event should have buttons = 0
-  XCTAssertTrue([app.textFields[@"0,PointerChange.add,d=0,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.add event did not occur for a normal tap");
+  XCTAssertTrue(
+      [app.textFields[@"0,PointerChange.add,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.add event did not occur for a normal tap");
   // Normal tap should have buttons = 0, the flutter framework will ensure it has buttons = 1
-  XCTAssertTrue([app.textFields[@"1,PointerChange.down,d=0,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.down event did not occur for a normal tap");
-  XCTAssertTrue([app.textFields[@"2,PointerChange.up,d=0,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.up event did not occur for a normal tap");
+  XCTAssertTrue(
+      [app.textFields[@"1,PointerChange.down,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.down event did not occur for a normal tap");
+  XCTAssertTrue(
+      [app.textFields[@"2,PointerChange.up,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.up event did not occur for a normal tap");
   SEL rightClick = @selector(rightClick);
   XCTAssertTrue([flutterView respondsToSelector:rightClick],
                 @"If supportsPointerInteraction is true, this should be true too.");
   [flutterView performSelector:rightClick];
   // Right-clicking will trigger the hover pointer as well
-  XCTAssertTrue([app.textFields[@"3,PointerChange.add,d=1,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.add event did not occur for a right-click");
-  XCTAssertTrue([app.textFields[@"4,PointerChange.add,d=2,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.add event did not occur for a right-click");
+  XCTAssertTrue(
+      [app.textFields[@"3,PointerChange.add,device=1,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.add event did not occur for a right-click");
+  XCTAssertTrue(
+      [app.textFields[@"4,PointerChange.add,device=2,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.add event did not occur for a right-click");
   // Right click should have buttons = 2
-  XCTAssertTrue([app.textFields[@"5,PointerChange.down,d=2,b=2"] waitForExistenceWithTimeout:1],
-                @"PointerChange.down event did not occur for a right-click");
-  XCTAssertTrue([app.textFields[@"6,PointerChange.up,d=2,b=2"] waitForExistenceWithTimeout:1],
-                @"PointerChange.up event did not occur for a right-click");
+  XCTAssertTrue(
+      [app.textFields[@"5,PointerChange.down,device=2,buttons=2"] waitForExistenceWithTimeout:1],
+      @"PointerChange.down event did not occur for a right-click");
+  XCTAssertTrue(
+      [app.textFields[@"6,PointerChange.up,device=2,buttons=2"] waitForExistenceWithTimeout:1],
+      @"PointerChange.up event did not occur for a right-click");
 }
 
 - (void)testPointerHover {
@@ -118,20 +125,26 @@ static BOOL performBoolSelector(id target, SEL selector) {
                 @"If supportsPointerInteraction is true, this should be true too.");
   [flutterView performSelector:hover];
   [NSThread sleepForTimeInterval:1.0];
-  XCTAssertTrue([app.textFields[@"0,PointerChange.add,d=0,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.add event did not occur for a hover");
+  XCTAssertTrue(
+      [app.textFields[@"0,PointerChange.add,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.add event did not occur for a hover");
   [flutterView tap];
-  XCTAssertTrue([app.textFields[@"1,PointerChange.add,d=1,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.add event did not occur for a tap");
-  XCTAssertTrue([app.textFields[@"2,PointerChange.down,d=1,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.down event did not occur for a tap");
-  XCTAssertTrue([app.textFields[@"3,PointerChange.up,d=1,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.up event did not occur for a tap");
-  XCTAssertTrue([app.textFields[@"4,PointerChange.remove,d=0,b=0"] waitForExistenceWithTimeout:1],
-                @"The hover pointer was not removed after a tap");
+  XCTAssertTrue(
+      [app.textFields[@"1,PointerChange.add,device=1,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.add event did not occur for a tap");
+  XCTAssertTrue(
+      [app.textFields[@"2,PointerChange.down,device=1,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.down event did not occur for a tap");
+  XCTAssertTrue(
+      [app.textFields[@"3,PointerChange.up,device=1,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.up event did not occur for a tap");
+  XCTAssertTrue(
+      [app.textFields[@"4,PointerChange.remove,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"The hover pointer was not removed after a tap");
   [flutterView performSelector:hover];
-  XCTAssertTrue([app.textFields[@"5,PointerChange.add,d=0,b=0"] waitForExistenceWithTimeout:1],
-                @"PointerChange.add event did not occur for a subsequent hover");
+  XCTAssertTrue(
+      [app.textFields[@"5,PointerChange.add,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.add event did not occur for a subsequent hover");
 }
 #pragma clang diagnostic pop
 

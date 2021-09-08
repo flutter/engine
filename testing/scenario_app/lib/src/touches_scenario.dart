@@ -35,9 +35,9 @@ class TouchesScenario extends Scenario {
           'data': _sequenceNo.toString() +
               ',' +
               datum.change.toString() +
-              ',d=' +
+              ',device=' +
               deviceId.toString() +
-              ',b=' +
+              ',buttons=' +
               datum.buttons.toString(),
         },
       );
