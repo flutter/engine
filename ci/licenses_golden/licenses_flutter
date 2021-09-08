@@ -1367,6 +1367,10 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v1.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v1.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/builtin.dart
@@ -1392,6 +1396,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_jit_runner.c
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/dart_zircon_test.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/jit_product_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/meta/jit_runtime
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/parse_url.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/parse_url.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart
