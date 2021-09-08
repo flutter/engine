@@ -357,8 +357,10 @@ TEST(RasterizerTest,
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(false);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -405,8 +407,11 @@ TEST(
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(true);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -455,8 +460,11 @@ TEST(
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(false);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -504,8 +512,11 @@ TEST(
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(true);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
