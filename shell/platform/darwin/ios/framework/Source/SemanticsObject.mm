@@ -163,10 +163,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return self;
 }
 
+- (void)willRemoveFromAccessibilityBridge {
+  [self removeFromSuperview];
+}
+
 - (void)dealloc {
   _container.get().semanticsObject = nil;
   [_semanticsObject release];
-  [self removeFromSuperview];
   [super dealloc];
 }
 
@@ -453,6 +456,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (void)accessibilityBridgeDidFinishUpdate { /* Do nothing by default */
+}
+
+- (void)willRemoveFromAccessibilityBridge { /* Do nothing by default */
 }
 
 /**

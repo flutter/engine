@@ -204,7 +204,11 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   if (root) {
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
   }
-  [objects_ removeObjectsForKeys:doomed_uids];
+  for (id uid in doomed_uids) {
+    SemanticsObject* object = objects_.get()[uid];
+    [object willRemoveFromAccessibilityBridge];
+    [objects_ removeObjectForKey:uid];
+  }
 
   for (SemanticsObject* object in [objects_ allValues]) {
     [object accessibilityBridgeDidFinishUpdate];
@@ -246,10 +250,11 @@ static void ReplaceSemanticsObject(SemanticsObject* oldObject,
                                    SemanticsObject* newObject,
                                    NSMutableDictionary<NSNumber*, SemanticsObject*>* objects) {
   // `newObject` should represent the same id as `oldObject`.
-  assert(oldObject.node.id == newObject.node.id);
+  assert(oldObject.node.id == newObject.uid);
   NSNumber* nodeId = @(oldObject.node.id);
   NSUInteger positionInChildlist = [oldObject.parent.children indexOfObject:oldObject];
   [objects removeObjectForKey:nodeId];
+  [oldObject willRemoveFromAccessibilityBridge];
   [oldObject.parent replaceChildAtIndex:positionInChildlist withChild:newObject];
   objects[nodeId] = newObject;
 }
@@ -294,7 +299,8 @@ SemanticsObject* AccessibilityBridge::GetOrCreateObject(int32_t uid,
       if (DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsTextField) ||
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kIsReadOnly) ||
           DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasCheckedState) ||
-          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasToggledState)) {
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasToggledState) ||
+          DidFlagChange(object.node, node, flutter::SemanticsFlags::kHasImplicitScrolling)) {
         // The node changed its type. In this case, we cannot reuse the existing
         // SemanticsObject implementation. Instead, we replace it with a new
         // instance.

@@ -304,6 +304,140 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNil(gMockPlatformView);
 }
 
+- (void)testScrollableSemanticsDeallocated {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners);
+  id engine = OCMClassMock([FlutterEngine class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  OCMStub([mockFlutterViewController view]).andReturn(flutterView);
+  std::string label = "some label";
+
+  auto bridge = std::make_unique<flutter::AccessibilityBridge>(
+      /*view_controller=*/mockFlutterViewController,
+      /*platform_view=*/platform_view.get(),
+      /*platform_views_controller=*/flutterPlatformViewsController);
+
+  flutter::SemanticsNodeUpdates nodes;
+  flutter::SemanticsNode parent;
+  parent.id = 0;
+  parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  parent.label = "label";
+  parent.value = "value";
+  parent.hint = "hint";
+
+  flutter::SemanticsNode node;
+  node.id = 1;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kHorizontalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  node.label = "label";
+  node.value = "value";
+  node.hint = "hint";
+  node.scrollExtentMax = 100.0;
+  node.scrollPosition = 0.0;
+  parent.childrenInTraversalOrder.push_back(1);
+  nodes[0] = parent;
+  nodes[1] = node;
+  flutter::CustomAccessibilityActionUpdates actions;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+  XCTAssertTrue([flutterView.subviews count] == 1);
+  XCTAssertTrue([flutterView.subviews[0] isKindOfClass:[FlutterScrollableSemanticsObject class]]);
+  XCTAssertTrue([flutterView.subviews[0].accessibilityLabel isEqualToString:@"label"]);
+
+  // Remove the scrollable from the tree.
+  flutter::SemanticsNodeUpdates new_nodes;
+  flutter::SemanticsNode new_parent;
+  new_parent.id = 0;
+  new_parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  new_parent.label = "label";
+  new_parent.value = "value";
+  new_parent.hint = "hint";
+  new_nodes[0] = new_parent;
+  bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
+  XCTAssertTrue([flutterView.subviews count] == 0);
+}
+
+- (void)testBridgeReplacesSemanticsNode {
+  flutter::MockDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners);
+  id engine = OCMClassMock([FlutterEngine class]);
+  id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
+  OCMStub([mockFlutterViewController view]).andReturn(flutterView);
+  std::string label = "some label";
+
+  auto bridge = std::make_unique<flutter::AccessibilityBridge>(
+      /*view_controller=*/mockFlutterViewController,
+      /*platform_view=*/platform_view.get(),
+      /*platform_views_controller=*/flutterPlatformViewsController);
+
+  flutter::SemanticsNodeUpdates nodes;
+  flutter::SemanticsNode parent;
+  parent.id = 0;
+  parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  parent.label = "label";
+  parent.value = "value";
+  parent.hint = "hint";
+
+  flutter::SemanticsNode node;
+  node.id = 1;
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+  node.actions = flutter::kHorizontalScrollSemanticsActions;
+  node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  node.label = "label";
+  node.value = "value";
+  node.hint = "hint";
+  node.scrollExtentMax = 100.0;
+  node.scrollPosition = 0.0;
+  parent.childrenInTraversalOrder.push_back(1);
+  nodes[0] = parent;
+  nodes[1] = node;
+  flutter::CustomAccessibilityActionUpdates actions;
+  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+  XCTAssertTrue([flutterView.subviews count] == 1);
+  XCTAssertTrue([flutterView.subviews[0] isKindOfClass:[FlutterScrollableSemanticsObject class]]);
+  XCTAssertTrue([flutterView.subviews[0].accessibilityLabel isEqualToString:@"label"]);
+
+  // Remove implicit scroll from node 1.
+  flutter::SemanticsNodeUpdates new_nodes;
+  flutter::SemanticsNode new_node;
+  new_node.id = 1;
+  new_node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+  new_node.label = "label";
+  new_node.value = "value";
+  new_node.hint = "hint";
+  new_node.scrollExtentMax = 100.0;
+  new_node.scrollPosition = 0.0;
+  new_nodes[1] = new_node;
+  bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
+  XCTAssertTrue([flutterView.subviews count] == 0);
+}
+
 - (void)testAnnouncesRouteChanges {
   flutter::MockDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("AccessibilityBridgeTest");

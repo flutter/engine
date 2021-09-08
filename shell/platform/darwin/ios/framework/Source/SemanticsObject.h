@@ -104,6 +104,13 @@ constexpr float kScrollExtentMaxForInf = 1000;
  */
 - (void)accessibilityBridgeDidFinishUpdate;
 
+/**
+ * Called after this object is removed from the accessibility bridge.
+ *
+ * Subclass can override this method to release additional resource.
+ */
+- (void)willRemoveFromAccessibilityBridge;
+
 #pragma mark - Designated initializers
 
 - (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
@@ -178,6 +185,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 - (instancetype)initWithCoder:(NSCoder*)coder NS_UNAVAILABLE;
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject NS_DESIGNATED_INITIALIZER;
 - (void)accessibilityBridgeDidFinishUpdate;
+- (void)willRemoveFromAccessibilityBridge;
 
 @end
 
