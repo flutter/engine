@@ -58,41 +58,49 @@ public final class TextEditingDelta {
     setDeltas(oldText, deltaText, deltaStart, deltaEnd);
   }
 
+  @VisibleForTesting
   public CharSequence getOldText() {
     return oldText;
   }
 
+  @VisibleForTesting
   public CharSequence getDeltaText() {
     return deltaText;
   }
 
+  @VisibleForTesting
   public int getDeltaStart() {
     return deltaStart;
   }
 
+  @VisibleForTesting
   public int getDeltaEnd() {
     return deltaEnd;
   }
 
+  @VisibleForTesting
   public int getNewSelectionStart() {
     return newSelectionStart;
   }
 
+  @VisibleForTesting
   public int getNewSelectionEnd() {
     return newSelectionEnd;
   }
 
+  @VisibleForTesting
   public int getNewComposingStart() {
     return newComposingStart;
   }
 
+  @VisibleForTesting
   public int getNewComposingEnd() {
     return newComposingEnd;
   }
 
-  private void setDeltas(CharSequence oldTxt, CharSequence newTxt, int newStart, int newExtent) {
-    oldText = oldTxt;
-    deltaText = newTxt;
+  private void setDeltas(CharSequence oldText, CharSequence newText, int newStart, int newExtent) {
+    this.oldText = oldText;
+    deltaText = newText;
     deltaStart = newStart;
     deltaEnd = newExtent;
   }

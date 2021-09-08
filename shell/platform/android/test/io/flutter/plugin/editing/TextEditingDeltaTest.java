@@ -45,7 +45,7 @@ public class TextEditingDeltaTest {
             newComposingEnd);
 
     assertEquals(oldText, delta.getOldText());
-    assertEquals("hello", delta.getDeltaText());
+    assertEquals(textAfterChange, delta.getDeltaText());
     assertEquals(oldComposingStart, delta.getDeltaStart());
     assertEquals(oldComposingEnd, delta.getDeltaEnd());
     assertEquals(newSelectionStart, delta.getNewSelectionStart());
