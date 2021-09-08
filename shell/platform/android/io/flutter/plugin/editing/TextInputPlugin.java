@@ -466,23 +466,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   // latest TextEditState from the framework.
   @VisibleForTesting
   void setTextInputEditingState(View view, TextInputChannel.TextEditState state) {
-    Log.v(
-        TAG,
-        "Receiving update from framework: \n"
-            + "Text: "
-            + state.text
-            + "\n"
-            + "Selection start: "
-            + state.selectionStart
-            + "\n"
-            + "Selection end: "
-            + state.selectionEnd
-            + "\n"
-            + "Composing start: "
-            + state.composingStart
-            + "\n"
-            + "Composing end: "
-            + state.composingEnd);
     if (!mRestartInputPending
         && mLastKnownFrameworkTextEditingState != null
         && mLastKnownFrameworkTextEditingState.hasComposing()) {
