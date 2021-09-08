@@ -11,6 +11,7 @@
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/fml/base32.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
@@ -1367,8 +1368,8 @@ void Shell::ReportTimings() {
 size_t Shell::UnreportedFramesCount() const {
   // Check that this is running on the raster thread to avoid race conditions.
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
-  FML_DCHECK(unreported_timings_.size() % (FrameTiming::kCount + 1) == 0);
-  return unreported_timings_.size() / (FrameTiming::kCount + 1);
+  FML_DCHECK(unreported_timings_.size() % (FrameTiming::kStatisticsCount) == 0);
+  return unreported_timings_.size() / (FrameTiming::kStatisticsCount);
 }
 
 void Shell::OnFrameRasterized(const FrameTiming& timing) {
@@ -1385,11 +1386,18 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     return;
   }
 
+  size_t old_count = unreported_timings_.size();
   for (auto phase : FrameTiming::kPhases) {
     unreported_timings_.push_back(
         timing.Get(phase).ToEpochDelta().ToMicroseconds());
   }
+  unreported_timings_.push_back(timing.GetLayerCacheCount());
+  unreported_timings_.push_back(timing.GetLayerCacheBytes());
+  unreported_timings_.push_back(timing.GetPictureCacheCount());
+  unreported_timings_.push_back(timing.GetPictureCacheBytes());
   unreported_timings_.push_back(timing.GetFrameNumber());
+  FML_DCHECK(unreported_timings_.size() ==
+             old_count + FrameTiming::kStatisticsCount);
 
   // In tests using iPhone 6S with profile mode, sending a batch of 1 frame or a
   // batch of 100 frames have roughly the same cost of less than 0.1ms. Sending
@@ -1679,14 +1687,19 @@ bool Shell::OnServiceProtocolGetSkSLs(
   std::vector<PersistentCache::SkSLCache> sksls = persistent_cache->LoadSkSLs();
   for (const auto& sksl : sksls) {
     size_t b64_size =
-        SkBase64::Encode(sksl.second->data(), sksl.second->size(), nullptr);
+        SkBase64::Encode(sksl.value->data(), sksl.value->size(), nullptr);
     sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size + 1);
     char* b64_char = static_cast<char*>(b64_data->writable_data());
-    SkBase64::Encode(sksl.second->data(), sksl.second->size(), b64_char);
+    SkBase64::Encode(sksl.value->data(), sksl.value->size(), b64_char);
     b64_char[b64_size] = 0;  // make it null terminated for printing
     rapidjson::Value shader_value(b64_char, response->GetAllocator());
-    rapidjson::Value shader_key(PersistentCache::SkKeyToFilePath(*sksl.first),
-                                response->GetAllocator());
+    std::string_view key_view(reinterpret_cast<const char*>(sksl.key->data()),
+                              sksl.key->size());
+    auto encode_result = fml::Base32Encode(key_view);
+    if (!encode_result.first) {
+      continue;
+    }
+    rapidjson::Value shader_key(encode_result.second, response->GetAllocator());
     shaders_json.AddMember(shader_key, shader_value, response->GetAllocator());
   }
   response->AddMember("SkSLs", shaders_json, response->GetAllocator());
@@ -1706,9 +1719,6 @@ bool Shell::OnServiceProtocolEstimateRasterCacheMemory(
                                 response->GetAllocator());
   response->AddMember<uint64_t>("pictureBytes",
                                 raster_cache.EstimatePictureCacheByteSize(),
-                                response->GetAllocator());
-  response->AddMember<uint64_t>("displayListBytes",
-                                raster_cache.EstimateDisplayListCacheByteSize(),
                                 response->GetAllocator());
   return true;
 }
