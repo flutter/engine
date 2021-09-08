@@ -895,7 +895,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   bool will_drop_hover = NO;
 
   if (@available(iOS 13.4, *)) {
-    if ([UIFocusSystem focusSystemForEnvironment:self.view] == nil) {
+    if (_mouseState.flutter_state_is_added &&
+        [UIFocusSystem focusSystemForEnvironment:self.view] == nil) {
       // There is no focus environment, the pointer is no longer attached
       will_drop_hover = YES;
     }
@@ -1700,8 +1701,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   pointer_data.Clear();
 
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
-  pointer_data.change = _mouseState.flutter_state_is_added ? flutter::PointerData::Change::kAdd
-                                                           : flutter::PointerData::Change::kHover;
+  pointer_data.change = _mouseState.flutter_state_is_added ? flutter::PointerData::Change::kHover
+                                                           : flutter::PointerData::Change::kAdd;
   pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
   pointer_data.device = reinterpret_cast<int64_t>(_pointerInteraction.get());
 
