@@ -5,30 +5,17 @@
 #ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_RUNNER_PARSE_URL_H_
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_RUNNER_PARSE_URL_H_
 
+#include <string>
+
 namespace dart_runner {
 
-// Find the last path component.
+// Find the last path of the component.
 // fuchsia-pkg://fuchsia.com/hello_dart#meta/hello_dart.cmx -> hello_dart.cmx
-std::string GetLabelFromUrl(const std::string& url) {
-  for (size_t i = url.length() - 1; i > 0; i--) {
-    if (url[i] == '/') {
-      return url.substr(i + 1, url.length() - 1);
-    }
-  }
-  return url;
-}
+std::string GetLabelFromUrl(const std::string& url);
 
 // Find the name of the component.
 // fuchsia-pkg://fuchsia.com/hello_dart#meta/hello_dart.cm -> hello_dart
-std::string GetComponentNameFromUrl(const std::string& url) {
-  const std::string label = GetLabelFromUrl(url);
-  for (size_t i = 0; i < label.length(); ++i) {
-    if (label[i] == '.') {
-      return label.substr(0, i);
-    }
-  }
-  return label;
-}
+std::string GetComponentNameFromUrl(const std::string& url);
 
 }  // namespace dart_runner
 

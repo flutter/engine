@@ -9,7 +9,6 @@
 #include <lib/async/cpp/task.h>
 #include <lib/async/default.h>
 #include <lib/fdio/directory.h>
-#include <lib/fdio/fd.h>
 #include <lib/fdio/namespace.h>
 #include <lib/fidl/cpp/optional.h>
 #include <lib/fidl/cpp/string.h>
@@ -25,11 +24,14 @@
 #include <regex>
 #include <utility>
 
+#include "builtin_libraries.h"
+#include "logging.h"
 #include "parse_url.h"
+
+#include "flutter/fml/logging.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/handle_exception.h"
 #include "runtime/dart/utils/inlines.h"
-#include "runtime/dart/utils/tempfs.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_message_handler.h"
@@ -37,18 +39,9 @@
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/logging/dart_error.h"
 
-#include "builtin_libraries.h"
-#include "third_party/tonic/logging/dart_error.h"
-
-#include "builtin_libraries.h"
-#include "flutter/fml/logging.h"
-#include "logging.h"
-
 using tonic::ToDart;
 
 namespace dart_runner {
-
-constexpr char kDataKey[] = "data";
 
 namespace {
 
@@ -101,16 +94,13 @@ bool DartComponentController::Setup() {
   return true;
 }
 
-constexpr char kTmpPath[] = "/tmp";
-constexpr char kServiceRootPath[] = "/svc";
-
 DartComponentController::DartComponentController(
     std::string resolved_url,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services)
-    : runner_incoming_services_(runner_incoming_services),
-      loop_(std::make_unique<async::Loop>(&kLoopConfig)),
+    : loop_(std::make_unique<async::Loop>(&kLoopConfig)),
       label_(GetLabelFromUrl(resolved_url)),
-      url_(resolved_url) {
+      url_(resolved_url),
+      runner_incoming_services_(runner_incoming_services) {
   const zx_status_t status =
       zx::timer::create(ZX_TIMER_SLACK_LATE, ZX_CLOCK_MONOTONIC, &idle_timer_);
   if (status != ZX_OK) {
@@ -270,7 +260,7 @@ bool DartComponentController::CreateIsolate(
 
 void DartComponentController::Run() {
   async::PostTask(loop_->dispatcher(), [loop = loop_.get(), app = this] {
-    if (!app->Main()) {
+    if (!app->RunDartMain()) {
       loop->Quit();
     }
   });
@@ -278,7 +268,7 @@ void DartComponentController::Run() {
   SendReturnCode();
 }
 
-bool DartComponentController::Main() {
+bool DartComponentController::RunDartMain() {
   FML_CHECK(namespace_ != nullptr);
   Dart_EnterScope();
 

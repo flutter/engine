@@ -4,8 +4,14 @@
 
 #include "dart_component_controller_v2.h"
 
+#include <lib/syslog/global.h>
+#include <zircon/status.h>
+
 #include "builtin_libraries.h"
+#include "logging.h"
 #include "parse_url.h"
+
+#include "runtime/dart/utils/tempfs.h"
 
 namespace dart_runner {
 
@@ -63,7 +69,7 @@ fdio_ns_t* DartComponentControllerV2::PrepareNamespace() {
       continue;
     }
 
-    if (ns_entry.path() == kTmpPath) {
+    if (ns_entry.path() == kComponentTmpPath) {
       // /tmp is covered by the local memfs.
       continue;
     }

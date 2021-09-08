@@ -27,10 +27,13 @@ class DartComponentController {
   // Called before the application is run.
   bool Setup();
 
-  // Calling this method will run the given application
+  // Calling this method will run the given application.
   void Run();
 
  protected:
+  static constexpr char kComponentTmpPath[] = "/tmp";
+  static constexpr char kServiceRootPath[] = "/svc";
+
   DartComponentController(
       std::string resolved_url,
       std::shared_ptr<sys::ServiceDirectory> runner_incoming_services);
@@ -50,7 +53,9 @@ class DartComponentController {
   int stderrfd_ = -1;
 
  private:
-  bool Main();
+  /// Runs the Dart component. Returns true if the component ran and
+  /// the main result was successful, otherwise false.
+  bool RunDartMain();
 
   /// Override this method to send the return code to the caller.
   virtual void SendReturnCode() = 0;

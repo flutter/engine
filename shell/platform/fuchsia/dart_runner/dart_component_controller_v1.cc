@@ -3,9 +3,24 @@
 // found in the LICENSE file.
 
 #include "dart_component_controller_v1.h"
+
+#include <lib/fdio/directory.h>
+#include <lib/fdio/fd.h>
+#include <lib/syslog/global.h>
+#include <zircon/status.h>
+
 #include "builtin_libraries.h"
+#include "logging.h"
+
+#include "runtime/dart/utils/tempfs.h"
 
 namespace dart_runner {
+
+namespace {
+
+constexpr char kDataKey[] = "data";
+
+}  // namespace
 
 DartComponentControllerV1::DartComponentControllerV1(
     fuchsia::sys::Package package,
@@ -63,7 +78,7 @@ fdio_ns_t* DartComponentControllerV1::PrepareNamespace() {
   dart_utils::RunnerTemp::SetupComponent(ns);
 
   for (size_t i = 0; i < flat->paths.size(); ++i) {
-    if (flat->paths.at(i) == kTmpPath) {
+    if (flat->paths.at(i) == kComponentTmpPath) {
       // /tmp is covered by the local memfs.
       continue;
     }
