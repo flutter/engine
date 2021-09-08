@@ -4,74 +4,49 @@
 
 #include "flutter/shell/platform/windows/task_runner_winuwp.h"
 
-#include <atomic>
-#include <utility>
-
 namespace flutter {
 
 // static
-std::unique_ptr<TaskRunner> TaskRunner::Create(
-    DWORD main_thread_id,
-    CurrentTimeProc get_current_time,
-    const TaskExpiredCallback& on_task_expired) {
-  return std::make_unique<TaskRunnerWinUwp>(main_thread_id, get_current_time,
-                                            on_task_expired);
+std::unique_ptr<TaskRunnerTimer> TaskRunnerTimer::Create(
+    TaskRunnerTimer::Delegate* delegate) {
+  return std::make_unique<TaskRunnerTimerWinUwp>(delegate);
 }
 
-TaskRunnerWinUwp::TaskRunnerWinUwp(DWORD main_thread_id,
-                                   CurrentTimeProc get_current_time,
-                                   const TaskExpiredCallback& on_task_expired)
-    : main_thread_id_(main_thread_id),
-      get_current_time_(get_current_time),
-      on_task_expired_(std::move(on_task_expired)) {
-  dispatcher_ =
-      winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread().Dispatcher();
+TaskRunnerTimerWinUwp::TaskRunnerTimerWinUwp(
+    TaskRunnerTimer::Delegate* delegate)
+    : delegate_(delegate) {
+  dispatcher_queue_ =
+      winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+  dispatcher_queue_timer_ = dispatcher_queue_.CreateTimer();
+  dispatcher_queue_timer_.Tick({this, &TaskRunnerTimerWinUwp::OnTick});
 }
 
-TaskRunnerWinUwp::~TaskRunnerWinUwp() {
-  std::lock_guard<std::mutex> lock(timer_queued_mutex_);
-  for (const auto& timer : timer_queued_) {
-    timer.Cancel();
-  }
+TaskRunnerTimerWinUwp::~TaskRunnerTimerWinUwp() = default;
+
+void TaskRunnerTimerWinUwp::WakeUp() {
+  dispatcher_queue_.TryEnqueue([this]() { ProcessTasks(); });
 };
 
-bool TaskRunnerWinUwp::RunsTasksOnCurrentThread() const {
-  return GetCurrentThreadId() == main_thread_id_;
+bool TaskRunnerTimerWinUwp::RunsOnCurrentThread() const {
+  return dispatcher_queue_.HasThreadAccess();
+};
+
+void TaskRunnerTimerWinUwp::OnTick(
+    winrt::Windows::System::DispatcherQueueTimer const&,
+    winrt::Windows::Foundation::IInspectable const&) {
+  ProcessTasks();
 }
 
-void TaskRunnerWinUwp::PostFlutterTask(FlutterTask flutter_task,
-                                       uint64_t flutter_target_time_nanos) {
-  const auto delay =
-      std::chrono::duration_cast<winrt::Windows::Foundation::TimeSpan>(
-          std::chrono::nanoseconds(flutter_target_time_nanos -
-                                   get_current_time_()));
+void TaskRunnerTimerWinUwp::ProcessTasks() {
+  auto next = delegate_->ProcessTasks();
 
-  auto timer = winrt::Windows::System::Threading::ThreadPoolTimer::CreateTimer(
-      winrt::Windows::System::Threading::TimerElapsedHandler(
-          [this, flutter_task](auto& timer) {
-            {
-              std::lock_guard<std::mutex> lock(timer_queued_mutex_);
-              auto i =
-                  std::find(timer_queued_.begin(), timer_queued_.end(), timer);
-              if (i != timer_queued_.end()) {
-                timer_queued_.erase(i);
-              }
-            }
-
-            PostTask(
-                [this, flutter_task]() { on_task_expired_(&flutter_task); });
-          }),
-      delay);
-
-  {
-    std::lock_guard<std::mutex> lock(timer_queued_mutex_);
-    timer_queued_.push_back(timer);
+  if (next == std::chrono::nanoseconds::max()) {
+    dispatcher_queue_timer_.Stop();
+  } else {
+    dispatcher_queue_timer_.Interval(
+        std::chrono::duration_cast<winrt::Windows::Foundation::TimeSpan>(next));
+    dispatcher_queue_timer_.Start();
   }
-}
-
-void TaskRunnerWinUwp::PostTask(TaskClosure task) {
-  dispatcher_.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal,
-                       [task]() { task(); });
 }
 
 }  // namespace flutter

@@ -5,53 +5,39 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINRT_TASK_RUNNER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_WINRT_TASK_RUNNER_H_
 
-#include <windows.h>
-
-#include <third_party/cppwinrt/generated/winrt/Windows.System.Threading.h>
-#include <third_party/cppwinrt/generated/winrt/Windows.UI.Core.h>
-
-#include <chrono>
-#include <functional>
-#include <mutex>
-#include <thread>
-#include <vector>
+#include <third_party/cppwinrt/generated/winrt/Windows.Foundation.h>
+#include <third_party/cppwinrt/generated/winrt/Windows.System.h>
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 
 namespace flutter {
 
-// A custom task runner that uses a CoreDispatcher to schedule
-// flutter tasks.
-class TaskRunnerWinUwp : public TaskRunner {
+// A custom timer that uses a DispatcherQueue.
+class TaskRunnerTimerWinUwp : public TaskRunnerTimer {
  public:
-  TaskRunnerWinUwp(DWORD main_thread_id,
-                   CurrentTimeProc get_current_time,
-                   const TaskExpiredCallback& on_task_expired);
+  TaskRunnerTimerWinUwp(TaskRunnerTimer::Delegate* delegate);
+  virtual ~TaskRunnerTimerWinUwp();
 
-  virtual ~TaskRunnerWinUwp();
+  // |TaskRunnerTimer|
+  void WakeUp() override;
 
-  TaskRunnerWinUwp(const TaskRunnerWinUwp&) = delete;
-  TaskRunnerWinUwp& operator=(const TaskRunnerWinUwp&) = delete;
-
-  // |TaskRunner|
-  bool RunsTasksOnCurrentThread() const override;
-
-  // |TaskRunner|
-  void PostFlutterTask(FlutterTask flutter_task,
-                       uint64_t flutter_target_time_nanos) override;
-
-  // |TaskRunner|
-  void PostTask(TaskClosure task) override;
+  // |TaskRunnerTimer|
+  bool RunsOnCurrentThread() const override;
 
  private:
-  DWORD main_thread_id_;
-  CurrentTimeProc get_current_time_;
-  TaskExpiredCallback on_task_expired_;
-  std::mutex timer_queued_mutex_;
-  std::vector<winrt::Windows::System::Threading::ThreadPoolTimer> timer_queued_;
+  void OnTick(winrt::Windows::System::DispatcherQueueTimer const&,
+              winrt::Windows::Foundation::IInspectable const&);
 
-  winrt::Windows::UI::Core::CoreDispatcher dispatcher_{nullptr};
+  void ProcessTasks();
+
+  TaskRunnerTimer::Delegate* delegate_;
+
+  winrt::Windows::System::DispatcherQueue dispatcher_queue_{nullptr};
+  winrt::Windows::System::DispatcherQueueTimer dispatcher_queue_timer_{nullptr};
+
+  TaskRunnerTimerWinUwp(const TaskRunnerTimerWinUwp&) = delete;
+  TaskRunnerTimerWinUwp& operator=(const TaskRunnerTimerWinUwp&) = delete;
 };
 
 }  // namespace flutter
