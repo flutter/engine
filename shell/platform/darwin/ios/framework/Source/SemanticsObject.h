@@ -105,7 +105,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 - (void)accessibilityBridgeDidFinishUpdate;
 
 /**
- * Called after this object is removed from the accessibility bridge.
+ * Called after this object is about to be removed from the accessibility bridge.
  *
  * Subclass can override this method to release additional resource.
  */
