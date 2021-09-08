@@ -7,7 +7,6 @@
 @implementation FlutterTextEditingDelta
 
 - (instancetype)initTextEditingDelta:(NSString*)textBeforeChange
-                     textAfterChange:(NSString*)textAfterChange
                        replacedRange:(NSRange)range
                          updatedText:(NSString*)text {
   self = [super init];
