@@ -44,6 +44,7 @@ std::unique_ptr<Surface> IOSSurfaceGL::CreateGPUSurface(GrDirectContext* gr_cont
     if (!context) {
       context = GPUSurfaceGL::MakeGLContext(this);
       gl_context->SetMainContext(context);
+      return std::make_unique<GPUSurfaceGL>(context, true);
     }
 
     return std::make_unique<GPUSurfaceGL>(context, this, true);
