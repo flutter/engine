@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -439,6 +440,51 @@ class AutofillInfo {
   }
 }
 
+class TextEditingDeltaState {
+  const TextEditingDeltaState({
+    this.oldText = '',
+    this.deltaText = '',
+    this.deltaStart = -1,
+    this.deltaEnd = -1,
+    this.baseOffset = -1,
+    this.extentOffset = -1,
+  });
+
+  final String oldText;
+  final String deltaText;
+  final int deltaStart;
+  final int deltaEnd;
+  final int baseOffset;
+  final int extentOffset;
+
+  Map<String, dynamic> toFlutter() => <String, dynamic>{
+    'oldText': oldText,
+    'deltaText': deltaText,
+    'deltaStart': deltaStart,
+    'deltaEnd': deltaEnd,
+    'selectionBase': baseOffset,
+    'selectionExtent': extentOffset,
+  };
+
+  TextEditingDeltaState copyWith({
+    String? oldText,
+    String? deltaText,
+    int? deltaStart,
+    int? deltaEnd,
+    int? baseOffset,
+    int? extentOffset,
+  }) {
+    return TextEditingDeltaState(
+      oldText: oldText ?? this.oldText,
+      deltaText: deltaText ?? this.deltaText,
+      deltaStart: deltaStart ?? this.deltaStart,
+      deltaEnd: deltaEnd ?? this.deltaEnd,
+      baseOffset: baseOffset ?? this.baseOffset,
+      extentOffset: extentOffset ?? this.extentOffset,
+    );
+  }
+}
+
 /// The current text and selection state of a text field.
 class EditingState {
   EditingState({this.text, int? baseOffset, int? extentOffset}) :
@@ -610,6 +656,7 @@ class InputConfiguration {
         const TextCapitalizationConfig.defaultCapitalization(),
     this.autofill,
     this.autofillGroup,
+    this.enableDeltaModel = false,
   });
 
   InputConfiguration.fromFrameworkMessage(
@@ -633,7 +680,8 @@ class InputConfiguration {
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
           flutterInputConfiguration.tryJson('autofill'),
           flutterInputConfiguration.tryList('fields'),
-        );
+        ),
+        enableDeltaModel = flutterInputConfiguration.tryBool('enableDeltaModel') ?? false;
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -658,6 +706,8 @@ class InputConfiguration {
   /// supported by Safari.
   final bool autocorrect;
 
+  final bool enableDeltaModel;
+
   final AutofillInfo? autofill;
 
   final EngineAutofillForm? autofillGroup;
@@ -665,7 +715,7 @@ class InputConfiguration {
   final TextCapitalizationConfig textCapitalization;
 }
 
-typedef OnChangeCallback = void Function(EditingState? editingState);
+typedef OnChangeCallback = void Function(EditingState? editingState, TextEditingDeltaState? editingDeltaState);
 typedef OnActionCallback = void Function(String? inputAction);
 
 /// Provides HTML DOM functionality for editable text.
@@ -849,6 +899,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
 
+  TextEditingDeltaState? lastTextEditingDeltaState;
+
   /// Styles associated with the editable text.
   EditableTextStyle? style;
 
@@ -947,6 +999,22 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
+    activeDomElement.addEventListener('beforeinput', (event) {
+      String eventData = js_util.getProperty(event, 'data').toString();
+      if (eventData == 'null') {
+        eventData = '';
+      }
+      final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+
+      if (eventData == '') {
+        lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: (lastEditingState!.extentOffset ?? -1) - 1, deltaEnd: lastEditingState!.extentOffset);
+      } else {
+        lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: lastEditingState!.extentOffset, deltaEnd: lastEditingState!.extentOffset);
+      }
+      print('beforeinput delta: ' + js_util.getProperty(event, 'data').toString() + ' delta length: ' + js_util.getProperty(event, 'data').toString().length.toString());
+      print('target ranges: ' + js_util.callMethod(event, 'getTargetRanges', []).toString());
+    });
+
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
@@ -978,6 +1046,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     isEnabled = false;
     lastEditingState = null;
+    lastTextEditingDeltaState = null;
     style = null;
     geometry = null;
 
@@ -1022,10 +1091,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     assert(isEnabled);
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+    final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
-      onChange!(lastEditingState);
+      lastTextEditingDeltaState = newTextEditingDeltaState;
+      onChange!(lastEditingState, lastTextEditingDeltaState);
     }
   }
 
@@ -1731,6 +1802,20 @@ class TextEditingChannel {
     );
   }
 
+  /// Sends the 'TextInputClient.updateEditingStateWithDeltas' message to the framework.
+  void updateEditingStateWithDelta(int? clientId, TextEditingDeltaState? editingDeltaState) {
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
+      'flutter/textinput',
+      const JSONMethodCodec().encodeMethodCall(
+        MethodCall('TextInputClient.updateEditingStateWithDeltas', <dynamic>[
+          clientId,
+          editingDeltaState!.toFlutter(),
+        ]),
+      ),
+      _emptyCallback,
+    );
+  }
+
   /// Sends the 'TextInputClient.performAction' message to the framework.
   void performAction(int? clientId, String? inputAction) {
     EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
@@ -1824,8 +1909,15 @@ class HybridTextEditing {
     isEditing = true;
     strategy.enable(
       configuration!,
-      onChange: (EditingState? editingState) {
-        channel.updateEditingState(_clientId, editingState);
+      onChange: (EditingState? editingState, TextEditingDeltaState? editingDeltaState) {
+        if (configuration!.enableDeltaModel) {
+          print('delta model is enabled');
+          editingDeltaState = editingDeltaState!.copyWith(baseOffset: editingState!.baseOffset, extentOffset: editingState.extentOffset);
+          channel.updateEditingStateWithDelta(_clientId, editingDeltaState);
+        } else {
+          print('we should never be here');
+          channel.updateEditingState(_clientId, editingState);
+        }
       },
       onAction: (String? inputAction) {
         channel.performAction(_clientId, inputAction);
