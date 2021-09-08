@@ -135,7 +135,7 @@ TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
 
   );
 
-  PostIOTaskSync(runners, [&]() {
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     TestIOManager manager(runners.GetIOTaskRunner());
     ImageDecoder decoder(std::move(runners), loop->GetTaskRunner(),
                          manager.GetWeakIOManager());
@@ -399,12 +399,12 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
   std::unique_ptr<ImageDecoder> image_decoder;
 
   // Setup the IO manager.
-  PostIOTaskSync(runners, [&]() {
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
   });
 
   // Setup the image decoder.
-  PostUITaskSync(runners, [&]() {
+  PostTaskSync(runners.GetUITaskRunner(), [&]() {
     image_decoder = std::make_unique<ImageDecoder>(
         runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
   });
@@ -444,10 +444,10 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
   ASSERT_EQ(decoded_size(100, 100), SkISize::Make(100, 100));
 
   // Destroy the IO manager
-  PostIOTaskSync(runners, [&]() { io_manager.reset(); });
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
 
   // Destroy the image decoder
-  PostUITaskSync(runners, [&]() { image_decoder.reset(); });
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { image_decoder.reset(); });
 }
 
 // TODO(https://github.com/flutter/flutter/issues/81232) - disabled due to
@@ -491,12 +491,12 @@ TEST_F(ImageDecoderFixtureTest, DISABLED_CanResizeWithoutDecode) {
   std::unique_ptr<ImageDecoder> image_decoder;
 
   // Setup the IO manager.
-  PostIOTaskSync(runners, [&]() {
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
   });
 
   // Setup the image decoder.
-  PostUITaskSync(runners, [&]() {
+  PostTaskSync(runners.GetUITaskRunner(), [&]() {
     image_decoder = std::make_unique<ImageDecoder>(
         runners, loop->GetTaskRunner(), io_manager->GetWeakIOManager());
   });
@@ -529,10 +529,10 @@ TEST_F(ImageDecoderFixtureTest, DISABLED_CanResizeWithoutDecode) {
   ASSERT_EQ(decoded_size(100, 100), SkISize::Make(100, 100));
 
   // Destroy the IO manager
-  PostIOTaskSync(runners, [&]() { io_manager.reset(); });
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
 
   // Destroy the image decoder
-  PostUITaskSync(runners, [&]() { image_decoder.reset(); });
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { image_decoder.reset(); });
 }
 
 // Verifies https://skia-review.googlesource.com/c/skia/+/259161 is present in
@@ -649,7 +649,7 @@ TEST_F(ImageDecoderFixtureTest,
   std::unique_ptr<TestIOManager> io_manager;
 
   // Setup the IO manager.
-  PostIOTaskSync(runners, [&]() {
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
   });
 
@@ -660,7 +660,7 @@ TEST_F(ImageDecoderFixtureTest,
   // Latch the IO task runner.
   runners.GetIOTaskRunner()->PostTask([&]() { io_latch.Wait(); });
 
-  PostUITaskSync(runners, [&]() {
+  PostTaskSync(runners.GetUITaskRunner(), [&]() {
     fml::AutoResetWaitableEvent isolate_latch;
     fml::RefPtr<MultiFrameCodec> codec;
     EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
@@ -690,7 +690,7 @@ TEST_F(ImageDecoderFixtureTest,
   });
 
   // Destroy the IO manager
-  PostIOTaskSync(runners, [&]() { io_manager.reset(); });
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
 }
 
 TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
@@ -718,7 +718,7 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   fml::RefPtr<MultiFrameCodec> codec;
 
   // Setup the IO manager.
-  PostIOTaskSync(runners, [&]() {
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     io_manager = std::make_unique<TestIOManager>(runners.GetIOTaskRunner());
   });
 
@@ -726,7 +726,7 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
                                       GetDefaultKernelFilePath(),
                                       io_manager->GetWeakIOManager());
 
-  PostUITaskSync(runners, [&]() {
+  PostTaskSync(runners.GetUITaskRunner(), [&]() {
     fml::AutoResetWaitableEvent isolate_latch;
 
     EXPECT_TRUE(isolate->RunInIsolateScope([&]() -> bool {
@@ -751,7 +751,7 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
     isolate_latch.Wait();
   });
 
-  PostIOTaskSync(runners, [&]() {
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() {
     EXPECT_TRUE(io_manager->did_access_is_gpu_disabled_sync_switch_);
   });
 
@@ -759,10 +759,10 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   isolate = nullptr;
 
   // Destroy the MultiFrameCodec
-  PostUITaskSync(runners, [&]() { codec = nullptr; });
+  PostTaskSync(runners.GetUITaskRunner(), [&]() { codec = nullptr; });
 
   // Destroy the IO manager
-  PostIOTaskSync(runners, [&]() { io_manager.reset(); });
+  PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
 }
 
 }  // namespace testing

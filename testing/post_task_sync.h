@@ -11,19 +11,7 @@
 namespace flutter {
 namespace testing {
 
-void PostPlatformTaskSync(const TaskRunners& task_runners,
-                          const std::function<void()>& function);
-
-void PostUITaskSync(const TaskRunners& task_runners,
-                    const std::function<void()>& function);
-
-void PostRasterTaskSync(const TaskRunners& task_runners,
-                        const std::function<void()>& function);
-
-void PostIOTaskSync(const TaskRunners& task_runners,
-                    const std::function<void()>& function);
-
-void PostTaskSync(fml::TaskRunner& task_runner,
+void PostTaskSync(fml::RefPtr<fml::TaskRunner> task_runner,
                   const std::function<void()>& function);
 
 }  // namespace testing
