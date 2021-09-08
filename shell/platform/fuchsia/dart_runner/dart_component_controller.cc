@@ -25,6 +25,7 @@
 #include <regex>
 #include <utility>
 
+#include "parse_url.h"
 #include "runtime/dart/utils/files.h"
 #include "runtime/dart/utils/handle_exception.h"
 #include "runtime/dart/utils/inlines.h"
@@ -70,29 +71,6 @@ constexpr async_loop_config_t kLoopConfig = {
     .make_default_for_current_thread = true,
     .epilogue = &AfterTask,
 };
-
-// Find the last path component.
-// fuchsia-pkg://fuchsia.com/hello_dart#meta/hello_dart.cmx -> hello_dart.cmx
-std::string GetLabelFromUrl(const std::string& url) {
-  for (size_t i = url.length() - 1; i > 0; i--) {
-    if (url[i] == '/') {
-      return url.substr(i + 1, url.length() - 1);
-    }
-  }
-  return url;
-}
-
-// Find the name of the component.
-// fuchsia-pkg://fuchsia.com/hello_dart#meta/hello_dart.cm -> hello_dart
-std::string GetComponentNameFromUrl(const std::string& url) {
-  const std::string label = GetLabelFromUrl(url);
-  for (size_t i = 0; i < label.length(); ++i) {
-    if (label[i] == '.') {
-      return label.substr(0, i);
-    }
-  }
-  return label;
-}
 
 }  // namespace
 

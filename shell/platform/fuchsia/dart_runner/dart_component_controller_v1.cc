@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "dart_component_controller_v1.h"
+#include "builtin_libraries.h"
 
 namespace dart_runner {
 

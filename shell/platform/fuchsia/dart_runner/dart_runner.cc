@@ -17,6 +17,9 @@
 #include <utility>
 
 #include "dart_component_controller.h"
+#include "dart_component_controller_v1.h"
+#include "dart_component_controller_v2.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "logging.h"
 #include "runtime/dart/utils/inlines.h"
@@ -100,15 +103,17 @@ void IsolateGroupCleanupCallback(void* isolate_group_data) {
   delete static_cast<std::shared_ptr<tonic::DartState>*>(isolate_group_data);
 }
 
-void RunApplication(
+// RunApplication for a v1 component
+void RunApplicationV1(
     DartRunner* runner,
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     ::fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
   int64_t start = Dart_TimelineGetMicros();
-  DartComponentController app(std::move(package), std::move(startup_info),
-                              runner_incoming_services, std::move(controller));
+  DartComponentControllerV1 app(std::move(package), std::move(startup_info),
+                                runner_incoming_services,
+                                std::move(controller));
   bool success = app.Setup();
   int64_t end = Dart_TimelineGetMicros();
   Dart_TimelineEvent("DartComponentController::Setup", start, end,
@@ -122,6 +127,28 @@ void RunApplication(
   }
 }
 
+// RunApplication for a v2 componeent
+void RunApplicationV2(
+    DartRunner* runner,
+    fuchsia::component::runner::ComponentStartInfo start_info,
+    std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
+    fidl::InterfaceRequest<fuchsia::component::runner::ComponentController>
+        controller) {
+  const int64_t start = Dart_TimelineGetMicros();
+  DartComponentControllerV2 app(std::move(start_info), runner_incoming_services,
+                                std::move(controller));
+  const bool success = app.Setup();
+  const int64_t end = Dart_TimelineGetMicros();
+  Dart_TimelineEvent("DartComponentController::Setup", start, end,
+                     Dart_Timeline_Event_Duration, 0, NULL, NULL);
+  if (success) {
+    app.Run();
+  }
+
+  if (Dart_CurrentIsolate()) {
+    Dart_ShutdownIsolate();
+  }
+}
 bool EntropySource(uint8_t* buffer, intptr_t count) {
   zx_cprng_draw(buffer, count);
   return true;
@@ -134,6 +161,13 @@ DartRunner::DartRunner(sys::ComponentContext* context) : context_(context) {
       [this](fidl::InterfaceRequest<fuchsia::sys::Runner> request) {
         bindings_.AddBinding(this, std::move(request));
       });
+
+  context_->outgoing()
+      ->AddPublicService<fuchsia::component::runner::ComponentRunner>(
+          [this](fidl::InterfaceRequest<
+                 fuchsia::component::runner::ComponentRunner> request) {
+            component_runner_bindings_.AddBinding(this, std::move(request));
+          });
 
 #if !defined(DART_PRODUCT)
   // The VM service isolate uses the process-wide namespace. It writes the
@@ -201,9 +235,20 @@ void DartRunner::StartComponent(
   // eagerly.
   std::string url_copy = package.resolved_url;
   TRACE_EVENT1("dart", "StartComponent", "url", url_copy.c_str());
-  std::thread thread(RunApplication, this, std::move(package),
+  std::thread thread(RunApplicationV1, this, std::move(package),
                      std::move(startup_info), context_->svc(),
                      std::move(controller));
+  thread.detach();
+}
+
+void DartRunner::Start(
+    fuchsia::component::runner::ComponentStartInfo start_info,
+    fidl::InterfaceRequest<fuchsia::component::runner::ComponentController>
+        controller) {
+  std::string url_copy = start_info.resolved_url();
+  TRACE_EVENT1("dart", "Start", "url", url_copy.c_str());
+  std::thread thread(RunApplicationV2, this, std::move(start_info),
+                     context_->svc(), std::move(controller));
   thread.detach();
 }
 

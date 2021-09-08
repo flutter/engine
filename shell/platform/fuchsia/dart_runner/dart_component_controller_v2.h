@@ -8,6 +8,7 @@
 #include <fuchsia/component/runner/cpp/fidl.h>
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async/cpp/wait.h>
+
 #include "dart_component_controller.h"
 
 namespace dart_runner {
@@ -24,7 +25,7 @@ class DartComponentControllerV2
   ~DartComponentControllerV2() override;
 
  private:
-  // |fuchsia::component::runner::ComponentController|
+  // |fuchsia::component::runner::ComponentController| implementation:
   void Kill() override;
   void Stop() override;
 

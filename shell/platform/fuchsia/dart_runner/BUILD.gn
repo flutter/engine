@@ -46,6 +46,7 @@ template("runner") {
       "dart_runner.h",
       "logging.h",
       "main.cc",
+      "parse_url.h",
       "service_isolate.cc",
       "service_isolate.h",
     ]

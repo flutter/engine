@@ -4,6 +4,9 @@
 
 #include "dart_component_controller_v2.h"
 
+#include "builtin_libraries.h"
+#include "parse_url.h"
+
 namespace dart_runner {
 
 DartComponentControllerV2::DartComponentControllerV2(
@@ -16,7 +19,7 @@ DartComponentControllerV2::DartComponentControllerV2(
           runner_incoming_services),
       start_info_(std::move(start_info)),
       binding_(this) {
-  auto name = GetComponentNameFromUrl(url_);
+  const std::string name = GetComponentNameFromUrl(url_);
   data_path_ = "pkg/data/" + name;
 
   if (controller.is_valid()) {
@@ -44,7 +47,7 @@ void DartComponentControllerV2::SendReturnCode() {
 
 fdio_ns_t* DartComponentControllerV2::PrepareNamespace() {
   fdio_ns_t* ns;
-  zx_status_t status = fdio_ns_create(&ns);
+  const zx_status_t status = fdio_ns_create(&ns);
   if (status != ZX_OK) {
     return nullptr;
   }
@@ -68,7 +71,7 @@ fdio_ns_t* DartComponentControllerV2::PrepareNamespace() {
     auto dir = std::move(*ns_entry.mutable_directory());
     auto path = std::move(*ns_entry.mutable_path());
 
-    zx_status_t status =
+    const zx_status_t status =
         fdio_ns_bind(ns, path.c_str(), dir.TakeChannel().release());
     if (status != ZX_OK) {
       FX_LOGF(ERROR, LOG_TAG, "Failed to bind %s to namespace: %s",
