@@ -88,7 +88,6 @@ class Chrome extends Browser {
       final String dir = environment.webUiDartToolDir.createTempSync('test_chrome_user_data_').resolveSymbolicLinksSync();
       final List<String> args = <String>[
         '--user-data-dir=$dir',
-        url.toString(),
         if (!debug)
           '--headless',
         if (isChromeNoSandbox)
@@ -103,6 +102,7 @@ class Chrome extends Browser {
         '--disable-default-apps',
         '--disable-translate',
         '--remote-debugging-port=$kDevtoolsPort',
+        url.toString(),
       ];
 
       final Process process =

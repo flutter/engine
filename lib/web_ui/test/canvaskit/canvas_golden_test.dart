@@ -1001,10 +1001,6 @@ void drawTestPicture(CkCanvas canvas) {
   }
 
   canvas.translate(60, 0);
-  // TODO(yjbanov): CanvasKit.drawPoints is currently broken
-  //                https://github.com/flutter/flutter/issues/71489
-  //                But keeping this anyway as it's a good test-case that
-  //                will ensure it's fixed when we have the fix.
   canvas.drawPoints(
     CkPaint()
       ..color = const ui.Color(0xFF0000FF)
