@@ -1179,7 +1179,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleBeforeInput(html.Event event) {
     String eventData = js_util.getProperty(event, 'data').toString();
-    final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+    final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
 
     if (eventData == 'null') {
       lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: '', deltaEnd: lastEditingState!.extentOffset);
