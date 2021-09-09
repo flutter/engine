@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import <OCMock/OCMock.h>
-#import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
