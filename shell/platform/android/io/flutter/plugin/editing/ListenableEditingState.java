@@ -279,9 +279,6 @@ class ListenableEditingState extends SpannableStringBuilder {
     mBatchTextEditingDeltas.add(
         new TextEditingDelta(
             toString(),
-            "",
-            -1,
-            -1,
             getSelectionStart(),
             getSelectionEnd(),
             getComposingStart(),

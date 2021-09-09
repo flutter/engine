@@ -25,9 +25,9 @@ public final class TextEditingDelta {
 
   public TextEditingDelta(
       CharSequence oldEditable,
-      int start,
-      int end,
-      CharSequence tb,
+      int replacementDestinationStart,
+      int replacementDestinationEnd,
+      CharSequence replacementSource,
       int selectionStart,
       int selectionEnd,
       int composingStart,
@@ -37,7 +37,23 @@ public final class TextEditingDelta {
     newComposingStart = composingStart;
     newComposingEnd = composingEnd;
 
-    setDeltas(oldEditable, tb.toString(), start, end);
+    setDeltas(
+        oldEditable, replacementSource.toString(), replacementDestinationStart, replacementDestinationEnd);
+  }
+
+  // Non text update delta constructor.
+  public TextEditingDelta(
+      CharSequence oldText,
+      int selectionStart,
+      int selectionEnd,
+      int composingStart,
+      int composingEnd) {
+    newSelectionStart = selectionStart;
+    newSelectionEnd = selectionEnd;
+    newComposingStart = composingStart;
+    newComposingEnd = composingEnd;
+
+    setDeltas(oldText, "", -1, -1);
   }
 
   @VisibleForTesting

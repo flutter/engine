@@ -254,7 +254,7 @@ public class TextInputPluginTest {
             false,
             true,
             true,
-            false,
+            false, // Delta model is disabled.
             TextInputChannel.TextCapitalization.NONE,
             new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
             null,

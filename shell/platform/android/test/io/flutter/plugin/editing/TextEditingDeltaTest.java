@@ -53,4 +53,31 @@ public class TextEditingDeltaTest {
     assertEquals(newComposingStart, delta.getNewComposingStart());
     assertEquals(newComposingEnd, delta.getNewComposingEnd());
   }
+
+  @Test
+  public void testNonTextUpdateConstructorTextEditingDelta() {
+    final CharSequence oldText = "hello";
+
+    final int newSelectionStart = 3;
+    final int newSelectionEnd = 3;
+    final int newComposingStart = 0;
+    final int newComposingEnd = 5;
+
+    final TextEditingDelta delta =
+        new TextEditingDelta(
+            oldText,
+            newSelectionStart,
+            newSelectionEnd,
+            newComposingStart,
+            newComposingEnd);
+
+    assertEquals(oldText, delta.getOldText());
+    assertEquals("", delta.getDeltaText());
+    assertEquals(-1, delta.getDeltaStart());
+    assertEquals(-1, delta.getDeltaEnd());
+    assertEquals(newSelectionStart, delta.getNewSelectionStart());
+    assertEquals(newSelectionEnd, delta.getNewSelectionEnd());
+    assertEquals(newComposingStart, delta.getNewComposingStart());
+    assertEquals(newComposingEnd, delta.getNewComposingEnd());
+  }
 }
