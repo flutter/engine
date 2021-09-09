@@ -219,6 +219,11 @@ executable("flutter_linux_unittests") {
 
 shared_library("flutter_linux_gtk") {
   deps = [ ":flutter_linux" ]
+  
+  if (is_linux) {
+    # Ensure we can dlopen bundled dlls in bundle/lib on Flutter Desktop.
+    ldflags = [ "-Wl,-rpath,\$ORIGIN/" ]
+  }
 
   public_configs = [ "//flutter:config" ]
 }
