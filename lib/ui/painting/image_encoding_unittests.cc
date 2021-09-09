@@ -131,14 +131,15 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
     fml::AutoResetWaitableEvent latch;
 
     task_runners.GetIOTaskRunner()->PostTask([&]() {
-      auto is_gpu_disabled_sync_switch = std::make_shared<MockSyncSwitch>();
+      auto is_gpu_disabled_sync_switch =
+          std::make_shared<const MockSyncSwitch>();
       EXPECT_CALL(*is_gpu_disabled_sync_switch, Execute)
           .WillOnce([](const MockSyncSwitch::Handlers& handlers) {
             handlers.true_handler();
           });
-      ConvertToRasterUsingResourceContext<MockSyncSwitch>(
-          canvas_image->image(), io_manager->GetResourceContext(),
-          is_gpu_disabled_sync_switch);
+      ConvertToRasterUsingResourceContext(canvas_image->image(),
+                                          io_manager->GetResourceContext(),
+                                          is_gpu_disabled_sync_switch);
       latch.Signal();
     });
 
