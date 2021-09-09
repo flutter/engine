@@ -1011,21 +1011,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    activeDomElement.addEventListener('compositionstart', handleCompositionStart);
-
     activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
-
-    activeDomElement.addEventListener('compositionend', handleCompositionEnd);
-
-    activeDomElement.addEventListener('candidatewindowshow', (event) {
-      print('hello from candidatewindowshow');
-      print('leaving candidatewindowshow');
-    });
-
-    activeDomElement.addEventListener('candidatewindowhide', (event) {
-      print('hello from candidatewindowhide');
-      print('leaving candidatewindowhide');
-    });
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
     // text field.
@@ -1217,16 +1203,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     print('leaving beforeinput');
   }
 
-  void handleCompositionStart(html.Event event) {
-    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    print('hello from compositionstart');
-    print('current baseOffset: ' + newEditingState.baseOffset.toString());
-    print('current extentOffset: ' + newEditingState.extentOffset.toString());
-    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
-    print('last extentOffset: ' + lastEditingState!.extentOffset.toString());
-    print('leaving compositionstart');
-  }
-
   void handleCompositionUpdate(html.Event event) {
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
@@ -1237,16 +1213,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
     print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
     print('leaving compositionupdate');
-  }
-
-  void handleCompositionEnd(html.Event event) {
-    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    print('hello from compositionend');
-    print('current baseOffset: ' + newEditingState.baseOffset.toString());
-    print('current extentOffset: ' + newEditingState.extentOffset.toString());
-    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
-    print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
-    print('leaving compositionend');
   }
 
   void maybeSendAction(html.Event event) {
@@ -1391,11 +1357,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-    activeDomElement.addEventListener('compositionstart', handleCompositionStart);
-
     activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
-
-    activeDomElement.addEventListener('compositionend', handleCompositionEnd);
 
     // Position the DOM element after it is focused.
     subscriptions.add(activeDomElement.onFocus.listen((_) {
