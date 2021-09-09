@@ -1102,10 +1102,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     //
     // We can assume the deltaText for additions and replacements to the text value
     // are accurate. What may not be accurate is the range of the delta.
-    print('hello from inside handleChange');
-    print('input type： ' + js_util.getProperty(event, 'inputType').toString());
-    print('isComposing： ' + js_util.getProperty(event, 'isComposing').toString());
-
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
 
@@ -1124,9 +1120,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
       newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.composingOffset, deltaEnd: newTextEditingDeltaState.composingExtent);
     }
-
-    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
-    print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
 
     final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
     if (!isDeltaRangeEmpty) {
@@ -1182,14 +1175,9 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       // Flush delta after it has been sent to framework.
       lastTextEditingDeltaState = TextEditingDeltaState(oldText: lastEditingState!.text!);
     }
-
-    print('leaving handleChange');
   }
 
   void handleBeforeInput(html.Event event) {
-    print('hello from beforeinput');
-    print('input type： ' + js_util.getProperty(event, 'inputType').toString());
-    print('isComposing： ' + js_util.getProperty(event, 'isComposing').toString());
     String eventData = js_util.getProperty(event, 'data').toString();
     final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
 
@@ -1198,21 +1186,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     } else {
       lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: lastEditingState!.extentOffset, deltaEnd: lastEditingState!.extentOffset);
     }
-    print('beforeinput delta: ' + js_util.getProperty(event, 'data').toString() + ' delta length: ' + js_util.getProperty(event, 'data').toString().length.toString());
-    print('target ranges: ' + js_util.callMethod(event, 'getTargetRanges', []).toString());
-    print('leaving beforeinput');
   }
 
   void handleCompositionUpdate(html.Event event) {
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
     lastTextEditingDeltaState = newDeltaState.copyWith(composingOffset: newEditingState.baseOffset, composingExtent: newEditingState.extentOffset);
-    print('hello from compositionupdate');
-    print('current baseOffset: ' + newEditingState.baseOffset.toString());
-    print('current extentOffset: ' + newEditingState.extentOffset.toString());
-    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
-    print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
-    print('leaving compositionupdate');
   }
 
   void maybeSendAction(html.Event event) {
@@ -2030,11 +2009,9 @@ class HybridTextEditing {
       configuration!,
       onChange: (EditingState? editingState, TextEditingDeltaState? editingDeltaState) {
         if (configuration!.enableDeltaModel) {
-          print('delta model is enabled');
           editingDeltaState = editingDeltaState!.copyWith(baseOffset: editingState!.baseOffset, extentOffset: editingState.extentOffset);
           channel.updateEditingStateWithDelta(_clientId, editingDeltaState);
         } else {
-          print('we should never be here');
           channel.updateEditingState(_clientId, editingState);
         }
       },
