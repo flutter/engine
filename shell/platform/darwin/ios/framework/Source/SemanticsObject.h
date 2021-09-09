@@ -97,19 +97,21 @@ constexpr float kScrollExtentMaxForInf = 1000;
 - (BOOL)onCustomAccessibilityAction:(FlutterCustomAccessibilityAction*)action;
 
 /**
+ * Returns the UIAccessibility that represents this object.
+ *
+ * By default, this return self. Subclasses can override to return different
+ * objects to represent them. For example, FlutterScrollableSemanticsObject[s]
+ * maintain UIScrollView[s] to represent their UIAccessibility[s].
+ */
+- (id)nativeAccessibility;
+
+/**
  * Called after accessibility bridge finishes a semantics update.
  *
  * Subclasses can override this method if they contain states that can only be
  * updated once every node in the accessibility tree has finished updating.
  */
 - (void)accessibilityBridgeDidFinishUpdate;
-
-/**
- * Called after this object is about to be removed from the accessibility bridge.
- *
- * Subclass can override this method to release additional resource.
- */
-- (void)willRemoveFromAccessibilityBridge;
 
 #pragma mark - Designated initializers
 
@@ -178,14 +180,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 /// The semantics object for scrollable. This class creates an UIScrollView to interact with the
 /// iOS.
-@interface FlutterScrollableSemanticsObject : UIScrollView
-
-- (instancetype)init NS_UNAVAILABLE;
-- (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
-- (instancetype)initWithCoder:(NSCoder*)coder NS_UNAVAILABLE;
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject NS_DESIGNATED_INITIALIZER;
-- (void)accessibilityBridgeDidFinishUpdate;
-- (void)willRemoveFromAccessibilityBridge;
+@interface FlutterScrollableSemanticsObject : SemanticsObject
 
 @end
 

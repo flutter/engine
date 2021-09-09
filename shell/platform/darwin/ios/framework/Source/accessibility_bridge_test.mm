@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 
 #import <OCMock/OCMock.h>
+#import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
@@ -324,49 +326,50 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
+  @autoreleasepool {
+    auto bridge = std::make_unique<flutter::AccessibilityBridge>(
+        /*view_controller=*/mockFlutterViewController,
+        /*platform_view=*/platform_view.get(),
+        /*platform_views_controller=*/flutterPlatformViewsController);
 
-  auto bridge = std::make_unique<flutter::AccessibilityBridge>(
-      /*view_controller=*/mockFlutterViewController,
-      /*platform_view=*/platform_view.get(),
-      /*platform_views_controller=*/flutterPlatformViewsController);
+    flutter::SemanticsNodeUpdates nodes;
+    flutter::SemanticsNode parent;
+    parent.id = 0;
+    parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+    parent.label = "label";
+    parent.value = "value";
+    parent.hint = "hint";
 
-  flutter::SemanticsNodeUpdates nodes;
-  flutter::SemanticsNode parent;
-  parent.id = 0;
-  parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
-  parent.label = "label";
-  parent.value = "value";
-  parent.hint = "hint";
+    flutter::SemanticsNode node;
+    node.id = 1;
+    node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+    node.actions = flutter::kHorizontalScrollSemanticsActions;
+    node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+    node.label = "label";
+    node.value = "value";
+    node.hint = "hint";
+    node.scrollExtentMax = 100.0;
+    node.scrollPosition = 0.0;
+    parent.childrenInTraversalOrder.push_back(1);
+    nodes[0] = parent;
+    nodes[1] = node;
+    flutter::CustomAccessibilityActionUpdates actions;
+    bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+    XCTAssertTrue([flutterView.subviews count] == 1);
+    XCTAssertTrue([flutterView.subviews[0] isKindOfClass:[FlutterSemanticsScrollView class]]);
+    XCTAssertTrue([flutterView.subviews[0].accessibilityLabel isEqualToString:@"label"]);
 
-  flutter::SemanticsNode node;
-  node.id = 1;
-  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
-  node.actions = flutter::kHorizontalScrollSemanticsActions;
-  node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
-  node.label = "label";
-  node.value = "value";
-  node.hint = "hint";
-  node.scrollExtentMax = 100.0;
-  node.scrollPosition = 0.0;
-  parent.childrenInTraversalOrder.push_back(1);
-  nodes[0] = parent;
-  nodes[1] = node;
-  flutter::CustomAccessibilityActionUpdates actions;
-  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
-  XCTAssertTrue([flutterView.subviews count] == 1);
-  XCTAssertTrue([flutterView.subviews[0] isKindOfClass:[FlutterScrollableSemanticsObject class]]);
-  XCTAssertTrue([flutterView.subviews[0].accessibilityLabel isEqualToString:@"label"]);
-
-  // Remove the scrollable from the tree.
-  flutter::SemanticsNodeUpdates new_nodes;
-  flutter::SemanticsNode new_parent;
-  new_parent.id = 0;
-  new_parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
-  new_parent.label = "label";
-  new_parent.value = "value";
-  new_parent.hint = "hint";
-  new_nodes[0] = new_parent;
-  bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
+    // Remove the scrollable from the tree.
+    flutter::SemanticsNodeUpdates new_nodes;
+    flutter::SemanticsNode new_parent;
+    new_parent.id = 0;
+    new_parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+    new_parent.label = "label";
+    new_parent.value = "value";
+    new_parent.hint = "hint";
+    new_nodes[0] = new_parent;
+    bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
+  }
   XCTAssertTrue([flutterView.subviews count] == 0);
 }
 
@@ -390,51 +393,52 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
+  @autoreleasepool {
+    auto bridge = std::make_unique<flutter::AccessibilityBridge>(
+        /*view_controller=*/mockFlutterViewController,
+        /*platform_view=*/platform_view.get(),
+        /*platform_views_controller=*/flutterPlatformViewsController);
 
-  auto bridge = std::make_unique<flutter::AccessibilityBridge>(
-      /*view_controller=*/mockFlutterViewController,
-      /*platform_view=*/platform_view.get(),
-      /*platform_views_controller=*/flutterPlatformViewsController);
+    flutter::SemanticsNodeUpdates nodes;
+    flutter::SemanticsNode parent;
+    parent.id = 0;
+    parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+    parent.label = "label";
+    parent.value = "value";
+    parent.hint = "hint";
 
-  flutter::SemanticsNodeUpdates nodes;
-  flutter::SemanticsNode parent;
-  parent.id = 0;
-  parent.rect = SkRect::MakeXYWH(0, 0, 100, 200);
-  parent.label = "label";
-  parent.value = "value";
-  parent.hint = "hint";
+    flutter::SemanticsNode node;
+    node.id = 1;
+    node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
+    node.actions = flutter::kHorizontalScrollSemanticsActions;
+    node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+    node.label = "label";
+    node.value = "value";
+    node.hint = "hint";
+    node.scrollExtentMax = 100.0;
+    node.scrollPosition = 0.0;
+    parent.childrenInTraversalOrder.push_back(1);
+    nodes[0] = parent;
+    nodes[1] = node;
+    flutter::CustomAccessibilityActionUpdates actions;
+    bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
+    XCTAssertTrue([flutterView.subviews count] == 1);
+    XCTAssertTrue([flutterView.subviews[0] isKindOfClass:[FlutterSemanticsScrollView class]]);
+    XCTAssertTrue([flutterView.subviews[0].accessibilityLabel isEqualToString:@"label"]);
 
-  flutter::SemanticsNode node;
-  node.id = 1;
-  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kHasImplicitScrolling);
-  node.actions = flutter::kHorizontalScrollSemanticsActions;
-  node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
-  node.label = "label";
-  node.value = "value";
-  node.hint = "hint";
-  node.scrollExtentMax = 100.0;
-  node.scrollPosition = 0.0;
-  parent.childrenInTraversalOrder.push_back(1);
-  nodes[0] = parent;
-  nodes[1] = node;
-  flutter::CustomAccessibilityActionUpdates actions;
-  bridge->UpdateSemantics(/*nodes=*/nodes, /*actions=*/actions);
-  XCTAssertTrue([flutterView.subviews count] == 1);
-  XCTAssertTrue([flutterView.subviews[0] isKindOfClass:[FlutterScrollableSemanticsObject class]]);
-  XCTAssertTrue([flutterView.subviews[0].accessibilityLabel isEqualToString:@"label"]);
-
-  // Remove implicit scroll from node 1.
-  flutter::SemanticsNodeUpdates new_nodes;
-  flutter::SemanticsNode new_node;
-  new_node.id = 1;
-  new_node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
-  new_node.label = "label";
-  new_node.value = "value";
-  new_node.hint = "hint";
-  new_node.scrollExtentMax = 100.0;
-  new_node.scrollPosition = 0.0;
-  new_nodes[1] = new_node;
-  bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
+    // Remove implicit scroll from node 1.
+    flutter::SemanticsNodeUpdates new_nodes;
+    flutter::SemanticsNode new_node;
+    new_node.id = 1;
+    new_node.rect = SkRect::MakeXYWH(0, 0, 100, 200);
+    new_node.label = "label";
+    new_node.value = "value";
+    new_node.hint = "hint";
+    new_node.scrollExtentMax = 100.0;
+    new_node.scrollPosition = 0.0;
+    new_nodes[1] = new_node;
+    bridge->UpdateSemantics(/*nodes=*/new_nodes, /*actions=*/actions);
+  }
   XCTAssertTrue([flutterView.subviews count] == 0);
 }
 

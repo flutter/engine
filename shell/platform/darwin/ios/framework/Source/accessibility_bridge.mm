@@ -204,11 +204,7 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
   if (root) {
     VisitObjectsRecursivelyAndRemove(root, doomed_uids);
   }
-  for (id uid in doomed_uids) {
-    SemanticsObject* object = objects_.get()[uid];
-    [object willRemoveFromAccessibilityBridge];
-    [objects_ removeObjectForKey:uid];
-  }
+  [objects_ removeObjectsForKeys:doomed_uids];
 
   for (SemanticsObject* object in [objects_ allValues]) {
     [object accessibilityBridgeDidFinishUpdate];
@@ -224,14 +220,16 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     }
 
     if (layoutChanged) {
-      ios_delegate_->PostAccessibilityNotification(UIAccessibilityLayoutChangedNotification,
-                                                   FindNextFocusableIfNecessary());
+      ios_delegate_->PostAccessibilityNotification(
+          UIAccessibilityLayoutChangedNotification,
+          [FindNextFocusableIfNecessary() nativeAccessibility]);
     } else if (scrollOccured) {
       // TODO(chunhtai): figure out what string to use for notification. At this
       // point, it is guarantee the previous focused object is still in the tree
       // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
-      ios_delegate_->PostAccessibilityNotification(UIAccessibilityPageScrolledNotification,
-                                                   FindNextFocusableIfNecessary());
+      ios_delegate_->PostAccessibilityNotification(
+          UIAccessibilityPageScrolledNotification,
+          [FindNextFocusableIfNecessary() nativeAccessibility]);
     }
   }
 }
@@ -254,7 +252,6 @@ static void ReplaceSemanticsObject(SemanticsObject* oldObject,
   NSNumber* nodeId = @(oldObject.node.id);
   NSUInteger positionInChildlist = [oldObject.parent.children indexOfObject:oldObject];
   [objects removeObjectForKey:nodeId];
-  [oldObject willRemoveFromAccessibilityBridge];
   [oldObject.parent replaceChildAtIndex:positionInChildlist withChild:newObject];
   objects[nodeId] = newObject;
 }
@@ -269,10 +266,8 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
              node.HasFlag(flutter::SemanticsFlags::kHasCheckedState)) {
     return [[[FlutterSwitchSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   } else if (node.HasFlag(flutter::SemanticsFlags::kHasImplicitScrolling)) {
-    SemanticsObject* delegateObject =
-        [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
-    return (SemanticsObject*)[[[FlutterScrollableSemanticsObject alloc]
-        initWithSemanticsObject:delegateObject] autorelease];
+    return [[[FlutterScrollableSemanticsObject alloc] initWithBridge:weak_ptr
+                                                                 uid:node.id] autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }
