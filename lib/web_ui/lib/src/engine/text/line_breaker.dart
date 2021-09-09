@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math' as math;
+
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
@@ -170,6 +172,19 @@ bool _hasEastAsianWidthFWH(int charCode) {
 /// * https://www.unicode.org/reports/tr14/tr14-45.html#Algorithm
 /// * https://www.unicode.org/Public/11.0.0/ucd/LineBreak.txt
 LineBreakResult nextLineBreak(String text, int index, {int? maxEnd}) {
+  final LineBreakResult unsafeResult = _unsafeNextLineBreak(text, index, maxEnd: maxEnd);
+  if (maxEnd != null && unsafeResult.index > maxEnd) {
+    return LineBreakResult(
+      maxEnd,
+      math.min(maxEnd, unsafeResult.indexWithoutTrailingNewlines),
+      math.min(maxEnd, unsafeResult.indexWithoutTrailingSpaces),
+      LineBreakType.prohibited,
+    );
+  }
+  return unsafeResult;
+}
+
+LineBreakResult _unsafeNextLineBreak(String text, int index, {int? maxEnd}) {
   int? codePoint = getCodePoint(text, index);
   LineCharProperty curr = lineLookup.findForChar(codePoint);
 
@@ -208,11 +223,11 @@ LineBreakResult nextLineBreak(String text, int index, {int? maxEnd}) {
   // Always break at the end of text.
   // LB3: ! eot
   while (index < text.length) {
-    if (index == maxEnd) {
+    if (maxEnd != null && index > maxEnd) {
       return LineBreakResult(
-        index,
-        lastNonNewlineIndex,
-        lastNonSpaceIndex,
+        maxEnd,
+        math.min(maxEnd, lastNonNewlineIndex),
+        math.min(maxEnd, lastNonSpaceIndex),
         LineBreakType.prohibited,
       );
     }
@@ -389,26 +404,31 @@ LineBreakResult nextLineBreak(String text, int index, {int? maxEnd}) {
     //       × EX
     //       × IS
     //       × SY
-    if (curr == LineCharProperty.CL ||
-        curr == LineCharProperty.CP ||
-        curr == LineCharProperty.EX ||
-        curr == LineCharProperty.IS ||
-        curr == LineCharProperty.SY) {
+    //
+    // Modification: when these characters are preceded by a space, they
+    // shouldn't prevent a line break.
+    if (prev1 != LineCharProperty.SP &&
+        (curr == LineCharProperty.CL ||
+            curr == LineCharProperty.CP ||
+            curr == LineCharProperty.EX ||
+            curr == LineCharProperty.IS ||
+            curr == LineCharProperty.SY)) {
       continue;
     }
 
     // Do not break after ‘[’, even after spaces.
     // LB14: OP SP* ×
-    if (prev1 == LineCharProperty.OP ||
-        baseOfSpaceSequence == LineCharProperty.OP) {
+    //
+    // Modification: allow breaks when there are spaces.
+    if (prev1 == LineCharProperty.OP) {
       continue;
     }
 
     // Do not break within ‘”[’, even with intervening spaces.
     // LB15: QU SP* × OP
-    if ((prev1 == LineCharProperty.QU ||
-            baseOfSpaceSequence == LineCharProperty.QU) &&
-        curr == LineCharProperty.OP) {
+    //
+    // Modification: allow breaks when there are spaces.
+    if (prev1 == LineCharProperty.QU && curr == LineCharProperty.OP) {
       continue;
     }
 
