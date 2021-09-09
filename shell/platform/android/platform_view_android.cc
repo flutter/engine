@@ -35,9 +35,11 @@ AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
   switch (android_context_->RenderingApi()) {
     case AndroidRenderingAPI::kSoftware:
+      FML_DCHECK(android_context_);
       return std::make_unique<AndroidSurfaceSoftware>(android_context_,
                                                       jni_facade_);
     case AndroidRenderingAPI::kOpenGLES:
+      FML_DCHECK(android_context_);
       return std::make_unique<AndroidSurfaceGL>(android_context_, jni_facade_);
     default:
       FML_DCHECK(false);
@@ -290,7 +292,7 @@ std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
-  if (!android_surface_) {
+  if (!android_surface_ || !android_context_) {
     return nullptr;
   }
   return android_surface_->CreateGPUSurface(
@@ -301,13 +303,14 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
 void PlatformViewAndroid::ReleaseSurfaceContext() {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   if (android_context_) {
-    android_context_->ReleaseMainSkiaContext();
+    android_context_.reset();
   }
 }
 
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder>
 PlatformViewAndroid::CreateExternalViewEmbedder() {
+  FML_DCHECK(android_context_);
   return std::make_shared<AndroidExternalViewEmbedder>(
       *android_context_, jni_facade_, surface_factory_);
 }

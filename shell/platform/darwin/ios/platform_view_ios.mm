@@ -113,6 +113,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
 
 void PlatformViewIOS::attachView() {
   FML_DCHECK(owner_controller_);
+  FML_DCHECK(ios_context_);
   FML_DCHECK(owner_controller_.get().isViewLoaded)
       << "FlutterViewController's view should be loaded "
          "before attaching to PlatformViewIOS.";
@@ -135,6 +136,7 @@ PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
 
 void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
                                               NSObject<FlutterTexture>* texture) {
+  FML_DCHECK(ios_context_);
   RegisterTexture(ios_context_->CreateExternalTexture(
       texture_id, fml::scoped_nsobject<NSObject<FlutterTexture>>{[texture retain]}));
 }
@@ -142,6 +144,7 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(ios_context_);
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {
     FML_DLOG(INFO) << "Could not CreateRenderingSurface, this PlatformViewIOS "
@@ -155,17 +158,19 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
 void PlatformViewIOS::ReleaseSurfaceContext() {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   if (ios_context_) {
-    ios_context_->ReleaseMainContext();
+    ios_context_.reset();
   }
 }
 
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder> PlatformViewIOS::CreateExternalViewEmbedder() {
+  FML_DCHECK(ios_context_);
   return std::make_shared<IOSExternalViewEmbedder>(platform_views_controller_, ios_context_);
 }
 
 // |PlatformView|
 sk_sp<GrDirectContext> PlatformViewIOS::CreateResourceContext() const {
+  FML_DCHECK(ios_context_);
   return ios_context_->CreateResourceContext();
 }
 

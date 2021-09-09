@@ -25,7 +25,11 @@ IOSContextGL::IOSContextGL() {
   }
 }
 
-IOSContextGL::~IOSContextGL() = default;
+IOSContextGL::~IOSContextGL() {
+  if (main_context_) {
+    main_context_->releaseResourcesAndAbandonContext();
+  }
+}
 
 std::unique_ptr<IOSRenderTargetGL> IOSContextGL::CreateRenderTarget(
     fml::scoped_nsobject<CAEAGLLayer> layer) {
@@ -51,14 +55,6 @@ sk_sp<GrDirectContext> IOSContextGL::GetMainContext() const {
 
 void IOSContextGL::SetMainContext(const sk_sp<GrDirectContext>& main_context) {
   main_context_ = main_context;
-}
-
-// |IOSContext|
-void IOSContextGL::ReleaseMainContext() {
-  if (main_context_) {
-    main_context_->releaseResourcesAndAbandonContext();
-    main_context_ = nullptr;
-  }
 }
 
 // |IOSContext|

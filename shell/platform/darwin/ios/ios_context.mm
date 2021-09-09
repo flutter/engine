@@ -35,8 +35,4 @@ std::unique_ptr<IOSContext> IOSContext::Create(IOSRenderingAPI rendering_api) {
   return nullptr;
 }
 
-void IOSContext::ReleaseMainContext() {
-  // Do nothing by default
-}
-
 }  // namespace flutter

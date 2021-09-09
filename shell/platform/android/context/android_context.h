@@ -40,11 +40,6 @@ class AndroidContext {
   ///
   void SetMainSkiaContext(const sk_sp<GrDirectContext>& main_context);
 
-  /// @brief      Release the Skia context used by subsequent AndroidSurfaces.
-  ///
-  /// @attention  This should be called on the rasterizer task runner.
-  void ReleaseMainSkiaContext();
-
   //----------------------------------------------------------------------------
   /// @brief      Accessor for the Skia context associated with AndroidSurfaces
   ///             and the raster thread.
