@@ -823,7 +823,7 @@ DEFINE_DRAW_SHADOW_OP(ShadowOccludes, true)
 #pragma pack(pop, DLOp_Alignment)
 
 void DisplayList::ComputeBounds() {
-  DisplayListBoundsCalculator calculator(bounds_cull_);
+  DisplayListBoundsCalculator calculator(&bounds_cull_);
   Dispatch(calculator);
   bounds_ = calculator.getBounds();
 }

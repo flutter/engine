@@ -245,8 +245,8 @@ class Dispatcher {
   virtual void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) = 0;
 
   virtual void save() = 0;
-  virtual void restore() = 0;
   virtual void saveLayer(const SkRect* bounds, bool restoreWithPaint) = 0;
+  virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;
   virtual void scale(SkScalar sx, SkScalar sy) = 0;
@@ -358,8 +358,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
 
   void save() override;
-  void restore() override;
   void saveLayer(const SkRect* bounds, bool restoreWithPaint) override;
+  void restore() override;
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;

@@ -190,20 +190,32 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
 class ClipBoundsDispatchHelper : public virtual Dispatcher,
                                  private virtual SkMatrixSource {
  public:
-  void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) override;
-  void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) override;
-  void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) override;
+  ClipBoundsDispatchHelper() : ClipBoundsDispatchHelper(nullptr) {}
+
+  ClipBoundsDispatchHelper(const SkRect* cull_rect)
+      : has_clip_(cull_rect),
+        bounds_(cull_rect && !cull_rect->isEmpty() ? *cull_rect
+                                                   : SkRect::MakeEmpty()) {}
+
+  void clipRect(const SkRect& rect, bool is_aa, SkClipOp clip_op) override;
+  void clipRRect(const SkRRect& rrect, bool is_aa, SkClipOp clip_op) override;
+  void clipPath(const SkPath& path, bool is_aa, SkClipOp clip_op) override;
 
   void save() override;
   void restore() override;
 
-  const SkRect& getCullingBounds() const { return bounds_; }
+  bool has_clip() const { return has_clip_; }
+  const SkRect& getClipBounds() const { return bounds_; }
+
+ protected:
+  void reset(const SkRect* cull_rect);
 
  private:
+  bool has_clip_;
   SkRect bounds_;
   std::vector<SkRect> saved_;
 
-  void intersect(const SkRect& clipBounds);
+  void intersect(const SkRect& clipBounds, bool is_aa);
 };
 
 class BoundsAccumulator {
@@ -246,19 +258,36 @@ class BoundsAccumulator {
 // bounds of the rendering operations.
 class DisplayListBoundsCalculator final
     : public virtual Dispatcher,
-      public virtual SkPaintDispatchHelper,
+      public virtual IgnoreAttributeDispatchHelper,
       public virtual SkMatrixDispatchHelper,
       public virtual ClipBoundsDispatchHelper {
  public:
   // Construct a Calculator to determine the bounds of a list of
   // DisplayList dispatcher method calls. Since 2 of the method calls
-  // have no intrinsic size because they render to the entire available,
-  // the |cullRect| provides a bounds for them to include.
-  DisplayListBoundsCalculator(const SkRect& cull_rect = SkRect::MakeEmpty())
-      : accumulator_(&root_accumulator_), bounds_cull_(cull_rect) {}
+  // have no intrinsic size because they flood the entire clip/surface,
+  // the |cull_rect| provides a bounds for them to include. If cull_rect
+  // is not specified or is null, then the flooding calls will not
+  // affect the resulting bounds, but will set the is_flooded flag
+  // below which can be inspected if an alternate plan is available
+  // for such cases.
+  // The flag should never be set if a cull_rect is provided.
+  DisplayListBoundsCalculator(const SkRect* cull_rect = nullptr);
 
-  void saveLayer(const SkRect* bounds, bool with_paint) override;
+  void setCaps(SkPaint::Cap cap) override;
+  void setJoins(SkPaint::Join join) override;
+  void setDrawStyle(SkPaint::Style style) override;
+  void setStrokeWidth(SkScalar width) override;
+  void setMiterLimit(SkScalar limit) override;
+  void setBlendMode(SkBlendMode mode) override;
+  void setBlender(sk_sp<SkBlender> blender) override;
+  void setImageFilter(sk_sp<SkImageFilter> filter) override;
+  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
+  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+
   void save() override;
+  void saveLayer(const SkRect* bounds, bool with_paint) override;
   void restore() override;
 
   void drawPaint() override;
@@ -317,98 +346,216 @@ class DisplayListBoundsCalculator final
                   bool occludes,
                   SkScalar dpr) override;
 
+  bool isFlooded() {
+    FML_DCHECK(layer_infos_.size() == 1);
+    return layer_infos_.front()->is_flooded();
+  }
+
   SkRect getBounds() {
-    FML_DCHECK(accumulator_ == &root_accumulator_);
-    return root_accumulator_.getBounds();
+    FML_DCHECK(layer_infos_.size() == 1);
+    if (isFlooded()) {
+      FML_LOG(INFO) << "returning partial bounds for flooded DisplayList";
+    }
+    return accumulator_->getBounds();
   }
 
  private:
   // current accumulator based on saveLayer history
   BoundsAccumulator* accumulator_;
 
-  // Only used for drawColor and drawPaint and paint objects that
-  // cannot support fast bounds.
-  SkRect bounds_cull_;
-  BoundsAccumulator root_accumulator_;
-
-  class SaveInfo {
+  // A class that abstracts the information kept for a single
+  // |save| or |saveLayer|, including the root information that
+  // is kept as a base set of information for the DisplayList
+  // at the initial conditions outside of any saveLayer.
+  // See |RootLayerData|, |SaveData| and |SaveLayerData|.
+  class LayerData {
    public:
-    SaveInfo(BoundsAccumulator* accumulator);
-    virtual ~SaveInfo() = default;
+    LayerData(BoundsAccumulator* outer) : outer_(outer), is_flooded_(false) {}
+    virtual ~LayerData() = default;
 
-    virtual BoundsAccumulator* save();
-    virtual BoundsAccumulator* restore();
+    virtual BoundsAccumulator* accumulatorForLayer() { return outer_; }
+    virtual BoundsAccumulator* accumulatorForRestore() { return outer_; }
+    virtual SkRect getLayerBounds() { return SkRect::MakeEmpty(); }
 
-   protected:
-    BoundsAccumulator* saved_accumulator_;
+    // is_flooded is to true if we ever encounter an operation
+    // on a layer that is unbounded (|drawColor| or |drawPaint|)
+    // or cannot compute its bounds (some effects and filters)
+    // and there was no outstanding clip op at the time.
+    // When the layer is restored, the outer layer may then
+    // process this flooded state by accumulating its own
+    // clip or recording the flood state to pass to its own
+    // outer layer.
+    // Typically the DisplayList will have been constructed with
+    // a cull rect which will act as a default clip for the
+    // outermost layer and the flood state of the overall
+    // DisplayList will never be true.
+    //
+    // SkPicture treats these same conditions as a Nop (they
+    // accumulate the SkPicture cull rect, but if it was not
+    // specified then it is an empty Rect and so has no
+    // effect on the bounds).
+    // If the Calculator object accumulates this flag into the
+    // root layer, then at least we can make the caller aware
+    // of that exceptional condition.
+    //
+    // Flutter is unlikely to ever run into this as the Dart
+    // mechanisms all supply a cull rect for all Dart Picture
+    // objects, even if that cull rect is kGiantRect.
+    void set_flooded() { is_flooded_ = true; }
+    bool is_flooded() { return is_flooded_; }
 
    private:
-    FML_DISALLOW_COPY_AND_ASSIGN(SaveInfo);
+    BoundsAccumulator* outer_;
+    bool is_flooded_;
+
+    FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
   };
 
-  class SaveLayerInfo : public SaveInfo {
+  // An intermediate implementation class that handles keeping
+  // a local accumulator for the layer, used by both |RootLayerData|
+  // and |SaveLayerData|.
+  class AccumulatorLayerData : public LayerData {
    public:
-    SaveLayerInfo(BoundsAccumulator* accumulator, const SkMatrix& matrix);
-    virtual ~SaveLayerInfo() = default;
+    BoundsAccumulator* accumulatorForLayer() override {
+      return &layer_accumulator_;
+    }
 
-    BoundsAccumulator* save() override;
-    BoundsAccumulator* restore() override;
+    SkRect getLayerBounds() override {
+      // Even though this layer might have been flooded, we still
+      // accumulate what bounds we have as the flooded condition
+      // may be a nop at a higher level and we at least want to
+      // account for the bounds that we do have.
+      return layer_accumulator_.getBounds();
+    }
 
    protected:
+    using LayerData::LayerData;
+    ~AccumulatorLayerData() = default;
+
+   private:
     BoundsAccumulator layer_accumulator_;
-    const SkMatrix matrix_;
-
-   private:
-    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerInfo);
   };
 
-  class SaveLayerWithPaintInfo : public SaveLayerInfo {
+  // Used as the initial default layer info for the Calculator.
+  class RootLayerData : public AccumulatorLayerData {
    public:
-    SaveLayerWithPaintInfo(DisplayListBoundsCalculator* calculator,
-                           BoundsAccumulator* accumulator,
-                           const SkMatrix& save_matrix,
-                           const SkRect* bounds,
-                           const SkPaint& save_paint);
-    virtual ~SaveLayerWithPaintInfo() = default;
-
-    BoundsAccumulator* restore() override;
-
-   protected:
-    DisplayListBoundsCalculator* calculator_;
-
-    std::optional<SkRect> bounds_;
-    SkPaint paint_;
+    RootLayerData() : AccumulatorLayerData(nullptr) {}
+    ~RootLayerData() = default;
 
    private:
-    static constexpr SkRect kMissingBounds = SkRect::MakeWH(-1, -1);
-
-    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerWithPaintInfo);
+    FML_DISALLOW_COPY_AND_ASSIGN(RootLayerData);
   };
 
-  std::vector<std::unique_ptr<SaveInfo>> saved_infos_;
+  // Used for |save|
+  class SaveData : public LayerData {
+   public:
+    using LayerData::LayerData;
+    ~SaveData() = default;
 
-  // Some operations are defined as stroking some geometry and
-  // need to always consider stroke attributes regardless of the
-  // setting of the drawing style in the paint.
-  static constexpr int kForceStroke = 1;
+   private:
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveData);
+  };
 
-  // Some operations are defined as filling some geometry and
-  // should never consider stroke attributes regardless of the
-  // setting of the drawing style in the paint.
-  static constexpr int kIgnoreStroke = 2;
+  // Used for |saveLayer|
+  class SaveLayerData : public AccumulatorLayerData {
+   public:
+    SaveLayerData(BoundsAccumulator* outer,
+                  sk_sp<SkImageFilter> filter,
+                  bool paint_nops_on_transparency)
+        : AccumulatorLayerData(outer), layer_filter_(std::move(filter)) {
+      if (!paint_nops_on_transparency) {
+        set_flooded();
+      }
+    }
+    ~SaveLayerData() = default;
 
-  // Some operations are defined as closed paths and will never
-  // have any segment end points which might be decorated with
-  // a square cap that expands the geometry.
-  static constexpr int kIgnoreCap = 4;
+   private:
+    sk_sp<SkImageFilter> layer_filter_;
 
-  // Some operations are defined as smooth paths or paths that
-  // never exceed 90 degrees at the corners.  Such paths will
-  // never have a corner that extends outside of the box defined
-  // by (path_bounds + stroke_width/2).
-  static constexpr int kIgnoreJoin = 8;
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerData);
+  };
 
-  void accumulateRect(const SkRect& rect, int flags = 0);
+  std::vector<std::unique_ptr<LayerData>> layer_infos_;
+
+  // A drawing operation that is not geometric in nature (but which
+  // may still apply a MaskFilter - see |kApplyMaskFilter| below).
+  static constexpr int kIsNonGeometric = 0x00;
+
+  // A geometric operation that is defined as a fill operation
+  // regardless of what the current paint Style is set to.
+  // This flag will automatically assume |kApplyMaskFilter|.
+  static constexpr int kIsFilledGeometry = 0x01;
+
+  // A geometric operation that is defined as a stroke operation
+  // regardless of what the current paint Style is set to.
+  // This flag will automatically assume |kApplyMaskFilter|.
+  static constexpr int kIsStrokedGeometry = 0x02;
+
+  // A geometric operation that may be a stroke or fill operation
+  // depending on the current state of the paint Style attribute.
+  // This flag will automatically assume |kApplyMaskFilter|.
+  static constexpr int kIsDrawnGeometry = 0x04;
+
+  static constexpr int kIsAnyGeometryMask =  //
+      kIsFilledGeometry |                    //
+      kIsStrokedGeometry |                   //
+      kIsDrawnGeometry;
+
+  // A geometric operation which has a path that might have
+  // end caps that are not rectilinear which means that square
+  // end caps might project further than half the stroke width
+  // from the geometry bounds.
+  // A rectilinear path such as |drawRect| will not have
+  // diagonal end caps. |drawLine| might have diagonal end
+  // caps depending on the angle of the line, and more likely
+  // |drawPath| will often have such end caps.
+  static constexpr int kGeometryMayHaveDiagonalEndCaps = 0x08;
+
+  // A geometric operation which has joined vertices that are
+  // not guaranteed to be smooth (angles of incoming and outgoing)
+  // segments at some joins may not have the same angle) or
+  // rectilinear (squares have right angles at the corners, but
+  // those corners will never extend past the bounding box of
+  // the geometry pre-transform).
+  // |drawRect|, |drawOval| and |drawRRect| all have well
+  // behaved joins, but |drawPath| might have joins that cause
+  // mitered extensions outside the pre-transformed bounding box.
+  static constexpr int kGeometryMayHaveProblematicJoins = 0x10;
+
+  // Some operations are inherently non-geometric and yet have the
+  // mask filter applied anyway.
+  // |drawImage| variants behave this way.
+  static constexpr int kApplyMaskFilter = 0x20;
+
+  // In very rare circumstances the ImageFilter is ignored.
+  // This is one of the few flags that turns off a step in
+  // estimating the bounds, rather than turning on any steps.
+  static constexpr int kIsUnfiltered = 0x40;
+
+  static constexpr SkScalar kMinStrokeWidth = 0.01;
+
+  skstd::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
+  sk_sp<SkColorFilter> color_filter_;
+
+  SkScalar half_stroke_width_ = kMinStrokeWidth;
+  SkScalar miter_limit_ = 4.0;
+  int style_flag_ = kIsFilledGeometry;
+  bool join_is_miter_ = true;
+  bool cap_is_square_ = false;
+  sk_sp<SkImageFilter> image_filter_;
+  sk_sp<SkPathEffect> path_effect_;
+  sk_sp<SkMaskFilter> mask_filter_;
+  SkScalar mask_sigma_pad_ = 0.0;
+
+  bool paintNopsOnTransparenBlack();
+  bool adjustBoundsForPaint(SkRect& bounds, int flags);
+
+  void accumulateFlood();
+  void accumulateRect(const SkRect& rect, int flags) {
+    SkRect bounds = rect;
+    accumulateRect(bounds, flags);
+  }
+  void accumulateRect(SkRect& rect, int flags);
 };
 
 }  // namespace flutter

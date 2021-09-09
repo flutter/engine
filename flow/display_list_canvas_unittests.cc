@@ -724,7 +724,7 @@ class CanvasCompareTester {
           FML_LOG(ERROR) << "DisplayList bounds are too small!";
         }
         if (!ref_bounds.roundOut().contains(dl_bounds.roundOut())) {
-          FML_LOG(ERROR) << "###### DisplayList bounds are larger than reference!";
+          FML_LOG(ERROR) << "###### DisplayList bounds larger than reference!";
         }
       }
 #endif  // DISPLAY_LIST_BOUNDS_ACCURACY_CHECKING
@@ -806,12 +806,13 @@ class CanvasCompareTester {
     SkPMColor untouched = (bg) ? SkPreMultiplyColor(*bg) : 0;
     int pixels_touched = 0;
     int pixels_oob = 0;
+    SkIRect i_bounds = ref_bounds.roundOut();
     for (int y = 0; y < TestHeight; y++) {
       const uint32_t* ref_row = ref_pixels->addr32(0, y);
       for (int x = 0; x < TestWidth; x++) {
         if (ref_row[x] != untouched) {
           pixels_touched++;
-          if (!ref_bounds.intersects(SkRect::MakeXYWH(x, y, 1, 1))) {
+          if (!i_bounds.contains(x, y)) {
             pixels_oob++;
           }
         }
@@ -835,6 +836,8 @@ class CanvasCompareTester {
     ASSERT_EQ(test_pixels.width(), width) << info;
     ASSERT_EQ(test_pixels.height(), height) << info;
     ASSERT_EQ(test_pixels.info().bytesPerPixel(), 4) << info;
+    SkIRect i_bounds =
+        bounds ? bounds->roundOut() : SkIRect::MakeWH(width, height);
 
     int pixels_different = 0;
     int pixels_oob = 0;
@@ -855,7 +858,7 @@ class CanvasCompareTester {
             maxX = x;
           if (maxY < y)
             maxY = y;
-          if (!bounds->intersects(SkRect::MakeXYWH(x, y, 1, 1))) {
+          if (!i_bounds.contains(x, y)) {
             pixels_oob++;
           }
         }
@@ -868,6 +871,16 @@ class CanvasCompareTester {
           pixels_different++;
         }
       }
+    }
+    if (pixels_oob > 0) {
+      FML_LOG(ERROR) << "pix bounds["  //
+                     << minX << ", " << minY << " => " << maxX << ", " << maxY
+                     << "]";
+      FML_LOG(ERROR) << "dl_bounds["                               //
+                     << bounds->fLeft << ", " << bounds->fTop      //
+                     << " => "                                     //
+                     << bounds->fRight << ", " << bounds->fBottom  //
+                     << "]";
     }
 #ifdef DISPLAY_LIST_BOUNDS_ACCURACY_CHECKING
     if (bounds && *bounds != SkRect::MakeLTRB(minX, minY, maxX + 1, maxY + 1)) {
