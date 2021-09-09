@@ -468,8 +468,6 @@ class TextEditingDeltaState {
     'deltaEnd': deltaEnd,
     'selectionBase': baseOffset,
     'selectionExtent': extentOffset,
-    // 'composingBase': composingOffset,
-    // 'composingExtent': composingExtent,
   };
 
   TextEditingDeltaState copyWith({
