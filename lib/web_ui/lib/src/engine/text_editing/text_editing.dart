@@ -1094,12 +1094,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleChange(html.Event event) {
     assert(isEnabled);
-    // To verify the range of our delta we should compare the newEditingState's
-    // current text with the delta applied to the oldText. If they differ then capture
-    // the correct range from the newEditingState's text value.
-    //
-    // We can assume the deltaText for additions and replacements to the text value
-    // are accurate. What may not be accurate is the range of the delta.
+
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
 
@@ -1114,6 +1109,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: lastEditingState!.baseOffset);
     }
 
+    // If we are composing then set the delta range to the composing region we captured in compositionupdate.
     final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
     if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
       newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.composingOffset, deltaEnd: newTextEditingDeltaState.composingExtent);
@@ -1121,11 +1117,14 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
     if (!isDeltaRangeEmpty) {
-      // At this point the delta has been built and is ready to be sent to the framework.
-      // Before we send it off we should verify that this delta results in the current
-      // editing state. If it does not then we should update our delta accordingly.
+      // To verify the range of our delta we should compare the newEditingState's
+      // text with the delta applied to the oldText. If they differ then capture
+      // the correct delta range from the newEditingState's text value.
       //
-      // Our editing state can be seen as our source of truth.
+      // We can assume the deltaText for additions and replacements to the text value
+      // are accurate. What may not be accurate is the range of the delta.
+      //
+      // We can think of the newEditingState as our source of truth.
       final String textAfterDelta = _replace(
           newTextEditingDeltaState.oldText, newTextEditingDeltaState.deltaText,
           newTextEditingDeltaState.deltaStart,
@@ -1133,8 +1132,9 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       final bool isDeltaVerified = textAfterDelta == newEditingState.text!;
 
       if (!isDeltaVerified) {
-        // Find all matches for deltaText.
-        // Find the correct range for our delta to arrive at the current editing state.
+        // 1. Find all matches for deltaText.
+        // 2. Apply matches/replacement to oldText until oldText matches the
+        // new editing state's text value.
         final RegExp deltaTextPattern = RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
         for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
           String textAfterMatch;
@@ -1180,8 +1180,14 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
 
     if (eventData == 'null') {
+      // When event.data is 'null' we have a deletion.
+      // The deltaStart is set in handleChange because there is where we get access
+      // to the new selection baseOffset which is our new deltaStart.
       lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: '', deltaEnd: lastEditingState!.extentOffset);
     } else {
+      // When event.data is not 'null' we we will begin by considering this delta as an insertion
+      // at the selection extentOffset. This may change due to logic in handleChange to handle
+      // composition and other IME behaviors.
       lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: lastEditingState!.extentOffset, deltaEnd: lastEditingState!.extentOffset);
     }
   }
