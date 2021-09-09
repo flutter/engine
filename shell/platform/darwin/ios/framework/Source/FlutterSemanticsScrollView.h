@@ -9,6 +9,14 @@
 
 @class SemanticsObject;
 
+/**
+ * A UIScrollView to represent Flutter scrollable in iOS accessibility
+ * services.
+ *
+ * This class is hidden from the user and can't be interacted with. It
+ * sends all of selector calls from accessibility services to the
+ * owner SemanticsObject.
+ */
 @interface FlutterSemanticsScrollView : UIScrollView
 
 - (instancetype)init NS_UNAVAILABLE;
