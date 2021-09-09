@@ -448,6 +448,8 @@ class TextEditingDeltaState {
     this.deltaEnd = -1,
     this.baseOffset = -1,
     this.extentOffset = -1,
+    this.composingOffset = -1,
+    this.composingExtent = -1,
   });
 
   final String oldText;
@@ -456,6 +458,8 @@ class TextEditingDeltaState {
   final int deltaEnd;
   final int baseOffset;
   final int extentOffset;
+  final int composingOffset;
+  final int composingExtent;
 
   Map<String, dynamic> toFlutter() => <String, dynamic>{
     'oldText': oldText,
@@ -464,6 +468,8 @@ class TextEditingDeltaState {
     'deltaEnd': deltaEnd,
     'selectionBase': baseOffset,
     'selectionExtent': extentOffset,
+    // 'composingBase': composingOffset,
+    // 'composingExtent': composingExtent,
   };
 
   TextEditingDeltaState copyWith({
@@ -473,6 +479,8 @@ class TextEditingDeltaState {
     int? deltaEnd,
     int? baseOffset,
     int? extentOffset,
+    int? composingOffset,
+    int? composingExtent,
   }) {
     return TextEditingDeltaState(
       oldText: oldText ?? this.oldText,
@@ -481,6 +489,8 @@ class TextEditingDeltaState {
       deltaEnd: deltaEnd ?? this.deltaEnd,
       baseOffset: baseOffset ?? this.baseOffset,
       extentOffset: extentOffset ?? this.extentOffset,
+      composingOffset: composingOffset ?? this.composingOffset,
+      composingExtent: composingExtent ?? this.composingExtent,
     );
   }
 }
@@ -999,20 +1009,22 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
-    activeDomElement.addEventListener('beforeinput', (event) {
-      String eventData = js_util.getProperty(event, 'data').toString();
-      if (eventData == 'null') {
-        eventData = '';
-      }
-      final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
 
-      if (eventData == '') {
-        lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: (lastEditingState!.extentOffset ?? -1) - 1, deltaEnd: lastEditingState!.extentOffset);
-      } else {
-        lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: lastEditingState!.extentOffset, deltaEnd: lastEditingState!.extentOffset);
-      }
-      print('beforeinput delta: ' + js_util.getProperty(event, 'data').toString() + ' delta length: ' + js_util.getProperty(event, 'data').toString().length.toString());
-      print('target ranges: ' + js_util.callMethod(event, 'getTargetRanges', []).toString());
+    activeDomElement.addEventListener('compositionstart', handleCompositionStart);
+
+    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+
+    activeDomElement.addEventListener('compositionend', handleCompositionEnd);
+
+    activeDomElement.addEventListener('candidatewindowshow', (event) {
+      print('hello from candidatewindowshow');
+      print('leaving candidatewindowshow');
+    });
+
+    activeDomElement.addEventListener('candidatewindowhide', (event) {
+      print('hello from candidatewindowhide');
+      print('leaving candidatewindowhide');
     });
 
     // Refocus on the activeDomElement after blur, so that user can keep editing the
@@ -1087,17 +1099,154 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _appendedToForm = true;
   }
 
+  /// Replaces a range of text in the original string with the text given in the
+  /// replacement string.
+  String _replace(String originalText, String replacementText, int start, int end) {
+    final String textStart = originalText.substring(0, start);
+    final String textEnd = originalText.substring(end, originalText.length);
+    final String newText = textStart + replacementText + textEnd;
+    return newText;
+  }
+
   void handleChange(html.Event event) {
     assert(isEnabled);
+    // To verify the range of our delta we should compare the newEditingState's
+    // current text with the delta applied to the oldText. If they differ then capture
+    // the correct range from the newEditingState's text value.
+    //
+    // We can assume the deltaText for additions and replacements to the text value
+    // are accurate. What may not be accurate is the range of the delta.
+    print('hello from inside handleChange');
+    print('input type： ' + js_util.getProperty(event, 'inputType').toString());
+    print('isComposing： ' + js_util.getProperty(event, 'isComposing').toString());
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
+
+    final bool previousSelectionWasCollapsed = lastEditingState!.baseOffset == lastEditingState!.extentOffset;
+
+    if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
+      // We are removing text.
+      final int deletedLength = newTextEditingDeltaState.oldText.length - newEditingState.text!.length;
+      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.deltaEnd - deletedLength);
+    } else if (newTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed) {
+      // We are replacing text at a selection.
+      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: lastEditingState!.baseOffset);
+    }
+
+    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
+    if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
+      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.composingOffset, deltaEnd: newTextEditingDeltaState.composingExtent);
+    }
+
+    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
+    print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
+
+    final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
+    if (!isDeltaRangeEmpty) {
+      // At this point the delta has been built and is ready to be sent to the framework.
+      // Before we send it off we should verify that this delta results in the current
+      // editing state. If it does not then we should update our delta accordingly.
+      //
+      // Our editing state can be seen as our source of truth.
+      final String textAfterDelta = _replace(
+          newTextEditingDeltaState.oldText, newTextEditingDeltaState.deltaText,
+          newTextEditingDeltaState.deltaStart,
+          newTextEditingDeltaState.deltaEnd);
+      final bool isDeltaVerified = textAfterDelta == newEditingState.text!;
+
+      if (!isDeltaVerified) {
+        // Find all matches for deltaText.
+        // Find the correct range for our delta to arrive at the current editing state.
+        final RegExp deltaTextPattern = RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
+        for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
+          String textAfterMatch;
+          int actualEnd;
+          final bool isMatchWithinOldTextBounds = match.start >= 0 && match.end <= newTextEditingDeltaState.oldText.length;
+          if (!isMatchWithinOldTextBounds) {
+            actualEnd = match.start + newTextEditingDeltaState.deltaText.length - 1;
+            textAfterMatch = _replace(
+                newTextEditingDeltaState.oldText,
+              newTextEditingDeltaState.deltaText,
+                match.start,
+                actualEnd,
+            );
+          } else {
+            actualEnd = match.end;
+            textAfterMatch = _replace(
+                newTextEditingDeltaState.oldText,
+              newTextEditingDeltaState.deltaText,
+                match.start,
+                actualEnd,
+            );
+          }
+
+          if (textAfterMatch == newEditingState.text!) {
+            newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: match.start, deltaEnd: actualEnd);
+            break;
+          }
+        }
+      }
+    }
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
       lastTextEditingDeltaState = newTextEditingDeltaState;
       onChange!(lastEditingState, lastTextEditingDeltaState);
+      // Flush delta after it has been sent to framework.
+      lastTextEditingDeltaState = TextEditingDeltaState(oldText: lastEditingState!.text!);
     }
+
+    print('leaving handleChange');
+  }
+
+  void handleBeforeInput(html.Event event) {
+    print('hello from beforeinput');
+    print('input type： ' + js_util.getProperty(event, 'inputType').toString());
+    print('isComposing： ' + js_util.getProperty(event, 'isComposing').toString());
+    String eventData = js_util.getProperty(event, 'data').toString();
+    final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+
+    if (eventData == 'null') {
+      lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: '', deltaEnd: lastEditingState!.extentOffset);
+    } else {
+      lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: eventData, deltaStart: lastEditingState!.extentOffset, deltaEnd: lastEditingState!.extentOffset);
+    }
+    print('beforeinput delta: ' + js_util.getProperty(event, 'data').toString() + ' delta length: ' + js_util.getProperty(event, 'data').toString().length.toString());
+    print('target ranges: ' + js_util.callMethod(event, 'getTargetRanges', []).toString());
+    print('leaving beforeinput');
+  }
+
+  void handleCompositionStart(html.Event event) {
+    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+    print('hello from compositionstart');
+    print('current baseOffset: ' + newEditingState.baseOffset.toString());
+    print('current extentOffset: ' + newEditingState.extentOffset.toString());
+    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
+    print('last extentOffset: ' + lastEditingState!.extentOffset.toString());
+    print('leaving compositionstart');
+  }
+
+  void handleCompositionUpdate(html.Event event) {
+    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+    final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+    lastTextEditingDeltaState = newDeltaState.copyWith(composingOffset: newEditingState.baseOffset, composingExtent: newEditingState.extentOffset);
+    print('hello from compositionupdate');
+    print('current baseOffset: ' + newEditingState.baseOffset.toString());
+    print('current extentOffset: ' + newEditingState.extentOffset.toString());
+    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
+    print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
+    print('leaving compositionupdate');
+  }
+
+  void handleCompositionEnd(html.Event event) {
+    final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
+    print('hello from compositionend');
+    print('current baseOffset: ' + newEditingState.baseOffset.toString());
+    print('current extentOffset: ' + newEditingState.extentOffset.toString());
+    print('last baseOffset: ' + lastEditingState!.baseOffset.toString());
+    print('last extenOffset: ' + lastEditingState!.extentOffset.toString());
+    print('leaving compositionend');
   }
 
   void maybeSendAction(html.Event event) {
@@ -1239,6 +1388,14 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
 
     subscriptions.add(html.document.onSelectionChange.listen(handleChange));
+
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    activeDomElement.addEventListener('compositionstart', handleCompositionStart);
+
+    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+
+    activeDomElement.addEventListener('compositionend', handleCompositionEnd);
 
     // Position the DOM element after it is focused.
     subscriptions.add(activeDomElement.onFocus.listen((_) {
