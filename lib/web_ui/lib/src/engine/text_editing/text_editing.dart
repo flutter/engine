@@ -1188,7 +1188,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleCompositionUpdate(html.Event event) {
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState();
+    final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
     lastTextEditingDeltaState = newDeltaState.copyWith(composingOffset: newEditingState.baseOffset, composingExtent: newEditingState.extentOffset);
   }
 
