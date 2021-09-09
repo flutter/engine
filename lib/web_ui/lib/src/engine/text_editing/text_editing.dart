@@ -1479,6 +1479,10 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
+
     subscriptions.add(activeDomElement.onBlur.listen((_) {
       if (domRenderer.windowHasFocus) {
         // Chrome on Android will hide the onscreen keyboard when you tap outside
@@ -1530,6 +1534,10 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(activeDomElement.onInput.listen(handleChange));
 
     subscriptions.add(activeDomElement.onKeyDown.listen(maybeSendAction));
+
+    activeDomElement.addEventListener('beforeinput', handleBeforeInput);
+
+    activeDomElement.addEventListener('compositionupdate', handleCompositionUpdate);
 
     // Detects changes in text selection.
     //
