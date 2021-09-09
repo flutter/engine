@@ -154,6 +154,22 @@ bool EntropySource(uint8_t* buffer, intptr_t count) {
   return true;
 }
 
+void SetProcessName() {
+  std::stringstream stream;
+#if defined(DART_PRODUCT)
+  stream << "io.flutter.product_runner_dart_akbiggs.";
+#else
+  stream << "io.flutter.runner_dart_akbiggs.";
+#endif
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    stream << "aot";
+  } else {
+    stream << "jit";
+  }
+  const auto name = stream.str();
+  zx::process::self()->set_property(ZX_PROP_NAME, name.c_str(), name.size());
+}
+
 }  // namespace
 
 DartRunner::DartRunner(sys::ComponentContext* context) : context_(context) {
@@ -186,6 +202,8 @@ DartRunner::DartRunner(sys::ComponentContext* context) : context_(context) {
   if (error) {
     FX_LOGF(FATAL, LOG_TAG, "Dart_SetVMFlags failed: %s", error);
   }
+
+  SetProcessName();
 
   Dart_InitializeParams params = {};
   params.version = DART_INITIALIZE_PARAMS_CURRENT_VERSION;

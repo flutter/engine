@@ -118,9 +118,9 @@ bool InitializeICU() {
 static void SetProcessName() {
   std::stringstream stream;
 #if defined(DART_PRODUCT)
-  stream << "io.flutter.product_runner.";
+  stream << "io.flutter.product_runner_akbiggs.";
 #else
-  stream << "io.flutter.runner.";
+  stream << "io.flutter.runner_akbiggs.";
 #endif
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
     stream << "aot";

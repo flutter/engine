@@ -288,7 +288,7 @@ bool DartComponentController::RunDartMain() {
   // The namespace pointer must be reset before the next run. Attempting
   // to allocate a namespace into a non-null pointer will result in an invalid
   // namespace, preventing files from opening on future runs (see fxb/82557).
-  namespace_ = nullptr;
+  // namespace_ = nullptr;
 
   Dart_ExitScope();
   Dart_ExitIsolate();
