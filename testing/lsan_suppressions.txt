@@ -40,3 +40,7 @@ leak:flutter::Engine::Run(flutter::RunConfiguration)
 leak:txt::FontCollection::CreateMinikinFontFamily
 leak:CGFontCreateFontsWithURL
 leak:txt::GetDefaultFontFamily
+
+# The RefCounted DebugChecks tests intentionally fail to wrap and manage heap
+# allocated objects.
+leak:RefCountedTest_DebugChecks_Test::TestBody
