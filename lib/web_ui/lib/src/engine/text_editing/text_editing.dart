@@ -440,6 +440,15 @@ class AutofillInfo {
   }
 }
 
+/// Replaces a range of text in the original string with the text given in the
+/// replacement string.
+String _replace(String originalText, String replacementText, int start, int end) {
+  final String textStart = originalText.substring(0, start);
+  final String textEnd = originalText.substring(end, originalText.length);
+  final String newText = textStart + replacementText + textEnd;
+  return newText;
+}
+
 class TextEditingDeltaState {
   const TextEditingDeltaState({
     this.oldText = '',
@@ -451,6 +460,80 @@ class TextEditingDeltaState {
     this.composingOffset = -1,
     this.composingExtent = -1,
   });
+
+  static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState? lastTextEditingDeltaState) {
+    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
+
+    final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
+
+    if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
+      // We are removing text.
+      final int deletedLength = newTextEditingDeltaState.oldText.length - newEditingState.text!.length;
+      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.deltaEnd - deletedLength);
+    } else if (newTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed) {
+      // We are replacing text at a selection.
+      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: lastEditingState!.baseOffset);
+    }
+
+    // If we are composing then set the delta range to the composing region we captured in compositionupdate.
+    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
+    if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
+      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.composingOffset, deltaEnd: newTextEditingDeltaState.composingExtent);
+    }
+
+    final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
+    if (!isDeltaRangeEmpty) {
+      // To verify the range of our delta we should compare the newEditingState's
+      // text with the delta applied to the oldText. If they differ then capture
+      // the correct delta range from the newEditingState's text value.
+      //
+      // We can assume the deltaText for additions and replacements to the text value
+      // are accurate. What may not be accurate is the range of the delta.
+      //
+      // We can think of the newEditingState as our source of truth.
+      final String textAfterDelta = _replace(
+          newTextEditingDeltaState.oldText, newTextEditingDeltaState.deltaText,
+          newTextEditingDeltaState.deltaStart,
+          newTextEditingDeltaState.deltaEnd);
+      final bool isDeltaVerified = textAfterDelta == newEditingState.text!;
+
+      if (!isDeltaVerified) {
+        // 1. Find all matches for deltaText.
+        // 2. Apply matches/replacement to oldText until oldText matches the
+        // new editing state's text value.
+        final RegExp deltaTextPattern = RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
+        for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
+          String textAfterMatch;
+          int actualEnd;
+          final bool isMatchWithinOldTextBounds = match.start >= 0 && match.end <= newTextEditingDeltaState.oldText.length;
+          if (!isMatchWithinOldTextBounds) {
+            actualEnd = match.start + newTextEditingDeltaState.deltaText.length - 1;
+            textAfterMatch = _replace(
+              newTextEditingDeltaState.oldText,
+              newTextEditingDeltaState.deltaText,
+              match.start,
+              actualEnd,
+            );
+          } else {
+            actualEnd = match.end;
+            textAfterMatch = _replace(
+              newTextEditingDeltaState.oldText,
+              newTextEditingDeltaState.deltaText,
+              match.start,
+              actualEnd,
+            );
+          }
+
+          if (textAfterMatch == newEditingState.text!) {
+            newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: match.start, deltaEnd: actualEnd);
+            break;
+          }
+        }
+      }
+    }
+
+    return newTextEditingDeltaState;
+  }
 
   final String oldText;
   final String deltaText;
@@ -1083,88 +1166,11 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     _appendedToForm = true;
   }
 
-  /// Replaces a range of text in the original string with the text given in the
-  /// replacement string.
-  String _replace(String originalText, String replacementText, int start, int end) {
-    final String textStart = originalText.substring(0, start);
-    final String textEnd = originalText.substring(end, originalText.length);
-    final String newText = textStart + replacementText + textEnd;
-    return newText;
-  }
-
   void handleChange(html.Event event) {
     assert(isEnabled);
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
-
-    final bool previousSelectionWasCollapsed = lastEditingState!.baseOffset == lastEditingState!.extentOffset;
-
-    if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
-      // We are removing text.
-      final int deletedLength = newTextEditingDeltaState.oldText.length - newEditingState.text!.length;
-      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.deltaEnd - deletedLength);
-    } else if (newTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed) {
-      // We are replacing text at a selection.
-      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: lastEditingState!.baseOffset);
-    }
-
-    // If we are composing then set the delta range to the composing region we captured in compositionupdate.
-    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
-    if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
-      newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.composingOffset, deltaEnd: newTextEditingDeltaState.composingExtent);
-    }
-
-    final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
-    if (!isDeltaRangeEmpty) {
-      // To verify the range of our delta we should compare the newEditingState's
-      // text with the delta applied to the oldText. If they differ then capture
-      // the correct delta range from the newEditingState's text value.
-      //
-      // We can assume the deltaText for additions and replacements to the text value
-      // are accurate. What may not be accurate is the range of the delta.
-      //
-      // We can think of the newEditingState as our source of truth.
-      final String textAfterDelta = _replace(
-          newTextEditingDeltaState.oldText, newTextEditingDeltaState.deltaText,
-          newTextEditingDeltaState.deltaStart,
-          newTextEditingDeltaState.deltaEnd);
-      final bool isDeltaVerified = textAfterDelta == newEditingState.text!;
-
-      if (!isDeltaVerified) {
-        // 1. Find all matches for deltaText.
-        // 2. Apply matches/replacement to oldText until oldText matches the
-        // new editing state's text value.
-        final RegExp deltaTextPattern = RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
-        for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
-          String textAfterMatch;
-          int actualEnd;
-          final bool isMatchWithinOldTextBounds = match.start >= 0 && match.end <= newTextEditingDeltaState.oldText.length;
-          if (!isMatchWithinOldTextBounds) {
-            actualEnd = match.start + newTextEditingDeltaState.deltaText.length - 1;
-            textAfterMatch = _replace(
-                newTextEditingDeltaState.oldText,
-              newTextEditingDeltaState.deltaText,
-                match.start,
-                actualEnd,
-            );
-          } else {
-            actualEnd = match.end;
-            textAfterMatch = _replace(
-                newTextEditingDeltaState.oldText,
-              newTextEditingDeltaState.deltaText,
-                match.start,
-                actualEnd,
-            );
-          }
-
-          if (textAfterMatch == newEditingState.text!) {
-            newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: match.start, deltaEnd: actualEnd);
-            break;
-          }
-        }
-      }
-    }
+    final TextEditingDeltaState newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, lastTextEditingDeltaState);
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
