@@ -222,14 +222,14 @@ void AccessibilityBridge::UpdateSemantics(flutter::SemanticsNodeUpdates nodes,
     if (layoutChanged) {
       ios_delegate_->PostAccessibilityNotification(
           UIAccessibilityLayoutChangedNotification,
-          [FindNextFocusableIfNecessary() nativeAccessibility]);
+          FindNextFocusableIfNecessary().nativeAccessibility);
     } else if (scrollOccured) {
       // TODO(chunhtai): figure out what string to use for notification. At this
       // point, it is guarantee the previous focused object is still in the tree
       // so that we don't need to worry about focus lost. (e.g. "Screen 0 of 3")
       ios_delegate_->PostAccessibilityNotification(
           UIAccessibilityPageScrolledNotification,
-          [FindNextFocusableIfNecessary() nativeAccessibility]);
+          FindNextFocusableIfNecessary().nativeAccessibility);
     }
   }
 }

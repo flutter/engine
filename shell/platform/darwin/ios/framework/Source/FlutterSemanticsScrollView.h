@@ -7,6 +7,7 @@
 
 #import <UIKit/UIKit.h>
 
+NS_ASSUME_NONNULL_BEGIN
 @class SemanticsObject;
 
 /**
@@ -25,5 +26,5 @@
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject;
 
 @end
-
+NS_ASSUME_NONNULL_END
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_SEMANTICS_SCROLL_VIEW_H_

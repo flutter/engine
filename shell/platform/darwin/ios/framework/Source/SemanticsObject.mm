@@ -167,6 +167,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (void)dealloc {
   [_scrollView removeFromSuperview];
+  [_scrollView release];
   [super dealloc];
 }
 
@@ -334,9 +335,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (void)accessibilityBridgeDidFinishUpdate { /* Do nothing by default */
-}
-
-- (void)willRemoveFromAccessibilityBridge { /* Do nothing by default */
 }
 
 /**
@@ -801,7 +799,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (nullable id)accessibilityElementAtIndex:(NSInteger)index {
   FML_DCHECK(index < 2);
   if (index == 0) {
-    return [_semanticsObject nativeAccessibility];
+    return _semanticsObject.nativeAccessibility;
   } else {
     return _platformView;
   }
@@ -878,7 +876,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   if (index < 0 || index >= [self accessibilityElementCount])
     return nil;
   if (index == 0) {
-    return [_semanticsObject nativeAccessibility];
+    return _semanticsObject.nativeAccessibility;
   }
 
   SemanticsObject* child = [_semanticsObject children][index - 1];
@@ -891,7 +889,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
   if ([child hasChildren])
     return [child accessibilityContainer];
-  return [child nativeAccessibility];
+  return child.nativeAccessibility;
 }
 
 - (NSInteger)indexOfAccessibilityElement:(id)element {
