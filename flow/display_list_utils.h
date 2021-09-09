@@ -402,6 +402,10 @@ class DisplayListBoundsCalculator final
     // mechanisms all supply a cull rect for all Dart Picture
     // objects, even if that cull rect is kGiantRect.
     void set_flooded() { is_flooded_ = true; }
+
+    // |is_flooded| should be called after |getLayerBounds| in case
+    // a problem was found during the computation of those bounds,
+    // the layer will have one last chance to flag a flooded state.
     bool is_flooded() { return is_flooded_; }
 
    private:
@@ -468,6 +472,14 @@ class DisplayListBoundsCalculator final
       }
     }
     ~SaveLayerData() = default;
+
+    SkRect getLayerBounds() override {
+      SkRect bounds = AccumulatorLayerData::getLayerBounds();
+      if (!getFilteredBounds(bounds, layer_filter_.get())) {
+        set_flooded();
+      }
+      return bounds;
+    }
 
    private:
     sk_sp<SkImageFilter> layer_filter_;
@@ -548,6 +560,8 @@ class DisplayListBoundsCalculator final
   SkScalar mask_sigma_pad_ = 0.0;
 
   bool paintNopsOnTransparenBlack();
+
+  static bool getFilteredBounds(SkRect& rect, SkImageFilter* filter);
   bool adjustBoundsForPaint(SkRect& bounds, int flags);
 
   void accumulateFlood();

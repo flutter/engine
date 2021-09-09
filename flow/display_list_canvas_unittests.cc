@@ -116,13 +116,27 @@ class CanvasCompareTester {
                cv_renderer, dl_renderer, "Base Test");
     RenderWithTransforms(cv_renderer, dl_renderer);
     RenderWithClips(cv_renderer, dl_renderer);
+    RenderWithSaveRestore(cv_renderer, dl_renderer);
   }
 
   static void RenderWithSaveRestore(CvRenderer& cv_renderer,
                                     DlRenderer& dl_renderer) {
     SkRect clip = SkRect::MakeLTRB(0, 0, 10, 10);
     SkRect rect = SkRect::MakeLTRB(5, 5, 15, 15);
-    SkColor save_layer_color = SkColorSetARGB(0x7f, 0x00, 0xff, 0xff);
+    SkColor alpha_layer_color = SkColorSetARGB(0x7f, 0x00, 0xff, 0xff);
+    SkColor default_color = SkPaint().getColor();
+    CvRenderer cv_restored = [=](SkCanvas* cv, SkPaint& p) {
+      // Draw more than one primitive to disable peephole optimizations
+      cv->drawRect(RenderBounds.makeOutset(5, 5), p);
+      cv_renderer(cv, p);
+      cv->restore();
+    };
+    DlRenderer dl_restored = [=](DisplayListBuilder& b) {
+      // Draw more than one primitive to disable peephole optimizations
+      b.drawRect(RenderBounds.makeOutset(5, 5));
+      dl_renderer(b);
+      b.restore();
+    };
     RenderWith(
         [=](SkCanvas* cv, SkPaint& p) {
           cv->save();
@@ -138,19 +152,80 @@ class CanvasCompareTester {
         },
         cv_renderer, dl_renderer, "With prior save/clip/restore");
     RenderWith(
+        [=](SkCanvas* cv, SkPaint& p) {  //
+          cv->saveLayer(nullptr, nullptr);
+        },
+        [=](DisplayListBuilder& b) {  //
+          b.saveLayer(nullptr, false);
+        },
+        cv_restored, dl_restored, "saveLayer no bounds, no paint");
+    RenderWith(
+        [=](SkCanvas* cv, SkPaint& p) {  //
+          cv->saveLayer(RenderBounds, nullptr);
+        },
+        [=](DisplayListBuilder& b) {  //
+          b.saveLayer(&RenderBounds, false);
+        },
+        cv_restored, dl_restored, "saveLayer with bounds, no paint");
+    RenderWith(
         [=](SkCanvas* cv, SkPaint& p) {
           SkPaint save_p;
-          save_p.setColor(save_layer_color);
+          save_p.setColor(alpha_layer_color);
           cv->saveLayer(RenderBounds, &save_p);
-          cv->drawRect(rect, p);
         },
         [=](DisplayListBuilder& b) {
-          b.setColor(save_layer_color);
+          b.setColor(alpha_layer_color);
           b.saveLayer(&RenderBounds, true);
-          b.setColor(SkPaint().getColor());
-          b.drawRect(rect);
+          b.setColor(default_color);
         },
-        cv_renderer, dl_renderer, "With saveLayer");
+        cv_restored, dl_restored, "saveLayer no bounds, with alpha");
+    RenderWith(
+        [=](SkCanvas* cv, SkPaint& p) {
+          SkPaint save_p;
+          save_p.setColor(alpha_layer_color);
+          cv->saveLayer(RenderBounds, &save_p);
+        },
+        [=](DisplayListBuilder& b) {
+          b.setColor(alpha_layer_color);
+          b.saveLayer(&RenderBounds, true);
+          b.setColor(default_color);
+        },
+        cv_restored, dl_restored, "saveLayer bounds and alpha");
+
+    {
+      sk_sp<SkImageFilter> filter =
+          SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
+      {
+        RenderWith(
+            [=](SkCanvas* cv, SkPaint& p) {
+              SkPaint save_p;
+              save_p.setImageFilter(filter);
+              cv->saveLayer(nullptr, &save_p);
+            },
+            [=](DisplayListBuilder& b) {
+              b.setImageFilter(filter);
+              b.saveLayer(nullptr, true);
+              b.setImageFilter(nullptr);
+            },
+            cv_restored, dl_restored, "saveLayer ImageFilter, no bounds");
+      }
+      ASSERT_TRUE(filter->unique()) << "SL with IF no bounds Cleanup";
+      {
+        RenderWith(
+            [=](SkCanvas* cv, SkPaint& p) {
+              SkPaint save_p;
+              save_p.setImageFilter(filter);
+              cv->saveLayer(RenderBounds, &save_p);
+            },
+            [=](DisplayListBuilder& b) {
+              b.setImageFilter(filter);
+              b.saveLayer(&RenderBounds, true);
+              b.setImageFilter(nullptr);
+            },
+            cv_restored, dl_restored, "saveLayer ImageFilter and bounds");
+      }
+      ASSERT_TRUE(filter->unique()) << "SL with IF and bounds Cleanup";
+    }
   }
 
   static void RenderWithAttributes(CvRenderer& cv_renderer,

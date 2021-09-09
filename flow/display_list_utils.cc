@@ -277,14 +277,19 @@ void DisplayListBoundsCalculator::restore() {
     ClipBoundsDispatchHelper::restore();
     accumulator_ = layer_infos_.back()->accumulatorForRestore();
     SkRect layer_bounds = layer_infos_.back()->getLayerBounds();
+    // Must read flooded state after layer_bounds
     bool layer_flooded = layer_infos_.back()->is_flooded();
     layer_infos_.pop_back();
 
     // We accumulate the bounds even if the layer was flooded because
-    // the flooding may become a NOP, so we at least accumulate what
-    // we have.
+    // the flooding may become a NOP, so we at least accumulate our
+    // best estimate about what we have.
     if (!layer_bounds.isEmpty()) {
-      accumulateRect(layer_bounds, kIsNonGeometric);
+      // kUnfiltered because the layer already applied all bounds
+      // modifications based on the attributes that were in place
+      // when it was instantiated. Modifying it further base on the
+      // current attributes would mix attribute states.
+      accumulateRect(layer_bounds, kIsUnfiltered);
     }
     if (layer_flooded) {
       accumulateFlood();
@@ -448,6 +453,17 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
   accumulateRect(shadow_bounds, kIsUnfiltered);
 }
 
+bool DisplayListBoundsCalculator::getFilteredBounds(SkRect& bounds,
+                                                    SkImageFilter* filter) {
+  if (filter) {
+    if (!filter->canComputeFastBounds()) {
+      return false;
+    }
+    bounds = filter->computeFastBounds(bounds);
+  }
+  return true;
+}
+
 bool DisplayListBoundsCalculator::adjustBoundsForPaint(SkRect& bounds,
                                                        int flags) {
   if ((flags & kIsUnfiltered) != 0) {
@@ -505,15 +521,7 @@ bool DisplayListBoundsCalculator::adjustBoundsForPaint(SkRect& bounds,
     }
   }
 
-  if (image_filter_) {
-    if (!image_filter_->canComputeFastBounds()) {
-      FML_LOG(ERROR) << "ImageFilter cannot compute bounds";
-      return false;
-    }
-    bounds = image_filter_->computeFastBounds(bounds);
-  }
-
-  return true;
+  return getFilteredBounds(bounds, image_filter_.get());
 }
 
 void DisplayListBoundsCalculator::accumulateFlood() {
