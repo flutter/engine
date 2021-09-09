@@ -38,7 +38,10 @@ public final class TextEditingDelta {
     newComposingEnd = composingEnd;
 
     setDeltas(
-        oldEditable, replacementSource.toString(), replacementDestinationStart, replacementDestinationEnd);
+        oldEditable,
+        replacementSource.toString(),
+        replacementDestinationStart,
+        replacementDestinationEnd);
   }
 
   // Non text update delta constructor.

@@ -64,12 +64,7 @@ public class TextEditingDeltaTest {
     final int newComposingEnd = 5;
 
     final TextEditingDelta delta =
-        new TextEditingDelta(
-            oldText,
-            newSelectionStart,
-            newSelectionEnd,
-            newComposingStart,
-            newComposingEnd);
+        new TextEditingDelta(oldText, newSelectionStart, newSelectionEnd, newComposingStart, newComposingEnd);
 
     assertEquals(oldText, delta.getOldText());
     assertEquals("", delta.getDeltaText());
