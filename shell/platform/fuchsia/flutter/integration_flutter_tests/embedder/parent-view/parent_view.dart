@@ -11,7 +11,7 @@ import 'package:fuchsia_services/services.dart';
 import 'package:zircon/zircon.dart';
 
 const _kChildAppUrl =
-    'fuchsia-pkg://fuchsia.com/child-view#meta/child-view.cmx';
+    'fuchsia-pkg://engine/child-view#meta/child-view.cmx';
 
 Future<void> main(List<String> args) async {
   // WidgetsFlutterBinding.ensureInitialized();
@@ -24,7 +24,8 @@ Future<void> main(List<String> args) async {
     print('parent-view: $option: ${arguments[option]}');
   }
 
-  final childViewToken = _launchApp(_kChildAppUrl);
+  // TODO(richkadel): uncomment next line when ready to launch child_view
+  // final childViewToken = _launchApp(_kChildAppUrl);
 
   window.onBeginFrame = beginFrame;
   window.scheduleFrame();

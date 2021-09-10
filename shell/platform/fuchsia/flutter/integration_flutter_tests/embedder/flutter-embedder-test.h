@@ -173,7 +173,6 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
       FAIL() << "Lost connection to Scenic: " << zx_status_get_string(status);
     });
 
-    FML_LOG(INFO) << "Taking screenshot... ";
     fuchsia::ui::scenic::ScreenshotData screenshot_out;
     scenic->TakeScreenshot(
         [this, &screenshot_out](fuchsia::ui::scenic::ScreenshotData screenshot,
@@ -184,7 +183,6 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
         });
     EXPECT_FALSE(RunLoopWithTimeout(kScreenshotTimeout))
         << "Timed out waiting for screenshot.";
-    FML_LOG(INFO) << "Screenshot captured.";
 
     return scenic::Screenshot(screenshot_out);
   }
@@ -195,21 +193,16 @@ class FlutterScenicEmbedderTests : public FlutterScenicEmbedderTestsBase {
       zx::duration timeout = kTestTimeout) {
     return RunLoopWithTimeoutOrUntil(
         [this, &callback, &color] {
-          // TODO(richkadel): remove this log
-          FML_VLOG(fml::LOG_INFO) << "Calling TakeScreenshot()";
           auto screenshot = TakeScreenshot();
-          // TODO(richkadel): remove this log
-          FML_VLOG(fml::LOG_INFO) << "Exited from TakeScreenshot()";
           auto histogram = screenshot.Histogram();
-          // TODO(richkadel): remove this log
-          FML_VLOG(fml::LOG_INFO) << "Exited from screenshot.Histogram()";
 
           bool color_found = histogram[color] > 0;
           if (color_found && callback != nullptr) {
+            // TODO(richkadel): remove this log
+            FML_VLOG(fml::LOG_INFO)
+                << "TakeScreenshotUntil found the color: " << color_found;
             callback(std::move(histogram));
           }
-          // TODO(richkadel): remove this log
-          FML_VLOG(fml::LOG_INFO) << "returning color_found=" << color_found;
           return color_found;
         },
         timeout);

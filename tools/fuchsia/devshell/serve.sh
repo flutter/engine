@@ -59,12 +59,19 @@ fi
 # Start our package server
 # TODO: Need to ask for the out directory to find the package list
 # TODO: Generate the all_packages.list file
-cd "${FLUTTER_ENGINE_SRC_DIR}" || exit
+cd "${FLUTTER_ENGINE_SRC_DIR}/${out}" || exit
+
+# Create the repository to serve
+"${FLUTTER_ENGINE_FUCHSIA_SDK_DIR}/tools/pm" newrepo -vt \
+  -repo "${FLUTTER_ENGINE_SRC_DIR}/${out}/tuf"
+
+# Serve packages (run as a background process)
 "${FLUTTER_ENGINE_FUCHSIA_SDK_DIR}/tools/pm" serve -vt \
-  -repo "${FLUTTER_ENGINE_FUCHSIA_SDK_DIR}/${out}/tuf" \
+  -repo "${FLUTTER_ENGINE_SRC_DIR}/${out}/tuf" \
   -l ":${port}" \
   -c 2 \
-  -p "${FLUTTER_ENGINE_SRC_DIR}/flutter/tools/fuchsia/all_packages.list"&
+  -p "${FLUTTER_ENGINE_SRC_DIR}/flutter/tools/fuchsia/all_packages.list" \
+    &
 serve_pid=$!
 
 # Add debug symbols to the symbol index.
@@ -119,8 +126,7 @@ run_ssh_command() {
     return 1
   fi
 
-  build_dir="$(<"${FUCHSIA_DIR}/.fx-build-dir")"
-  ssh_config="${FUCHSIA_DIR}/${build_dir}/ssh-keys/ssh_config"
+  ssh_config="${fuchsia_build_dir}/ssh-keys/ssh_config"
   if [[ ! -e $ssh_config ]]; then
     engine-error "No valid ssh_config at $ssh_config"
   fi
@@ -132,10 +138,24 @@ run_ssh_command() {
   fi
 }
 
+fuchsia_build_dir="$(<"${FUCHSIA_DIR}/.fx-build-dir")"
+if [[ "${fuchsia_build_dir:0:1}" != "/" ]]; then
+  fuchsia_build_dir="${FUCHSIA_DIR}/${fuchsia_build_dir}"
+fi
+
+if [[ $remote != true && -z "${device_name}" ]]; then
+  device_name="$(cat ${fuchsia_build_dir}.device)"
+fi
+
+echo -n "Connecting to "
+if $remote; then
+  echo -n "remote device via ssh tunnel on port 8022..."
+else
+  echo -n "device '${device_name}', port ${port}..."
+fi
 # State is used to prevent too much output
 state="discover"
 while true; do
-  sleep 1
   if ! kill -0 "${serve_pid}" 2> /dev/null; then
     echo "Server died, exiting"
     serve_pid=
@@ -155,6 +175,7 @@ while true; do
   fi
 
   if [[ "$state" == "discover" && "$ping_result" == 0 ]]; then
+    echo
     echo "Device up"
     state="config"
   fi
@@ -186,47 +207,51 @@ while true; do
     fi
 
     if [[ $only_serve_runners == true ]]; then
-      run_ssh_command "pkgctl rule replace json '
-        {
-          \"version\": \"1\",
-          \"content\": [
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/flutter_jit_runner/\", \"path_prefix_replacement\": \"/flutter_jit_runner/\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/flutter_jit_runner\", \"path_prefix_replacement\": \"/flutter_jit_runner\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/flutter_aot_runner/\", \"path_prefix_replacement\": \"/flutter_aot_runner/\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/flutter_aot_runner\", \"path_prefix_replacement\": \"/flutter_aot_runner\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/dart_jit_runner/\", \"path_prefix_replacement\": \"/dart_jit_runner/\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/dart_jit_runner\", \"path_prefix_replacement\": \"/dart_jit_runner\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/dart_aot_runner/\", \"path_prefix_replacement\": \"/dart_aot_runner/\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"engine\",
-              \"path_prefix_match\": \"/dart_aot_runner\", \"path_prefix_replacement\": \"/dart_aot_runner\"
-            },
-            {
-              \"host_match\": \"fuchsia.com\", \"host_replacement\": \"devhost\",
-              \"path_prefix_match\": \"/\", \"path_prefix_replacement\": \"/\"
-          }]
-        }'"
+      run_ssh_command "pkgctl rule replace json '$(cat <<EOF
+{
+  "version": "1",
+  "content": [
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/flutter_jit_runner/", "path_prefix_replacement": "/flutter_jit_runner/"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/flutter_jit_runner", "path_prefix_replacement": "/flutter_jit_runner"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/flutter_aot_runner/", "path_prefix_replacement": "/flutter_aot_runner/"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/flutter_aot_runner", "path_prefix_replacement": "/flutter_aot_runner"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/dart_jit_runner/", "path_prefix_replacement": "/dart_jit_runner/"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/dart_jit_runner", "path_prefix_replacement": "/dart_jit_runner"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/dart_aot_runner/", "path_prefix_replacement": "/dart_aot_runner/"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "engine",
+      "path_prefix_match": "/dart_aot_runner", "path_prefix_replacement": "/dart_aot_runner"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "devhost",
+      "path_prefix_match": "/", "path_prefix_replacement": "/"
+    }
+  ]
+}
+EOF
+)'"
+
       err=$?
       if [[ $err -ne 0 ]]; then
         engine-error "Failed to add runner rewrite rules"
@@ -244,6 +269,8 @@ while true; do
     else
       sleep 1
     fi
+  else
+    sleep 1
+    echo -n "."
   fi
 done
-
