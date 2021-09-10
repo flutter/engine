@@ -141,17 +141,31 @@ including the subsection titled
 ```shell
 $ cd "$FUCHSIA_DIR"
 $ # you may want to run `fx clean`, particularly right after `fx sync-from-stem`
-$ fx set core.<board> --with //bundles:tests --with-base //topaz/bundles:buildbot
+$ fx set workstation.qemu-x64
 $ fx build
 $ fx reboot -r
+```
 
+<!--
 $ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
-    "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test-0.far \
-    $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far) \
+    "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test-0.far
+$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
+    $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far)
+$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
     $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name child-view.far)
+-->
+
+The test requires scenic, but the workstation UI consumes the scenic services,
+exclusively. Kill scenic (which kills the workstation UI), run the flutter
+package server, and then run the test.
+
+```shell
+$ fx shell killall scenic.cmx
+
+$ flutter/tools/fuchsia/devshell/serve.sh --out out/fuchsia_debug_x64 --only-serve-runners
 
 $ fx shell run-test-component \
-    fuchsia-pkg://fuchsia.com/flutter-embedder-test#meta/flutter-embedder-test.cmx
+    fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
 ```
 
 From here, you can modify the Flutter test, rebuild flutter, and usually rerun the test without

@@ -7,7 +7,7 @@
 namespace flutter_embedder_test {
 
 constexpr char kParentViewUrl[] =
-    "fuchsia-pkg://fuchsia.com/parent-view#meta/parent-view.cmx";
+    "fuchsia-pkg://engine/parent-view#meta/parent-view.cmx";
 
 constexpr scenic::Color kParentBackgroundColor = {0x00, 0x00, 0xFF,
                                                   0xFF};  // Blue
@@ -70,14 +70,9 @@ const std::vector<std::pair<const char*, const char*>> GetInjectedServices() {
       "fuchsia-pkg://fuchsia.com/fonts#meta/fonts.cmx"
     },{
       "fuchsia.hardware.display.Provider",
-      // TODO(richkadel): make sure this is never "fake-fuchsia.com"
-      "fuchsia-pkg://fuchsia.com/fake-hardware-display-controller-provider#meta/hdcp.cmx"
-      // TODO(richkadel): Delete the following comment block:
-      // "fuchsia-pkg://fuchsia.com/hardware-display-controller-provider#meta/hdcp.cmx"
-      // This failed with:
-      //   [pkg-resolver] WARNING: error resolving fuchsia-pkg://fuchsia.com/hardware-display-controller-provider/0
-      //   as fuchsia-pkg://google3-devhost/hardware-display-controller-provider/0: while caching the package:
-      //   while looking up merkle root for package: the package was not found in the repository
+      // TODO(richkadel): make sure this is NOT SUBMITTED WITHOUT "fake-"
+      // "fuchsia-pkg://fuchsia.com/fake-hardware-display-controller-provider#meta/hdcp.cmx"
+      "fuchsia-pkg://fuchsia.com/hardware-display-controller-provider#meta/hdcp.cmx"
     },{
       "fuchsia.intl.PropertyProvider",
       "fuchsia-pkg://fuchsia.com/intl_property_manager#meta/intl_property_manager.cmx"
