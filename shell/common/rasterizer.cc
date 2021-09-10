@@ -151,7 +151,7 @@ void Rasterizer::DrawLastLayerTree(
 RasterStatus Rasterizer::Draw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-    LayerTreeDiscardCallback discardCallback) {
+    LayerTreeDiscardCallback discard_callback) {
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
                                 "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
@@ -170,7 +170,7 @@ RasterStatus Rasterizer::Draw(
   RasterStatus raster_status = RasterStatus::kFailed;
   Pipeline<flutter::LayerTree>::Consumer consumer =
       [&](std::unique_ptr<LayerTree> layer_tree) {
-        if (discardCallback(*layer_tree.get())) {
+        if (discard_callback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
           raster_status =
@@ -209,10 +209,10 @@ RasterStatus Rasterizer::Draw(
           fml::MakeCopyable(
               [weak_this = weak_factory_.GetWeakPtr(), pipeline,
                resubmit_recorder = std::move(resubmit_recorder),
-               discardCallback = std::move(discardCallback)]() mutable {
+               discard_callback = std::move(discard_callback)]() mutable {
                 if (weak_this) {
                   weak_this->Draw(std::move(resubmit_recorder), pipeline,
-                                  std::move(discardCallback));
+                                  std::move(discard_callback));
                 }
               }));
       break;

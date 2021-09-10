@@ -2296,11 +2296,6 @@ TEST_F(ShellTest, DiscardResubmittedLayerTreeOnResize) {
           raster_thread_merger_ref = raster_thread_merger;
         }
         if (should_merge_thread) {
-          // TODO(cyanglaz): This test used external_view_embedder so we need to
-          // merge the threads here. However, the scenario it is testing is
-          // unrelated to platform views. We should consider to update this test
-          // so it doesn't require external_view_embedder.
-          // https://github.com/flutter/flutter/issues/69895
           raster_thread_merger->MergeWithLease(10);
           external_view_embedder->UpdatePostPrerollResult(
               PostPrerollResult::kSuccess);
