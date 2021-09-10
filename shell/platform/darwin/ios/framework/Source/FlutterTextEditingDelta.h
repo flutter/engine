@@ -21,10 +21,5 @@
 
 - (instancetype)initWithNonText:(NSString*)text;
 
-- (void)setDeltas:(NSString*)oldText
-          newText:(NSString*)newTxt
-       deltaStart:(NSInteger)newStart
-         deltaEnd:(NSInteger)newEnd;
-
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_

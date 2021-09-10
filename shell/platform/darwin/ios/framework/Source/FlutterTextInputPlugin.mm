@@ -736,6 +736,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_tokenizer release];
   [_autofillId release];
   [_inputViewController release];
+  [_currentTextEditingDelta release];
   [super dealloc];
 }
 
@@ -1439,7 +1440,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
   }
 
-  NSDictionary* state = @{
+  NSDictionary* delta = @{
     @"oldText" : [NSString stringWithString:_currentTextEditingDelta.oldText],
     @"deltaText" : [NSString stringWithString:_currentTextEditingDelta.deltaText],
     @"deltaStart" : @(_currentTextEditingDelta.deltaStart),
@@ -1452,8 +1453,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"composingExtent" : @(composingExtent),
   };
 
-  [self.textInputDelegate updateEditingClient:_textInputClient withDelta:state];
-  _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:self.text];
+  [self.textInputDelegate updateEditingClient:_textInputClient withDelta:delta];
+  // Flush the delta after sending it to the framework.
+  _currentTextEditingDelta = nil;
 }
 
 - (BOOL)hasText {
