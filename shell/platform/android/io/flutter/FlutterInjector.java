@@ -12,6 +12,7 @@ import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * This class is a simple dependency injector for the relatively thin Android part of the Flutter
@@ -115,6 +116,16 @@ public final class FlutterInjector {
    * <p>Non-overridden values have reasonable defaults.
    */
   public static final class Builder {
+    private class NamedThreadFactory implements ThreadFactory {
+      private int threadId = 0;
+
+      public Thread newThread(Runnable command) {
+        Thread thread = new Thread(command);
+        thread.setName("flutter-worker-" + threadId++);
+        return thread;
+      }
+    }
+
     private FlutterLoader flutterLoader;
     private DeferredComponentManager deferredComponentManager;
     private FlutterJNI.Factory flutterJniFactory;
@@ -151,7 +162,7 @@ public final class FlutterInjector {
       }
 
       if (executorService == null) {
-        executorService = Executors.newSingleThreadExecutor();
+        executorService = Executors.newCachedThreadPool(new NamedThreadFactory());
       }
 
       if (flutterLoader == null) {
