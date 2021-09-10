@@ -610,7 +610,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _isFloatingCursorActive = false;
 
     // Delta
-    _currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:@""];
+    _currentTextEditingDelta = nil;
     _previousTextEditingDelta = nil;
 
     // UITextInputTraits
