@@ -40,10 +40,4 @@
   _deltaEnd = newEnd;
 }
 
-- (id)copyWithZone:(NSZone*)zone {
-  FlutterTextEditingDelta* copyOfObject = [[FlutterTextEditingDelta alloc] initWithNonText:@""];
-  [copyOfObject setDeltas:_oldText newText:_deltaText deltaStart:_deltaStart deltaEnd:_deltaEnd];
-  return copyOfObject;
-}
-
 @end
