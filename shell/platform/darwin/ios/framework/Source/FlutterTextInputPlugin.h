@@ -64,9 +64,9 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
 
 // Delta
-@property(nonatomic, readonly) FlutterTextEditingDelta* currentTextEditingDelta;
+@property(nonatomic, strong) FlutterTextEditingDelta* currentTextEditingDelta;
 // Previous text editing delta for testing.
-@property(nonatomic, readonly) FlutterTextEditingDelta* previousTextEditingDelta;
+@property(nonatomic, strong) FlutterTextEditingDelta* previousTextEditingDelta;
 
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
