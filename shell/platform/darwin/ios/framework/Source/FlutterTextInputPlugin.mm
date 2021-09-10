@@ -1455,6 +1455,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:delta];
   // Flush the delta after sending it to the framework.
+  _previousTextEditingDelta = [_currentTextEditingDelta copy];
   _currentTextEditingDelta = nil;
 }
 
