@@ -34,7 +34,6 @@ public final class FlutterInjector {
    * accessed.
    */
   public static void setInstance(@NonNull FlutterInjector injector) {
-    android.util.Log.d("ATAG", "setInstance");
     if (accessed) {
       throw new IllegalStateException(
           "Cannot change the FlutterInjector instance once it's been "
