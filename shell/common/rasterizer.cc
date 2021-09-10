@@ -143,14 +143,15 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  frame_timings_recorder->RecordRasterStart(fml::TimePoint::Now());
+  frame_timings_recorder->RecordRasterStart(
+      fml::TimePoint::Now(), &compositor_context_->raster_cache());
   DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
 }
 
 RasterStatus Rasterizer::Draw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-    LayerTreeDiscardCallback discardCallback) {
+    LayerTreeDiscardCallback discard_callback) {
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
                                 "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
@@ -169,7 +170,7 @@ RasterStatus Rasterizer::Draw(
   RasterStatus raster_status = RasterStatus::kFailed;
   Pipeline<flutter::LayerTree>::Consumer consumer =
       [&](std::unique_ptr<LayerTree> layer_tree) {
-        if (discardCallback(*layer_tree.get())) {
+        if (discard_callback(*layer_tree.get())) {
           raster_status = RasterStatus::kDiscarded;
         } else {
           raster_status =
@@ -207,9 +208,11 @@ RasterStatus Rasterizer::Draw(
       delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
           fml::MakeCopyable(
               [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               resubmit_recorder = std::move(resubmit_recorder)]() mutable {
+               resubmit_recorder = std::move(resubmit_recorder),
+               discard_callback = std::move(discard_callback)]() mutable {
                 if (weak_this) {
-                  weak_this->Draw(std::move(resubmit_recorder), pipeline);
+                  weak_this->Draw(std::move(resubmit_recorder), pipeline,
+                                  std::move(discard_callback));
                 }
               }));
       break;
@@ -374,7 +377,8 @@ RasterStatus Rasterizer::DoDraw(
     return RasterStatus::kFailed;
   }
 
-  frame_timings_recorder->RecordRasterStart(fml::TimePoint::Now());
+  frame_timings_recorder->RecordRasterStart(
+      fml::TimePoint::Now(), &compositor_context_->raster_cache());
 
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
@@ -547,7 +551,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       frame->Submit();
     }
 
-    frame_timings_recorder.RecordRasterEnd();
+    frame_timings_recorder.RecordRasterEnd(
+        &compositor_context_->raster_cache());
     FireNextFrameCallbackIfPresent();
 
     if (surface_->GetContext()) {
