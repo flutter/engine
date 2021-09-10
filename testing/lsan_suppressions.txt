@@ -44,3 +44,8 @@ leak:txt::GetDefaultFontFamily
 # The RefCounted DebugChecks tests intentionally fail to wrap and manage heap
 # allocated objects.
 leak:RefCountedTest_DebugChecks_Test::TestBody
+
+# Objects allocated by this mock API are intentionally not collected and are
+# instead marked as released in order to explicitly assert double free attempts
+# and allow some tests to inspect contents.
+leak:*flutter/shell/platform/linux/testing/mock_engine.cc
