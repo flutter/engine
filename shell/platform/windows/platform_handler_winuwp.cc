@@ -69,7 +69,8 @@ void PlatformHandlerWinUwp::GetPlainText(
       result->Success(rapidjson::Document());
     }
   } else {
-    result->Success(rapidjson::Document());
+    result->Error(kClipboardError,
+                  "Unable to read clipboard. The window is not focused.");
   }
 }
 
