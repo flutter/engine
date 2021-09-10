@@ -11,6 +11,7 @@ import static org.junit.Assert.assertThrows;
 
 import io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import java.util.concurrent.ExecutorService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,7 @@ import org.robolectric.annotation.Config;
 public class FlutterInjectorTest {
   @Mock FlutterLoader mockFlutterLoader;
   @Mock PlayStoreDeferredComponentManager mockDeferredComponentManager;
+  @Mock ExecutorService mockExecutorService;
 
   @Before
   public void setUp() {
@@ -44,6 +46,7 @@ public class FlutterInjectorTest {
     FlutterInjector injector = FlutterInjector.instance();
     assertNotNull(injector.flutterLoader());
     assertNull(injector.deferredComponentManager());
+    assertNotNull(injector.executorService());
   }
 
   @Test
@@ -62,6 +65,14 @@ public class FlutterInjectorTest {
             .build());
     FlutterInjector injector = FlutterInjector.instance();
     assertEquals(injector.deferredComponentManager(), mockDeferredComponentManager);
+  }
+
+  @Test
+  public void canInjectExecutorService() {
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setExecutorService(mockExecutorService).build());
+    FlutterInjector injector = FlutterInjector.instance();
+    assertEquals(injector.executorService(), mockExecutorService);
   }
 
   @Test()
