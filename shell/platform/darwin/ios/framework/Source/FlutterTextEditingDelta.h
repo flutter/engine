@@ -7,7 +7,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface FlutterTextEditingDelta : NSObject <NSCopying>
+@interface FlutterTextEditingDelta : NSObject
 
 @property(nonatomic, readonly) NSString* oldText;
 @property(nonatomic, readonly) NSString* deltaText;
