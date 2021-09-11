@@ -966,7 +966,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // Replace the text within the specified range with the given text,
 // without notifying the framework.
 - (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
-  NSString* textBeforeChange = [self.text copy];
+  NSString* textBeforeChange = [[self.text copy] autorelease];
   NSRange selectedRange = _selectedTextRange.range;
 
   // Adjust the text selection:
