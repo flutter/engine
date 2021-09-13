@@ -477,7 +477,7 @@ class TextEditingDeltaState {
 
     // If we are composing then set the delta range to the composing region we
     // captured in compositionupdate.
-    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
+    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent; //Maybe use event.isComposing?
     if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
       newTextEditingDeltaState = newTextEditingDeltaState.copyWith(deltaStart: newTextEditingDeltaState.composingOffset, deltaEnd: newTextEditingDeltaState.composingExtent);
     }
