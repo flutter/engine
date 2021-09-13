@@ -31,7 +31,7 @@ const MethodCodec codec = JSONMethodCodec();
 
 DefaultTextEditingStrategy? editingStrategy;
 EditingState? lastEditingState;
-TextEditingState? lastTextEditingDeltaState;
+TextEditingDeltaState? lastTextEditingDeltaState;
 String? lastInputAction;
 
 final InputConfiguration singlelineConfig = InputConfiguration(
