@@ -63,11 +63,6 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
 
-// Delta
-@property(nonatomic, strong) FlutterTextEditingDelta* currentTextEditingDelta;
-// Previous text editing delta for testing.
-@property(nonatomic, strong) FlutterTextEditingDelta* previousTextEditingDelta;
-
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
 @property(nonatomic) UITextAutocorrectionType autocorrectionType;

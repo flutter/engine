@@ -609,10 +609,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     _editableTransform = CATransform3D();
     _isFloatingCursorActive = false;
 
-    // Delta
-    _currentTextEditingDelta = nil;
-    _previousTextEditingDelta = nil;
-
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
     _autocorrectionType = UITextAutocorrectionTypeDefault;
@@ -736,8 +732,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_tokenizer release];
   [_autofillId release];
   [_inputViewController release];
-  [_currentTextEditingDelta release];
-  [_previousTextEditingDelta release];
   [super dealloc];
 }
 
@@ -934,8 +928,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:selectedTextRange];
 
   if (_enableDeltaModel) {
-    self.currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:self.text];
-    [self updateEditingStateWithDelta];
+    [self updateEditingStateWithDelta:[[FlutterTextEditingDelta alloc] initWithNonText:self.text]];
   } else {
     [self updateEditingState];
   }
@@ -966,7 +959,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 // Replace the text within the specified range with the given text,
 // without notifying the framework.
 - (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text {
-  NSString* textBeforeChange = [[self.text copy] autorelease];
   NSRange selectedRange = _selectedTextRange.range;
 
   // Adjust the text selection:
@@ -985,17 +977,17 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [self setSelectedTextRangeLocal:[FlutterTextRange
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
-  self.currentTextEditingDelta = [[FlutterTextEditingDelta alloc]
-      initTextEditingDelta:textBeforeChange
-             replacedRange:[self clampSelection:range forText:textBeforeChange]
-               updatedText:text];
 }
 
 - (void)replaceRange:(UITextRange*)range withText:(NSString*)text {
+  NSString* textBeforeChange = [[self.text copy] autorelease];
   NSRange replaceRange = ((FlutterTextRange*)range).range;
   [self replaceRangeLocal:replaceRange withText:text];
   if (_enableDeltaModel) {
-    [self updateEditingStateWithDelta];
+    [self updateEditingStateWithDelta:[[FlutterTextEditingDelta alloc]
+                                       initTextEditingDelta:textBeforeChange
+                                              replacedRange:[self clampSelection:replaceRange forText:textBeforeChange]
+                                                updatedText:text]];
   } else {
     [self updateEditingState];
   }
@@ -1053,8 +1045,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)setMarkedText:(NSString*)markedText selectedRange:(NSRange)markedSelectedRange {
+  NSString* textBeforeChange = [[self.text copy] autorelease];
   NSRange selectedRange = _selectedTextRange.range;
   NSRange markedTextRange = ((FlutterTextRange*)self.markedTextRange).range;
+  NSRange actualReplacedRange;
 
   if (markedText == nil)
     markedText = @"";
@@ -1062,9 +1056,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (markedTextRange.length > 0) {
     // Replace text in the marked range with the new text.
     [self replaceRangeLocal:markedTextRange withText:markedText];
+    actualReplacedRange = markedTextRange;
     markedTextRange.length = markedText.length;
   } else {
     // Replace text in the selected range with the new text.
+    actualReplacedRange = selectedRange;
     [self replaceRangeLocal:selectedRange withText:markedText];
     markedTextRange = NSMakeRange(selectedRange.location, markedText.length);
   }
@@ -1078,7 +1074,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
   if (_enableDeltaModel) {
-    [self updateEditingStateWithDelta];
+    [self updateEditingStateWithDelta:[[FlutterTextEditingDelta alloc]
+                                       initTextEditingDelta:textBeforeChange
+                                              replacedRange:[self clampSelection:actualReplacedRange forText:textBeforeChange]
+                                                updatedText:markedText]];
   } else {
     [self updateEditingState];
   }
@@ -1089,8 +1088,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     return;
   self.markedTextRange = nil;
   if (_enableDeltaModel) {
-    self.currentTextEditingDelta = [[FlutterTextEditingDelta alloc] initWithNonText:self.text];
-    [self updateEditingStateWithDelta];
+    [self updateEditingStateWithDelta:[[FlutterTextEditingDelta alloc] initWithNonText:self.text]];
   } else {
     [self updateEditingState];
   }
@@ -1425,7 +1423,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   }
 }
 
-- (void)updateEditingStateWithDelta {
+- (void)updateEditingStateWithDelta:(FlutterTextEditingDelta*)delta {
   NSUInteger selectionBase = ((FlutterTextPosition*)_selectedTextRange.start).index;
   NSUInteger selectionExtent = ((FlutterTextPosition*)_selectedTextRange.end).index;
 
@@ -1437,11 +1435,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     composingExtent = ((FlutterTextPosition*)self.markedTextRange.end).index;
   }
 
-  NSDictionary* delta = @{
-    @"oldText" : [NSString stringWithString:_currentTextEditingDelta.oldText],
-    @"deltaText" : [NSString stringWithString:_currentTextEditingDelta.deltaText],
-    @"deltaStart" : @(_currentTextEditingDelta.deltaStart),
-    @"deltaEnd" : @(_currentTextEditingDelta.deltaEnd),
+  NSDictionary* deltaToFramework = @{
+    @"oldText" : [NSString stringWithString:delta.oldText],
+    @"deltaText" : [NSString stringWithString:delta.deltaText],
+    @"deltaStart" : @(delta.deltaStart),
+    @"deltaEnd" : @(delta.deltaEnd),
     @"selectionBase" : @(selectionBase),
     @"selectionExtent" : @(selectionExtent),
     @"selectionAffinity" : @(_selectionAffinity),
@@ -1451,13 +1449,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   };
 
   NSDictionary* batchDeltas = @{
-    @"batchDeltas" : @[ delta ],
+    @"batchDeltas" : @[ deltaToFramework ],
   };
 
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:batchDeltas];
-  // Flush the delta after sending it to the framework.
-  self.previousTextEditingDelta = _currentTextEditingDelta;
-  self.currentTextEditingDelta = nil;
 }
 
 - (BOOL)hasText {
