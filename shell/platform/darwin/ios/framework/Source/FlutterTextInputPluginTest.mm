@@ -323,8 +323,10 @@ FLUTTER_ASSERT_ARC
   // Verify correct delta is generated.
   OCMVerify([engine updateEditingClient:0
                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"" &&
-                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"text to insert") &&
+                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) ==
+                                           @"" &&
+                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] ==
+                                        @"text to insert") &&
                                        ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 0) &&
                                        ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 0);
                               }]]);
@@ -332,24 +334,27 @@ FLUTTER_ASSERT_ARC
   [inputView deleteBackward];
   XCTAssertEqual(updateCount, 2);
 
-  OCMVerify([engine updateEditingClient:0
-                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"text to insert" &&
-                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"") &&
-                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 13) &&
-                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 14);
-                              }]]);
+  OCMVerify([engine
+      updateEditingClient:0
+                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                  return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) ==
+                             @"text to insert" &&
+                         ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"") &&
+                         ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 13) &&
+                         ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 14);
+                }]]);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 3);
 
-  OCMVerify([engine updateEditingClient:0
-                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"text to inser" &&
-                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"") &&
-                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == -1) &&
-                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == -1);
-                              }]]);
+  OCMVerify([engine
+      updateEditingClient:0
+                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                  return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"text to inser" &&
+                         ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"") &&
+                         ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == -1) &&
+                         ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == -1);
+                }]]);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
                  withText:@"replace text"];
@@ -357,8 +362,10 @@ FLUTTER_ASSERT_ARC
 
   OCMVerify([engine updateEditingClient:0
                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"text to inser" &&
-                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"replace text") &&
+                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) ==
+                                           @"text to inser" &&
+                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] ==
+                                        @"replace text") &&
                                        ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 0) &&
                                        ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 1);
                               }]]);
@@ -366,24 +373,28 @@ FLUTTER_ASSERT_ARC
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 5);
 
-  OCMVerify([engine updateEditingClient:0
-                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"replace textext to inser" &&
-                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"marked text") &&
-                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 12) &&
-                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 12);
-                              }]]);
+  OCMVerify([engine
+      updateEditingClient:0
+                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                  return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) ==
+                             @"replace textext to inser" &&
+                         ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"marked text") &&
+                         ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 12) &&
+                         ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 12);
+                }]]);
 
   [inputView unmarkText];
   XCTAssertEqual(updateCount, 6);
 
-  OCMVerify([engine updateEditingClient:0
-                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                                return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) == @"replace textmarked textext to inser" &&
-                                       ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"") &&
-                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == -1) &&
-                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == -1);
-                              }]]);
+  OCMVerify([engine
+      updateEditingClient:0
+                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                  return ([state[@"batchDeltas"][0][@"oldText"] stringValue]) ==
+                             @"replace textmarked textext to inser" &&
+                         ([state[@"batchDeltas"][0][@"deltaText"] stringValue] == @"") &&
+                         ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == -1) &&
+                         ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == -1);
+                }]]);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextReplacement {
