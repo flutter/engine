@@ -986,10 +986,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (_enableDeltaModel) {
     [self
         updateEditingStateWithDelta:[[FlutterTextEditingDelta alloc]
-                                       initTextEditingDelta:textBeforeChange
-                                              replacedRange:[self clampSelection:replaceRange
-                                                                         forText:textBeforeChange]
-                                                updatedText:text]];
+                                         initTextEditingDelta:textBeforeChange
+                                                replacedRange:[self clampSelection:replaceRange
+                                                                           forText:textBeforeChange]
+                                                  updatedText:text]];
   } else {
     [self updateEditingState];
   }
@@ -1078,10 +1078,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (_enableDeltaModel) {
     [self
         updateEditingStateWithDelta:[[FlutterTextEditingDelta alloc]
-                                       initTextEditingDelta:textBeforeChange
-                                              replacedRange:[self clampSelection:actualReplacedRange
-                                                                         forText:textBeforeChange]
-                                                updatedText:markedText]];
+                                         initTextEditingDelta:textBeforeChange
+                                                replacedRange:[self
+                                                                  clampSelection:actualReplacedRange
+                                                                           forText:textBeforeChange]
+                                                  updatedText:markedText]];
   } else {
     [self updateEditingState];
   }
