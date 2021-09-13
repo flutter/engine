@@ -17,7 +17,7 @@ G_DECLARE_DERIVABLE_TYPE(FlPixelBufferTexture,
                          fl_pixel_buffer_texture,
                          FL,
                          PIXEL_BUFFER_TEXTURE,
-                         FlTexture)
+                         GObject)
 
 /**
  * FlPixelBufferTexture:
@@ -76,7 +76,7 @@ G_DECLARE_DERIVABLE_TYPE(FlPixelBufferTexture,
  */
 
 struct _FlPixelBufferTextureClass {
-  FlTextureClass parent_class;
+  GObjectClass parent_class;
 
   /**
    * FlPixelBufferTexture::copy_pixels:

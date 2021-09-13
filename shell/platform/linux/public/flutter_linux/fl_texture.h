@@ -14,20 +14,20 @@
 
 G_BEGIN_DECLS
 
-G_DECLARE_DERIVABLE_TYPE(FlTexture, fl_texture, FL, TEXTURE, GObject)
+G_DECLARE_INTERFACE(FlTexture, fl_texture, FL, TEXTURE, GObject)
 
 /**
  * FlTexture:
  *
- * #FlTexture is an abstract class that represents a texture.
+ * #FlTexture represents a texture.
  *
  * You can derive #FlTextureGL for populating hardware-accelerated textures or
  * instantiate #FlPixelBufferTexture for populating pixel buffers. Do NOT
- * directly derive this class.
+ * directly implement this interface.
  */
 
-struct _FlTextureClass {
-  GObjectClass parent_class;
+struct _FlTextureInterface {
+  GTypeInterface g_iface;
 };
 
 G_END_DECLS

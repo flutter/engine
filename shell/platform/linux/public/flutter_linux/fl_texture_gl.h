@@ -15,7 +15,7 @@
 
 G_BEGIN_DECLS
 
-G_DECLARE_DERIVABLE_TYPE(FlTextureGL, fl_texture_gl, FL, TEXTURE_GL, FlTexture)
+G_DECLARE_DERIVABLE_TYPE(FlTextureGL, fl_texture_gl, FL, TEXTURE_GL, GObject)
 
 /**
  * FlTextureGL:
@@ -75,7 +75,7 @@ G_DECLARE_DERIVABLE_TYPE(FlTextureGL, fl_texture_gl, FL, TEXTURE_GL, FlTexture)
  */
 
 struct _FlTextureGLClass {
-  FlTextureClass parent_class;
+  GObjectClass parent_class;
 
   /**
    * Virtual method called when Flutter populates this texture. The OpenGL

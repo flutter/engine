@@ -12,7 +12,13 @@
 // Added here to stop the compiler from optimising this function away.
 G_MODULE_EXPORT GType fl_texture_gl_get_type();
 
-G_DEFINE_TYPE(FlTextureGL, fl_texture_gl, fl_texture_get_type())
+static void fl_texture_gl_texture_iface_init(FlTextureInterface* iface) {}
+
+G_DEFINE_TYPE_WITH_CODE(FlTextureGL,
+                        fl_texture_gl,
+                        G_TYPE_OBJECT,
+                        G_IMPLEMENT_INTERFACE(fl_texture_get_type(),
+                                              fl_texture_gl_texture_iface_init))
 
 static void fl_texture_gl_class_init(FlTextureGLClass* klass) {}
 

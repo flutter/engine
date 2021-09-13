@@ -16,9 +16,15 @@ typedef struct {
 // Added here to stop the compiler from optimising this function away.
 G_MODULE_EXPORT GType fl_pixel_buffer_texture_get_type();
 
-G_DEFINE_TYPE_WITH_PRIVATE(FlPixelBufferTexture,
-                           fl_pixel_buffer_texture,
-                           fl_texture_get_type())
+static void fl_pixel_buffer_texture_iface_init(FlTextureInterface* iface) {}
+
+G_DEFINE_TYPE_WITH_CODE(
+    FlPixelBufferTexture,
+    fl_pixel_buffer_texture,
+    G_TYPE_OBJECT,
+    G_IMPLEMENT_INTERFACE(fl_texture_get_type(),
+                          fl_pixel_buffer_texture_iface_init);
+    G_ADD_PRIVATE(FlPixelBufferTexture))
 
 static void fl_pixel_buffer_texture_dispose(GObject* object) {
   FlPixelBufferTexture* self = FL_PIXEL_BUFFER_TEXTURE(object);
