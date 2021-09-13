@@ -249,9 +249,6 @@ bool _isLoopback(String host) {
 // ignore: unused_element
 void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllDomains) {
   return (Uri uri) {
-      if (_isLoopback(uri.host)) {
-        return;
-      }
       final dynamic zoneOverride = Zone.current[#flutter.io.allow_http];
       if (zoneOverride == true) {
         return;
@@ -261,6 +258,9 @@ void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllD
       } else if (mayInsecurelyConnectToAllDomains || uri.isScheme('https')) {
         // In absence of zone override, if engine setting allows the connection
         // or if connection is to `https`, allow the connection.
+        return;
+      }
+      if (_isLoopback(uri.host)) {
         return;
       }
       throw UnsupportedError(
