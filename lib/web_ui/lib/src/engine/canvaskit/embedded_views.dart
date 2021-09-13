@@ -544,6 +544,8 @@ class HtmlViewEmbedder {
   //
   // [_compositionOrder] and [_activeComposition] order should contain the
   // composition order of the current and previous frame, respectively.
+  //
+  // TODO(hterkelsen): Test this more thoroughly.
   Map<int, int>? _updateOverlays(ViewListDiffResult? diffResult) {
     if (_viewsUsingBackupSurface.isEmpty) {
       SurfaceFactory.instance
