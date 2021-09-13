@@ -38,6 +38,8 @@ template("runner") {
       "builtin_libraries.h",
       "dart_component_controller.cc",
       "dart_component_controller.h",
+      "dart_component_controller_v2.cc",
+      "dart_component_controller_v2.h",
       "dart_runner.cc",
       "dart_runner.h",
       "logging.h",
