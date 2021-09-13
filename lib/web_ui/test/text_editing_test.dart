@@ -46,7 +46,7 @@ final InputConfiguration multilineConfig = InputConfiguration(
 final Map<String, dynamic> flutterMultilineConfig =
     createFlutterConfig('multiline');
 
-void trackEditingState(EditingState? editingState) {
+void trackEditingState(EditingState? editingState, TextEditingDeltaState? textEditingDeltaState) {
   lastEditingState = editingState;
 }
 
