@@ -28,7 +28,7 @@ struct _FlTestTexture {
   FlTextureGL parent_instance;
 };
 
-G_DEFINE_TYPE(FlTestTexture, fl_test_texture, fl_texture_get_type())
+G_DEFINE_TYPE(FlTestTexture, fl_test_texture, fl_texture_gl_get_type())
 
 static gboolean fl_test_texture_populate(FlTextureGL* texture,
                                          uint32_t* target,

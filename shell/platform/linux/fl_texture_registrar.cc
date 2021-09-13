@@ -16,8 +16,14 @@
 struct _FlTextureRegistrar {
   GObject parent_instance;
 
+  // Weak reference to the engine this texture registrar is created for.
   FlEngine* engine;
 
+  // Internal record for registered textures.
+  //
+  // It is a map from Flutter texture ID to #FlTexture instance created by
+  // plugins.  The keys are directly stored int64s. The values are stored
+  // pointer to #FlTexture.  This table is freed by the responder.
   GHashTable* textures;
 };
 
@@ -57,39 +63,46 @@ static void fl_texture_registrar_init(FlTextureRegistrar* self) {
                                          g_object_unref);
 }
 
-G_MODULE_EXPORT int64_t
+G_MODULE_EXPORT gboolean
 fl_texture_registrar_register_texture(FlTextureRegistrar* self,
                                       FlTexture* texture) {
-  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR(self), 0);
-  g_return_val_if_fail(FL_IS_TEXTURE(texture), 0);
+  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR(self), FALSE);
+  g_return_val_if_fail(FL_IS_TEXTURE(texture), FALSE);
 
   if (FL_IS_TEXTURE_GL(texture) || FL_IS_PIXEL_BUFFER_TEXTURE(texture)) {
-    int64_t id = fl_texture_get_texture_id(texture);
-    g_hash_table_insert(self->textures, GINT_TO_POINTER(id),
+    g_hash_table_insert(self->textures,
+                        GINT_TO_POINTER(fl_texture_get_texture_id(texture)),
                         g_object_ref(texture));
 
     if (self->engine == nullptr) {
-      return id;
+      return FALSE;
     }
 
-    fl_engine_register_external_texture(self->engine, id);
-    return id;
+    return fl_engine_register_external_texture(
+        self->engine, fl_texture_get_texture_id(texture));
   } else {
     // We currently only support #FlTextureGL and #FlPixelBufferTexture.
-    return 0;
+    return FALSE;
   }
 }
 
-G_MODULE_EXPORT void fl_texture_registrar_mark_texture_frame_available(
-    FlTextureRegistrar* self,
-    int64_t texture_id) {
-  g_return_if_fail(FL_IS_TEXTURE_REGISTRAR(self));
+G_MODULE_EXPORT gboolean
+fl_texture_registrar_mark_texture_frame_available(FlTextureRegistrar* self,
+                                                  FlTexture* texture) {
+  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR(self), FALSE);
 
   if (self->engine == nullptr) {
-    return;
+    return FALSE;
   }
 
-  fl_engine_mark_texture_frame_available(self->engine, texture_id);
+  if (fl_texture_registrar_get_texture(
+          self, fl_texture_get_texture_id(texture)) == nullptr) {
+    g_warning("Unregistered texture %p", texture);
+    return FALSE;
+  }
+
+  return fl_engine_mark_texture_frame_available(
+      self->engine, fl_texture_get_texture_id(texture));
 }
 
 gboolean fl_texture_registrar_populate_gl_external_texture(
@@ -99,8 +112,7 @@ gboolean fl_texture_registrar_populate_gl_external_texture(
     uint32_t height,
     FlutterOpenGLTexture* opengl_texture,
     GError** error) {
-  FlTexture* texture = FL_TEXTURE(
-      g_hash_table_lookup(self->textures, GINT_TO_POINTER(texture_id)));
+  FlTexture* texture = fl_texture_registrar_get_texture(self, texture_id);
   if (texture == nullptr) {
     g_set_error(error, fl_engine_error_quark(), FL_ENGINE_ERROR_FAILED,
                 "Unable to find texture %" G_GINT64_FORMAT, texture_id);
@@ -119,21 +131,24 @@ gboolean fl_texture_registrar_populate_gl_external_texture(
   }
 }
 
-G_MODULE_EXPORT void fl_texture_registrar_unregister_texture(
-    FlTextureRegistrar* self,
-    int64_t texture_id) {
-  g_return_if_fail(FL_IS_TEXTURE_REGISTRAR(self));
+G_MODULE_EXPORT gboolean
+fl_texture_registrar_unregister_texture(FlTextureRegistrar* self,
+                                        FlTexture* texture) {
+  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR(self), FALSE);
 
-  if (!g_hash_table_remove(self->textures, GINT_TO_POINTER(texture_id))) {
-    g_warning("Unregistering a non-existent texture %ld", texture_id);
-    return;
+  if (!g_hash_table_remove(
+          self->textures,
+          GINT_TO_POINTER(fl_texture_get_texture_id(texture)))) {
+    g_warning("Unregistering a non-existent texture %p", texture);
+    return FALSE;
   }
 
   if (self->engine == nullptr) {
-    return;
+    return FALSE;
   }
 
-  fl_engine_unregister_external_texture(self->engine, texture_id);
+  return fl_engine_unregister_external_texture(
+      self->engine, fl_texture_get_texture_id(texture));
 }
 
 FlTexture* fl_texture_registrar_get_texture(FlTextureRegistrar* registrar,

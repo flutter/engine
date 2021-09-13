@@ -38,34 +38,38 @@ G_DECLARE_FINAL_TYPE(FlTextureRegistrar,
  * @registrar: an #FlTextureRegistrar.
  * @texture: an #FlTexture for registration.
  *
- * Registers a texture and returns the unique ID for that texture.
+ * Registers a texture.
  *
- * Returns: unique ID of the texture.
+ * Returns: %TRUE on success.
  */
-int64_t fl_texture_registrar_register_texture(FlTextureRegistrar* registrar,
-                                              FlTexture* texture);
+gboolean fl_texture_registrar_register_texture(FlTextureRegistrar* registrar,
+                                               FlTexture* texture);
 
 /**
  * fl_texture_registrar_mark_texture_frame_available:
  * @registrar: an #FlTextureRegistrar.
- * @texture_id: the ID of the texture that has a frame available.
+ * @texture: the texture that has a frame available.
  *
- * Notifies the flutter engine that the texture object corresponding
- * to texture_id needs to render a new texture.
+ * Notifies the flutter engine that the texture object has updated and needs to
+ * be rerendered.
+ *
+ * Returns: %TRUE on success.
  */
-void fl_texture_registrar_mark_texture_frame_available(
+gboolean fl_texture_registrar_mark_texture_frame_available(
     FlTextureRegistrar* registrar,
-    int64_t texture_id);
+    FlTexture* texture);
 
 /**
  * fl_texture_registrar_unregister_texture:
  * @registrar: an #FlTextureRegistrar.
- * @texture_id: the ID of the texture that is being unregistered.
+ * @texture: the texture being unregistered.
  *
  * Unregisters an existing texture object.
+ *
+ * Returns: %TRUE on success.
  */
-void fl_texture_registrar_unregister_texture(FlTextureRegistrar* registrar,
-                                             int64_t texture_id);
+gboolean fl_texture_registrar_unregister_texture(FlTextureRegistrar* registrar,
+                                                 FlTexture* texture);
 
 G_END_DECLS
 

@@ -285,9 +285,11 @@ gboolean fl_engine_register_external_texture(FlEngine* engine,
  *
  * Tells the Flutter engine that an existing external texture is not available
  * anymore.
+ *
+ * Returns: %TRUE on success.
  */
-void fl_engine_unregister_external_texture(FlEngine* engine,
-                                           int64_t texture_id);
+gboolean fl_engine_unregister_external_texture(FlEngine* engine,
+                                               int64_t texture_id);
 
 G_END_DECLS
 

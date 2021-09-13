@@ -715,9 +715,11 @@ gboolean fl_engine_register_external_texture(FlEngine* self,
          kSuccess;
 }
 
-void fl_engine_unregister_external_texture(FlEngine* self, int64_t texture_id) {
-  g_return_if_fail(FL_IS_ENGINE(self));
-  self->embedder_api.UnregisterExternalTexture(self->engine, texture_id);
+gboolean fl_engine_unregister_external_texture(FlEngine* self,
+                                               int64_t texture_id) {
+  g_return_val_if_fail(FL_IS_ENGINE(self), FALSE);
+  return self->embedder_api.UnregisterExternalTexture(self->engine,
+                                                      texture_id) == kSuccess;
 }
 
 G_MODULE_EXPORT FlBinaryMessenger* fl_engine_get_binary_messenger(
