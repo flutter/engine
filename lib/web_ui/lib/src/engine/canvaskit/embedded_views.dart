@@ -83,6 +83,9 @@ class HtmlViewEmbedder {
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
+  /// Number of views which have been prerolled but not necessarily composited.
+  int _numPrerolledViews = 0;
+
   /// The most recent composition order.
   List<int> _activeCompositionOrder = <int>[];
 
@@ -111,7 +114,7 @@ class HtmlViewEmbedder {
       // backup overlay, so that draw commands after the platform view will
       // correctly paint to the backup surface.
       _viewsUsingBackupSurface.remove(viewId);
-      if (_compositionOrder.length >= SurfaceFactory.instance.maximumOverlays) {
+      if (_numPrerolledViews >= SurfaceFactory.instance.maximumOverlays) {
         _viewsUsingBackupSurface.add(viewId);
       }
       if (_viewsUsingBackupSurface.contains(viewId)) {
@@ -130,7 +133,7 @@ class HtmlViewEmbedder {
         _pictureRecorders[viewId] = pictureRecorder;
       }
     }
-    _compositionOrder.add(viewId);
+    _numPrerolledViews++;
 
     // Do nothing if the params didn't change.
     if (_currentCompositionParams[viewId] == params) {
@@ -145,6 +148,7 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
+    _compositionOrder.add(viewId);
     // Do nothing if this view doesn't need to be composited.
     if (!_viewsToRecomposite.contains(viewId)) {
       if (!disableOverlays) {
@@ -413,6 +417,7 @@ class HtmlViewEmbedder {
         }
       }
     }
+    _numPrerolledViews = 0;
     _pictureRecorders.clear();
     _viewsUsingBackupSurface.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
