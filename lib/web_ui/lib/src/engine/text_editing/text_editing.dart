@@ -462,7 +462,7 @@ class TextEditingDeltaState {
   });
 
   static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState? lastTextEditingDeltaState) {
-    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
+    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text ?? '');
 
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
 
