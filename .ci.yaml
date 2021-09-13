@@ -147,6 +147,7 @@ targets:
     scheduler: luci
 
   - name: Linux Benchmarks (no-upload)
+    bringup: true
     recipe: engine/engine_metrics
     properties:
       build_host: "true"
