@@ -545,12 +545,16 @@ class TextEditingDeltaState {
   final int composingExtent;
 
   Map<String, dynamic> toFlutter() => <String, dynamic>{
-    'oldText': oldText,
-    'deltaText': deltaText,
-    'deltaStart': deltaStart,
-    'deltaEnd': deltaEnd,
-    'selectionBase': baseOffset,
-    'selectionExtent': extentOffset,
+    'batchDeltas': [
+      <String, dynamic>{
+        'oldText': oldText,
+        'deltaText': deltaText,
+        'deltaStart': deltaStart,
+        'deltaEnd': deltaEnd,
+        'selectionBase': baseOffset,
+        'selectionExtent': extentOffset,
+      },
+    ],
   };
 
   TextEditingDeltaState copyWith({

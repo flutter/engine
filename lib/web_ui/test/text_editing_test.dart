@@ -2145,7 +2145,7 @@ void testMain() {
   });
 
   group('TextEditingDeltaState', () {
-    test('Verify correct delta is inferred', () {
+    test('Verify correct delta is inferred - insertion', () {
       final EditingState newEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
       final EditingState lastEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
       final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'worl', deltaText: 'd', deltaStart: 4, deltaEnd: 4, baseOffset: -1, extentOffset: -1, composingOffset: -1, extentOffset: -1);
@@ -2158,6 +2158,23 @@ void testMain() {
       expect(textEditingDeltaState.deltaEnd, 4);
       expect(textEditingDeltaState.baseOffset, 5);
       expect(textEditingDeltaState.extentOffset, 5);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+
+    test('Verify correct delta is inferred - deletion', () {
+      final EditingState newEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
+      final EditingState lastEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'world', deltaText: '', deltaStart: 4, deltaEnd: 5, baseOffset: -1, extentOffset: -1, composingOffset: -1, extentOffset: -1);
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'world');
+      expect(textEditingDeltaState.deltaText, '');
+      expect(textEditingDeltaState.deltaStart, 4);
+      expect(textEditingDeltaState.deltaEnd, 5);
+      expect(textEditingDeltaState.baseOffset, 4);
+      expect(textEditingDeltaState.extentOffset, 4);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
