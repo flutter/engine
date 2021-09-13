@@ -438,6 +438,32 @@ public class FlutterActivityTest {
     assertNull(splashScreen);
   }
 
+  @Test
+  public void fullyDrawn() {
+    Intent intent =
+        FlutterActivityWithReportFullyDrawn.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn flutterActivity = activityController.get();
+
+    // See https://github.com/flutter/flutter/issues/46172, and
+    // https://github.com/flutter/flutter/issues/88767.
+    for (int version = Build.VERSION_CODES.JELLY_BEAN; version < Build.VERSION_CODES.Q; version++) {
+      TestUtils.setApiVersion(version);
+      flutterActivity.onFlutterUiDisplayed();
+      assertFalse(
+          "reportFullyDrawn isn't used in API level " + version, flutterActivity.isFullyDrawn());
+    }
+
+    for (int version = Build.VERSION_CODES.Q; version < Build.VERSION_CODES.S; version++) {
+      TestUtils.setApiVersion(version);
+      flutterActivity.onFlutterUiDisplayed();
+      assertTrue(
+          "reportFullyDrawn is used in API level " + version, flutterActivity.isFullyDrawn());
+      flutterActivity.resetFullyDrawn();
+    }
+  }
+
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
     @Override
     @SuppressLint("MissingSuperCall")
@@ -475,6 +501,23 @@ public class FlutterActivityTest {
     @Override
     public RenderMode getRenderMode() {
       return RenderMode.texture;
+    }
+  }
+
+  private static class FlutterActivityWithReportFullyDrawn extends FlutterActivity {
+    private boolean fullyDrawn = false;
+
+    @Override
+    public void reportFullyDrawn() {
+      fullyDrawn = true;
+    }
+
+    public boolean isFullyDrawn() {
+      return fullyDrawn;
+    }
+
+    public void resetFullyDrawn() {
+      fullyDrawn = false;
     }
   }
 
