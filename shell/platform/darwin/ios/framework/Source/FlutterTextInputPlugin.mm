@@ -1451,7 +1451,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   };
 
   NSDictionary* batchDeltas = @{
-    @"batchDeltas" : @[delta],
+    @"batchDeltas" : @[ delta ],
   };
 
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:batchDeltas];
