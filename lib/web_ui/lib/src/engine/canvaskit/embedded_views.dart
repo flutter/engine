@@ -381,10 +381,11 @@ class HtmlViewEmbedder {
   }
 
   void submitFrame() {
-    final ViewListDiffResult? diffResult =
-        (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
-            ? null
-            : diffViewList(_activeCompositionOrder, _compositionOrder);
+    final ViewListDiffResult? diffResult = (_activeCompositionOrder.isEmpty ||
+            _compositionOrder.isEmpty ||
+            disableOverlays)
+        ? null
+        : diffViewList(_activeCompositionOrder, _compositionOrder);
     final Map<int, int>? insertBeforeMap = _updateOverlays(diffResult);
 
     bool _didPaintBackupSurface = false;
