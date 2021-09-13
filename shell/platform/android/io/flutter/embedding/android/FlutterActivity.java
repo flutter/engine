@@ -1094,9 +1094,9 @@ public class FlutterActivity extends Activity
   public void onFlutterUiDisplayed() {
     // Notifies Android that we're fully drawn so that performance metrics can be collected by
     // Flutter performance tests. A few considerations:
-    // * rFD was supported in KitKat (API 19), but has a bug around requiring
+    // * reportFullyDrawn was supported in KitKat (API 19), but has a bug around requiring
     // permissions in some Android versions.
-    // * rFD behavior isn't tested on pre-Q versions.
+    // * reportFullyDrawn behavior isn't tested on pre-Q versions.
     // See https://github.com/flutter/flutter/issues/46172, and
     // https://github.com/flutter/flutter/issues/88767.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
