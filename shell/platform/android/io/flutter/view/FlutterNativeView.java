@@ -53,6 +53,9 @@ public class FlutterNativeView implements BinaryMessenger {
   }
 
   public FlutterNativeView(@NonNull Context context, boolean isBackgroundView) {
+    if (isBackgroundView) {
+      Log.w(TAG, "'isBackgroundView' is no longer supported and will be ignored");
+    }
     mContext = context;
     mPluginRegistry = new FlutterPluginRegistry(this, context);
     mFlutterJNI = new FlutterJNI();
