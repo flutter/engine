@@ -194,7 +194,7 @@ void ClipBoundsDispatchHelper::restore() {
   }
 }
 void ClipBoundsDispatchHelper::reset(const SkRect* cull_rect) {
-  if ((has_clip_ = cull_rect)) {
+  if ((has_clip_ = ((bool) cull_rect))) {
     bounds_ = *cull_rect;
   } else {
     bounds_.setEmpty();
@@ -270,6 +270,7 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   // Accumulate the layer in its own coordinate system and then
   // filter and transform its bounds on restore.
   SkMatrixDispatchHelper::reset();
+  ClipBoundsDispatchHelper::reset(bounds);
 }
 void DisplayListBoundsCalculator::restore() {
   if (layer_infos_.size() > 1) {
@@ -361,16 +362,14 @@ void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
     int flags = kIsStrokedGeometry;
     if (mode != SkCanvas::kPoints_PointMode) {
       flags |= kGeometryMayHaveDiagonalEndCaps;
-      if (mode == SkCanvas::PointMode::kPolygon_PointMode) {
-        flags |= kGeometryMayHaveProblematicJoins;
-      }
+      // Even Polygon mode just draws (count-1) separate lines, no joins
     }
     accumulateRect(ptBounds.getBounds(), flags);
   }
 }
 void DisplayListBoundsCalculator::drawVertices(const sk_sp<SkVertices> vertices,
                                                SkBlendMode mode) {
-  accumulateRect(vertices->bounds(), kIsFilledGeometry);
+  accumulateRect(vertices->bounds(), kIsNonGeometric);
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
                                             const SkPoint point,
@@ -411,13 +410,19 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
                                             const SkRect* cullRect) {
   SkPoint quad[4];
   BoundsAccumulator atlasBounds;
+  // FML_LOG(ERROR) << "atlas quads: {";
   for (int i = 0; i < count; i++) {
     const SkRect& src = tex[i];
+    // FML_LOG(ERROR) << "  rect " << (i + 1) << ": " << src.fLeft << ", " << src.fTop << " => " << src.fRight << ", " << src.fBottom;
     xform[i].toQuad(src.width(), src.height(), quad);
+    // FML_LOG(ERROR) << "  quad " << (i + 1) << ": {";
     for (int j = 0; j < 4; j++) {
+      // FML_LOG(ERROR) << "    " << quad[j].fX << ", " << quad[j].fY;
       atlasBounds.accumulate(quad[j]);
     }
+    // FML_LOG(ERROR) << "  }";
   }
+  // FML_LOG(ERROR) << "}";
   if (atlasBounds.isNotEmpty()) {
     accumulateRect(atlasBounds.getBounds(), kIsNonGeometric);
   }
@@ -432,7 +437,7 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
   if (pic_matrix) {
     pic_matrix->mapRect(&bounds);
   }
-  accumulateRect(bounds, with_save_layer ? kIsFilledGeometry : kIsNonGeometric);
+  accumulateRect(bounds, with_save_layer ? kIsNonGeometric : kIsUnfiltered);
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
@@ -441,7 +446,7 @@ void DisplayListBoundsCalculator::drawDisplayList(
 void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,
                                                SkScalar y) {
-  accumulateRect(blob->bounds().makeOffset(x, y), kIsNonGeometric);
+  accumulateRect(blob->bounds().makeOffset(x, y), kIsFilledGeometry);
 }
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkColor color,
@@ -472,6 +477,11 @@ bool DisplayListBoundsCalculator::adjustBoundsForPaint(SkRect& bounds,
   }
 
   if ((flags & kIsAnyGeometryMask) != 0) {
+    if ((flags & kIsDrawnGeometry) != 0) {
+      FML_DCHECK((flags & (kIsFilledGeometry | kIsStrokedGeometry)) == 0);
+      flags |= style_flag_;
+    }
+
     // Path effect occurs before stroking...
     if (path_effect_) {
       SkPaint p;
@@ -480,12 +490,10 @@ bool DisplayListBoundsCalculator::adjustBoundsForPaint(SkRect& bounds,
         return false;
       }
       bounds = p.computeFastBounds(bounds, &bounds);
+      flags |= kGeometryMayHaveDiagonalEndCaps |
+               kGeometryMayHaveProblematicJoins;
     }
 
-    if ((flags & kIsDrawnGeometry) != 0) {
-      FML_DCHECK((flags & (kIsFilledGeometry | kIsStrokedGeometry)) == 0);
-      flags |= style_flag_;
-    }
     if ((flags & kIsStrokedGeometry) != 0) {
       FML_DCHECK((flags & kIsFilledGeometry) == 0);
       // Determine the max multiplier to the stroke width first.
