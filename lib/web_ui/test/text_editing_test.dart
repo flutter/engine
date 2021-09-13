@@ -2143,6 +2143,59 @@ void testMain() {
       expect(editingState1 != editingState3, isTrue);
     });
   });
+
+  group('TextEditingDeltaState', () {
+    test('Verify correct delta is inferred', () {
+      final EditingState newEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
+      final EditingState lastEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'worl', deltaText: 'd', deltaStart: 4, deltaEnd: 4, baseOffset: -1, extentOffset: -1, composingOffset: -1, extentOffset: -1);
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'worl');
+      expect(textEditingDeltaState.deltaText, 'd');
+      expect(textEditingDeltaState.deltaStart, 4);
+      expect(textEditingDeltaState.deltaEnd, 4);
+      expect(textEditingDeltaState.baseOffset, 5);
+      expect(textEditingDeltaState.extentOffset, 5);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+
+    test('Verify correct delta is inferred for double space to insert a period', () {
+      final EditingState newEditState = EditingState(text: 'hello.', baseOffset: 7, extentOffset: 7);
+      final EditingState lastEditState = EditingState(text: 'hello', baseOffset: 6, extentOffset: 6);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'hello', deltaText: '.', deltaStart: 6, deltaEnd: 6, baseOffset: -1, extentOffset: -1, composingOffset: -1, extentOffset: -1);
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'hello ');
+      expect(textEditingDeltaState.deltaText, '. ');
+      expect(textEditingDeltaState.deltaStart, 5);
+      expect(textEditingDeltaState.deltaEnd, 6);
+      expect(textEditingDeltaState.baseOffset, 7);
+      expect(textEditingDeltaState.extentOffset, 7);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+
+    test('Verify correct delta is inferred for accent menu', () {
+      final EditingState newEditState = EditingState(text: 'à', baseOffset: 1, extentOffset: 1);
+      final EditingState lastEditState = EditingState(text: 'a', baseOffset: 1, extentOffset: 1);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'a', deltaText: 'à', deltaStart: 1, deltaEnd: 1, baseOffset: -1, extentOffset: -1, composingOffset: -1, extentOffset: -1);
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'a');
+      expect(textEditingDeltaState.deltaText, 'à');
+      expect(textEditingDeltaState.deltaStart, 0);
+      expect(textEditingDeltaState.deltaEnd, 1);
+      expect(textEditingDeltaState.baseOffset, 1);
+      expect(textEditingDeltaState.extentOffset, 1);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+  });
 }
 
 KeyboardEvent dispatchKeyboardEvent(
