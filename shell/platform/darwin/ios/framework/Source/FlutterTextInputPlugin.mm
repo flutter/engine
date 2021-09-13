@@ -1450,7 +1450,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"composingExtent" : @(composingExtent),
   };
 
-  [self.textInputDelegate updateEditingClient:_textInputClient withDelta:delta];
+  NSDictionary* batchDeltas = @{
+    @"batchDeltas" : @[delta],
+  };
+
+  [self.textInputDelegate updateEditingClient:_textInputClient withDelta:batchDeltas];
   // Flush the delta after sending it to the framework.
   self.previousTextEditingDelta = _currentTextEditingDelta;
   self.currentTextEditingDelta = nil;
