@@ -3,12 +3,13 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:core';
+import 'dart:ffi';
+import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
-import 'dart:isolate';
-import 'dart:ffi';
-import 'dart:core';
-import 'dart:convert';
 
 void main() {}
 
@@ -30,6 +31,14 @@ void customEntrypoint1() {
 void sayHiFromCustomEntrypoint1() native 'SayHiFromCustomEntrypoint1';
 void sayHiFromCustomEntrypoint2() native 'SayHiFromCustomEntrypoint2';
 void sayHiFromCustomEntrypoint3() native 'SayHiFromCustomEntrypoint3';
+
+
+@pragma('vm:entry-point')
+void terminateExitCodeHandler() {
+  final ProcessResult result = Process.runSync(
+        'ls', <String>[]
+  );
+}
 
 
 @pragma('vm:entry-point')
@@ -111,6 +120,7 @@ void a11y_main() async {
     ..updateNode(
       id: 42,
       label: 'A: root',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(0.0, 0.0, 10.0, 10.0),
       transform: kTestTransform,
       childrenInTraversalOrder: Int32List.fromList(<int>[84, 96]),
@@ -129,15 +139,21 @@ void a11y_main() async {
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 84,
       label: 'B: leaf',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       actions: 0,
@@ -154,10 +170,15 @@ void a11y_main() async {
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       additionalActions: Int32List(0),
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
@@ -165,6 +186,7 @@ void a11y_main() async {
     ..updateNode(
       id: 96,
       label: 'C: branch',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       childrenInTraversalOrder: Int32List.fromList(<int>[128]),
@@ -183,15 +205,21 @@ void a11y_main() async {
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 128,
       label: 'D: leaf',
+      labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
       transform: kTestTransform,
       additionalActions: Int32List.fromList(<int>[21]),
@@ -209,10 +237,15 @@ void a11y_main() async {
       scrollExtentMin: 0.0,
       elevation: 0.0,
       thickness: 0.0,
-      hint: "",
-      value: "",
-      increasedValue: "",
-      decreasedValue: "",
+      hint: '',
+      hintAttributes: <StringAttribute>[],
+      value: '',
+      valueAttributes: <StringAttribute>[],
+      increasedValue: '',
+      increasedValueAttributes: <StringAttribute>[],
+      decreasedValue: '',
+      decreasedValueAttributes: <StringAttribute>[],
+      tooltip: '',
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
     )
@@ -644,7 +677,7 @@ void can_display_platform_view_with_pixel_ratio() {
 @pragma('vm:entry-point')
 void can_receive_locale_updates() {
   PlatformDispatcher.instance.onLocaleChanged = (){
-    signalNativeCount(PlatformDispatcher.instance.locales!.length);
+    signalNativeCount(PlatformDispatcher.instance.locales.length);
   };
   signalNativeTest();
 }

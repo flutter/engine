@@ -22,7 +22,7 @@ class IntervalTree<T> {
     // Get a list of all the ranges ordered by start index.
     final List<IntervalTreeNode<T>> intervals = <IntervalTreeNode<T>>[];
     rangesMap.forEach((T key, List<CodeunitRange> rangeList) {
-      for (CodeunitRange range in rangeList) {
+      for (final CodeunitRange range in rangeList) {
         intervals.add(IntervalTreeNode<T>(key, range.start, range.end));
       }
     });
@@ -33,14 +33,14 @@ class IntervalTree<T> {
 
     // Make a balanced binary search tree from the nodes sorted by low value.
     IntervalTreeNode<T>? _makeBalancedTree(List<IntervalTreeNode<T>> nodes) {
-      if (nodes.length == 0) {
+      if (nodes.isEmpty) {
         return null;
       }
       if (nodes.length == 1) {
         return nodes.single;
       }
-      int mid = nodes.length ~/ 2;
-      IntervalTreeNode<T> root = nodes[mid];
+      final int mid = nodes.length ~/ 2;
+      final IntervalTreeNode<T> root = nodes[mid];
       root.left = _makeBalancedTree(nodes.sublist(0, mid));
       root.right = _makeBalancedTree(nodes.sublist(mid + 1));
       return root;
@@ -70,16 +70,16 @@ class IntervalTree<T> {
       }
     }
 
-    IntervalTreeNode<T> root = _makeBalancedTree(intervals)!;
+    final IntervalTreeNode<T> root = _makeBalancedTree(intervals)!;
     _computeHigh(root);
 
-    return IntervalTree._(root);
+    return IntervalTree<T>._(root);
   }
 
   /// Returns the list of objects which have been associated with intervals that
   /// intersect with [x].
   List<T> intersections(int x) {
-    List<T> results = <T>[];
+    final List<T> results = <T>[];
     root.searchForPoint(x, results);
     return results;
   }
@@ -127,7 +127,7 @@ class IntervalTreeNode<T> {
       // Don't bother checking intervals.
       return false;
     }
-    if (this.containsShallow(x)) {
+    if (containsShallow(x)) {
       return true;
     }
     if (left?.containsDeep(x) == true) {
@@ -146,7 +146,7 @@ class IntervalTreeNode<T> {
       return;
     }
     left?.searchForPoint(x, result);
-    if (this.containsShallow(x)) {
+    if (containsShallow(x)) {
       result.add(value);
     }
     if (x < low) {

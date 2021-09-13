@@ -375,22 +375,6 @@ class Matrix4 {
         det3_201_012 * m[15];
   }
 
-  /// Returns a new vector or matrix by multiplying [this] with [arg].
-  dynamic operator *(dynamic arg) {
-    if (arg is double) {
-      return scaled(arg);
-    }
-    if (arg is Vector3) {
-      final Vector3 copy = arg.clone();
-      transform3(copy.storage);
-      return copy;
-    }
-    if (arg is Matrix4) {
-      return multiplied(arg);
-    }
-    throw ArgumentError(arg);
-  }
-
   /// Transform [arg] of type [Vector3] using the perspective transformation
   /// defined by [this].
   Vector3 perspectiveTransform(Vector3 arg) {
@@ -1020,8 +1004,8 @@ class Matrix4 {
   /// This transformation forgets the final Z component. If you need the
   /// Z component, see [transform3].
   void transform2(Float32List vector) {
-    double x = vector[0];
-    double y = vector[1];
+    final double x = vector[0];
+    final double y = vector[1];
     vector[0] = (_m4storage[0] * x) +
         (_m4storage[4] * y) +
         _m4storage[12];

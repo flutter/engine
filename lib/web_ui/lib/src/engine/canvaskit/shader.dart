@@ -79,7 +79,7 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
         assert(offsetIsValid(to)),
         assert(colors != null), // ignore: unnecessary_null_comparison
         assert(tileMode != null), // ignore: unnecessary_null_comparison
-        this.matrix4 = matrix {
+        matrix4 = matrix {
     if (assertionsEnabled) {
       assert(matrix4 == null || matrix4IsValid(matrix4!));
       validateColorStops(colors, colorStops);
@@ -188,7 +188,7 @@ class CkImageShader extends CkShader implements ui.ImageShader {
   ui.FilterQuality? _cachedQuality;
   @override
   SkShader withQuality(ui.FilterQuality contextualQuality) {
-    ui.FilterQuality quality = filterQuality ?? contextualQuality;
+    final ui.FilterQuality quality = filterQuality ?? contextualQuality;
     SkShader? shader = rawSkiaObject;
     if (_cachedQuality != quality || shader == null) {
       if (quality == ui.FilterQuality.high) {

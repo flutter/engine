@@ -20,6 +20,7 @@ import android.view.MotionEvent;
 import android.view.PointerIcon;
 import android.view.Surface;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewStructure;
 import android.view.WindowInsets;
@@ -844,7 +845,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * @param accessibilityId The view accessibility id.
    * @return The view matching the accessibility id if any.
    */
-  @SuppressLint("PrivateApi")
+  @SuppressLint("SoonBlockedPrivateApi")
   public View findViewByAccessibilityIdTraversal(int accessibilityId) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
       return findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this);
@@ -1262,6 +1263,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
+    viewportMetrics.physicalTouchSlop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
     flutterEngine.getRenderer().setViewportMetrics(viewportMetrics);
   }
 

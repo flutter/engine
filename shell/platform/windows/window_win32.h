@@ -8,9 +8,13 @@
 #include <Windows.h>
 #include <Windowsx.h>
 
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager_win32.h"
 
 namespace flutter {
@@ -53,17 +57,18 @@ class WindowWin32 {
   // Processes and route salient window messages for mouse handling,
   // size change and DPI.  Delegates handling of these to member overloads that
   // inheriting classes can handle.
-  LRESULT
-  HandleMessage(UINT const message,
-                WPARAM const wparam,
-                LPARAM const lparam) noexcept;
+  LRESULT HandleMessage(UINT const message,
+                        WPARAM const wparam,
+                        LPARAM const lparam) noexcept;
 
   // When WM_DPICHANGE process it using |hWnd|, |wParam|.  If
   // |top_level| is set, extract the suggested new size from |lParam| and resize
   // the window to the new suggested size.  If |top_level| is not set, the
   // |lParam| will not contain a suggested size hence ignore it.
-  LRESULT
-  HandleDpiChange(HWND hWnd, WPARAM wParam, LPARAM lParam, bool top_level);
+  LRESULT HandleDpiChange(HWND hWnd,
+                          WPARAM wParam,
+                          LPARAM lParam,
+                          bool top_level);
 
   // Called when the DPI changes either when a
   // user drags the window between monitors of differing DPI or when the user
@@ -75,17 +80,29 @@ class WindowWin32 {
 
   // Called when the pointer moves within the
   // window bounds.
-  virtual void OnPointerMove(double x, double y) = 0;
+  virtual void OnPointerMove(double x,
+                             double y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id) = 0;
 
   // Called when the a mouse button, determined by |button|, goes down.
-  virtual void OnPointerDown(double x, double y, UINT button) = 0;
+  virtual void OnPointerDown(double x,
+                             double y,
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id,
+                             UINT button) = 0;
 
   // Called when the a mouse button, determined by |button|, goes from
   // down to up
-  virtual void OnPointerUp(double x, double y, UINT button) = 0;
+  virtual void OnPointerUp(double x,
+                           double y,
+                           FlutterPointerDeviceKind device_kind,
+                           int32_t device_id,
+                           UINT button) = 0;
 
   // Called when the mouse leaves the window.
-  virtual void OnPointerLeave() = 0;
+  virtual void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+                              int32_t device_id) = 0;
 
   // Called when the cursor should be set for the client area.
   virtual void OnSetCursor() = 0;
@@ -150,7 +167,10 @@ class WindowWin32 {
   virtual void UpdateCursorRect(const Rect& rect);
 
   // Called when mouse scrollwheel input occurs.
-  virtual void OnScroll(double delta_x, double delta_y) = 0;
+  virtual void OnScroll(double delta_x,
+                        double delta_y,
+                        FlutterPointerDeviceKind device_kind,
+                        int32_t device_id) = 0;
 
   UINT GetCurrentDPI();
 
@@ -159,7 +179,28 @@ class WindowWin32 {
   UINT GetCurrentHeight();
 
  protected:
-  LRESULT DefaultWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+  // Win32's DefWindowProc.
+  //
+  // Used as the fallback behavior of HandleMessage. Exposed for dependency
+  // injection.
+  virtual LRESULT Win32DefWindowProc(HWND hWnd,
+                                     UINT Msg,
+                                     WPARAM wParam,
+                                     LPARAM lParam);
+
+  // Win32's PeekMessage.
+  //
+  // Used to process key messages. Exposed for dependency injection.
+  virtual BOOL Win32PeekMessage(LPMSG lpMsg,
+                                HWND hWnd,
+                                UINT wMsgFilterMin,
+                                UINT wMsgFilterMax,
+                                UINT wRemoveMsg);
+
+  // Win32's MapVirtualKey(*, MAPVK_VK_TO_CHAR).
+  //
+  // Used to process key messages. Exposed for dependency injection.
+  virtual uint32_t Win32MapVkToChar(uint32_t virtual_key);
 
  private:
   // Release OS resources associated with window.
@@ -171,8 +212,19 @@ class WindowWin32 {
   // Stores new width and height and calls |OnResize| to notify inheritors
   void HandleResize(UINT width, UINT height);
 
+  // Returns the type of the next WM message.
+  //
+  // The parameters limits the range of interested messages. See Win32's
+  // |PeekMessage| for information.
+  //
+  // If there's no message, returns 0.
+  //
+  // The behavior can be mocked by replacing |Win32PeekMessage|.
+  UINT PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax);
+
   // Retrieves a class instance pointer for |window|
   static WindowWin32* GetThisFromHandle(HWND const window) noexcept;
+
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
@@ -194,8 +246,16 @@ class WindowWin32 {
   // message.
   int keycode_for_char_message_ = 0;
 
+  std::map<uint16_t, std::u16string> text_for_scancode_on_redispatch_;
+
   // Manages IME state.
   TextInputManagerWin32 text_input_manager_;
+
+  // Used for temporarily storing the WM_TOUCH-provided touch points.
+  std::vector<TOUCHINPUT> touch_points_;
+
+  // Generates touch point IDs for touch events.
+  SequentialIdGenerator touch_id_generator_;
 };
 
 }  // namespace flutter

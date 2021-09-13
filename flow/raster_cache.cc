@@ -390,11 +390,12 @@ bool RasterCache::Draw(const Layer* layer,
 }
 
 void RasterCache::SweepAfterFrame() {
+  TraceStatsToTimeline();
   SweepOneCacheAfterFrame(picture_cache_);
   SweepOneCacheAfterFrame(display_list_cache_);
   SweepOneCacheAfterFrame(layer_cache_);
   picture_cached_this_frame_ = 0;
-  TraceStatsToTimeline();
+  sweep_count_++;
 }
 
 void RasterCache::Clear() {
@@ -413,11 +414,7 @@ size_t RasterCache::GetLayerCachedEntriesCount() const {
 }
 
 size_t RasterCache::GetPictureCachedEntriesCount() const {
-  return picture_cache_.size();
-}
-
-size_t RasterCache::GetDisplayListCachedEntriesCount() const {
-  return display_list_cache_.size();
+  return picture_cache_.size() + display_list_cache_.size();
 }
 
 void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
@@ -434,14 +431,13 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
-  FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
-                    "LayerCount", layer_cache_.size(), "LayerMBytes",
-                    EstimateLayerCacheByteSize() / kMegaByteSizeInBytes,
-                    "PictureCount", picture_cache_.size(), "PictureMBytes",
-                    EstimatePictureCacheByteSize() / kMegaByteSizeInBytes,
-                    "DisplayListCount", display_list_cache_.size(),
-                    "DisplayListMBytes",
-                    EstimateDisplayListCacheByteSize() / kMegaByteSizeInBytes);
+  FML_TRACE_COUNTER(
+      "flutter",                                                           //
+      "RasterCache", reinterpret_cast<int64_t>(this),                      //
+      "LayerCount", GetLayerCachedEntriesCount(),                          //
+      "LayerMBytes", EstimateLayerCacheByteSize() / kMegaByteSizeInBytes,  //
+      "PictureCount", GetPictureCachedEntriesCount(),                      //
+      "PictureMBytes", EstimatePictureCacheByteSize() / kMegaByteSizeInBytes);
 
 #endif  // !FLUTTER_RELEASE
 }
@@ -463,17 +459,12 @@ size_t RasterCache::EstimatePictureCacheByteSize() const {
       picture_cache_bytes += item.second.image->image_bytes();
     }
   }
-  return picture_cache_bytes;
-}
-
-size_t RasterCache::EstimateDisplayListCacheByteSize() const {
-  size_t display_list_cache_bytes = 0;
   for (const auto& item : display_list_cache_) {
     if (item.second.image) {
-      display_list_cache_bytes += item.second.image->image_bytes();
+      picture_cache_bytes += item.second.image->image_bytes();
     }
   }
-  return display_list_cache_bytes;
+  return picture_cache_bytes;
 }
 
 }  // namespace flutter

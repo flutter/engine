@@ -4,11 +4,10 @@
 
 import 'dart:html' as html;
 
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -203,9 +202,9 @@ void testMain() {
       expect(elementB.parent, null);
     },
         // This method failed on iOS Safari.
-        // TODO: https://github.com/flutter/flutter/issues/60036
-        skip: (browserEngine == BrowserEngine.webkit &&
-            operatingSystem == OperatingSystem.iOs));
+        // TODO(ferhat): https://github.com/flutter/flutter/issues/60036
+        skip: browserEngine == BrowserEngine.webkit &&
+            operatingSystem == OperatingSystem.iOs);
 
     test('is retained', () {
       final SceneBuilder builder1 = SceneBuilder();
@@ -371,9 +370,9 @@ void testMain() {
             () {
       final SceneBuilder builder1 = SceneBuilder();
       final Path path = Path();
-      path.addPolygon([Offset(50, 0), Offset(100, 80), Offset(20, 40)], true);
-      PersistedPhysicalShape shape = builder1.pushPhysicalShape(path: path,
-        color: Color(0xFF00FF00), elevation: 1) as PersistedPhysicalShape;
+      path.addPolygon(const <Offset>[Offset(50, 0), Offset(100, 80), Offset(20, 40)], true);
+      final PersistedPhysicalShape shape = builder1.pushPhysicalShape(path: path,
+        color: const Color(0xFF00FF00), elevation: 1) as PersistedPhysicalShape;
       builder1.build();
       expect(() => shape.apply(), returnsNormally);
     });
@@ -385,6 +384,7 @@ class _LoggingTestSurface extends PersistedContainerSurface {
 
   _LoggingTestSurface() : super(null);
 
+  @override
   void build() {
     log.add('build');
     super.build();
@@ -407,11 +407,13 @@ class _LoggingTestSurface extends PersistedContainerSurface {
     super.update(oldSurface);
   }
 
+  @override
   void adoptElements(covariant PersistedSurface oldSurface) {
     log.add('adoptElements');
     super.adoptElements(oldSurface);
   }
 
+  @override
   void retain() {
     log.add('retain');
     super.retain();
@@ -423,6 +425,7 @@ class _LoggingTestSurface extends PersistedContainerSurface {
     super.discard();
   }
 
+  @override
   void revive() {
     log.add('revive');
     super.revive();

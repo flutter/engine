@@ -37,7 +37,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void clipRect(ui.Rect rect, ui.ClipOp op) {
+  void clipRect(ui.Rect rect, ui.ClipOp clipOp) {
     throw UnimplementedError();
   }
 
@@ -83,7 +83,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    html.Element element = buildDrawRectElement(
+    final html.Element element = buildDrawRectElement(
         rrect.outerRect, paint, 'draw-rrect', currentTransform);
     applyRRectBorderRadius(element.style, rrect);
     currentElement.append(element);
@@ -251,7 +251,7 @@ void applyRRectBorderRadius(html.CssStyleDeclaration style, ui.RRect rrect) {
       rrect.trRadiusX == rrect.trRadiusY &&
       rrect.blRadiusX == rrect.blRadiusY &&
       rrect.brRadiusX == rrect.brRadiusY) {
-    style.borderRadius = '${_borderStrokeToCssUnit(rrect.blRadiusX)}';
+    style.borderRadius = _borderStrokeToCssUnit(rrect.blRadiusX);
     return;
   }
   // Non-uniform. Apply each corner radius.
@@ -267,7 +267,7 @@ void applyRRectBorderRadius(html.CssStyleDeclaration style, ui.RRect rrect) {
 
 String _borderStrokeToCssUnit(double value) {
   if (value == 0) {
-    // TODO: hairline nees to take into account both dpi and density.
+    // TODO(ferhat): hairline nees to take into account both dpi and density.
     value = 1.0;
   }
   return '${value.toStringAsFixed(3)}px';

@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 @TestOn('!safari')
-// TODO(nurhan): https://github.com/flutter/flutter/issues/51169
+// TODO(mdebbar): https://github.com/flutter/flutter/issues/51169
 
 import 'dart:async';
 import 'dart:html' as html;
@@ -39,6 +39,50 @@ void main() {
 }
 
 void testMain() {
+  test('createHistoryForExistingState', () {
+    TestUrlStrategy strategy;
+    BrowserHistory history;
+
+    // No url strategy.
+    history = createHistoryForExistingState(null);
+    expect(history, isA<MultiEntriesBrowserHistory>());
+    expect(history.urlStrategy, isNull);
+
+    // Random history state.
+    strategy = TestUrlStrategy.fromEntry(
+      const TestHistoryEntry(<dynamic, dynamic>{'foo': 123}, null, '/'),
+    );
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<MultiEntriesBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+
+    // Multi-entry history state.
+    final Map<dynamic, dynamic> state = <dynamic, dynamic>{
+      'serialCount': 1,
+      'state': <dynamic, dynamic>{'foo': 123},
+    };
+    strategy = TestUrlStrategy.fromEntry(TestHistoryEntry(state, null, '/'));
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<MultiEntriesBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+
+    // Single-entry history "origin" state.
+    strategy = TestUrlStrategy.fromEntry(
+      const TestHistoryEntry(<dynamic, dynamic>{'origin': true}, null, '/'),
+    );
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<SingleEntryBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+
+    // Single-entry history "flutter" state.
+    strategy = TestUrlStrategy.fromEntry(
+      const TestHistoryEntry(<dynamic, dynamic>{'flutter': true}, null, '/'),
+    );
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<SingleEntryBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+  });
+
   group('$SingleEntryBrowserHistory', () {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
@@ -53,7 +97,7 @@ void testMain() {
 
     test('basic setup works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/initial'),
+        const TestHistoryEntry('initial state', null, '/initial'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -74,12 +118,12 @@ void testMain() {
       // The flutter entry is the current entry.
       expect(strategy.currentEntry, flutterEntry);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('browser back button pops routes correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -111,12 +155,12 @@ void testMain() {
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -164,7 +208,7 @@ void testMain() {
       // The next browser back will exit the app. We store the strategy locally
       // because it will be remove from the browser history class once it exits
       // the app.
-      TestUrlStrategy originalStrategy = strategy;
+      final TestUrlStrategy originalStrategy = strategy;
       await originalStrategy.go(-1);
       // 1. The engine sends a `popRoute` platform message.
       expect(spy.messages, hasLength(1));
@@ -179,13 +223,13 @@ void testMain() {
       // navigated past it.
       expect(originalStrategy.currentEntryIndex, -1);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -223,12 +267,12 @@ void testMain() {
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('user types unknown url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -249,7 +293,7 @@ void testMain() {
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
   });
 
@@ -267,7 +311,7 @@ void testMain() {
 
     test('basic setup works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/initial'),
+        const TestHistoryEntry('initial state', null, '/initial'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -279,12 +323,12 @@ void testMain() {
       expect(taggedOriginEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(taggedOriginEntry.url, '/initial');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('browser back button push route information correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -320,12 +364,12 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -371,13 +415,13 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -417,12 +461,12 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('forward button works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -469,7 +513,7 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('page2 state', 2));
       expect(strategy.currentEntry.url, '/page2');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
   });
 
@@ -539,7 +583,7 @@ Future<void> systemNavigatorPop() {
   final Completer<void> completer = Completer<void>();
   window.sendPlatformMessage(
     'flutter/platform',
-    codec.encodeMethodCall(MethodCall('SystemNavigator.pop')),
+    codec.encodeMethodCall(const MethodCall('SystemNavigator.pop')),
     (_) => completer.complete(),
   );
   return completer.future;
@@ -547,7 +591,10 @@ Future<void> systemNavigatorPop() {
 
 /// A mock implementation of [PlatformLocation] that doesn't access the browser.
 class TestPlatformLocation extends PlatformLocation {
+  @override
   String? hash;
+
+  @override
   dynamic state;
 
   @override

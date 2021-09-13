@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "assets/directory_asset_bundle.h"
+#include "common/graphics/persistent_cache.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
@@ -816,7 +817,7 @@ TEST_F(ShellTest,
        OnPlatformViewDestroyAfterMergingThreads
 #endif
 ) {
-  const size_t ThreadMergingLease = 10;
+  const int ThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
@@ -896,7 +897,7 @@ TEST_F(ShellTest,
        OnPlatformViewDestroyWhenThreadsAreMerging
 #endif
 ) {
-  const size_t kThreadMergingLease = 10;
+  const int kThreadMergingLease = 10;
   auto settings = CreateSettingsForFixture();
   fml::AutoResetWaitableEvent end_frame_latch;
   auto end_frame_callback =
@@ -1363,7 +1364,7 @@ TEST_F(ShellTest, WaitForFirstFrameZeroSizeFrame) {
   configuration.SetEntrypoint("emptyMain");
 
   RunEngine(shell.get(), std::move(configuration));
-  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0});
+  PumpOneFrame(shell.get(), {1.0, 0.0, 0.0, 22});
   fml::Status result = shell->WaitForFirstFrame(fml::TimeDelta::Zero());
   ASSERT_FALSE(result.ok());
   ASSERT_EQ(result.code(), fml::StatusCode::kDeadlineExceeded);
@@ -1484,7 +1485,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1504,7 +1505,7 @@ TEST_F(ShellTest, SetResourceCacheSize) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 800, 400, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1522,7 +1523,7 @@ TEST_F(ShellTest, SetResourceCacheSizeEarly) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1550,7 +1551,7 @@ TEST_F(ShellTest, SetResourceCacheSizeNotifiesDart) {
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
-        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200});
+        shell->GetPlatformView()->SetViewportMetrics({1.0, 400, 200, 22});
       });
   PumpOneFrame(shell.get());
 
@@ -1930,6 +1931,75 @@ TEST_F(ShellTest, CanDecompressImageFromAsset) {
   DestroyShell(std::move(shell));
 }
 
+/// An image generator that always creates a 1x1 single-frame green image.
+class SinglePixelImageGenerator : public ImageGenerator {
+ public:
+  SinglePixelImageGenerator()
+      : info_(SkImageInfo::MakeN32(1, 1, SkAlphaType::kOpaque_SkAlphaType)){};
+  ~SinglePixelImageGenerator() = default;
+  const SkImageInfo& GetInfo() { return info_; }
+
+  unsigned int GetFrameCount() const { return 1; }
+
+  unsigned int GetPlayCount() const { return 1; }
+
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+    return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
+  }
+
+  SkISize GetScaledDimensions(float scale) {
+    return SkISize::Make(info_.width(), info_.height());
+  }
+
+  bool GetPixels(const SkImageInfo& info,
+                 void* pixels,
+                 size_t row_bytes,
+                 unsigned int frame_index,
+                 std::optional<unsigned int> prior_frame) {
+    assert(info.width() == 1);
+    assert(info.height() == 1);
+    assert(row_bytes == 4);
+
+    reinterpret_cast<uint32_t*>(pixels)[0] = 0x00ff00ff;
+    return true;
+  };
+
+ private:
+  SkImageInfo info_;
+};
+
+TEST_F(ShellTest, CanRegisterImageDecoders) {
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto width = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      auto height = tonic::DartConverter<int>::FromDart(
+                          Dart_GetNativeArgument(args, 1));
+                      ASSERT_EQ(width, 1);
+                      ASSERT_EQ(height, 1);
+                      latch.Signal();
+                    }));
+
+  auto settings = CreateSettingsForFixture();
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("canRegisterImageDecoders");
+  std::unique_ptr<Shell> shell = CreateShell(settings);
+  ASSERT_NE(shell.get(), nullptr);
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
+        shell->RegisterImageDecoder(
+            [](sk_sp<SkData> buffer) {
+              return std::make_unique<SinglePixelImageGenerator>();
+            },
+            100);
+      });
+
+  RunEngine(shell.get(), std::move(configuration));
+  latch.Wait();
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
   fml::ScopedTemporaryDirectory base_dir;
   ASSERT_TRUE(base_dir.fd().is_valid());
@@ -1943,14 +2013,24 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
       PersistentCache::kSkSLSubdirName};
   auto sksl_dir = fml::CreateDirectory(base_dir.fd(), components,
                                        fml::FilePermission::kReadWrite);
-  const std::string x = "x";
-  const std::string y = "y";
-  auto x_data = std::make_unique<fml::DataMapping>(
-      std::vector<uint8_t>{x.begin(), x.end()});
-  auto y_data = std::make_unique<fml::DataMapping>(
-      std::vector<uint8_t>{y.begin(), y.end()});
-  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "IE", *x_data));
-  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "II", *y_data));
+  const std::string x_key_str = "A";
+  const std::string x_value_str = "x";
+  sk_sp<SkData> x_key =
+      SkData::MakeWithCopy(x_key_str.data(), x_key_str.size());
+  sk_sp<SkData> x_value =
+      SkData::MakeWithCopy(x_value_str.data(), x_value_str.size());
+  auto x_data = PersistentCache::BuildCacheObject(*x_key, *x_value);
+
+  const std::string y_key_str = "B";
+  const std::string y_value_str = "y";
+  sk_sp<SkData> y_key =
+      SkData::MakeWithCopy(y_key_str.data(), y_key_str.size());
+  sk_sp<SkData> y_value =
+      SkData::MakeWithCopy(y_value_str.data(), y_value_str.size());
+  auto y_data = PersistentCache::BuildCacheObject(*y_key, *y_value);
+
+  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "x_cache", *x_data));
+  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "y_cache", *y_data));
 
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -2116,7 +2196,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   document.Accept(writer);
   std::string expected_json =
       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400,\"displayListBytes\":0}";
+      "Bytes\":400}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
@@ -2165,7 +2245,7 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
       [&shell, &expected_size]() {
         shell->GetPlatformView()->SetViewportMetrics(
             {1.0, static_cast<double>(expected_size.width()),
-             static_cast<double>(expected_size.height())});
+             static_cast<double>(expected_size.height()), 22});
       });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -2192,6 +2272,92 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   // should be submitted with `external_view_embedder`, hence the below check.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, DiscardResubmittedLayerTreeOnResize) {
+  auto settings = CreateSettingsForFixture();
+
+  SkISize origin_size = SkISize::Make(400, 100);
+  SkISize new_size = SkISize::Make(400, 200);
+
+  fml::AutoResetWaitableEvent end_frame_latch;
+
+  fml::AutoResetWaitableEvent resize_latch;
+
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
+  auto end_frame_callback =
+      [&](bool should_merge_thread,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
+        if (should_merge_thread) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
+        end_frame_latch.Signal();
+
+        if (should_merge_thread) {
+          resize_latch.Wait();
+        }
+      };
+
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame, true);
+
+  std::unique_ptr<Shell> shell = CreateShell(
+      settings, GetTaskRunnersForFixture(), false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &origin_size]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(origin_size.width()),
+             static_cast<double>(origin_size.height()), 22});
+      });
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  PumpOneFrame(shell.get(), static_cast<double>(origin_size.width()),
+               static_cast<double>(origin_size.height()));
+
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &new_size, &resize_latch]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(new_size.width()),
+             static_cast<double>(new_size.height()), 22});
+        resize_latch.Signal();
+      });
+
+  end_frame_latch.Wait();
+
+  // The frame resubmitted with origin size should be discarded after the
+  // viewport metrics changed.
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  // Threads will be merged at the end of this frame.
+  PumpOneFrame(shell.get(), static_cast<double>(new_size.width()),
+               static_cast<double>(new_size.height()));
+
+  end_frame_latch.Wait();
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+  ASSERT_EQ(new_size, external_view_embedder->GetLastSubmittedFrameSize());
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
@@ -2238,13 +2404,13 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   RunEngine(shell.get(), std::move(configuration));
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200});
+    shell->GetPlatformView()->SetViewportMetrics({0.0, 400, 200, 22});
     task_runner->PostTask([&]() {
-      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200});
+      shell->GetPlatformView()->SetViewportMetrics({0.8, 0.0, 200, 22});
       task_runner->PostTask([&]() {
-        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0});
+        shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 0.0, 22});
         task_runner->PostTask([&]() {
-          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0});
+          shell->GetPlatformView()->SetViewportMetrics({0.8, 400, 200.0, 22});
         });
       });
     });
@@ -2256,7 +2422,7 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   latch.Reset();
 
   task_runner->PostTask([&]() {
-    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300});
+    shell->GetPlatformView()->SetViewportMetrics({1.2, 600, 300, 22});
   });
   latch.Wait();
   ASSERT_EQ(last_device_pixel_ratio, 1.2);
@@ -2791,6 +2957,39 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
   PumpOneFrame(shell.get());
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UserTagSetOnStartup) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  // Make sure the shell launch does not kick off the creation of the VM
+  // instance by already creating one upfront.
+  auto vm_settings = CreateSettingsForFixture();
+  auto vm_ref = DartVMRef::Create(vm_settings);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  auto settings = vm_settings;
+  fml::AutoResetWaitableEvent isolate_create_latch;
+
+  // ensure that "AppStartUpTag" is set during isolate creation.
+  settings.root_isolate_create_callback = [&](const DartIsolate& isolate) {
+    Dart_Handle current_tag = Dart_GetCurrentUserTag();
+    Dart_Handle startup_tag = Dart_NewUserTag("AppStartUp");
+    EXPECT_TRUE(Dart_IdentityEquals(current_tag, startup_tag));
+
+    isolate_create_latch.Signal();
+  };
+
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+
+  RunEngine(shell.get(), std::move(configuration));
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+
+  DestroyShell(std::move(shell));
+  isolate_create_latch.Wait();
 }
 
 }  // namespace testing

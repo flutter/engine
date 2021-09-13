@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
+// For member documentation see https://api.flutter.dev/flutter/dart-ui/Canvas-class.html
+// ignore_for_file: public_member_api_docs
+
 import 'dart:html' as html;
+import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 

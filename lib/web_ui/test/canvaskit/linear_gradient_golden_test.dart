@@ -17,7 +17,7 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-const ui.Rect region = const ui.Rect.fromLTRB(0, 0, 500, 250);
+const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {bool write = false}) async {
@@ -41,14 +41,14 @@ void testMain() {
       final CkGradientLinear gradient = CkGradientLinear(
           ui.Offset(region.left + region.width / 4, region.height / 2),
           ui.Offset(region.right - region.width / 8, region.height / 2),
-          <ui.Color>[
+          const <ui.Color>[
             ui.Color(0xFF4285F4),
             ui.Color(0xFF34A853),
             ui.Color(0xFFFBBC05),
             ui.Color(0xFFEA4335),
             ui.Color(0xFF4285F4),
           ],
-          <double>[
+          const <double>[
             0.0,
             0.25,
             0.5,
@@ -75,14 +75,14 @@ void testMain() {
       final CkGradientLinear gradient = CkGradientLinear(
           ui.Offset(region.left + region.width / 4, region.height / 2),
           ui.Offset(region.right - region.width / 8, region.height / 2),
-          <ui.Color>[
+          const <ui.Color>[
             ui.Color(0xFF4285F4),
             ui.Color(0xFF34A853),
             ui.Color(0xFFFBBC05),
             ui.Color(0xFFEA4335),
             ui.Color(0xFF4285F4),
           ],
-          <double>[
+          const <double>[
             0.0,
             0.25,
             0.5,
@@ -101,7 +101,7 @@ void testMain() {
         recorder.endRecording(),
       );
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
-    // TODO: https://github.com/flutter/flutter/issues/71520
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isIosSafari || isFirefox);
 }

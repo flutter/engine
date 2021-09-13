@@ -10,8 +10,8 @@ import '../../engine.dart' show toMatrix32;
 import '../vector_math.dart';
 import 'layer.dart';
 import 'layer_tree.dart';
-import 'picture.dart';
 import 'path.dart';
+import 'picture.dart';
 
 class LayerScene implements ui.Scene {
   final LayerTree layerTree;
@@ -23,7 +23,7 @@ class LayerScene implements ui.Scene {
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    ui.Picture picture = layerTree.flatten();
+    final ui.Picture picture = layerTree.flatten();
     return picture.toImage(width, height);
   }
 }
@@ -67,7 +67,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     bool freeze = false,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    // TODO(b/128315641): implement addTexture.
+    // TODO(hterkelsen): implement addTexture, b/128315641
   }
 
   @override
@@ -146,6 +146,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
   }
 
+  @override
   ImageFilterEngineLayer pushImageFilter(
     ui.ImageFilter filter, {
     ui.ImageFilterEngineLayer? oldLayer,
@@ -213,17 +214,17 @@ class LayerSceneBuilder implements ui.SceneBuilder {
 
   @override
   void setCheckerboardOffscreenLayers(bool checkerboard) {
-    // TODO: implement setCheckerboardOffscreenLayers
+    // TODO(hterkelsen): implement setCheckerboardOffscreenLayers
   }
 
   @override
   void setCheckerboardRasterCacheImages(bool checkerboard) {
-    // TODO: implement setCheckerboardRasterCacheImages
+    // TODO(hterkelsen): implement setCheckerboardRasterCacheImages
   }
 
   @override
   void setRasterizerTracingThreshold(int frameInterval) {
-    // TODO: implement setRasterizerTracingThreshold
+    // TODO(hterkelsen): implement setRasterizerTracingThreshold
   }
 
   T pushLayer<T extends ContainerLayer>(T layer) {

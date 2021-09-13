@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// For documentation see https://github.com/flutter/engine/blob/master/lib/ui/painting.dart
+// ignore_for_file: public_member_api_docs
 part of ui;
 
 // ignore: unused_element, Used in Shader assert.
@@ -33,7 +35,7 @@ Color _scaleAlpha(Color a, double factor) {
 }
 
 class Color {
-  const Color(int value) : this.value = value & 0xFFFFFFFF;
+  const Color(int value) : this.value = value & 0xFFFFFFFF;// ignore: unnecessary_this
   const Color.fromARGB(int a, int r, int g, int b)
       : value = (((a & 0xff) << 24) |
                 ((r & 0xff) << 16) |
@@ -278,7 +280,7 @@ abstract class Gradient extends Shader {
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
   ]) {
-    Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
+    final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
     return engine.useCanvasKit
         ? engine.CkGradientLinear(
         from, to, colors, colorStops, tileMode, matrix)
@@ -399,7 +401,7 @@ class ImageFilter {
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
     }
-    // TODO(flutter_web): implement TileMode.
+    // TODO(ferhat): implement TileMode.
     return engine.EngineImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
@@ -409,11 +411,11 @@ class ImageFilter {
     if (engine.useCanvasKit) {
       return engine.CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
     }
-    // TODO(flutter_web): implement FilterQuality.
+    // TODO(yjbanov): implement FilterQuality.
     return engine.EngineImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
   }
 
-  // TODO(flutter_web): add implementation and remove the "ignore".
+  // TODO(ferhat): add implementation and remove the "ignore".
   // ignore: avoid_unused_constructor_parameters
   ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) {
     throw UnimplementedError(
@@ -423,6 +425,7 @@ class ImageFilter {
 
 enum ImageByteFormat {
   rawRgba,
+  rawStraightRgba,
   rawUnmodified,
   png,
 }
@@ -460,7 +463,7 @@ Future<Codec> instantiateImageCodec(
   bool allowUpscaling = true,
 }) async {
   if (engine.useCanvasKit) {
-    // TODO: Implement targetWidth and targetHeight support.
+    // TODO(hterkelsen): Implement targetWidth and targetHeight support.
     return engine.skiaInstantiateImageCodec(list);
   } else {
     final html.Blob blob = html.Blob(<dynamic>[list.buffer]);
@@ -594,12 +597,13 @@ void decodeImageFromPixels(
     return;
   }
 
-  void Function(Codec) callbacker = (Codec codec) {
+  void executeCallback(Codec codec) {
     codec.getNextFrame().then((FrameInfo frameInfo) {
       callback(frameInfo.image);
     });
-  };
-  _createBmp(pixels, width, height, rowBytes ?? width, format).then(callbacker);
+  }
+  _createBmp(pixels, width, height, rowBytes ?? width, format).then(
+      executeCallback);
 
 }
 
@@ -782,3 +786,17 @@ class ImageDescriptor {
     return _createBmp(_data!, width, height, _rowBytes ?? width, _format!);
   }
 }
+
+class FragmentShader extends Shader {
+  FragmentShader({
+    required ByteBuffer spirv, // ignore: avoid_unused_constructor_parameters
+    Float32List? floatUniforms, // ignore: avoid_unused_constructor_parameters
+    bool debugPrint = false, // ignore: avoid_unused_constructor_parameters
+  }) : super._() {
+    throw UnsupportedError('FragmentShader is not supported for the CanvasKit or HTML renderers.');
+  }
+
+  void update({Float32List? floatUniforms}) =>
+    throw UnsupportedError('FragmentShader is not supported for the CanvasKit or HTML renderers.');
+}
+

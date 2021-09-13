@@ -3,6 +3,7 @@ package io.flutter.embedding.android;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -17,6 +18,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -41,6 +43,7 @@ public class FlutterFragmentTest {
     assertTrue(fragment.shouldDestroyEngineWithHost());
     assertEquals(RenderMode.surface, fragment.getRenderMode());
     assertEquals(TransparencyMode.transparent, fragment.getTransparencyMode());
+    assertFalse(fragment.shouldDelayFirstAndroidViewDraw());
   }
 
   @Test
@@ -68,12 +71,21 @@ public class FlutterFragmentTest {
   }
 
   @Test
-  public void itCreatesCachedEngineFragmentThatDoesNotDestroyTheEngine() {
+  public void itCreatesNewEngineFragmentThatDelaysFirstDrawWhenRequested() {
+    FlutterFragment fragment =
+        FlutterFragment.withNewEngine().shouldDelayFirstAndroidViewDraw(true).build();
+
+    assertNotNull(fragment.shouldDelayFirstAndroidViewDraw());
+  }
+
+  @Test
+  public void itCreatesCachedEngineFragmentWithExpectedDefaults() {
     FlutterFragment fragment = FlutterFragment.withCachedEngine("my_cached_engine").build();
 
     assertTrue(fragment.shouldAttachEngineToActivity());
     assertEquals("my_cached_engine", fragment.getCachedEngineId());
     assertFalse(fragment.shouldDestroyEngineWithHost());
+    assertFalse(fragment.shouldDelayFirstAndroidViewDraw());
   }
 
   @Test
@@ -86,6 +98,16 @@ public class FlutterFragmentTest {
     assertTrue(fragment.shouldAttachEngineToActivity());
     assertEquals("my_cached_engine", fragment.getCachedEngineId());
     assertTrue(fragment.shouldDestroyEngineWithHost());
+  }
+
+  @Test
+  public void itCreatesCachedEngineFragmentThatDelaysFirstDrawWhenRequested() {
+    FlutterFragment fragment =
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .shouldDelayFirstAndroidViewDraw(true)
+            .build();
+
+    assertNotNull(fragment.shouldDelayFirstAndroidViewDraw());
   }
 
   @Test
@@ -176,8 +198,14 @@ public class FlutterFragmentTest {
         .beginTransaction()
         .add(android.R.id.content, fragment)
         .commitNow();
-    OnBackPressedCallback callback = mock(OnBackPressedCallback.class);
-    when(callback.isEnabled()).thenReturn(true);
+    final AtomicBoolean onBackPressedCalled = new AtomicBoolean(false);
+    OnBackPressedCallback callback =
+        new OnBackPressedCallback(true) {
+          @Override
+          public void handleOnBackPressed() {
+            onBackPressedCalled.set(true);
+          }
+        };
     activity.getOnBackPressedDispatcher().addCallback(callback);
 
     FlutterActivityAndFragmentDelegate mockDelegate =
@@ -187,6 +215,6 @@ public class FlutterFragmentTest {
     assertTrue(fragment.popSystemNavigator());
 
     verify(mockDelegate, never()).onBackPressed();
-    verify(callback, times(1)).handleOnBackPressed();
+    assertTrue(onBackPressedCalled.get());
   }
 }

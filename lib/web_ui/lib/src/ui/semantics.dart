@@ -318,7 +318,7 @@ class LocaleStringAttribute extends StringAttribute {
 
   @override
   StringAttribute copy({required TextRange range}) {
-    return LocaleStringAttribute(range: range, locale: this.locale);
+    return LocaleStringAttribute(range: range, locale: locale);
   }
 
   @override
@@ -349,15 +349,16 @@ class SemanticsUpdateBuilder {
     required double thickness,
     required Rect rect,
     required String label,
-    List<StringAttribute>? labelAttributes,
+    required List<StringAttribute> labelAttributes,
     required String value,
-    List<StringAttribute>? valueAttributes,
+    required List<StringAttribute> valueAttributes,
     required String increasedValue,
-    List<StringAttribute>? increasedValueAttributes,
+    required List<StringAttribute> increasedValueAttributes,
     required String decreasedValue,
-    List<StringAttribute>? decreasedValueAttributes,
+    required List<StringAttribute> decreasedValueAttributes,
     required String hint,
-    List<StringAttribute>? hintAttributes,
+    required List<StringAttribute> hintAttributes,
+    String? tooltip,
     TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
@@ -390,6 +391,7 @@ class SemanticsUpdateBuilder {
       decreasedValueAttributes: decreasedValueAttributes,
       hint: hint,
       hintAttributes: hintAttributes,
+      tooltip: tooltip,
       textDirection: textDirection,
       transform: engine.toMatrix32(transform),
       elevation: elevation,

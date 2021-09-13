@@ -41,6 +41,7 @@ abstract class Layer implements ui.EngineLayer {
 
   // TODO(dnfield): Implement ui.EngineLayer.dispose for CanvasKit.
   // https://github.com/flutter/flutter/issues/82878
+  @override
   void dispose() {}
 }
 
@@ -58,7 +59,7 @@ class PrerollContext {
 
   ui.Rect get cullRect {
     ui.Rect cullRect = ui.Rect.largest;
-    for (Mutator m in mutatorsStack) {
+    for (final Mutator m in mutatorsStack) {
       ui.Rect clipRect;
       switch (m.type) {
         case MutatorType.clipRect:
@@ -130,7 +131,7 @@ abstract class ContainerLayer extends Layer {
   /// [Rect] is empty.
   ui.Rect prerollChildren(PrerollContext context, Matrix4 childMatrix) {
     ui.Rect childPaintBounds = ui.Rect.zero;
-    for (Layer layer in _layers) {
+    for (final Layer layer in _layers) {
       layer.preroll(context, childMatrix);
       if (childPaintBounds.isEmpty) {
         childPaintBounds = layer.paintBounds;
@@ -145,7 +146,7 @@ abstract class ContainerLayer extends Layer {
   void paintChildren(PaintContext context) {
     assert(needsPainting);
 
-    for (Layer layer in _layers) {
+    for (final Layer layer in _layers) {
       if (layer.needsPainting) {
         layer.paint(context);
       }
@@ -159,8 +160,8 @@ abstract class ContainerLayer extends Layer {
 /// to [LayerSceneBuilder] without requiring a [ContainerLayer].
 class RootLayer extends ContainerLayer {
   @override
-  void paint(PaintContext context) {
-    paintChildren(context);
+  void paint(PaintContext paintContext) {
+    paintChildren(paintContext);
   }
 }
 
@@ -172,18 +173,18 @@ class BackdropFilterEngineLayer extends ContainerLayer
   BackdropFilterEngineLayer(this._filter, this._blendMode);
 
   @override
-  void preroll(PrerollContext preRollContext, Matrix4 matrix) {
-    ui.Rect childBounds = prerollChildren(preRollContext, matrix);
-    paintBounds = childBounds.expandToInclude(preRollContext.cullRect);
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    final ui.Rect childBounds = prerollChildren(prerollContext, matrix);
+    paintBounds = childBounds.expandToInclude(prerollContext.cullRect);
   }
 
   @override
-  void paint(PaintContext context) {
-    CkPaint paint = CkPaint()..blendMode = _blendMode;
-    context.internalNodesCanvas
+  void paint(PaintContext paintContext) {
+    final CkPaint paint = CkPaint()..blendMode = _blendMode;
+    paintContext.internalNodesCanvas
         .saveLayerWithFilter(paintBounds, _filter, paint);
-    paintChildren(context);
-    context.internalNodesCanvas.restore();
+    paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
   }
 
   // TODO(dnfield): dispose of the _filter
@@ -201,14 +202,14 @@ class ClipPathEngineLayer extends ContainerLayer
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
-  void preroll(PrerollContext context, Matrix4 matrix) {
-    context.mutatorsStack.pushClipPath(_clipPath);
-    final ui.Rect childPaintBounds = prerollChildren(context, matrix);
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    prerollContext.mutatorsStack.pushClipPath(_clipPath);
+    final ui.Rect childPaintBounds = prerollChildren(prerollContext, matrix);
     final ui.Rect clipBounds = _clipPath.getBounds();
     if (childPaintBounds.overlaps(clipBounds)) {
       paintBounds = childPaintBounds.intersect(clipBounds);
     }
-    context.mutatorsStack.pop();
+    prerollContext.mutatorsStack.pop();
   }
 
   @override
@@ -241,13 +242,13 @@ class ClipRectEngineLayer extends ContainerLayer
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
-  void preroll(PrerollContext context, Matrix4 matrix) {
-    context.mutatorsStack.pushClipRect(_clipRect);
-    final ui.Rect childPaintBounds = prerollChildren(context, matrix);
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    prerollContext.mutatorsStack.pushClipRect(_clipRect);
+    final ui.Rect childPaintBounds = prerollChildren(prerollContext, matrix);
     if (childPaintBounds.overlaps(_clipRect)) {
       paintBounds = childPaintBounds.intersect(_clipRect);
     }
-    context.mutatorsStack.pop();
+    prerollContext.mutatorsStack.pop();
   }
 
   @override
@@ -282,13 +283,13 @@ class ClipRRectEngineLayer extends ContainerLayer
       : assert(_clipBehavior != ui.Clip.none);
 
   @override
-  void preroll(PrerollContext context, Matrix4 matrix) {
-    context.mutatorsStack.pushClipRRect(_clipRRect);
-    final ui.Rect childPaintBounds = prerollChildren(context, matrix);
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    prerollContext.mutatorsStack.pushClipRRect(_clipRRect);
+    final ui.Rect childPaintBounds = prerollChildren(prerollContext, matrix);
     if (childPaintBounds.overlaps(_clipRRect.outerRect)) {
       paintBounds = childPaintBounds.intersect(_clipRRect.outerRect);
     }
-    context.mutatorsStack.pop();
+    prerollContext.mutatorsStack.pop();
   }
 
   @override
@@ -318,15 +319,15 @@ class OpacityEngineLayer extends ContainerLayer
   OpacityEngineLayer(this._alpha, this._offset);
 
   @override
-  void preroll(PrerollContext context, Matrix4 matrix) {
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     final Matrix4 childMatrix = Matrix4.copy(matrix);
     childMatrix.translate(_offset.dx, _offset.dy);
-    context.mutatorsStack
+    prerollContext.mutatorsStack
         .pushTransform(Matrix4.translationValues(_offset.dx, _offset.dy, 0.0));
-    context.mutatorsStack.pushOpacity(_alpha);
-    super.preroll(context, childMatrix);
-    context.mutatorsStack.pop();
-    context.mutatorsStack.pop();
+    prerollContext.mutatorsStack.pushOpacity(_alpha);
+    super.preroll(prerollContext, childMatrix);
+    prerollContext.mutatorsStack.pop();
+    prerollContext.mutatorsStack.pop();
     paintBounds = paintBounds.translate(_offset.dx, _offset.dy);
   }
 
@@ -359,12 +360,13 @@ class TransformEngineLayer extends ContainerLayer
   TransformEngineLayer(this._transform);
 
   @override
-  void preroll(PrerollContext context, Matrix4 matrix) {
-    final Matrix4 childMatrix = matrix * _transform;
-    context.mutatorsStack.pushTransform(_transform);
-    final ui.Rect childPaintBounds = prerollChildren(context, childMatrix);
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    final Matrix4 childMatrix = matrix.multiplied(_transform);
+    prerollContext.mutatorsStack.pushTransform(_transform);
+    final ui.Rect childPaintBounds =
+        prerollChildren(prerollContext, childMatrix);
     paintBounds = transformRect(_transform, childPaintBounds);
-    context.mutatorsStack.pop();
+    prerollContext.mutatorsStack.pop();
   }
 
   @override
@@ -427,7 +429,7 @@ class ShaderMaskEngineLayer extends ContainerLayer
     paintContext.internalNodesCanvas.saveLayer(paintBounds, null);
     paintChildren(paintContext);
 
-    CkPaint paint = CkPaint();
+    final CkPaint paint = CkPaint();
     paint.shader = shader;
     paint.blendMode = blendMode;
     paint.filterQuality = filterQuality;
@@ -568,7 +570,7 @@ class ColorFilterEngineLayer extends ContainerLayer
   void paint(PaintContext paintContext) {
     assert(needsPainting);
 
-    CkPaint paint = CkPaint();
+    final CkPaint paint = CkPaint();
     paint.colorFilter = filter;
 
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
@@ -587,21 +589,24 @@ class PlatformViewLayer extends Layer {
   final double height;
 
   @override
-  void preroll(PrerollContext context, Matrix4 matrix) {
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-    context.viewEmbedder!.prerollCompositeEmbeddedView(
+    prerollContext.viewEmbedder!.prerollCompositeEmbeddedView(
       viewId,
       EmbeddedViewParams(
         offset,
         ui.Size(width, height),
-        context.mutatorsStack,
+        prerollContext.mutatorsStack,
       ),
     );
   }
 
   @override
-  void paint(PaintContext context) {
-    CkCanvas? canvas = context.viewEmbedder!.compositeEmbeddedView(viewId);
-    context.leafNodesCanvas = canvas;
+  void paint(PaintContext paintContext) {
+    final CkCanvas? canvas =
+        paintContext.viewEmbedder!.compositeEmbeddedView(viewId);
+    if (canvas != null) {
+      paintContext.leafNodesCanvas = canvas;
+    }
   }
 }

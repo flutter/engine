@@ -71,7 +71,7 @@ Once the emulator is up, you can run the test by running:
 In the `android` directory, run:
 
 ```bash
-./gradlew app:recordDebugAndroidTestScreenshotTest
+../../../../gradle/bin/gradle app:recordDebugAndroidTestScreenshotTest
 ```
 
 The screenshots are recorded into `android/reports/screenshots`.
@@ -81,7 +81,18 @@ The screenshots are recorded into `android/reports/screenshots`.
 In the `android` directory, run:
 
 ```bash
-./gradlew app:verifyDebugAndroidTestScreenshotTest
+../../../../gradle/bin/gradle app:verifyDebugAndroidTestScreenshotTest
+```
+
+### Updating Gradle dependencies
+
+If a Gradle dependency is updated, lockfiles must be regenerated.
+
+To generate new lockfiles, run:
+
+```bash
+cd android
+../../../../gradle/bin/gradle generateLockfiles
 ```
 
 ## Changing dart:ui code

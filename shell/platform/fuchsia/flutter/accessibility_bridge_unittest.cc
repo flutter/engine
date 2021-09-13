@@ -68,7 +68,7 @@ class AccessibilityBridgeTest : public testing::Test {
     loop_.ResetQuit();
   }
 
-  void RunPromiseToCompletion(fit::promise<> promise) {
+  void RunPromiseToCompletion(fpromise::promise<> promise) {
     bool done = false;
     executor_.schedule_task(
         std::move(promise).and_then([&done]() { done = true; }));
@@ -585,6 +585,52 @@ TEST_F(AccessibilityBridgeTest, TruncatesLargeLabel) {
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
 }
 
+TEST_F(AccessibilityBridgeTest, TruncatesLargeToolTip) {
+  // Test that tooltips which are too long are truncated.
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+
+  flutter::SemanticsNode bad_node;
+  bad_node.id = 2;
+  bad_node.tooltip =
+      std::string(fuchsia::accessibility::semantics::MAX_LABEL_SIZE + 1, '2');
+
+  node0.childrenInTraversalOrder = {1, 2};
+  node0.childrenInHitTestOrder = {1, 2};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+          {2, bad_node},
+      },
+      1.f);
+  RunLoopUntilIdle();
+
+  // Nothing to delete, but we should have broken
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(3U, semantics_manager_.LastUpdatedNodes().size());
+  auto trimmed_node =
+      std::find_if(semantics_manager_.LastUpdatedNodes().begin(),
+                   semantics_manager_.LastUpdatedNodes().end(),
+                   [id = static_cast<uint32_t>(bad_node.id)](
+                       fuchsia::accessibility::semantics::Node const& node) {
+                     return node.node_id() == id;
+                   });
+  ASSERT_NE(trimmed_node, semantics_manager_.LastUpdatedNodes().end());
+  ASSERT_TRUE(trimmed_node->has_attributes());
+  EXPECT_EQ(
+      trimmed_node->attributes().secondary_label(),
+      std::string(fuchsia::accessibility::semantics::MAX_LABEL_SIZE, '2'));
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
 TEST_F(AccessibilityBridgeTest, TruncatesLargeValue) {
   // Test that values which are too long are truncated.
   flutter::SemanticsNode node0;
@@ -842,6 +888,41 @@ TEST_F(AccessibilityBridgeTest, HitTest) {
   EXPECT_EQ(hit_node_id, 4u);
 }
 
+TEST_F(AccessibilityBridgeTest, HitTestWithPixelRatio) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  node0.rect.setLTRB(0, 0, 100, 100);
+  node0.flags |= static_cast<int32_t>(flutter::SemanticsFlags::kIsFocusable);
+
+  flutter::SemanticsNode node1;
+  node1.id = 1;
+  node1.rect.setLTRB(10, 10, 20, 20);
+  // Setting platform view id ensures this node is considered focusable.
+  node1.platformViewId = 1u;
+
+  node0.childrenInTraversalOrder = {1};
+  node0.childrenInHitTestOrder = {1};
+
+  accessibility_bridge_->AddSemanticsNodeUpdate(
+      {
+          {0, node0},
+          {1, node1},
+      },
+      // Pick a very small pixel ratio so that a point within the bounds of
+      // the node's root-space coordinates will be well outside the "screen"
+      // bounds of the node.
+      .1f);
+  RunLoopUntilIdle();
+
+  uint32_t hit_node_id;
+  auto callback = [&hit_node_id](fuchsia::accessibility::semantics::Hit hit) {
+    EXPECT_TRUE(hit.has_node_id());
+    hit_node_id = hit.node_id();
+  };
+  accessibility_bridge_->HitTest({15, 15}, callback);
+  EXPECT_EQ(hit_node_id, 0u);
+}
+
 TEST_F(AccessibilityBridgeTest, HitTestUnfocusableChild) {
   flutter::SemanticsNode node0;
   node0.id = 0;
@@ -1013,11 +1094,11 @@ TEST_F(AccessibilityBridgeTest, InspectData) {
   accessibility_bridge_->AddSemanticsNodeUpdate(std::move(updates), 1.f);
   RunLoopUntilIdle();
 
-  fit::result<inspect::Hierarchy> hierarchy;
+  fpromise::result<inspect::Hierarchy> hierarchy;
   ASSERT_FALSE(hierarchy.is_ok());
   RunPromiseToCompletion(
       inspect::ReadFromInspector(*inspector_)
-          .then([&hierarchy](fit::result<inspect::Hierarchy>& result) {
+          .then([&hierarchy](fpromise::result<inspect::Hierarchy>& result) {
             hierarchy = std::move(result);
           }));
   ASSERT_TRUE(hierarchy.is_ok());

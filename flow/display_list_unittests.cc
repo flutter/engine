@@ -251,97 +251,97 @@ struct DisplayListInvocationGroup {
 
 std::vector<DisplayListInvocationGroup> allGroups = {
   { "SetAA", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setAA(false);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setAA(true);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAA(false);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAA(true);}},
     }
   },
   { "SetDither", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setDither(false);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setDither(true);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDither(false);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDither(true);}},
     }
   },
   { "SetInvertColors", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setInvertColors(false);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setInvertColors(true);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setInvertColors(false);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setInvertColors(true);}},
     }
   },
   { "SetStrokeCap", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kButt_Cap);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kRound_Cap);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kSquare_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kButt_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kRound_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kSquare_Cap);}},
     }
   },
   { "SetStrokeJoin", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kBevel_Join);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kRound_Join);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kMiter_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kBevel_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kRound_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kMiter_Join);}},
     }
   },
   { "SetDrawStyle", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setDrawStyle(SkPaint::kFill_Style);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setDrawStyle(SkPaint::kStroke_Style);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDrawStyle(SkPaint::kFill_Style);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDrawStyle(SkPaint::kStroke_Style);}},
     }
   },
   { "SetStrokeWidth", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(0.0);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(5.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(0.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(5.0);}},
     }
   },
   { "SetMiterLimit", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMiterLimit(0.0);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMiterLimit(5.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMiterLimit(0.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMiterLimit(5.0);}},
     }
   },
   { "SetColor", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorGREEN);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorBLUE);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorGREEN);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorBLUE);}},
     }
   },
   { "SetBlendMode", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kSrcIn);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kDstIn);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kSrcIn);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(SkBlendMode::kDstIn);}},
     }
   },
   { "SetBlender", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender1);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender2);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender3);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender1);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender2);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender3);}},
     }
   },
   { "SetShader", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setShader(nullptr);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader1);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader2);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader3);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setShader(nullptr);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader1);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader2);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setShader(TestShader3);}},
     }
   },
   { "SetImageFilter", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(nullptr);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(TestImageFilter1);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(TestImageFilter2);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(nullptr);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(TestImageFilter1);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(TestImageFilter2);}},
     }
   },
   { "SetColorFilter", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(nullptr);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(TestColorFilter1);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(TestColorFilter2);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(nullptr);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(TestColorFilter1);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(TestColorFilter2);}},
     }
   },
   { "SetPathEffect", {
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2);}},
     }
   },
   { "SetMaskFilter", {
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(nullptr);}},
-      {1, 16, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(TestMaskFilter);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kNormal_SkBlurStyle, 3.0);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kNormal_SkBlurStyle, 5.0);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kSolid_SkBlurStyle, 3.0);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kInner_SkBlurStyle, 3.0);}},
-      {1, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kOuter_SkBlurStyle, 3.0);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(nullptr);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(TestMaskFilter);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kNormal_SkBlurStyle, 3.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kNormal_SkBlurStyle, 5.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kSolid_SkBlurStyle, 3.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kInner_SkBlurStyle, 3.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMaskBlurFilter(kOuter_SkBlurStyle, 3.0);}},
     }
   },
   { "Save(Layer)+Restore", {
@@ -433,9 +433,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   },
   { "DrawColor", {
       // cv.drawColor becomes cv.drawPaint(paint)
-      {1, 16, 3, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, SkBlendMode::kSrcIn);}},
-      {1, 16, 3, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, SkBlendMode::kDstIn);}},
-      {1, 16, 3, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorCYAN, SkBlendMode::kSrcIn);}},
+      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, SkBlendMode::kSrcIn);}},
+      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, SkBlendMode::kDstIn);}},
+      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorCYAN, SkBlendMode::kSrcIn);}},
     }
   },
   { "DrawLine", {
@@ -584,7 +584,7 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 88, 1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kLinear, false);}},
-      {2, 96, 2, 96, [](DisplayListBuilder& b) {b.setColor(SK_ColorMAGENTA);
+      {1, 96, 1, 96, [](DisplayListBuilder& b) {b.setColor(SK_ColorMAGENTA);
                                                 b.drawImageLattice(TestImage1,
                                                                    {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
                                                                    {10, 10, 40, 40}, SkFilterMode::kNearest, true);}},
@@ -860,6 +860,131 @@ TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
       ASSERT_FALSE(variant_dl->Equals(*missing_dl)) << desc << " != omitted";
       ASSERT_FALSE(missing_dl->Equals(*variant_dl)) << "omitted != " << desc;
     }
+  }
+}
+
+TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
+  SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
+  SkRect save_bounds = SkRect::MakeWH(100, 100);
+  SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
+  // clang-format off
+  const float color_matrix[] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  };
+  // clang-format on
+  sk_sp<SkColorFilter> base_color_filter = SkColorFilters::Matrix(color_matrix);
+  // clang-format off
+  const float alpha_matrix[] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 0, 1,
+  };
+  // clang-format on
+  sk_sp<SkColorFilter> alpha_color_filter =
+      SkColorFilters::Matrix(alpha_matrix);
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.saveLayer(&save_bounds, true);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), rect);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setColorFilter(base_color_filter);
+    builder.saveLayer(&save_bounds, true);
+    builder.setColorFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), rect);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setColorFilter(alpha_color_filter);
+    builder.saveLayer(&save_bounds, true);
+    builder.setColorFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), save_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setColorFilter(alpha_color_filter);
+    builder.saveLayer(nullptr, true);
+    builder.setColorFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), build_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setImageFilter(
+        SkImageFilters::ColorFilter(base_color_filter, nullptr));
+    builder.saveLayer(&save_bounds, true);
+    builder.setImageFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), rect);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setImageFilter(
+        SkImageFilters::ColorFilter(alpha_color_filter, nullptr));
+    builder.saveLayer(&save_bounds, true);
+    builder.setImageFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), save_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setImageFilter(
+        SkImageFilters::ColorFilter(alpha_color_filter, nullptr));
+    builder.saveLayer(nullptr, true);
+    builder.setImageFilter(nullptr);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), build_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setBlendMode(SkBlendMode::kClear);
+    builder.saveLayer(&save_bounds, true);
+    builder.setBlendMode(SkBlendMode::kSrcOver);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), save_bounds);
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.setBlendMode(SkBlendMode::kClear);
+    builder.saveLayer(nullptr, true);
+    builder.setBlendMode(SkBlendMode::kSrcOver);
+    builder.drawRect(rect);
+    builder.restore();
+    sk_sp<DisplayList> display_list = builder.Build();
+    ASSERT_EQ(display_list->bounds(), build_bounds);
   }
 }
 

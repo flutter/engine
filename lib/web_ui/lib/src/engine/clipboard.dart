@@ -25,7 +25,7 @@ class ClipboardMessageHandler {
     const MethodCodec codec = JSONMethodCodec();
     bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'])
+        .setData(methodCall.arguments['text'] as String?)
         .then((bool success) {
       if (success) {
         callback!(codec.encodeSuccessEnvelope(true));
@@ -130,9 +130,9 @@ class ClipboardAPICopyStrategy implements CopyToClipboardStrategy {
       await html.window.navigator.clipboard!.writeText(text!);
     } catch (error) {
       print('copy is not successful $error');
-      return Future.value(false);
+      return Future<bool>.value(false);
     }
-    return Future.value(true);
+    return Future<bool>.value(true);
   }
 }
 
@@ -153,7 +153,7 @@ class ClipboardAPIPasteStrategy implements PasteFromClipboardStrategy {
 class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   @override
   Future<bool> setData(String? text) {
-    return Future.value(_setDataSync(text));
+    return Future<bool>.value(_setDataSync(text));
   }
 
   bool _setDataSync(String? text) {
@@ -203,8 +203,8 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
 class ExecCommandPasteStrategy implements PasteFromClipboardStrategy {
   @override
   Future<String> getData() {
-    // TODO(nurhan): https://github.com/flutter/flutter/issues/48581
-    return Future.error(
+    // TODO(mdebbar): https://github.com/flutter/flutter/issues/48581
+    return Future<String>.error(
         UnimplementedError('Paste is not implemented for this browser.'));
   }
 }

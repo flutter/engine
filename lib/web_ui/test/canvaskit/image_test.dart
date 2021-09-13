@@ -252,7 +252,7 @@ void testMain() {
         );
       }
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 
@@ -272,7 +272,7 @@ class TestHttpRequest implements html.HttpRequest {
   }
 
   @override
-  void addEventListener(String type, listener, [bool? useCapture]) {
+  void addEventListener(String type, html.EventListener? listener, [bool? useCapture]) {
     throw UnimplementedError();
   }
 
@@ -330,7 +330,7 @@ class TestHttpRequest implements html.HttpRequest {
   int get readyState => throw UnimplementedError();
 
   @override
-  void removeEventListener(String type, listener, [bool? useCapture]) {
+  void removeEventListener(String type, html.EventListener? listener, [bool? useCapture]) {
     throw UnimplementedError();
   }
 

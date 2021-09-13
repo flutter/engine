@@ -12,11 +12,17 @@
 #include "flutter/shell/platform/linux/fl_key_embedder_responder_private.h"
 #include "flutter/shell/platform/linux/key_mapping.h"
 
-// The code prefix for unrecognized keys that are unique to Gtk, generated from
-// platform-specific codes.
-constexpr uint64_t kGtkKeyIdPlane = 0x00600000000;
-
 constexpr uint64_t kMicrosecondsPerMillisecond = 1000;
+
+static const FlutterKeyEvent empty_event{
+    .struct_size = sizeof(FlutterKeyEvent),
+    .timestamp = 0,
+    .type = kFlutterKeyEventTypeDown,
+    .physical = 0,
+    .logical = 0,
+    .character = nullptr,
+    .synthesized = false,
+};
 
 // Look up a hash table that maps a uint64_t to a uint64_t.
 //
@@ -269,12 +275,16 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(FlEngine* engine) {
 
 /* Implement FlKeyEmbedderUserData */
 
+static uint64_t apply_id_plane(uint64_t logical_id, uint64_t plane) {
+  return (logical_id & kValueMask) | plane;
+}
+
 static uint64_t event_to_physical_key(const FlKeyEvent* event) {
   auto found = xkb_to_physical_key_map.find(event->keycode);
   if (found != xkb_to_physical_key_map.end()) {
     return found->second;
   }
-  return kGtkKeyIdPlane | event->keycode;
+  return apply_id_plane(event->keycode, kGtkPlane);
 }
 
 static uint64_t event_to_logical_key(const FlKeyEvent* event) {
@@ -285,10 +295,10 @@ static uint64_t event_to_logical_key(const FlKeyEvent* event) {
   }
   // EASCII range
   if (keyval < 256) {
-    return to_lower(keyval);
+    return apply_id_plane(to_lower(keyval), kUnicodePlane);
   }
   // Auto-generate key
-  return kGtkKeyIdPlane | keyval;
+  return apply_id_plane(keyval, kGtkPlane);
 }
 
 static uint64_t event_to_timestamp(const FlKeyEvent* event) {
@@ -712,6 +722,7 @@ static void fl_key_embedder_responder_handle_event(
       // pressed one, usually indicating multiple keyboards are pressing keys
       // with the same physical key, or the up event was lost during a loss of
       // focus. The down event is ignored.
+      fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
       callback(true, user_data);
       return;
     } else {
@@ -724,6 +735,7 @@ static void fl_key_embedder_responder_handle_event(
       // The physical key has been released before. It might indicate a missed
       // event due to loss of focus, or multiple keyboards pressed keys with the
       // same physical key. Ignore the up event.
+      fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
       callback(true, user_data);
       return;
     } else {

@@ -76,10 +76,7 @@ group("flutter") {
 
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
-    public_deps += [
-      "//flutter/lib/snapshot:generate_snapshot_bin",
-      "//flutter/lib/snapshot:kernel_platform_files",
-    ]
+    public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
     if (_build_engine_artifacts) {
       public_deps += [
@@ -116,8 +113,14 @@ group("flutter") {
     ]
   }
 
-  if (is_ios || is_android) {
+  if ((flutter_runtime_mode == "debug" || flutter_runtime_mode == "profile") &&
+      (is_ios || is_android)) {
     public_deps += [ "//flutter/testing/scenario_app" ]
+  }
+
+  if (is_android && flutter_runtime_mode == "profile" &&
+      current_cpu == "arm64") {
+    public_deps += [ "//flutter/testing/android_background_image" ]
   }
 
   # Compile all unittests targets if enabled.
@@ -126,6 +129,9 @@ group("flutter") {
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
+      "//flutter/lib/spirv/test/general_shaders:spirv_compile_general_shaders",
+      "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
+      "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",

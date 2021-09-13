@@ -116,12 +116,12 @@ final String lineBreakCodegen =
 /// (2) The codegen'd Dart files is located at:
 ///     lib/src/engine/text/word_break_properties.dart
 ///     lib/src/engine/text/line_break_properties.dart
-void main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
   final ArgResults result = argParser.parse(arguments);
   final PropertiesSyncer syncer = getSyncer(
-    result['words'],
-    result['lines'],
-    result['dry'],
+    result['words'] as String?,
+    result['lines'] as String?,
+    result['dry'] as bool,
   );
 
   syncer.perform();
@@ -147,11 +147,11 @@ PropertiesSyncer getSyncer(
   if (wordBreakProperties != null) {
     return dry
         ? WordBreakPropertiesSyncer.dry(wordBreakProperties)
-        : WordBreakPropertiesSyncer(wordBreakProperties, '$wordBreakCodegen');
+        : WordBreakPropertiesSyncer(wordBreakProperties, wordBreakCodegen);
   } else {
     return dry
         ? LineBreakPropertiesSyncer.dry(lineBreakProperties!)
-        : LineBreakPropertiesSyncer(lineBreakProperties!, '$lineBreakCodegen');
+        : LineBreakPropertiesSyncer(lineBreakProperties!, lineBreakCodegen);
   }
 }
 
@@ -177,7 +177,7 @@ abstract class PropertiesSyncer {
   /// to any known range.
   String get defaultProperty;
 
-  void perform() async {
+  Future<void> perform() async {
     final List<String> lines = await File(_src).readAsLines();
     final List<String> header = extractHeader(lines);
     final PropertyCollection data =
@@ -209,7 +209,7 @@ import 'unicode_range.dart';
 
 /// For an explanation of these enum values, see:
 ///
-/// * ${enumDocLink}
+/// * $enumDocLink
 enum ${prefix}CharProperty {
   ${_getEnumValues(data.enumCollection).join('\n  ')}
 }
@@ -223,7 +223,7 @@ UnicodePropertyLookup<${prefix}CharProperty> ${prefix.toLowerCase()}Lookup =
   _packed${prefix}BreakProperties,
   ${_getSingleRangesCount(data)},
   ${prefix}CharProperty.values,
-  ${prefix}CharProperty.${defaultProperty},
+  ${prefix}CharProperty.$defaultProperty,
 );
 ''';
   }
@@ -305,7 +305,7 @@ class PropertyCollection {
         .toList();
     // Insert the default property if it doesn't exist.
     final EnumValue? found = enumCollection.values.cast<EnumValue?>().firstWhere(
-      (property) => property!.name == defaultProperty,
+      (EnumValue? property) => property!.name == defaultProperty,
       orElse: () => null,
     );
     if (found == null) {
@@ -479,7 +479,7 @@ void verifyNoOverlappingRanges(List<UnicodeRange> data) {
 
 List<String> extractHeader(List<String> lines) {
   final List<String> headerLines = <String>[];
-  for (String line in lines) {
+  for (final String line in lines) {
     if (line.trim() == '#' || line.trim().isEmpty) {
       break;
     }

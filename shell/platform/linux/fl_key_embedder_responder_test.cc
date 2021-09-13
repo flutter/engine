@@ -6,6 +6,7 @@
 
 #include "gtest/gtest.h"
 
+#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
@@ -26,20 +27,7 @@ constexpr guint16 kKeyCodeCapsLock = 0x42u;
 constexpr guint16 kKeyCodeControlLeft = 0x25u;
 constexpr guint16 kKeyCodeControlRight = 0x69u;
 
-constexpr uint64_t kPhysicalKeyA = 0x00070004;
-constexpr uint64_t kPhysicalControlLeft = 0x000700e0;
-constexpr uint64_t kPhysicalShiftRight = 0x000700E5;
-constexpr uint64_t kPhysicalNumpad1 = 0x00070059;
-constexpr uint64_t kPhysicalNumLock = 0x00070053;
-constexpr uint64_t kPhysicalCapsLock = 0x00070039;
-
-constexpr uint64_t kLogicalKeyA = 0x00000061;
-constexpr uint64_t kLogicalKeyQ = 0x00000071;
-constexpr uint64_t kLogicalControlLeft = 0x30000000105;
-constexpr uint64_t kLogicalShiftRight = 0x4000000010D;
-constexpr uint64_t kLogicalNumpad1 = 0x50000000031;
-constexpr uint64_t kLogicalNumLock = 0x100000010A;
-constexpr uint64_t kLogicalCapsLock = 0x1000000104;
+using namespace ::flutter::testing::keycodes;
 }  // namespace
 
 static void g_ptr_array_clear(GPtrArray* array) {
@@ -890,14 +878,23 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
 
   // Press KeyA again (with different logical key, which is not necessari but
   // for coverage).
-  g_expected_handled = true;  // The ignored event is always handled.
+  g_expected_handled = true;  // The empty event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(102, kPress, GDK_KEY_q, kKeyCodeKeyA, 0,
                                kIsNotModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 0u);
+  EXPECT_EQ(g_call_records->len, 1u);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
+
+  g_ptr_array_clear(g_call_records);
 
   // Release KeyA
   fl_key_responder_handle_event(
@@ -917,6 +914,8 @@ TEST(FlKeyEmbedderResponderTest, IgnoreDuplicateDownEvent) {
 }
 
 TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
+  FlKeyEmbedderCallRecord* record;
+
   EXPECT_EQ(g_call_records, nullptr);
   g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlEngine* engine = make_mock_engine_with_records();
@@ -925,14 +924,21 @@ TEST(FlKeyEmbedderResponderTest, IgnoreAbruptUpEvent) {
   int user_data = 123;  // Arbitrary user data
 
   // Release KeyA before it was even pressed.
-  g_expected_handled = true;  // The ignored event is always handled.
+  g_expected_handled = true;  // The empty event is always handled.
   fl_key_responder_handle_event(
       responder,
       fl_key_event_new_by_mock(103, kRelease, GDK_KEY_q, kKeyCodeKeyA, 0,
                                kIsNotModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 0u);
+  EXPECT_EQ(g_call_records->len, 1u);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
 
   clear_g_call_records();
   g_object_unref(engine);
@@ -1051,11 +1057,11 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
                                kKeyCodeControlRight, state, kIsModifier),
       verify_response_handled, &user_data);
 
-  // A ControlLeft down is synthesized, with no non-synthesized event.
+  // A ControlLeft down is synthesized, with an empty event.
   // Reason: The ControlLeft down is synthesized to synchronize the state
   // showing Control as pressed. The ControlRight event is ignored because
   // the event is considered a duplicate up event.
-  EXPECT_EQ(g_call_records->len, 1u);
+  EXPECT_EQ(g_call_records->len, 2u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 105000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
@@ -1063,6 +1069,13 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncPressingStateOnSelfEvents) {
   EXPECT_EQ(record->event->logical, kLogicalControlLeft);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
 
   g_ptr_array_clear(g_call_records);
 
@@ -1364,7 +1377,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
   g_ptr_array_clear(g_call_records);
 
   // Release NumLock. Since the previous event should have synthesized NumLock
-  // to be released, this should result in no events.
+  // to be released, this should result in only an empty event.
   g_expected_handled = true;
   fl_key_responder_handle_event(
       responder,
@@ -1372,7 +1385,13 @@ TEST(FlKeyEmbedderResponderTest, SynthesizeForDesyncLockModeOnNonSelfEvents) {
                                state, kIsModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 0u);
+  EXPECT_EQ(g_call_records->len, 1u);
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
 
   clear_g_call_records();
   g_object_unref(engine);
@@ -1503,7 +1522,7 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
                                kIsNotModifier),
       verify_response_handled, &user_data);
 
-  EXPECT_EQ(g_call_records->len, 2u);
+  EXPECT_EQ(g_call_records->len, 3u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->timestamp, 101000);
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
@@ -1519,6 +1538,13 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   EXPECT_EQ(record->event->logical, kLogicalControlLeft);
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, true);
+
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
+  EXPECT_EQ(record->event->physical, 0ull);
+  EXPECT_EQ(record->event->logical, 0ull);
+  EXPECT_STREQ(record->event->character, nullptr);
+  EXPECT_EQ(record->event->synthesized, false);
+  EXPECT_EQ(record->callback, nullptr);
 
   g_ptr_array_clear(g_call_records);
 

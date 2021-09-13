@@ -17,6 +17,9 @@ enum {
   kFlutterSurfaceManagerBufferCount,
 };
 
+// BackBuffer will be released after kIdleDelay if there is no activity.
+static const double kIdleDelay = 1.0;
+
 @implementation FlutterIOSurfaceManager {
   CALayer* _containingLayer;  // provided (parent layer)
   CALayer* _contentLayer;
@@ -24,6 +27,7 @@ enum {
 
   CGSize _surfaceSize;
   FlutterIOSurfaceHolder* _ioSurfaces[kFlutterSurfaceManagerBufferCount];
+  BOOL _frameInProgress;
 }
 
 - (instancetype)initWithLayer:(CALayer*)containingLayer contentTransform:(CATransform3D)transform {
@@ -46,12 +50,21 @@ enum {
   }
   _surfaceSize = size;
   for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
-    [_ioSurfaces[i] recreateIOSurfaceWithSize:size];
-    [_delegate onUpdateSurface:_ioSurfaces[i] bufferIndex:i size:size];
+    if (_ioSurfaces[i] != nil) {
+      [_ioSurfaces[i] recreateIOSurfaceWithSize:size];
+      [_delegate onUpdateSurface:_ioSurfaces[i] bufferIndex:i size:size];
+    }
   }
 }
 
 - (void)swapBuffers {
+#ifndef NDEBUG
+  // swapBuffers should not be called unless a frame was drawn
+  @synchronized(self) {
+    assert(_frameInProgress);
+  }
+#endif
+
   _contentLayer.frame = _containingLayer.bounds;
   _contentLayer.transform = _contentTransform;
   IOSurfaceRef contentIOSurface = [_ioSurfaces[kFlutterSurfaceManagerBackBuffer] ioSurface];
@@ -60,6 +73,48 @@ enum {
   std::swap(_ioSurfaces[kFlutterSurfaceManagerBackBuffer],
             _ioSurfaces[kFlutterSurfaceManagerFrontBuffer]);
   [_delegate onSwapBuffers];
+
+  // performSelector:withObject:afterDelay needs to be performed on RunLoop thread
+  [self performSelectorOnMainThread:@selector(reschedule) withObject:nil waitUntilDone:NO];
+
+  @synchronized(self) {
+    _frameInProgress = NO;
+  }
+}
+
+- (void)reschedule {
+  [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(onIdle) object:nil];
+  [self performSelector:@selector(onIdle) withObject:nil afterDelay:kIdleDelay];
+}
+
+- (void)onIdle {
+  @synchronized(self) {
+    if (!_frameInProgress) {
+      // Release the back buffer and notify delegate. The buffer will be restored
+      // on demand in ensureBackBuffer
+      _ioSurfaces[kFlutterSurfaceManagerBackBuffer] = nil;
+      [self.delegate onSurfaceReleased:kFlutterSurfaceManagerBackBuffer];
+    }
+  }
+}
+
+- (void)ensureBackBuffer {
+  @synchronized(self) {
+    _frameInProgress = YES;
+    if (_ioSurfaces[kFlutterSurfaceManagerBackBuffer] == nil) {
+      // Restore previously released backbuffer
+      _ioSurfaces[kFlutterSurfaceManagerBackBuffer] = [[FlutterIOSurfaceHolder alloc] init];
+      [_ioSurfaces[kFlutterSurfaceManagerBackBuffer] recreateIOSurfaceWithSize:_surfaceSize];
+      [_delegate onUpdateSurface:_ioSurfaces[kFlutterSurfaceManagerBackBuffer]
+                     bufferIndex:kFlutterSurfaceManagerBackBuffer
+                            size:_surfaceSize];
+    }
+  };
+  [self performSelectorOnMainThread:@selector(cancelIdle) withObject:nil waitUntilDone:NO];
+}
+
+- (void)cancelIdle {
+  [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(onIdle) object:nil];
 }
 
 - (nonnull FlutterRenderBackingStore*)renderBuffer {
@@ -84,14 +139,12 @@ enum {
   if (self) {
     super.delegate = self;
     _openGLContext = openGLContext;
-
-    _frameBuffers[0] = [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:_openGLContext];
-    _frameBuffers[1] = [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:_openGLContext];
   }
   return self;
 }
 
 - (FlutterRenderBackingStore*)renderBuffer {
+  [self ensureBackBuffer];
   uint32_t fboID = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
   return [[FlutterOpenGLRenderBackingStore alloc] initWithFrameBufferID:fboID];
 }
@@ -104,10 +157,18 @@ enum {
 - (void)onUpdateSurface:(FlutterIOSurfaceHolder*)surface
             bufferIndex:(size_t)index
                    size:(CGSize)size {
+  if (_frameBuffers[index] == nil) {
+    _frameBuffers[index] =
+        [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:_openGLContext];
+  }
   MacOSGLContextSwitch context_switch(_openGLContext);
   GLuint fbo = [_frameBuffers[index] glFrameBufferId];
   GLuint texture = [_frameBuffers[index] glTextureId];
   [surface bindSurfaceToTexture:texture fbo:fbo size:size];
+}
+
+- (void)onSurfaceReleased:(size_t)index {
+  _frameBuffers[index] = nil;
 }
 
 @end
@@ -132,6 +193,7 @@ enum {
 }
 
 - (FlutterRenderBackingStore*)renderBuffer {
+  [self ensureBackBuffer];
   id<MTLTexture> texture = _textures[kFlutterSurfaceManagerBackBuffer];
   return [[FlutterMetalRenderBackingStore alloc] initWithTexture:texture];
 }
@@ -155,6 +217,10 @@ enum {
   _textures[index] = [_device newTextureWithDescriptor:textureDescriptor
                                              iosurface:[surface ioSurface]
                                                  plane:0];
+}
+
+- (void)onSurfaceReleased:(size_t)index {
+  _textures[index] = nil;
 }
 
 @end

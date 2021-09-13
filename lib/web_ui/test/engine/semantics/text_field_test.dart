@@ -87,10 +87,10 @@ void testMain() {
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  },  // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
-      skip: (browserEngine != BrowserEngine.blink));
+  },  // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
+      skip: browserEngine != BrowserEngine.blink);
 
     test('Syncs editing state from framework', () async {
       semantics()
@@ -113,14 +113,14 @@ void testMain() {
       );
 
       // Create
-      SemanticsObject textFieldSemantics = createTextFieldSemantics(
+      final SemanticsObject textFieldSemantics = createTextFieldSemantics(
         value: 'hello',
         label: 'greeting',
         isFocused: true,
-        rect: ui.Rect.fromLTWH(0, 0, 10, 15),
+        rect: const ui.Rect.fromLTWH(0, 0, 10, 15),
       );
 
-      TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField) as TextField;
+      final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       expect(html.document.activeElement, domRenderer.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
@@ -134,7 +134,7 @@ void testMain() {
         value: 'bye',
         label: 'farewell',
         isFocused: false,
-        rect: ui.Rect.fromLTWH(0, 0, 12, 17),
+        rect: const ui.Rect.fromLTWH(0, 0, 12, 17),
       );
 
       expect(html.document.activeElement, html.document.body);
@@ -172,7 +172,7 @@ void testMain() {
         isFocused: true,
       );
 
-      final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField) as TextField;
+      final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       expect(textField.editableElement, strategy.domElement);
       expect(html.document.activeElement, domRenderer.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
@@ -212,7 +212,7 @@ void testMain() {
       expect(strategy.domElement, isNull);
 
       // It doesn't remove the DOM element.
-      final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField) as TextField;
+      final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       expect(appHostNode.contains(textField.editableElement), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
@@ -284,7 +284,7 @@ void testMain() {
         isMultiline: true,
       );
 
-      final html.TextAreaElement textArea = strategy.domElement as html.TextAreaElement;
+      final html.TextAreaElement textArea = strategy.domElement! as html.TextAreaElement;
 
       expect(html.document.activeElement, domRenderer.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
@@ -325,7 +325,7 @@ void testMain() {
         width: 13,
         globalTransform: Matrix4.translationValues(14, 15, 0).storage,
       );
-      final ui.Rect semanticsRect = ui.Rect.fromLTRB(0, 0, 100, 50);
+      const ui.Rect semanticsRect = ui.Rect.fromLTRB(0, 0, 100, 50);
 
       testTextEditing.acceptCommand(
         TextInputSetEditableSizeAndTransform(geometry: geometry),
@@ -361,14 +361,14 @@ void testMain() {
             isTextField: true,
             value: 'Hello',
             isFocused: focusFieldId == 1,
-            rect: ui.Rect.fromLTRB(0, 0, 50, 10),
+            rect: const ui.Rect.fromLTRB(0, 0, 50, 10),
           ),
           builder.updateNode(
             id: 2,
             isTextField: true,
             value: 'World',
             isFocused: focusFieldId == 2,
-            rect: ui.Rect.fromLTRB(0, 20, 50, 10),
+            rect: const ui.Rect.fromLTRB(0, 20, 50, 10),
           ),
         ],
       );
@@ -405,7 +405,7 @@ void testMain() {
       semantics().semanticsEnabled = false;
     });
   },
-  // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+  // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
   skip: browserEngine == BrowserEngine.edge);
 }
 

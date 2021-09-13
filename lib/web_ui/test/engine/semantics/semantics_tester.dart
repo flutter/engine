@@ -115,10 +115,16 @@ class SemanticsTester {
     double? thickness,
     ui.Rect? rect,
     String? label,
+    List<ui.StringAttribute>? labelAttributes,
     String? hint,
+    List<ui.StringAttribute>? hintAttributes,
     String? value,
+    List<ui.StringAttribute>? valueAttributes,
     String? increasedValue,
+    List<ui.StringAttribute>? increasedValueAttributes,
     String? decreasedValue,
+    List<ui.StringAttribute>? decreasedValueAttributes,
+    String? tooltip,
     ui.TextDirection? textDirection,
     Float64List? transform,
     Int32List? additionalActions,
@@ -278,7 +284,7 @@ class SemanticsTester {
     ui.Rect effectiveRect = rect ?? ui.Rect.zero;
     if (children != null && children.isNotEmpty) {
       effectiveRect = childRect(children.first);
-      for (SemanticsNodeUpdate child in children.skip(1)) {
+      for (final SemanticsNodeUpdate child in children.skip(1)) {
         effectiveRect = effectiveRect.expandToInclude(childRect(child));
       }
     }
@@ -306,10 +312,16 @@ class SemanticsTester {
       scrollExtentMin: scrollExtentMin ?? 0,
       rect: effectiveRect,
       label: label ?? '',
+      labelAttributes: labelAttributes ?? const <ui.StringAttribute>[],
       hint: hint ?? '',
+      hintAttributes: hintAttributes ?? const <ui.StringAttribute>[],
       value: value ?? '',
+      valueAttributes: valueAttributes ?? const <ui.StringAttribute>[],
       increasedValue: increasedValue ?? '',
+      increasedValueAttributes: increasedValueAttributes ?? const <ui.StringAttribute>[],
       decreasedValue: decreasedValue ?? '',
+      decreasedValueAttributes: decreasedValueAttributes ?? const <ui.StringAttribute>[],
+      tooltip: tooltip ?? '',
       transform: transform != null ? toMatrix32(transform) : Matrix4.identity().storage,
       elevation: elevation ?? 0,
       thickness: thickness ?? 0,
@@ -342,7 +354,7 @@ class SemanticsTester {
 
   /// Locates the [TextField] role manager of the semantics object with the give [id].
   TextField getTextField(int id) {
-    return getRoleManager(id, Role.textField) as TextField;
+    return getRoleManager(id, Role.textField)! as TextField;
   }
 }
 

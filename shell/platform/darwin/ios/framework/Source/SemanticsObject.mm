@@ -6,6 +6,7 @@
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanticsScrollView.h"
 
 namespace {
 
@@ -54,7 +55,9 @@ CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[reference bridge]->view() window] screen].scale;
+  UIScreen* screen = [[[reference bridge]->view() window] screen];
+  // Screen can be nil if the FlutterView is covered by another native view.
+  CGFloat scale = screen == nil ? [UIScreen mainScreen].scale : screen.scale;
   auto result = CGPointMake(point.x() / scale, point.y() / scale);
   return [[reference bridge]->view() convertPoint:result toView:nil];
 }
@@ -80,7 +83,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  CGFloat scale = [[[reference bridge]->view() window] screen].scale;
+  UIScreen* screen = [[[reference bridge]->view() window] screen];
+  // Screen can be nil if the FlutterView is covered by another native view.
+  CGFloat scale = screen == nil ? [UIScreen mainScreen].scale : screen.scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, [reference bridge]->view());
@@ -96,7 +101,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
                            uid:(int32_t)uid {
   self = [super initWithBridge:bridge uid:uid];
   if (self) {
-    _nativeSwitch = [[[UISwitch alloc] init] retain];
+    _nativeSwitch = [[UISwitch alloc] init];
   }
   return self;
 }
@@ -141,46 +146,29 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @end  // FlutterSwitchSemanticsObject
 
 @interface FlutterScrollableSemanticsObject ()
-@property(nonatomic, strong) SemanticsObject* semanticsObject;
+@property(nonatomic, strong) FlutterSemanticsScrollView* scrollView;
 @end
 
 @implementation FlutterScrollableSemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
 }
 
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject {
-  self = [super initWithFrame:CGRectZero];
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid {
+  self = [super initWithBridge:bridge uid:uid];
   if (self) {
-    _semanticsObject = [semanticsObject retain];
-    [semanticsObject.bridge->view() addSubview:self];
-    [self setShowsHorizontalScrollIndicator:NO];
-    [self setShowsVerticalScrollIndicator:NO];
+    _scrollView = [[FlutterSemanticsScrollView alloc] initWithSemanticsObject:self];
+    [_scrollView setShowsHorizontalScrollIndicator:NO];
+    [_scrollView setShowsVerticalScrollIndicator:NO];
+    [self.bridge->view() addSubview:_scrollView];
   }
   return self;
 }
 
 - (void)dealloc {
-  _container.get().semanticsObject = nil;
-  [_semanticsObject release];
-  [self removeFromSuperview];
+  [_scrollView removeFromSuperview];
+  [_scrollView release];
   [super dealloc];
-}
-
-- (UIView*)hitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  return nil;
-}
-
-- (NSMethodSignature*)methodSignatureForSelector:(SEL)sel {
-  NSMethodSignature* result = [super methodSignatureForSelector:sel];
-  if (!result) {
-    result = [_semanticsObject methodSignatureForSelector:sel];
-  }
-  return result;
-}
-
-- (void)forwardInvocation:(NSInvocation*)anInvocation {
-  [anInvocation setTarget:_semanticsObject];
-  [anInvocation invoke];
 }
 
 - (void)accessibilityBridgeDidFinishUpdate {
@@ -192,48 +180,22 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // Once the requirements are met, the iOS uses contentOffset to determine
   // what scroll actions are available. e.g. If the view scrolls vertically and
   // contentOffset is 0.0, only the scroll down action is available.
-  [self setFrame:[_semanticsObject accessibilityFrame]];
-  [self setContentSize:[self contentSizeInternal]];
-  [self setContentOffset:[self contentOffsetInternal] animated:NO];
+  [_scrollView setFrame:[self accessibilityFrame]];
+  [_scrollView setContentSize:[self contentSizeInternal]];
+  [_scrollView setContentOffset:[self contentOffsetInternal] animated:NO];
 }
 
-- (void)setChildren:(NSArray<SemanticsObject*>*)children {
-  [_semanticsObject setChildren:children];
-  // The children's parent is pointing to _semanticsObject, need to manually
-  // set it this object.
-  for (SemanticsObject* child in _semanticsObject.children) {
-    child.parent = (SemanticsObject*)self;
-  }
-}
-
-- (id)accessibilityContainer {
-  if (_container == nil) {
-    _container.reset([[SemanticsObjectContainer alloc]
-        initWithSemanticsObject:(SemanticsObject*)self
-                         bridge:[_semanticsObject bridge]]);
-  }
-  return _container.get();
-}
-
-- (BOOL)isAccessibilityElement {
-  if (![_semanticsObject isAccessibilityBridgeAlive]) {
-    return NO;
-  }
-  if (self.contentSize.width > self.frame.size.width ||
-      self.contentSize.height > self.frame.size.height) {
-    return !_semanticsObject.bridge->isVoiceOverRunning();
-  } else {
-    return NO;
-  }
+- (id)nativeAccessibility {
+  return _scrollView;
 }
 
 // private methods
 
 - (float)scrollExtentMax {
-  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+  if (![self isAccessibilityBridgeAlive]) {
     return 0.0f;
   }
-  float scrollExtentMax = _semanticsObject.node.scrollExtentMax;
+  float scrollExtentMax = self.node.scrollExtentMax;
   if (isnan(scrollExtentMax)) {
     scrollExtentMax = 0.0f;
   } else if (!isfinite(scrollExtentMax)) {
@@ -243,10 +205,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (float)scrollPosition {
-  if (![_semanticsObject isAccessibilityBridgeAlive]) {
+  if (![self isAccessibilityBridgeAlive]) {
     return 0.0f;
   }
-  float scrollPosition = _semanticsObject.node.scrollPosition;
+  float scrollPosition = self.node.scrollPosition;
   if (isnan(scrollPosition)) {
     scrollPosition = 0.0f;
   }
@@ -256,65 +218,32 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (CGSize)contentSizeInternal {
   CGRect result;
-  const SkRect& rect = _semanticsObject.node.rect;
+  const SkRect& rect = self.node.rect;
 
-  if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
+  if (self.node.actions & flutter::kVerticalScrollSemanticsActions) {
     result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height() + [self scrollExtentMax]);
-  } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
+  } else if (self.node.actions & flutter::kHorizontalScrollSemanticsActions) {
     result = CGRectMake(rect.x(), rect.y(), rect.width() + [self scrollExtentMax], rect.height());
   } else {
     result = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
   }
-  return ConvertRectToGlobal(_semanticsObject, result).size;
+  return ConvertRectToGlobal(self, result).size;
 }
 
 - (CGPoint)contentOffsetInternal {
   CGPoint result;
-  CGPoint origin = self.frame.origin;
-  const SkRect& rect = _semanticsObject.node.rect;
-  if (_semanticsObject.node.actions & flutter::kVerticalScrollSemanticsActions) {
-    result = ConvertPointToGlobal(_semanticsObject,
-                                  CGPointMake(rect.x(), rect.y() + [self scrollPosition]));
-  } else if (_semanticsObject.node.actions & flutter::kHorizontalScrollSemanticsActions) {
-    result = ConvertPointToGlobal(_semanticsObject,
-                                  CGPointMake(rect.x() + [self scrollPosition], rect.y()));
+  CGPoint origin = _scrollView.frame.origin;
+  const SkRect& rect = self.node.rect;
+  if (self.node.actions & flutter::kVerticalScrollSemanticsActions) {
+    result = ConvertPointToGlobal(self, CGPointMake(rect.x(), rect.y() + [self scrollPosition]));
+  } else if (self.node.actions & flutter::kHorizontalScrollSemanticsActions) {
+    result = ConvertPointToGlobal(self, CGPointMake(rect.x() + [self scrollPosition], rect.y()));
   } else {
     result = origin;
   }
   return CGPointMake(result.x - origin.x, result.y - origin.y);
 }
 
-// The following methods are explicitly forwarded to the wrapped SemanticsObject because the
-// forwarding logic above doesn't apply to them since they are also implemented in the
-// UIScrollView class, the base class.
-
-- (BOOL)accessibilityActivate {
-  return [_semanticsObject accessibilityActivate];
-}
-
-- (void)accessibilityIncrement {
-  [_semanticsObject accessibilityIncrement];
-}
-
-- (void)accessibilityDecrement {
-  [_semanticsObject accessibilityDecrement];
-}
-
-- (BOOL)accessibilityScroll:(UIAccessibilityScrollDirection)direction {
-  return [_semanticsObject accessibilityScroll:direction];
-}
-
-- (BOOL)accessibilityPerformEscape {
-  return [_semanticsObject accessibilityPerformEscape];
-}
-
-- (void)accessibilityElementDidBecomeFocused {
-  [_semanticsObject accessibilityElementDidBecomeFocused];
-}
-
-- (void)accessibilityElementDidLoseFocus {
-  [_semanticsObject accessibilityElementDidLoseFocus];
-}
 @end  // FlutterScrollableSemanticsObject
 
 @implementation FlutterCustomAccessibilityAction {
@@ -329,6 +258,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
+  BOOL _inDealloc;
 }
 
 #pragma mark - Override base class designated initializers
@@ -370,6 +300,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   _parent = nil;
   _container.get().semanticsObject = nil;
   [_platformViewSemanticsContainer release];
+  _inDealloc = YES;
   [super dealloc];
 }
 
@@ -467,6 +398,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return nil;
 }
 
+- (id)nativeAccessibility {
+  return self;
+}
+
 #pragma mark - Semantic object private method
 
 - (void)privateSetParent:(SemanticsObject*)parent {
@@ -561,10 +496,15 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (NSString*)accessibilityLabel {
   if (![self isAccessibilityBridgeAlive])
     return nil;
-
-  if ([self node].label.empty())
-    return nil;
-  return @([self node].label.data());
+  NSString* label = nil;
+  if (![self node].label.empty()) {
+    label = @([self node].label.data());
+  }
+  if (![self node].tooltip.empty()) {
+    label = label ? [NSString stringWithFormat:@"%@\n%@", label, @([self node].tooltip.data())]
+                  : @([self node].tooltip.data());
+  }
+  return label;
 }
 
 - (NSAttributedString*)accessibilityAttributedLabel {
@@ -643,6 +583,18 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (id)accessibilityContainer {
+  if (_inDealloc) {
+    // In iOS9, `accessibilityContainer` will be called by `[UIAccessibilityElementSuperCategory
+    // dealloc]` during `[super dealloc]`. And will crash when accessing `_children` which has
+    // called `[_children release]` in `[SemanticsObject dealloc]`.
+    // https://github.com/flutter/flutter/issues/87247
+    return nil;
+  }
+
+  if (![self isAccessibilityBridgeAlive]) {
+    return nil;
+  }
+
   if ([self hasChildren] || [self uid] == kRootNodeId) {
     if (_container == nil)
       _container.reset([[SemanticsObjectContainer alloc] initWithSemanticsObject:self
@@ -847,7 +799,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (nullable id)accessibilityElementAtIndex:(NSInteger)index {
   FML_DCHECK(index < 2);
   if (index == 0) {
-    return _semanticsObject;
+    return _semanticsObject.nativeAccessibility;
   } else {
     return _platformView;
   }
@@ -924,7 +876,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   if (index < 0 || index >= [self accessibilityElementCount])
     return nil;
   if (index == 0) {
-    return _semanticsObject;
+    return _semanticsObject.nativeAccessibility;
   }
 
   SemanticsObject* child = [_semanticsObject children][index - 1];
@@ -937,7 +889,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
   if ([child hasChildren])
     return [child accessibilityContainer];
-  return child;
+  return child.nativeAccessibility;
 }
 
 - (NSInteger)indexOfAccessibilityElement:(id)element {

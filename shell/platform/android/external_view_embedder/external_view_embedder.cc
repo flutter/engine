@@ -75,8 +75,7 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
+    std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 
   if (!FrameHasPlatformLayers()) {
@@ -225,8 +224,8 @@ PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     //
     // Eventually, the frame is submitted once this method returns `kSuccess`.
     // At that point, the raster tasks are handled on the platform thread.
-    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     CancelFrame();
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     return PostPrerollResult::kSkipAndRetryFrame;
   }
   raster_thread_merger->ExtendLeaseTo(kDefaultMergedLeaseDuration);

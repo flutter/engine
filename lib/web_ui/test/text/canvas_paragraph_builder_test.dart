@@ -25,14 +25,14 @@ String fontFamilyToAttribute(String fontFamily) {
 final String defaultFontFamily = fontFamilyToAttribute('Ahem');
 const String defaultColor = 'color: rgb(255, 0, 0);';
 const String defaultFontSize = 'font-size: 14px;';
-final String paragraphStyle =
+const String paragraphStyle =
     'position: absolute; white-space: pre;';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() async {
+Future<void> testMain() async {
   await webOnlyInitializeTestDomRenderer();
 
   setUpAll(() {
@@ -50,7 +50,7 @@ void testMain() async {
     expect(paragraph.toPlainText(), 'Hello');
     expect(paragraph.spans, hasLength(1));
 
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
@@ -61,7 +61,7 @@ void testMain() async {
     );
 
     // Should break "Hello" into "Hel" and "lo".
-    paragraph.layout(ParagraphConstraints(width: 39.0));
+    paragraph.layout(const ParagraphConstraints(width: 39.0));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
@@ -89,7 +89,7 @@ void testMain() async {
     expect(paragraph.toPlainText(), 'Hello');
     expect(paragraph.spans, hasLength(1));
 
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle">'
@@ -118,7 +118,7 @@ void testMain() async {
       // On iOS Safari, the height measurement is one extra pixel.
       expectedHeight++;
     }
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle overflow-y: hidden; height: ${expectedHeight}px;">'
@@ -144,7 +144,7 @@ void testMain() async {
       // On iOS Safari, the height measurement is one extra pixel.
       expectedHeight++;
     }
-    paragraph.layout(ParagraphConstraints(width: 100.0));
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="$defaultFontSize $defaultFontFamily $paragraphStyle width: 100px; overflow-y: hidden; height: ${expectedHeight}px;">'
@@ -172,7 +172,7 @@ void testMain() async {
     expect(paragraph.toPlainText(), 'Hello');
     expect(paragraph.spans, hasLength(1));
 
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="line-height: 1.5; font-size: 9px; $defaultFontFamily $paragraphStyle">'
@@ -210,7 +210,7 @@ void testMain() async {
     expect(paragraph.toPlainText(), 'Hello world');
     expect(paragraph.spans, hasLength(2));
 
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
@@ -224,7 +224,7 @@ void testMain() async {
     );
 
     // Should break "Hello world" into "Hello" and " world".
-    paragraph.layout(ParagraphConstraints(width: 75.0));
+    paragraph.layout(const ParagraphConstraints(width: 75.0));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle width: 75px;">'
@@ -275,7 +275,7 @@ void testMain() async {
     expect(paragraph.toPlainText(), 'Hello world!');
     expect(paragraph.spans, hasLength(3));
 
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
@@ -339,7 +339,7 @@ void testMain() async {
 
     // There's a new line between "First" and "Second", but "Second" and
     // "ThirdLongLine" remain together since constraints are infinite.
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle">'
@@ -353,7 +353,7 @@ void testMain() async {
     );
 
     // Should break the paragraph into "First", "Second" and "ThirdLongLine".
-    paragraph.layout(ParagraphConstraints(width: 180.0));
+    paragraph.layout(const ParagraphConstraints(width: 180.0));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 13px; $defaultFontFamily $paragraphStyle width: 180px;">'
@@ -387,7 +387,7 @@ void testMain() async {
 
     // The paragraph should take the font size and family from the span with the
     // greatest font size.
-    paragraph.layout(ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
     expect(
       paragraph.toDomElement().outerHtml,
       '<p style="font-size: 18px; ${fontFamilyToAttribute('second')} $paragraphStyle">'
