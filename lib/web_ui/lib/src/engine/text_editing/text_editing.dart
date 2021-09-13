@@ -546,7 +546,7 @@ class TextEditingDeltaState {
   final int composingExtent;
 
   Map<String, dynamic> toFlutter() => <String, dynamic>{
-    'batchDeltas': [
+    'batchDeltas': <Map<String, dynamic>>[
       <String, dynamic>{
         'oldText': oldText,
         'deltaText': deltaText,
