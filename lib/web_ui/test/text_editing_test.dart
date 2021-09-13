@@ -2179,6 +2179,23 @@ void testMain() {
       expect(textEditingDeltaState.composingExtent, -1);
     });
 
+    test('Verify correct delta is inferred - composing region replacement', () {
+      final EditingState newEditState = EditingState(text: '你好吗', baseOffset: 3, extentOffset: 3);
+      final EditingState lastEditState = EditingState(text: 'ni hao ma', baseOffset: 9, extentOffset: 9);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'ni hao ma', deltaText: '你好吗', deltaStart: 9, deltaEnd: 9, baseOffset: -1, extentOffset: -1, composingOffset: 0, extentOffset: 9);
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'ni hao ma');
+      expect(textEditingDeltaState.deltaText, '你好吗');
+      expect(textEditingDeltaState.deltaStart, 0);
+      expect(textEditingDeltaState.deltaEnd, 9);
+      expect(textEditingDeltaState.baseOffset, 3);
+      expect(textEditingDeltaState.extentOffset, 3);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+
     test('Verify correct delta is inferred for double space to insert a period', () {
       final EditingState newEditState = EditingState(text: 'hello.', baseOffset: 7, extentOffset: 7);
       final EditingState lastEditState = EditingState(text: 'hello', baseOffset: 6, extentOffset: 6);
