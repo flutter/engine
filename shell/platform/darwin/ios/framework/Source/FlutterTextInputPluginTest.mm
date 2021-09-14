@@ -342,7 +342,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"text to insert"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          13) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
                 }]]);
 
@@ -356,7 +357,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"text to inser"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          -1) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                 }]]);
 
@@ -385,7 +387,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"replace textext to inser"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@"marked text"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 12) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          12) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
                 }]]);
 
@@ -399,7 +402,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"replace textmarked textext to inser"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          -1) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                 }]]);
 }
@@ -433,7 +437,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"Some initial text"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@"new marked text."]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          13) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
@@ -467,7 +472,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"Some initial text"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@"text."]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          13) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
@@ -501,7 +507,8 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"Some initial text"]) &&
                          ([[[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue]
                              isEqualToString:@"tex"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                          13) &&
                          ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
