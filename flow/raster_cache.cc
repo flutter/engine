@@ -271,17 +271,18 @@ bool RasterCache::PreCheckWillCache(DisplayList* display_list,
 
 bool RasterCache::Prepare(PrerollContext* context,
                           SkPicture* picture,
-                          const SkMatrix& transformation_matrix) {
+                          const SkMatrix& untranslated_matrix,
+                          const SkPoint& offset) {
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
-  const MatrixDecomposition matrix(transformation_matrix);
+  const MatrixDecomposition matrix(untranslated_matrix);
 
   if (!matrix.IsValid()) {
     // The matrix was singular. No point in going further.
     return false;
   }
 
-  PictureRasterCacheKey cache_key(picture->uniqueID(), transformation_matrix);
+  PictureRasterCacheKey cache_key(picture->uniqueID(), untranslated_matrix);
 
   // Creates an entry, if not present prior.
   Entry& entry = picture_cache_[cache_key];
@@ -291,8 +292,15 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   if (!entry.image) {
+    // Translate won't affect cache result, so we apply it only before
+    // rasterizing.
+    SkMatrix ctm = untranslated_matrix;
+    ctm.preTranslate(offset.x(), offset.y());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    ctm = GetIntegralTransCTM(ctm);
+#endif
     entry.image =
-        RasterizePicture(picture, context->gr_context, transformation_matrix,
+        RasterizePicture(picture, context->gr_context, ctm,
                          context->dst_color_space, checkerboard_images_);
     picture_cached_this_frame_++;
   }
@@ -301,10 +309,11 @@ bool RasterCache::Prepare(PrerollContext* context,
 
 bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
-                          const SkMatrix& transformation_matrix) {
+                          const SkMatrix& untranslated_matrix,
+                          const SkPoint& offset) {
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
-  const MatrixDecomposition matrix(transformation_matrix);
+  const MatrixDecomposition matrix(untranslated_matrix);
 
   if (!matrix.IsValid()) {
     // The matrix was singular. No point in going further.
@@ -312,7 +321,7 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   DisplayListRasterCacheKey cache_key(display_list->unique_id(),
-                                      transformation_matrix);
+                                      untranslated_matrix);
 
   // Creates an entry, if not present prior.
   Entry& entry = display_list_cache_[cache_key];
@@ -322,9 +331,16 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   if (!entry.image) {
-    entry.image = RasterizeDisplayList(
-        display_list, context->gr_context, transformation_matrix,
-        context->dst_color_space, checkerboard_images_);
+    // Translate won't affect cache result, so we apply it only before
+    // rasterizing.
+    SkMatrix ctm = untranslated_matrix;
+    ctm.preTranslate(offset.x(), offset.y());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    ctm = GetIntegralTransCTM(ctm);
+#endif
+    entry.image =
+        RasterizeDisplayList(display_list, context->gr_context, ctm,
+                             context->dst_color_space, checkerboard_images_);
     display_list_cached_this_frame_++;
   }
   return true;

@@ -149,10 +149,12 @@ class RasterCache {
   // 2. the picture is accessed too few times.
   bool Prepare(PrerollContext* context,
                SkPicture* picture,
-               const SkMatrix& transformation_matrix);
+               const SkMatrix& untranslated_matrix,
+               const SkPoint& offset = SkPoint());
   bool Prepare(PrerollContext* context,
                DisplayList* display_list,
-               const SkMatrix& transformation_matrix);
+               const SkMatrix& untranslated_matrix,
+               const SkPoint& offset = SkPoint());
 
   void Prepare(PrerollContext* context, Layer* layer, const SkMatrix& ctm);
 

@@ -114,13 +114,7 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   if (context->raster_cache && context->raster_cache->PreCheckWillCache(
                                    sk_picture, is_complex_, will_change_)) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-
-    SkMatrix ctm = matrix;
-    ctm.preTranslate(offset_.x(), offset_.y());
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = RasterCache::GetIntegralTransCTM(ctm);
-#endif
-    context->raster_cache->Prepare(context, sk_picture, ctm);
+    context->raster_cache->Prepare(context, sk_picture, matrix, offset_);
   }
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
