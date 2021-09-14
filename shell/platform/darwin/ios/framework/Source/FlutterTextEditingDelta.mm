@@ -34,8 +34,8 @@
           newText:(NSString*)newTxt
        deltaStart:(NSInteger)newStart
          deltaEnd:(NSInteger)newEnd {
-  _oldText = oldText;
-  _deltaText = newTxt;
+  _oldText = [oldText retain];
+  _deltaText = [newTxt retain];
   _deltaStart = newStart;
   _deltaEnd = newEnd;
 }
