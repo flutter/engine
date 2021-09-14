@@ -115,11 +115,12 @@ DartComponentControllerV2::DartComponentControllerV2(
   const std::string component_name = GetComponentNameFromUrl(url_);
   data_path_ = "pkg/data/" + component_name;
 
-  // TODO(akbiggs): In what situations is the controller not valid? Should
-  // we log an error?
   if (controller.is_valid()) {
     binding_.Bind(std::move(controller));
     binding_.set_error_handler([this](zx_status_t status) { Kill(); });
+  } else {
+    FX_LOG(ERROR, LOG_TAG,
+           "Fuchsia component controller endpoint is not valid.");
   }
 
   zx_status_t idle_timer_status =
@@ -157,9 +158,7 @@ bool DartComponentControllerV2::SetUp() {
   } else if (SetUpFromKernel()) {
     FX_LOGF(INFO, LOG_TAG, "%s is running from kernel", url_.c_str());
   } else {
-    FX_LOGF(ERROR, LOG_TAG,
-            "Could not find a program in %s. Was data specified"
-            " correctly in the component manifest?",
+    FX_LOGF(ERROR, LOG_TAG, "Failed to set up component controller for %s.",
             url_.c_str());
     return false;
   }
@@ -195,7 +194,8 @@ bool DartComponentControllerV2::CreateAndBindNamespace() {
       continue;
     }
 
-    // TODO(akbiggs): Why is it okay/desirable to transfer ownership of these?
+    // We move ownership of the directory & path since RAII is used to keep
+    // the handle open.
     fidl::InterfaceHandle<::fuchsia::io::Directory> dir =
         std::move(*ns_entry.mutable_directory());
     const std::string path = std::move(*ns_entry.mutable_path());
@@ -254,13 +254,14 @@ bool DartComponentControllerV2::SetUpFromKernel() {
     dart_utils::MappedResource kernel;
     if (!dart_utils::MappedResource::LoadFromNamespace(namespace_, path,
                                                        kernel)) {
-      FX_LOGF(ERROR, LOG_TAG, "Failed to find kernel: %s", path.c_str());
+      FX_LOGF(ERROR, LOG_TAG, "Cannot load kernel from namespace: %s",
+              path.c_str());
       Dart_ExitScope();
       return false;
     }
     library = Dart_LoadLibraryFromKernel(kernel.address(), kernel.size());
     if (Dart_IsError(library)) {
-      FX_LOGF(ERROR, LOG_TAG, "Failed to load kernel: %s",
+      FX_LOGF(ERROR, LOG_TAG, "Cannot load library from kernel: %s",
               Dart_GetError(library));
       Dart_ExitScope();
       return false;
