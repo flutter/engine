@@ -361,16 +361,15 @@ FLUTTER_ASSERT_ARC
                  withText:@"replace text"];
   XCTAssertEqual(updateCount, 4);
 
-  OCMVerify([engine
-      updateEditingClient:0
-                withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return [([state[@"batchDeltas"][0][@"oldText"]
-                             stringValue]) isEqualToString:@"text to inser"] &&
-                         [([state[@"batchDeltas"][0][@"deltaText"] stringValue]) isEqualToString
-                           : @"replace text"] &&
-                         ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 0) &&
-                         ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 1);
-                }]]);
+  OCMVerify([engine updateEditingClient:0
+                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return [([state[@"batchDeltas"][0][@"oldText"]
+                                           stringValue]) isEqualToString:@"text to inser"] &&
+                                       [([state[@"batchDeltas"][0][@"deltaText"] stringValue])
+                                           isEqualToString:@"replace text"] &&
+                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 0) &&
+                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 1);
+                              }]]);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 5);
@@ -378,7 +377,7 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine updateEditingClient:0
                               withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                                 return [([state[@"batchDeltas"][0][@"oldText"] stringValue])
-                                           isEqualToString:@"replace textext to inser" ] &&
+                                           isEqualToString:@"replace textext to inser"] &&
                                        ([[state[@"batchDeltas"][0][@"deltaText"] stringValue]
                                            isEqualToString:@"marked text"]) &&
                                        ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 12) &&
