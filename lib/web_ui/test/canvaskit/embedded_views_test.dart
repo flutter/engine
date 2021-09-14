@@ -573,6 +573,10 @@ void testMain() {
       sb.pop();
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+          domRenderer.glassPaneElement!
+              .querySelectorAll('flt-platform-view-slot'),
+          isEmpty);
     });
     // TODO(dit): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);

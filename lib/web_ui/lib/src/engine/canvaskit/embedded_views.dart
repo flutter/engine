@@ -104,8 +104,8 @@ class HtmlViewEmbedder {
   /// canvas after a platform view is composited into the scene.
   ///
   /// The engine asks for the overlay canvases immediately before the paint
-  /// phase, after the preroll phase. Note that in the preroll phase we must
-  /// be conservative and assume that every platform view which is prerolled is
+  /// phase, after the preroll phase. In the preroll phase we must be
+  /// conservative and assume that every platform view which is prerolled is
   /// also composited, and therefore requires an overlay canvas. However, not
   /// every platform view which is prerolled ends up being composited (it may be
   /// clipped out and not actually drawn). This means that we may end up
@@ -168,11 +168,11 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
-    final int numCompositedViews = _compositionOrder.length;
+    final int compositedViewCount = _compositionOrder.length;
     _compositionOrder.add(viewId);
-    if (numCompositedViews < _pictureRecordersCreatedDuringPreroll.length) {
+    if (compositedViewCount < _pictureRecordersCreatedDuringPreroll.length) {
       _pictureRecorders[viewId] =
-          _pictureRecordersCreatedDuringPreroll[numCompositedViews];
+          _pictureRecordersCreatedDuringPreroll[compositedViewCount];
     } else {
       _viewsUsingBackupSurface.add(viewId);
       _pictureRecorders[viewId] = _backupPictureRecorder!;
