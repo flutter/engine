@@ -36,7 +36,6 @@ class DartComponentControllerV2
   /// Sets up the controller.
   ///
   /// This should be called before |Run|.
-  // TODO(akbiggs): Why can't this logic be done in the constructor?
   bool SetUp();
 
   /// Runs the Dart component in a task, sending the return code back to
@@ -54,13 +53,9 @@ class DartComponentControllerV2
   /// successful, false otherwise.
   bool CreateAndBindNamespace();
 
-  /// Sets up the controller using TODO: what?
   bool SetUpFromKernel();
-
-  /// Sets up the controller using TODO: what?
   bool SetUpFromAppSnapshot();
 
-  /// Creates TODO: what is an isolate?
   bool CreateIsolate(const uint8_t* isolate_snapshot_data,
                      const uint8_t* isolate_snapshot_instructions);
 
