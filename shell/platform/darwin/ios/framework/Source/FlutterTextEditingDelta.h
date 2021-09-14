@@ -11,15 +11,14 @@
 
 @property(nonatomic, readonly) NSString* oldText;
 @property(nonatomic, readonly) NSString* deltaText;
-@property(nonatomic, readonly) NSString* deltaType;
 @property(nonatomic, readonly) NSInteger deltaStart;
 @property(nonatomic, readonly) NSInteger deltaEnd;
 
-- (instancetype)initTextEditingDelta:(NSString*)textBeforeChange
++ (instancetype)textEditingDelta:(NSString*)textBeforeChange
                        replacedRange:(NSRange)range
                          updatedText:(NSString*)text;
 
-- (instancetype)initWithNonText:(NSString*)text;
++ (instancetype)deltaWithNonText:(NSString*)text;
 
 @end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_

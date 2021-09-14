@@ -40,4 +40,23 @@
   _deltaEnd = newEnd;
 }
 
+- (void)dealloc {
+  [_oldText release];
+  [_deltaText release];
+  [super dealloc];
+}
+
++ (instancetype)textEditingDelta:(NSString*)textBeforeChange
+                       replacedRange:(NSRange)range
+                         updatedText:(NSString*)text {
+  return [[FlutterTextEditingDelta
+           textEditingDelta:textBeforeChange
+                  replacedRange:range
+                    updatedText:text] autorelease];
+}
+
++ (instancetype)deltaWithNonText:(NSString*)text {
+  return [[[FlutterTextEditingDelta alloc] initWithNonText:text] autorelease];
+}
+
 @end

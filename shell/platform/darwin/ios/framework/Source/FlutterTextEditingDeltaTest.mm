@@ -22,7 +22,7 @@ FLUTTER_ASSERT_ARC
   NSRange range = NSMakeRange(0, 4);
 
   FlutterTextEditingDelta* delta =
-      [[FlutterTextEditingDelta alloc] initTextEditingDelta:oldText
+      [[FlutterTextEditingDelta alloc] textEditingDelta:oldText
                                               replacedRange:range
                                                 updatedText:replacementText];
 
@@ -36,7 +36,7 @@ FLUTTER_ASSERT_ARC
   // Here we are simulating inserting an "o" at the end of "hell".
   NSString* oldText = @"hello";
 
-  FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc] initWithNonText:oldText];
+  FlutterTextEditingDelta* delta = [[FlutterTextEditingDelta alloc] deltaWithNonText:oldText];
 
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqualObjects(delta.deltaText, @"");
