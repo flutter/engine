@@ -46,13 +46,14 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 }
 
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
-    bool use_software_rendering) {
+    bool use_software_rendering,
+    const flutter::TaskRunners task_runners) {
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   return std::make_unique<AndroidContextGL>(
       AndroidRenderingAPI::kOpenGLES,
-      fml::MakeRefCounted<AndroidEnvironmentGL>());
+      fml::MakeRefCounted<AndroidEnvironmentGL>(), task_runners);
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -63,7 +64,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     : PlatformViewAndroid(delegate,
                           std::move(task_runners),
                           std::move(jni_facade),
-                          CreateAndroidContext(use_software_rendering)) {}
+                          CreateAndroidContext(use_software_rendering,
+                                               task_runners)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
