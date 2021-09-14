@@ -108,9 +108,10 @@ DartComponentControllerV2::DartComponentControllerV2(
       runner_incoming_services_(runner_incoming_services),
       start_info_(std::move(start_info)),
       binding_(this) {
-  // TODO(fxb/84537): This data path how we build Flutter applications in tree
-  // currently, but that may not always be the case. We should avoid making
-  // this assumption and let the CML file specify this data path instead.
+  // TODO(fxb/84537): This data path is configured based how we build Flutter
+  // applications in tree currently, but the way we build the Flutter
+  // application may change. We should avoid assuming the data path and let the
+  // CML file specify this data path instead.
   const std::string component_name = GetComponentNameFromUrl(url_);
   data_path_ = "pkg/data/" + component_name;
 
@@ -363,7 +364,7 @@ bool DartComponentControllerV2::RunDartMain() {
 
   tonic::DartMicrotaskQueue::StartForCurrentThread();
 
-  // TODO(fxb/...): Point these at the actual stdout/stderr handles of the
+  // TODO(fxb/79871): Point these at the actual stdout/stderr handles of the
   // component.
   stdout_fd_ = fileno(stdout);
   stderr_fd_ = fileno(stderr);
@@ -387,7 +388,7 @@ bool DartComponentControllerV2::RunDartMain() {
   Dart_EnterIsolate(isolate_);
   Dart_EnterScope();
 
-  // TODO(...): Support argument passing.
+  // TODO(fxb/79871): Support argument passing.
   Dart_Handle main_result =
       Dart_Invoke(Dart_RootLibrary() /* target */, ToDart("main") /* name */,
                   0 /* number_of_arguments */, {} /* arguments */);
