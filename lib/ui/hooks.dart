@@ -254,12 +254,14 @@ void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllD
         return;
       }
       if (zoneOverride == false && uri.isScheme('http')) {
-        // Going to throw
+        // Going to _isLoopback check before throwing
       } else if (mayInsecurelyConnectToAllDomains || uri.isScheme('https')) {
         // In absence of zone override, if engine setting allows the connection
         // or if connection is to `https`, allow the connection.
         return;
       }
+      // Loopback connections are always allowed
+      // Check at last resort to avoid debug annoyance of try/on ArgumentError
       if (_isLoopback(uri.host)) {
         return;
       }
