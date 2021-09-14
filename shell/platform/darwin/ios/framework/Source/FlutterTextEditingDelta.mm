@@ -49,10 +49,9 @@
 + (instancetype)textEditingDelta:(NSString*)textBeforeChange
                        replacedRange:(NSRange)range
                          updatedText:(NSString*)text {
-  return [[FlutterTextEditingDelta
-           textEditingDelta:textBeforeChange
-                  replacedRange:range
-                    updatedText:text] autorelease];
+  return [[FlutterTextEditingDelta textEditingDelta:textBeforeChange
+                                      replacedRange:range
+                                        updatedText:text] autorelease];
 }
 
 + (instancetype)deltaWithNonText:(NSString*)text {

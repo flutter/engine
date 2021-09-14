@@ -15,8 +15,8 @@
 @property(nonatomic, readonly) NSInteger deltaEnd;
 
 + (instancetype)textEditingDelta:(NSString*)textBeforeChange
-                       replacedRange:(NSRange)range
-                         updatedText:(NSString*)text;
+                   replacedRange:(NSRange)range
+                     updatedText:(NSString*)text;
 
 + (instancetype)deltaWithNonText:(NSString*)text;
 

@@ -984,12 +984,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   NSRange replaceRange = ((FlutterTextRange*)range).range;
   [self replaceRangeLocal:replaceRange withText:text];
   if (_enableDeltaModel) {
-    [self
-        updateEditingStateWithDelta:[FlutterTextEditingDelta
-                                        textEditingDelta:textBeforeChange
-                                               replacedRange:[self clampSelection:replaceRange
-                                                                          forText:textBeforeChange]
-                                                 updatedText:text]];
+    [self updateEditingStateWithDelta:[FlutterTextEditingDelta
+                                          textEditingDelta:textBeforeChange
+                                             replacedRange:[self clampSelection:replaceRange
+                                                                        forText:textBeforeChange]
+                                               updatedText:text]];
   } else {
     [self updateEditingState];
   }
@@ -1076,13 +1075,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
                                       rangeWithNSRange:[self clampSelection:selectedRange
                                                                     forText:self.text]]];
   if (_enableDeltaModel) {
-    [self
-        updateEditingStateWithDelta:[FlutterTextEditingDelta
-                                        textEditingDelta:textBeforeChange
-                                               replacedRange:[self
-                                                                 clampSelection:actualReplacedRange
+    [self updateEditingStateWithDelta:[FlutterTextEditingDelta
+                                          textEditingDelta:textBeforeChange
+                                             replacedRange:[self clampSelection:actualReplacedRange
                                                                         forText:textBeforeChange]
-                                                 updatedText:markedText]];
+                                               updatedText:markedText]];
   } else {
     [self updateEditingState];
   }
