@@ -115,7 +115,7 @@ class HtmlViewEmbedder {
     if (disableOverlays) {
       return const <CkCanvas>[];
     }
-    List<CkCanvas> overlayCanvases = _pictureRecordersCreatedDuringPreroll
+    final List<CkCanvas> overlayCanvases = _pictureRecordersCreatedDuringPreroll
         .map((CkPictureRecorder r) => r.recordingCanvas!)
         .toList();
     if (_backupPictureRecorder != null) {

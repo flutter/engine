@@ -566,7 +566,7 @@ void testMain() {
       final EnginePlatformDispatcher dispatcher =
           ui.window.platformDispatcher as EnginePlatformDispatcher;
 
-      LayerSceneBuilder sb = LayerSceneBuilder();
+      final LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.pushClipRect(ui.Rect.zero);
       sb.addPlatformView(0, width: 10, height: 10);
