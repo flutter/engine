@@ -1537,8 +1537,8 @@ void testMain() {
         <dynamic>[
           123, // Client ID
           <String, dynamic>{
-            'batchDeltas': [
-              {
+            'batchDeltas': <Map<String, dynamic>>[
+              <String, dynamic>{
                 'oldText': 'something',
                 'deltaText': '',
                 'deltaStart': -1,
