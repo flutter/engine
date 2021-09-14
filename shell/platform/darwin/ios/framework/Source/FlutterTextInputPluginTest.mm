@@ -421,11 +421,15 @@ FLUTTER_ASSERT_ARC
   [inputView setMarkedText:@"new marked text." selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 2);
 
-  FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
-  XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
-  XCTAssertEqualObjects(currentDelta.deltaText, @"new marked text.");
-  XCTAssertEqual(currentDelta.deltaStart, 13);
-  XCTAssertEqual(currentDelta.deltaEnd, 17);
+  OCMVerify([engine updateEditingClient:0
+                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return [([state[@"batchDeltas"][0][@"oldText"]
+                                           stringValue]) isEqualToString:@"Some initial text"] &&
+                                       [[state[@"batchDeltas"][0][@"deltaText"] stringValue]
+                                           isEqualToString:@"new marked text."] &&
+                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 13) &&
+                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 17);
+                              }]]);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextInsertion {
@@ -450,11 +454,15 @@ FLUTTER_ASSERT_ARC
   [inputView setMarkedText:@"text." selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 2);
 
-  FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
-  XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
-  XCTAssertEqualObjects(currentDelta.deltaText, @"text.");
-  XCTAssertEqual(currentDelta.deltaStart, 13);
-  XCTAssertEqual(currentDelta.deltaEnd, 17);
+  OCMVerify([engine updateEditingClient:0
+                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return [([state[@"batchDeltas"][0][@"oldText"]
+                                           stringValue]) isEqualToString:@"Some initial text"] &&
+                                       [[state[@"batchDeltas"][0][@"deltaText"] stringValue]
+                                           isEqualToString:@"text."] &&
+                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 13) &&
+                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 17);
+                              }]]);
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextDeletion {
@@ -479,11 +487,15 @@ FLUTTER_ASSERT_ARC
   [inputView setMarkedText:@"tex" selectedRange:NSMakeRange(0, 1)];
   XCTAssertEqual(updateCount, 2);
 
-  FlutterTextEditingDelta* currentDelta = inputView.previousTextEditingDelta;
-  XCTAssertEqualObjects(currentDelta.oldText, @"Some initial text");
-  XCTAssertEqualObjects(currentDelta.deltaText, @"tex");
-  XCTAssertEqual(currentDelta.deltaStart, 13);
-  XCTAssertEqual(currentDelta.deltaEnd, 17);
+  OCMVerify([engine updateEditingClient:0
+                              withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
+                                return [([state[@"batchDeltas"][0][@"oldText"]
+                                           stringValue]) isEqualToString:@"Some initial text"] &&
+                                       [[state[@"batchDeltas"][0][@"deltaText"] stringValue]
+                                           isEqualToString:@"tex"] &&
+                                       ([state[@"batchDeltas"][0][@"deltaStart"] intValue] == 13) &&
+                                       ([state[@"batchDeltas"][0][@"deltaEnd"] intValue] == 17);
+                              }]]);
 }
 
 #pragma mark - EditingState tests
