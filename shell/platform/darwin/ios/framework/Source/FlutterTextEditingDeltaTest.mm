@@ -21,10 +21,9 @@ FLUTTER_ASSERT_ARC
   NSString* replacementText = @"hello";
   NSRange range = NSMakeRange(0, 4);
 
-  FlutterTextEditingDelta* delta =
-      [FlutterTextEditingDelta textEditingDelta:oldText
-                                  replacedRange:range
-                                    updatedText:replacementText];
+  FlutterTextEditingDelta* delta = [FlutterTextEditingDelta textEditingDelta:oldText
+                                                               replacedRange:range
+                                                                 updatedText:replacementText];
 
   XCTAssertEqual(delta.oldText, oldText);
   XCTAssertEqualObjects(delta.deltaText, @"hello");
