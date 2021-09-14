@@ -68,7 +68,7 @@ class DartComponentControllerV2
   void Kill() override;
   void Stop() override;
 
-  // Idle notification. TODO: what is the idle notification?
+  // Idle notification.
   void MessageEpilogue(Dart_Handle result);
   void OnIdleTimer(async_dispatcher_t* dispatcher,
                    async::WaitBase* wait,
