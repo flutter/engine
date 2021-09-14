@@ -60,24 +60,6 @@ public final class TextEditingDelta {
   }
 
   @VisibleForTesting
-  public TextEditingDelta(
-      CharSequence oldText,
-      CharSequence deltaText,
-      int deltaStart,
-      int deltaEnd,
-      int selectionStart,
-      int selectionEnd,
-      int composingStart,
-      int composingEnd) {
-    newSelectionStart = selectionStart;
-    newSelectionEnd = selectionEnd;
-    newComposingStart = composingStart;
-    newComposingEnd = composingEnd;
-
-    setDeltas(oldText, deltaText, deltaStart, deltaEnd);
-  }
-
-  @VisibleForTesting
   public CharSequence getOldText() {
     return oldText;
   }
