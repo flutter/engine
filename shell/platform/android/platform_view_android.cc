@@ -47,7 +47,8 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
-    bool create_onscreen_surface) {
+    bool create_onscreen_surface,
+    const flutter::TaskRunners task_runners) {
   if (!create_onscreen_surface) {
     return nullptr;
   }
@@ -56,7 +57,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
   }
   return std::make_unique<AndroidContextGL>(
       AndroidRenderingAPI::kOpenGLES,
-      fml::MakeRefCounted<AndroidEnvironmentGL>());
+      fml::MakeRefCounted<AndroidEnvironmentGL>(), task_runners);
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -69,7 +70,8 @@ PlatformViewAndroid::PlatformViewAndroid(
                           std::move(task_runners),
                           std::move(jni_facade),
                           CreateAndroidContext(use_software_rendering,
-                                               create_onscreen_surface)) {}
+                                               create_onscreen_surface,
+                                               task_runners)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,

@@ -148,10 +148,12 @@ SkISize AndroidEGLSurface::GetSize() const {
 
 AndroidContextGL::AndroidContextGL(
     AndroidRenderingAPI rendering_api,
-    fml::RefPtr<AndroidEnvironmentGL> environment)
+    fml::RefPtr<AndroidEnvironmentGL> environment,
+    const TaskRunners& task_runners)
     : AndroidContext(AndroidRenderingAPI::kOpenGLES),
       environment_(environment),
-      config_(nullptr) {
+      config_(nullptr),
+      task_runners_(task_runners) {
   if (!environment_->IsValid()) {
     FML_LOG(ERROR) << "Could not create an Android GL environment.";
     return;
@@ -189,6 +191,23 @@ AndroidContextGL::AndroidContextGL(
 }
 
 AndroidContextGL::~AndroidContextGL() {
+  sk_sp<GrDirectContext> main_context = GetMainSkiaContext();
+  SetMainSkiaContext(nullptr);
+  fml::AutoResetWaitableEvent latch;
+  task_runners_.GetRasterTaskRunner()->PostTask([&] {
+    if (main_context) {
+      std::unique_ptr<AndroidEGLSurface> pbuffer_surface =
+          CreateOffscreenSurface();
+      if (pbuffer_surface->MakeCurrent()) {
+        main_context->releaseResourcesAndAbandonContext();
+        main_context.reset();
+        ClearCurrent();
+      }
+      pbuffer_surface.reset();
+    }
+    latch.Signal();
+  });
+  latch.Wait();
   if (!TeardownContext(environment_->Display(), context_)) {
     FML_LOG(ERROR)
         << "Could not tear down the EGL context. Possible resource leak.";
