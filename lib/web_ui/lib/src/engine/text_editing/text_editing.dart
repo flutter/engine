@@ -462,7 +462,7 @@ class TextEditingDeltaState {
   });
 
   static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState? lastTextEditingDeltaState) {
-    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text ?? '');
+    TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
 
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
 
@@ -1175,7 +1175,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     assert(isEnabled);
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
-    final TextEditingDeltaState newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, lastTextEditingDeltaState);
+    TextEditingDeltaState? newTextEditingDeltaState;
+    if (inputConfiguration.enableDeltaModel) {
+      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, lastTextEditingDeltaState);
+    }
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;

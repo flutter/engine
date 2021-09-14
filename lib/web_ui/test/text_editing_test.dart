@@ -1498,6 +1498,63 @@ void testMain() {
       hideKeyboard();
     });
 
+    test('Syncs the editing state back to Flutter - delta model', () {
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, createFlutterConfig('text', enableDeltaModel: true)]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+      MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': '',
+        'selectionBase': -1,
+        'selectionExtent': -1,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      final InputElement input = textEditing!.strategy.domElement! as InputElement;
+
+      input.value = 'something';
+      input.dispatchEvent(Event.eventType('Event', 'input'));
+
+      spy.messages.clear();
+
+      input.setSelectionRange(2, 5);
+      if (browserEngine == BrowserEngine.firefox) {
+        final Event keyup = KeyboardEvent('keyup');
+        textEditing!.strategy.domElement!.dispatchEvent(keyup);
+      } else {
+        document.dispatchEvent(Event.eventType('Event', 'selectionchange'));
+      }
+
+      expect(spy.messages, hasLength(1));
+      expect(spy.messages[0].channel, 'flutter/textinput');
+      expect(spy.messages[0].methodName, 'TextInputClient.updateEditingStateWithDeltas');
+      expect(
+        spy.messages[0].methodArguments,
+        <dynamic>[
+          123, // Client ID
+          <String, dynamic>{
+            'batchDeltas': [
+              {
+                'oldText': 'something',
+                'deltaText': '',
+                'deltaStart': -1,
+                'deltaEnd': -1,
+                'selectionBase': 2,
+                'selectionExtent': 5,
+              }
+            ],
+          }
+        ],
+      );
+      spy.messages.clear();
+
+      hideKeyboard();
+    });
+
     test('multiTextField Autofill sync updates back to Flutter', () {
       // Create a configuration with an AutofillGroup of four text fields.
       const String hintForFirstElement = 'familyName';
@@ -2145,6 +2202,8 @@ void testMain() {
   });
 
   group('TextEditingDeltaState', () {
+    // The selection baseOffset and extentOffset are not inferred by
+    // TextEditingDeltaState.inferDeltaState so we do not verify them here.
     test('Verify correct delta is inferred - insertion', () {
       final EditingState newEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
       final EditingState lastEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
@@ -2156,8 +2215,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, 'd');
       expect(textEditingDeltaState.deltaStart, 4);
       expect(textEditingDeltaState.deltaEnd, 4);
-      expect(textEditingDeltaState.baseOffset, 5);
-      expect(textEditingDeltaState.extentOffset, 5);
+      expect(textEditingDeltaState.baseOffset, -1);
+      expect(textEditingDeltaState.extentOffset, -1);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2173,8 +2232,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, '');
       expect(textEditingDeltaState.deltaStart, 4);
       expect(textEditingDeltaState.deltaEnd, 5);
-      expect(textEditingDeltaState.baseOffset, 4);
-      expect(textEditingDeltaState.extentOffset, 4);
+      expect(textEditingDeltaState.baseOffset, -1);
+      expect(textEditingDeltaState.extentOffset, -1);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2190,16 +2249,16 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, '你好吗');
       expect(textEditingDeltaState.deltaStart, 0);
       expect(textEditingDeltaState.deltaEnd, 9);
-      expect(textEditingDeltaState.baseOffset, 3);
-      expect(textEditingDeltaState.extentOffset, 3);
-      expect(textEditingDeltaState.composingOffset, -1);
-      expect(textEditingDeltaState.composingExtent, -1);
+      expect(textEditingDeltaState.baseOffset, -1);
+      expect(textEditingDeltaState.extentOffset, -1);
+      expect(textEditingDeltaState.composingOffset, 0);
+      expect(textEditingDeltaState.composingExtent, 9);
     });
 
     test('Verify correct delta is inferred for double space to insert a period', () {
-      final EditingState newEditState = EditingState(text: 'hello.', baseOffset: 7, extentOffset: 7);
-      final EditingState lastEditState = EditingState(text: 'hello', baseOffset: 6, extentOffset: 6);
-      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'hello', deltaText: '.', deltaStart: 6, deltaEnd: 6, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
+      final EditingState newEditState = EditingState(text: 'hello. ', baseOffset: 7, extentOffset: 7);
+      final EditingState lastEditState = EditingState(text: 'hello ', baseOffset: 6, extentOffset: 6);
+      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'hello ', deltaText: '. ', deltaStart: 6, deltaEnd: 6, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 
@@ -2207,8 +2266,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, '. ');
       expect(textEditingDeltaState.deltaStart, 5);
       expect(textEditingDeltaState.deltaEnd, 6);
-      expect(textEditingDeltaState.baseOffset, 7);
-      expect(textEditingDeltaState.extentOffset, 7);
+      expect(textEditingDeltaState.baseOffset, -1);
+      expect(textEditingDeltaState.extentOffset, -1);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2224,8 +2283,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, 'à');
       expect(textEditingDeltaState.deltaStart, 0);
       expect(textEditingDeltaState.deltaEnd, 1);
-      expect(textEditingDeltaState.baseOffset, 1);
-      expect(textEditingDeltaState.extentOffset, 1);
+      expect(textEditingDeltaState.baseOffset, -1);
+      expect(textEditingDeltaState.extentOffset, -1);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2339,6 +2398,7 @@ Map<String, dynamic> createFlutterConfig(
   String? placeholderText,
   List<String>? autofillHintsForFields,
   bool decimal = false,
+  bool enableDeltaModel = false,
 }) {
   return <String, dynamic>{
     'inputType': <String, dynamic>{
@@ -2355,6 +2415,7 @@ Map<String, dynamic> createFlutterConfig(
     if (autofillEnabled && autofillHintsForFields != null)
       'fields':
           createFieldValues(autofillHintsForFields, autofillHintsForFields),
+    'enableDeltaModel': enableDeltaModel,
   };
 }
 
