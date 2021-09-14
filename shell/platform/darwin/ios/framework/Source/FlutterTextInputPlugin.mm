@@ -1457,8 +1457,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     @"batchDeltas" : @[ deltaToFramework ],
   };
 
-  NSLog(@"%@", [batchDeltas[@"batchDeltas"] objectAtIndex:0][@"oldText"]);
-
   [self.textInputDelegate updateEditingClient:_textInputClient withDelta:batchDeltas];
 }
 
