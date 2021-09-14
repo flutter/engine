@@ -365,7 +365,10 @@ bool DartComponentControllerV2::RunDartMain() {
 
   tonic::DartMicrotaskQueue::StartForCurrentThread();
 
-  // TODO(fxb/79871): Point these at the actual stdout/stderr handles of the
+  // TODO(fxb/79871): Create a file descriptor for each component that is
+  // launched and listen for anything that is written to the component. When
+  // something is written to the component, forward that message along to the
+  // Fuchsia logger and decorate it with the tag that it came from the
   // component.
   stdout_fd_ = fileno(stdout);
   stderr_fd_ = fileno(stderr);
