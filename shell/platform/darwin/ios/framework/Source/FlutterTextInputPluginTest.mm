@@ -324,10 +324,10 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return
-                      ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue] == 0) &&
-                      ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                      ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
+                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"] stringValue] ==
+                          0) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
                 }]]);
 }
 
