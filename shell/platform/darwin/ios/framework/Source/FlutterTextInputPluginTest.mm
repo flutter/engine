@@ -340,8 +340,8 @@ FLUTTER_ASSERT_ARC
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                   return
-                      [[([state[@"batchDeltas"] objectAtIndex:0])[@"oldText"]
-                          stringValue] isEqualToString:@"text to insert"] &&
+                      [[([state[@"batchDeltas"] objectAtIndex:0])[@"oldText"] stringValue]
+                          isEqualToString:@"text to insert"] &&
                       ([[([state[@"batchDeltas"] objectAtIndex:0])[@"deltaText"] stringValue]
                           isEqualToString:@""]) &&
                       ([([state[@"batchDeltas"] objectAtIndex:0])[@"deltaStart"] intValue] == 13) &&
