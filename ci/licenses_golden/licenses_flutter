@@ -900,6 +900,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/FlutterT
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/ImeSyncDeferringInsetsCallback.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/ListenableEditingState.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextEditingDelta.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/localization/LocalizationPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java
@@ -1370,6 +1371,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/builtin_libraries.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller.h
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.cc
+FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_component_controller_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/dart_runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/builtin.dart
