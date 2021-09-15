@@ -324,8 +324,7 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
-                             isEqualToString:@""]) &&
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"] isEqualToString:@""]) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"text to insert"]) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
@@ -340,10 +339,8 @@ FLUTTER_ASSERT_ARC
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"text to insert"]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                             isEqualToString:@""]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          13) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"] isEqualToString:@""]) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
                 }]]);
 
@@ -355,10 +352,8 @@ FLUTTER_ASSERT_ARC
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"text to inser"]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                             isEqualToString:@""]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          -1) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"] isEqualToString:@""]) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                 }]]);
 
@@ -387,8 +382,7 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"replace textext to inser"]) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"marked text"]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          12) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 12) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
                 }]]);
 
@@ -400,10 +394,8 @@ FLUTTER_ASSERT_ARC
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
                   return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"replace textmarked textext to inser"]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
-                             isEqualToString:@""]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          -1) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"] isEqualToString:@""]) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == -1) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                 }]]);
 }
@@ -437,8 +429,7 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"Some initial text"]) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"new marked text."]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          13) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
@@ -472,8 +463,7 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"Some initial text"]) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"text."]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          13) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
@@ -507,8 +497,7 @@ FLUTTER_ASSERT_ARC
                              isEqualToString:@"Some initial text"]) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"tex"]) &&
-                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
-                          13) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 13) &&
                          ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
