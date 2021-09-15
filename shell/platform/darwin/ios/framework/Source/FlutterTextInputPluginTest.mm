@@ -324,12 +324,12 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"text to insert"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 0);
                 }]]);
 
   [inputView deleteBackward];
@@ -338,13 +338,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"text to insert"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           13) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 14);
                 }]]);
 
   inputView.selectedTextRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)];
@@ -353,13 +353,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"text to inser"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           -1) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                 }]]);
 
   [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]
@@ -369,12 +369,12 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"text to inser"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"replace text"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] == 0) &&
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 1);
                 }]]);
 
   [inputView setMarkedText:@"marked text" selectedRange:NSMakeRange(0, 1)];
@@ -383,13 +383,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"replace textext to inser"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"marked text"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           12) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 12);
                 }]]);
 
   [inputView unmarkText];
@@ -398,13 +398,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"replace textmarked textext to inser"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@""]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           -1) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == -1);
                 }]]);
 }
 
@@ -433,13 +433,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"Some initial text"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"new marked text."]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           13) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
 
@@ -468,13 +468,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"Some initial text"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"text."]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           13) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
 
@@ -503,13 +503,13 @@ FLUTTER_ASSERT_ARC
   OCMVerify([engine
       updateEditingClient:0
                 withDelta:[OCMArg checkWithBlock:^BOOL(NSDictionary* state) {
-                  return ([[state[@"batchDeltas"] objectAtIndex:0][@"oldText"]
+                  return ([[state[@"deltas"] objectAtIndex:0][@"oldText"]
                              isEqualToString:@"Some initial text"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaText"]
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaText"]
                              isEqualToString:@"tex"]) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaStart"] intValue] ==
                           13) &&
-                         ([[state[@"batchDeltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
+                         ([[state[@"deltas"] objectAtIndex:0][@"deltaEnd"] intValue] == 17);
                 }]]);
 }
 
