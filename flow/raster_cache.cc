@@ -43,34 +43,7 @@ RasterCache::RasterCache(size_t access_threshold,
           picture_and_display_list_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
-static bool CanRasterizePicture(SkPicture* picture) {
-  if (picture == nullptr) {
-    return false;
-  }
-
-  const SkRect cull_rect = picture->cullRect();
-
-  if (cull_rect.isEmpty()) {
-    // No point in ever rasterizing an empty picture.
-    return false;
-  }
-
-  if (!cull_rect.isFinite()) {
-    // Cannot attempt to rasterize into an infinitely large surface.
-    FML_LOG(INFO) << "Attempted to raster cache non-finite picture";
-    return false;
-  }
-
-  return true;
-}
-
-static bool CanRasterizeDisplayList(DisplayList* display_list) {
-  if (display_list == nullptr) {
-    return false;
-  }
-
-  const SkRect cull_rect = display_list->bounds();
-
+static bool CanRasterizeRect(const SkRect& cull_rect) {
   if (cull_rect.isEmpty()) {
     // No point in ever rasterizing an empty display list.
     return false;
@@ -94,7 +67,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
     return false;
   }
 
-  if (!CanRasterizePicture(picture)) {
+  if (picture == nullptr || !CanRasterizeRect(picture->cullRect())) {
     // No point in deciding whether the picture is worth rasterizing if it
     // cannot be rasterized at all.
     return false;
@@ -120,7 +93,7 @@ static bool IsDisplayListWorthRasterizing(DisplayList* display_list,
     return false;
   }
 
-  if (!CanRasterizeDisplayList(display_list)) {
+  if (display_list == nullptr || !CanRasterizeRect(display_list->bounds())) {
     // No point in deciding whether the display list is worth rasterizing if it
     // cannot be rasterized at all.
     return false;
@@ -239,10 +212,13 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
       });
 }
 
-bool RasterCache::PreCheckWillCache(SkPicture* picture,
-                                    bool is_complex,
-                                    bool will_change) {
-  if (!GenerateNewCacheInthisFrame()) {
+bool RasterCache::Prepare(PrerollContext* context,
+                          SkPicture* picture,
+                          bool is_complex,
+                          bool will_change,
+                          const SkMatrix& untranslated_matrix,
+                          const SkPoint& offset) {
+  if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
 
@@ -251,38 +227,19 @@ bool RasterCache::PreCheckWillCache(SkPicture* picture,
     return false;
   }
 
-  return true;
-}
+  SkMatrix transformation_matrix = untranslated_matrix;
+  transformation_matrix.preTranslate(offset.x(), offset.y());
 
-bool RasterCache::PreCheckWillCache(DisplayList* display_list,
-                                    bool is_complex,
-                                    bool will_change) {
-  if (!GenerateNewCacheInthisFrame()) {
-    return false;
-  }
-
-  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex)) {
-    // We only deal with display lists that are worthy of rasterization.
-    return false;
-  }
-
-  return true;
-}
-
-bool RasterCache::Prepare(PrerollContext* context,
-                          SkPicture* picture,
-                          const SkMatrix& untranslated_matrix,
-                          const SkPoint& offset) {
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
-  const MatrixDecomposition matrix(untranslated_matrix);
+  const MatrixDecomposition matrix(transformation_matrix);
 
   if (!matrix.IsValid()) {
     // The matrix was singular. No point in going further.
     return false;
   }
 
-  PictureRasterCacheKey cache_key(picture->uniqueID(), untranslated_matrix);
+  PictureRasterCacheKey cache_key(picture->uniqueID(), transformation_matrix);
 
   // Creates an entry, if not present prior.
   Entry& entry = picture_cache_[cache_key];
@@ -292,15 +249,14 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   if (!entry.image) {
-    // Translate won't affect cache result, so we apply it only before
-    // rasterizing.
-    SkMatrix ctm = untranslated_matrix;
-    ctm.preTranslate(offset.x(), offset.y());
+    // GetIntegralTransCTM effect for matrix which only contains scale,
+    // translate, so it won't affect result of matrix decomposition and cache
+    // key.
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = GetIntegralTransCTM(ctm);
+    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
 #endif
     entry.image =
-        RasterizePicture(picture, context->gr_context, ctm,
+        RasterizePicture(picture, context->gr_context, transformation_matrix,
                          context->dst_color_space, checkerboard_images_);
     picture_cached_this_frame_++;
   }
@@ -309,11 +265,25 @@ bool RasterCache::Prepare(PrerollContext* context,
 
 bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
+                          bool is_complex,
+                          bool will_change,
                           const SkMatrix& untranslated_matrix,
                           const SkPoint& offset) {
+  if (!GenerateNewCacheInThisFrame()) {
+    return false;
+  }
+
+  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex)) {
+    // We only deal with display lists that are worthy of rasterization.
+    return false;
+  }
+
+  SkMatrix transformation_matrix = untranslated_matrix;
+  transformation_matrix.preTranslate(offset.x(), offset.y());
+
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
-  const MatrixDecomposition matrix(untranslated_matrix);
+  const MatrixDecomposition matrix(transformation_matrix);
 
   if (!matrix.IsValid()) {
     // The matrix was singular. No point in going further.
@@ -321,7 +291,7 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   DisplayListRasterCacheKey cache_key(display_list->unique_id(),
-                                      untranslated_matrix);
+                                      transformation_matrix);
 
   // Creates an entry, if not present prior.
   Entry& entry = display_list_cache_[cache_key];
@@ -331,16 +301,15 @@ bool RasterCache::Prepare(PrerollContext* context,
   }
 
   if (!entry.image) {
-    // Translate won't affect cache result, so we apply it only before
-    // rasterizing.
-    SkMatrix ctm = untranslated_matrix;
-    ctm.preTranslate(offset.x(), offset.y());
+    // GetIntegralTransCTM effect for matrix which only contains scale,
+    // translate, so it won't affect result of matrix decomposition and cache
+    // key.
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = GetIntegralTransCTM(ctm);
+    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
 #endif
-    entry.image =
-        RasterizeDisplayList(display_list, context->gr_context, ctm,
-                             context->dst_color_space, checkerboard_images_);
+    entry.image = RasterizeDisplayList(
+        display_list, context->gr_context, transformation_matrix,
+        context->dst_color_space, checkerboard_images_);
     display_list_cached_this_frame_++;
   }
   return true;

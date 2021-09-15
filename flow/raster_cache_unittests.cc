@@ -4,8 +4,6 @@
 
 #include "flutter/flow/raster_cache.h"
 
-#include <memory>
-
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "gtest/gtest.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -46,16 +44,15 @@ TEST(RasterCache, ThresholdIsRespected) {
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
   ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
+                             picture.get(), true, false, matrix));
   // 1st access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
 
   ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));
+                             picture.get(), true, false, matrix));
 
   // 2nd access.
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
@@ -64,7 +61,7 @@ TEST(RasterCache, ThresholdIsRespected) {
 
   // Now Prepare should cache it.
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), matrix));
+                            picture.get(), true, false, matrix));
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 }
 
@@ -72,22 +69,36 @@ TEST(RasterCache, AccessThresholdOfZeroDisablesCaching) {
   size_t threshold = 0;
   flutter::RasterCache cache(threshold);
 
+  SkMatrix matrix = SkMatrix::I();
+
   auto picture = GetSamplePicture();
+
+  SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  ASSERT_FALSE(cache.PreCheckWillCache(picture.get(), true, false));
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             picture.get(), true, false, matrix));
+
+  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 }
 
 TEST(RasterCache, PictureCacheLimitPerFrameIsRespectedWhenZero) {
   size_t picture_cache_limit_per_frame = 0;
   flutter::RasterCache cache(3, picture_cache_limit_per_frame);
 
+  SkMatrix matrix = SkMatrix::I();
+
   auto picture = GetSamplePicture();
+
+  SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  ASSERT_FALSE(cache.PreCheckWillCache(picture.get(), true, false));
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             picture.get(), true, false, matrix));
+
+  ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 }
 
 TEST(RasterCache, SweepsRemoveUnusedFrames) {
@@ -102,15 +113,14 @@ TEST(RasterCache, SweepsRemoveUnusedFrames) {
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
   ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), matrix));  // 1
+                             picture.get(), true, false, matrix));  // 1
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
 
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), matrix));  // 2
+                            picture.get(), true, false, matrix));  // 2
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 
   cache.SweepAfterFrame();
@@ -141,14 +151,12 @@ TEST(RasterCache, DeviceRectRoundOut) {
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
 
-  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
   ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
-                             picture.get(), ctm));
+                             picture.get(), true, false, ctm));
   ASSERT_FALSE(cache.Draw(*picture, canvas));
   cache.SweepAfterFrame();
-  ASSERT_TRUE(cache.PreCheckWillCache(picture.get(), true, false));
   ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
-                            picture.get(), ctm));
+                            picture.get(), true, false, ctm));
   ASSERT_TRUE(cache.Draw(*picture, canvas));
 
   canvas.translate(248, 0);

@@ -59,10 +59,10 @@ void MockRasterCache::AddMockPicture(int width, int height) {
   PrerollContextHolder holder = GetSamplePrerollContextHolder();
   holder.preroll_context.dst_color_space = color_space_;
   for (int i = 0; i < access_threshold(); i++) {
-    Prepare(&holder.preroll_context, picture.get(), ctm);
+    Prepare(&holder.preroll_context, picture.get(), true, false, ctm);
     Draw(*picture, mock_canvas_);
   }
-  Prepare(&holder.preroll_context, picture.get(), ctm);
+  Prepare(&holder.preroll_context, picture.get(), true, false, ctm);
 }
 
 PrerollContextHolder GetSamplePrerollContextHolder() {

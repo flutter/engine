@@ -89,10 +89,10 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   DisplayList* disp_list = display_list();
 
-  if (context->raster_cache && context->raster_cache->PreCheckWillCache(
-                                   disp_list, is_complex_, will_change_)) {
+  if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    context->raster_cache->Prepare(context, disp_list, matrix, offset_);
+    cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
+                   offset_);
   }
 
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());

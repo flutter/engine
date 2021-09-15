@@ -131,28 +131,24 @@ class RasterCache {
     return result;
   }
 
-  // Check picture/display_list is worth to cache without generate cache entry.
-  // Raster result is not worth to cache if
-  // 1. There are too many results to be cached in the current frame.
-  //    (See also kDefaultPictureAndDispLayListCacheLimitPerFrame.)
-  // 2. The result is not worth rasterizing
-  bool PreCheckWillCache(SkPicture* picture, bool is_complex, bool will_change);
-  bool PreCheckWillCache(DisplayList* display_list,
-                         bool is_complex,
-                         bool will_change);
-
-  // Return true if the cache is generated. Makesure call this after
-  // PreCheckWillCache returns true
+  // Return true if the cache is generated.
   //
   // We may return false and not generate the cache if
-  // 1. The matrix is singular
-  // 2. the picture is accessed too few times.
+  // 1. There are too many pictures to be cached in the current frame.
+  //    (See also kDefaultPictureAndDispLayListCacheLimitPerFrame.)
+  // 2. The picture is not worth rasterizing
+  // 3. The matrix is singular
+  // 4. The picture is accessed too few times
   bool Prepare(PrerollContext* context,
                SkPicture* picture,
+               bool is_complex,
+               bool will_change,
                const SkMatrix& untranslated_matrix,
                const SkPoint& offset = SkPoint());
   bool Prepare(PrerollContext* context,
                DisplayList* display_list,
+               bool is_complex,
+               bool will_change,
                const SkMatrix& untranslated_matrix,
                const SkPoint& offset = SkPoint());
 
@@ -254,7 +250,7 @@ class RasterCache {
     }
   }
 
-  bool GenerateNewCacheInthisFrame() const {
+  bool GenerateNewCacheInThisFrame() const {
     // Disabling caching when access_threshold is zero is historic behavior.
     return access_threshold_ != 0 &&
            picture_cached_this_frame_ + display_list_cached_this_frame_ <

@@ -47,10 +47,12 @@ class MockRasterCacheResult : public RasterCacheResult {
  */
 class MockRasterCache : public RasterCache {
  public:
-  explicit MockRasterCache(size_t access_threshold = 3,
-                           size_t picture_cache_limit_per_frame =
-                               kDefaultPictureAndDispLayListCacheLimitPerFrame)
-      : RasterCache(access_threshold, picture_cache_limit_per_frame) {}
+  explicit MockRasterCache(
+      size_t access_threshold = 3,
+      size_t picture_and_display_list_cache_limit_per_frame =
+          kDefaultPictureAndDispLayListCacheLimitPerFrame)
+      : RasterCache(access_threshold,
+                    picture_and_display_list_cache_limit_per_frame) {}
 
   std::unique_ptr<RasterCacheResult> RasterizePicture(
       SkPicture* picture,

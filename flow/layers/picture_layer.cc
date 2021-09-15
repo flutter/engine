@@ -111,10 +111,10 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkPicture* sk_picture = picture();
 
-  if (context->raster_cache && context->raster_cache->PreCheckWillCache(
-                                   sk_picture, is_complex_, will_change_)) {
+  if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    context->raster_cache->Prepare(context, sk_picture, matrix, offset_);
+    cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
+                   offset_);
   }
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());

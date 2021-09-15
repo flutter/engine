@@ -2142,47 +2142,46 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
   // 2. Rasterize the picture and the picture layer in the raster cache.
   std::promise<bool> rasterized;
-  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask([&shell, &rasterized,
-                                                           &picture,
-                                                           &picture_layer] {
-    auto* compositor_context = shell->GetRasterizer()->compositor_context();
-    auto& raster_cache = compositor_context->raster_cache();
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+      [&shell, &rasterized, &picture, &picture_layer] {
+        auto* compositor_context = shell->GetRasterizer()->compositor_context();
+        auto& raster_cache = compositor_context->raster_cache();
 
-    Stopwatch raster_time;
-    Stopwatch ui_time;
-    MutatorsStack mutators_stack;
-    TextureRegistry texture_registry;
-    PrerollContext preroll_context = {
-        nullptr,                 /* raster_cache */
-        nullptr,                 /* gr_context */
-        nullptr,                 /* external_view_embedder */
-        mutators_stack, nullptr, /* color_space */
-        kGiantRect,              /* cull_rect */
-        false,                   /* layer reads from surface */
-        raster_time,    ui_time, texture_registry,
-        false, /* checkerboard_offscreen_layers */
-        1.0f,  /* frame_device_pixel_ratio */
-        false, /* has_platform_view */
-    };
+        Stopwatch raster_time;
+        Stopwatch ui_time;
+        MutatorsStack mutators_stack;
+        TextureRegistry texture_registry;
+        PrerollContext preroll_context = {
+            nullptr,                 /* raster_cache */
+            nullptr,                 /* gr_context */
+            nullptr,                 /* external_view_embedder */
+            mutators_stack, nullptr, /* color_space */
+            kGiantRect,              /* cull_rect */
+            false,                   /* layer reads from surface */
+            raster_time,    ui_time, texture_registry,
+            false, /* checkerboard_offscreen_layers */
+            1.0f,  /* frame_device_pixel_ratio */
+            false, /* has_platform_view */
+        };
 
-    // 2.1. Rasterize the picture. Call Draw multiple times to pass the
-    // access threshold (default to 3) so a cache can be generated.
-    SkCanvas dummy_canvas;
-    bool picture_cache_generated;
-    for (int i = 0; i < 4; i += 1) {
-      SkMatrix matrix = SkMatrix::I();
-      ASSERT_TRUE(raster_cache.PreCheckWillCache(picture.get(), true, false));
+        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
+        // access threshold (default to 3) so a cache can be generated.
+        SkCanvas dummy_canvas;
+        bool picture_cache_generated;
+        for (int i = 0; i < 4; i += 1) {
+          SkMatrix matrix = SkMatrix::I();
 
-      picture_cache_generated =
-          raster_cache.Prepare(&preroll_context, picture.get(), matrix);
-      raster_cache.Draw(*picture, dummy_canvas);
-    }
-    ASSERT_TRUE(picture_cache_generated);
+          picture_cache_generated = raster_cache.Prepare(
+              &preroll_context, picture.get(), true, false, matrix);
+          raster_cache.Draw(*picture, dummy_canvas);
+        }
+        ASSERT_TRUE(picture_cache_generated);
 
-    // 2.2. Rasterize the picture layer.
-    raster_cache.Prepare(&preroll_context, picture_layer.get(), SkMatrix::I());
-    rasterized.set_value(true);
-  });
+        // 2.2. Rasterize the picture layer.
+        raster_cache.Prepare(&preroll_context, picture_layer.get(),
+                             SkMatrix::I());
+        rasterized.set_value(true);
+      });
   rasterized.get_future().wait();
 
   // 3. Call the service protocol and check its output.
