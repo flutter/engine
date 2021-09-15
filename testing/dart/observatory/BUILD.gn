@@ -4,10 +4,7 @@
 
 import("//flutter/testing/dart/compile_test.gni")
 
-tests = [
-  "skp_test.dart",
-  "http_loopback_test.dart",
-]
+tests = [ "skp_test.dart" ]
 
 foreach(test, tests) {
   compile_flutter_dart_test("compile_$test") {
