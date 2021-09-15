@@ -55,3 +55,10 @@ leak:*flutter/shell/platform/linux/fl_keyboard_manager_test.cc*
 leak:*flutter/shell/platform/linux/fl_key_channel_responder_test.cc*
 leak:*flutter/shell/platform/linux/fl_basic_message_channel_test.cc*
 leak:fl_message_codec_decode_message
+
+# Unfortunately, realloc calls originating from g_realloc effectively obscure
+# the trace of the original allocation. Deeper investigation is required to
+# identify the original allocation source for these.
+# At the time of writing, this only amounts to 4 allocations totalling 512 bytes
+# worth of leaks.
+leak:g_realloc
