@@ -114,6 +114,7 @@ class _MockZoneValue {
   bool _falseChecked = false;
   bool _trueChecked = false;
 
+  @override
   bool operator ==(Object o) {
     if(o == true) {
       _trueChecked = true;
