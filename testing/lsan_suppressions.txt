@@ -52,4 +52,6 @@ leak:*flutter/shell/platform/linux/testing/mock_engine.cc
 
 # TODO(bdero): Fix FL leaks
 leak:*flutter/shell/platform/linux/fl_keyboard_manager_test.cc*
+leak:*flutter/shell/platform/linux/fl_key_channel_responder_test.cc*
 leak:*flutter/shell/platform/linux/fl_basic_message_channel_test.cc*
+leak:fl_message_codec_decode_message
