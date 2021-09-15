@@ -197,7 +197,7 @@ public class TextInputChannel {
     for (TextEditingDelta delta : batchDeltas) {
       deltas.put(delta.toJSON());
     }
-    state.put("batchDeltas", deltas);
+    state.put("deltas", deltas);
     return state;
   }
   /**
