@@ -151,13 +151,13 @@ void Rasterizer::DrawLastLayerTree() {
   DrawToSurface(*last_layer_tree_);
 }
 
-void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+RasterStatus Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
                       LayerTreeDiscardCallback discardCallback) {
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
     // we yield and let this frame be serviced on the right thread.
-    return;
+    return RasterStatus::kYielded;
   }
   FML_DCHECK(delegate_.GetTaskRunners()
                  .GetRasterTaskRunner()
@@ -211,6 +211,8 @@ void Rasterizer::Draw(fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
     default:
       break;
   }
+
+  return raster_status;
 }
 
 namespace {
@@ -342,6 +344,8 @@ RasterStatus Rasterizer::DoDraw(
              raster_status == RasterStatus::kSkipAndRetry) {
     resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
+  } else if (raster_status == RasterStatus::kDiscarded) {
+    return raster_status;
   }
 
   if (persistent_cache->IsDumpingSkp() &&
@@ -418,10 +422,33 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
-  // There is no way for the compositor to know how long the layer tree
-  // construction took. Fortunately, the layer tree does. Grab that time
-  // for instrumentation.
-  compositor_context_->ui_time().SetLapTime(layer_tree.build_time());
+  RasterStatus raster_status;
+  if (surface_->AllowsDrawingWhenGpuDisabled()) {
+    raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+  } else {
+    delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
+        fml::SyncSwitch::Handlers()
+            .SetIfTrue([&] { raster_status = RasterStatus::kDiscarded; })
+            .SetIfFalse([&] {
+              raster_status =
+                  DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
+            }));
+  }
+
+  return raster_status;
+}
+
+/// Unsafe because it assumes we have access to the GPU which isn't the case
+/// when iOS is backgrounded, for example.
+/// \see Rasterizer::DrawToSurface
+RasterStatus Rasterizer::DrawToSurfaceUnsafe(
+    FrameTimingsRecorder& frame_timings_recorder,
+    flutter::LayerTree& layer_tree) {
+  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurfaceUnsafe");
+  FML_DCHECK(surface_);
+
+  compositor_context_->ui_time().SetLapTime(
+      frame_timings_recorder.GetBuildDuration());
 
   SkCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
@@ -480,9 +507,8 @@ RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(
-          surface_->GetContext(), std::move(frame),
-          delegate_.GetIsGpuDisabledSyncSwitch());
+      external_view_embedder_->SubmitFrame(surface_->GetContext(),
+                                           std::move(frame));
     } else {
       frame->Submit();
     }

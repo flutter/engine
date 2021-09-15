@@ -339,4 +339,9 @@ bool GPUSurfaceGL::ClearRenderContext() {
   return delegate_->GLContextClearCurrent();
 }
 
+// |Surface|
+bool GPUSurfaceGL::AllowsDrawingWhenGpuDisabled() const {
+  return delegate_->AllowsDrawingWhenGpuDisabled();
+}
+
 }  // namespace flutter
