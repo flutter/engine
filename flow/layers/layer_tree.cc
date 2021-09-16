@@ -22,8 +22,7 @@ LayerTree::LayerTree(const SkISize& frame_size, float device_pixel_ratio)
   FML_CHECK(device_pixel_ratio_ != 0.0f);
 }
 
-bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
-                        bool ignore_raster_cache) {
+bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame) {
   TRACE_EVENT0("flutter", "LayerTree::Preroll");
 
   if (!root_layer_) {
@@ -37,7 +36,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       checkerboard_raster_cache_images_);
   MutatorsStack stack;
   PrerollContext context = {
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
+      &frame.context().raster_cache(),
       frame.gr_context(),
       frame.view_embedder(),
       stack,
@@ -54,8 +53,7 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   return context.surface_needs_readback;
 }
 
-void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
-                      bool ignore_raster_cache) const {
+void LayerTree::Paint(CompositorContext::ScopedFrame& frame) const {
   TRACE_EVENT0("flutter", "LayerTree::Paint");
 
   if (!root_layer_) {
@@ -81,7 +79,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       frame.context().raster_time(),
       frame.context().ui_time(),
       frame.context().texture_registry(),
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache(),
+      &frame.context().raster_cache(),
       checkerboard_offscreen_layers_,
       device_pixel_ratio_};
 

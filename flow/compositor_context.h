@@ -83,8 +83,7 @@ class CompositorContext {
 
     GrDirectContext* gr_context() const { return gr_context_; }
 
-    virtual RasterStatus Raster(LayerTree& layer_tree,
-                                bool ignore_raster_cache);
+    virtual RasterStatus Raster(LayerTree& layer_tree);
 
    private:
     CompositorContext& context_;

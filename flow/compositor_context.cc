@@ -68,10 +68,9 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
 }
 
 RasterStatus CompositorContext::ScopedFrame::Raster(
-    flutter::LayerTree& layer_tree,
-    bool ignore_raster_cache) {
+    flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
-  bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
+  bool root_needs_readback = layer_tree.Preroll(*this);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {
@@ -97,7 +96,7 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
     }
     canvas()->clear(SK_ColorTRANSPARENT);
   }
-  layer_tree.Paint(*this, ignore_raster_cache);
+  layer_tree.Paint(*this);
   if (canvas() && needs_save_layer) {
     canvas()->restore();
   }
