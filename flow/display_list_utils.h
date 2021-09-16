@@ -343,7 +343,7 @@ class DisplayListBoundsCalculator final
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes,
+                  bool transparentOccluder,
                   SkScalar dpr) override;
 
   bool isFlooded() {

@@ -194,7 +194,7 @@ void ClipBoundsDispatchHelper::restore() {
   }
 }
 void ClipBoundsDispatchHelper::reset(const SkRect* cull_rect) {
-  if ((has_clip_ = ((bool) cull_rect))) {
+  if ((has_clip_ = ((bool)cull_rect)) && !cull_rect->isEmpty()) {
     bounds_ = *cull_rect;
   } else {
     bounds_.setEmpty();
@@ -410,19 +410,13 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
                                             const SkRect* cullRect) {
   SkPoint quad[4];
   BoundsAccumulator atlasBounds;
-  // FML_LOG(ERROR) << "atlas quads: {";
   for (int i = 0; i < count; i++) {
     const SkRect& src = tex[i];
-    // FML_LOG(ERROR) << "  rect " << (i + 1) << ": " << src.fLeft << ", " << src.fTop << " => " << src.fRight << ", " << src.fBottom;
     xform[i].toQuad(src.width(), src.height(), quad);
-    // FML_LOG(ERROR) << "  quad " << (i + 1) << ": {";
     for (int j = 0; j < 4; j++) {
-      // FML_LOG(ERROR) << "    " << quad[j].fX << ", " << quad[j].fY;
       atlasBounds.accumulate(quad[j]);
     }
-    // FML_LOG(ERROR) << "  }";
   }
-  // FML_LOG(ERROR) << "}";
   if (atlasBounds.isNotEmpty()) {
     accumulateRect(atlasBounds.getBounds(), kIsNonGeometric);
   }
@@ -451,7 +445,7 @@ void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkColor color,
                                              const SkScalar elevation,
-                                             bool occludes,
+                                             bool transparentOccluder,
                                              SkScalar dpr) {
   SkRect shadow_bounds =
       PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix());
@@ -484,14 +478,25 @@ bool DisplayListBoundsCalculator::adjustBoundsForPaint(SkRect& bounds,
 
     // Path effect occurs before stroking...
     if (path_effect_) {
-      SkPaint p;
-      p.setPathEffect(path_effect_);
-      if (!p.canComputeFastBounds()) {
-        return false;
+      SkPathEffect::DashInfo info;
+      if (path_effect_->asADash(&info) == SkPathEffect::kDash_DashType) {
+        // A dash effect has a very simple impact. It cannot introduce any
+        // miter joins that weren't already present in the original path
+        // and it does not grow the bounds of the path, but it can add
+        // end caps to areas that might not have had them before so all
+        // we need to do is to indicate the potential for diagonal
+        // end caps and move on.
+        flags |= kGeometryMayHaveDiagonalEndCaps;
+      } else {
+        SkPaint p;
+        p.setPathEffect(path_effect_);
+        if (!p.canComputeFastBounds()) {
+          return false;
+        }
+        bounds = p.computeFastBounds(bounds, &bounds);
+        flags |= (kGeometryMayHaveDiagonalEndCaps |
+                  kGeometryMayHaveProblematicJoins);
       }
-      bounds = p.computeFastBounds(bounds, &bounds);
-      flags |= kGeometryMayHaveDiagonalEndCaps |
-               kGeometryMayHaveProblematicJoins;
     }
 
     if ((flags & kIsStrokedGeometry) != 0) {

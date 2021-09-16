@@ -148,7 +148,7 @@ namespace flutter {
   V(DrawTextBlob)                   \
                                     \
   V(DrawShadow)                     \
-  V(DrawShadowOccludes)
+  V(DrawNonOccludingShadow)
 
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
@@ -325,7 +325,7 @@ class Dispatcher {
   virtual void drawShadow(const SkPath& path,
                           const SkColor color,
                           const SkScalar elevation,
-                          bool occludes,
+                          bool transparentOccluder,
                           SkScalar dpr) = 0;
 };
 
@@ -440,7 +440,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes,
+                  bool transparentOccluder,
                   SkScalar dpr) override;
 
   sk_sp<DisplayList> Build();
