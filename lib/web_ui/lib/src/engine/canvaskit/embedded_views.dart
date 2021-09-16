@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
+import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
@@ -39,12 +40,19 @@ class HtmlViewEmbedder {
   /// platform views.
   static const bool disableOverlays = maximumSurfaces <= 1;
 
+  /// The set of platform views using the backup surface.
+  final Set<int> _viewsUsingBackupSurface = <int>{};
+
+  /// Picture recorders which were created during the preroll phase.
+  ///
+  /// These picture recorders will be "claimed" in the paint phase by platform
+  /// views being composited into the scene.
+  final List<CkPictureRecorder> _pictureRecordersCreatedDuringPreroll =
+      <CkPictureRecorder>[];
+
   /// The picture recorder shared by all platform views which paint to the
   /// backup surface.
   CkPictureRecorder? _backupPictureRecorder;
-
-  /// The set of platform views using the backup surface.
-  final Set<int> _viewsUsingBackupSurface = <int>{};
 
   /// A picture recorder associated with a view id.
   ///
@@ -92,22 +100,41 @@ class HtmlViewEmbedder {
     _frameSize = size;
   }
 
-  List<CkCanvas> getCurrentCanvases() {
+  /// Returns a list of canvases which will be overlaid on top of the "base"
+  /// canvas after a platform view is composited into the scene.
+  ///
+  /// The engine asks for the overlay canvases immediately before the paint
+  /// phase, after the preroll phase. In the preroll phase we must be
+  /// conservative and assume that every platform view which is prerolled is
+  /// also composited, and therefore requires an overlay canvas. However, not
+  /// every platform view which is prerolled ends up being composited (it may be
+  /// clipped out and not actually drawn). This means that we may end up
+  /// overallocating canvases. This isn't a problem in practice, however, as
+  /// unused recording canvases are simply deleted at the end of the frame.
+  List<CkCanvas> getOverlayCanvases() {
     if (disableOverlays) {
       return const <CkCanvas>[];
     }
-    final Set<CkCanvas> canvases = <CkCanvas>{};
-    for (int i = 0; i < _compositionOrder.length; i++) {
-      final int viewId = _compositionOrder[i];
-      canvases.add(_pictureRecorders[viewId]!.recordingCanvas!);
+    final List<CkCanvas> overlayCanvases = _pictureRecordersCreatedDuringPreroll
+        .map((CkPictureRecorder r) => r.recordingCanvas!)
+        .toList();
+    if (_backupPictureRecorder != null) {
+      overlayCanvases.add(_backupPictureRecorder!.recordingCanvas!);
     }
-    return canvases.toList();
+    return overlayCanvases;
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
     if (!disableOverlays) {
-      _ensureOverlayInitialized(viewId);
-      if (_viewsUsingBackupSurface.contains(viewId)) {
+      // We must decide in the preroll phase if a platform view will use the
+      // backup overlay, so that draw commands after the platform view will
+      // correctly paint to the backup surface.
+      bool needBackupSurface = false;
+      if (_pictureRecordersCreatedDuringPreroll.length >=
+          SurfaceFactory.instance.maximumOverlays) {
+        needBackupSurface = true;
+      }
+      if (needBackupSurface) {
         if (_backupPictureRecorder == null) {
           // Only initialize the picture recorder for the backup surface once.
           final CkPictureRecorder pictureRecorder = CkPictureRecorder();
@@ -115,18 +142,21 @@ class HtmlViewEmbedder {
           pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
           _backupPictureRecorder = pictureRecorder;
         }
-        _pictureRecorders[viewId] = _backupPictureRecorder!;
       } else {
         final CkPictureRecorder pictureRecorder = CkPictureRecorder();
         pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
         pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
-        _pictureRecorders[viewId] = pictureRecorder;
+        _pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
       }
     }
-    _compositionOrder.add(viewId);
 
     // Do nothing if the params didn't change.
     if (_currentCompositionParams[viewId] == params) {
+      // If the view was prerolled but not composited, then it needs to be
+      // recomposited.
+      if (!_activeCompositionOrder.contains(viewId)) {
+        _viewsToRecomposite.add(viewId);
+      }
       return;
     }
     _currentCompositionParams[viewId] = params;
@@ -138,6 +168,16 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
+    final int compositedViewCount = _compositionOrder.length;
+    _compositionOrder.add(viewId);
+    if (compositedViewCount < _pictureRecordersCreatedDuringPreroll.length) {
+      _pictureRecorders[viewId] =
+          _pictureRecordersCreatedDuringPreroll[compositedViewCount];
+    } else {
+      _viewsUsingBackupSurface.add(viewId);
+      _pictureRecorders[viewId] = _backupPictureRecorder!;
+    }
+
     // Do nothing if this view doesn't need to be composited.
     if (!_viewsToRecomposite.contains(viewId)) {
       if (!disableOverlays) {
@@ -374,6 +414,13 @@ class HtmlViewEmbedder {
   }
 
   void submitFrame() {
+    final ViewListDiffResult? diffResult = (_activeCompositionOrder.isEmpty ||
+            _compositionOrder.isEmpty ||
+            disableOverlays)
+        ? null
+        : diffViewList(_activeCompositionOrder, _compositionOrder);
+    final Map<int, int>? insertBeforeMap = _updateOverlays(diffResult);
+
     bool _didPaintBackupSurface = false;
     if (!disableOverlays) {
       for (int i = 0; i < _compositionOrder.length; i++) {
@@ -400,46 +447,101 @@ class HtmlViewEmbedder {
         }
       }
     }
+    _pictureRecordersCreatedDuringPreroll.clear();
+    _pictureRecorders.clear();
+    _viewsUsingBackupSurface.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
       return;
     }
 
-    SurfaceFactory.instance.removeSurfacesFromDom();
     final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
     List<int>? debugInvalidViewIds;
-    for (int i = 0; i < _compositionOrder.length; i++) {
-      final int viewId = _compositionOrder[i];
 
-      if (assertionsEnabled) {
-        if (!platformViewManager.knowsViewId(viewId)) {
-          debugInvalidViewIds ??= <int>[];
-          debugInvalidViewIds.add(viewId);
-          continue;
+    if (diffResult != null) {
+      disposeViews(diffResult.viewsToRemove.toSet());
+      _activeCompositionOrder.addAll(_compositionOrder);
+      unusedViews.removeAll(_compositionOrder);
+
+      html.Element? elementToInsertBefore;
+      if (diffResult.addToBeginning) {
+        elementToInsertBefore =
+            _viewClipChains[diffResult.viewToInsertBefore!]!.root;
+      }
+
+      for (final int viewId in diffResult.viewsToAdd) {
+        if (assertionsEnabled) {
+          if (!platformViewManager.knowsViewId(viewId)) {
+            debugInvalidViewIds ??= <int>[];
+            debugInvalidViewIds.add(viewId);
+            continue;
+          }
+        }
+        if (diffResult.addToBeginning) {
+          final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
+          skiaSceneHost!.insertBefore(platformViewRoot, elementToInsertBefore);
+          final Surface? overlay = _overlays[viewId];
+          if (overlay != null) {
+            skiaSceneHost!
+                .insertBefore(overlay.htmlElement, elementToInsertBefore);
+          }
+        } else {
+          final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
+          skiaSceneHost!.append(platformViewRoot);
+          final Surface? overlay = _overlays[viewId];
+          if (overlay != null) {
+            skiaSceneHost!.append(overlay.htmlElement);
+          }
         }
       }
-
-      unusedViews.remove(viewId);
-      final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
-      platformViewRoot.remove();
-      skiaSceneHost!.append(platformViewRoot);
-      if (!disableOverlays) {
+      insertBeforeMap?.forEach((int viewId, int viewIdToInsertBefore) {
         final html.Element overlay = _overlays[viewId]!.htmlElement;
-        overlay.remove();
-        skiaSceneHost!.append(overlay);
+        if (viewIdToInsertBefore != -1) {
+          final html.Element nextSibling =
+              _viewClipChains[viewIdToInsertBefore]!.root;
+          skiaSceneHost!.insertBefore(overlay, nextSibling);
+        } else {
+          skiaSceneHost!.append(overlay);
+        }
+      });
+      if (_didPaintBackupSurface) {
+        skiaSceneHost!
+            .append(SurfaceFactory.instance.backupSurface.htmlElement);
       }
-      _activeCompositionOrder.add(viewId);
-    }
-    if (_didPaintBackupSurface) {
-      skiaSceneHost!.append(SurfaceFactory.instance.backupSurface.htmlElement);
+    } else {
+      SurfaceFactory.instance.removeSurfacesFromDom();
+      for (int i = 0; i < _compositionOrder.length; i++) {
+        final int viewId = _compositionOrder[i];
+
+        if (assertionsEnabled) {
+          if (!platformViewManager.knowsViewId(viewId)) {
+            debugInvalidViewIds ??= <int>[];
+            debugInvalidViewIds.add(viewId);
+            continue;
+          }
+        }
+
+        final html.Element platformViewRoot = _viewClipChains[viewId]!.root;
+        final Surface? overlay = _overlays[viewId];
+        skiaSceneHost!.append(platformViewRoot);
+        if (overlay != null) {
+          skiaSceneHost!.append(overlay.htmlElement);
+        }
+        _activeCompositionOrder.add(viewId);
+      }
+      if (_didPaintBackupSurface) {
+        skiaSceneHost!
+            .append(SurfaceFactory.instance.backupSurface.htmlElement);
+      }
     }
 
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
-    _releaseOverlays();
+
+    _pictureRecorders.clear();
 
     if (assertionsEnabled) {
       if (debugInvalidViewIds != null && debugInvalidViewIds.isNotEmpty) {
@@ -464,52 +566,133 @@ class HtmlViewEmbedder {
     }
   }
 
-  void _releaseOverlays() {
-    _pictureRecorders.clear();
-    _overlays.clear();
-    _viewsUsingBackupSurface.clear();
-    SurfaceFactory.instance.releaseSurfaces();
-  }
-
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
       final Surface overlay = _overlays[viewId]!;
-      if (overlay == SurfaceFactory.instance.backupSurface) {
-        assert(_viewsUsingBackupSurface.contains(viewId));
-        _viewsUsingBackupSurface.remove(viewId);
-        _overlays.remove(viewId);
-        // If no views use the backup surface, then we can release it. This
-        // happens when the number of live platform views drops below the
-        // maximum overlay surfaces, so the backup surface is no longer needed.
-        if (_viewsUsingBackupSurface.isEmpty) {
-          SurfaceFactory.instance.releaseSurface(overlay);
+      SurfaceFactory.instance.releaseSurface(overlay);
+      _overlays.remove(viewId);
+    }
+  }
+
+  // Called right before compositing the scene.
+  //
+  // [_compositionOrder] and [_activeComposition] order should contain the
+  // composition order of the current and previous frame, respectively.
+  //
+  // TODO(hterkelsen): Test this more thoroughly.
+  Map<int, int>? _updateOverlays(ViewListDiffResult? diffResult) {
+    if (_viewsUsingBackupSurface.isEmpty) {
+      SurfaceFactory.instance
+          .releaseSurface(SurfaceFactory.instance.backupSurface);
+    }
+    if (diffResult != null &&
+        diffResult.viewsToAdd.isEmpty &&
+        diffResult.viewsToRemove.isEmpty) {
+      return null;
+    }
+    if (diffResult == null) {
+      // Everything is going to be explicitly recomposited anyway. Release all
+      // the surfaces and assign an overlay to the first N surfaces where
+      // N = [SurfaceFactory.instance.maximumOverlays] and assign the rest
+      // to the backup surface.
+      SurfaceFactory.instance.releaseSurfaces();
+      _overlays.clear();
+      final int numOverlays = math.min(
+        SurfaceFactory.instance.maximumOverlays,
+        _compositionOrder.length,
+      );
+      for (int i = 0; i < numOverlays; i++) {
+        final int viewId = _compositionOrder[i];
+        assert(!_viewsUsingBackupSurface.contains(viewId));
+        _initializeOverlay(viewId);
+      }
+      _assertOverlaysInitialized();
+      return null;
+    } else {
+      // We want to preserve the overlays in the "unchanged" section of the
+      // diff result as much as possible. If `addToBeginning` is `false`, then
+      // release the overlays for the views which were deleted from the
+      // beginning of the composition order and try to reuse those overlays in
+      // either the unchanged segment or the newly added views. If
+      // `addToBeginning` is `true` then release the overlays for the deleted
+      // views and from the unchanged segment and assign the newly added views
+      // to them.
+      diffResult.viewsToRemove.forEach(_releaseOverlay);
+      final int availableOverlays =
+          SurfaceFactory.instance.numAvailableOverlays;
+      if (diffResult.addToBeginning) {
+        // If we have enough overlays for the newly added views, then just use
+        // them. Otherwise, we will need to release overlays from the unchanged
+        // segment of view ids.
+        if (diffResult.viewsToAdd.length > availableOverlays) {
+          int viewsToDispose = diffResult.viewsToAdd.length - availableOverlays;
+          // The first `maximumSurfaces` views in the previous composition order
+          // had an overlay.
+          int index = SurfaceFactory.instance.maximumOverlays -
+              diffResult.viewsToAdd.length;
+          while (viewsToDispose > 0) {
+            // The first [maxOverlays - viewsAdded] active views should have
+            // overlays. The rest should be removed.
+            _releaseOverlay(_activeCompositionOrder[index++]);
+            viewsToDispose--;
+          }
         }
+
+        // Now assign an overlay to the newly added views.
+        final int overlaysToAssign = math.min(diffResult.viewsToAdd.length,
+            SurfaceFactory.instance.numAvailableOverlays);
+        for (int i = 0; i < overlaysToAssign; i++) {
+          _initializeOverlay(diffResult.viewsToAdd[i]);
+        }
+        _assertOverlaysInitialized();
+        return null;
       } else {
-        SurfaceFactory.instance.releaseSurface(overlay);
-        _overlays.remove(viewId);
+        // Use the overlays we just released for any platform views at the
+        // beginning of the list which previously used the backup surface.
+        int overlaysToAssign =
+            math.min(_compositionOrder.length, availableOverlays);
+        int index = 0;
+        final int lastOriginalIndex =
+            _activeCompositionOrder.length - diffResult.viewsToRemove.length;
+        final Map<int, int> insertBeforeMap = <int, int>{};
+        while (overlaysToAssign > 0 && index < _compositionOrder.length) {
+          final bool activeView = index < lastOriginalIndex;
+          final int viewId = _compositionOrder[index];
+          if (!_overlays.containsKey(viewId)) {
+            _initializeOverlay(viewId);
+            overlaysToAssign--;
+            if (activeView) {
+              if (index + 1 < _compositionOrder.length) {
+                insertBeforeMap[viewId] = _compositionOrder[index + 1];
+              } else {
+                insertBeforeMap[viewId] = -1;
+              }
+            }
+          }
+          index++;
+        }
+        _assertOverlaysInitialized();
+        return insertBeforeMap;
       }
     }
   }
 
-  void _ensureOverlayInitialized(int viewId) {
-    // If there's an active overlay for the view ID, continue using it.
-    Surface? overlay = _overlays[viewId];
-    if (overlay != null && !_viewsUsingBackupSurface.contains(viewId)) {
-      overlay.createOrUpdateSurfaces(_frameSize);
-      return;
+  void _assertOverlaysInitialized() {
+    if (assertionsEnabled) {
+      for (int i = 0; i < _compositionOrder.length; i++) {
+        final int viewId = _compositionOrder[i];
+        assert(_viewsUsingBackupSurface.contains(viewId) ||
+            _overlays[viewId] != null);
+      }
     }
+  }
 
-    // If this view was using the backup surface, try to release the backup
-    // surface and see if a non-backup surface became available.
-    if (_viewsUsingBackupSurface.contains(viewId)) {
-      _releaseOverlay(viewId);
-    }
+  void _initializeOverlay(int viewId) {
+    assert(!_overlays.containsKey(viewId) &&
+        !_viewsUsingBackupSurface.contains(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    overlay = SurfaceFactory.instance.getSurface();
-    if (overlay == SurfaceFactory.instance.backupSurface) {
-      _viewsUsingBackupSurface.add(viewId);
-    }
+    final Surface overlay = SurfaceFactory.instance.getOverlay()!;
     overlay.createOrUpdateSurfaces(_frameSize);
     _overlays[viewId] = overlay;
   }
@@ -531,6 +714,7 @@ class HtmlViewEmbedder {
     _backupPictureRecorder?.endRecording();
     _backupPictureRecorder = null;
     _viewsUsingBackupSurface.clear();
+    _pictureRecordersCreatedDuringPreroll.clear();
     _pictureRecorders.clear();
     _currentCompositionParams.clear();
     debugCleanupSvgClipPaths();
@@ -717,4 +901,89 @@ class MutatorsStack extends Iterable<Mutator> {
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;
+}
+
+/// The results of diffing the current composition order with the active
+/// composition order.
+class ViewListDiffResult {
+  /// Views which should be removed from the scene.
+  final List<int> viewsToRemove;
+
+  /// Views to add to the scene.
+  final List<int> viewsToAdd;
+
+  /// If `true`, [viewsToAdd] should be added at the beginning of the scene.
+  /// Otherwise, they should be added at the end of the scene.
+  final bool addToBeginning;
+
+  /// If [addToBeginning] is `true`, then this is the id of the platform view
+  /// to insert [viewsToAdd] before.
+  ///
+  /// `null` if [addToBeginning] is `false`.
+  final int? viewToInsertBefore;
+
+  const ViewListDiffResult(
+      this.viewsToRemove, this.viewsToAdd, this.addToBeginning,
+      {this.viewToInsertBefore});
+}
+
+/// Diff the composition order with the active composition order. It is
+/// common for the composition order and active composition order to differ
+/// only slightly.
+///
+/// Consider a scrolling list of platform views; from frame
+/// to frame the composition order will change in one of two ways, depending
+/// on which direction the list is scrolling. One or more views will be added
+/// to the beginning of the list, and one or more views will be removed from
+/// the end of the list, with the order of the unchanged middle views
+/// remaining the same.
+// TODO(hterkelsen): Refactor to use [longestIncreasingSubsequence] and logic
+// similar to `Surface._insertChildDomNodes` to efficiently handle more cases,
+// https://github.com/flutter/flutter/issues/89611.
+ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
+  assert(active.isNotEmpty && next.isNotEmpty,
+      'diffViewList called with empty view list');
+  // If the [active] and [next] lists are in the expected form described above,
+  // then either the first or last element of [next] will be in [active].
+  int index = active.indexOf(next.first);
+  if (index != -1) {
+    // Verify that the active composition order is contained, in order, in the
+    // next composition order.
+    for (int i = 0; i + index < active.length; i++) {
+      if (active[i + index] != next[i]) {
+        return null;
+      }
+      if (i == next.length - 1) {
+        if (index == 0) {
+          return ViewListDiffResult(active.sublist(i + 1), const <int>[], true,
+              viewToInsertBefore: next.first);
+        } else {
+          return ViewListDiffResult(
+              active.sublist(0, index), const <int>[], false);
+        }
+      }
+    }
+    return ViewListDiffResult(
+      active.sublist(0, index),
+      next.sublist(active.length - index),
+      false,
+    );
+  }
+
+  index = active.lastIndexOf(next.last);
+  if (index != -1) {
+    for (int i = 0; index - i >= 0; i++) {
+      if (next.length <= i || active[index - i] != next[next.length - 1 - i]) {
+        return null;
+      }
+    }
+    return ViewListDiffResult(
+      active.sublist(index + 1),
+      next.sublist(0, next.length - index - 1),
+      true,
+      viewToInsertBefore: active.first,
+    );
+  }
+
+  return null;
 }

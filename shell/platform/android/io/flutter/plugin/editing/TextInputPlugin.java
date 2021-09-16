@@ -30,6 +30,7 @@ import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /** Android implementation of the text input plugin. */
@@ -624,6 +625,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int selectionEnd = mEditable.getSelectionEnd();
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
+
+    final ArrayList<TextEditingDelta> batchTextEditingDeltas =
+        mEditable.extractBatchTextEditingDeltas();
     final boolean skipFrameworkUpdate =
         // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null
@@ -634,16 +638,25 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
                 && composingEnd == mLastKnownFrameworkTextEditingState.composingEnd);
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
-      textInputChannel.updateEditingState(
-          inputTarget.id,
-          mEditable.toString(),
-          selectionStart,
-          selectionEnd,
-          composingStart,
-          composingEnd);
+
+      if (configuration.enableDeltaModel) {
+        textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
+        mEditable.clearBatchDeltas();
+      } else {
+        textInputChannel.updateEditingState(
+            inputTarget.id,
+            mEditable.toString(),
+            selectionStart,
+            selectionEnd,
+            composingStart,
+            composingEnd);
+      }
       mLastKnownFrameworkTextEditingState =
           new TextEditState(
               mEditable.toString(), selectionStart, selectionEnd, composingStart, composingEnd);
+    } else {
+      // Don't accumulate deltas if they are not sent to the framework.
+      mEditable.clearBatchDeltas();
     }
   }
 
@@ -658,7 +671,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   //
   // ### Keep the AFM updated
   //
-  // The autofill session connected to The AFM keeps a copy of the current state for each reported
+  // The autofill session connected to the AFM keeps a copy of the current state for each reported
   // field in "AutofillVirtualStructure" (instead of holding a reference to those fields), so the
   // AFM needs to be notified when text changes if the client was part of the
   // "AutofillVirtualStructure" previously reported to the AFM. This step is essential for
@@ -761,6 +774,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       child.setAutofillHints(autofill.hints);
       child.setAutofillType(View.AUTOFILL_TYPE_TEXT);
       child.setVisibility(View.VISIBLE);
+      if (autofill.hintText != null) {
+        child.setHint(autofill.hintText);
+      }
 
       // For some autofill services, only visible input fields are eligible for autofill.
       // Reports the real size of the child if it's the current client, or 1x1 if we don't
@@ -814,7 +830,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         editingValues.put(autofill.uniqueIdentifier, newState);
       }
     }
-
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
   // -------- End: Autofill -------

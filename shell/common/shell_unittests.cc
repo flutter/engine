@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "assets/directory_asset_bundle.h"
+#include "common/graphics/persistent_cache.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
@@ -2012,14 +2013,24 @@ TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
       PersistentCache::kSkSLSubdirName};
   auto sksl_dir = fml::CreateDirectory(base_dir.fd(), components,
                                        fml::FilePermission::kReadWrite);
-  const std::string x = "x";
-  const std::string y = "y";
-  auto x_data = std::make_unique<fml::DataMapping>(
-      std::vector<uint8_t>{x.begin(), x.end()});
-  auto y_data = std::make_unique<fml::DataMapping>(
-      std::vector<uint8_t>{y.begin(), y.end()});
-  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "IE", *x_data));
-  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "II", *y_data));
+  const std::string x_key_str = "A";
+  const std::string x_value_str = "x";
+  sk_sp<SkData> x_key =
+      SkData::MakeWithCopy(x_key_str.data(), x_key_str.size());
+  sk_sp<SkData> x_value =
+      SkData::MakeWithCopy(x_value_str.data(), x_value_str.size());
+  auto x_data = PersistentCache::BuildCacheObject(*x_key, *x_value);
+
+  const std::string y_key_str = "B";
+  const std::string y_value_str = "y";
+  sk_sp<SkData> y_key =
+      SkData::MakeWithCopy(y_key_str.data(), y_key_str.size());
+  sk_sp<SkData> y_value =
+      SkData::MakeWithCopy(y_value_str.data(), y_value_str.size());
+  auto y_data = PersistentCache::BuildCacheObject(*y_key, *y_value);
+
+  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "x_cache", *x_data));
+  ASSERT_TRUE(fml::WriteAtomically(sksl_dir, "y_cache", *y_data));
 
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -2135,23 +2146,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
       [&shell, &rasterized, &picture, &picture_layer] {
         auto* compositor_context = shell->GetRasterizer()->compositor_context();
         auto& raster_cache = compositor_context->raster_cache();
-        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
-        // access threshold (default to 3) so a cache can be generated.
-        SkCanvas dummy_canvas;
-        bool picture_cache_generated;
-        for (int i = 0; i < 4; i += 1) {
-          picture_cache_generated =
-              raster_cache.Prepare(nullptr,  // GrDirectContext
-                                   picture.get(), SkMatrix::I(),
-                                   nullptr,  // SkColorSpace
-                                   true,     // isComplex
-                                   false     // willChange
-              );
-          raster_cache.Draw(*picture, dummy_canvas);
-        }
-        ASSERT_TRUE(picture_cache_generated);
 
-        // 2.2. Rasterize the picture layer.
         Stopwatch raster_time;
         Stopwatch ui_time;
         MutatorsStack mutators_stack;
@@ -2168,6 +2163,21 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             1.0f,  /* frame_device_pixel_ratio */
             false, /* has_platform_view */
         };
+
+        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
+        // access threshold (default to 3) so a cache can be generated.
+        SkCanvas dummy_canvas;
+        bool picture_cache_generated;
+        for (int i = 0; i < 4; i += 1) {
+          SkMatrix matrix = SkMatrix::I();
+
+          picture_cache_generated = raster_cache.Prepare(
+              &preroll_context, picture.get(), true, false, matrix);
+          raster_cache.Draw(*picture, dummy_canvas);
+        }
+        ASSERT_TRUE(picture_cache_generated);
+
+        // 2.2. Rasterize the picture layer.
         raster_cache.Prepare(&preroll_context, picture_layer.get(),
                              SkMatrix::I());
         rasterized.set_value(true);
@@ -2185,7 +2195,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   document.Accept(writer);
   std::string expected_json =
       "{\"type\":\"EstimateRasterCacheMemory\",\"layerBytes\":40000,\"picture"
-      "Bytes\":400,\"displayListBytes\":0}";
+      "Bytes\":400}";
   std::string actual_json = buffer.GetString();
   ASSERT_EQ(actual_json, expected_json);
 
@@ -2261,6 +2271,92 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   // should be submitted with `external_view_embedder`, hence the below check.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, DiscardResubmittedLayerTreeOnResize) {
+  auto settings = CreateSettingsForFixture();
+
+  SkISize origin_size = SkISize::Make(400, 100);
+  SkISize new_size = SkISize::Make(400, 200);
+
+  fml::AutoResetWaitableEvent end_frame_latch;
+
+  fml::AutoResetWaitableEvent resize_latch;
+
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
+  auto end_frame_callback =
+      [&](bool should_merge_thread,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
+        if (should_merge_thread) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
+        end_frame_latch.Signal();
+
+        if (should_merge_thread) {
+          resize_latch.Wait();
+        }
+      };
+
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame, true);
+
+  std::unique_ptr<Shell> shell = CreateShell(
+      settings, GetTaskRunnersForFixture(), false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &origin_size]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(origin_size.width()),
+             static_cast<double>(origin_size.height()), 22});
+      });
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  PumpOneFrame(shell.get(), static_cast<double>(origin_size.width()),
+               static_cast<double>(origin_size.height()));
+
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &new_size, &resize_latch]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(new_size.width()),
+             static_cast<double>(new_size.height()), 22});
+        resize_latch.Signal();
+      });
+
+  end_frame_latch.Wait();
+
+  // The frame resubmitted with origin size should be discarded after the
+  // viewport metrics changed.
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  // Threads will be merged at the end of this frame.
+  PumpOneFrame(shell.get(), static_cast<double>(new_size.width()),
+               static_cast<double>(new_size.height()));
+
+  end_frame_latch.Wait();
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+  ASSERT_EQ(new_size, external_view_embedder->GetLastSubmittedFrameSize());
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));

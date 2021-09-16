@@ -126,6 +126,10 @@ targets:
     bringup: true # Recipe issue https://github.com/flutter/flutter/issues/86427
     recipe: engine/scenarios
     properties:
+      dependencies: >-
+        [
+          {"dependency": "android_virtual_device", "version": "31"}
+        ]
       upload_packages: "true"
       clobber: "true"
     timeout: 60
@@ -138,6 +142,16 @@ targets:
     presubmit: false
     properties:
       build_host: "true"
+      upload_metrics: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Benchmarks (no-upload)
+    bringup: true
+    recipe: engine/engine_metrics
+    properties:
+      build_host: "true"
+      upload_metrics: "false"
     timeout: 60
     scheduler: luci
 

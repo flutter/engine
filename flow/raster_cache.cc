@@ -37,39 +37,13 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
 }
 
 RasterCache::RasterCache(size_t access_threshold,
-                         size_t picture_cache_limit_per_frame)
+                         size_t picture_and_display_list_cache_limit_per_frame)
     : access_threshold_(access_threshold),
-      picture_cache_limit_per_frame_(picture_cache_limit_per_frame),
+      picture_and_display_list_cache_limit_per_frame_(
+          picture_and_display_list_cache_limit_per_frame),
       checkerboard_images_(false) {}
 
-static bool CanRasterizePicture(SkPicture* picture) {
-  if (picture == nullptr) {
-    return false;
-  }
-
-  const SkRect cull_rect = picture->cullRect();
-
-  if (cull_rect.isEmpty()) {
-    // No point in ever rasterizing an empty picture.
-    return false;
-  }
-
-  if (!cull_rect.isFinite()) {
-    // Cannot attempt to rasterize into an infinitely large surface.
-    FML_LOG(INFO) << "Attempted to raster cache non-finite picture";
-    return false;
-  }
-
-  return true;
-}
-
-static bool CanRasterizeDisplayList(DisplayList* display_list) {
-  if (display_list == nullptr) {
-    return false;
-  }
-
-  const SkRect cull_rect = display_list->bounds();
-
+static bool CanRasterizeRect(const SkRect& cull_rect) {
   if (cull_rect.isEmpty()) {
     // No point in ever rasterizing an empty display list.
     return false;
@@ -93,7 +67,7 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
     return false;
   }
 
-  if (!CanRasterizePicture(picture)) {
+  if (picture == nullptr || !CanRasterizeRect(picture->cullRect())) {
     // No point in deciding whether the picture is worth rasterizing if it
     // cannot be rasterized at all.
     return false;
@@ -119,7 +93,7 @@ static bool IsDisplayListWorthRasterizing(DisplayList* display_list,
     return false;
   }
 
-  if (!CanRasterizeDisplayList(display_list)) {
+  if (display_list == nullptr || !CanRasterizeRect(display_list->bounds())) {
     // No point in deciding whether the display list is worth rasterizing if it
     // cannot be rasterized at all.
     return false;
@@ -238,23 +212,23 @@ std::unique_ptr<RasterCacheResult> RasterCache::RasterizeLayer(
       });
 }
 
-bool RasterCache::Prepare(GrDirectContext* context,
+bool RasterCache::Prepare(PrerollContext* context,
                           SkPicture* picture,
-                          const SkMatrix& transformation_matrix,
-                          SkColorSpace* dst_color_space,
                           bool is_complex,
-                          bool will_change) {
-  // Disabling caching when access_threshold is zero is historic behavior.
-  if (access_threshold_ == 0) {
+                          bool will_change,
+                          const SkMatrix& untranslated_matrix,
+                          const SkPoint& offset) {
+  if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
-  if (picture_cached_this_frame_ >= picture_cache_limit_per_frame_) {
-    return false;
-  }
+
   if (!IsPictureWorthRasterizing(picture, will_change, is_complex)) {
     // We only deal with pictures that are worthy of rasterization.
     return false;
   }
+
+  SkMatrix transformation_matrix = untranslated_matrix;
+  transformation_matrix.preTranslate(offset.x(), offset.y());
 
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
@@ -275,30 +249,37 @@ bool RasterCache::Prepare(GrDirectContext* context,
   }
 
   if (!entry.image) {
-    entry.image = RasterizePicture(picture, context, transformation_matrix,
-                                   dst_color_space, checkerboard_images_);
+    // GetIntegralTransCTM effect for matrix which only contains scale,
+    // translate, so it won't affect result of matrix decomposition and cache
+    // key.
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
+#endif
+    entry.image =
+        RasterizePicture(picture, context->gr_context, transformation_matrix,
+                         context->dst_color_space, checkerboard_images_);
     picture_cached_this_frame_++;
   }
   return true;
 }
 
-bool RasterCache::Prepare(GrDirectContext* context,
+bool RasterCache::Prepare(PrerollContext* context,
                           DisplayList* display_list,
-                          const SkMatrix& transformation_matrix,
-                          SkColorSpace* dst_color_space,
                           bool is_complex,
-                          bool will_change) {
-  // Disabling caching when access_threshold is zero is historic behavior.
-  if (access_threshold_ == 0) {
+                          bool will_change,
+                          const SkMatrix& untranslated_matrix,
+                          const SkPoint& offset) {
+  if (!GenerateNewCacheInThisFrame()) {
     return false;
   }
-  if (picture_cached_this_frame_ >= picture_cache_limit_per_frame_) {
-    return false;
-  }
+
   if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex)) {
     // We only deal with display lists that are worthy of rasterization.
     return false;
   }
+
+  SkMatrix transformation_matrix = untranslated_matrix;
+  transformation_matrix.preTranslate(offset.x(), offset.y());
 
   // Decompose the matrix (once) for all subsequent operations. We want to make
   // sure to avoid volumetric distortions while accounting for scaling.
@@ -320,10 +301,16 @@ bool RasterCache::Prepare(GrDirectContext* context,
   }
 
   if (!entry.image) {
-    entry.image =
-        RasterizeDisplayList(display_list, context, transformation_matrix,
-                             dst_color_space, checkerboard_images_);
-    picture_cached_this_frame_++;
+    // GetIntegralTransCTM effect for matrix which only contains scale,
+    // translate, so it won't affect result of matrix decomposition and cache
+    // key.
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    transformation_matrix = GetIntegralTransCTM(transformation_matrix);
+#endif
+    entry.image = RasterizeDisplayList(
+        display_list, context->gr_context, transformation_matrix,
+        context->dst_color_space, checkerboard_images_);
+    display_list_cached_this_frame_++;
   }
   return true;
 }
@@ -390,11 +377,13 @@ bool RasterCache::Draw(const Layer* layer,
 }
 
 void RasterCache::SweepAfterFrame() {
+  TraceStatsToTimeline();
   SweepOneCacheAfterFrame(picture_cache_);
   SweepOneCacheAfterFrame(display_list_cache_);
   SweepOneCacheAfterFrame(layer_cache_);
   picture_cached_this_frame_ = 0;
-  TraceStatsToTimeline();
+  display_list_cached_this_frame_ = 0;
+  sweep_count_++;
 }
 
 void RasterCache::Clear() {
@@ -413,11 +402,7 @@ size_t RasterCache::GetLayerCachedEntriesCount() const {
 }
 
 size_t RasterCache::GetPictureCachedEntriesCount() const {
-  return picture_cache_.size();
-}
-
-size_t RasterCache::GetDisplayListCachedEntriesCount() const {
-  return display_list_cache_.size();
+  return picture_cache_.size() + display_list_cache_.size();
 }
 
 void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
@@ -434,14 +419,13 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
-  FML_TRACE_COUNTER("flutter", "RasterCache", reinterpret_cast<int64_t>(this),
-                    "LayerCount", layer_cache_.size(), "LayerMBytes",
-                    EstimateLayerCacheByteSize() / kMegaByteSizeInBytes,
-                    "PictureCount", picture_cache_.size(), "PictureMBytes",
-                    EstimatePictureCacheByteSize() / kMegaByteSizeInBytes,
-                    "DisplayListCount", display_list_cache_.size(),
-                    "DisplayListMBytes",
-                    EstimateDisplayListCacheByteSize() / kMegaByteSizeInBytes);
+  FML_TRACE_COUNTER(
+      "flutter",                                                           //
+      "RasterCache", reinterpret_cast<int64_t>(this),                      //
+      "LayerCount", GetLayerCachedEntriesCount(),                          //
+      "LayerMBytes", EstimateLayerCacheByteSize() / kMegaByteSizeInBytes,  //
+      "PictureCount", GetPictureCachedEntriesCount(),                      //
+      "PictureMBytes", EstimatePictureCacheByteSize() / kMegaByteSizeInBytes);
 
 #endif  // !FLUTTER_RELEASE
 }
@@ -463,17 +447,12 @@ size_t RasterCache::EstimatePictureCacheByteSize() const {
       picture_cache_bytes += item.second.image->image_bytes();
     }
   }
-  return picture_cache_bytes;
-}
-
-size_t RasterCache::EstimateDisplayListCacheByteSize() const {
-  size_t display_list_cache_bytes = 0;
   for (const auto& item : display_list_cache_) {
     if (item.second.image) {
-      display_list_cache_bytes += item.second.image->image_bytes();
+      picture_cache_bytes += item.second.image->image_bytes();
     }
   }
-  return display_list_cache_bytes;
+  return picture_cache_bytes;
 }
 
 }  // namespace flutter

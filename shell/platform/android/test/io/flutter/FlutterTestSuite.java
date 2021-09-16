@@ -17,7 +17,6 @@ import io.flutter.embedding.engine.FlutterEngineCacheTest;
 import io.flutter.embedding.engine.FlutterEngineConnectionRegistryTest;
 import io.flutter.embedding.engine.FlutterEngineGroupComponentTest;
 import io.flutter.embedding.engine.FlutterJNITest;
-import io.flutter.embedding.engine.LocalizationPluginTest;
 import io.flutter.embedding.engine.RenderingComponentTest;
 import io.flutter.embedding.engine.dart.DartExecutorTest;
 import io.flutter.embedding.engine.dart.DartMessengerTest;
@@ -31,13 +30,16 @@ import io.flutter.embedding.engine.systemchannels.DeferredComponentChannelTest;
 import io.flutter.embedding.engine.systemchannels.KeyEventChannelTest;
 import io.flutter.embedding.engine.systemchannels.PlatformChannelTest;
 import io.flutter.embedding.engine.systemchannels.RestorationChannelTest;
+import io.flutter.embedding.engine.systemchannels.TextInputChannelTest;
 import io.flutter.external.FlutterLaunchTests;
 import io.flutter.plugin.common.BinaryCodecTest;
 import io.flutter.plugin.common.StandardMessageCodecTest;
 import io.flutter.plugin.common.StandardMethodCodecTest;
 import io.flutter.plugin.editing.InputConnectionAdaptorTest;
 import io.flutter.plugin.editing.ListenableEditingStateTest;
+import io.flutter.plugin.editing.TextEditingDeltaTest;
 import io.flutter.plugin.editing.TextInputPluginTest;
+import io.flutter.plugin.localization.LocalizationPluginTest;
 import io.flutter.plugin.mouse.MouseCursorPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
 import io.flutter.plugin.platform.PlatformViewsControllerTest;
@@ -98,6 +100,8 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   SmokeTest.class,
   StandardMessageCodecTest.class,
   StandardMethodCodecTest.class,
+  TextEditingDeltaTest.class,
+  TextInputChannelTest.class,
   TextInputPluginTest.class,
 })
 /** Runs all of the unit tests listed in the {@code @SuiteClasses} annotation. */
