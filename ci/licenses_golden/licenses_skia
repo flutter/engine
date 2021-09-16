@@ -1,4 +1,4 @@
-Signature: 8dade1904dfe60b37d08de025925d4a0
+Signature: 9466cfc13c5d6f811e9a4a910c40c2bb
 
 UNUSED LICENSES:
 
@@ -683,16 +683,19 @@ FILE: ../../../third_party/skia/experimental/sktext/editor/Selection.cpp
 FILE: ../../../third_party/skia/experimental/sktext/editor/Selection.h
 FILE: ../../../third_party/skia/experimental/sktext/editor/Texts.cpp
 FILE: ../../../third_party/skia/experimental/sktext/editor/Texts.h
+FILE: ../../../third_party/skia/experimental/sktext/include/Interface.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Text.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Types.h
 FILE: ../../../third_party/skia/experimental/sktext/samples/Text.cpp
 FILE: ../../../third_party/skia/experimental/sktext/src/Line.cpp
 FILE: ../../../third_party/skia/experimental/sktext/src/Line.h
+FILE: ../../../third_party/skia/experimental/sktext/src/LogicalRun.cpp
+FILE: ../../../third_party/skia/experimental/sktext/src/LogicalRun.h
 FILE: ../../../third_party/skia/experimental/sktext/src/Paint.cpp
 FILE: ../../../third_party/skia/experimental/sktext/src/Paint.h
 FILE: ../../../third_party/skia/experimental/sktext/src/Text.cpp
-FILE: ../../../third_party/skia/experimental/sktext/src/TextRun.cpp
-FILE: ../../../third_party/skia/experimental/sktext/src/TextRun.h
+FILE: ../../../third_party/skia/experimental/sktext/src/VisualRun.cpp
+FILE: ../../../third_party/skia/experimental/sktext/src/VisualRun.h
 FILE: ../../../third_party/skia/experimental/tskit/.eslintignore
 FILE: ../../../third_party/skia/experimental/tskit/.eslintrc.js
 FILE: ../../../third_party/skia/experimental/tskit/bindings/core.d.ts
@@ -3962,10 +3965,10 @@ FILE: ../../../third_party/skia/src/gpu/ops/DrawAtlasPathOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/DrawAtlasPathOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrSimpleMeshDrawOpHelperWithStencil.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathAtlasMgr.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathAtlasMgr.h
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathShapeData.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/GrSmallPathShapeData.h
+FILE: ../../../third_party/skia/src/gpu/ops/SmallPathAtlasMgr.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/SmallPathAtlasMgr.h
+FILE: ../../../third_party/skia/src/gpu/ops/SmallPathShapeData.cpp
+FILE: ../../../third_party/skia/src/gpu/ops/SmallPathShapeData.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrMiddleOutPolygonTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIterator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/GrVectorXform.h
