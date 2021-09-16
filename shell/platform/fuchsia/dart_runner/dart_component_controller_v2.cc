@@ -434,6 +434,10 @@ void DartComponentControllerV2::Kill() {
   }
 }
 
+void DartComponentControllerV2::Stop() {
+  Kill();
+}
+
 void DartComponentControllerV2::MessageEpilogue(Dart_Handle result) {
   auto dart_state = tonic::DartState::Current();
   // If the Dart program has set a return code, then it is intending to shut
