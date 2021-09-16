@@ -121,6 +121,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
+- (void)installFirstFrameCallback;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -181,6 +182,36 @@ typedef enum UIAccessibilityContrast : NSInteger {
     OCMVerify([viewControllerMock surfaceUpdated:NO]);
   }
   XCTAssertNil(weakViewController);
+}
+
+- (void)testSurfaceUpdatedWillReturnWhenNotTheCurrentViewController {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = nil;
+  FlutterViewController* viewControllerB = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  mockEngine.viewController = viewControllerB;
+  FlutterViewController* viewControllerMockA = OCMPartialMock(viewControllerA);
+  [viewControllerA surfaceUpdated:YES];
+  OCMVerify(never(), [viewControllerMockA installFirstFrameCallback]);
+}
+
+- (void)testSurfaceUpdatedWillExecuteWhenIsTheCurrentViewController {
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  mockEngine.viewController = viewController;
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  [viewController surfaceUpdated:YES];
+  OCMVerify([viewControllerMock installFirstFrameCallback]);
 }
 
 - (void)testUpdateViewportMetricsDoesntInvokeEngineWhenNotTheViewController {

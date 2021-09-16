@@ -608,7 +608,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
-  if (!_engine) {
+  if (!_engine || [_engine.get() viewController] != self) {
     return;
   }
 
