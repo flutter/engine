@@ -225,6 +225,10 @@ while true; do
     {
       "host_match": "fuchsia.com", "host_replacement": "engine",
       "path_prefix_match": "/flutter_aot_runner", "path_prefix_replacement": "/flutter_aot_runner"
+    },
+    {
+      "host_match": "fuchsia.com", "host_replacement": "devhost",
+      "path_prefix_match": "/", "path_prefix_replacement": "/"
     }
   ]
 }
