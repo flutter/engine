@@ -1,175 +1,126 @@
 # `flutter scenic embedder tests`
 
-<!-- TODO(richkadel): FIX OR REMOVE INVALID INSTRUCTIONS
--->
-# THESE INSTRUCTIONS ARE A WORK IN PROGRESS. I'VE BEEN TOLD THIS MAY NOT WORK
-# (FOR INSTANCE, DUE TO DART COMPILER DIFFERENCES) AND IF IT DOES WORK, THE
-# CHANGES VALIDATED BETWEEN VERSIONS OF FLUTTER, FUCHSIA, AND FUCHSIA_SDK MAY
-# STILL BE INCOMPATIBLE WITH OTHER DEPENDENT REPOSITORIES IN FUCHSIA'S RELEASE-
-# AND-ROLL WORKFLOW. TAKE THESE WITH A GRAIN OF SALT FOR NOW, AS THEY EVOLVE.
+## Build and reboot your Fuchsia device
 
-To run the tests:
-
-## Sync your fuchsia.git checkout to your current Fuchsia SDK version
-
-First, sync your Fuchsia checkout and dependencies to match the versions used
-to generate the Fuchsia SDK version you are using in the flutter/engine repo.
-Typically, you've used `gclient sync` to download the version specified in the
-flutter/engine `DEPS` file.
-
-In a web browser, open
-https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core, select your
-architecture, click one of the "Instances" to open it's detail page, and then
-edit the web URL to replace the selected instance ID with the instance ID you
-synched with, from the DEPS file (for the same architecture).
-
-<!-- TODO(richkadel): after any flutter_update, it would be nice if we could
-warn the user if DEPS was updated after a recent roll of a newer Fuchsia SDK?
--->
-
-From the new page matching your current instance ID, copy the `jiri_snapshot`
-(only the value after the colon) and set a shell variable to this value:
-
-```shell
-$ JIRI_SNAPSHOT="<tag>" # for example, 6.20210809.3.1
-```
-
-Now, from your `$FUCHSIA_DIR` directory, do the following:
-
-Use `git` to checkout the version of the `$FUCHSIA_DIR/integration` directory
-matching your Fuchsia SDK's `$JIRI_SNAPSHOT`.
-
-### Option 1: Checkout the matching tagged revision of Fuchsia, if available
-
-Depending on your fuchsia.git configuration, you may be able to check it out by
-tag:
+For tests that require scenic, for example:
 
 ```shell
 $ cd "$FUCHSIA_DIR"
-$ git -C integration checkout "tags/releases/$JIRI_SNAPSHOT"
+$ fx set core.x64 \
+    --with //src/ui/scenic \
+    --with //src/ui/bin/root_presenter \
+    --with //src/ui/bin/hardware_display_controller_provider
+$ fx build
 ```
 
-### Option 2: Use git to find the matching revision of Fuchsia
+(Note, you could use `--with-base` here, instead of `--with`, but if so, you
+would also need to add `--with //garnet/packages/testing:run_test_component`.
+More on this below, under
+[Start the package servers](#start-the-package-servers).
 
-But if your `$FUCHSIA_DIR/integration` git checkout doesn't have the release
-tags, you may be able to find the right version by searching its git log
-history:
+## Restart and reboot your device
+
+_(Optional)_ If developing with the emulator, launch (or shutdown and relaunch)
+the emulator.
 
 ```shell
-$ cd "$FUCHSIA_DIR"
-$ git -C integration log --grep="Roll sdk-core packages to version:$JIRI_SNAPSHOT"
-commit abcdef1234567890abcdef123456789
-Author: global-integration-roller ...
-Date: ...
-
-    [roll] Roll sdk-core packages to version:6.20210809.4.1
-...
+fx vdl start -N
 ```
 
-***IMPORANT: Your search may return more than one result. If so, choose one. Or
-you may get no result (perhaps due to a manual roll, or other maintenance
-activity). In this case, you may need to modify the `git log` `--grep=` pattern
-and drop suffixes from your `$JIRI_SNAPSHOT` version to find a closely related
-version. This would not guarantee compatibility, so if you're not a gambler, you
-may want to update the SDK instance ID in your local `DEPS` file, and re-run
-`gclient sync`, to ensure your installed `$FUCHSIA_SDK` matches the version
-returned by `git log`.***
+NOTE: Do _not_ run the default package server. The instructions below describe
+how to launch a flutter-specific package server.
 
-### Update fuchsia.git to match `integration`, and sync all dependencies
+Or if you've rebuilt fuchsia for a device that is already running a version of
+fuchsia, you may be able to reboot without restarting the device:
 
 ```shell
-$ cd "$FUCHSIA_DIR"
-$ git checkout "$(sed -ne 's/ *revision="\([^"]*\).*/\1/p' $(find integration -name stem) )"
-$ fx sync-from-stem  # this will be very slow the first time, while it caches git history
+$ fx reboot -r
 ```
 
-The `fx sync-from-stem` command uses `jiri` to update all dependencies (other
-`git` repos and CIPD prebuilts) to match the current $FUCHSIA_DIR commit (as set
-by `git checkout ...` above). These versions should match the versions used when
-creating the Fuchsia SDK you are using.
-
-If you are also modifying Fuchsia, you may want to cherry-pick your changes on
-top of your current checkout.
-
-## Beware of Dart SDK differences between Flutter and Fuchsia
-
-NOTE: These steps may or may not be necessary, and have not been confirmed
-at this point.
-
-To match Fuchsia's version of Dart, you may be able to update your DEPS file to
-install a version of the Dart SDK that matches the version used in your
-revision-synched `$FUCHSIA_DIR` prebuilts.
+If you are building a device that launches the UI at startup, you will likely
+need to kill Scenic before running the test.
 
 ```shell
-$ cat "$FUCHSIA_DIR/prebuilt/third_party/dart/linux-x64/version"
-2.14.0-289.0.dev # for example
+$ fx shell killall scenic.cmx
 ```
 
-https://dart.googlesource.com/sdk/+/refs/tags/<the version tag from above>
+## Build the test
 
-You may be able to use the `tag` reference hash, to update the Dart SDK
-dependency in `DEPS`, use `gclient sync` to download that version, and then
-run `create_updated_flutter_deps.py` to update DEPS once more with the correct
-versions of other dependencies required by the newly updated version of the
-Dart SDK.
-
-```shell
-$ cd "$FLUTTER_ENGINE_DIR/src"
-$ gclient sync
-$ tools/dart/create_updated_flutter_deps.py
-$ gclient sync
-```
-
-## Build flutter/engine:
+You can specify the test's package target to build only the test package, with
+its dependencies. This will also build the required runner.
 
 ```shell
 $ cd "$FLUTTER_ENGINE_DIR/src"
 $ ./flutter/tools/gn --fuchsia <flags> \
-      # for example: --goma --fuchsia-cpu=x64 --runtime-mode=release
-$ ninja -C out/fuchsia_release_x64
+      # for example: --goma --fuchsia-cpu=x64 --runtime-mode=debug
+$ ninja -C out/fuchsia_debug_x64 \
+    flutter/shell/platform/fuchsia/flutter/integration_flutter_tests
 ```
 
-## If needed, replace Fuchsia's flutter_runner with your custom built runner
+## Start the package servers
 
-Follow the steps in the Flutter wiki, under
-[Compiling for Fuchsia](https://github.com/flutter/flutter/wiki/Compiling-the-engine#compiling-for-fuchsia),
-including the subsection titled
-[Deploy to Fuchsia](https://github.com/flutter/flutter/wiki/Compiling-the-engine#deploy-to-fuchsia).
+The default fuchsia package server (launched via `fx serve`) is normally
+required, unless all of your test's package dependencies are included in the
+fuchsia system image. You can force additional packages into the system image
+with `fx set ... --with-base <package>` (instead of using `--with`). For
+example, in the `fx set` command above, using, `--with-base scenic`, and so on.
+Note, however, that the default `core.x64` configuration bundles the test
+runner as if it was included via
+`--with //garnet/packages/testing:run_test_component`, so to include the test
+runner in the system image requires adding that package as well, via
+`--with-base`, instead.
 
-## Build and reboot your Fuchsia device, for example:
+In order to serve fuchsia package dependencies (like `run_test_component`,
+`scenic`, `root_presenter`, and `hardware-display-controller-provider`),
+without forcing them into the system image, you will need to run the fuchsia
+default package server.
+
+The `flutter/engine` packages (tests and flutter runners, for dart-based tests)
+are served from a separate package server. The `flutter/engine` repo's
+`serve.sh` script launches this secondary package server, and configures
+package URL rewrite rules to redirect fuchsia's requests for flutter- and
+dart-runner packages from `fuchsia.com` to flutter's package server instead.
+
+**IMPORTANT:** _The flutter package server must be launched **after** the
+default package server, because both `fx serve` and flutter's `serve.sh` set
+package URL rewrite rules, and only the last one wins._
+
+Launch each package server in a separate window or shell:
 
 ```shell
-$ cd "$FUCHSIA_DIR"
-$ # you may want to run `fx clean`, particularly right after `fx sync-from-stem`
-$ fx set workstation.qemu-x64
-$ fx build
-$ fx reboot -r
+$ cd "${FUCHSIA_DIR}"
+$ fx serve
 ```
 
-<!--
-$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
-    "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test-0.far
-$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
-    $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far)
-$ fx pm publish -a -repo "$(cat ~/fuchsia/.fx-build-dir)/amber-files/" -f \
-    $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name child-view.far)
--->
-
-The test requires scenic, but the workstation UI consumes the scenic services,
-exclusively. Kill scenic (which kills the workstation UI), run the flutter
-package server, and then run the test.
+From the flutter engine `src` directory, rRun the following script to launch the
+`engine` package server, to serve the flutter runner and test components.
 
 ```shell
-$ fx shell killall scenic.cmx
-
 $ flutter/tools/fuchsia/devshell/serve.sh --out out/fuchsia_debug_x64 --only-serve-runners
+```
 
+## Run the test, using `engine` as the package server domain
+
+```shell
 $ fx shell run-test-component \
     fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
 ```
 
-From here, you can modify the Flutter test, rebuild flutter, and usually rerun the test without
-rebooting, by repeating the calls above to `fx pm ...` and `fx shell run-test-component ...`.
+## Make a change and re-run the test
+
+If, for example, you only make a change to the Dart code in `parent-view`, you
+can rebuild only the parent-view package target, and then re-run the test, with:
+
+```shell
+$ ninja -C out/fuchsia_debug_x64 \
+    flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view:package
+$ fx shell run-test-component \
+    fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
+```
+
+From here, you can modify the Flutter test, rebuild flutter, and usually rerun
+the test without rebooting, by repeating the calls above to `fx pm ...` and
+`fx shell run-test-component ...`.
 
 The embedder tests must be run on a product without a graphical base shell,
 such as `core` because it starts and stops Scenic.

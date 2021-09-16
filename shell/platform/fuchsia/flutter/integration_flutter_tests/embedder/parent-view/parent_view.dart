@@ -13,8 +13,9 @@ import 'package:zircon/zircon.dart';
 const _kChildAppUrl =
     'fuchsia-pkg://engine/child-view#meta/child-view.cmx';
 
+TestApp app;
+
 Future<void> main(List<String> args) async {
-  // WidgetsFlutterBinding.ensureInitialized();
   final parser = ArgParser()
     ..addFlag('showOverlay', defaultsTo: false)
     ..addFlag('hitTestable', defaultsTo: true)
@@ -24,63 +25,71 @@ Future<void> main(List<String> args) async {
     print('parent-view: $option: ${arguments[option]}');
   }
 
-  // TODO(richkadel): uncomment next line when ready to launch child_view
+  // TODO(richkadel): uncomment childViewToken when ready to launch child-view
   // final childViewToken = _launchApp(_kChildAppUrl);
+  app = TestApp(
+    // FuchsiaViewConnection(childViewToken),
+    showOverlay: arguments['showOverlay'],
+    hitTestable: arguments['hitTestable'],
+    focusable: arguments['focusable'],
+  );
 
-  window.onBeginFrame = beginFrame;
-  window.scheduleFrame();
+  app.run();
 }
 
-void beginFrame(Duration duration) {
-//     FuchsiaViewConnection(childViewToken),
-// call and await "createView" behavior from fuchsia_views_cservice.dart (casts handle to a token)
-// don't drop token
-// put view in parent scene (size and position it)
-  final pixelRatio = window.devicePixelRatio;
-  final size = window.physicalSize / pixelRatio;
-  final physicalBounds = Offset.zero & size * pixelRatio;
-  final recorder = PictureRecorder();
-  final canvas = Canvas(recorder, physicalBounds);
-  canvas.scale(pixelRatio, pixelRatio);
-  final paint = Paint()..color = Color(0xFFF44336);
-  final center = size.center(Offset.zero);
-  canvas.drawCircle(center, size.shortestSide / 4, paint);
-  final picture = recorder.endRecording();
-  final sceneBuilder = SceneBuilder()
-    ..pushClipRect(physicalBounds)
-    ..addPicture(Offset.zero, picture)
-    // ..addPlatformView(...) for child view using same ID used in createView (a zircon handle, internally)
-    ..pop();
-    // may need to await on createView
-  window.render(sceneBuilder.build());
-}
+class TestApp {
+  static const _black = Color.fromARGB(255, 0, 0, 0);
+  static const _blue = Color.fromARGB(255, 0, 0, 255);
+  static const _red = Color.fromARGB(255, 255, 0, 0);
 
-// runApp(MaterialApp(
-//   debugShowCheckedModeBanner: false,
-//   home: TestApp(
-//     FuchsiaViewConnection(childViewToken),
-//     showOverlay: arguments['showOverlay'],
-//     hitTestable: arguments['hitTestable'],
-//     focusable: arguments['focusable'],
-//   ),
-// ));
-//}
+  // final FuchsiaViewConnection connection;
+  final bool showOverlay;
+  final bool hitTestable;
+  final bool focusable;
 
-// class TestApp extends StatelessWidget {
-//   static const _black = Color.fromARGB(255, 0, 0, 0);
-//   static const _blue = Color.fromARGB(255, 0, 0, 255);
+  Color _backgroundColor = _blue;
 
-//   final FuchsiaViewConnection connection;
-//   final bool showOverlay;
-//   final bool hitTestable;
-//   final bool focusable;
+  TestApp(
+    // this.connection,
+    {this.showOverlay = false,
+    this.hitTestable = true,
+    this.focusable = true});
 
-//   final _backgroundColor = ValueNotifier(_blue);
+  void run() {
+    window.onBeginFrame = (Duration duration) {
+      app.beginFrame(duration);
+    };
+    window.scheduleFrame();
+  }
 
-//   TestApp(this.connection,
-//     {this.showOverlay = false,
-//     this.hitTestable = true,
-//     this.focusable = true});
+  void beginFrame(Duration duration) {
+  //     FuchsiaViewConnection(childViewToken),
+  // call and await "createView" behavior from fuchsia_views_cservice.dart (casts handle to a token)
+  // don't drop token
+  // put view in parent scene (size and position it)
+    final pixelRatio = window.devicePixelRatio;
+    final size = window.physicalSize / pixelRatio;
+    final physicalBounds = Offset.zero & size * pixelRatio;
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, physicalBounds);
+    canvas.scale(pixelRatio, pixelRatio);
+    final paint = Paint()..color = this._backgroundColor;
+    final width = size.width * .33;
+    final height = size.height * .33;
+    final center = size.center(Offset.zero);
+    final left = center.dx - (width / 2);
+    final top = center.dy - (height / 2);
+    //canvas.drawCircle(center, size.shortestSide / 4, paint);
+    canvas.drawRect(Rect.fromLTWH(left, top, width, height), paint);
+    final picture = recorder.endRecording();
+    final sceneBuilder = SceneBuilder()
+      ..pushClipRect(physicalBounds)
+      ..addPicture(Offset.zero, picture)
+      // ..addPlatformView(...) for child view using same ID used in createView (a zircon handle, internally)
+      ..pop();
+      // may need to await on createView
+    window.render(sceneBuilder.build());
+  }
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -124,7 +133,7 @@ void beginFrame(Duration duration) {
 //           }),
 //     );
 //   }
-// }
+}
 
 ViewHolderToken _launchApp(String componentUrl) {
   final incoming = Incoming();
