@@ -358,6 +358,7 @@ typedef struct {
   uint64_t event_logical_key;
   bool is_down;
   double timestamp;
+  bool sent_any_events;
 } SyncStateLoopContext;
 
 }  // namespace
@@ -459,6 +460,7 @@ static void synchronize_pressed_states_loop_body(gpointer key,
       synthesize_simple_event(self, kFlutterKeyEventTypeUp,
                               recorded_physical_key, logical_key,
                               context->timestamp);
+      context->sent_any_events = true;
       update_pressing_state(self, recorded_physical_key, 0);
     }
   }
@@ -480,6 +482,7 @@ static void synchronize_pressed_states_loop_body(gpointer key,
     }
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
                             logical_key, context->timestamp);
+    context->sent_any_events = true;
     update_pressing_state(self, physical_key, logical_key);
   }
 }
@@ -667,41 +670,49 @@ static void synchronize_lock_states_loop_body(gpointer key,
     possibly_update_lock_bit(self, logical_key, is_down_event);
     synthesize_simple_event(self, type, physical_key, logical_key,
                             context->timestamp);
+    context->sent_any_events = true;
   }
 }
 
-// Sends a key event to the framework.
-static void fl_key_embedder_responder_handle_event(
+// Implements fl_key_embedder_responder_handle_event and returns whether
+// any events has been sent.
+static bool fl_key_embedder_responder_handle_event_impl(
     FlKeyResponder* responder,
     FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
+  bool sent_any_events = false;
 
-  g_return_if_fail(event != nullptr);
-  g_return_if_fail(callback != nullptr);
+  g_return_val_if_fail(event != nullptr, sent_any_events);
+  g_return_val_if_fail(callback != nullptr, sent_any_events);
 
   const uint64_t physical_key = event_to_physical_key(event);
   const uint64_t logical_key = event_to_logical_key(event);
   const double timestamp = event_to_timestamp(event);
   const bool is_down_event = event->is_press;
 
-  SyncStateLoopContext sync_pressed_state_context;
-  sync_pressed_state_context.self = self;
-  sync_pressed_state_context.state = event->state;
-  sync_pressed_state_context.timestamp = timestamp;
-  sync_pressed_state_context.is_down = is_down_event;
-  sync_pressed_state_context.event_logical_key = logical_key;
+  SyncStateLoopContext sync_state_context;
+  sync_state_context.self = self;
+  sync_state_context.state = event->state;
+  sync_state_context.timestamp = timestamp;
+  sync_state_context.is_down = is_down_event;
+  sync_state_context.event_logical_key = logical_key;
+  sync_state_context.sent_any_events = false;
 
   // Update lock mode states
   g_hash_table_foreach(self->lock_bit_to_checked_keys,
                        synchronize_lock_states_loop_body,
-                       &sync_pressed_state_context);
+                       &sync_state_context);
 
   // Update pressing states
   g_hash_table_foreach(self->modifier_bit_to_checked_keys,
                        synchronize_pressed_states_loop_body,
-                       &sync_pressed_state_context);
+                       &sync_state_context);
+
+  if (sync_state_context.sent_any_events) {
+    sent_any_events = true;
+  }
 
   // Construct the real event
   const uint64_t last_logical_record =
@@ -722,9 +733,8 @@ static void fl_key_embedder_responder_handle_event(
       // pressed one, usually indicating multiple keyboards are pressing keys
       // with the same physical key, or the up event was lost during a loss of
       // focus. The down event is ignored.
-      fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
       callback(true, user_data);
-      return;
+      return sent_any_events;
     } else {
       out_event.type = kFlutterKeyEventTypeDown;
       character_to_free = event_to_character(event);  // Might be null
@@ -735,9 +745,8 @@ static void fl_key_embedder_responder_handle_event(
       // The physical key has been released before. It might indicate a missed
       // event due to loss of focus, or multiple keyboards pressed keys with the
       // same physical key. Ignore the up event.
-      fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
       callback(true, user_data);
-      return;
+      return sent_any_events;
     } else {
       out_event.type = kFlutterKeyEventTypeUp;
     }
@@ -753,7 +762,28 @@ static void fl_key_embedder_responder_handle_event(
         fl_key_embedder_user_data_new(callback, user_data);
     fl_engine_send_key_event(self->engine, &out_event, handle_response,
                              response_data);
+    sent_any_events = true;
   } else {
     callback(true, user_data);
+  }
+  return sent_any_events;
+}
+
+
+// Sends a key event to the framework.
+static void fl_key_embedder_responder_handle_event(
+    FlKeyResponder* responder,
+    FlKeyEvent* event,
+    FlKeyResponderAsyncCallback callback,
+    gpointer user_data) {
+  FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
+  bool sent_any_events = fl_key_embedder_responder_handle_event_impl(
+    responder,
+    event,
+    callback,
+    user_data
+  );
+  if (!sent_any_events) {
+    fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
   }
 }
