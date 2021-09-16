@@ -174,9 +174,9 @@ while true; do
     fi
 
     config_url="http://${addr}:${port}/config.json"
-    run_ssh_command amberctl add_src \
+    run_ssh_command pkgctl add \
       -n "engine" \
-      -f "${config_url}"
+      -f 1 "${config_url}"
     err=$?
 
     if [[ $err -ne 0 ]]; then
