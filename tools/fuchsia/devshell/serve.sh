@@ -176,6 +176,7 @@ while true; do
     config_url="http://${addr}:${port}/config.json"
     run_ssh_command pkgctl add \
       -n "engine" \
+      # We need backwards compatibility with V1 configs for V1 runners.
       -f 1 "${config_url}"
     err=$?
 
