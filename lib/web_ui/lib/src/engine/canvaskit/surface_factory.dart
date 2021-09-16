@@ -4,6 +4,7 @@
 
 import 'package:meta/meta.dart';
 
+import '../../engine.dart';
 import '../util.dart';
 import 'embedded_views.dart';
 import 'surface.dart';
@@ -16,7 +17,11 @@ class SurfaceFactory {
 
   SurfaceFactory(this.maximumSurfaces)
       : assert(maximumSurfaces >= 1,
-            'The maximum number of surfaces must be at least 1');
+            'The maximum number of surfaces must be at least 1') {
+    if (assertionsEnabled) {
+      registerHotRestartListener(debugClear);
+    }
+  }
 
   /// The base surface to paint on. This is the default surface which will be
   /// painted to. If there are no platform views, then this surface will receive
