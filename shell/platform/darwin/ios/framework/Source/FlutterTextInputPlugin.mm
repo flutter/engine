@@ -365,10 +365,10 @@ static BOOL isApproximatelyEqual(float x, float y, float delta) {
 // If checkRightBoundary is set, the right-center point on selectionRect and
 // otherSelectionRect will be used instead of the left-center point.
 //
-// This uses special (empirically determined) logic for determining the closer rect,
-// rather than a simple distance calculation. First, the closer vertical distance is
-// determined. Within the closest y distance, if the point is above the bottom
-// of the closest rect, the x distance will be minimized; however, if the point is
+// This uses special (empirically determined using a 1st gen iPad pro, 9.7" model running
+// iOS 14.7.1) logic for determining the closer rect, rather than a simple distance calculation.
+// First, the closer vertical distance is determined. Within the closest y distance, if the point is
+// above the bottom of the closest rect, the x distance will be minimized; however, if the point is
 // below the bottom of the rect, the x value will be maximized.
 static BOOL isSelectionRectCloserToPoint(CGPoint point,
                                          CGRect selectionRect,
@@ -399,7 +399,8 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
                                  (isBelowBottomOfLine && isFartherToRight))));
 }
 
-// Checks whether Scribble features are possibly available – meaning this is an iPad running iOS 14+
+// Checks whether Scribble features are possibly available – meaning this is an iPad running iOS
+// 14 or higher.
 static BOOL isScribbleAvailable() {
   if (@available(iOS 14.0, *)) {
     NSString* deviceModel = (NSString*)[UIDevice currentDevice].model;
@@ -870,7 +871,7 @@ static BOOL isScribbleAvailable() {
   }
 }
 
-// Forward touches to the viewResponder to allow tapping inside the UITextField as normal
+// Forward touches to the viewResponder to allow tapping inside the UITextField as normal.
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
   [self resetScribbleInteractionStatusIfEnding];
@@ -1008,7 +1009,7 @@ static BOOL isScribbleAvailable() {
 // account.
 - (void)setIsVisibleToAutofill:(BOOL)isVisibleToAutofill {
   // This probably needs to change (think it is getting overwritten by the updateSizeAndTransform
-  // stuff for now)
+  // stuff for now).
   self.frame = isVisibleToAutofill ? CGRectMake(0, 0, 1, 1) : CGRectZero;
 }
 
@@ -1048,7 +1049,7 @@ static BOOL isScribbleAvailable() {
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
   // When scribble is available, the FlutterTextInputView will display the native toolbar unless
-  // these text editing actions are disabled
+  // these text editing actions are disabled.
   if (isScribbleAvailable() &&
       (action == @selector(paste:) || action == @selector(cut:) || action == @selector(copy:) ||
        action == @selector(select:) || action == @selector(selectAll:) ||
@@ -1958,7 +1959,7 @@ static BOOL isScribbleAvailable() {
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
   [_activeView setEditableTransform:dictionary[@"transform"]];
   if (isScribbleAvailable()) {
-    // This is necessary to set up where the scribble interactable element will be
+    // This is necessary to set up where the scribble interactable element will be.
     int leftIndex = 12;
     int topIndex = 13;
     _inputHider.frame =
