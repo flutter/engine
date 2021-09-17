@@ -11,9 +11,13 @@ import 'surface.dart';
 
 /// Caches surfaces used to overlay platform views.
 class SurfaceFactory {
-  /// The cache singleton.
-  static final SurfaceFactory instance =
-      SurfaceFactory(HtmlViewEmbedder.maximumSurfaces);
+  /// The lazy-initialized singleton surface factory.
+  ///
+  /// [debugClear] causes this singleton to be reinitialized.
+  static SurfaceFactory get instance =>
+      _instance ??= SurfaceFactory(HtmlViewEmbedder.maximumSurfaces);
+
+  static SurfaceFactory? _instance;
 
   SurfaceFactory(this.maximumSurfaces)
       : assert(maximumSurfaces >= 1,
@@ -173,7 +177,10 @@ class SurfaceFactory {
     for (final Surface surface in _liveSurfaces) {
       surface.dispose();
     }
+    baseSurface.dispose();
+    backupSurface.dispose();
     _liveSurfaces.clear();
     _cache.clear();
+    _instance = null;
   }
 }
