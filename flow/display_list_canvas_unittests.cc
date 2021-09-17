@@ -50,7 +50,10 @@ constexpr SkRect RenderBounds =
 // The tests try 3 miter limit values, 0.0, 4.0 (the default), and 10.0
 // These values will allow us to construct a diamond that spans the
 // width or height of the render box and still show the miter for 4.0
-// and 10.0
+// and 10.0.
+// These values were discovered by drawing a diamond path in Skia fiddle
+// and then playing with the cross-axis size until the miter was about
+// as large as it could get before it got cut off.
 
 // The X offsets which will be used for tall vertical diamonds are
 // expressed in terms of the rendering height to obtain the proper angle
@@ -436,7 +439,8 @@ class CanvasCompareTester {
             cv_restored, dl_restored, adjuster, blur5Tolerance,
             "saveLayer ImageFilter, no bounds");
       }
-      ASSERT_TRUE(filter->unique()) << "SL with IF no bounds Cleanup";
+      ASSERT_TRUE(filter->unique())
+          << "saveLayer ImageFilter, no bounds Cleanup";
       {
         RenderWith(
             [=](SkCanvas* cv, SkPaint& p) {
@@ -454,7 +458,8 @@ class CanvasCompareTester {
             cv_restored, dl_restored, adjuster, blur5Tolerance,
             "saveLayer ImageFilter and bounds");
       }
-      ASSERT_TRUE(filter->unique()) << "SL with IF and bounds Cleanup";
+      ASSERT_TRUE(filter->unique())
+          << "saveLayer ImageFilter and bounds Cleanup";
     }
   }
 
@@ -468,10 +473,12 @@ class CanvasCompareTester {
 
     RenderWith([=](SkCanvas*, SkPaint& p) { p.setAntiAlias(true); },  //
                [=](DisplayListBuilder& b) { b.setAA(true); },         //
-               cv_renderer, dl_renderer, adjuster, tolerance, "AA == True");
+               cv_renderer, dl_renderer, adjuster, tolerance,
+               "AntiAlias == True");
     RenderWith([=](SkCanvas*, SkPaint& p) { p.setAntiAlias(false); },  //
                [=](DisplayListBuilder& b) { b.setAA(false); },         //
-               cv_renderer, dl_renderer, adjuster, tolerance, "AA == False");
+               cv_renderer, dl_renderer, adjuster, tolerance,
+               "AntiAlias == False");
 
     RenderWith([=](SkCanvas*, SkPaint& p) { p.setDither(true); },  //
                [=](DisplayListBuilder& b) { b.setDither(true); },  //
@@ -606,7 +613,7 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, adjuster, tolerance,
             "ColorFilter == RotateRGB", &bg);
       }
-      ASSERT_TRUE(filter->unique()) << "ColorFilter Cleanup";
+      ASSERT_TRUE(filter->unique()) << "ColorFilter == RotateRGB Cleanup";
       filter = SkColorFilters::Matrix(invert_color_matrix);
       {
         SkColor bg = SK_ColorWHITE;
@@ -622,7 +629,7 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, adjuster, tolerance,
             "ColorFilter == Invert", &bg);
       }
-      ASSERT_TRUE(filter->unique()) << "ColorFilter Cleanup";
+      ASSERT_TRUE(filter->unique()) << "ColorFilter == Invert Cleanup";
     }
 
     {
@@ -654,7 +661,7 @@ class CanvasCompareTester {
                 .addBoundsPadding(2, 2),
             "PathEffect == Discrete-3-5");
       }
-      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+      ASSERT_TRUE(effect->unique()) << "PathEffect == Discrete-3-5 Cleanup";
       effect = SkDiscretePathEffect::Make(2, 3);
       {
         RenderWith(
@@ -681,7 +688,7 @@ class CanvasCompareTester {
                 .addBoundsPadding(2, 2),
             "PathEffect == Discrete-2-3");
       }
-      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+      ASSERT_TRUE(effect->unique()) << "PathEffect == Discrete-2-3 Cleanup";
     }
 
     {
@@ -703,7 +710,7 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, adjuster, blur5Tolerance,
             "MaskFilter == Blur 5");
       }
-      ASSERT_TRUE(filter->unique()) << "MaskFilter Cleanup";
+      ASSERT_TRUE(filter->unique()) << "MaskFilter == Blur 5 Cleanup";
       {
         RenderWith(
             [=](SkCanvas*, SkPaint& p) {
@@ -719,7 +726,8 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, adjuster, blur5Tolerance,
             "MaskFilter == Blur(Normal, 5.0)");
       }
-      ASSERT_TRUE(filter->unique()) << "MaskFilter Cleanup";
+      ASSERT_TRUE(filter->unique())
+          << "MaskFilter == Blur(Normal, 5.0) Cleanup";
     }
 
     {
@@ -745,7 +753,7 @@ class CanvasCompareTester {
                    cv_renderer, dl_renderer, adjuster, tolerance,
                    "LinearGradient GYB");
       }
-      ASSERT_TRUE(shader->unique()) << "Shader Cleanup";
+      ASSERT_TRUE(shader->unique()) << "LinearGradient GYB Cleanup";
     }
   }
 
@@ -915,7 +923,7 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, adjuster, tolerance,
             "PathEffect == Dash-29-2");
       }
-      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+      ASSERT_TRUE(effect->unique()) << "PathEffect == Dash-29-2 Cleanup";
       effect = SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
       {
         RenderWith(
@@ -936,7 +944,7 @@ class CanvasCompareTester {
             cv_renderer, dl_renderer, adjuster, tolerance,
             "PathEffect == Dash-17-1.5");
       }
-      ASSERT_TRUE(effect->unique()) << "PathEffect Cleanup";
+      ASSERT_TRUE(effect->unique()) << "PathEffect == Dash-17-1.5 Cleanup";
     }
   }
 
@@ -1016,7 +1024,7 @@ class CanvasCompareTester {
           b.clipRect(r_clip, true, SkClipOp::kIntersect);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
-        "AA ClipRect inset by 15.5");
+        "AntiAlias ClipRect inset by 15.5");
     RenderWith(
         [=](SkCanvas* c, SkPaint&) {
           c->clipRect(r_clip, SkClipOp::kDifference, false);
@@ -1044,7 +1052,7 @@ class CanvasCompareTester {
           b.clipRRect(rr_clip, true, SkClipOp::kIntersect);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
-        "AA ClipRRect inset by 15.5");
+        "AntiAlias ClipRRect inset by 15.5");
     RenderWith(
         [=](SkCanvas* c, SkPaint&) {
           c->clipRRect(rr_clip, SkClipOp::kDifference, false);
@@ -1075,7 +1083,7 @@ class CanvasCompareTester {
           b.clipPath(path_clip, true, SkClipOp::kIntersect);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
-        "AA ClipPath inset by 15.5");
+        "AntiAlias ClipPath inset by 15.5");
     RenderWith(
         [=](SkCanvas* c, SkPaint&) {
           c->clipPath(path_clip, SkClipOp::kDifference, false);
@@ -1121,7 +1129,7 @@ class CanvasCompareTester {
     ASSERT_EQ(ref_pixels.width(), TestWidth) << info;
     ASSERT_EQ(ref_pixels.height(), TestHeight) << info;
     ASSERT_EQ(ref_pixels.info().bytesPerPixel(), 4) << info;
-    checkPixels(&ref_pixels, ref_bounds, info, bg);
+    checkPixels(&ref_pixels, ref_bounds, info + " (Skia reference)", bg);
 
     {
       // This sequence plays the provided equivalently constructed
@@ -1159,7 +1167,8 @@ class CanvasCompareTester {
           << info;
 
       display_list->RenderTo(test_surface->getCanvas());
-      compareToReference(test_surface.get(), &ref_pixels, info + " (DL render)",
+      compareToReference(test_surface.get(), &ref_pixels,
+                         info + " (DisplayList built directly -> surface)",
                          &dl_bounds, &tolerance, bg);
     }
 
@@ -1176,7 +1185,8 @@ class CanvasCompareTester {
       cv_render(&dl_recorder, test_paint);
       dl_recorder.builder()->Build()->RenderTo(test_surface->getCanvas());
       compareToReference(test_surface.get(), &ref_pixels,
-                         info + " (Sk->DL render)", nullptr, nullptr, nullptr);
+                         info + " (Skia calls -> DisplayList -> surface)",
+                         nullptr, nullptr, nullptr);
     }
 
     {
@@ -1214,7 +1224,7 @@ class CanvasCompareTester {
       test_canvas->scale(TestScale, TestScale);
       display_list->RenderTo(test_canvas);
       compareToReference(test_surface.get(), &ref_pixels2,
-                         info + " (SKP/DL render scaled 2x)", nullptr, nullptr,
+                         info + " (Both rendered scaled 2x)", nullptr, nullptr,
                          nullptr, TestWidth2, TestHeight2, false);
     }
   }

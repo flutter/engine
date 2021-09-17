@@ -266,9 +266,9 @@ class DisplayListBoundsCalculator final
   // DisplayList dispatcher method calls. Since 2 of the method calls
   // have no intrinsic size because they flood the entire clip/surface,
   // the |cull_rect| provides a bounds for them to include. If cull_rect
-  // is not specified or is null, then the flooding calls will not
-  // affect the resulting bounds, but will set the is_flooded flag
-  // below which can be inspected if an alternate plan is available
+  // is not specified or is null, then the unbounded calls will not
+  // affect the resulting bounds, but will set a flag that can be
+  // queried using |isUnbounded| if an alternate plan is available
   // for such cases.
   // The flag should never be set if a cull_rect is provided.
   DisplayListBoundsCalculator(const SkRect* cull_rect = nullptr);
@@ -346,15 +346,24 @@ class DisplayListBoundsCalculator final
                   bool transparentOccluder,
                   SkScalar dpr) override;
 
-  bool isFlooded() {
+  // The DisplayList had an unbounded call with no cull rect or clip
+  // to contain it. Should only be called after the stream is fully
+  // dispatched.
+  // Unbounded operations are calls like |drawColor| which are defined
+  // to flood the entire surface, or calls that relied on a rendering
+  // attribute which is unable to compute bounds (should be rare).
+  // In those cases the bounds will represent only the accumulation
+  // of the bounded calls and this flag will be set to indicate that
+  // condition.
+  bool isUnbounded() const {
     FML_DCHECK(layer_infos_.size() == 1);
-    return layer_infos_.front()->is_flooded();
+    return layer_infos_.front()->is_unbounded();
   }
 
-  SkRect getBounds() {
+  SkRect getBounds() const {
     FML_DCHECK(layer_infos_.size() == 1);
-    if (isFlooded()) {
-      FML_LOG(INFO) << "returning partial bounds for flooded DisplayList";
+    if (isUnbounded()) {
+      FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
     }
     return accumulator_->getBounds();
   }
@@ -370,47 +379,67 @@ class DisplayListBoundsCalculator final
   // See |RootLayerData|, |SaveData| and |SaveLayerData|.
   class LayerData {
    public:
-    LayerData(BoundsAccumulator* outer) : outer_(outer), is_flooded_(false) {}
+    // Construct a LayerData to push on the save stack for a |save|
+    // or |saveLayer| call.
+    // There does not tend to be an actual layer in the case of
+    // a |save| call, but in order to homogenize the handling
+    // of |restore| it adds a trivial implementation of this
+    // class to the stack of saves.
+    // The |outer| parameter is the |BoundsAccumulator| that was
+    // in use by the stream before this layer was pushed on the
+    // stack and should be returned when this layer is popped off
+    // the stack.
+    // Some layers may substitute their own accumulator to compute
+    // their own local bounds while they are on the stack.
+    LayerData(BoundsAccumulator* outer) : outer_(outer), is_unbounded_(false) {}
     virtual ~LayerData() = default;
 
+    // The accumulator to use while this layer is put in play by
+    // a |save| or |saveLayer|
     virtual BoundsAccumulator* accumulatorForLayer() { return outer_; }
-    virtual BoundsAccumulator* accumulatorForRestore() { return outer_; }
-    virtual SkRect getLayerBounds() { return SkRect::MakeEmpty(); }
 
-    // is_flooded is to true if we ever encounter an operation
-    // on a layer that is unbounded (|drawColor| or |drawPaint|)
-    // or cannot compute its bounds (some effects and filters)
-    // and there was no outstanding clip op at the time.
-    // When the layer is restored, the outer layer may then
-    // process this flooded state by accumulating its own
-    // clip or recording the flood state to pass to its own
-    // outer layer.
-    // Typically the DisplayList will have been constructed with
-    // a cull rect which will act as a default clip for the
-    // outermost layer and the flood state of the overall
+    // The accumulator to use after this layer is removed from play
+    // via |restore|
+    virtual BoundsAccumulator* accumulatorForRestore() { return outer_; }
+
+    // The bounds of this layer. May be empty for cases like
+    // a non-layer |save| call which uses the |outer_| accumulator
+    // to accumulate draw calls inside of it
+    virtual SkRect getLayerBounds() = 0;
+
+    // is_unbounded should be set to true if we ever encounter an operation
+    // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
+    // or cannot compute its bounds (some effects and filters) and there
+    // was no outstanding clip op at the time.
+    // When the layer is restored, the outer layer may then process this
+    // unbounded state by accumulating its own clip or transferring the
+    // unbounded state to its own outer layer.
+    // Typically the DisplayList will have been constructed with a cull
+    // rect which will act as a default clip for the outermost layer and
+    // the unbounded state of all sub layers will eventually be caught by
+    // that cull rect so that the overall unbounded state of the entire
     // DisplayList will never be true.
     //
-    // SkPicture treats these same conditions as a Nop (they
-    // accumulate the SkPicture cull rect, but if it was not
-    // specified then it is an empty Rect and so has no
-    // effect on the bounds).
-    // If the Calculator object accumulates this flag into the
-    // root layer, then at least we can make the caller aware
-    // of that exceptional condition.
+    // SkPicture treats these same conditions as a Nop (they accumulate
+    // the SkPicture cull rect, but if it was not specified then it is an
+    // empty Rect and so has no effect on the bounds).
+    // If the Calculator object accumulates this flag into the root layer,
+    // then at least we can make the caller aware of that exceptional
+    // condition via the |DisplayListBoundsCalculator::isUnbounded| call.
     //
-    // Flutter is unlikely to ever run into this as the Dart
-    // mechanisms all supply a cull rect for all Dart Picture
-    // objects, even if that cull rect is kGiantRect.
-    void set_flooded() { is_flooded_ = true; }
+    // Flutter is unlikely to ever run into this as the Dart mechanisms
+    // all supply a non-null cull rect for all Dart Picture objects,
+    // even if that cull rect is kGiantRect.
+    void set_unbounded() { is_unbounded_ = true; }
 
-    // |is_flooded| should be called after |getLayerBounds| in case
+    // |is_unbounded| should be called after |getLayerBounds| in case
     // a problem was found during the computation of those bounds,
-    // the layer will have one last chance to flag a flooded state.
-    bool is_flooded() { return is_flooded_; }
+    // the layer will have one last chance to flag an unbounded state.
+    bool is_unbounded() const { return is_unbounded_; }
 
    private:
     BoundsAccumulator* outer_;
-    bool is_flooded_;
+    bool is_unbounded_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
   };
@@ -425,9 +454,9 @@ class DisplayListBoundsCalculator final
     }
 
     SkRect getLayerBounds() override {
-      // Even though this layer might have been flooded, we still
-      // accumulate what bounds we have as the flooded condition
-      // may be a nop at a higher level and we at least want to
+      // Even though this layer might be unbounded, we still
+      // accumulate what bounds we have as the unbounded condition
+      // may be contained at a higher level and we at least want to
       // account for the bounds that we do have.
       return layer_accumulator_.getBounds();
     }
@@ -441,7 +470,7 @@ class DisplayListBoundsCalculator final
   };
 
   // Used as the initial default layer info for the Calculator.
-  class RootLayerData : public AccumulatorLayerData {
+  class RootLayerData final : public AccumulatorLayerData {
    public:
     RootLayerData() : AccumulatorLayerData(nullptr) {}
     ~RootLayerData() = default;
@@ -451,24 +480,26 @@ class DisplayListBoundsCalculator final
   };
 
   // Used for |save|
-  class SaveData : public LayerData {
+  class SaveData final : public LayerData {
    public:
     using LayerData::LayerData;
     ~SaveData() = default;
+
+    SkRect getLayerBounds() override { return SkRect::MakeEmpty(); }
 
    private:
     FML_DISALLOW_COPY_AND_ASSIGN(SaveData);
   };
 
   // Used for |saveLayer|
-  class SaveLayerData : public AccumulatorLayerData {
+  class SaveLayerData final : public AccumulatorLayerData {
    public:
     SaveLayerData(BoundsAccumulator* outer,
                   sk_sp<SkImageFilter> filter,
                   bool paint_nops_on_transparency)
         : AccumulatorLayerData(outer), layer_filter_(std::move(filter)) {
       if (!paint_nops_on_transparency) {
-        set_flooded();
+        set_unbounded();
       }
     }
     ~SaveLayerData() = default;
@@ -476,7 +507,7 @@ class DisplayListBoundsCalculator final
     SkRect getLayerBounds() override {
       SkRect bounds = AccumulatorLayerData::getLayerBounds();
       if (!getFilteredBounds(bounds, layer_filter_.get())) {
-        set_flooded();
+        set_unbounded();
       }
       return bounds;
     }
@@ -564,7 +595,7 @@ class DisplayListBoundsCalculator final
   static bool getFilteredBounds(SkRect& rect, SkImageFilter* filter);
   bool adjustBoundsForPaint(SkRect& bounds, int flags);
 
-  void accumulateFlood();
+  void accumulateUnbounded();
   void accumulateRect(const SkRect& rect, int flags) {
     SkRect bounds = rect;
     accumulateRect(bounds, flags);

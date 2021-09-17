@@ -278,13 +278,13 @@ void DisplayListBoundsCalculator::restore() {
     ClipBoundsDispatchHelper::restore();
     accumulator_ = layer_infos_.back()->accumulatorForRestore();
     SkRect layer_bounds = layer_infos_.back()->getLayerBounds();
-    // Must read flooded state after layer_bounds
-    bool layer_flooded = layer_infos_.back()->is_flooded();
+    // Must read unbounded state after layer_bounds
+    bool layer_unbounded = layer_infos_.back()->is_unbounded();
     layer_infos_.pop_back();
 
-    // We accumulate the bounds even if the layer was flooded because
-    // the flooding may become a NOP, so we at least accumulate our
-    // best estimate about what we have.
+    // We accumulate the bounds even if the layer was unbounded because
+    // the unbounded state may be contained at a higher level, so we at
+    // least accumulate our best estimate about what we have.
     if (!layer_bounds.isEmpty()) {
       // kUnfiltered because the layer already applied all bounds
       // modifications based on the attributes that were in place
@@ -292,17 +292,17 @@ void DisplayListBoundsCalculator::restore() {
       // current attributes would mix attribute states.
       accumulateRect(layer_bounds, kIsUnfiltered);
     }
-    if (layer_flooded) {
-      accumulateFlood();
+    if (layer_unbounded) {
+      accumulateUnbounded();
     }
   }
 }
 
 void DisplayListBoundsCalculator::drawPaint() {
-  accumulateFlood();
+  accumulateUnbounded();
 }
 void DisplayListBoundsCalculator::drawColor(SkColor color, SkBlendMode mode) {
-  accumulateFlood();
+  accumulateUnbounded();
 }
 void DisplayListBoundsCalculator::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
@@ -334,7 +334,7 @@ void DisplayListBoundsCalculator::drawDRRect(const SkRRect& outer,
 }
 void DisplayListBoundsCalculator::drawPath(const SkPath& path) {
   if (path.isInverseFillType()) {
-    accumulateFlood();
+    accumulateUnbounded();
   } else {
     accumulateRect(path.getBounds(),                   //
                    (kIsDrawnGeometry |                 //
@@ -537,11 +537,11 @@ bool DisplayListBoundsCalculator::adjustBoundsForPaint(SkRect& bounds,
   return getFilteredBounds(bounds, image_filter_.get());
 }
 
-void DisplayListBoundsCalculator::accumulateFlood() {
+void DisplayListBoundsCalculator::accumulateUnbounded() {
   if (has_clip()) {
     accumulator_->accumulate(getClipBounds());
   } else {
-    layer_infos_.back()->set_flooded();
+    layer_infos_.back()->set_unbounded();
   }
 }
 void DisplayListBoundsCalculator::accumulateRect(SkRect& rect, int flags) {
@@ -551,7 +551,7 @@ void DisplayListBoundsCalculator::accumulateRect(SkRect& rect, int flags) {
       accumulator_->accumulate(rect);
     }
   } else {
-    accumulateFlood();
+    accumulateUnbounded();
   }
 }
 
