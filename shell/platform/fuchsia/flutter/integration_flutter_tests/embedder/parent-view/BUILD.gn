@@ -13,12 +13,12 @@ dart_library("parent-view_dart_library") {
   sources = [ "parent_view.dart" ]
 
   deps = [
+    "//flutter/shell/platform/fuchsia/dart:args",
     "//flutter/tools/fuchsia/dart:fuchsia_services",
     "//flutter/tools/fuchsia/dart:zircon",
     "//flutter/tools/fuchsia/fidl:fuchsia.sys",
     "//flutter/tools/fuchsia/fidl:fuchsia.ui.app",
     "//flutter/tools/fuchsia/fidl:fuchsia.ui.views",
-    "//third_party/dart/third_party/pkg/args",
   ]
 }
 
