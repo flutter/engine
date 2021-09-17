@@ -640,7 +640,10 @@ const char* getEventString(NSString* characters) {
 - (void)handleDownEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp guard:callback];
+  [self synchronizeModifiers:event.modifierFlags
+               ignoringFlags:0
+                   timestamp:event.timestamp
+                       guard:callback];
 
   bool isARepeat = event.isARepeat;
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -672,7 +675,10 @@ const char* getEventString(NSString* characters) {
 - (void)handleUpEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   NSAssert(!event.isARepeat, @"Unexpected repeated Up event: keyCode %d, char %@, charIM %@",
            event.keyCode, event.characters, event.charactersIgnoringModifiers);
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp guard:callback];
+  [self synchronizeModifiers:event.modifierFlags
+               ignoringFlags:0
+                   timestamp:event.timestamp
+                       guard:callback];
 
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -702,7 +708,7 @@ const char* getEventString(NSString* characters) {
   [self synchronizeModifiers:event.modifierFlags
                ignoringFlags:NSEventModifierFlagCapsLock
                    timestamp:event.timestamp
-                      guard:callback];
+                       guard:callback];
   if ((_lastModifierFlagsOfInterest & NSEventModifierFlagCapsLock) !=
       (event.modifierFlags & NSEventModifierFlagCapsLock)) {
     [self sendCapsLockTapWithTimestamp:event.timestamp synthesizeDown:false callback:callback];
