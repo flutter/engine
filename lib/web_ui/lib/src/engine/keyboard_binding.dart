@@ -76,6 +76,15 @@ const int _kDeadKeyShift = 0x20000000;
 const int _kDeadKeyAlt = 0x40000000;
 const int _kDeadKeyMeta = 0x80000000;
 
+const ui.KeyData _emptyKeyData = ui.KeyData(
+  type: ui.KeyEventType.down,
+  timeStamp: Duration.zero,
+  logical: 0,
+  physical: 0,
+  character: null,
+  synthesized: false,
+);
+
 typedef DispatchKeyData = bool Function(ui.KeyData data);
 
 /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
@@ -195,10 +204,17 @@ class FlutterHtmlKeyboardEvent {
 // [dispatchKeyData] as given in the constructor. Some key data might be
 // dispatched asynchronously.
 class KeyboardConverter {
-  KeyboardConverter(this.dispatchKeyData, {this.onMacOs = false});
+  KeyboardConverter(this.performDispatchKeyData, {this.onMacOs = false});
 
-  final DispatchKeyData dispatchKeyData;
+  final DispatchKeyData performDispatchKeyData;
   final bool onMacOs;
+
+  // The `performDispatchKeyData` wrapped with tracking logic.
+  //
+  // It is non-null only during `handleEvent`. All events during `handleEvent`
+  // should be dispatched with `_dispatchKeyData`, others with
+  // `performDispatchKeyData`.
+  DispatchKeyData? _dispatchKeyData;
 
   bool _disposed = false;
   void dispose() {
@@ -285,7 +301,9 @@ class KeyboardConverter {
     Future<void>.delayed(duration).then<void>((_) {
       if (!canceled && !_disposed) {
         callback();
-        dispatchKeyData(getData());
+        // This dispatch is performed asynchronously, therefore should not use
+        // `_dispatchKeyData`.
+        performDispatchKeyData(getData());
       }
     });
     return () { canceled = true; };
@@ -326,8 +344,7 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
   }
 
-  List<ui.KeyData> _convertEvent(FlutterHtmlKeyboardEvent event) {
-    final List<ui.KeyData> result = <ui.KeyData>[];
+  void _handleEvent(FlutterHtmlKeyboardEvent event) {
     final Duration timeStamp = _eventTimeStampToDuration(event.timeStamp!);
 
     final String eventKey = event.key!;
@@ -394,7 +411,7 @@ class KeyboardConverter {
           // pressing keys with the same physical key, or the up event was lost
           // during a loss of focus. The down event is ignored.
           event.preventDefault();
-          return result;
+          return;
         }
       } else {
         // This physical key is not being pressed according to the record. It's a
@@ -407,7 +424,7 @@ class KeyboardConverter {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
         event.preventDefault();
-        return result;
+        return;
       }
 
       type = ui.KeyEventType.up;
@@ -436,15 +453,16 @@ class KeyboardConverter {
 
     // After updating _pressingRecords, synchronize modifier states. The
     // `event.***Key` fields can be used to reduce some omitted modifier key
-    // events. We can deduce key up events if they are false. Key down events
-    // can not be deduced since we don't know which physical key they represent.
+    // events. We can deduce key cancel events if they are false. Key sync
+    // events can not be deduced since we don't know which physical key they
+    // represent.
     _kLogicalKeyToModifierGetter.forEach((int logicalKey, _ModifierGetter getModifier) {
       if (_pressingRecords.containsValue(logicalKey) && !getModifier(event)) {
         _pressingRecords.removeWhere((int physicalKey, int logicalRecord) {
           if (logicalRecord != logicalKey)
             return false;
 
-          result.add(ui.KeyData(
+          _dispatchKeyData!(ui.KeyData(
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
             physical: physicalKey,
@@ -467,15 +485,19 @@ class KeyboardConverter {
       }
     }
 
-    result.add(ui.KeyData(
+    final ui.KeyData keyData = ui.KeyData(
       timeStamp: timeStamp,
       type: type,
       physical: physicalKey,
       logical: lastLogicalRecord ?? logicalKey,
       character: type == ui.KeyEventType.up ? null : character,
       synthesized: false,
-    ));
-    return result;
+    );
+
+    final bool primaryHandled = _dispatchKeyData!(keyData);
+    if (primaryHandled) {
+      event.preventDefault();
+    }
   }
 
   // Parse the HTML event, update states, and dispatch Flutter key data through
@@ -489,27 +511,19 @@ class KeyboardConverter {
   //  * Some key data might be synthesized to update states after the main key
   //    data. They are always scheduled asynchronously with results discarded.
   void handleEvent(FlutterHtmlKeyboardEvent event) {
-    final List<ui.KeyData> result = _convertEvent(event);
-    // Add an empty event for the framework to correctly infer KeyDataTransitMode.
-    if (result.isEmpty) {
-      result.add(const ui.KeyData(
-        type: ui.KeyEventType.down,
-        timeStamp: Duration.zero,
-        logical: 0,
-        physical: 0,
-        character: null,
-        synthesized: false,
-      ));
-    }
-    bool primaryHandled = false;
-    for (final ui.KeyData keyData in result) {
-      // Only count if the primary event is handled.
-      final bool thisHandled = dispatchKeyData(keyData);
-      if (!keyData.synthesized)
-        primaryHandled = thisHandled;
-    }
-    if (primaryHandled) {
-      event.preventDefault();
+    assert(_dispatchKeyData == null);
+    bool sentAnyEvents = false;
+    _dispatchKeyData = (ui.KeyData data) {
+      sentAnyEvents = true;
+      return performDispatchKeyData(data);
+    };
+    try {
+      _handleEvent(event);
+    } finally {
+      if (!sentAnyEvents) {
+        _dispatchKeyData!(_emptyKeyData);
+      }
+      _dispatchKeyData = null;
     }
   }
 }
