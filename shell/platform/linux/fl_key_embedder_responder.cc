@@ -768,7 +768,8 @@ static void fl_key_embedder_responder_handle_event(
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   self->sent_any_events = false;
-  fl_key_embedder_responder_handle_event_impl(responder, event, callback, user_data);
+  fl_key_embedder_responder_handle_event_impl(responder, event, callback,
+                                              user_data);
   if (!self->sent_any_events) {
     fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
   }
