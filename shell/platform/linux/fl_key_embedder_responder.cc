@@ -154,6 +154,10 @@ struct _FlKeyEmbedderResponder {
   // For more information, see #update_caps_lock_state_logic_inferrence.
   StateLogicInferrence caps_lock_state_logic_inferrence;
 
+  // Record if any events has been sent through the engine during a
+  // |fl_key_embedder_responder_handle_event| call.
+  bool sent_any_events;
+
   // A static map from GTK modifier bits to #FlKeyEmbedderCheckedKey to
   // configure the modifier keys that needs to be tracked and kept synchronous
   // on.
@@ -344,6 +348,7 @@ static void synthesize_simple_event(FlKeyEmbedderResponder* self,
   out_event.character = nullptr;
   out_event.synthesized = true;
   if (self->engine != nullptr) {
+    self->sent_any_events = true;
     fl_engine_send_key_event(self->engine, &out_event, nullptr, nullptr);
   }
 }
@@ -358,7 +363,6 @@ typedef struct {
   uint64_t event_logical_key;
   bool is_down;
   double timestamp;
-  bool sent_any_events;
 } SyncStateLoopContext;
 
 }  // namespace
@@ -460,7 +464,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
       synthesize_simple_event(self, kFlutterKeyEventTypeUp,
                               recorded_physical_key, logical_key,
                               context->timestamp);
-      context->sent_any_events = true;
       update_pressing_state(self, recorded_physical_key, 0);
     }
   }
@@ -482,7 +485,6 @@ static void synchronize_pressed_states_loop_body(gpointer key,
     }
     synthesize_simple_event(self, kFlutterKeyEventTypeDown, physical_key,
                             logical_key, context->timestamp);
-    context->sent_any_events = true;
     update_pressing_state(self, physical_key, logical_key);
   }
 }
@@ -670,22 +672,18 @@ static void synchronize_lock_states_loop_body(gpointer key,
     possibly_update_lock_bit(self, logical_key, is_down_event);
     synthesize_simple_event(self, type, physical_key, logical_key,
                             context->timestamp);
-    context->sent_any_events = true;
   }
 }
 
-// Implements fl_key_embedder_responder_handle_event and returns whether
-// any events has been sent.
-static bool fl_key_embedder_responder_handle_event_impl(
+static void fl_key_embedder_responder_handle_event_impl(
     FlKeyResponder* responder,
     FlKeyEvent* event,
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
-  bool sent_any_events = false;
 
-  g_return_val_if_fail(event != nullptr, sent_any_events);
-  g_return_val_if_fail(callback != nullptr, sent_any_events);
+  g_return_if_fail(event != nullptr);
+  g_return_if_fail(callback != nullptr);
 
   const uint64_t physical_key = event_to_physical_key(event);
   const uint64_t logical_key = event_to_logical_key(event);
@@ -698,7 +696,6 @@ static bool fl_key_embedder_responder_handle_event_impl(
   sync_state_context.timestamp = timestamp;
   sync_state_context.is_down = is_down_event;
   sync_state_context.event_logical_key = logical_key;
-  sync_state_context.sent_any_events = false;
 
   // Update lock mode states
   g_hash_table_foreach(self->lock_bit_to_checked_keys,
@@ -708,10 +705,6 @@ static bool fl_key_embedder_responder_handle_event_impl(
   g_hash_table_foreach(self->modifier_bit_to_checked_keys,
                        synchronize_pressed_states_loop_body,
                        &sync_state_context);
-
-  if (sync_state_context.sent_any_events) {
-    sent_any_events = true;
-  }
 
   // Construct the real event
   const uint64_t last_logical_record =
@@ -733,7 +726,7 @@ static bool fl_key_embedder_responder_handle_event_impl(
       // with the same physical key, or the up event was lost during a loss of
       // focus. The down event is ignored.
       callback(true, user_data);
-      return sent_any_events;
+      return;
     } else {
       out_event.type = kFlutterKeyEventTypeDown;
       character_to_free = event_to_character(event);  // Might be null
@@ -745,7 +738,7 @@ static bool fl_key_embedder_responder_handle_event_impl(
       // event due to loss of focus, or multiple keyboards pressed keys with the
       // same physical key. Ignore the up event.
       callback(true, user_data);
-      return sent_any_events;
+      return;
     } else {
       out_event.type = kFlutterKeyEventTypeUp;
     }
@@ -759,13 +752,12 @@ static bool fl_key_embedder_responder_handle_event_impl(
   if (self->engine != nullptr) {
     FlKeyEmbedderUserData* response_data =
         fl_key_embedder_user_data_new(callback, user_data);
+    self->sent_any_events = true;
     fl_engine_send_key_event(self->engine, &out_event, handle_response,
                              response_data);
-    sent_any_events = true;
   } else {
     callback(true, user_data);
   }
-  return sent_any_events;
 }
 
 // Sends a key event to the framework.
@@ -775,9 +767,9 @@ static void fl_key_embedder_responder_handle_event(
     FlKeyResponderAsyncCallback callback,
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
-  bool sent_any_events = fl_key_embedder_responder_handle_event_impl(
-      responder, event, callback, user_data);
-  if (!sent_any_events) {
+  self->sent_any_events = false;
+  fl_key_embedder_responder_handle_event_impl(responder, event, callback, user_data);
+  if (!self->sent_any_events) {
     fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
   }
 }
