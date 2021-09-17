@@ -702,8 +702,7 @@ static bool fl_key_embedder_responder_handle_event_impl(
 
   // Update lock mode states
   g_hash_table_foreach(self->lock_bit_to_checked_keys,
-                       synchronize_lock_states_loop_body,
-                       &sync_state_context);
+                       synchronize_lock_states_loop_body, &sync_state_context);
 
   // Update pressing states
   g_hash_table_foreach(self->modifier_bit_to_checked_keys,
@@ -769,7 +768,6 @@ static bool fl_key_embedder_responder_handle_event_impl(
   return sent_any_events;
 }
 
-
 // Sends a key event to the framework.
 static void fl_key_embedder_responder_handle_event(
     FlKeyResponder* responder,
@@ -778,11 +776,7 @@ static void fl_key_embedder_responder_handle_event(
     gpointer user_data) {
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(responder);
   bool sent_any_events = fl_key_embedder_responder_handle_event_impl(
-    responder,
-    event,
-    callback,
-    user_data
-  );
+      responder, event, callback, user_data);
   if (!sent_any_events) {
     fl_engine_send_key_event(self->engine, &empty_event, nullptr, nullptr);
   }

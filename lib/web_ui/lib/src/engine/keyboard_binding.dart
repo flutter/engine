@@ -211,7 +211,9 @@ class KeyboardConverter {
 
   // The `performDispatchKeyData` wrapped with tracking logic.
   //
-  // It is non-null only during handleEvent.
+  // It is non-null only during `handleEvent`. All events during `handleEvent`
+  // should be dispatched with `_dispatchKeyData`, others with
+  // `performDispatchKeyData`.
   DispatchKeyData? _dispatchKeyData;
 
   bool _disposed = false;
@@ -299,6 +301,8 @@ class KeyboardConverter {
     Future<void>.delayed(duration).then<void>((_) {
       if (!canceled && !_disposed) {
         callback();
+        // This dispatch is performed asynchronously, therefore should not use
+        // `_dispatchKeyData`.
         performDispatchKeyData(getData());
       }
     });
