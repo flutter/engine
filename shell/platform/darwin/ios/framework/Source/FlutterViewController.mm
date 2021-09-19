@@ -42,6 +42,9 @@ NSNotificationName const FlutterViewControllerShowHomeIndicator =
 // Struct holding the mouse state. The engine doesn't keep track of which
 // mouse buttons have been pressed, so it's the embedding's responsibility.
 typedef struct MouseState {
+  // True if at least one mouse event has been received.
+  bool is_valid;
+
   // True if the last event sent to Flutter had at least one mouse button.
   // pressed.
   bool flutter_state_is_down = false;
@@ -252,6 +255,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
+  if (@available(iOS 13.4, *)) {
+    [NSTimer scheduledTimerWithTimeInterval:0.5
+                                    repeats:YES
+                                      block:^(NSTimer* _Nonnull timer) {
+                                        [self handleDetachingMouse];
+                                      }];
+  }
 }
 
 - (FlutterEngine*)engine {
@@ -780,6 +790,31 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }
 }
 
+- (void)handleDetachingMouse API_AVAILABLE(ios(13.4)) {
+  if (!_mouseState.is_valid) {
+    return;
+  }
+  if (_mouseState.flutter_state_is_added &&
+      [UIFocusSystem focusSystemForEnvironment:self.view] == nil) {
+    // There is no focus environment, therefore the mouse is no longer attached
+    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+    flutter::PointerData pointer_data = [self generatePointerDataForMouse];
+    pointer_data.change = flutter::PointerData::Change::kRemove;
+    packet->SetPointerData(0, pointer_data);
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+    _mouseState.flutter_state_is_added = false;
+  } else if (!_mouseState.flutter_state_is_added &&
+             [UIFocusSystem focusSystemForEnvironment:self.view] != nil) {
+    // There is now a focus environment, therefore the mouse should be re-added
+    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+    flutter::PointerData pointer_data = [self generatePointerDataForMouse];
+    pointer_data.change = flutter::PointerData::Change::kAdd;
+    packet->SetPointerData(0, pointer_data);
+    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+    _mouseState.flutter_state_is_added = true;
+  }
+}
+
 - (void)deregisterNotifications {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerWillDealloc
                                                       object:self
@@ -891,30 +926,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   const CGFloat scale = [UIScreen mainScreen].scale;
-
-  bool will_drop_hover = NO;
-
-  if (@available(iOS 13.4, *)) {
-    if (_mouseState.flutter_state_is_added &&
-        [UIFocusSystem focusSystemForEnvironment:self.view] == nil) {
-      // There is no focus environment, the pointer is no longer attached
-      will_drop_hover = YES;
-    }
-  }
-
-  auto packet = std::make_unique<flutter::PointerDataPacket>(will_drop_hover ? touches.count + 1
-                                                                             : touches.count);
+  auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
 
   size_t pointer_index = 0;
-
-  if (@available(iOS 13.4, *)) {
-    if (will_drop_hover) {
-      _mouseState.flutter_state_is_added = false;
-      flutter::PointerData drop_hover_pointer_data = [self generatePointerDataForMouse];
-      drop_hover_pointer_data.change = flutter::PointerData::Change::kRemove;
-      packet->SetPointerData(pointer_index++, drop_hover_pointer_data);
-    }
-  }
 
   for (UITouch* touch in touches) {
     CGPoint windowCoordinates = [touch locationInView:self.view];
@@ -1728,6 +1742,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 
     _mouseState.flutter_state_is_added = true;
+    _mouseState.is_valid = true;
   }
   return nil;
 }
