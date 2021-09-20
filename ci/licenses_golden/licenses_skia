@@ -1,4 +1,4 @@
-Signature: cfda4250e8a0bd4d1d546a130b105989
+Signature: 867c68f7f12f238362f2db12fc898367
 
 UNUSED LICENSES:
 
@@ -2976,6 +2976,8 @@ FILE: ../../../third_party/skia/src/gpu/GrOpsTypes.h
 FILE: ../../../third_party/skia/src/gpu/GrPersistentCacheUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSubRunAllocator.cpp
 FILE: ../../../third_party/skia/src/gpu/GrSubRunAllocator.h
+FILE: ../../../third_party/skia/src/gpu/GrUniformAggregator.cpp
+FILE: ../../../third_party/skia/src/gpu/GrUniformAggregator.h
 FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/GrWritePixelsRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/GrYUVATextureProxies.cpp
