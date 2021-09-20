@@ -1,4 +1,4 @@
-Signature: 815485991942e21f2a016b0a47936fc4
+Signature: 582d9a1fcd8c3996f37e47f4ff2d15f7
 
 UNUSED LICENSES:
 
@@ -254,6 +254,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: abseil-cpp
 LIBRARY: angle
 LIBRARY: boringssl
+LIBRARY: fuchsia-vulkan
 LIBRARY: khronos
 LIBRARY: libwebp
 LIBRARY: vulkan
@@ -1197,6 +1198,31 @@ FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_pem_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_test.json
 FILE: ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.json
+FILE: ../../../third_party/fuchsia-vulkan/cmake/cmake_uninstall.cmake.in
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_icd.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_layer.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_platform.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vk_sdk_platform.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan.hpp
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_android.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_beta.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_core.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_directfb.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_fuchsia.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_ggp.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_ios.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_macos.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_metal.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_screen.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_vi.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_wayland.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_win32.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xcb.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xlib.h
+FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_xlib_xrandr.h
+FILE: ../../../third_party/fuchsia-vulkan/registry/validusage.json
+FILE: ../../../third_party/fuchsia-vulkan/registry/vk.xml
 FILE: ../../../third_party/khronos/GLES2/gl2platform.h
 FILE: ../../../third_party/khronos/GLES3/gl3platform.h
 FILE: ../../../third_party/libwebp/gradlew
