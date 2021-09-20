@@ -1124,6 +1124,15 @@ class LineBuilder {
       }
     }
 
+    // Now let's fixes boxes if they need fixing.
+    //
+    // If we popped a segment of an already created box, we should pop the box
+    // too.
+    if (_currentBoxStart.index > poppedSegment.start.index) {
+      final RangeBox poppedBox = _boxes.removeLast();
+      _currentBoxStartOffset -= poppedBox.width;
+    }
+
     return poppedSegment;
   }
 
