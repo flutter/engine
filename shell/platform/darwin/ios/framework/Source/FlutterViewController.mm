@@ -124,6 +124,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
+  fml::scoped_nsobject<NSTimer> _mousePollTimer API_AVAILABLE(ios(13.4));
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -256,11 +257,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
   [self setupNotificationCenterObservers];
   if (@available(iOS 13.4, *)) {
-    [NSTimer scheduledTimerWithTimeInterval:0.5
-                                    repeats:YES
-                                      block:^(NSTimer* _Nonnull timer) {
-                                        [self handleDetachingMouse];
-                                      }];
+    auto weakSelf = [self getWeakPtr];
+    _mousePollTimer.reset([[NSTimer scheduledTimerWithTimeInterval:0.5
+                                                           repeats:YES
+                                                             block:^(NSTimer* _Nonnull timer) {
+                                                               [weakSelf.get()
+                                                                   handleDetachingMouse];
+                                                             }] retain]);
   }
 }
 
@@ -831,6 +834,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [_displayLink release];
+  if (@available(iOS 13.4, *)) {
+    [_mousePollTimer.get() invalidate];
+  }
   [super dealloc];
 }
 
