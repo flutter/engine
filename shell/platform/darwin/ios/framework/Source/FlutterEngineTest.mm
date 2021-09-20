@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
@@ -28,6 +29,21 @@ FLUTTER_ASSERT_ARC
   id project = OCMClassMock([FlutterDartProject class]);
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
   XCTAssertNotNil(engine);
+}
+
+- (void)testInfoPlist {
+  NSBundle* flutterBundle = [NSBundle bundleForClass:[FlutterEngine class]];
+  XCTAssertEqualObjects(flutterBundle.bundleIdentifier, @"io.flutter.flutter");
+  NSDictionary<NSString*, id>* infoDictionary = flutterBundle.infoDictionary;
+  XCTAssertEqualObjects(infoDictionary[@"MinimumOSVersion"], @"9.0");
+
+  // SHA length is 40.
+  XCTAssertEqual(((NSString*)infoDictionary[@"FlutterEngine"]).length, 40);
+
+  // {clang_version} placeholder is 15 characters. The clang string version
+  // is longer than that, so check if the placeholder has been replaced, without
+  // actually checking a literal string, which could be different on various machines.
+  XCTAssertTrue(((NSString*)infoDictionary[@"ClangVersion"]).length > 15);
 }
 
 - (void)testDeallocated {
