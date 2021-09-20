@@ -73,6 +73,7 @@ void fixturesAreFunctionalMain() {
 
 void sayHiFromFixturesAreFunctionalMain() native 'SayHiFromFixturesAreFunctionalMain';
 
+@pragma('vm:entry-point')
 void notifyNative() native 'NotifyNative';
 
 @pragma('vm:entry-point')
