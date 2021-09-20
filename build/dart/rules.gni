@@ -47,13 +47,11 @@ template("flutter_snapshot") {
     depfile = "$kernel_output.d"
     abs_depfile = rebase_path(depfile)
     rebased_output = rebase_path(kernel_output, root_build_dir)
-    vm_args = [
-      "--depfile=$abs_depfile",
-      "--depfile_output_filename=$rebased_output",
-      "--disable-dart-dev",
-    ]
+    vm_args = [ "--disable-dart-dev" ]
 
     args = [
+      "--depfile=$abs_depfile",
+      "--depfile_output_filename=$rebased_output",
       "--packages=" + rebase_path(package_config),
       "--target=flutter",
       "--sdk-root=" + flutter_patched_sdk,
