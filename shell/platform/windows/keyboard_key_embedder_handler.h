@@ -33,9 +33,10 @@ std::string ConvertChar32ToUtf8(char32_t ch);
 class KeyboardKeyEmbedderHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
-  using SendEventHandler = std::function<void(const FlutterKeyEvent& /* event */,
-                                       FlutterKeyEventCallback /* callback */,
-                                       void* /* user_data */)>;
+  using SendEventHandler =
+      std::function<void(const FlutterKeyEvent& /* event */,
+                         FlutterKeyEventCallback /* callback */,
+                         void* /* user_data */)>;
   using GetKeyStateHandler = std::function<SHORT(int /* nVirtKey */)>;
 
   // Build a KeyboardKeyEmbedderHandler.
@@ -111,9 +112,11 @@ class KeyboardKeyEmbedderHandler
   // if their pressing states have been desynchronized.
   void SynchronizeCritialPressedStates();
 
-  // Wraps perform_send_event_ with state tracking. Use this instead of |perform_send_event_|
-  // to send events to the framework.
-  void SendEvent(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* user_data);
+  // Wraps perform_send_event_ with state tracking. Use this instead of
+  // |perform_send_event_| to send events to the framework.
+  void SendEvent(const FlutterKeyEvent& event,
+                 FlutterKeyEventCallback callback,
+                 void* user_data);
 
   std::function<void(const FlutterKeyEvent&, FlutterKeyEventCallback, void*)>
       perform_send_event_;

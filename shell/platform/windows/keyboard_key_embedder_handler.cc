@@ -72,7 +72,9 @@ std::string ConvertChar32ToUtf8(char32_t ch) {
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
     SendEventHandler send_event,
     GetKeyStateHandler get_key_state)
-    : perform_send_event_(send_event), get_key_state_(get_key_state), response_id_(1) {
+    : perform_send_event_(send_event),
+      get_key_state_(get_key_state),
+      response_id_(1) {
   InitCriticalKeys();
 }
 
@@ -277,7 +279,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   auto pending_ptr = std::make_unique<PendingResponse>(std::move(pending));
   pending_responses_[response_id] = std::move(pending_ptr);
   SendEvent(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
-             reinterpret_cast<void*>(pending_responses_[response_id].get()));
+            reinterpret_cast<void*>(pending_responses_[response_id].get()));
 }
 
 void KeyboardKeyEmbedderHandler::KeyboardHook(
@@ -289,7 +291,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     bool was_down,
     std::function<void(bool)> callback) {
   sent_any_events = false;
-  KeyboardHookImpl(key, scancode, action, character, extended, was_down, std::move(callback));
+  KeyboardHookImpl(key, scancode, action, character, extended, was_down,
+                   std::move(callback));
   if (!sent_any_events) {
     FlutterKeyEvent empty_event{
         .struct_size = sizeof(FlutterKeyEvent),
@@ -346,17 +349,17 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
         if (pressingRecords_.find(key_info.physical_key) !=
             pressingRecords_.end()) {
           SendEvent(SynthesizeSimpleEvent(
-                         kFlutterKeyEventTypeUp, key_info.physical_key,
-                         key_info.logical_key, empty_character),
-                     nullptr, nullptr);
+                        kFlutterKeyEventTypeUp, key_info.physical_key,
+                        key_info.logical_key, empty_character),
+                    nullptr, nullptr);
         } else {
           // This key will always be pressed in the following synthesized event.
           pressingRecords_[key_info.physical_key] = key_info.logical_key;
         }
         SendEvent(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
-                                         key_info.physical_key,
-                                         key_info.logical_key, empty_character),
-                   nullptr, nullptr);
+                                        key_info.physical_key,
+                                        key_info.logical_key, empty_character),
+                  nullptr, nullptr);
       }
       key_info.toggled_on = should_toggled;
     }
@@ -477,7 +480,9 @@ FlutterKeyEvent KeyboardKeyEmbedderHandler::SynthesizeSimpleEvent(
   };
 }
 
-void KeyboardKeyEmbedderHandler::SendEvent(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* user_data) {
+void KeyboardKeyEmbedderHandler::SendEvent(const FlutterKeyEvent& event,
+                                           FlutterKeyEventCallback callback,
+                                           void* user_data) {
   sent_any_events = true;
   perform_send_event_(event, callback, user_data);
 }
