@@ -7,6 +7,7 @@
 #include <windows.h>
 
 #ifdef WINUWP
+#include "third_party/cppwinrt/generated/winrt/Windows.System.h"
 #include "third_party/cppwinrt/generated/winrt/Windows.UI.Core.h"
 #endif
 
