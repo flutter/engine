@@ -17,6 +17,11 @@ class SurfaceFactory {
   static SurfaceFactory get instance =>
       _instance ??= SurfaceFactory(HtmlViewEmbedder.maximumSurfaces);
 
+  /// Returns the raw (potentially uninitialized) value of the singleton.
+  ///
+  /// Useful in tests for checking the lifecycle of this class.
+  static SurfaceFactory? get debugUninitializedInstance => _instance;
+
   static SurfaceFactory? _instance;
 
   SurfaceFactory(this.maximumSurfaces)
