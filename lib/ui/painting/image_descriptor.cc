@@ -18,18 +18,18 @@ namespace flutter {
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageDescriptor);
 
 #define FOR_EACH_BINDING(V)            \
-  V(ImageDescriptor, initRaw)          \
-  V(ImageDescriptor, instantiateCodec) \
-  V(ImageDescriptor, width)            \
-  V(ImageDescriptor, height)           \
-  V(ImageDescriptor, bytesPerPixel)    \
-  V(ImageDescriptor, dispose)
+  V(ImageDescriptor, InitRaw)          \
+  V(ImageDescriptor, InstantiateCodec) \
+  V(ImageDescriptor, Width)            \
+  V(ImageDescriptor, Height)           \
+  V(ImageDescriptor, BytesPerPixel)    \
+  V(ImageDescriptor, Dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
 void ImageDescriptor::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register(
-      {{"ImageDescriptor_initEncoded", ImageDescriptor::initEncoded, 3, true},
+      {{"ImageDescriptor_initEncoded", ImageDescriptor::InitEncoded, 3, true},
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
@@ -53,7 +53,7 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
       image_info_(CreateImageInfo()),
       row_bytes_(std::nullopt) {}
 
-void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
+void ImageDescriptor::InitEncoded(Dart_NativeArguments args) {
   Dart_Handle callback_handle = Dart_GetNativeArgument(args, 2);
   if (!Dart_IsClosure(callback_handle)) {
     Dart_SetReturnValue(args, tonic::ToDart("Callback must be a function"));
@@ -84,7 +84,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
   }
 
   auto generator =
-      registry->CreateCompatibleGenerator(immutable_buffer->data());
+      registry->CreateCompatibleGenerator(immutable_buffer->GetData());
 
   if (!generator) {
     // No compatible image decoder was found.
@@ -93,7 +93,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
   }
 
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
-      immutable_buffer->data(), std::move(generator));
+      immutable_buffer->GetData(), std::move(generator));
 
   FML_DCHECK(descriptor);
 
@@ -101,7 +101,7 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }
 
-void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
+void ImageDescriptor::InitRaw(Dart_Handle descriptor_handle,
                               fml::RefPtr<ImmutableBuffer> data,
                               int width,
                               int height,
@@ -120,12 +120,12 @@ void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
   auto image_info =
       SkImageInfo::Make(width, height, color_type, kPremul_SkAlphaType);
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
-      data->data(), std::move(image_info),
+      data->GetData(), std::move(image_info),
       row_bytes == -1 ? std::nullopt : std::optional<size_t>(row_bytes));
   descriptor->AssociateWithDartWrapper(descriptor_handle);
 }
 
-void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
+void ImageDescriptor::InstantiateCodec(Dart_Handle codec_handle,
                                        int target_width,
                                        int target_height) {
   fml::RefPtr<Codec> ui_codec;
@@ -139,11 +139,11 @@ void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
   ui_codec->AssociateWithDartWrapper(codec_handle);
 }
 
-sk_sp<SkImage> ImageDescriptor::image() const {
+sk_sp<SkImage> ImageDescriptor::GetImage() const {
   return generator_->GetImage();
 }
 
-bool ImageDescriptor::get_pixels(const SkPixmap& pixmap) const {
+bool ImageDescriptor::GetPixels(const SkPixmap& pixmap) const {
   FML_DCHECK(generator_);
   return generator_->GetPixels(pixmap.info(), pixmap.writable_addr(),
                                pixmap.rowBytes());

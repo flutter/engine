@@ -25,14 +25,14 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
   static SkSamplingOptions SamplingFromIndex(int filterQualityIndex);
   static SkFilterMode FilterModeFromIndex(int index);
 
-  void initImage(CanvasImage* image);
-  void initPicture(Picture*);
-  void initBlur(double sigma_x, double sigma_y, SkTileMode tile_mode);
-  void initMatrix(const tonic::Float64List& matrix4, int filter_quality_index);
-  void initColorFilter(ColorFilter* colorFilter);
-  void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
+  void InitImage(CanvasImage* image);
+  void InitPicture(Picture*);
+  void InitBlur(double sigma_x, double sigma_y, SkTileMode tile_mode);
+  void InitMatrix(const tonic::Float64List& matrix4, int filter_quality_index);
+  void InitColorFilter(ColorFilter* colorFilter);
+  void InitComposeFilter(ImageFilter* outer, ImageFilter* inner);
 
-  const sk_sp<SkImageFilter>& filter() const { return filter_; }
+  const sk_sp<SkImageFilter>& GetFilter() const { return filter_; }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 

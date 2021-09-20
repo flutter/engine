@@ -37,7 +37,7 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   ///
   /// The second indexed argument is expected to be a void callback to signal
   /// when the copy has completed.
-  static void init(Dart_NativeArguments args);
+  static void Init(Dart_NativeArguments args);
 
   /// The length of the data in bytes.
   size_t length() const {
@@ -46,14 +46,14 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   }
 
   /// Callers should not modify the returned data. This is not exposed to Dart.
-  sk_sp<SkData> data() const { return data_; }
+  sk_sp<SkData> GetData() const { return data_; }
 
   /// Clears the Dart native fields and removes the reference to the underlying
   /// byte buffer.
   ///
   /// The byte buffer will continue to live if other objects hold a reference to
   /// it.
-  void dispose() {
+  void Dispose() {
     data_.reset();
     ClearDartWrapper();
   }

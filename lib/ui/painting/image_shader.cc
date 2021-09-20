@@ -45,7 +45,7 @@ void ImageShader::initWithImage(CanvasImage* image,
         ToDart("ImageShader constructor called with non-genuine Image."));
     return;
   }
-  sk_image_ = UIDartState::CreateGPUObject(image->image());
+  sk_image_ = UIDartState::CreateGPUObject(image->GetImage());
   tmx_ = tmx;
   tmy_ = tmy;
   local_matrix_ = ToSkMatrix(matrix4);

@@ -328,7 +328,7 @@ void Canvas::drawImage(const CanvasImage* image,
     return;
   }
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  canvas_->drawImage(image->image(), x, y, sampling, paint.paint());
+  canvas_->drawImage(image->GetImage(), x, y, sampling, paint.paint());
 }
 
 void Canvas::drawImageRect(const CanvasImage* image,
@@ -354,7 +354,7 @@ void Canvas::drawImageRect(const CanvasImage* image,
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  canvas_->drawImageRect(image->image(), src, dst, sampling, paint.paint(),
+  canvas_->drawImageRect(image->GetImage(), src, dst, sampling, paint.paint(),
                          SkCanvas::kFast_SrcRectConstraint);
 }
 
@@ -392,9 +392,9 @@ void Canvas::drawImageNine(const CanvasImage* image,
     // simpler DrawImageNineOp record directly.
     display_list_recorder_->RecordPaintAttributes(
         paint.paint(), DisplayListCanvasRecorder::DrawType::kImageOpType);
-    builder()->drawImageNine(image->image(), icenter, dst, filter);
+    builder()->drawImageNine(image->GetImage(), icenter, dst, filter);
   } else {
-    canvas_->drawImageNine(image->image().get(), icenter, dst, filter,
+    canvas_->drawImageNine(image->GetImage().get(), icenter, dst, filter,
                            paint.paint());
   }
 }
@@ -472,7 +472,7 @@ void Canvas::drawAtlas(const Paint& paint,
     return;
   }
 
-  sk_sp<SkImage> skImage = atlas->image();
+  sk_sp<SkImage> skImage = atlas->GetImage();
 
   static_assert(sizeof(SkRSXform) == sizeof(float) * 4,
                 "SkRSXform doesn't use floats.");

@@ -137,7 +137,7 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
           .WillOnce([](const MockSyncSwitch::Handlers& handlers) {
             handlers.true_handler();
           });
-      ConvertToRasterUsingResourceContext(canvas_image->image(),
+      ConvertToRasterUsingResourceContext(canvas_image->GetImage(),
                                           io_manager->GetResourceContext(),
                                           is_gpu_disabled_sync_switch);
       latch.Signal();

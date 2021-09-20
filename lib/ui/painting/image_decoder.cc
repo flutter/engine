@@ -81,8 +81,9 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
-  auto image = SkImage::MakeRasterData(
-      descriptor->image_info(), descriptor->data(), descriptor->row_bytes());
+  auto image =
+      SkImage::MakeRasterData(descriptor->GetImageInfo(), descriptor->GetData(),
+                              descriptor->RowBytes());
 
   if (!image) {
     FML_LOG(ERROR) << "Could not create image from decompressed bytes.";
@@ -105,17 +106,17 @@ sk_sp<SkImage> ImageFromCompressedData(ImageDescriptor* descriptor,
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
 
-  if (!descriptor->should_resize(target_width, target_height)) {
+  if (!descriptor->ShouldResize(target_width, target_height)) {
     // No resizing requested. Just decode & rasterize the image.
-    sk_sp<SkImage> image = descriptor->image();
+    sk_sp<SkImage> image = descriptor->GetImage();
     return image ? image->makeRasterImage() : nullptr;
   }
 
-  const SkISize source_dimensions = descriptor->image_info().dimensions();
+  const SkISize source_dimensions = descriptor->GetImageInfo().dimensions();
   const SkISize resized_dimensions = {static_cast<int32_t>(target_width),
                                       static_cast<int32_t>(target_height)};
 
-  auto decode_dimensions = descriptor->get_scaled_dimensions(
+  auto decode_dimensions = descriptor->GetScaledDimensions(
       std::max(static_cast<double>(resized_dimensions.width()) /
                    source_dimensions.width(),
                static_cast<double>(resized_dimensions.height()) /
@@ -125,7 +126,7 @@ sk_sp<SkImage> ImageFromCompressedData(ImageDescriptor* descriptor,
   // close to the target resolution before resizing.
   if (decode_dimensions != source_dimensions) {
     auto scaled_image_info =
-        descriptor->image_info().makeDimensions(decode_dimensions);
+        descriptor->GetImageInfo().makeDimensions(decode_dimensions);
 
     SkBitmap scaled_bitmap;
     if (!scaled_bitmap.tryAllocPixels(scaled_image_info)) {
@@ -135,7 +136,7 @@ sk_sp<SkImage> ImageFromCompressedData(ImageDescriptor* descriptor,
     }
 
     const auto& pixmap = scaled_bitmap.pixmap();
-    if (descriptor->get_pixels(pixmap)) {
+    if (descriptor->GetPixels(pixmap)) {
       // Marking this as immutable makes the MakeFromBitmap call share
       // the pixels instead of copying.
       scaled_bitmap.setImmutable();
@@ -152,7 +153,7 @@ sk_sp<SkImage> ImageFromCompressedData(ImageDescriptor* descriptor,
     }
   }
 
-  auto image = descriptor->image();
+  auto image = descriptor->GetImage();
   if (!image) {
     return nullptr;
   }
@@ -258,7 +259,7 @@ void ImageDecoder::Decode(fml::RefPtr<ImageDescriptor> descriptor_ref_ptr,
             }));
       };
 
-  if (!raw_descriptor->data() || raw_descriptor->data()->size() == 0) {
+  if (!raw_descriptor->GetData() || raw_descriptor->GetData()->size() == 0) {
     result({}, std::move(flow));
     return;
   }
@@ -275,7 +276,7 @@ void ImageDecoder::Decode(fml::RefPtr<ImageDescriptor> descriptor_ref_ptr,
         // Step 1: Decompress the image.
         // On Worker.
 
-        auto decompressed = raw_descriptor->is_compressed()
+        auto decompressed = raw_descriptor->IsCompressed()
                                 ? ImageFromCompressedData(raw_descriptor,  //
                                                           target_width,    //
                                                           target_height,   //

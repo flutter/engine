@@ -26,7 +26,7 @@ namespace flutter {
 ///         This class will hold a reference on the underlying image data, and
 ///         in the case of compressed data, an `ImageGenerator` for the data.
 ///         The Codec initialization actually happens in initEncoded, making
-///         `initstantiateCodec` a lightweight operation.
+///         `InitstantiateCodec` a lightweight operation.
 /// @see    `ImageGenerator`
 class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
  public:
@@ -44,11 +44,11 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   ///         an `ImageGenerator` and read EXIF corrected dimensions from the
   ///         image data.
   /// @see    `ImageGeneratorRegistry`
-  static void initEncoded(Dart_NativeArguments args);
+  static void InitEncoded(Dart_NativeArguments args);
 
   /// @brief  Synchronously initializes an `ImageDescriptor` for decompressed
   ///         image data as specified by the `PixelFormat`.
-  static void initRaw(Dart_Handle descriptor_handle,
+  static void InitRaw(Dart_Handle descriptor_handle,
                       fml::RefPtr<ImmutableBuffer> data,
                       int width,
                       int height,
@@ -56,46 +56,46 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
                       PixelFormat pixel_format);
 
   /// @brief  Associates a flutter::Codec object with the dart.ui Codec handle.
-  void instantiateCodec(Dart_Handle codec, int target_width, int target_height);
+  void InstantiateCodec(Dart_Handle codec, int target_width, int target_height);
 
   /// @brief  The width of this image, EXIF oriented if applicable.
-  int width() const { return image_info_.width(); }
+  int Width() const { return image_info_.width(); }
 
   /// @brief  The height of this image. EXIF oriented if applicable.
-  int height() const { return image_info_.height(); }
+  int Height() const { return image_info_.height(); }
 
   /// @brief  The bytes per pixel of the image.
-  int bytesPerPixel() const { return image_info_.bytesPerPixel(); }
+  int BytesPerPixel() const { return image_info_.bytesPerPixel(); }
 
   /// @brief  The byte length of the first row of the image.
-  ///         Defaults to width() * 4.
-  int row_bytes() const {
+  ///         Defaults to Width() * 4.
+  int RowBytes() const {
     return row_bytes_.value_or(
         static_cast<size_t>(image_info_.width() * image_info_.bytesPerPixel()));
   }
 
   /// @brief  Whether the given `target_width` or `target_height` differ from
-  ///         `width()` and `height()` respectively.
-  bool should_resize(int target_width, int target_height) const {
-    return target_width != width() || target_height != height();
+  ///         `Width()` and `Height()` respectively.
+  bool ShouldResize(int target_width, int target_height) const {
+    return target_width != Width() || target_height != Height();
   }
 
   /// @brief  The underlying buffer for this image.
-  sk_sp<SkData> data() const { return buffer_; }
+  sk_sp<SkData> GetData() const { return buffer_; }
 
-  sk_sp<SkImage> image() const;
+  sk_sp<SkImage> GetImage() const;
 
   /// @brief  Whether this descriptor represents compressed (encoded) data or
   ///         not.
-  bool is_compressed() const { return !!generator_; }
+  bool IsCompressed() const { return !!generator_; }
 
   /// @brief  The orientation corrected image info for this image.
-  const SkImageInfo& image_info() const { return image_info_; }
+  const SkImageInfo& GetImageInfo() const { return image_info_; }
 
   /// @brief  Gets the scaled dimensions of this image, if backed by an
   ///         `ImageGenerator` that can perform efficient subpixel scaling.
   /// @see    `ImageGenerator::GetScaledDimensions`
-  SkISize get_scaled_dimensions(float scale) {
+  SkISize GetScaledDimensions(float scale) {
     if (generator_) {
       return generator_->GetScaledDimensions(scale);
     }
@@ -104,9 +104,9 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
 
   /// @brief  Gets pixels for this image transformed based on the EXIF
   ///         orientation tag, if applicable.
-  bool get_pixels(const SkPixmap& pixmap) const;
+  bool GetPixels(const SkPixmap& pixmap) const;
 
-  void dispose() {
+  void Dispose() {
     buffer_.reset();
     generator_.reset();
     ClearDartWrapper();

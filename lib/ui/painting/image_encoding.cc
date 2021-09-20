@@ -244,7 +244,7 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
   const auto& task_runners = UIDartState::Current()->GetTaskRunners();
 
   task_runners.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
-      [callback = std::move(callback), image = canvas_image->image(),
+      [callback = std::move(callback), image = canvas_image->GetImage(),
        image_format, ui_task_runner = task_runners.GetUITaskRunner(),
        raster_task_runner = task_runners.GetRasterTaskRunner(),
        io_task_runner = task_runners.GetIOTaskRunner(),

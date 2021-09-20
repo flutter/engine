@@ -21,12 +21,12 @@ static void ImageFilter_constructor(Dart_NativeArguments args) {
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
 
 #define FOR_EACH_BINDING(V)       \
-  V(ImageFilter, initImage)       \
-  V(ImageFilter, initPicture)     \
-  V(ImageFilter, initBlur)        \
-  V(ImageFilter, initMatrix)      \
-  V(ImageFilter, initColorFilter) \
-  V(ImageFilter, initComposeFilter)
+  V(ImageFilter, InitImage)       \
+  V(ImageFilter, InitPicture)     \
+  V(ImageFilter, InitBlur)        \
+  V(ImageFilter, InitMatrix)      \
+  V(ImageFilter, InitColorFilter) \
+  V(ImageFilter, InitComposeFilter)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -68,35 +68,35 @@ ImageFilter::ImageFilter() {}
 
 ImageFilter::~ImageFilter() {}
 
-void ImageFilter::initImage(CanvasImage* image) {
-  filter_ = SkImageFilters::Image(image->image());
+void ImageFilter::InitImage(CanvasImage* image) {
+  filter_ = SkImageFilters::Image(image->GetImage());
 }
 
-void ImageFilter::initPicture(Picture* picture) {
+void ImageFilter::InitPicture(Picture* picture) {
   filter_ = SkImageFilters::Picture(picture->picture());
 }
 
-void ImageFilter::initBlur(double sigma_x,
+void ImageFilter::InitBlur(double sigma_x,
                            double sigma_y,
                            SkTileMode tile_mode) {
   filter_ = SkImageFilters::Blur(sigma_x, sigma_y, tile_mode, nullptr, nullptr);
 }
 
-void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
+void ImageFilter::InitMatrix(const tonic::Float64List& matrix4,
                              int filterQualityIndex) {
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
   filter_ =
       SkImageFilters::MatrixTransform(ToSkMatrix(matrix4), sampling, nullptr);
 }
 
-void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
+void ImageFilter::InitColorFilter(ColorFilter* colorFilter) {
   filter_ = SkImageFilters::ColorFilter(
       colorFilter ? colorFilter->filter() : nullptr, nullptr);
 }
 
-void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
-  filter_ = SkImageFilters::Compose(outer ? outer->filter() : nullptr,
-                                    inner ? inner->filter() : nullptr);
+void ImageFilter::InitComposeFilter(ImageFilter* outer, ImageFilter* inner) {
+  filter_ = SkImageFilters::Compose(outer ? outer->GetFilter() : nullptr,
+                                    inner ? inner->GetFilter() : nullptr);
 }
 
 }  // namespace flutter

@@ -47,7 +47,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
     ASSERT_FALSE(Dart_IsNull(native_image_handle));
     CanvasImage* image = GetNativePeer<CanvasImage>(native_image_handle);
     Picture* picture = GetNativePeer<Picture>(Dart_GetNativeArgument(args, 1));
-    ASSERT_FALSE(image->image()->unique());
+    ASSERT_FALSE(image->GetImage()->unique());
     if (picture->display_list()) {
       ASSERT_FALSE(picture->display_list()->unique());
       current_display_list_ = picture->display_list();
@@ -55,7 +55,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
       ASSERT_FALSE(picture->picture()->unique());
       current_picture_ = picture->picture();
     }
-    current_image_ = image->image();
+    current_image_ = image->GetImage();
   };
 
   auto native_finish = [&](Dart_NativeArguments args) {
