@@ -233,7 +233,7 @@ Future<void> testMain() async {
     ]);
   });
 
-  test('does not take prohibited line breaks', () {
+  test('does not make prohibited line breaks', () {
     final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('AAA B');

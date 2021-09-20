@@ -178,6 +178,9 @@ class TextLayoutService {
             currentLine.revertToLastBreakOpportunity();
             // If a revert had occurred in the line, we need to revert the span
             // index accordingly.
+            //
+            // If no revert occurred, then `revertedToSpan` will be equal to
+            // `span` and the following while loop won't do anything.
             final ParagraphSpan revertedToSpan = currentLine.lastSegment.span;
             while (span != revertedToSpan) {
               span = paragraph.spans[--spanIndex];
@@ -1214,6 +1217,10 @@ class LineBuilder {
     while (isEndProhibited) {
       _popSegment();
     }
+    // Make sure the line is not empty and still breakable after popping a few
+    // segments.
+    assert(isNotEmpty);
+    assert(isBreakable);
   }
 
   LineBreakResult get _currentBoxStart {
@@ -1400,8 +1407,8 @@ class LineBuilder {
   DirectionalPosition findNextBreak() {
     LineBreakResult? nextBreak = _cachedNextBreak;
     final String text = paragraph.toPlainText();
-    // Don't recompute the `nextBreak` again until the line has reached the
-    // previously computed `nextBreak`.
+    // Don't recompute the `nextBreak` until the line has reached the previously
+    // computed `nextBreak`.
     if (nextBreak == null || end.index >= nextBreak.index) {
       final int maxEnd = spanometer.currentSpan.end;
       nextBreak = nextLineBreak(text, end.index, maxEnd: maxEnd);

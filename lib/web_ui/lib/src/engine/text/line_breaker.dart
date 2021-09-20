@@ -155,7 +155,7 @@ bool _hasEastAsianWidthFWH(int charCode) {
 
 /// Finds the next line break in the given [text] starting from [index].
 ///
-/// Wethink about indices as pointing between characters, and they go all the
+/// We think about indices as pointing between characters, and they go all the
 /// way from 0 to the string length. For example, here are the indices for the
 /// string "foo bar":
 ///
@@ -405,8 +405,9 @@ LineBreakResult _unsafeNextLineBreak(String text, int index, {int? maxEnd}) {
     //       × IS
     //       × SY
     //
-    // Modification: when these characters are preceded by a space, they
-    // shouldn't prevent a line break.
+    // The above is a quote from unicode.org. In our implementation, we did the
+    // following modification: When there are spaces present, we consider it a
+    // line break opportunity.
     if (prev1 != LineCharProperty.SP &&
         (curr == LineCharProperty.CL ||
             curr == LineCharProperty.CP ||
@@ -419,7 +420,8 @@ LineBreakResult _unsafeNextLineBreak(String text, int index, {int? maxEnd}) {
     // Do not break after ‘[’, even after spaces.
     // LB14: OP SP* ×
     //
-    // Modification: allow breaks when there are spaces.
+    // The above is a quote from unicode.org. In our implementation, we did the
+    // following modification: Allow breaks when there are spaces.
     if (prev1 == LineCharProperty.OP) {
       continue;
     }
@@ -427,7 +429,8 @@ LineBreakResult _unsafeNextLineBreak(String text, int index, {int? maxEnd}) {
     // Do not break within ‘”[’, even with intervening spaces.
     // LB15: QU SP* × OP
     //
-    // Modification: allow breaks when there are spaces.
+    // The above is a quote from unicode.org. In our implementation, we did the
+    // following modification: Allow breaks when there are spaces.
     if (prev1 == LineCharProperty.QU && curr == LineCharProperty.OP) {
       continue;
     }
