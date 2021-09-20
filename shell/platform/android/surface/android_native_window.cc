@@ -6,7 +6,11 @@
 
 namespace flutter {
 
-AndroidNativeWindow::AndroidNativeWindow(Handle window) : window_(window) {}
+AndroidNativeWindow::AndroidNativeWindow(Handle window, bool is_offscreen)
+    : window_(window), is_offscreen_(is_offscreen) {}
+
+AndroidNativeWindow::AndroidNativeWindow(Handle window)
+    : AndroidNativeWindow(window, /*is_offscreen=*/false) {}
 
 AndroidNativeWindow::~AndroidNativeWindow() {
   if (window_ != nullptr) {
