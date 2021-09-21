@@ -9,10 +9,12 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.hardware.display.DisplayManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.Display;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -158,8 +160,20 @@ public class FlutterLoader {
 
     initStartTimestampMillis = SystemClock.uptimeMillis();
     flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
-    VsyncWaiter.getInstance((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
-        .init();
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      final DisplayManager dm = appContext.getSystemService(DisplayManager.class);
+      final Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+      final Context windowContext =
+          appContext.createWindowContext(
+              primaryDisplay, WindowManager.LayoutParams.TYPE_APPLICATION, null);
+      VsyncWaiter.getInstance(
+              (WindowManager) windowContext.getSystemService(Context.WINDOW_SERVICE))
+          .init();
+    } else {
+      VsyncWaiter.getInstance((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
+          .init();
+    }
 
     // Use a background thread for initialization tasks that require disk access.
     Callable<InitResult> initTask =
