@@ -10,13 +10,11 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.hardware.display.DisplayManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.Display;
-import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.BuildConfig;
@@ -109,7 +107,6 @@ public class FlutterLoader {
   private FlutterApplicationInfo flutterApplicationInfo;
   private FlutterJNI flutterJNI;
   private ExecutorService executorService;
-  private WindowManager windowManager;
 
   private static class InitResult {
     final String appStoragePath;
@@ -162,19 +159,9 @@ public class FlutterLoader {
     initStartTimestampMillis = SystemClock.uptimeMillis();
     flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      final DisplayManager dm = appContext.getSystemService(DisplayManager.class);
-      final Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-      final Context windowContext =
-          appContext.createWindowContext(
-              primaryDisplay, WindowManager.LayoutParams.TYPE_APPLICATION, null);
-      VsyncWaiter.getInstance(
-              (WindowManager) windowContext.getSystemService(Context.WINDOW_SERVICE))
-          .init();
-    } else {
-      VsyncWaiter.getInstance((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
-          .init();
-    }
+    final DisplayManager dm = appContext.getSystemService(DisplayManager.class);
+    final Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
+    VsyncWaiter.getInstance(primaryDisplay).init();
 
     // Use a background thread for initialization tasks that require disk access.
     Callable<InitResult> initTask =

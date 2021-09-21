@@ -5,7 +5,7 @@
 package io.flutter.view;
 
 import android.view.Choreographer;
-import android.view.WindowManager;
+import android.view.Display;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 
@@ -14,14 +14,14 @@ public class VsyncWaiter {
   private static VsyncWaiter instance;
 
   @NonNull
-  public static VsyncWaiter getInstance(@NonNull WindowManager windowManager) {
+  public static VsyncWaiter getInstance(@NonNull Display display) {
     if (instance == null) {
-      instance = new VsyncWaiter(windowManager);
+      instance = new VsyncWaiter(display);
     }
     return instance;
   }
 
-  @NonNull private final WindowManager windowManager;
+  @NonNull private final Display display;
 
   private final FlutterJNI.AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate =
       new FlutterJNI.AsyncWaitForVsyncDelegate() {
@@ -32,7 +32,7 @@ public class VsyncWaiter {
                   new Choreographer.FrameCallback() {
                     @Override
                     public void doFrame(long frameTimeNanos) {
-                      float fps = windowManager.getDefaultDisplay().getRefreshRate();
+                      float fps = display.getRefreshRate();
                       long refreshPeriodNanos = (long) (1000000000.0 / fps);
                       FlutterJNI.nativeOnVsync(
                           frameTimeNanos, frameTimeNanos + refreshPeriodNanos, cookie);
@@ -41,15 +41,15 @@ public class VsyncWaiter {
         }
       };
 
-  private VsyncWaiter(@NonNull WindowManager windowManager) {
-    this.windowManager = windowManager;
+  private VsyncWaiter(@NonNull Display display) {
+    this.display = display;
   }
 
   public void init() {
     FlutterJNI.setAsyncWaitForVsyncDelegate(asyncWaitForVsyncDelegate);
 
     // TODO(mattcarroll): look into moving FPS reporting to a plugin
-    float fps = windowManager.getDefaultDisplay().getRefreshRate();
+    float fps = display.getRefreshRate();
     FlutterJNI.setRefreshRateFPS(fps);
   }
 }
