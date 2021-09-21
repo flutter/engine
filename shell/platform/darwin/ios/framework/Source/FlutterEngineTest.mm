@@ -38,12 +38,12 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqualObjects(infoDictionary[@"MinimumOSVersion"], @"9.0");
 
   // SHA length is 40.
-  XCTAssertEqual(((NSString*)infoDictionary[@"FlutterEngine"]).length, 40);
+  XCTAssertEqual(((NSString*)infoDictionary[@"FlutterEngine"]).length, 40UL);
 
   // {clang_version} placeholder is 15 characters. The clang string version
   // is longer than that, so check if the placeholder has been replaced, without
   // actually checking a literal string, which could be different on various machines.
-  XCTAssertTrue(((NSString*)infoDictionary[@"ClangVersion"]).length > 15);
+  XCTAssertTrue(((NSString*)infoDictionary[@"ClangVersion"]).length > 15UL);
 }
 
 - (void)testDeallocated {
