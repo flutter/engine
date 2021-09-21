@@ -45,8 +45,6 @@ class Engine final {
     virtual void OnEngineTerminate(const Engine* holder) = 0;
   };
 
-  static flutter::ThreadHost CreateThreadHost(const std::string& name_prefix);
-
   Engine(Delegate& delegate,
          std::string thread_label,
          std::shared_ptr<sys::ServiceDirectory> svc,
