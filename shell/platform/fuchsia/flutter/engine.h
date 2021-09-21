@@ -21,7 +21,6 @@
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/shell.h"
-#include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h"
 
 #include "flutter_runner_product_configuration.h"
@@ -69,7 +68,7 @@ class Engine final {
   Delegate& delegate_;
 
   const std::string thread_label_;
-  flutter::ThreadHost thread_host_;
+  std::array<fml::Thread, 3> threads_;
 
   std::shared_ptr<GfxSessionConnection> session_connection_;
   std::optional<VulkanSurfaceProducer> surface_producer_;
