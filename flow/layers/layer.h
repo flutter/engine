@@ -157,26 +157,35 @@ class Layer {
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
+    // Indicates which canvas the layer should be saved on.
+    enum SaveMode {
+      // The layer is saved on the internal_nodes_canvas.
+      ON_INTERNAL_NODES_CANVAS,
+      // The layer is saved on the leaf_nodes_canvas.
+      ON_LEAF_NODES_CANVAS
+    };
+
     // Create a layer and save it on the canvas. The layer is restored from the
     // canvas in destructor.
     //
     // By default, the layer is saved on and restored from
-    // `internal_nodes_canvas`. If save_on_leaf_canvas is `true`, the layer is
-    // only saved on and restored from `leaf_nodes_canvas`.
-    [[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
-                                              const SkRect& bounds,
-                                              const SkPaint* paint,
-                                              bool save_on_leaf_canvas = false);
+    // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
+    // save the layer on other canvases.
+    [[nodiscard]] static AutoSaveLayer Create(
+        const PaintContext& paint_context,
+        const SkRect& bounds,
+        const SkPaint* paint,
+        SaveMode save_mode = SaveMode::ON_INTERNAL_NODES_CANVAS);
     // Create a layer and save it on the canvas. The layer is restored from the
     // canvas in destructor.
     //
     // By default, the layer is saved on and restored from
-    // `internal_nodes_canvas`. If save_on_leaf_canvas is `true`, the layer is
-    // only saved on and restored from `leaf_nodes_canvas`.
+    // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
+    // save the layer on other canvases.
     [[nodiscard]] static AutoSaveLayer Create(
         const PaintContext& paint_context,
         const SkCanvas::SaveLayerRec& layer_rec,
-        bool save_on_leaf_canvas = false);
+        SaveMode save_mode = SaveMode::ON_INTERNAL_NODES_CANVAS);
 
     ~AutoSaveLayer();
 
@@ -184,11 +193,11 @@ class Layer {
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkRect& bounds,
                   const SkPaint* paint,
-                  bool save_on_leaf_canvas);
+                  SaveMode save_mode = SaveMode::ON_INTERNAL_NODES_CANVAS);
 
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkCanvas::SaveLayerRec& layer_rec,
-                  bool save_on_leaf_canvas);
+                  SaveMode save_mode = SaveMode::ON_INTERNAL_NODES_CANVAS);
 
     const PaintContext& paint_context_;
     const SkRect bounds_;

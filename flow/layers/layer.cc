@@ -59,21 +59,23 @@ Layer::AutoPrerollSaveLayerState::~AutoPrerollSaveLayerState() {
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     const SkRect& bounds,
                                     const SkPaint* paint,
-                                    bool save_on_leaf_canvas)
+                                    SaveMode save_mode)
     : paint_context_(paint_context),
       bounds_(bounds),
-      canvas_(save_on_leaf_canvas ? *(paint_context.leaf_nodes_canvas)
-                                  : *(paint_context.internal_nodes_canvas)) {
+      canvas_(save_mode == SaveMode::ON_INTERNAL_NODES_CANVAS
+                  ? *(paint_context.internal_nodes_canvas)
+                  : *(paint_context.leaf_nodes_canvas)) {
   canvas_.saveLayer(bounds_, paint);
 }
 
 Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     const SkCanvas::SaveLayerRec& layer_rec,
-                                    bool save_on_leaf_canvas)
+                                    SaveMode save_mode)
     : paint_context_(paint_context),
       bounds_(*layer_rec.fBounds),
-      canvas_(save_on_leaf_canvas ? *(paint_context.leaf_nodes_canvas)
-                                  : *(paint_context.internal_nodes_canvas)) {
+      canvas_(save_mode == SaveMode::ON_INTERNAL_NODES_CANVAS
+                  ? *(paint_context.internal_nodes_canvas)
+                  : *(paint_context.leaf_nodes_canvas)) {
   canvas_.saveLayer(layer_rec);
 }
 
@@ -81,16 +83,15 @@ Layer::AutoSaveLayer Layer::AutoSaveLayer::Create(
     const PaintContext& paint_context,
     const SkRect& bounds,
     const SkPaint* paint,
-    bool save_on_leaf_canvas) {
-  return Layer::AutoSaveLayer(paint_context, bounds, paint,
-                              save_on_leaf_canvas);
+    SaveMode save_mode) {
+  return Layer::AutoSaveLayer(paint_context, bounds, paint, save_mode);
 }
 
 Layer::AutoSaveLayer Layer::AutoSaveLayer::Create(
     const PaintContext& paint_context,
     const SkCanvas::SaveLayerRec& layer_rec,
-    bool save_on_leaf_canvas) {
-  return Layer::AutoSaveLayer(paint_context, layer_rec, save_on_leaf_canvas);
+    SaveMode save_mode) {
+  return Layer::AutoSaveLayer(paint_context, layer_rec, save_mode);
 }
 
 Layer::AutoSaveLayer::~AutoSaveLayer() {

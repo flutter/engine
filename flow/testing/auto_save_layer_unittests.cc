@@ -13,10 +13,10 @@ using AutoSaveLayerTests = LayerTest;
 
 TEST_F(AutoSaveLayerTests, SaveLayerOnInternalNodesCanvasByDefault) {
   // For:
-  //[[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
-  //                                          const SkRect& bounds,
-  //                                          const SkPaint* paint,
-  //                                          bool save_on_leaf_canvas = false);
+  // static AutoSaveLayer Create(const PaintContext& paint_context,
+  //                             const SkRect& bounds,
+  //                             const SkPaint* paint,
+  //                             SaveMode save_mode);
   {
     int saved_count_before =
         paint_context().internal_nodes_canvas->getSaveCount();
@@ -36,11 +36,9 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnInternalNodesCanvasByDefault) {
               saved_count_before);
   }
   // For:
-  // [[nodiscard]] static AutoSaveLayer Create(const PaintContext&
-  // paint_context,
-  //                                          const SkCanvas::SaveLayerRec&
-  //                                          layer_rec, bool
-  //                                          save_on_leaf_canvas = false);
+  // static AutoSaveLayer Create(const PaintContext& paint_context,
+  //                             const SkCanvas::SaveLayerRec& layer_rec,
+  //                             SaveMode save_mode);
   {
     int saved_count_before =
         paint_context().internal_nodes_canvas->getSaveCount();
@@ -65,18 +63,19 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnInternalNodesCanvasByDefault) {
 
 TEST_F(AutoSaveLayerTests, SaveLayerOnlyOnLeafNodesCanvas) {
   // For:
-  //[[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
-  //                                          const SkRect& bounds,
-  //                                          const SkPaint* paint,
-  //                                          bool save_on_leaf_canvas = false);
+  // static AutoSaveLayer Create(const PaintContext& paint_context,
+  //                             const SkRect& bounds,
+  //                             const SkPaint* paint,
+  //                             SaveMode save_mode);
   {
     int saved_count_before =
         paint_context().internal_nodes_canvas->getSaveCount();
     {
       const SkPaint paint;
       const SkRect rect = SkRect::MakeEmpty();
-      Layer::AutoSaveLayer save =
-          Layer::AutoSaveLayer::Create(paint_context(), rect, &paint, true);
+      Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+          paint_context(), rect, &paint,
+          Layer::AutoSaveLayer::SaveMode::ON_LEAF_NODES_CANVAS);
       EXPECT_EQ(paint_context().internal_nodes_canvas->getSaveCount(),
                 saved_count_before);
       EXPECT_EQ(paint_context().leaf_nodes_canvas->getSaveCount(),
@@ -88,11 +87,9 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnlyOnLeafNodesCanvas) {
               saved_count_before);
   }
   // For:
-  // [[nodiscard]] static AutoSaveLayer Create(const PaintContext&
-  // paint_context,
-  //                                          const SkCanvas::SaveLayerRec&
-  //                                          layer_rec, bool
-  //                                          save_on_leaf_canvas = false);
+  // static AutoSaveLayer Create(const PaintContext& paint_context,
+  //                             const SkCanvas::SaveLayerRec& layer_rec,
+  //                             SaveMode save_mode);
   {
     int saved_count_before =
         paint_context().internal_nodes_canvas->getSaveCount();
@@ -101,8 +98,9 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnlyOnLeafNodesCanvas) {
       const SkRect rect = SkRect::MakeEmpty();
       const SkCanvas::SaveLayerRec save_layer_rect =
           SkCanvas::SaveLayerRec{&rect, &paint, nullptr, 0};
-      Layer::AutoSaveLayer save =
-          Layer::AutoSaveLayer::Create(paint_context(), save_layer_rect, true);
+      Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+          paint_context(), save_layer_rect,
+          Layer::AutoSaveLayer::SaveMode::ON_LEAF_NODES_CANVAS);
       EXPECT_EQ(paint_context().internal_nodes_canvas->getSaveCount(),
                 saved_count_before);
       EXPECT_EQ(paint_context().leaf_nodes_canvas->getSaveCount(),
