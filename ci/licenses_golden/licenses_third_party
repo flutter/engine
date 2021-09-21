@@ -1,4 +1,4 @@
-Signature: 582d9a1fcd8c3996f37e47f4ff2d15f7
+Signature: f04c2b841baf13c1677bf60d52a7b085
 
 UNUSED LICENSES:
 
@@ -1214,7 +1214,6 @@ FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_ggp.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_ios.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_macos.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_metal.h
-FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_screen.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_vi.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_wayland.h
 FILE: ../../../third_party/fuchsia-vulkan/include/vulkan/vulkan_win32.h
