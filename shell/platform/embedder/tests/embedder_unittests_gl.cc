@@ -3437,12 +3437,12 @@ TEST_F(EmbedderTest, SnapshotRenderTargetScalesDownToDriverMax) {
         };
 
         CanvasImage* big_image = get_arg(0);
-        ASSERT_EQ(big_image->width(), max_size);
-        ASSERT_EQ(big_image->height(), max_size / 2);
+        ASSERT_EQ(big_image->Width(), max_size);
+        ASSERT_EQ(big_image->Height(), max_size / 2);
 
         CanvasImage* small_image = get_arg(1);
         ASSERT_TRUE(ImageMatchesFixture("snapshot_large_scene.png",
-                                        small_image->image()));
+                                        small_image->GetImage()));
 
         latch.Signal();
       })));
