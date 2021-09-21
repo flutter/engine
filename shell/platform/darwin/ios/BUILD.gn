@@ -259,7 +259,6 @@ shared_library("ios_test_flutter") {
     ":flutter_framework_source",
     ":ios_gpu_configuration",
     ":ios_test_flutter_mrc",
-    ":universal_flutter_framework",
     "//flutter/common:common",
     "//flutter/lib/ui:ui",
     "//flutter/shell/platform/darwin/common:framework_shared",

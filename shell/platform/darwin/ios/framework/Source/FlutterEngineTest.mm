@@ -32,8 +32,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testInfoPlist {
-  NSBundle* flutterBundle = [NSBundle bundleForClass:[FlutterEngine class]];
-  XCTAssertEqualObjects(flutterBundle.bundleIdentifier, @"io.flutter.flutter");
+  // Check the embedded Flutter.framework Info.plist, not the linked dylib.
+  NSURL* flutterFrameworkURL =
+      [NSBundle.mainBundle.privateFrameworksURL URLByAppendingPathComponent:@"Flutter.framework"];
+  NSBundle* flutterBundle = [NSBundle bundleWithURL:flutterFrameworkURL];
+
   NSDictionary<NSString*, id>* infoDictionary = flutterBundle.infoDictionary;
   XCTAssertEqualObjects(infoDictionary[@"MinimumOSVersion"], @"9.0");
 
