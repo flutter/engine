@@ -539,7 +539,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     compositor_context_->raster_cache().PrepareNewFrame();
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
-    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
+    RasterStatus raster_status =
+        compositor_frame->Raster(layer_tree, false, nullptr);
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
@@ -585,7 +586,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false, true, nullptr);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
   SkSerialProcs procs = {0};
@@ -653,7 +654,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
                                                root_surface_transformation,
                                                false, true, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, nullptr);
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.
