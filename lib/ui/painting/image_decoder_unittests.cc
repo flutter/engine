@@ -248,7 +248,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
     EXPECT_FALSE(io_manager->did_access_is_gpu_disabled_sync_switch_);
-    image_decoder->Decode(descriptor, descriptor->Width(), descriptor->Height(),
+    image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
                           callback);
   };
 
@@ -304,7 +304,7 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
       decoded_size = image.skia_object()->dimensions();
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
-    image_decoder->Decode(descriptor, descriptor->Width(), descriptor->Height(),
+    image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
                           callback);
   };
 
@@ -362,7 +362,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
       ASSERT_TRUE(image.skia_object());
       runners.GetIOTaskRunner()->PostTask(release_io_manager);
     };
-    image_decoder->Decode(descriptor, descriptor->Width(), descriptor->Height(),
+    image_decoder->Decode(descriptor, descriptor->width(), descriptor->height(),
                           callback);
   };
 

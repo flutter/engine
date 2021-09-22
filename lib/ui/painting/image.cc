@@ -24,10 +24,10 @@ const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
     kDartWrapperInfo_ui_Image;
 
 #define FOR_EACH_BINDING(V) \
-  V(Image, Width)           \
-  V(Image, Height)          \
-  V(Image, ToByteData)      \
-  V(Image, Dispose)
+  V(Image, width)           \
+  V(Image, height)          \
+  V(Image, toByteData)      \
+  V(Image, dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -39,11 +39,11 @@ CanvasImage::CanvasImage() = default;
 
 CanvasImage::~CanvasImage() = default;
 
-Dart_Handle CanvasImage::ToByteData(int format, Dart_Handle callback) {
+Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
   return EncodeImage(this, format, callback);
 }
 
-void CanvasImage::Dispose() {
+void CanvasImage::dispose() {
   image_.reset();
   ClearDartWrapper();
 }

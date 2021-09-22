@@ -18,12 +18,12 @@ namespace flutter {
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageDescriptor);
 
 #define FOR_EACH_BINDING(V)            \
-  V(ImageDescriptor, InitRaw)          \
-  V(ImageDescriptor, InstantiateCodec) \
-  V(ImageDescriptor, Width)            \
-  V(ImageDescriptor, Height)           \
-  V(ImageDescriptor, BytesPerPixel)    \
-  V(ImageDescriptor, Dispose)
+  V(ImageDescriptor, initRaw)          \
+  V(ImageDescriptor, instantiateCodec) \
+  V(ImageDescriptor, width)            \
+  V(ImageDescriptor, height)           \
+  V(ImageDescriptor, bytesPerPixel)    \
+  V(ImageDescriptor, dispose)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
@@ -101,7 +101,7 @@ void ImageDescriptor::InitEncoded(Dart_NativeArguments args) {
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }
 
-void ImageDescriptor::InitRaw(Dart_Handle descriptor_handle,
+void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
                               fml::RefPtr<ImmutableBuffer> data,
                               int width,
                               int height,
@@ -125,7 +125,7 @@ void ImageDescriptor::InitRaw(Dart_Handle descriptor_handle,
   descriptor->AssociateWithDartWrapper(descriptor_handle);
 }
 
-void ImageDescriptor::InstantiateCodec(Dart_Handle codec_handle,
+void ImageDescriptor::instantiateCodec(Dart_Handle codec_handle,
                                        int target_width,
                                        int target_height) {
   fml::RefPtr<Codec> ui_codec;

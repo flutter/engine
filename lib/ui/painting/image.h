@@ -26,13 +26,13 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
     return fml::MakeRefCounted<CanvasImage>();
   }
 
-  int Width() { return image_.skia_object()->width(); }
+  int width() { return image_.skia_object()->width(); }
 
-  int Height() { return image_.skia_object()->height(); }
+  int height() { return image_.skia_object()->height(); }
 
-  Dart_Handle ToByteData(int format, Dart_Handle callback);
+  Dart_Handle toByteData(int format, Dart_Handle callback);
 
-  void Dispose();
+  void dispose();
 
   sk_sp<SkImage> GetImage() const { return image_.skia_object(); }
   void set_image(flutter::SkiaGPUObject<SkImage> image) {

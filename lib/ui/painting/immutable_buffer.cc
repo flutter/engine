@@ -20,7 +20,7 @@ namespace flutter {
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImmutableBuffer);
 
 #define FOR_EACH_BINDING(V)   \
-  V(ImmutableBuffer, Dispose) \
+  V(ImmutableBuffer, dispose) \
   V(ImmutableBuffer, length)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)

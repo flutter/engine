@@ -48,7 +48,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
 
   /// @brief  Synchronously initializes an `ImageDescriptor` for decompressed
   ///         image data as specified by the `PixelFormat`.
-  static void InitRaw(Dart_Handle descriptor_handle,
+  static void initRaw(Dart_Handle descriptor_handle,
                       fml::RefPtr<ImmutableBuffer> data,
                       int width,
                       int height,
@@ -56,16 +56,16 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
                       PixelFormat pixel_format);
 
   /// @brief  Associates a flutter::Codec object with the dart.ui Codec handle.
-  void InstantiateCodec(Dart_Handle codec, int target_width, int target_height);
+  void instantiateCodec(Dart_Handle codec, int target_width, int target_height);
 
   /// @brief  The width of this image, EXIF oriented if applicable.
-  int Width() const { return image_info_.width(); }
+  int width() const { return image_info_.width(); }
 
   /// @brief  The height of this image. EXIF oriented if applicable.
-  int Height() const { return image_info_.height(); }
+  int height() const { return image_info_.height(); }
 
   /// @brief  The bytes per pixel of the image.
-  int BytesPerPixel() const { return image_info_.bytesPerPixel(); }
+  int bytesPerPixel() const { return image_info_.bytesPerPixel(); }
 
   /// @brief  The byte length of the first row of the image.
   ///         Defaults to Width() * 4.
@@ -77,7 +77,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   /// @brief  Whether the given `target_width` or `target_height` differ from
   ///         `Width()` and `Height()` respectively.
   bool ShouldResize(int target_width, int target_height) const {
-    return target_width != Width() || target_height != Height();
+    return target_width != width() || target_height != height();
   }
 
   /// @brief  The underlying buffer for this image.
@@ -106,7 +106,7 @@ class ImageDescriptor : public RefCountedDartWrappable<ImageDescriptor> {
   ///         orientation tag, if applicable.
   bool GetPixels(const SkPixmap& pixmap) const;
 
-  void Dispose() {
+  void dispose() {
     buffer_.reset();
     generator_.reset();
     ClearDartWrapper();
