@@ -540,8 +540,17 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     compositor_context_->raster_cache().PrepareNewFrame();
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
+    // Disable partial repaint if external_view_embedder_ SubmitFrame is
+    // involved - ExternalViewEmbedder unconditionally clears the entire
+    // surface and also partial repaint with platform view present is something
+    // that still need to be figured out.
+    bool disable_partial_repaint =
+        external_view_embedder_ &&
+        (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+
     FrameDamage damage;
-    if (!frame->framebuffer_info().existing_damage.empty()) {
+    if (!disable_partial_repaint &&
+        !frame->framebuffer_info().existing_damage.empty()) {
       damage.prev_layer_tree = last_layer_tree_.get();
       for (const auto& r : frame->framebuffer_info().existing_damage) {
         damage.additional_damage.join(r);
