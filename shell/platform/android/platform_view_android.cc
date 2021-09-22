@@ -61,11 +61,11 @@ PlatformViewAndroid::PlatformViewAndroid(
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering)
-    : PlatformViewAndroid(delegate,
-                          std::move(task_runners),
-                          std::move(jni_facade),
-                          CreateAndroidContext(use_software_rendering,
-                                               task_runners)) {}
+    : PlatformViewAndroid(
+          delegate,
+          std::move(task_runners),
+          std::move(jni_facade),
+          CreateAndroidContext(use_software_rendering, task_runners)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,

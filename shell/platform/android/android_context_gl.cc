@@ -194,7 +194,7 @@ AndroidContextGL::~AndroidContextGL() {
   sk_sp<GrDirectContext> main_context = GetMainSkiaContext();
   SetMainSkiaContext(nullptr);
   fml::AutoResetWaitableEvent latch;
-  task_runners_.GetRasterTaskRunner()->PostTask([&] {
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(), [&] {
     if (main_context) {
       std::unique_ptr<AndroidEGLSurface> pbuffer_surface =
           CreateOffscreenSurface();
@@ -208,6 +208,7 @@ AndroidContextGL::~AndroidContextGL() {
     latch.Signal();
   });
   latch.Wait();
+
   if (!TeardownContext(environment_->Display(), context_)) {
     FML_LOG(ERROR)
         << "Could not tear down the EGL context. Possible resource leak.";
