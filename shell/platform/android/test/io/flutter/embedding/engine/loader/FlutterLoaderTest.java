@@ -8,11 +8,11 @@ import static android.os.Looper.getMainLooper;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyFloat;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -107,8 +107,7 @@ public class FlutterLoaderTest {
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(appContextSpy);
-    verify(mockFlutterJNI, times(1)).setRefreshRateFPS(anyFloat());
-    verify(appContextSpy, times(0)).getSystemService(anyString());
+    verify(appContextSpy, never()).getSystemService(anyString());
   }
 
   @Test
@@ -120,6 +119,6 @@ public class FlutterLoaderTest {
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(RuntimeEnvironment.application);
-    verify(mockFlutterJNI, times(1)).setRefreshRateFPS(anyFloat());
+    vverify(appContextSpy, times(1)).getSystemService(anyString());
   }
 }
