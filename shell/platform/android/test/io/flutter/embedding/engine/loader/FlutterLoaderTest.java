@@ -92,4 +92,14 @@ public class FlutterLoaderTest {
     flutterLoader.startInitialization(RuntimeEnvironment.application);
     verify(mockExecutorService, times(1)).submit(any(Callable.class));
   }
+
+  @Test
+  public void itReportsFpsToVsyncWaiter() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    verify(mockFlutterJNI, times(1)).setRefreshRateFPS(anyFloat());
+  }
 }
