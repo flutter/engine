@@ -102,9 +102,12 @@ public class FlutterLoaderTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
+    Context appContextSpy = Mockito.spy(RuntimeEnvironment.application);
+
     assertFalse(flutterLoader.initialized());
-    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    flutterLoader.startInitialization(appContextSpy);
     verify(mockFlutterJNI, times(1)).setRefreshRateFPS(anyFloat());
+    verify(appContextSpy, times(0)).getSystemService(anyString());
   }
 
   @Test
