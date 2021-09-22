@@ -36,9 +36,47 @@ FLUTTER_ASSERT_ARC
   NSURL* flutterFrameworkURL =
       [NSBundle.mainBundle.privateFrameworksURL URLByAppendingPathComponent:@"Flutter.framework"];
   NSBundle* flutterBundle = [NSBundle bundleWithURL:flutterFrameworkURL];
+  XCTAssertEqualObjects(flutterBundle.bundleIdentifier, @"io.flutter.flutter");
 
   NSDictionary<NSString*, id>* infoDictionary = flutterBundle.infoDictionary;
-  XCTAssertEqualObjects(infoDictionary[@"MinimumOSVersion"], @"9.0");
+
+  // OS version can have one, two, or three digits: "8", "8.0", "8.0.0"
+  NSError* regexError = NULL;
+  NSRegularExpression* osVersionRegex =
+      [NSRegularExpression regularExpressionWithPattern:@"((0|[1-9]\\d*)\\.)*(0|[1-9]\\d*)"
+                                                options:NSRegularExpressionCaseInsensitive
+                                                  error:&regexError];
+  XCTAssertNil(regexError);
+
+  // Smoke test the test regex.
+  NSString* testString = @"9";
+  NSUInteger versionMatches =
+      [osVersionRegex numberOfMatchesInString:testString
+                                      options:NSMatchingAnchored
+                                        range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+  testString = @"9.1";
+  versionMatches = [osVersionRegex numberOfMatchesInString:testString
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+  testString = @"9.0.1";
+  versionMatches = [osVersionRegex numberOfMatchesInString:testString
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 1UL);
+  testString = @".0.1";
+  versionMatches = [osVersionRegex numberOfMatchesInString:testString
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, testString.length)];
+  XCTAssertEqual(versionMatches, 0UL);
+
+  // Test Info.plist values.
+  NSString* minimumOSVersion = infoDictionary[@"MinimumOSVersion"];
+  versionMatches = [osVersionRegex numberOfMatchesInString:minimumOSVersion
+                                                   options:NSMatchingAnchored
+                                                     range:NSMakeRange(0, minimumOSVersion.length)];
+  XCTAssertEqual(versionMatches, 1UL);
 
   // SHA length is 40.
   XCTAssertEqual(((NSString*)infoDictionary[@"FlutterEngine"]).length, 40UL);
