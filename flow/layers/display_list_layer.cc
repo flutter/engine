@@ -17,8 +17,6 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
   // Only return true for identical display lists; This way
@@ -80,8 +78,6 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
   }
   return res;
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {

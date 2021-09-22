@@ -11,8 +11,6 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
       transformed_filter_(nullptr),
       render_count_(1) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const ImageFilterLayer*>(old_layer);
@@ -39,8 +37,6 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {

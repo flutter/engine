@@ -15,8 +15,6 @@
 
 namespace flutter {
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 class Layer;
 
 // Represents area that needs to be updated in front buffer (frame_damage) and
@@ -204,8 +202,6 @@ class DiffContext {
   std::vector<Readback> readbacks_;
   Statistics statistics_;
 };
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace flutter
 

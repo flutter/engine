@@ -18,8 +18,6 @@ PictureLayer::PictureLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 bool PictureLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Only return true for identical pictures; This way
   // ContainerLayer::DiffChildren can detect when a picture layer got inserted
@@ -103,8 +101,6 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
   }
   return cached_serialized_picture_;
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");

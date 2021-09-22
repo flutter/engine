@@ -7,8 +7,6 @@
 
 namespace flutter {
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 DiffContext::DiffContext(SkISize frame_size,
                          double frame_device_pixel_ratio,
                          PaintRegionMap& this_frame_paint_region_map,
@@ -159,7 +157,5 @@ void DiffContext::Statistics::LogStatistics() {
                     different_instance_but_equal_pictures_);
 #endif  // !FLUTTER_RELEASE
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace flutter

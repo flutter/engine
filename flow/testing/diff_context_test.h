@@ -12,8 +12,6 @@
 namespace flutter {
 namespace testing {
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 class MockLayerTree {
  public:
   explicit MockLayerTree(SkISize size = SkISize::Make(1000, 1000))
@@ -70,8 +68,6 @@ class DiffContextTest : public ThreadTest {
  private:
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
 };
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace testing
 }  // namespace flutter
