@@ -16,6 +16,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -94,6 +95,20 @@ public class FlutterLoaderTest {
   }
 
   @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void itReportsFpsToVsyncWaiter() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    verify(mockFlutterJNI, times(1)).setRefreshRateFPS(anyFloat());
+  }
+
+  @Test
+  @TargetApi(18)
+  @Config(sdk = 18)
   public void itReportsFpsToVsyncWaiter() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
