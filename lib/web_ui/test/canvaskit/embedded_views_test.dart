@@ -578,6 +578,30 @@ void testMain() {
               .querySelectorAll('flt-platform-view-slot'),
           isEmpty);
     });
+
+    test('does not crash when overlays are disabled', () async {
+      HtmlViewEmbedder.debugDisableOverlays = true;
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (int viewId) => html.DivElement()..id = 'view-0',
+      );
+      await _createPlatformView(0, 'test-platform-view');
+
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
+
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(0, width: 10, height: 10);
+      sb.pop();
+      // The below line should not throw an error.
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+          domRenderer.glassPaneElement!
+              .querySelectorAll('flt-platform-view-slot'),
+          isEmpty);
+      HtmlViewEmbedder.debugDisableOverlays = false;
+    });
     // TODO(dit): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
