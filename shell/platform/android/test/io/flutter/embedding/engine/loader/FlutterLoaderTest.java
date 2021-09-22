@@ -95,9 +95,9 @@ public class FlutterLoaderTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
-  public void itReportsFpsToVsyncWaiter() {
+  @TargetApi(23)
+  @Config(sdk = 23)
+  public void itReportsFpsToVsyncWaiterAndroidM() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
@@ -107,9 +107,9 @@ public class FlutterLoaderTest {
   }
 
   @Test
-  @TargetApi(18)
-  @Config(sdk = 18)
-  public void itReportsFpsToVsyncWaiter() {
+  @TargetApi(22)
+  @Config(sdk = 22)
+  public void itReportsFpsToVsyncWaiterLegacy() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
