@@ -5,7 +5,6 @@
 package io.flutter.view;
 
 import android.view.Choreographer;
-import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.FlutterJNI;
 
 // TODO(mattcarroll): add javadoc.
@@ -13,14 +12,14 @@ public class VsyncWaiter {
   private static VsyncWaiter instance;
 
   @NonNull
-  public static VsyncWaiter getInstance(@NonNull float fps) {
+  public static VsyncWaiter getInstance(float fps) {
     if (instance == null) {
       instance = new VsyncWaiter(fps);
     }
     return instance;
   }
 
-  @NonNull private final float fps;
+  private final float fps;
 
   private final FlutterJNI.AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate =
       new FlutterJNI.AsyncWaitForVsyncDelegate() {
@@ -39,7 +38,7 @@ public class VsyncWaiter {
         }
       };
 
-  private VsyncWaiter(@NonNull float fps) {
+  private VsyncWaiter(float fps) {
     this.fps = fps;
   }
 
