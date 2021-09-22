@@ -574,7 +574,7 @@ void testMain() {
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
       expect(
-          domRenderer.glassPaneElement!
+          domRenderer.glassPaneShadow!
               .querySelectorAll('flt-platform-view-slot'),
           isEmpty);
     });
@@ -597,9 +597,9 @@ void testMain() {
       // The below line should not throw an error.
       dispatcher.rasterizer!.draw(sb.build().layerTree);
       expect(
-          domRenderer.glassPaneElement!
+          domRenderer.glassPaneShadow!
               .querySelectorAll('flt-platform-view-slot'),
-          isEmpty);
+          hasLength(1));
       HtmlViewEmbedder.debugDisableOverlays = false;
     });
     // TODO(dit): https://github.com/flutter/flutter/issues/60040
