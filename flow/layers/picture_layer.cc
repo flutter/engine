@@ -112,13 +112,19 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 
   SkPicture* sk_picture = picture();
 
+  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
-                   offset_);
+    if (context->cull_rect.intersects(bounds)) {
+      cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
+                     offset_);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(sk_picture, matrix);
+    }
   }
 
-  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 }
 

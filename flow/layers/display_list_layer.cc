@@ -89,13 +89,18 @@ void DisplayListLayer::Preroll(PrerollContext* context,
 
   DisplayList* disp_list = display_list();
 
+  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
-                   offset_);
+    if (context->cull_rect.intersects(bounds)) {
+      cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
+                     offset_);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(disp_list, matrix);
+    }
   }
-
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 }
 
