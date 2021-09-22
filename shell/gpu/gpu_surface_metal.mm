@@ -60,7 +60,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
 
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
-        nullptr, true, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
+        nullptr, SurfaceFrame::FramebufferInfo(),
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
   }
 
   PrecompileKnownSkSLsIfNecessary();
@@ -120,7 +121,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
     return delegate_->PresentDrawable(drawable);
   };
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
@@ -159,7 +162,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
     return delegate->PresentTexture(texture);
   };
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), true, submit_callback);
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
+  return std::make_unique<SurfaceFrame>(std::move(surface), std::move(framebuffer_info),
+                                        submit_callback);
 }
 
 // |Surface|
