@@ -13,6 +13,7 @@ import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
@@ -102,7 +103,7 @@ public class FlutterLoaderTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
-    Context appContextSpy = Mockito.spy(RuntimeEnvironment.application);
+    Context appContextSpy = spy(RuntimeEnvironment.application);
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(appContextSpy);
