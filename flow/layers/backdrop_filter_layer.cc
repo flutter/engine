@@ -10,8 +10,6 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter,
                                          SkBlendMode blend_mode)
     : filter_(std::move(filter)), blend_mode_(blend_mode) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const BackdropFilterLayer*>(old_layer);
@@ -41,8 +39,6 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
