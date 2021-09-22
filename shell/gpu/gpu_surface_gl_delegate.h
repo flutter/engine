@@ -31,9 +31,17 @@ class GPUSurfaceGLDelegate {
   // either the GPU or IO threads.
   virtual bool GLContextClearCurrent() = 0;
 
+  // Inform the GL Context that there's going to be no writing beyond
+  // the specified region
+  virtual void GLContextSetDamageRegion(std::vector<SkIRect> region) {}
+
   // Called to present the main GL surface. This is only called for the main GL
   // context and not any of the contexts dedicated for IO.
-  virtual bool GLContextPresent(uint32_t fbo_id) = 0;
+  //
+  // Damage is a hint to compositor telling it which parts of front buffer
+  // need to be updated
+  virtual bool GLContextPresent(uint32_t fbo_id,
+                                std::vector<SkIRect> damage) = 0;
 
   // The ID of the main window bound framebuffer. Typically FBO0.
   virtual intptr_t GLContextFBO(GLFrameInfo frame_info) const = 0;
