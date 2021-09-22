@@ -48,6 +48,7 @@ abstract class BrowserHistory {
   /// The strategy to interact with html browser history.
   UrlStrategy? get urlStrategy;
 
+  bool _isTornDown = false;
   bool _isDisposed = false;
 
   void _setupStrategy(UrlStrategy strategy) {
@@ -211,10 +212,12 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   @override
   Future<void> tearDown() async {
-    if (_isDisposed || urlStrategy == null) {
+    dispose();
+
+    if (_isTornDown || urlStrategy == null) {
       return;
     }
-    dispose();
+    _isTornDown = true;
 
     // Restores the html browser history.
     assert(_hasSerialCount(currentState));
@@ -381,10 +384,12 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   @override
   Future<void> tearDown() async {
-    if (_isDisposed || urlStrategy == null) {
+    dispose();
+
+    if (_isTornDown || urlStrategy == null) {
       return;
     }
-    dispose();
+    _isTornDown = true;
 
     // We need to remove the flutter entry that we pushed in setup.
     await urlStrategy!.go(-1);

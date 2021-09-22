@@ -123,14 +123,16 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('disposes of its listener without touching history', () async {
+      const String unwrappedOriginState = 'initial state';
+      final Map<String, dynamic> wrappedOriginState = _wrapOriginState(unwrappedOriginState);
+
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        const TestHistoryEntry('initial state', null, '/initial'),
+        const TestHistoryEntry(unwrappedOriginState, null, '/initial'),
       );
       expect(strategy.listeners, isEmpty);
 
       await window.debugInitializeHistory(strategy, useSingle: true);
 
-      final Map<String, dynamic> wrappedOriginState = _wrapOriginState('initial state');
 
       // There should be one `popstate` listener and two history entries.
       expect(strategy.listeners, hasLength(1));
@@ -169,6 +171,12 @@ void testMain() {
       expect(strategy.history[0].url, '/initial');
       expect(strategy.history[1].state, flutterState);
       expect(strategy.history[1].url, '/initial');
+
+      // Can still teardown after being disposed.
+      await window.browserHistory.tearDown();
+      expect(strategy.history, hasLength(2));
+      expect(strategy.currentEntry.state, unwrappedOriginState);
+      expect(strategy.currentEntry.url, '/initial');
     });
 
     test('disposes gracefully when url strategy is null', () async {
@@ -382,14 +390,16 @@ void testMain() {
         skip: browserEngine == BrowserEngine.edge);
 
     test('disposes of its listener without touching history', () async {
+      const String untaggedState = 'initial state';
+      final Map<String, dynamic> taggedState = _tagStateWithSerialCount(untaggedState, 0);
+
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        const TestHistoryEntry('initial state', null, '/initial'),
+        const TestHistoryEntry(untaggedState, null, '/initial'),
       );
       expect(strategy.listeners, isEmpty);
 
       await window.debugInitializeHistory(strategy, useSingle: false);
 
-      final Map<String, dynamic> taggedState = _tagStateWithSerialCount('initial state', 0);
 
       // There should be one `popstate` listener and one history entry.
       expect(strategy.listeners, hasLength(1));
@@ -421,6 +431,12 @@ void testMain() {
       expect(strategy.listeners, isEmpty);
       expect(strategy.history, hasLength(1));
       expect(strategy.history.single.state, taggedState);
+      expect(strategy.history.single.url, '/initial');
+
+      // Can still teardown after being disposed.
+      await window.browserHistory.tearDown();
+      expect(strategy.history, hasLength(1));
+      expect(strategy.history.single.state, untaggedState);
       expect(strategy.history.single.url, '/initial');
     });
 
