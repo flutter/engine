@@ -62,7 +62,7 @@ Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     SaveMode save_mode)
     : paint_context_(paint_context),
       bounds_(bounds),
-      canvas_(save_mode == SaveMode::ON_INTERNAL_NODES_CANVAS
+      canvas_(save_mode == SaveMode::kInternalNodesCanvas
                   ? *(paint_context.internal_nodes_canvas)
                   : *(paint_context.leaf_nodes_canvas)) {
   canvas_.saveLayer(bounds_, paint);
@@ -73,7 +73,7 @@ Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
                                     SaveMode save_mode)
     : paint_context_(paint_context),
       bounds_(*layer_rec.fBounds),
-      canvas_(save_mode == SaveMode::ON_INTERNAL_NODES_CANVAS
+      canvas_(save_mode == SaveMode::kInternalNodesCanvas
                   ? *(paint_context.internal_nodes_canvas)
                   : *(paint_context.leaf_nodes_canvas)) {
   canvas_.saveLayer(layer_rec);
