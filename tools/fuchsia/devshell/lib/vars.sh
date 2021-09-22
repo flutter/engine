@@ -47,7 +47,7 @@ function engine-error {
   fi
 }
 
-# engine-warning prints a line to stderr with a red WARNING: prefix.
+# engine-warning prints a line to stderr with a yellow WARNING: prefix.
 function engine-warning {
   if engine-is-stderr-tty; then
     echo -e >&2 "\033[1;33mWARNING:\033[0m $*"

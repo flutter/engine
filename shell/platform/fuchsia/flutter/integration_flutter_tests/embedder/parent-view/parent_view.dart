@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
+import 'dart:typed_data';
 import 'dart:ui';
+import 'package:vector_math/vector_math_64.dart' as vector_math_64;
 import 'package:args/args.dart';
 import 'package:fidl_fuchsia_sys/fidl_async.dart';
 import 'package:fidl_fuchsia_ui_app/fidl_async.dart';
@@ -25,10 +28,10 @@ Future<void> main(List<String> args) async {
     print('parent-view: $option: ${arguments[option]}');
   }
 
-  // TODO(richkadel): uncomment childViewToken when ready to launch child-view
-  // final childViewToken = _launchApp(_kChildAppUrl);
+  final childViewToken = _launchApp(_kChildAppUrl);
+
   app = TestApp(
-    // FuchsiaViewConnection(childViewToken),
+    ChildView(childViewToken),
     showOverlay: arguments['showOverlay'],
     hitTestable: arguments['hitTestable'],
     focusable: arguments['focusable'],
@@ -40,9 +43,8 @@ Future<void> main(List<String> args) async {
 class TestApp {
   static const _black = Color.fromARGB(255, 0, 0, 0);
   static const _blue = Color.fromARGB(255, 0, 0, 255);
-  static const _red = Color.fromARGB(255, 255, 0, 0);
 
-  // final FuchsiaViewConnection connection;
+  final ChildView childView;
   final bool showOverlay;
   final bool hitTestable;
   final bool focusable;
@@ -50,89 +52,97 @@ class TestApp {
   Color _backgroundColor = _blue;
 
   TestApp(
-    // this.connection,
+    this.childView,
     {this.showOverlay = false,
     this.hitTestable = true,
-    this.focusable = true});
+    this.focusable = true}) {
+  }
 
   void run() {
-    window.onBeginFrame = (Duration duration) {
-      app.beginFrame(duration);
-    };
-    window.scheduleFrame();
+    childView.create(hitTestable, focusable, (ByteData reply) {
+        // The child-view should be attached to Scenic now.
+        // Ready to build the scene.
+        window.onPointerDataPacket = (PointerDataPacket packet) {
+          for (final data in packet.data) {
+            if (data.change == PointerChange.up) {
+              this._backgroundColor = _black;
+            }
+          }
+          window.scheduleFrame();
+        };
+        window.onBeginFrame = (Duration duration) {
+          app.beginFrame(duration);
+        };
+        window.scheduleFrame();
+      });
   }
 
   void beginFrame(Duration duration) {
-  //     FuchsiaViewConnection(childViewToken),
-  // call and await "createView" behavior from fuchsia_views_cservice.dart (casts handle to a token)
-  // don't drop token
-  // put view in parent scene (size and position it)
+    final windowPhysicalBounds = Offset.zero & window.physicalSize;
     final pixelRatio = window.devicePixelRatio;
-    final size = window.physicalSize / pixelRatio;
-    final physicalBounds = Offset.zero & size * pixelRatio;
+    final windowSize = window.physicalSize / pixelRatio;
+    final windowBounds = Offset.zero & windowSize;
+
     final recorder = PictureRecorder();
-    final canvas = Canvas(recorder, physicalBounds);
-    canvas.scale(pixelRatio, pixelRatio);
+    final canvas = Canvas(recorder, windowPhysicalBounds);
+    canvas.scale(pixelRatio);
     final paint = Paint()..color = this._backgroundColor;
-    final width = size.width * .33;
-    final height = size.height * .33;
-    final center = size.center(Offset.zero);
-    final left = center.dx - (width / 2);
-    final top = center.dy - (height / 2);
-    //canvas.drawCircle(center, size.shortestSide / 4, paint);
-    canvas.drawRect(Rect.fromLTWH(left, top, width, height), paint);
+    canvas.drawRect(windowBounds, paint);
     final picture = recorder.endRecording();
+
     final sceneBuilder = SceneBuilder()
-      ..pushClipRect(physicalBounds)
-      ..addPicture(Offset.zero, picture)
-      // ..addPlatformView(...) for child view using same ID used in createView (a zircon handle, internally)
-      ..pop();
-      // may need to await on createView
+      ..pushClipRect(windowPhysicalBounds)
+      ..addPicture(Offset.zero, picture);
+
+    final childPhysicalSize = window.physicalSize * 0.33;
+    // Alignment.center
+    final windowCenter = windowSize.center(Offset.zero);
+    final windowPhysicalCenter = window.physicalSize.center(Offset.zero);
+    final childPhysicalOffset = windowPhysicalCenter - childPhysicalSize.center(Offset.zero);
+
+    sceneBuilder
+      ..pushTransform(
+        vector_math_64.Matrix4.translationValues(childPhysicalOffset.dx,
+                                                 childPhysicalOffset.dy,
+                                                 0.0).storage)
+      ..addPlatformView(childView.viewId,
+                        width: childPhysicalSize.width,
+                        height: childPhysicalSize.height)
+      ..pop()
+    ;
+
+    if (showOverlay) {
+      final containerSize = windowSize * .66;
+      // Alignment.center
+      final containerOffset = windowCenter - containerSize.center(Offset.zero);
+
+      final overlaySize = containerSize * 0.5;
+      // Alignment.topRight
+      final overlayOffset = Offset(
+        containerOffset.dx + containerSize.width - overlaySize.width,
+        containerOffset.dy);
+
+      final overlayPhysicalSize = overlaySize * pixelRatio;
+      final overlayPhysicalOffset = overlayOffset * pixelRatio;
+      final overlayPhysicalBounds = overlayPhysicalOffset & overlayPhysicalSize;
+
+      final recorder = PictureRecorder();
+      final overlayCullRect = Offset.zero & overlayPhysicalSize; // in canvas physical coordinates
+      final canvas = Canvas(recorder, overlayCullRect);
+      canvas.scale(pixelRatio);
+      final paint = Paint()..color = Color.fromARGB(255, 0, 255, 0);
+      canvas.drawRect(Offset.zero & overlaySize, paint);
+      final overlayPicture = recorder.endRecording();
+      sceneBuilder
+        ..pushClipRect(overlayPhysicalBounds) // in window physical coordinates
+        ..addPicture(overlayPhysicalOffset, overlayPicture)
+        ..pop()
+        ;
+    }
+    sceneBuilder.pop();
+
     window.render(sceneBuilder.build());
   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Listener(
-//       onPointerDown: (_) => _backgroundColor.value = _black,
-//       child: AnimatedBuilder(
-//           animation: _backgroundColor,
-//           builder: (context, snapshot) {
-//             return Container(
-//               color: _backgroundColor.value,
-//               child: Stack(
-//                 alignment: Alignment.center,
-//                 children: [
-//                   FractionallySizedBox(
-//                     widthFactor: 0.33,
-//                     heightFactor: 0.33,
-//                     child: FuchsiaView(
-//                       controller: connection,
-//                       hitTestable: hitTestable,
-//                       focusable: focusable,
-//                     ),
-//                   ),
-//                   if (showOverlay)
-//                     FractionallySizedBox(
-//                       widthFactor: 0.66,
-//                       heightFactor: 0.66,
-//                       child: Container(
-//                         alignment: Alignment.topRight,
-//                         child: FractionallySizedBox(
-//                           widthFactor: 0.5,
-//                           heightFactor: 0.5,
-//                           child: Container(
-//                             color: Color.fromARGB(255, 0, 255, 0),
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                 ],
-//               ),
-//             );
-//           }),
-//     );
-//   }
 }
 
 ViewHolderToken _launchApp(String componentUrl) {
@@ -166,4 +176,50 @@ ViewHolderToken _launchApp(String componentUrl) {
   viewProvider.ctrl.close();
 
   return viewHolderToken;
+}
+
+class ChildView {
+
+  final ViewHolderToken viewToken;
+  final int viewId;
+
+  ChildView(this.viewToken) : viewId = viewToken.value.handle.handle {
+    assert(viewId != null);
+  }
+
+  void create(
+    bool hitTestable,
+    bool focusable,
+    PlatformMessageResponseCallback callback) {
+    // Construct the dart:ui platform message to create the view, and when the
+    // return callback is invoked, build the scene. At that point, it is safe
+    // to embed the child-view in the scene.
+    final viewOcclusionHint = Rect.zero;
+
+    final Map<String, dynamic> args = <String, dynamic>{
+      'viewId': viewId,
+      'hitTestable': hitTestable,
+      'focusable': focusable,
+      'viewOcclusionHintLTRB': <double>[
+        viewOcclusionHint.left,
+        viewOcclusionHint.top,
+        viewOcclusionHint.right,
+        viewOcclusionHint.bottom
+      ],
+    };
+
+    final ByteData createViewMessage = utf8.encoder.convert(
+      json.encode(<String, Object>{
+        'method': 'View.create',
+        'args': args,
+      })
+    ).buffer.asByteData();
+
+    final platformViewsChannel = 'flutter/platform_views';
+
+    PlatformDispatcher.instance.sendPlatformMessage(
+      platformViewsChannel,
+      createViewMessage,
+      callback);
+  }
 }

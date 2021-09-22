@@ -51,6 +51,11 @@ const Color& Screenshot::ColorAt(float x, float y) const {
   return (*this)[iy][ix];
 }
 
+const Color& Screenshot::ColorAtPixelXY(size_t ix, size_t iy) const {
+  FML_CHECK(ix < width_ && iy < height_);
+  return (*this)[iy][ix];
+}
+
 const Color* Screenshot::begin() const {
   return reinterpret_cast<const Color*>(data_.data());
 }

@@ -74,7 +74,7 @@ if [[ "${fuchsia_build_dir:0:1}" != "/" ]]; then
   fuchsia_build_dir="${FUCHSIA_DIR}/${fuchsia_build_dir}"
 fi
 
-# If remote, the following sanity check is not currently performed:
+# If remote, there is currently no equivalent check, but perhaps there could be?
 if [[ $remote != true ]]; then
   # Warn if the package server for the fuchsia packages is not running. Test
   # runners and any fuchsia package dependencies not included in the fuchsia
@@ -247,7 +247,7 @@ while true; do
     config_url="http://${addr}:${port}/config.json"
 
     if [[ ${component_framework_version} == 2 ]]; then
-      run_ssh_command pkgctl add \
+      run_ssh_command pkgctl repo add \
         -n "engine" \
         "${config_url}"
     else

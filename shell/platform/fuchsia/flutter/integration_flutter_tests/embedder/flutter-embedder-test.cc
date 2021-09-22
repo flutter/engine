@@ -10,13 +10,11 @@ constexpr char kParentViewUrl[] =
     "fuchsia-pkg://engine/parent-view#meta/parent-view.cmx";
 
 constexpr scenic::Color kParentBackgroundColor = {0x00, 0x00, 0xFF,
-                                                  0xFF};  // Blue
-// constexpr scenic::Color kParentTappedColor = {0x00, 0x00, 0x00,
-//                                               0xFF}; // Black
+                                                  0xFF};                // Blue
+constexpr scenic::Color kParentTappedColor = {0x00, 0x00, 0x00, 0xFF};  // Black
 constexpr scenic::Color kChildBackgroundColor = {0xFF, 0x00, 0xFF,
-                                                 0xFF};  // Pink
-// constexpr scenic::Color kChildTappedColor = {0xFF, 0xFF, 0x00,
-//                                              0xFF}; // Yellow
+                                                 0xFF};                // Pink
+constexpr scenic::Color kChildTappedColor = {0xFF, 0xFF, 0x00, 0xFF};  // Yellow
 
 // TODO(fxb/64201): The new flutter renderer draws overlays as a single, large
 // layer.  Some parts of this layer are fully transparent, so we want the
@@ -58,98 +56,67 @@ static size_t OverlayPixelCount(std::map<scenic::Color, size_t>& histogram) {
 /// these are injected per test and result in a more hermetic test environment.
 const std::vector<std::pair<const char*, const char*>> GetInjectedServices() {
   std::vector<std::pair<const char*, const char*>> injected_services = {{
-      // clang-format off
-    {
-      "fuchsia.accessibility.semantics.SemanticsManager",
-      "fuchsia-pkg://fuchsia.com/a11y-manager#meta/a11y-manager.cmx"
-    },{
-      "fuchsia.deprecatedtimezone.Timezone",
-      "fuchsia-pkg://fuchsia.com/timezone#meta/timezone.cmx"
-    },{
-      "fuchsia.fonts.Provider",
-      "fuchsia-pkg://fuchsia.com/fonts#meta/fonts.cmx"
-    },{
-      "fuchsia.hardware.display.Provider",
-      // TODO(richkadel): make sure this is NOT SUBMITTED WITHOUT "fake-"
-      // "fuchsia-pkg://fuchsia.com/fake-hardware-display-controller-provider#meta/hdcp.cmx"
-      "fuchsia-pkg://fuchsia.com/hardware-display-controller-provider#meta/hdcp.cmx"
-    },{
-      "fuchsia.intl.PropertyProvider",
-      "fuchsia-pkg://fuchsia.com/intl_property_manager#meta/intl_property_manager.cmx"
-    },{
-      "fuchsia.netstack.Netstack",
-      "fuchsia-pkg://fuchsia.com/netstack#meta/netstack.cmx"
-    },{
-      "fuchsia.posix.socket.Provider",
-      "fuchsia-pkg://fuchsia.com/netstack#meta/netstack.cmx"
-    },{
-      "fuchsia.tracing.provider.Registry",
-      "fuchsia-pkg://fuchsia.com/trace_manager#meta/trace_manager.cmx"
-    },{
-      "fuchsia.ui.input.ImeService",
-      "fuchsia-pkg://fuchsia.com/ime_service#meta/ime_service.cmx"
-    },{
-      "fuchsia.ui.input.ImeVisibilityService",
-      "fuchsia-pkg://fuchsia.com/ime_service#meta/ime_service.cmx"
-    },{
-      "fuchsia.ui.scenic.Scenic",
-      "fuchsia-pkg://fuchsia.com/scenic#meta/scenic.cmx"
-    },{
-      "fuchsia.ui.pointerinjector.Registry",
-      "fuchsia-pkg://fuchsia.com/scenic#meta/scenic.cmx"
-    },{
-      "fuchsia.ui.policy.Presenter",
-      "fuchsia-pkg://fuchsia.com/root_presenter#meta/root_presenter.cmx"
-    },{
-      "fuchsia.ui.input.InputDeviceRegistry",
-      "fuchsia-pkg://fuchsia.com/root_presenter#meta/root_presenter.cmx"
-    },
-      // clang-format on
+      {"fuchsia.accessibility.semantics.SemanticsManager",
+       "fuchsia-pkg://fuchsia.com/a11y-manager#meta/a11y-manager.cmx"},
+      {"fuchsia.deprecatedtimezone.Timezone",
+       "fuchsia-pkg://fuchsia.com/timezone#meta/timezone.cmx"},
+      {"fuchsia.fonts.Provider",
+       "fuchsia-pkg://fuchsia.com/fonts#meta/fonts.cmx"},
+      {"fuchsia.hardware.display.Provider",
+       "fuchsia-pkg://fuchsia.com/"
+       "fake-hardware-display-controller-provider#meta/hdcp.cmx"},
+      {"fuchsia.intl.PropertyProvider",
+       "fuchsia-pkg://fuchsia.com/intl_property_manager#meta/"
+       "intl_property_manager.cmx"},
+      {"fuchsia.netstack.Netstack",
+       "fuchsia-pkg://fuchsia.com/netstack#meta/netstack.cmx"},
+      {"fuchsia.posix.socket.Provider",
+       "fuchsia-pkg://fuchsia.com/netstack#meta/netstack.cmx"},
+      {"fuchsia.tracing.provider.Registry",
+       "fuchsia-pkg://fuchsia.com/trace_manager#meta/trace_manager.cmx"},
+      {"fuchsia.ui.input.ImeService",
+       "fuchsia-pkg://fuchsia.com/ime_service#meta/ime_service.cmx"},
+      {"fuchsia.ui.input.ImeVisibilityService",
+       "fuchsia-pkg://fuchsia.com/ime_service#meta/ime_service.cmx"},
+      {"fuchsia.ui.scenic.Scenic",
+       "fuchsia-pkg://fuchsia.com/scenic#meta/scenic.cmx"},
+      {"fuchsia.ui.pointerinjector.Registry",
+       "fuchsia-pkg://fuchsia.com/scenic#meta/scenic.cmx"},  // For
+                                                             // root_presenter
+      // TODO(fxbug.dev/82655): Remove this after migrating to RealmBuilder.
+      {"fuchsia.ui.lifecycle.LifecycleController",
+       "fuchsia-pkg://fuchsia.com/scenic#meta/scenic.cmx"},
+      {"fuchsia.ui.policy.Presenter",
+       "fuchsia-pkg://fuchsia.com/root_presenter#meta/root_presenter.cmx"},
+      {"fuchsia.ui.input.InputDeviceRegistry",
+       "fuchsia-pkg://fuchsia.com/root_presenter#meta/root_presenter.cmx"},
   }};
   return injected_services;
 }
 
-TEST_F(FlutterScenicEmbedderTests, NotARealTest1) {
-  ASSERT_TRUE(true);
-}
-
 TEST_F(FlutterScenicEmbedderTests, Embedding) {
-  // TODO(richkadel): remove this log
-  FML_VLOG(fml::LOG_INFO) << "Calling RunAppWithArgs()";
   RunAppWithArgs(kParentViewUrl);
-  // TODO(richkadel): remove this log
-  FML_VLOG(fml::LOG_INFO) << "Exited RunAppWithArgs()";
 
   // Take screenshot until we see the child-view's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(
-      kChildBackgroundColor, [](std::map<scenic::Color, size_t> histogram) {
-        // TODO(richkadel): remove this log
-        FML_VLOG(fml::LOG_INFO)
-            << "in callback from TakeScreenshotUntil() ... color was found!";
-        if (false) {  // TODO(richkadel): remove this if block... unused
-          OverlayPixelCount(histogram);
-        }
+      kChildBackgroundColor, [](scenic::Screenshot screenshot,
+                                std::map<scenic::Color, size_t> histogram) {
         // Expect parent and child background colors, with parent color > child
         // color.
         EXPECT_GT(histogram[kParentBackgroundColor], 0u);
         EXPECT_GT(histogram[kChildBackgroundColor], 0u);
         EXPECT_GT(histogram[kParentBackgroundColor],
                   histogram[kChildBackgroundColor]);
-      }));
-}
-/*
-TEST_F(FlutterScenicEmbedderTests, Embedding) {
-  RunAppWithArgs(kParentViewUrl);
 
-  // Take screenshot until we see the child-view's embedded color.
-  ASSERT_TRUE(
-      TakeScreenshotUntil(kChildBackgroundColor, [](std::map<scenic::Color,
-size_t> histogram) {
-        // Expect parent and child background colors, with parent color > child
-color. EXPECT_GT(histogram[kParentBackgroundColor], 0u);
-        EXPECT_GT(histogram[kChildBackgroundColor], 0u);
-        EXPECT_GT(histogram[kParentBackgroundColor],
-histogram[kChildBackgroundColor]);
+        // Expect all corners to be the parent-view background color
+        EXPECT_EQ(kParentBackgroundColor, screenshot.ColorAtPixelXY(10, 10));
+        EXPECT_EQ(kParentBackgroundColor,
+                  screenshot.ColorAtPixelXY(screenshot.width() - 10, 0));
+        EXPECT_EQ(kParentBackgroundColor,
+                  screenshot.ColorAtPixelXY(0, screenshot.height() - 10));
+        EXPECT_EQ(kParentBackgroundColor,
+                  screenshot.ColorAtPixelXY(screenshot.width() - 10,
+                                            screenshot.height() - 10));
       }));
 }
 
@@ -163,14 +130,17 @@ TEST_F(FlutterScenicEmbedderTests, HittestEmbedding) {
   InjectInput();
 
   // Take screenshot until we see the child-view's tapped color.
-  ASSERT_TRUE(TakeScreenshotUntil(kChildTappedColor, [](std::map<scenic::Color,
-size_t> histogram) {
-    // Expect parent and child background colors, with parent color > child
-color. EXPECT_GT(histogram[kParentBackgroundColor], 0u);
-    EXPECT_EQ(histogram[kChildBackgroundColor], 0u);
-    EXPECT_GT(histogram[kChildTappedColor], 0u);
-    EXPECT_GT(histogram[kParentBackgroundColor], histogram[kChildTappedColor]);
-  }));
+  ASSERT_TRUE(TakeScreenshotUntil(
+      kChildTappedColor, [](scenic::Screenshot screenshot,
+                            std::map<scenic::Color, size_t> histogram) {
+        // Expect parent and child background colors, with parent color > child
+        // color.
+        EXPECT_GT(histogram[kParentBackgroundColor], 0u);
+        EXPECT_EQ(histogram[kChildBackgroundColor], 0u);
+        EXPECT_GT(histogram[kChildTappedColor], 0u);
+        EXPECT_GT(histogram[kParentBackgroundColor],
+                  histogram[kChildTappedColor]);
+      }));
 }
 
 TEST_F(FlutterScenicEmbedderTests, HittestDisabledEmbedding) {
@@ -180,19 +150,21 @@ TEST_F(FlutterScenicEmbedderTests, HittestDisabledEmbedding) {
   ASSERT_TRUE(TakeScreenshotUntil(kChildBackgroundColor));
 
   // Tap the center of child view. Since it's not hit-testable, the tap should
-go to the parent. InjectInput();
+  // go to the parent.
+  InjectInput();
 
   // The parent-view should change color.
-  ASSERT_TRUE(
-      TakeScreenshotUntil(kParentTappedColor, [](std::map<scenic::Color, size_t>
-histogram) {
+  ASSERT_TRUE(TakeScreenshotUntil(
+      kParentTappedColor, [](scenic::Screenshot screenshot,
+                             std::map<scenic::Color, size_t> histogram) {
         // Expect parent and child background colors, with parent color > child
-color. EXPECT_EQ(histogram[kParentBackgroundColor], 0u);
+        // color.
+        EXPECT_EQ(histogram[kParentBackgroundColor], 0u);
         EXPECT_GT(histogram[kParentTappedColor], 0u);
         EXPECT_GT(histogram[kChildBackgroundColor], 0u);
         EXPECT_EQ(histogram[kChildTappedColor], 0u);
         EXPECT_GT(histogram[kParentTappedColor],
-histogram[kChildBackgroundColor]);
+                  histogram[kChildBackgroundColor]);
       }));
 }
 
@@ -200,9 +172,9 @@ TEST_F(FlutterScenicEmbedderTests, EmbeddingWithOverlay) {
   RunAppWithArgs(kParentViewUrl, {"--showOverlay"});
 
   // Take screenshot until we see the child-view's embedded color.
-  ASSERT_TRUE(
-      TakeScreenshotUntil(kChildBackgroundColor, [](std::map<scenic::Color,
-size_t> histogram) {
+  ASSERT_TRUE(TakeScreenshotUntil(
+      kChildBackgroundColor, [](scenic::Screenshot screenshot,
+                                std::map<scenic::Color, size_t> histogram) {
         // Expect parent, overlay and child background colors.
         // With parent color > child color and overlay color > child color.
         const size_t overlay_pixel_count = OverlayPixelCount(histogram);
@@ -210,8 +182,8 @@ size_t> histogram) {
         EXPECT_GT(overlay_pixel_count, 0u);
         EXPECT_GT(histogram[kChildBackgroundColor], 0u);
         EXPECT_GT(histogram[kParentBackgroundColor],
-histogram[kChildBackgroundColor]); EXPECT_GT(overlay_pixel_count,
-histogram[kChildBackgroundColor]);
+                  histogram[kChildBackgroundColor]);
+        EXPECT_GT(overlay_pixel_count, histogram[kChildBackgroundColor]);
       }));
 }
 
@@ -225,20 +197,20 @@ TEST_F(FlutterScenicEmbedderTests, HittestEmbeddingWithOverlay) {
   InjectInput();
 
   // Take screenshot until we see the child-view's tapped color.
-  ASSERT_TRUE(TakeScreenshotUntil(kChildTappedColor, [](std::map<scenic::Color,
-size_t> histogram) {
-    // Expect parent, overlay and child background colors.
-    // With parent color > child color and overlay color > child color.
-    const size_t overlay_pixel_count = OverlayPixelCount(histogram);
-    EXPECT_GT(histogram[kParentBackgroundColor], 0u);
-    EXPECT_GT(overlay_pixel_count, 0u);
-    EXPECT_EQ(histogram[kChildBackgroundColor], 0u);
-    EXPECT_GT(histogram[kChildTappedColor], 0u);
-    EXPECT_GT(histogram[kParentBackgroundColor], histogram[kChildTappedColor]);
-    EXPECT_GT(overlay_pixel_count, histogram[kChildTappedColor]);
-  }));
+  ASSERT_TRUE(TakeScreenshotUntil(
+      kChildTappedColor, [](scenic::Screenshot screenshot,
+                            std::map<scenic::Color, size_t> histogram) {
+        // Expect parent, overlay and child background colors.
+        // With parent color > child color and overlay color > child color.
+        const size_t overlay_pixel_count = OverlayPixelCount(histogram);
+        EXPECT_GT(histogram[kParentBackgroundColor], 0u);
+        EXPECT_GT(overlay_pixel_count, 0u);
+        EXPECT_EQ(histogram[kChildBackgroundColor], 0u);
+        EXPECT_GT(histogram[kChildTappedColor], 0u);
+        EXPECT_GT(histogram[kParentBackgroundColor],
+                  histogram[kChildTappedColor]);
+        EXPECT_GT(overlay_pixel_count, histogram[kChildTappedColor]);
+      }));
 }
-
-*/
 
 }  // namespace flutter_embedder_test

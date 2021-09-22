@@ -9,6 +9,7 @@ import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
 dart_library("child-view_dart_library") {
   package_name = "child-view"
+
   source_dir = "."
   sources = [ "child_view.dart" ]
 

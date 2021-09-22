@@ -45,6 +45,7 @@ executable("flutter-embedder-test-bin") {
            "$fuchsia_sdk_root/fidl:fuchsia.sys",
            "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
            "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+           "$fuchsia_sdk_root/fidl:fuchsia.ui.lifecycle",
            "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
            "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
            "$fuchsia_sdk_root/pkg:fit",

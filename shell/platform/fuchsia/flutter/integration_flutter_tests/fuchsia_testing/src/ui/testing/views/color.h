@@ -44,11 +44,20 @@ class Screenshot {
   bool empty() const { return width_ == 0 || height_ == 0; }
 
   // Notably the indexer behaves like a row-major matrix, whereas the iterator
-  // behaves like a flat array.
+  // behaves like a flat array. *IMPORTANT*: Use caution because index values
+  // are not validated, and out of bounds indexes can introduce memory errors.
+  // Also when indexing a specific pixel with |screenshot[a][b]|, note that
+  // the order of the indexes is non-traditional. The first index is for the
+  // |y| position (the row), followed by the |x| position. Consider using
+  // |ColorAtPixelXY()| instead.
   const Color* operator[](size_t row) const;
 
   // Coordinates are in the range [0, 1).
   const Color& ColorAt(float x, float y) const;
+
+  // Returns the color of a pixel at the integer x and y indexes, after
+  // asserting that the indexes are in range.
+  const Color& ColorAtPixelXY(size_t ix, size_t iy) const;
 
   // Notably the iterator behaves like a flat array, whereas the indexer behaves
   // like a row-major matrix.

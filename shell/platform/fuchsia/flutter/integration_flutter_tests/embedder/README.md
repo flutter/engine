@@ -13,10 +13,22 @@ $ fx set core.x64 \
 $ fx build
 ```
 
-(Note, you could use `--with-base` here, instead of `--with`, but if so, you
+Note 1: You could use `--with-base` here, instead of `--with`, but if so, you
 would also need to add `--with //garnet/packages/testing:run_test_component`.
 More on this below, under
 [Start the package servers](#start-the-package-servers).
+
+Note 2: The `fx set` flags, above, offer a minimized fuchsia platform
+configuration to successfully execute the test, but some optional services may
+be missing. Be aware that the Fuchsia system logs may include multiple
+occurrences `WARNING: error resolving ...` messages, such as the following,
+which can be ignored:
+
+```
+[pkg-resolver] WARNING: error resolving fuchsia-pkg://fuchsia.com/fonts/0 ...
+[pkg-resolver] WARNING: error resolving fuchsia-pkg://fuchsia.com/ime_service/0 ...
+[pkg-resolver] WARNING: error resolving fuchsia-pkg://fuchsia.com/intl_property_manager/0 ...
+```
 
 ## Restart and reboot your device
 
@@ -73,7 +85,7 @@ runner in the system image requires adding that package as well, via
 In order to serve fuchsia package dependencies (like `run_test_component`,
 `scenic`, `root_presenter`, and `hardware-display-controller-provider`),
 without forcing them into the system image, you will need to run the fuchsia
-default package server.
+default package server, via `fx serve`.
 
 The `flutter/engine` packages (tests and flutter runners, for dart-based tests)
 are served from a separate package server. The `flutter/engine` repo's
@@ -92,7 +104,7 @@ $ cd "${FUCHSIA_DIR}"
 $ fx serve
 ```
 
-From the flutter engine `src` directory, rRun the following script to launch the
+From the flutter engine `src` directory, run the following script to launch the
 `engine` package server, to serve the flutter runner and test components.
 
 ```shell

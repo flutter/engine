@@ -1,6 +1,6 @@
 {
     "program": {
-        "data": "data/child_view"
+        "data": "data/child-view"
     },
     "sandbox": {
         "services": [

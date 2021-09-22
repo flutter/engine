@@ -9,11 +9,13 @@ import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
 dart_library("parent-view_dart_library") {
   package_name = "parent-view"
+
   source_dir = "."
   sources = [ "parent_view.dart" ]
 
   deps = [
     "//flutter/shell/platform/fuchsia/dart:args",
+    "//flutter/shell/platform/fuchsia/dart:vector_math",
     "//flutter/tools/fuchsia/dart:fuchsia_services",
     "//flutter/tools/fuchsia/dart:zircon",
     "//flutter/tools/fuchsia/fidl:fuchsia.sys",
