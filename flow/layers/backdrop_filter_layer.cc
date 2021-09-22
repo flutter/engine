@@ -63,7 +63,7 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context,
       SkCanvas::SaveLayerRec{&paint_bounds(), &paint, filter_.get(), 0},
-      AutoSaveLayer::SaveMode::ON_LEAF_NODES_CANVAS);
+      AutoSaveLayer::SaveMode::kLeafNodesCanvas);
   PaintChildren(context);
 }
 

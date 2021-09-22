@@ -75,7 +75,7 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnlyOnLeafNodesCanvas) {
       const SkRect rect = SkRect::MakeEmpty();
       Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
           paint_context(), rect, &paint,
-          Layer::AutoSaveLayer::SaveMode::ON_LEAF_NODES_CANVAS);
+          Layer::AutoSaveLayer::SaveMode::kLeafNodesCanvas);
       EXPECT_EQ(paint_context().internal_nodes_canvas->getSaveCount(),
                 saved_count_before);
       EXPECT_EQ(paint_context().leaf_nodes_canvas->getSaveCount(),
@@ -100,7 +100,7 @@ TEST_F(AutoSaveLayerTests, SaveLayerOnlyOnLeafNodesCanvas) {
           SkCanvas::SaveLayerRec{&rect, &paint, nullptr, 0};
       Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
           paint_context(), save_layer_rect,
-          Layer::AutoSaveLayer::SaveMode::ON_LEAF_NODES_CANVAS);
+          Layer::AutoSaveLayer::SaveMode::kLeafNodesCanvas);
       EXPECT_EQ(paint_context().internal_nodes_canvas->getSaveCount(),
                 saved_count_before);
       EXPECT_EQ(paint_context().leaf_nodes_canvas->getSaveCount(),
