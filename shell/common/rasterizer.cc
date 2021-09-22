@@ -540,12 +540,27 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     compositor_context_->raster_cache().PrepareNewFrame();
     frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
+    FrameDamage damage;
+    if (!frame->framebuffer_info().existing_damage.empty()) {
+      damage.prev_layer_tree = last_layer_tree_.get();
+      for (const auto& r : frame->framebuffer_info().existing_damage) {
+        damage.additional_damage.join(r);
+      }
+    }
+
     RasterStatus raster_status =
-        compositor_frame->Raster(layer_tree, false, nullptr);
+        compositor_frame->Raster(layer_tree, false, &damage);
     if (raster_status == RasterStatus::kFailed ||
         raster_status == RasterStatus::kSkipAndRetry) {
       return raster_status;
     }
+
+    SurfaceFrame::SubmitInfo submit_info;
+    submit_info.frame_damage.push_back(damage.damage_out.frame_damage);
+    submit_info.buffer_damage.push_back(damage.damage_out.buffer_damage);
+
+    frame->set_submit_info(submit_info);
+
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
