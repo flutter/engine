@@ -299,8 +299,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
 
   auto rtree_factory = RTreeFactory();
   platform_view_rtrees_[view_id] = rtree_factory.getInstance();
-  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_),
-                                              &rtree_factory);
+  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_), &rtree_factory);
 
   composition_order_.push_back(view_id);
 

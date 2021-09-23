@@ -195,8 +195,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation TwoPlatformViewsWithOtherBackDropFilterTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  GoldenTestManager* manager =
-      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-views-with-other-backdrop-filter"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--two-platform-views-with-other-backdrop-filter"];
   return [super initWithManager:manager invocation:invocation];
 }
 
