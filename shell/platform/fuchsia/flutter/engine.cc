@@ -858,12 +858,13 @@ void Engine::OnLevelChanged(
     fuchsia::memorypressure::Watcher::OnLevelChangedCallback callback) {
   callback();
 
-  FML_VLOG(-1) << "memorypressure watcher: OnLevelChanged";
+  FML_LOG(WARNING) << "memorypressure watcher: OnLevelChanged";
 
   if (latest_memory_pressure_level_ == fuchsia::memorypressure::Level::NORMAL &&
       (level == fuchsia::memorypressure::Level::WARNING ||
        level == fuchsia::memorypressure::Level::CRITICAL)) {
-    FML_VLOG(-1) << "memorypressure watcher: Notifying shell of low memory";
+    FML_LOG(WARNING)
+        << "memorypressure watcher: notifying Flutter that memory is low";
     shell_->NotifyLowMemoryWarning();
   }
   latest_memory_pressure_level_ = level;
