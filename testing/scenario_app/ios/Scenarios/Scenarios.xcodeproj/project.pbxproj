@@ -56,6 +56,7 @@
 		6816DBA42318358200A51400 /* GoldenTestManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 6816DBA32318358200A51400 /* GoldenTestManager.m */; };
 		682BD8B526E93C2500FA6697 /* golden_platform_view_with_other_backdrop_filter_iPhone 8_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 682BD8B426E93C2500FA6697 /* golden_platform_view_with_other_backdrop_filter_iPhone 8_simulator.png */; };
 		68A5B63423EB71D300BDBCDB /* PlatformViewGestureRecognizerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 68A5B63323EB71D300BDBCDB /* PlatformViewGestureRecognizerTests.m */; };
+		68C03C4826FCF02A00D4700A /* golden_two_platform_views_with_other_backdrop_filter_iPhone 8_simulator.png in Resources */ = {isa = PBXBuildFile; fileRef = 68C03C4726FCF02A00D4700A /* golden_two_platform_views_with_other_backdrop_filter_iPhone 8_simulator.png */; };
 		68D4017D2564859300ECD91A /* ContinuousTexture.m in Sources */ = {isa = PBXBuildFile; fileRef = 68D4017C2564859300ECD91A /* ContinuousTexture.m */; };
 		F26F15B8268B6B5600EC54D3 /* iPadGestureTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F26F15B7268B6B5500EC54D3 /* iPadGestureTests.m */; };
 /* End PBXBuildFile section */
@@ -173,6 +174,7 @@
 		6816DBA32318358200A51400 /* GoldenTestManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GoldenTestManager.m; sourceTree = "<group>"; };
 		682BD8B426E93C2500FA6697 /* golden_platform_view_with_other_backdrop_filter_iPhone 8_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_platform_view_with_other_backdrop_filter_iPhone 8_simulator.png"; sourceTree = "<group>"; };
 		68A5B63323EB71D300BDBCDB /* PlatformViewGestureRecognizerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PlatformViewGestureRecognizerTests.m; sourceTree = "<group>"; };
+		68C03C4726FCF02A00D4700A /* golden_two_platform_views_with_other_backdrop_filter_iPhone 8_simulator.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "golden_two_platform_views_with_other_backdrop_filter_iPhone 8_simulator.png"; sourceTree = "<group>"; };
 		68D4017B2564859300ECD91A /* ContinuousTexture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ContinuousTexture.h; sourceTree = "<group>"; };
 		68D4017C2564859300ECD91A /* ContinuousTexture.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ContinuousTexture.m; sourceTree = "<group>"; };
 		F26F15B7268B6B5500EC54D3 /* iPadGestureTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iPadGestureTests.m; sourceTree = "<group>"; };
@@ -263,6 +265,7 @@
 		248D76ED22E388380012F0C1 /* ScenariosUITests */ = {
 			isa = PBXGroup;
 			children = (
+				68C03C4726FCF02A00D4700A /* golden_two_platform_views_with_other_backdrop_filter_iPhone 8_simulator.png */,
 				0DDEBC8A258839760065D0E8 /* golden_spawn_engine_works_iPhone 8_simulator.png */,
 				4F06F1B124731F66000AF246 /* LocalizationInitializationTest.m */,
 				6402EBD024147BDA00987DCB /* UnobstructedPlatformViewTests.m */,
@@ -450,6 +453,7 @@
 				3DEF491223C3BE6500184216 /* golden_platform_view_clippath_iPhone 8_simulator.png in Resources */,
 				3DEF491423C3BE6500184216 /* golden_platform_view_cliprrect_iPhone 8_simulator.png in Resources */,
 				59A97FDA236B984300B4C066 /* golden_platform_view_multiple_background_foreground_iPhone SE_simulator.png in Resources */,
+				68C03C4826FCF02A00D4700A /* golden_two_platform_views_with_other_backdrop_filter_iPhone 8_simulator.png in Resources */,
 				3DEF491923C3BE6500184216 /* golden_platform_view_rotate_iPhone 8_simulator.png in Resources */,
 				24D47D1B230C79840069DD5E /* golden_platform_view_D211AP.png in Resources */,
 				0DDEBC8B258839760065D0E8 /* golden_spawn_engine_works_iPhone 8_simulator.png in Resources */,
