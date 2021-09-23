@@ -34,17 +34,17 @@ class AndroidNativeWindow
 
   /// Returns true when this AndroidNativeWindow is not backed by a real window
   /// (used for testing).
-  bool IsOffscreen() const { return is_offscreen_; }
+  bool IsFakeWindow() const { return is_fake_window_; }
 
  private:
   Handle window_;
-  const bool is_offscreen_;
+  const bool is_fake_window_;
 
   /// Creates a native window with the given handle. Handle ownership is assumed
   /// by this instance of the native window.
   explicit AndroidNativeWindow(Handle window);
 
-  explicit AndroidNativeWindow(Handle window, bool is_offscreen);
+  explicit AndroidNativeWindow(Handle window, bool is_fake_window);
 
   ~AndroidNativeWindow();
 
