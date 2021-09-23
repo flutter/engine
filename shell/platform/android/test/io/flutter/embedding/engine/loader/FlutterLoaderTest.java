@@ -22,7 +22,6 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.view.VsyncWaiter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
