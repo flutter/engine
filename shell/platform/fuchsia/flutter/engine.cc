@@ -522,6 +522,8 @@ void Engine::Initialize(
     ZX_ASSERT(runner_services->Connect(
                   memory_pressure_provider_.NewRequest()) == ZX_OK);
 
+    FML_VLOG(-1) << "Registering for memory pressure changes";
+
     // Register for changes, which will make the request for the initial
     // memory level.
     memory_pressure_provider_->RegisterWatcher(
@@ -855,6 +857,9 @@ void Engine::OnLevelChanged(
     fuchsia::memorypressure::Level level,
     fuchsia::memorypressure::Watcher::OnLevelChangedCallback callback) {
   callback();
+
+  FML_VLOG(-1) << "memorypressure watcher OnLevelChanged: "
+               << fuchsia::memorypressure::Level::Name(level);
 
   if (latest_memory_pressure_level_ == fuchsia::memorypressure::Level::NORMAL &&
       (level == fuchsia::memorypressure::Level::WARNING ||
