@@ -35,11 +35,15 @@ void VsyncWaiterFallback::AwaitVSync() {
 
   constexpr fml::TimeDelta kSingleFrameInterval =
       fml::TimeDelta::FromSecondsF(1.0 / 60.0);
-
-  auto next =
+  auto frame_start_time =
       SnapToNextTick(fml::TimePoint::Now(), phase_, kSingleFrameInterval);
+  auto frame_target_time = frame_start_time + kSingleFrameInterval;
 
-  FireCallback(next, next + kSingleFrameInterval, !for_testing_);
+  task_runners_.GetPlatformTaskRunner()->PostTaskForTime(
+      [frame_start_time, frame_target_time, this]() {
+        FireCallback(frame_start_time, frame_target_time, !for_testing_);
+      },
+      frame_start_time);
 }
 
 }  // namespace flutter
