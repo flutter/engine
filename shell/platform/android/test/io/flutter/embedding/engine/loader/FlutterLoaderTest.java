@@ -22,6 +22,7 @@ import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import io.flutter.embedding.engine.FlutterJNI;
+import io.flutter.view.VsyncWaiter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -104,10 +105,12 @@ public class FlutterLoaderTest {
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     Context appContextSpy = spy(RuntimeEnvironment.application);
+    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0));
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(appContextSpy);
     verify(appContextSpy, never()).getSystemService(anyString());
+    verify(vsyncSpy, times(1)).init();
   }
 
   @Test
@@ -117,10 +120,10 @@ public class FlutterLoaderTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
-    Context appContextSpy = spy(RuntimeEnvironment.application);
+    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0));
 
     assertFalse(flutterLoader.initialized());
-    flutterLoader.startInitialization(appContextSpy);
-    verify(appContextSpy, times(1)).getSystemService(anyString());
+    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    verify(vsyncSpy, times(1)).init();
   }
 }
