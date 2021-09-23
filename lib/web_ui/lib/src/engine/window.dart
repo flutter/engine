@@ -13,7 +13,7 @@ import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart';
+import '../engine.dart' show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'navigation/history.dart';
 import 'navigation/js_url_strategy.dart';
