@@ -105,7 +105,7 @@ public class FlutterLoaderTest {
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     Context appContextSpy = spy(RuntimeEnvironment.application);
-    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0));
+    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0f));
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(appContextSpy);
@@ -120,7 +120,7 @@ public class FlutterLoaderTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
-    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0));
+    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0f));
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(RuntimeEnvironment.application);
