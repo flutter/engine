@@ -861,7 +861,9 @@ void Engine::OnLevelChanged(
   // https://fuchsia.dev/fuchsia-src/concepts/api/fidl#throttle_push_using_acknowledgements
   callback();
 
-  FML_LOG(WARNING) << "memorypressure watcher: OnLevelChanged";
+  FML_LOG(WARNING) << "memorypressure watcher: OnLevelChanged from "
+                   << static_cast<int>(latest_memory_pressure_level_) << " to "
+                   << static_cast<int>(level);
 
   if (latest_memory_pressure_level_ == fuchsia::memorypressure::Level::NORMAL &&
       (level == fuchsia::memorypressure::Level::WARNING ||
