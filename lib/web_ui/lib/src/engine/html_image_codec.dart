@@ -172,21 +172,25 @@ class HtmlImage implements ui.Image {
 
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
-    if (format == ui.ImageByteFormat.rawRgba || format == ui.ImageByteFormat.rawStraightRgba) {
-      final html.CanvasElement canvas = html.CanvasElement()
-        ..width = width
-        ..height = height;
-      final html.CanvasRenderingContext2D ctx = canvas.context2D;
-      ctx.drawImage(imgElement, 0, 0);
-      final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
-      return Future<ByteData?>.value(imageData.data.buffer.asByteData());
-    }
-    if (imgElement.src?.startsWith('data:') == true) {
-      final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
-      return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
-    } else {
-      return Future<ByteData?>.value(null);
+    switch (format) {
+      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
+      // The format rawRgba always returns straight rather than premul currently.
+      case ui.ImageByteFormat.rawRgba:
+      case ui.ImageByteFormat.rawStraightRgba:
+        final html.CanvasElement canvas = html.CanvasElement()
+          ..width = width
+          ..height = height;
+        final html.CanvasRenderingContext2D ctx = canvas.context2D;
+        ctx.drawImage(imgElement, 0, 0);
+        final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
+        return Future<ByteData?>.value(imageData.data.buffer.asByteData());
+      default:
+        if (imgElement.src?.startsWith('data:') == true) {
+          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
+          return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+        } else {
+          return Future<ByteData?>.value(null);
+        }
     }
   }
 
