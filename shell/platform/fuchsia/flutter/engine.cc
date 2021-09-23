@@ -522,7 +522,7 @@ void Engine::Initialize(
     ZX_ASSERT(runner_services->Connect(
                   memory_pressure_provider_.NewRequest()) == ZX_OK);
 
-    FML_VLOG(-1) << "Registering for memory pressure changes";
+    FML_VLOG(-1) << "Registering memorypressure watcher";
 
     // Register for changes, which will make the request for the initial
     // memory level.
