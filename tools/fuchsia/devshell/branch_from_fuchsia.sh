@@ -1,0 +1,40 @@
+#!/bin/bash
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+### Starts a new branch from Fuchsia's checkout of the Flutter engine.
+### This is necessary to avoid skew between the version of the Dart VM used in
+### the flutter_runner and the version of the Dart SDK and VM used by the
+### Flutter toolchain. See
+### https://github.com/flutter/flutter/wiki/Compiling-the-engine#important-dart-version-synchronization-on-fuchsia
+### for more details.
+###
+### Example:
+###   branch_from_fuchsia.sh my_new_feature_branch
+
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/lib/vars.sh || exit $?
+
+ensure_fuchsia_dir
+
+engine-info "Syncing to Fuchsia's checkout of the Flutter engine."
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/sync_to_fuchsia.sh || exit $?
+
+engine-info "Creating new branch '$1'."
+git checkout -b $1
+if [ $? -ne 0 ]
+then
+    engine-error "Failed to create new branch '$1'. Restoring previous checkout."
+    git checkout -
+    exit $?
+fi
+
+autosetuprebase="$(git config branch.autosetuprebase)"
+if [ autosetuprebase != "always" ]
+then
+  engine-warning \
+    "Pushing updates to a remote feature branch created from an earlier commit"\
+    "will always fail by default since the remote branch will be based"\
+    "off master instead of the earlier commit. You can avoid this by"\
+    "setting 'git config --global branch.autosetuprebase always'."
+fi
