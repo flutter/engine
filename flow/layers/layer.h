@@ -158,6 +158,12 @@ class Layer {
   class AutoSaveLayer {
    public:
     // Indicates which canvas the layer should be saved on.
+    //
+    // Usually layers are saved on the internal_nodes_canvas, so that all
+    // the canvas keep track of the current state of the layer tree.
+    // In some special cases, layers should only save on the leaf_nodes_canvas,
+    // See https:://flutter.dev/go/backdrop-filter-with-overlay-canvas for why
+    // it is the case for Backdrop filter layer.
     enum SaveMode {
       // The layer is saved on the internal_nodes_canvas.
       kInternalNodesCanvas,
@@ -165,8 +171,9 @@ class Layer {
       kLeafNodesCanvas
     };
 
-    // Create a layer and save it on the canvas. The layer is restored from the
-    // canvas in destructor.
+    // Create a layer and save it on the canvas.
+    //
+    // The layer is restored from the canvas in destructor.
     //
     // By default, the layer is saved on and restored from
     // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
@@ -176,8 +183,9 @@ class Layer {
         const SkRect& bounds,
         const SkPaint* paint,
         SaveMode save_mode = SaveMode::kInternalNodesCanvas);
-    // Create a layer and save it on the canvas. The layer is restored from the
-    // canvas in destructor.
+    // Create a layer and save it on the canvas.
+    //
+    // The layer is restored from the canvas in destructor.
     //
     // By default, the layer is saved on and restored from
     // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
