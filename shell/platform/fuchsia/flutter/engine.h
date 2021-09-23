@@ -159,8 +159,6 @@ class Engine final : public fuchsia::memorypressure::Watcher {
   void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
 
   // |fuchsia::memorypressure::Watcher|
-  // |callback| must be invoked immediately to acknowledge the message
-  // as part of the "Throttle push using acknowledgements" pattern.
   void OnLevelChanged(fuchsia::memorypressure::Level level,
                       fuchsia::memorypressure::Watcher::OnLevelChangedCallback
                           callback) override;

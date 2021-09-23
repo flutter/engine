@@ -856,6 +856,9 @@ void Engine::WarmupSkps(
 void Engine::OnLevelChanged(
     fuchsia::memorypressure::Level level,
     fuchsia::memorypressure::Watcher::OnLevelChangedCallback callback) {
+  // The callback must be invoked immediately to acknowledge the message.
+  // This is the "Throttle push using acknowledgements" pattern:
+  // https://fuchsia.dev/fuchsia-src/concepts/api/fidl#throttle_push_using_acknowledgements
   callback();
 
   FML_LOG(WARNING) << "memorypressure watcher: OnLevelChanged";
