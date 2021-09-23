@@ -117,8 +117,10 @@ public class FlutterLoaderTest {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
+    Context appContextSpy = spy(RuntimeEnvironment.application);
+
     assertFalse(flutterLoader.initialized());
-    flutterLoader.startInitialization(RuntimeEnvironment.application);
-    vverify(appContextSpy, times(1)).getSystemService(anyString());
+    flutterLoader.startInitialization(appContextSpy);
+    verify(appContextSpy, times(1)).getSystemService(anyString());
   }
 }
