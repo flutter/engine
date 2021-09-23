@@ -105,25 +105,9 @@ public class FlutterLoaderTest {
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     Context appContextSpy = spy(RuntimeEnvironment.application);
-    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0f));
 
     assertFalse(flutterLoader.initialized());
     flutterLoader.startInitialization(appContextSpy);
     verify(appContextSpy, never()).getSystemService(anyString());
-    verify(vsyncSpy, times(1)).init();
-  }
-
-  @Test
-  @TargetApi(22)
-  @Config(sdk = 22)
-  public void itReportsFpsToVsyncWaiterLegacy() {
-    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
-
-    VsyncWaiter vsyncSpy = spy(VsyncWaiter.getInstance(60.0f));
-
-    assertFalse(flutterLoader.initialized());
-    flutterLoader.startInitialization(RuntimeEnvironment.application);
-    verify(vsyncSpy, times(1)).init();
   }
 }
