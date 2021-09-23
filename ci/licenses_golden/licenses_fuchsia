@@ -1,4 +1,4 @@
-Signature: 30f67d138a1195960aa4882b7eaf379d
+Signature: 32f6fcbf76a933579d7527e10b8e335c
 
 UNUSED LICENSES:
 
@@ -2287,7 +2287,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_pipe.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/memory_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/intl.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/io.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/file.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/ldsvc.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/logger.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/gain_control.fidl
@@ -3442,6 +3444,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/calendar.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/time_zones.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/rights-abilities.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io2/inotify.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/cpu-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.power.profile/profile.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/allocator.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.composition/flatland.fidl
