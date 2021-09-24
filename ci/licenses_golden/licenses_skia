@@ -1,4 +1,4 @@
-Signature: 9ff8964c060abfed7263526597da9d8b
+Signature: f8ba56d32acc5c8a0f8e81a8ce56d33f
 
 UNUSED LICENSES:
 
@@ -2936,12 +2936,22 @@ FILE: ../../../third_party/skia/bench/CanvasSaveRestoreBench.cpp
 FILE: ../../../third_party/skia/bench/TriangulatorBench.cpp
 FILE: ../../../third_party/skia/experimental/graphite/include/Context.h
 FILE: ../../../third_party/skia/experimental/graphite/include/SkStuff.h
+FILE: ../../../third_party/skia/experimental/graphite/src/BoundsManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Context.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawCommandList.h
+FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.h
+FILE: ../../../third_party/skia/experimental/graphite/src/SDCTask.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/SDCTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/SkStuff.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/SurfaceDrawContext.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/SurfaceDrawContext.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.h
+FILE: ../../../third_party/skia/experimental/graphite/src/Task.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/Task.h
 FILE: ../../../third_party/skia/experimental/lowp-basic/QMath.h
 FILE: ../../../third_party/skia/experimental/lowp-basic/bilerp-study.cpp
 FILE: ../../../third_party/skia/experimental/lowp-basic/lerp-study.cpp
