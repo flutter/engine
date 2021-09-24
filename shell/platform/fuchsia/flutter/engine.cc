@@ -7,6 +7,7 @@
 #include <fuchsia/accessibility/semantics/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
+#include <lib/fdio/directory.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
 #include <memory>
@@ -236,8 +237,15 @@ void Engine::Initialize(
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
        vsync_offset = product_config.get_vsync_offset()]() mutable {
         if (use_flatland) {
+          fidl::InterfaceHandle<fuchsia::ui::composition::Flatland> flatland;
+          zx_status_t status = fdio_service_connect(
+              "/svc/fuchsia.ui.composition.Flatland",
+              flatland.NewRequest().TakeChannel().release());
+          FML_CHECK(status == ZX_OK);
+
           flatland_connection_ = std::make_shared<FlatlandConnection>(
-              thread_label_, std::move(session_error_callback), [](auto) {},
+              thread_label_, std::move(flatland),
+              std::move(session_error_callback), [](auto) {},
               max_frames_in_flight, vsync_offset);
           surface_producer_.emplace(/*scenic_session=*/nullptr);
           fuchsia::ui::views::ViewIdentityOnCreation view_identity = {
