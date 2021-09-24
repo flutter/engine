@@ -158,7 +158,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
   // SkParagraph text layout library
   NSNumber* enableSkParagraph = [mainBundle objectForInfoDictionaryKey:@"FLTEnableSkParagraph"];
-  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : false;
+  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : true;
 
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
   // There are no ownership concerns here as all mappings are owned by the
