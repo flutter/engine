@@ -9,6 +9,9 @@
 ### Flutter toolchain. See
 ### https://github.com/flutter/flutter/wiki/Compiling-the-engine#important-dart-version-synchronization-on-fuchsia
 ### for more details.
+###
+### Example:
+###   $ ./sync_to_fuchsia.sh
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/lib/vars.sh || exit $?
 

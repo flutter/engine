@@ -11,7 +11,7 @@
 ### for more details.
 ###
 ### Example:
-###   branch_from_fuchsia.sh my_new_feature_branch
+###   $ ./branch_from_fuchsia.sh my_new_feature_branch
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"/lib/vars.sh || exit $?
 
