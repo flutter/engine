@@ -28,13 +28,3 @@ then
     git checkout -
     exit $?
 fi
-
-autosetuprebase="$(git config branch.autosetuprebase)"
-if [ autosetuprebase != "always" ]
-then
-  engine-warning \
-    "Pushing updates to a remote feature branch created from an earlier commit"\
-    "will always fail by default since the remote branch will be based"\
-    "off master instead of the earlier commit. You can avoid this by"\
-    "setting 'git config --global branch.autosetuprebase always'."
-fi
