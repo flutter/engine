@@ -427,6 +427,9 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
   float yDistOther = fabs(pointForOtherSelectionRect.y - point.y);
   float xDistOther = fabs(pointForOtherSelectionRect.x - point.x);
 
+  // This serves a similar purpose to isApproximatelyEqual, allowing a little buffer before
+  // declaring something closer vertically to account for the small variations in size and position
+  // of SelectionRects, especially when dealing with emoji.
   BOOL isCloserVertically = yDist < yDistOther - 1;
   BOOL isEqualVertically = isApproximatelyEqual(yDist, yDistOther, 1);
   BOOL isAboveBottomOfLine = point.y <= selectionRect.origin.y + selectionRect.size.height;
