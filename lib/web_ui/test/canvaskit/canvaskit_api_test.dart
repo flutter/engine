@@ -654,8 +654,8 @@ Future<bool> fuzzyCompareImages(ui.Image golden, ui.Image img) async {
 
 void _matrix4x4CompositionTests() {
   test('compose4x4MatrixInCanvas', () async {
-    final double rotateAroundX = pi / 6;  // 30 degrees
-    final double rotateAroundY = pi / 9;  // 20 degrees
+    const double rotateAroundX = pi / 6;  // 30 degrees
+    const double rotateAroundY = pi / 9;  // 20 degrees
     const int width = 150;
     const int height = 150;
     const ui.Color black = ui.Color.fromARGB(255, 0, 0, 0);
