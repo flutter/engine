@@ -37,21 +37,18 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
   void scale(SkScalar sx, SkScalar sy) override;
   void rotate(SkScalar degrees) override;
   void skew(SkScalar sx, SkScalar sy) override;
-  void transform2x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt) override;
-  void transform3x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt,
-                    SkScalar px,
-                    SkScalar py,
-                    SkScalar pt) override;
+  // clang-format off
+  void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                    SkScalar myx, SkScalar myy, SkScalar myt) override;
+  void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                    SkScalar myx, SkScalar myy, SkScalar myt,
+                    SkScalar mwx, SkScalar mwy, SkScalar mwt) override;
+  void transform4x4(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+  // clang-format on
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool isAA) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool isAA) override;

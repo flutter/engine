@@ -20,6 +20,7 @@ dependencies:
   litetest: any
   path: any
   sky_engine: any
+  vector_math: any
   vm_service: any
 
 dependency_overrides:

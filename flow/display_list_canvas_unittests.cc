@@ -997,6 +997,25 @@ class CanvasCompareTester {
                  cv_renderer, dl_renderer, adjuster, skewed_tolerance,
                  "Transform 3x3");
     }
+    {
+      SkM44 m44 = SkM44(1, 0, 0, RenderCenterX,  //
+                        0, 1, 0, RenderCenterY,  //
+                        0, 0, 1, 0,              //
+                        0, 0, .001, 1);
+      m44.preConcat(SkM44::Rotate({1, 0, 0}, M_PI / 60));  // 3 degrees around X
+      m44.preConcat(SkM44::Rotate({0, 1, 0}, M_PI / 45));  // 4 degrees around Y
+      m44.preTranslate(-RenderCenterX, -RenderCenterY);
+      RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(m44); },  //
+                 [=](DisplayListBuilder& b) {
+                   b.transform4x4(
+                       m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
+                       m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),
+                       m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),
+                       m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3));
+                 },  //
+                 cv_renderer, dl_renderer, adjuster, skewed_tolerance,
+                 "Transform 4x4");
+    }
   }
 
   static void RenderWithClips(CvRenderer& cv_renderer,

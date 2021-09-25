@@ -107,6 +107,7 @@ namespace flutter {
   V(Skew)                           \
   V(Transform2x3)                   \
   V(Transform3x3)                   \
+  V(Transform4x4)                   \
                                     \
   V(ClipIntersectRect)              \
   V(ClipIntersectRRect)             \
@@ -271,26 +272,62 @@ class Dispatcher {
   virtual void scale(SkScalar sx, SkScalar sy) = 0;
   virtual void rotate(SkScalar degrees) = 0;
   virtual void skew(SkScalar sx, SkScalar sy) = 0;
+
+  // The transform methods all assume the following math for transforming
+  // a point (x, y, z, w). SkPoint objects represent (x, y, 0, 1).
+  //   x' = x * mxx + y * mxy + z * mxz + w * mxt
+  //   y' = x * myx + y * myy + z * myz + w * myt
+  //   z' = x * mzx + y * mzy + z * mzz + w * mzt
+  //   w' = x * mwx + y * mwy + z * mwz + w * mwt
+  // Note that for non-homogenous coordinates (99.9% of the coordinates
+  // Flutter deals with) where w=1, the last column in those equations
+  // is simply adding a translation and so is referred to with the final
+  // letter "t" here instead of "w".
+  //
+  // In 2D coordinates, z=0 and so the 3rd column always evaluates to 0.
+  //
+  // In non-perspective transforms, the 4th row has identity values
+  // and so w` = w. (1 for 2d points).
+  //
+  // In affine 2D transforms, the 3rd row and column are identity
+  // and so z` = 0 and the x` and y` equations don't need Z.
+  //
+  // The only need for the w value here is for homogenous coordinates
+  // which only come up if the perspective elements (the 4th row) of
+  // a transform are non-identity. Otherwise the w always ends up
+  // being 1 in all calculations. If the matrix has perspecitve elements
+  // then the final transformed coordinates will have a w that is not 1
+  // and the actual coordinates are determined by dividing out that w
+  // factor resulting in a real-world point expressed as (x, y, z, 1).
+  //
+  // Because of the predominance of 2D affine transforms the
+  // 2x3 subset of the 4x4 transform matrix is special cased with
+  // its own dispatch method that omits the last 2 rows and the 3rd
+  // column. Similarly, Flutter provides simple perspective transforms
+  // that act on 2D coordinates for 2D (non-Z-buffer) output and those
+  // matrices can be expressed as 3x3 subsets with the 3rd row and column
+  // missing.
+
+  // clang-format off
+
   // |transform2x3| is equivalent to concatenating an SkMatrix
   // with only the upper 2x3 affine 2D parameters and the rest
   // of the transformation parameters set to their identity values.
-  virtual void transform2x3(SkScalar mxx,
-                            SkScalar mxy,
-                            SkScalar mxt,
-                            SkScalar myx,
-                            SkScalar myy,
-                            SkScalar myt) = 0;
+  virtual void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                            SkScalar myx, SkScalar myy, SkScalar myt) = 0;
   // |transform3x3| is equivalent to concatenating an SkMatrix
   // with no promises about the non-affine-2D parameters.
-  virtual void transform3x3(SkScalar mxx,
-                            SkScalar mxy,
-                            SkScalar mxt,
-                            SkScalar myx,
-                            SkScalar myy,
-                            SkScalar myt,
-                            SkScalar px,
-                            SkScalar py,
-                            SkScalar pt) = 0;
+  virtual void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                            SkScalar myx, SkScalar myy, SkScalar myt,
+                            SkScalar mwx, SkScalar mwy, SkScalar mwt) = 0;
+  // |transform4x4| is equivalent to concatenating a full SkM44
+  virtual void transform4x4(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) = 0;
+
+  // clang-format on
 
   virtual void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) = 0;
   virtual void clipRRect(const SkRRect& rrect,
@@ -402,21 +439,19 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void scale(SkScalar sx, SkScalar sy) override;
   void rotate(SkScalar degrees) override;
   void skew(SkScalar sx, SkScalar sy) override;
-  void transform2x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt) override;
-  void transform3x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt,
-                    SkScalar px,
-                    SkScalar py,
-                    SkScalar pt) override;
+
+  // clang-format off
+  void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                    SkScalar myx, SkScalar myy, SkScalar myt) override;
+  void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                    SkScalar myx, SkScalar myy, SkScalar myt,
+                    SkScalar mwx, SkScalar mwy, SkScalar mwt) override;
+  void transform4x4(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+  // clang-format on
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool isAA) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool isAA) override;
