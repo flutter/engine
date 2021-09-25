@@ -35,6 +35,7 @@ void DisplayListCanvasDispatcher::skew(SkScalar sx, SkScalar sy) {
   canvas_->skew(sx, sy);
 }
 // clang-format off
+// 2x3 2D affine subset of a 4x4 transform in row major order
 void DisplayListCanvasDispatcher::transform2x3(
     SkScalar mxx, SkScalar mxy, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myt) {
@@ -45,6 +46,7 @@ void DisplayListCanvasDispatcher::transform2x3(
                          0,   0,  1,  0,
                          0,   0,  0,  1));
 }
+// 3x3 non-Z subset of a 4x4 transform in row major order
 void DisplayListCanvasDispatcher::transform3x3(
     SkScalar mxx, SkScalar mxy, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myt,
@@ -56,6 +58,7 @@ void DisplayListCanvasDispatcher::transform3x3(
                          0,   0,  1,  0,
                         mwx, mwy, 0, mwt));
 }
+// full 4x4 transform in row major order
 void DisplayListCanvasDispatcher::transform4x4(
     SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
@@ -217,6 +220,7 @@ sk_sp<DisplayList> DisplayListCanvasRecorder::Build() {
 
 // clang-format off
 void DisplayListCanvasRecorder::didConcat44(const SkM44& m44) {
+  // transform4x4 takes a full 4x4 transform in row major order
   builder_->transform4x4(
       m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
       m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),

@@ -274,23 +274,55 @@ class Dispatcher {
   virtual void skew(SkScalar sx, SkScalar sy) = 0;
 
   // The transform methods all assume the following math for transforming
-  // a point (x, y, z, w). SkPoint objects represent (x, y, 0, 1).
+  // an arbitrary 3D homogenous point (x, y, z, w).
+  // All coordinates in the rendering methods (and SkPoint and SkRect objects)
+  // represent a simplified coordinate (x, y, 0, 1).
   //   x' = x * mxx + y * mxy + z * mxz + w * mxt
   //   y' = x * myx + y * myy + z * myz + w * myt
   //   z' = x * mzx + y * mzy + z * mzz + w * mzt
   //   w' = x * mwx + y * mwy + z * mwz + w * mwt
-  // Note that for non-homogenous coordinates (99.9% of the coordinates
-  // Flutter deals with) where w=1, the last column in those equations
-  // is simply adding a translation and so is referred to with the final
-  // letter "t" here instead of "w".
+  // Note that for non-homogenous 2D coordinates, the last column in those
+  // equations is multiplied by 1 and is simply adding a translation and
+  // so is referred to with the final letter "t" here instead of "w".
   //
   // In 2D coordinates, z=0 and so the 3rd column always evaluates to 0.
   //
   // In non-perspective transforms, the 4th row has identity values
-  // and so w` = w. (1 for 2d points).
+  // and so w` = w. (i.e. w'=1 for 2d points).
   //
-  // In affine 2D transforms, the 3rd row and column are identity
-  // and so z` = 0 and the x` and y` equations don't need Z.
+  // In affine 2D transforms, the 3rd and 4th row and 3rd column are all
+  // identity values and so z` = z (which is 0 for 2D coordinates) and
+  // the x` and y` equations don't see a contribution from a z coordinate
+  // and the w' ends up being the same as the w from the source coordinate
+  // (which is 1 for a 2D coordinate).
+  //
+  // Here is the math for transforming a 2D source coordinate and
+  // looking for the destination 2D coordinate (for a surface that
+  // does not have a Z buffer or track the Z coordinates in any way)
+  //  Source coordinate = (x, y, 0, 1)
+  //   x' = x * mxx + y * mxy + 0 * mxz + 1 * mxt
+  //   y' = x * myx + y * myy + 0 * myz + 1 * myt
+  //   z' = x * mzx + y * mzy + 0 * mzz + 1 * mzt
+  //   w' = x * mwx + y * mwy + 0 * mwz + 1 * mwt
+  //  Destination coordinate does not need z', so this reduces to:
+  //   x' = x * mxx + y * mxy + mxt
+  //   y' = x * myx + y * myy + myt
+  //   w' = x * mwx + y * mwy + mwt
+  //  Destination coordinate is (x' / w', y' / w', 0, 1)
+  // Note that these are the matrix values in transform3x3 and which are
+  // stored and used by SkMatrix.
+  //
+  // If the transform doesn't have any perspective parts (the last
+  // row is identity - 0, 0, 0, 1), then this further simplifies to:
+  //   x' = x * mxx + y * mxy + mxt
+  //   y' = x * myx + y * myy + myt
+  //   w' = x * 0 + y * 0 + 1         = 1
+  //
+  // In short, while the full 4x4 set of matrix entries needs to be
+  // maintained for accumulating transform mutations accurately, the
+  // actual end work of transforming a single 2D coordinate (or, in
+  // the case of bounds transformations, 4 of them) can be accomplished
+  // with the 9 values from transform3x3 or SkMatrix.
   //
   // The only need for the w value here is for homogenous coordinates
   // which only come up if the perspective elements (the 4th row) of
@@ -310,17 +342,29 @@ class Dispatcher {
 
   // clang-format off
 
-  // |transform2x3| is equivalent to concatenating an SkMatrix
-  // with only the upper 2x3 affine 2D parameters and the rest
-  // of the transformation parameters set to their identity values.
+  // |transform2x3| is equivalent to concatenating the internal 4x4 transform
+  // with the following row major transform matrix:
+  //   [ mxx  mxy   0   mxt ]
+  //   [ myx  myy   0   myt ]
+  //   [  0    0    1    0  ]
+  //   [  0    0    0    1  ]
   virtual void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
                             SkScalar myx, SkScalar myy, SkScalar myt) = 0;
-  // |transform3x3| is equivalent to concatenating an SkMatrix
-  // with no promises about the non-affine-2D parameters.
+  // |transform3x3| is equivalent to concatenating the internal 4x4 transform
+  // with the following row major transform matrix:
+  //   [ mxx  mxy   0   mxt ]
+  //   [ myx  myy   0   myt ]
+  //   [  0    0    1    0  ]
+  //   [ mwx  mwy   0   mwt ]
   virtual void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
                             SkScalar myx, SkScalar myy, SkScalar myt,
                             SkScalar mwx, SkScalar mwy, SkScalar mwt) = 0;
-  // |transform4x4| is equivalent to concatenating a full SkM44
+  // |transform4x4| is equivalent to concatenating the internal 4x4 transform
+  // with the following row major transform matrix:
+  //   [ mxx  mxy  mxz  mxt ]
+  //   [ myx  myy  myz  myt ]
+  //   [ mzx  mzy  mzz  mzt ]
+  //   [ mwx  mwy  mwz  mwt ]
   virtual void transform4x4(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
@@ -441,11 +485,14 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void skew(SkScalar sx, SkScalar sy) override;
 
   // clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
   void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
                     SkScalar myx, SkScalar myy, SkScalar myt) override;
+  // 3x3 non-Z subset of a 4x4 transform in row major order
   void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
                     SkScalar myx, SkScalar myy, SkScalar myt,
                     SkScalar mwx, SkScalar mwy, SkScalar mwt) override;
+  // full 4x4 transform in row major order
   void transform4x4(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,

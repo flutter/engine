@@ -112,6 +112,7 @@ void SkMatrixDispatchHelper::skew(SkScalar sx, SkScalar sy) {
   matrix33_ = matrix_.asM33();
 }
 // clang-format off
+// 2x3 2D affine subset of a 4x4 transform in row major order
 void SkMatrixDispatchHelper::transform2x3(
     SkScalar mxx, SkScalar mxy, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myt) {
@@ -119,6 +120,7 @@ void SkMatrixDispatchHelper::transform2x3(
   matrix_.preConcat(matrix33_);
   matrix33_ = matrix_.asM33();
 }
+// 3x3 non-Z subset of a 4x4 transform in row major order
 void SkMatrixDispatchHelper::transform3x3(
     SkScalar mxx, SkScalar mxy, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myt,
@@ -127,6 +129,7 @@ void SkMatrixDispatchHelper::transform3x3(
   matrix_.preConcat(matrix33_);
   matrix33_ = matrix_.asM33();
 }
+// full 4x4 transform in row major order
 void SkMatrixDispatchHelper::transform4x4(
     SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
