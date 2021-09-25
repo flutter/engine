@@ -188,6 +188,9 @@ public class FlutterImageView extends View implements RenderSurface {
     if (!isAttachedToFlutterRenderer) {
       return false;
     }
+    if (currentImage != null) {
+      return true;
+    }
     // 1. `acquireLatestImage()` may return null if no new image is available.
     // 2. There's no guarantee that `onDraw()` is called after `invalidate()`.
     // For example, the device may not produce new frames if it's in sleep mode

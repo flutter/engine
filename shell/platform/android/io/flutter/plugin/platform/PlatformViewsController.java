@@ -111,10 +111,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private boolean synchronizeToNativeViewHierarchy = true;
 
   // Overlay layer IDs that were displayed since the start of the current frame.
-  private HashSet<Integer> currentFrameUsedOverlayLayerIds;
+  private final HashSet<Integer> currentFrameUsedOverlayLayerIds;
 
   // Platform view IDs that were displayed since the start of the current frame.
-  private HashSet<Integer> currentFrameUsedPlatformViewIds;
+  private final HashSet<Integer> currentFrameUsedPlatformViewIds;
+
+  // The z-order of the views owned by controller that live in FlutterView.
+  // This is a stack that provides efficient querying of the views z-order.
+  private final SparseArray<View> viewZorder;
+
+  // The index of a view in viewZorder.
+  //
+  // This is used to determinate if the view is in the expected z-order.
+  // For example, if viewZorderIndex is 1, the view for index 1 in viewZorder must equal
+  // to the expected view in order to be considered in the correct order.
+  //
+  // This value is reset to 0 when the frame starts.
+  private int viewZorderIndex = 0;
 
   // Used to acquire the original motion events using the motionEventIds.
   private final MotionEventTracker motionEventTracker;
@@ -431,6 +444,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     overlayLayerViews = new SparseArray<>();
     currentFrameUsedOverlayLayerIds = new HashSet<>();
     currentFrameUsedPlatformViewIds = new HashSet<>();
+    viewZorder = new SparseArray<>();
 
     platformViews = new SparseArray<>();
     platformViewParent = new SparseArray<>();
@@ -502,6 +516,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   public void detachFromView() {
     destroyOverlaySurfaces();
+    destroyHybridPlatformViews();
+    viewZorder.clear();
+
     this.flutterView = null;
     flutterViewConvertedToImageView = false;
 
@@ -716,6 +733,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (contextToPlatformView.size() > 0) {
       contextToPlatformView.clear();
     }
+
+    destroyOverlaySurfaces();
+    destroyHybridPlatformViews();
+    viewZorder.clear();
   }
 
   private void initializeRootImageViewIfNeeded() {
@@ -798,15 +819,21 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
     final FlutterMutatorView parentView = platformViewParent.get(viewId);
     parentView.readyToDisplay(mutatorsStack, x, y, width, height);
-    parentView.setVisibility(View.VISIBLE);
-    parentView.bringToFront();
 
-    final FrameLayout.LayoutParams layoutParams =
-        new FrameLayout.LayoutParams(viewWidth, viewHeight);
+    parentView.setVisibility(View.VISIBLE);
+    bringViewToFrontIfNeeded(parentView);
+
     final View view = platformViews.get(viewId).getView();
     if (view != null) {
-      view.setLayoutParams(layoutParams);
-      view.bringToFront();
+      final ViewGroup.LayoutParams viewLayoutParams = view.getLayoutParams();
+      // setLayoutParams schedules a layout even when the params haven't changed.
+      // This is expensive on low end devices.
+      if (viewLayoutParams.width != viewWidth || viewLayoutParams.height != viewHeight) {
+        final FrameLayout.LayoutParams layoutParams =
+            new FrameLayout.LayoutParams(viewWidth, viewHeight);
+
+        view.setLayoutParams(layoutParams);
+      }
     }
     currentFrameUsedPlatformViewIds.add(viewId);
   }
@@ -832,18 +859,44 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       ((FlutterView) flutterView).addView(overlayView);
     }
 
-    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams((int) width, (int) height);
-    layoutParams.leftMargin = (int) x;
-    layoutParams.topMargin = (int) y;
-    overlayView.setLayoutParams(layoutParams);
+    // setLayoutParams schedules a layout even when the params haven't changed.
+    // This is expensive on low end devices.
+    final FrameLayout.LayoutParams currentParams =
+        (FrameLayout.LayoutParams) overlayView.getLayoutParams();
+    if (currentParams.width != width
+        || currentParams.height != height
+        || currentParams.leftMargin != x
+        || currentParams.topMargin != y) {
+      FrameLayout.LayoutParams layoutParams =
+          new FrameLayout.LayoutParams((int) width, (int) height);
+      layoutParams.leftMargin = (int) x;
+      layoutParams.topMargin = (int) y;
+      overlayView.setLayoutParams(layoutParams);
+    }
+
     overlayView.setVisibility(View.VISIBLE);
-    overlayView.bringToFront();
+    bringViewToFrontIfNeeded(overlayView);
     currentFrameUsedOverlayLayerIds.add(id);
   }
 
   public void onBeginFrame() {
+    viewZorderIndex = 0;
     currentFrameUsedOverlayLayerIds.clear();
     currentFrameUsedPlatformViewIds.clear();
+  }
+
+  /** @param view The view that should be */
+  private void bringViewToFrontIfNeeded(View view) {
+    if (viewZorder.contains(viewZorderIndex) && viewZorder.get(viewZorderIndex) == view) {
+      viewZorderIndex++;
+      return;
+    }
+    // Remove the views from the current z-order index to the top of the stack.
+    viewZorder.removeAtRange(viewZorderIndex, viewZorder.size() - 1);
+    viewZorder.put(viewZorderIndex, view);
+    viewZorderIndex++;
+    io.flutter.Log.d("flutter", "->" + viewZorderIndex + "- view: " + view);
+    view.bringToFront();
   }
 
   /**
@@ -966,17 +1019,30 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * <p>This method is used only internally by {@code FlutterJNI}.
    *
-   * <p>This member is not intended for public use, and is only visible for testing.
+   * <p>This member is not intended for public use.
    */
   public void destroyOverlaySurfaces() {
     for (int i = 0; i < overlayLayerViews.size(); i++) {
-      int overlayId = overlayLayerViews.keyAt(i);
-      FlutterImageView overlayView = overlayLayerViews.valueAt(i);
+      final int overlayId = overlayLayerViews.keyAt(i);
+      final FlutterImageView overlayView = overlayLayerViews.valueAt(i);
       overlayView.detachFromRenderer();
       if (flutterView != null) {
         ((FlutterView) flutterView).removeView(overlayView);
       }
     }
     overlayLayerViews.clear();
+  }
+
+  /** Destroys the platform views that use hybrid composition. */
+  @VisibleForTesting
+  public void destroyHybridPlatformViews() {
+    for (int i = 0; i < platformViewParent.size(); i++) {
+      final int overlayId = platformViewParent.keyAt(i);
+      final FlutterMutatorView view = platformViewParent.valueAt(i);
+      if (flutterView != null) {
+        ((FlutterView) flutterView).removeView(view);
+      }
+    }
+    platformViewParent.clear();
   }
 }

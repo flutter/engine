@@ -91,8 +91,7 @@ void Rasterizer::Teardown() {
   surface_.reset();
   last_layer_tree_.reset();
 
-  if (raster_thread_merger_.get() != nullptr &&
-      raster_thread_merger_.get()->IsMerged()) {
+  if (raster_thread_merger_ && raster_thread_merger_->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNowIfLastOne();
     raster_thread_merger_->SetMergeUnmergeCallback(nullptr);

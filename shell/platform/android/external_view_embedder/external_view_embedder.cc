@@ -212,7 +212,7 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  if (!FrameHasPlatformLayers()) {
+  if (!FrameHasPlatformLayers() || !raster_thread_merger) {
     return PostPrerollResult::kSuccess;
   }
   if (!raster_thread_merger->IsMerged()) {
@@ -264,14 +264,12 @@ void AndroidExternalViewEmbedder::BeginFrame(
 
   // The surface size changed. Therefore, destroy existing surfaces as
   // the existing surfaces in the pool can't be recycled.
-  if (frame_size_ != frame_size && raster_thread_merger->IsOnPlatformThread()) {
+  if (frame_size_ != frame_size) {
     surface_pool_->DestroyLayers(jni_facade_);
   }
   surface_pool_->SetFrameSize(frame_size);
   // JNI method must be called on the platform thread.
-  if (raster_thread_merger->IsOnPlatformThread()) {
-    jni_facade_->FlutterViewBeginFrame();
-  }
+  jni_facade_->FlutterViewBeginFrame();
 
   frame_size_ = frame_size;
   device_pixel_ratio_ = device_pixel_ratio;
@@ -288,14 +286,12 @@ void AndroidExternalViewEmbedder::EndFrame(
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   surface_pool_->RecycleLayers();
   // JNI method must be called on the platform thread.
-  if (raster_thread_merger->IsOnPlatformThread()) {
-    jni_facade_->FlutterViewEndFrame();
-  }
+  jni_facade_->FlutterViewEndFrame();
 }
 
 // |ExternalViewEmbedder|
 bool AndroidExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return true;
+  return false;
 }
 
 }  // namespace flutter

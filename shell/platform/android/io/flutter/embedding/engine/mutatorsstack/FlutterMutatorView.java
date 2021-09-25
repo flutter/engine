@@ -120,10 +120,16 @@ public class FlutterMutatorView extends FrameLayout {
     this.mutatorsStack = mutatorsStack;
     this.left = left;
     this.top = top;
-    FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);
-    layoutParams.leftMargin = left;
-    layoutParams.topMargin = top;
-    setLayoutParams(layoutParams);
+    final FrameLayout.LayoutParams currentLayout = (FrameLayout.LayoutParams) getLayoutParams();
+    if (currentLayout.width != width
+        || currentLayout.height != height
+        || currentLayout.leftMargin != left
+        || currentLayout.topMargin != top) {
+      final FrameLayout.LayoutParams newLayoutParams = new FrameLayout.LayoutParams(width, height);
+      newLayoutParams.leftMargin = left;
+      newLayoutParams.topMargin = top;
+      setLayoutParams(newLayoutParams);
+    }
     setWillNotDraw(false);
   }
 
