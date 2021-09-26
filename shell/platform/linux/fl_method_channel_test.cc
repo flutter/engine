@@ -612,7 +612,8 @@ struct UserDataReassignMethod {
 static void reassign_method_cb(FlMethodChannel* channel,
                                FlMethodCall* method_call,
                                gpointer raw_user_data) {
-  UserDataReassignMethod* user_data = static_cast<UserDataReassignMethod*>(raw_user_data);
+  UserDataReassignMethod* user_data =
+      static_cast<UserDataReassignMethod*>(raw_user_data);
   user_data->count += 1;
 
   g_autoptr(FlValue) result = fl_value_new_string("Polo!");
@@ -633,11 +634,11 @@ TEST(FlMethodChannelTest, ReassignMethodChannelShouldWork) {
 
   // Create the first channel and test if sending messages work.
   UserDataReassignMethod user_data1{
-    .loop = loop,
-    .count = 100,
+      .loop = loop,
+      .count = 100,
   };
-  FlMethodChannel* channel1 = fl_method_channel_new(
-      messenger, method_name, FL_METHOD_CODEC(codec));
+  FlMethodChannel* channel1 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(channel1, reassign_method_cb,
                                             &user_data1, nullptr);
 
@@ -659,11 +660,11 @@ TEST(FlMethodChannelTest, ReassignMethodChannelShouldWork) {
   // Create the second channel on the same name and test if sending messages
   // work.
   UserDataReassignMethod user_data2{
-    .loop = loop,
-    .count = 100,
+      .loop = loop,
+      .count = 100,
   };
-  g_autoptr(FlMethodChannel) channel2 = fl_method_channel_new(
-      messenger, method_name, FL_METHOD_CODEC(codec));
+  g_autoptr(FlMethodChannel) channel2 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(channel2, reassign_method_cb,
                                             &user_data2, nullptr);
 
@@ -694,11 +695,11 @@ TEST(FlMethodChannelTest, LateReassignMethodChannelShouldWork) {
 
   // Create the first channel and test if sending messages work.
   UserDataReassignMethod user_data1{
-    .loop = loop,
-    .count = 100,
+      .loop = loop,
+      .count = 100,
   };
-  FlMethodChannel* channel1 = fl_method_channel_new(
-      messenger, method_name, FL_METHOD_CODEC(codec));
+  FlMethodChannel* channel1 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(channel1, reassign_method_cb,
                                             &user_data1, nullptr);
 
@@ -719,11 +720,11 @@ TEST(FlMethodChannelTest, LateReassignMethodChannelShouldWork) {
   // Create the second channel on the same name and test if sending messages
   // work.
   UserDataReassignMethod user_data2{
-    .loop = loop,
-    .count = 100,
+      .loop = loop,
+      .count = 100,
   };
-  g_autoptr(FlMethodChannel) channel2 = fl_method_channel_new(
-      messenger, method_name, FL_METHOD_CODEC(codec));
+  g_autoptr(FlMethodChannel) channel2 =
+      fl_method_channel_new(messenger, method_name, FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(channel2, reassign_method_cb,
                                             &user_data2, nullptr);
 
