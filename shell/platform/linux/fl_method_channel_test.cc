@@ -603,3 +603,143 @@ TEST(FlMethodChannelTest, ReceiveMethodCallRespondErrorError) {
   // Blocks here until method_call_error_error_cb is called.
   g_main_loop_run(loop);
 }
+
+struct UserDataReassignMethod {
+  GMainLoop* loop;
+  int count;
+};
+
+static void reassign_method_cb(FlMethodChannel* channel,
+                               FlMethodCall* method_call,
+                               gpointer raw_user_data) {
+  UserDataReassignMethod* user_data = static_cast<UserDataReassignMethod*>(raw_user_data);
+  user_data->count += 1;
+
+  g_autoptr(FlValue) result = fl_value_new_string("Polo!");
+  g_autoptr(GError) error = nullptr;
+  EXPECT_TRUE(fl_method_call_respond_success(method_call, result, &error));
+  EXPECT_EQ(error, nullptr);
+
+  g_main_loop_quit(user_data->loop);
+}
+
+TEST(FlMethodChannelTest, ReassignMethodChannelShouldWork) {
+  const char* method_name = "test/standard-method";
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+
+  // Create the first channel and test if sending messages work.
+  UserDataReassignMethod user_data1{
+    .loop = loop,
+    .count = 100,
+  };
+  FlMethodChannel* channel1 = fl_method_channel_new(
+      messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel1, reassign_method_cb,
+                                            &user_data1, nullptr);
+
+  // Trigger the engine to make a method call.
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_string(method_name));
+  fl_value_append_take(args, fl_value_new_string("FOO"));
+  fl_value_append_take(args, fl_value_new_string("BAR"));
+
+  fl_method_channel_invoke_method(channel1, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+
+  // Blocks here until method_call_error_error_cb is called.
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+
+  // g_autoptr(GMainLoop) loop2 = g_main_loop_new(nullptr, 0);
+  // Create the second channel on the same name and test if sending messages
+  // work.
+  UserDataReassignMethod user_data2{
+    .loop = loop,
+    .count = 100,
+  };
+  g_autoptr(FlMethodChannel) channel2 = fl_method_channel_new(
+      messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel2, reassign_method_cb,
+                                            &user_data2, nullptr);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 101);
+
+  g_object_unref(channel1);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 102);
+}
+
+TEST(FlMethodChannelTest, LateReassignMethodChannelShouldWork) {
+  const char* method_name = "test/standard-method";
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+
+  // Create the first channel and test if sending messages work.
+  UserDataReassignMethod user_data1{
+    .loop = loop,
+    .count = 100,
+  };
+  FlMethodChannel* channel1 = fl_method_channel_new(
+      messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel1, reassign_method_cb,
+                                            &user_data1, nullptr);
+
+  // Trigger the engine to make a method call.
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_string(method_name));
+  fl_value_append_take(args, fl_value_new_string("FOO"));
+  fl_value_append_take(args, fl_value_new_string("BAR"));
+
+  fl_method_channel_invoke_method(channel1, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+
+  // Blocks here until method_call_error_error_cb is called.
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+
+  // Create the second channel on the same name and test if sending messages
+  // work.
+  UserDataReassignMethod user_data2{
+    .loop = loop,
+    .count = 100,
+  };
+  g_autoptr(FlMethodChannel) channel2 = fl_method_channel_new(
+      messenger, method_name, FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(channel2, reassign_method_cb,
+                                            &user_data2, nullptr);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 101);
+
+  g_object_unref(channel1);
+
+  fl_method_channel_invoke_method(channel2, "InvokeMethod", args, nullptr,
+                                  nullptr, nullptr);
+  g_main_loop_run(loop);
+
+  EXPECT_EQ(user_data1.count, 101);
+  EXPECT_EQ(user_data2.count, 102);
+}
