@@ -313,6 +313,7 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      size_t /* height */,
                                      FlutterOpenGLTexture* /* texture out */);
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
+typedef void (*OnPreEngineRestartCallback)(void* /* user data */);
 
 /// A structure to represent the width and height.
 typedef struct {
@@ -1577,6 +1578,9 @@ typedef struct {
   // or component name to embedder's logger. This string will be passed to to
   // callbacks on `log_message_callback`. Defaults to "flutter" if unspecified.
   const char* log_tag;
+
+  /// TODO
+  OnPreEngineRestartCallback on_pre_engine_restart_callback;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

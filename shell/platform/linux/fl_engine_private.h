@@ -58,6 +58,10 @@ typedef void (*FlEngineUpdateSemanticsNodeHandler)(
     const FlutterSemanticsNode* node,
     gpointer user_data);
 
+// TODO
+typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
+                                                  gpointer user_data);
+
 /**
  * fl_engine_new:
  * @project: an #FlDartProject.
@@ -112,6 +116,13 @@ void fl_engine_set_platform_message_handler(
 void fl_engine_set_update_semantics_node_handler(
     FlEngine* engine,
     FlEngineUpdateSemanticsNodeHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
+
+// TODO
+void fl_engine_set_on_pre_engine_restart_handler(
+    FlEngine* engine,
+    FlEngineOnPreEngineRestartHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
 
