@@ -300,7 +300,6 @@ static void fl_engine_on_pre_engine_restart_cb(void* user_data) {
   }
 }
 
-
 // Called when a response to a sent platform message is received from the
 // engine.
 static void fl_engine_platform_message_response_cb(const uint8_t* data,
@@ -554,7 +553,6 @@ void fl_engine_set_on_pre_engine_restart_handler(
   self->on_pre_engine_restart_handler_data = user_data;
   self->on_pre_engine_restart_handler_destroy_notify = destroy_notify;
 }
-
 
 gboolean fl_engine_send_platform_message_response(
     FlEngine* self,

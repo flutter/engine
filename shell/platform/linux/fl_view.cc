@@ -91,8 +91,7 @@ static void fl_view_update_semantics_node_cb(FlEngine* engine,
 static void fl_view_init_keyboard(FlView* self) {
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   self->keyboard_manager = fl_keyboard_manager_new(
-      fl_text_input_plugin_new(messenger,
-                                self, text_input_im_filter_by_gtk),
+      fl_text_input_plugin_new(messenger, self, text_input_im_filter_by_gtk),
       redispatch_key_event_by_gtk);
   // The embedder responder must be added before the channel responder.
   fl_keyboard_manager_add_responder(
@@ -103,7 +102,8 @@ static void fl_view_init_keyboard(FlView* self) {
       FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger)));
 }
 
-static void fl_view_on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
+static void fl_view_on_pre_engine_restart_cb(FlEngine* engine,
+                                             gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
   g_clear_object(&self->keyboard_manager);

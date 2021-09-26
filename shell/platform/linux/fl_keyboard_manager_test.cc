@@ -242,7 +242,6 @@ TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
   g_ptr_array_unref(call_records);
 }
 
-
 TEST(FlKeyboardManagerTest, SingleDelegateWithAsyncResponds) {
   GPtrArray* call_records = g_ptr_array_new_with_free_func(g_object_unref);
   FlKeyboardCallRecord* record;
