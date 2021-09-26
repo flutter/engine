@@ -1810,7 +1810,9 @@ static BOOL isScribbleAvailable() {
     @"deltas" : @[ deltaToFramework ],
   };
 
-  [self.textInputDelegate updateEditingClient:_textInputClient withDelta:deltas];
+  [self.textInputDelegate flutterTextInputView:self
+                           updateEditingClient:_textInputClient
+                                     withDelta:deltas];
 }
 
 - (BOOL)hasText {
