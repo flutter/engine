@@ -1,3 +1,4 @@
+
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -713,7 +714,7 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario with _BasePlatfor
     final Canvas canvas = Canvas(recorder);
     // This is just a background picture to make the result more viewable.
     canvas.drawRect(
-      const Rect.fromLTRB(0, 0, 500, 400),
+      const Rect.fromLTRB(0, 0, 600, 1000),
       Paint()..color = const Color(0xFFFF0000),
     );
     // This rect should look blur due to the backdrop filter.
