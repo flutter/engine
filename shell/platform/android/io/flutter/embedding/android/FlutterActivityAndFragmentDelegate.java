@@ -790,7 +790,9 @@ import java.util.Arrays;
       // not at least running critical, we should avoid delaying the frame for
       // an overly aggressive GC.
       boolean trim =
-          isFirstFrameRendered ? level >= TRIM_MEMORY_RUNNING_LOW : level > TRIM_MEMORY_RUNNING_LOW;
+          isFirstFrameRendered
+              ? level >= TRIM_MEMORY_RUNNING_LOW
+              : level >= TRIM_MEMORY_RUNNING_CRITICAL;
       if (trim) {
         flutterEngine.getDartExecutor().notifyLowMemoryWarning();
         flutterEngine.getSystemChannel().sendMemoryPressureWarning();
