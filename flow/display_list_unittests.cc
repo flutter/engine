@@ -384,41 +384,27 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 16, 1, 32, [](DisplayListBuilder& b) {b.skew(0.2, 0.1);}},
     }
   },
-  { "Transform2x3", {
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform2x3(0, 1, 12, 1, 0, 33);}},
+  { "Transform2DAffine", {
+      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform2DAffine(0, 1, 12, 1, 0, 33);}},
       // b.transform(identity) is ignored
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transform2x3(1, 0, 0, 0, 1, 0);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transform2DAffine(1, 0, 0, 0, 1, 0);}},
     }
   },
-  { "Transform3x3", {
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.transform3x3(1, 0, 0, 0, 1, 0, 0, .001, 1);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.transform3x3(0, 1, 12, 1, 0, 33, 0, 0, 12);}},
-      // b.transform(2d affine) is reduced to 2x3
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform3x3(2, 0, 0, 0, 1, 0, 0, 0, 1);}},
-      // b.transform(identity) is ignored
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transform3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);}},
-    }
-  },
-  { "Transform4x4", {
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.transform4x4(0, 1, 0, 12,
-                                                               1, 0, 0, 33,
-                                                               3, 2, 5, 29,
-                                                               0, 0, 0, 12);}},
-      // b.transform(identity-Z-entries) is reduced to 3x3
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.transform4x4(1, 0, 0, 0,
-                                                               0, 1, 0, 0,
-                                                               0, 0, 1, 0,
-                                                               0, 0, 0, 2);}},
+  { "TransformFullPerspective", {
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.transformFullPerspective(0, 1, 0, 12,
+                                                                           1, 0, 0, 33,
+                                                                           3, 2, 5, 29,
+                                                                           0, 0, 0, 12);}},
       // b.transform(2D affine) is reduced to 2x3
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform4x4(2, 0, 0, 0,
-                                                               0, 1, 0, 0,
-                                                               0, 0, 1, 0,
-                                                               0, 0, 0, 1);}},
+      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transformFullPerspective(2, 1, 0, 4,
+                                                                           1, 3, 0, 5,
+                                                                           0, 0, 1, 0,
+                                                                           0, 0, 0, 1);}},
       // b.transform(identity) is ignored
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transform4x4(1, 0, 0, 0,
-                                                             0, 1, 0, 0,
-                                                             0, 0, 1, 0,
-                                                             0, 0, 0, 1);}},
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transformFullPerspective(1, 0, 0, 0,
+                                                                         0, 1, 0, 0,
+                                                                         0, 0, 1, 0,
+                                                                         0, 0, 0, 1);}},
     }
   },
   { "ClipRect", {

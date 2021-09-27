@@ -105,9 +105,8 @@ namespace flutter {
   V(Scale)                          \
   V(Rotate)                         \
   V(Skew)                           \
-  V(Transform2x3)                   \
-  V(Transform3x3)                   \
-  V(Transform4x4)                   \
+  V(Transform2DAffine)              \
+  V(TransformFullPerspective)       \
                                     \
   V(ClipIntersectRect)              \
   V(ClipIntersectRRect)             \
@@ -288,7 +287,8 @@ class Dispatcher {
   // In 2D coordinates, z=0 and so the 3rd column always evaluates to 0.
   //
   // In non-perspective transforms, the 4th row has identity values
-  // and so w` = w. (i.e. w'=1 for 2d points).
+  // and so w` = w. (i.e. w'=1 for 2d points transformed by a matrix
+  // with identity values in the last row).
   //
   // In affine 2D transforms, the 3rd and 4th row and 3rd column are all
   // identity values and so z` = z (which is 0 for 2D coordinates) and
@@ -309,8 +309,12 @@ class Dispatcher {
   //   y' = x * myx + y * myy + myt
   //   w' = x * mwx + y * mwy + mwt
   //  Destination coordinate is (x' / w', y' / w', 0, 1)
-  // Note that these are the matrix values in transform3x3 and which are
-  // stored and used by SkMatrix.
+  // Note that these are the matrix values in SkMatrix which means that
+  // an SkMatrix contains enough data to transform a 2D source coordinate
+  // and place it on a 2D surface, but is otherwise not enough to continue
+  // concatenating with further matrices as its missing elements will not
+  // be able to model the interplay between the rows and columns that
+  // happens during a full 4x4 by 4x4 matrix multiplication.
   //
   // If the transform doesn't have any perspective parts (the last
   // row is identity - 0, 0, 0, 1), then this further simplifies to:
@@ -335,37 +339,31 @@ class Dispatcher {
   // Because of the predominance of 2D affine transforms the
   // 2x3 subset of the 4x4 transform matrix is special cased with
   // its own dispatch method that omits the last 2 rows and the 3rd
-  // column. Similarly, Flutter provides simple perspective transforms
-  // that act on 2D coordinates for 2D (non-Z-buffer) output and those
-  // matrices can be expressed as 3x3 subsets with the 3rd row and column
-  // missing.
+  // column. Even though a 3x3 subset is enough for transforming
+  // leaf coordinates as shown above, no method is provided for
+  // representing a 3x3 transform in the DisplayList since if there
+  // is perspective involved then a full 4x4 matrix should be provided
+  // for accurate concatenations. Providing a 3x3 method or record
+  // in the stream would encourage developers to prematurely subset
+  // a full perspective matrix.
 
   // clang-format off
 
-  // |transform2x3| is equivalent to concatenating the internal 4x4 transform
-  // with the following row major transform matrix:
+  // |transform2DAffine| is equivalent to concatenating the internal
+  // 4x4 transform with the following row major transform matrix:
   //   [ mxx  mxy   0   mxt ]
   //   [ myx  myy   0   myt ]
   //   [  0    0    1    0  ]
   //   [  0    0    0    1  ]
-  virtual void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                            SkScalar myx, SkScalar myy, SkScalar myt) = 0;
-  // |transform3x3| is equivalent to concatenating the internal 4x4 transform
-  // with the following row major transform matrix:
-  //   [ mxx  mxy   0   mxt ]
-  //   [ myx  myy   0   myt ]
-  //   [  0    0    1    0  ]
-  //   [ mwx  mwy   0   mwt ]
-  virtual void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                            SkScalar myx, SkScalar myy, SkScalar myt,
-                            SkScalar mwx, SkScalar mwy, SkScalar mwt) = 0;
-  // |transform4x4| is equivalent to concatenating the internal 4x4 transform
-  // with the following row major transform matrix:
+  virtual void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                                 SkScalar myx, SkScalar myy, SkScalar myt) = 0;
+  // |transformFullPerspective| is equivalent to concatenating the internal
+  // 4x4 transform with the following row major transform matrix:
   //   [ mxx  mxy  mxz  mxt ]
   //   [ myx  myy  myz  myt ]
   //   [ mzx  mzy  mzz  mzt ]
   //   [ mwx  mwy  mwz  mwt ]
-  virtual void transform4x4(
+  virtual void transformFullPerspective(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
@@ -485,19 +483,17 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void skew(SkScalar sx, SkScalar sy) override;
 
   // clang-format off
+
   // 2x3 2D affine subset of a 4x4 transform in row major order
-  void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                    SkScalar myx, SkScalar myy, SkScalar myt) override;
-  // 3x3 non-Z subset of a 4x4 transform in row major order
-  void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                    SkScalar myx, SkScalar myy, SkScalar myt,
-                    SkScalar mwx, SkScalar mwy, SkScalar mwt) override;
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override;
   // full 4x4 transform in row major order
-  void transform4x4(
+  void transformFullPerspective(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+
   // clang-format on
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool isAA) override;

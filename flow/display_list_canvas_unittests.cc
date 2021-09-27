@@ -978,24 +978,11 @@ class CanvasCompareTester {
                                       0, 0, 1);
       RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(tx); },  //
                  [=](DisplayListBuilder& b) {
-                   b.transform2x3(tx[0], tx[1], tx[2],  //
-                                  tx[3], tx[4], tx[5]);
+                   b.transform2DAffine(tx[0], tx[1], tx[2],  //
+                                       tx[3], tx[4], tx[5]);
                  },  //
                  cv_renderer, dl_renderer, adjuster, skewed_tolerance,
-                 "Transform 2x3");
-    }
-    {
-      SkMatrix tx = SkMatrix::MakeAll(1.10, 0.10, 5,   //
-                                      0.05, 1.05, 10,  //
-                                      0, 0, 1.01);
-      RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(tx); },  //
-                 [=](DisplayListBuilder& b) {
-                   b.transform3x3(tx[0], tx[1], tx[2],  //
-                                  tx[3], tx[4], tx[5],  //
-                                  tx[6], tx[7], tx[8]);
-                 },  //
-                 cv_renderer, dl_renderer, adjuster, skewed_tolerance,
-                 "Transform 3x3");
+                 "Transform 2D Affine");
     }
     {
       SkM44 m44 = SkM44(1, 0, 0, RenderCenterX,  //
@@ -1007,14 +994,14 @@ class CanvasCompareTester {
       m44.preTranslate(-RenderCenterX, -RenderCenterY);
       RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(m44); },  //
                  [=](DisplayListBuilder& b) {
-                   b.transform4x4(
+                   b.transformFullPerspective(
                        m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
                        m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),
                        m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),
                        m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3));
                  },  //
                  cv_renderer, dl_renderer, adjuster, skewed_tolerance,
-                 "Transform 4x4");
+                 "Transform Full Perspective");
     }
   }
 

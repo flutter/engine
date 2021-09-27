@@ -306,12 +306,12 @@ struct SkewOp final : DLOp {
 };
 // 4 byte header + 24 byte payload uses 28 bytes but is rounded up to 32 bytes
 // (4 bytes unused)
-struct Transform2x3Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform2x3;
+struct Transform2DAffineOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransform2DAffine;
 
   // clang-format off
-  Transform2x3Op(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                 SkScalar myx, SkScalar myy, SkScalar myt)
+  Transform2DAffineOp(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                      SkScalar myx, SkScalar myy, SkScalar myt)
       : mxx(mxx), mxy(mxy), mxt(mxt), myx(myx), myy(myy), myt(myt) {}
   // clang-format on
 
@@ -319,43 +319,21 @@ struct Transform2x3Op final : DLOp {
   const SkScalar myx, myy, myt;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform2x3(mxx, mxy, mxt,  //
-                            myx, myy, myt);
-  }
-};
-// 4 byte header + 36 byte payload packs evenly into 40 bytes
-struct Transform3x3Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform3x3;
-
-  // clang-format off
-  Transform3x3Op(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                 SkScalar myx, SkScalar myy, SkScalar myt,
-                 SkScalar mwx, SkScalar mwy, SkScalar mwt)
-      : mxx(mxx), mxy(mxy), mxt(mxt),
-        myx(myx), myy(myy), myt(myt),
-        mwx(mwx), mwy(mwy), mwt(mwt) {}
-  // clang-format on
-
-  const SkScalar mxx, mxy, mxt;
-  const SkScalar myx, myy, myt;
-  const SkScalar mwx, mwy, mwt;
-
-  void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform3x3(mxx, mxy, mxt,  //
-                            myx, myy, myt,  //
-                            mwx, mwy, mwt);
+    dispatcher.transform2DAffine(mxx, mxy, mxt,  //
+                                 myx, myy, myt);
   }
 };
 // 4 byte header + 64 byte payload uses 68 bytes which is rounded up to 72 bytes
 // (4 bytes unused)
-struct Transform4x4Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform4x4;
+struct TransformFullPerspectiveOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransformFullPerspective;
 
   // clang-format off
-  Transform4x4Op(SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-                 SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-                 SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-                 SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt)
+  TransformFullPerspectiveOp(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt)
       : mxx(mxx), mxy(mxy), mxz(mxz), mxt(mxt),
         myx(myx), myy(myy), myz(myz), myt(myt),
         mzx(mzx), mzy(mzy), mzz(mzz), mzt(mzt),
@@ -368,10 +346,10 @@ struct Transform4x4Op final : DLOp {
   const SkScalar mwx, mwy, mwz, mwt;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform4x4(mxx, mxy, mxz, mxt,  //
-                            myx, myy, myz, myt,  //
-                            mzx, mzy, mzz, mzt,  //
-                            mwx, mwy, mwz, mwt);
+    dispatcher.transformFullPerspective(mxx, mxy, mxz, mxt,  //
+                                        myx, myy, myz, myt,  //
+                                        mzx, mzy, mzz, mzt,  //
+                                        mwx, mwy, mwz, mwt);
   }
 };
 
@@ -1204,34 +1182,20 @@ void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
 }
 
 // clang-format off
+
 // 2x3 2D affine subset of a 4x4 transform in row major order
-void DisplayListBuilder::transform2x3(
+void DisplayListBuilder::transform2DAffine(
     SkScalar mxx, SkScalar mxy, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myt) {
   if (!(mxx == 1 && mxy == 0 && mxt == 0 &&
         myx == 0 && myy == 1 && myt == 0)) {
-    Push<Transform2x3Op>(0, 1,
-                        mxx, mxy, mxt,
-                        myx, myy, myt);
-  }
-}
-// 3x3 non-Z subset of a 4x4 transform in row major order
-void DisplayListBuilder::transform3x3(
-    SkScalar mxx, SkScalar mxy, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwt) {
-  if (mwx == 0 && mwy == 0 && mwt == 1) {
-    transform2x3(mxx, mxy, mxt,
-                 myx, myy, myt);
-  } else {
-    Push<Transform3x3Op>(0, 1,
-                         mxx, mxy, mxt,
-                         myx, myy, myt,
-                         mwx, mwy, mwt);
+    Push<Transform2DAffineOp>(0, 1,
+                              mxx, mxy, mxt,
+                              myx, myy, myt);
   }
 }
 // full 4x4 transform in row major order
-void DisplayListBuilder::transform4x4(
+void DisplayListBuilder::transformFullPerspective(
     SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
     SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
@@ -1239,18 +1203,18 @@ void DisplayListBuilder::transform4x4(
   if (                        mxz == 0 &&
                               myz == 0 &&
       mzx == 0 && mzy == 0 && mzz == 1 && mzt == 0 &&
-                              mwz == 0) {
-    transform3x3(mxx, mxy, mxt,
-                 myx, myy, myt,
-                 mwx, mwy, mwt);
+      mwx == 0 && mwy == 0 && mwz == 0 && mwt == 1) {
+    transform2DAffine(mxx, mxy, mxt,
+                      myx, myy, myt);
   } else {
-    Push<Transform4x4Op>(0, 1,
-                         mxx, mxy, mxz, mxt,
-                         myx, myy, myz, myt,
-                         mzx, mzy, mzz, mzt,
-                         mwx, mwy, mwz, mwt);
+    Push<TransformFullPerspectiveOp>(0, 1,
+                                     mxx, mxy, mxz, mxt,
+                                     myx, myy, myz, myt,
+                                     mzx, mzy, mzz, mzt,
+                                     mwx, mwy, mwz, mwt);
   }
 }
+
 // clang-format on
 
 void DisplayListBuilder::clipRect(const SkRect& rect,

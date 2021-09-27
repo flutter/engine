@@ -80,18 +80,14 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
   void skew(SkScalar sx, SkScalar sy) override {}
   // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
-  void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                    SkScalar myx, SkScalar myy, SkScalar myt) override {}
-  // 3x3 non-Z subset of a 4x4 transform in row major order
-  void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                    SkScalar myx, SkScalar myy, SkScalar myt,
-                    SkScalar mwx, SkScalar mwy, SkScalar mwt) override {}
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override {}
   // full 4x4 transform in row major order
-  void transform4x4(
-    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {}
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {}
   // clang-format on
 };
 
@@ -157,20 +153,19 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
   void scale(SkScalar sx, SkScalar sy) override;
   void rotate(SkScalar degrees) override;
   void skew(SkScalar sx, SkScalar sy) override;
+
   // clang-format off
+
   // 2x3 2D affine subset of a 4x4 transform in row major order
-  void transform2x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                    SkScalar myx, SkScalar myy, SkScalar myt) override;
-  // 3x3 non-Z subset of a 4x4 transform in row major order
-  void transform3x3(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                    SkScalar myx, SkScalar myy, SkScalar myt,
-                    SkScalar mwx, SkScalar mwy, SkScalar mwt) override;
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override;
   // full 4x4 transform in row major order
-  void transform4x4(
-    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
-    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
-    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+
   // clang-format on
 
   void save() override;
