@@ -41,19 +41,28 @@ void PlatformHandlerWinUwp::GetPlainText(
     std::string_view key) {
   // We call `Clipboard::GetContent()` when the application window is in
   // focus, otherwise calling this will throw an error.
-  if (isWindowInForeground()) {
-    auto content =
-        winrt::Windows::ApplicationModel::DataTransfer::Clipboard::GetContent();
-    // Calling `DataPackageView::GetTextAsync()` when the clipboard has no text
-    // content will throw an error.
-    if (content.Contains(winrt::Windows::ApplicationModel::DataTransfer::
-                             StandardDataFormats::Text())) {
-      // Waiting `DataPackageView::GetTextAsync()` using `TResult.get()` on the
-      // platform thread will causes the application stop, so we continue
-      // response on this callback.
-      content.GetTextAsync().Completed([result = std::move(result), key](
-                                           auto async_info,
-                                           auto _async_status) {
+  if (!isWindowInForeground()) {
+    result->Error(kClipboardError,
+                  "Unable to read clipboard. The window is not focused.");
+    return;
+  }
+
+  auto content =
+      winrt::Windows::ApplicationModel::DataTransfer::Clipboard::GetContent();
+
+  // Calling `DataPackageView::GetTextAsync()` when the clipboard has no text
+  // content will throw an error.
+  if (!content.Contains(winrt::Windows::ApplicationModel::DataTransfer::
+                            StandardDataFormats::Text())) {
+    result->Success(rapidjson::Document());
+    return;
+  }
+
+  // Waiting `DataPackageView::GetTextAsync()` using `TResult.get()` on the
+  // platform thread will causes the application stop, so we continue
+  // response on this callback.
+  content.GetTextAsync().Completed(
+      [result = std::move(result), key](auto async_info, auto _async_status) {
         auto clipboard_string = async_info.GetResults();
 
         rapidjson::Document document;
@@ -65,13 +74,6 @@ void PlatformHandlerWinUwp::GetPlainText(
             allocator);
         result->Success(document);
       });
-    } else {
-      result->Success(rapidjson::Document());
-    }
-  } else {
-    result->Error(kClipboardError,
-                  "Unable to read clipboard. The window is not focused.");
-  }
 }
 
 void PlatformHandlerWinUwp::GetHasStrings(
