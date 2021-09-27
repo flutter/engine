@@ -13,8 +13,12 @@ import 'package:fidl_fuchsia_ui_views/fidl_async.dart';
 import 'package:fuchsia_services/services.dart';
 import 'package:zircon/zircon.dart';
 
+// TODO(richkadel): To run the test serving the runner and test packages from
+// the flutter/engine package server (via
+// `//flutter/tools/fuchsia/devshell/serve.sh`), change `fuchsia.com` to
+// `engine`.
 const _kChildAppUrl =
-    'fuchsia-pkg://engine/child-view#meta/child-view.cmx';
+    'fuchsia-pkg://fuchsia.com/child-view#meta/child-view.cmx';
 
 TestApp app;
 

@@ -1,8 +1,9 @@
 # `flutter scenic embedder tests`
 
-## Build and reboot your Fuchsia device
+## Configure and build fuchsia
 
-For tests that require scenic, for example:
+For tests that require scenic, for example, run `fx set` with the required
+targets; for example:
 
 ```shell
 $ cd "$FUCHSIA_DIR"
@@ -69,7 +70,63 @@ $ ninja -C out/fuchsia_debug_x64 \
     flutter/shell/platform/fuchsia/flutter/integration_flutter_tests
 ```
 
-## Start the package servers
+## Publish the test packages to the Fuchsia package server
+
+The tests currently specify the Fuchsia package server's standard domain,
+`fuchsia.com`, as the server to use to resolve (locate and load) the test
+packages. So, before running the test, the most recently built `.far` files
+need to be published to the Fuchsia package repo:
+
+```shell
+$ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
+  -f "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test-0.far
+$ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
+  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far)
+$ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
+  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name child-view.far)
+```
+
+## Run the test (using the package server at `fuchsia.com`)
+
+```shell
+$ fx shell run-test-component \
+    fuchsia-pkg://fuchsia.com/flutter-embedder-test#meta/flutter-embedder-test.cmx
+```
+
+## Make a change and re-run the test
+
+If, for example, you only make a change to the Dart code in `parent-view`, you
+can rebuild only the parent-view package target, republish it, and then re-run
+the test, with:
+
+```shell
+$ ninja -C out/fuchsia_debug_x64 \
+    flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view:package
+$ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
+  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far)
+$ fx shell run-test-component \
+    fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
+```
+
+From here, you can modify the Flutter test, rebuild flutter, and usually rerun
+the test without rebooting, by repeating the commands above.
+
+The embedder tests must be run on a product without a graphical base shell,
+such as `core` because it starts and stops Scenic.
+
+## (Alternative) Serving flutter packages from a custom package server
+
+If you want to use a custom package server, you will need to edit these sources:
+
+    * `//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test.cc`
+    * `//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view/parent_view.dart`
+
+Search for the component URLs with `fuchsia.com`, and change it to `engine`,
+which is the domain currently registered with the custom package server in
+`//tools/fuchsia/devshell/serve.sh`.
+
+WARNING: Be careful not to check in that change because CI requires using the
+`fuchsia.com` domain/package server.
 
 The default fuchsia package server (launched via `fx serve`) is normally
 required, unless all of your test's package dependencies are included in the
@@ -118,21 +175,4 @@ $ fx shell run-test-component \
     fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
 ```
 
-## Make a change and re-run the test
-
-If, for example, you only make a change to the Dart code in `parent-view`, you
-can rebuild only the parent-view package target, and then re-run the test, with:
-
-```shell
-$ ninja -C out/fuchsia_debug_x64 \
-    flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view:package
-$ fx shell run-test-component \
-    fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
-```
-
-From here, you can modify the Flutter test, rebuild flutter, and usually rerun
-the test without rebooting, by repeating the calls above to `fx pm ...` and
-`fx shell run-test-component ...`.
-
-The embedder tests must be run on a product without a graphical base shell,
-such as `core` because it starts and stops Scenic.
+You can recompile and run the test without needing to re-publish the `.far`.

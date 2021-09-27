@@ -6,8 +6,12 @@
 
 namespace flutter_embedder_test {
 
+// TODO(richkadel): To run the test serving the runner and test packages from
+// the flutter/engine package server (via
+// `//flutter/tools/fuchsia/devshell/serve.sh`), change `fuchsia.com` to
+// `engine`.
 constexpr char kParentViewUrl[] =
-    "fuchsia-pkg://engine/parent-view#meta/parent-view.cmx";
+    "fuchsia-pkg://fuchsia.com/parent-view#meta/parent-view.cmx";
 
 constexpr scenic::Color kParentBackgroundColor = {0x00, 0x00, 0xFF,
                                                   0xFF};                // Blue
