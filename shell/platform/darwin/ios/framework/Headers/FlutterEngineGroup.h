@@ -41,6 +41,10 @@ FLUTTER_DARWIN_EXPORT
  */
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI;
+
+- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
+                                libraryURI:(nullable NSString*)libraryURI
+                              initialRoute:(nullable NSString*)initialRoute;
 @end
 
 NS_ASSUME_NONNULL_END

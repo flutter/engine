@@ -998,7 +998,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
-                           libraryURI:(/*nullable*/ NSString*)libraryURI {
+                           libraryURI:(/*nullable*/ NSString*)libraryURI
+                         initialRoute:(/*nullable*/ NSString*)initialRoute {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
                                                       project:_dartProject.get()
@@ -1027,8 +1028,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
+  const std::string initial_route([initialRoute UTF8String]);
   std::unique_ptr<flutter::Shell> shell =
-      _shell->Spawn(std::move(configuration), on_create_platform_view, on_create_rasterizer);
+      _shell->Spawn(std::move(configuration), std::move(initial_route), on_create_platform_view,
+                    on_create_rasterizer);
 
   result->_threadHost = _threadHost;
   result->_profiler = _profiler;

@@ -269,7 +269,7 @@ TEST_F(EngineTest, SpawnSharesFontLibrary) {
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
     auto spawn =
-        engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr);
+        engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr, "");
     EXPECT_TRUE(spawn != nullptr);
     EXPECT_EQ(&engine->GetFontCollection(), &spawn->GetFontCollection());
   });

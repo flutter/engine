@@ -81,6 +81,11 @@ public class FlutterEngineGroup {
     return createAndRunEngine(context, null);
   }
 
+  public FlutterEngine createAndRunEngine(
+      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint) {
+    return createAndRunEngine(context, dartEntrypoint, null);
+  }
+
   /**
    * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
    * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint}.
@@ -95,7 +100,7 @@ public class FlutterEngineGroup {
    * engine created will recreate its dependencies.
    */
   public FlutterEngine createAndRunEngine(
-      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint) {
+      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint, String initialRoute) {
     FlutterEngine engine = null;
 
     if (dartEntrypoint == null) {
@@ -104,9 +109,12 @@ public class FlutterEngineGroup {
 
     if (activeEngines.size() == 0) {
       engine = createEngine(context);
+      if (initialRoute != null) {
+        engine.getNavigationChannel().setInitialRoute(initialRoute);
+      }
       engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint);
     } else {
-      engine = activeEngines.get(0).spawn(context, dartEntrypoint);
+      engine = activeEngines.get(0).spawn(context, dartEntrypoint, initialRoute);
     }
 
     activeEngines.add(engine);

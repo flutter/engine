@@ -225,6 +225,10 @@ FLUTTER_DARWIN_EXPORT
  */
 - (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint libraryURI:(nullable NSString*)uri;
 
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint
+               libraryURI:(nullable NSString*)libraryURI
+             initialRoute:(nullable NSString*)initialRoute;
+
 /**
  * Destroy running context for an engine.
  *

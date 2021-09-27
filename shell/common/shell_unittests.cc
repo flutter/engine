@@ -2695,6 +2695,8 @@ TEST_F(ShellTest, Spawn) {
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
 
+  const std::string initial_route("/");
+
   fml::AutoResetWaitableEvent main_latch;
   std::string last_entry_point;
   // Fulfill native function for the first Shell's entrypoint.
@@ -2719,10 +2721,11 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration, &second_latch]() {
+      [this, &spawner = shell, &second_configuration, &second_latch,
+       &initial_route]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
-            std::move(second_configuration),
+            std::move(second_configuration), std::move(initial_route),
             [&platform_view_delegate](Shell& shell) {
               auto result = std::make_unique<MockPlatformView>(
                   platform_view_delegate, shell.GetTaskRunners());
