@@ -98,7 +98,6 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
                                fml::TimePoint frame_target_time,
                                bool pause_secondary_tasks) {
   FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
-  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   Callback callback;
   std::vector<fml::closure> secondary_callbacks;

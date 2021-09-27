@@ -2,9 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#define FML_USED_ON_EMBEDDER
+
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 
+#include <memory>
+
 #include "flutter/fml/logging.h"
+#include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -38,10 +43,16 @@ void VsyncWaiterFallback::AwaitVSync() {
   auto frame_start_time =
       SnapToNextTick(fml::TimePoint::Now(), phase_, kSingleFrameInterval);
   auto frame_target_time = frame_start_time + kSingleFrameInterval;
+  std::weak_ptr<VsyncWaiterFallback> weak_this =
+      std::static_pointer_cast<VsyncWaiterFallback>(shared_from_this());
 
-  task_runners_.GetPlatformTaskRunner()->PostTaskForTime(
-      [frame_start_time, frame_target_time, this]() {
-        FireCallback(frame_start_time, frame_target_time, !for_testing_);
+  auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  current_task_runner->PostTaskForTime(
+      [frame_start_time, frame_target_time, weak_this]() {
+        if (auto vsync_waiter = weak_this.lock()) {
+          vsync_waiter->FireCallback(frame_start_time, frame_target_time,
+                                     !vsync_waiter->for_testing_);
+        }
       },
       frame_start_time);
 }
