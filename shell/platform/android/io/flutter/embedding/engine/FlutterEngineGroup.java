@@ -102,7 +102,7 @@ public class FlutterEngineGroup {
   /**
    * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
    * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint} and
-   * the specified {@code initalRoute}.
+   * the specified {@code initialRoute}.
    *
    * <p>If no prior {@link io.flutter.embedding.engine.FlutterEngine} were created in this group,
    * the initialization cost will be slightly higher than subsequent engines. The very first {@link

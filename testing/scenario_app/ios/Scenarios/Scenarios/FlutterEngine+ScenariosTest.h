@@ -10,6 +10,6 @@ NS_ASSUME_NONNULL_BEGIN
                   withCompletion:(nullable void (^)(void))engineRunCompletion;
 - (FlutterEngine*)spawnWithEntrypoint:(nullable NSString*)entrypoint
                            libraryURI:(nullable NSString*)libraryURI
-                          initalRoute:(nullable NSString*)initalRoute;
+                         initialRoute:(nullable NSString*)initialRoute;
 @end
 NS_ASSUME_NONNULL_END
