@@ -480,7 +480,7 @@ Shell::~Shell() {
 
 std::unique_ptr<Shell> Shell::Spawn(
     RunConfiguration run_configuration,
-    const std::string initial_route,
+    const std::string& initial_route,
     const CreateCallback<PlatformView>& on_create_platform_view,
     const CreateCallback<Rasterizer>& on_create_rasterizer) const {
   FML_DCHECK(task_runners_.IsValid());
@@ -504,7 +504,7 @@ std::unique_ptr<Shell> Shell::Spawn(
                                /*dispatcher_maker=*/dispatcher_maker,
                                /*settings=*/settings,
                                /*animator=*/std::move(animator),
-                               /*initial_route*/ std::move(initial_route));
+                               /*initial_route*/ initial_route);
         },
         is_gpu_disabled));
     return result;

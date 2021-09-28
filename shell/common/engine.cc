@@ -113,7 +113,7 @@ std::unique_ptr<Engine> Engine::Spawn(
     const PointerDataDispatcherMaker& dispatcher_maker,
     Settings settings,
     std::unique_ptr<Animator> animator,
-    const std::string initial_route) const {
+    const std::string& initial_route) const {
   auto result = std::make_unique<Engine>(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
