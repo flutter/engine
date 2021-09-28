@@ -76,9 +76,6 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
 
-  // |ExternalViewEmbedder|
-  void Teardown() override;
-
   const EndFrameCallBack end_frame_call_back_;
 
   PostPrerollResult post_preroll_result_;

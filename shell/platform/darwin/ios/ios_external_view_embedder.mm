@@ -92,7 +92,4 @@ bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
 }
 
-// |ExternalViewEmbedder|
-void IOSExternalViewEmbedder::Teardown() {}
-
 }  // namespace flutter

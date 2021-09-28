@@ -90,6 +90,4 @@ bool ShellTestExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return support_thread_merging_;
 }
 
-void ShellTestExternalViewEmbedder::Teardown() {}
-
 }  // namespace flutter
