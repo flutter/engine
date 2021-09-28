@@ -64,6 +64,9 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
 
+  // |ExternalViewEmbedder|
+  void Teardown() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(IOSExternalViewEmbedder);
 };
 

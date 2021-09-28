@@ -58,6 +58,9 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   SkCanvas* CompositeEmbeddedView(int view_id) override { return &canvas_; }
 
+  // |ExternalViewEmbedder|
+  void Teardown() override {}
+
  private:
   SkCanvas canvas_;
 };

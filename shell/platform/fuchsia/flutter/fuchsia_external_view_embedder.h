@@ -120,6 +120,9 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override { return false; }
 
+  // |ExternalViewEmbedder|
+  void Teardown() override {}
+
   // View manipulation.
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.
