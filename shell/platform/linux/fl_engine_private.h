@@ -58,7 +58,13 @@ typedef void (*FlEngineUpdateSemanticsNodeHandler)(
     const FlutterSemanticsNode* node,
     gpointer user_data);
 
-// TODO
+/**
+ * FlEngineOnPreEngineRestartHandler:
+ * @engine: an #FlEngine.
+ * @user_data: semantic node information.
+ *
+ * @user_data: (closure): data provided when registering this handler.
+ */
 typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
                                                   gpointer user_data);
 
@@ -119,7 +125,16 @@ void fl_engine_set_update_semantics_node_handler(
     gpointer user_data,
     GDestroyNotify destroy_notify);
 
-// TODO
+/**
+ * fl_engine_set_on_pre_engine_restart_handler:
+ * @engine: an #FlEngine.
+ * @handler: function to call when the engine is restarted.
+ * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
+ *
+ * Registers the function called when the engine is restarted.
+ */
 void fl_engine_set_on_pre_engine_restart_handler(
     FlEngine* engine,
     FlEngineOnPreEngineRestartHandler handler,

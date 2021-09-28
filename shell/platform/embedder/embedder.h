@@ -1579,7 +1579,14 @@ typedef struct {
   // callbacks on `log_message_callback`. Defaults to "flutter" if unspecified.
   const char* log_tag;
 
-  /// TODO
+  // A callback that is invoked when the engine is restarted.
+  //
+  // This optional callback is typically used to reset states to as if the
+  // engine has just been started, and usually indicates the user has requested
+  // a hot restart (Shift-R in the Flutter CLI.) It is not called the first time
+  // the engine starts.
+  //
+  // The first argument is the `user_data` from `FlutterEngineInitialize`.
   OnPreEngineRestartCallback on_pre_engine_restart_callback;
 } FlutterProjectArgs;
 
