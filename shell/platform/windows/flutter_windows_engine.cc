@@ -419,7 +419,7 @@ void FlutterWindowsEngine::SendSystemSettings() {
   settings.AddMember("alwaysUse24HourFormat",
                      Prefer24HourTime(GetUserTimeFormat()), allocator);
   settings.AddMember("textScaleFactor", 1.0, allocator);
-  settings.AddMember("platformBrightness", GetPreferredBrightness(), allocator);
+  settings.AddMember("platformBrightness", Utf8FromUtf16(GetPreferredBrightness()), allocator);
   settings_channel_->Send(settings);
 }
 

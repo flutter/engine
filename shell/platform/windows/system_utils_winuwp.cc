@@ -82,7 +82,7 @@ bool Prefer24HourTime(std::wstring time_format) {
   return time_format.find(L"H") != std::wstring::npos;
 }
 
-std::string GetPreferredBrightness() {
+std::wstring GetPreferredBrightness() {
   winrt::Windows::UI::ViewManagement::UISettings ui_settings;
   auto background_color = ui_settings.GetColorValue(
       winrt::Windows::UI::ViewManagement::UIColorType::Background);

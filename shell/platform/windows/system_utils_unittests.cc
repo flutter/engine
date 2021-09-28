@@ -89,8 +89,8 @@ TEST(SystemUtils, Prefer24HourTimeHandles24Hour) {
 }
 
 TEST(SystemUtils, GetPreferredBrightness) {
-  std::string brightness = GetPreferredBrightness();
-  EXPECT_TRUE(brightness == "light" || brightness == "dark");
+  std::wstring brightness = GetPreferredBrightness();
+  EXPECT_TRUE(brightness == L"light" || brightness == L"dark");
 }
 
 }  // namespace testing

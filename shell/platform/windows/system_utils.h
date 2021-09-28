@@ -13,8 +13,8 @@
 namespace flutter {
 
 namespace {
-static constexpr char kPlatformBrightnessLight[] = "light";
-static constexpr char kPlatformBrightnessDark[] = "dark";
+static constexpr wchar_t kPlatformBrightnessLight[] = L"light";
+static constexpr wchar_t kPlatformBrightnessDark[] = L"dark";
 }  // namespace
 
 // Components of a system language/locale.
@@ -43,7 +43,7 @@ std::wstring GetUserTimeFormat();
 bool Prefer24HourTime(std::wstring time_format);
 
 // Returns the user-preferred brightness.
-std::string GetPreferredBrightness();
+std::wstring GetPreferredBrightness();
 
 }  // namespace flutter
 

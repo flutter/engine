@@ -106,7 +106,7 @@ bool Prefer24HourTime(std::wstring time_format) {
   return time_format.find(L"H") != std::wstring::npos;
 }
 
-std::string GetPreferredBrightness() {
+std::wstring GetPreferredBrightness() {
   DWORD use_light_theme;
   DWORD use_light_theme_size = sizeof(use_light_theme);
   LONG result = RegGetValue(
