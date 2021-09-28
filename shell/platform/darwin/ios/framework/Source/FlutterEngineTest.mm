@@ -10,7 +10,6 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
 
 FLUTTER_ASSERT_ARC
