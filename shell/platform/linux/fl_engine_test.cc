@@ -270,11 +270,8 @@ TEST(FlEngineTest, OnPreEngineRestart) {
 
   // Set a handler, and the call should has an effect.
   fl_engine_set_on_pre_engine_restart_handler(
-    engine,
-    on_pre_engine_restart_cb,
-    &count,
-    on_pre_engine_restart_destroy_notify
-  );
+      engine, on_pre_engine_restart_cb, &count,
+      on_pre_engine_restart_destroy_notify);
 
   callback(callback_user_data);
   EXPECT_EQ(count, 1);
