@@ -81,11 +81,6 @@ public class FlutterEngineGroup {
     return createAndRunEngine(context, null);
   }
 
-  public FlutterEngine createAndRunEngine(
-      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint) {
-    return createAndRunEngine(context, dartEntrypoint, null);
-  }
-
   /**
    * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
    * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint}.
@@ -100,7 +95,28 @@ public class FlutterEngineGroup {
    * engine created will recreate its dependencies.
    */
   public FlutterEngine createAndRunEngine(
-      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint, String initialRoute) {
+      @NonNull Context context, @Nullable DartEntrypoint dartEntrypoint) {
+    return createAndRunEngine(context, dartEntrypoint, null);
+  }
+
+  /**
+   * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
+   * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint} and
+   * the specified {@code initalRoute}.
+   *
+   * <p>If no prior {@link io.flutter.embedding.engine.FlutterEngine} were created in this group,
+   * the initialization cost will be slightly higher than subsequent engines. The very first {@link
+   * io.flutter.embedding.engine.FlutterEngine} created per program, regardless of
+   * FlutterEngineGroup, also incurs the Dart VM creation time.
+   *
+   * <p>Subsequent engine creations will share resources with existing engines. However, if all
+   * existing engines were {@link io.flutter.embedding.engine.FlutterEngine#destroy()}ed, the next
+   * engine created will recreate its dependencies.
+   */
+  public FlutterEngine createAndRunEngine(
+      @NonNull Context context,
+      @Nullable DartEntrypoint dartEntrypoint,
+      @Nullable String initialRoute) {
     FlutterEngine engine = null;
 
     if (dartEntrypoint == null) {
