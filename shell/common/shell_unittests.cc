@@ -2695,7 +2695,7 @@ TEST_F(ShellTest, Spawn) {
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
 
-  const std::string initial_route("/");
+  const std::string initial_route("/foo");
 
   fml::AutoResetWaitableEvent main_latch;
   std::string last_entry_point;
@@ -2743,6 +2743,7 @@ TEST_F(ShellTest, Spawn) {
                    // Check second shell ran the second entrypoint.
                    ASSERT_EQ("testCanLaunchSecondaryIsolate",
                              spawn->GetEngine()->GetLastEntrypoint());
+                   ASSERT_EQ("/foo", spawn->GetEngine()->InitialRoute());
 
                    // TODO(74520): Remove conditional once isolate groups are
                    // supported by JIT.
