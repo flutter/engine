@@ -1028,7 +1028,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
-  const std::string initial_route([initialRoute UTF8String]);
+  std::string initial_route;
+  if (initialRoute) {
+    initial_route = [initialRoute UTF8String];
+  }
+
   std::unique_ptr<flutter::Shell> shell =
       _shell->Spawn(std::move(configuration), std::move(initial_route), on_create_platform_view,
                     on_create_rasterizer);
