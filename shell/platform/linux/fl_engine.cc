@@ -291,7 +291,7 @@ static void fl_engine_update_semantics_node_cb(const FlutterSemanticsNode* node,
 // Called when the engine is restarted.
 //
 // This method should reset states to as if the engine has just been started,
-// and usually indicates the user has requested a hot restart (Shift-R in the
+// which usually indicates the user has requested a hot restart (Shift-R in the
 // Flutter CLI.)
 static void fl_engine_on_pre_engine_restart_cb(void* user_data) {
   FlEngine* self = FL_ENGINE(user_data);
@@ -360,6 +360,13 @@ static void fl_engine_dispose(GObject* object) {
   }
   self->update_semantics_node_handler_data = nullptr;
   self->update_semantics_node_handler_destroy_notify = nullptr;
+
+  if (self->on_pre_engine_restart_handler_destroy_notify) {
+    self->on_pre_engine_restart_handler_destroy_notify(
+        self->on_pre_engine_restart_handler_data);
+  }
+  self->on_pre_engine_restart_handler_data = nullptr;
+  self->on_pre_engine_restart_handler_destroy_notify = nullptr;
 
   G_OBJECT_CLASS(fl_engine_parent_class)->dispose(object);
 }

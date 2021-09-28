@@ -102,6 +102,11 @@ static void fl_view_init_keyboard(FlView* self) {
       FL_KEY_RESPONDER(fl_key_channel_responder_new(messenger)));
 }
 
+// Called when the engine is restarted.
+//
+// This method should reset states to as if the engine has just been started,
+// which usually indicates the user has requested a hot restart (Shift-R in the
+// Flutter CLI.)
 static void fl_view_on_pre_engine_restart_cb(FlEngine* engine,
                                              gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
