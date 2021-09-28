@@ -3,12 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert' show json;
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
 import 'package:pedantic/pedantic.dart';
 import 'package:test_api/src/backend/runtime.dart';
-import 'package:test_core/src/util/io.dart';
 
 import 'browser.dart';
 import 'browser_lock.dart';
@@ -49,13 +49,9 @@ class Firefox extends Browser {
   @override
   final String name = 'Firefox';
 
-  @override
-  final Future<Uri> remoteDebuggerUrl;
-
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, {bool debug = false}) {
-    final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(() async {
       final BrowserInstallation installation = await getOrInstallFirefox(
         browserLock.firefoxLock.version,
@@ -84,7 +80,6 @@ user_pref("dom.max_script_run_time", 0);
           .writeAsStringSync(_profile);
       final bool isMac = Platform.isMacOS;
       final List<String> args = <String>[
-        url.toString(),
         '--profile',
         temporaryProfileDirectory.path,
         if (!debug)
@@ -94,23 +89,91 @@ user_pref("dom.max_script_run_time", 0);
         // On Mac Firefox uses the -- option prefix, while elsewhere it uses the - prefix.
         '${isMac ? '-' : ''}-new-window',
         '${isMac ? '-' : ''}-new-instance',
-        '--start-debugger-server $kDevtoolsPort',
+        'http://localhost:$kHealthCheckServerPort',
       ];
 
-      final Process process =
-          await Process.start(installation.executable, args);
+      final _HealthCheckServer healthCheckServer = await _HealthCheckServer.start(url);
 
-      remoteDebuggerCompleter.complete(
-          getRemoteDebuggerUrl(Uri.parse('http://localhost:$kDevtoolsPort')));
+      final Process process;
+      final Object? healthCheckResult;
+      try {
+        process =
+            await Process.start(installation.executable, args);
+
+        // Wait for the browser to ping the health check. If the browser exits
+        // before the health check, then something is wrong and we should
+        // report the failure.
+        healthCheckResult = await Future.any<Object?>(<Future<Object?>>[
+          process.exitCode,
+          healthCheckServer.whenHealthCheckPingReceived,
+        ]);
+      } catch (error) {
+        rethrow;
+      } finally {
+        await healthCheckServer.close();
+      }
+
+      if (healthCheckResult is int) {
+        throw Exception(
+          'Firefox exited prematurely with exit code $healthCheckResult before reporting a health check.',
+        );
+      }
 
       unawaited(process.exitCode.then((_) {
         temporaryProfileDirectory.deleteSync(recursive: true);
       }));
 
       return process;
-    }, remoteDebuggerCompleter.future);
+    });
   }
 
-  Firefox._(Future<Process> Function() startBrowser, this.remoteDebuggerUrl)
+  Firefox._(Future<Process> Function() startBrowser)
       : super(startBrowser);
+}
+
+/// Host the initial page that redirects to the test page.
+///
+/// The browser's ability to load the initial page is used as a proof that the
+/// browser has launched successfully, and therefore it's safe to load the test
+/// page. When the initial page is requested by the browser, the
+/// [whenHealthCheckPingReceived] resolves successfully.
+class _HealthCheckServer {
+  static Future<_HealthCheckServer> start(Uri url) async {
+    final HttpServer server = await HttpServer.bind('localhost', kHealthCheckServerPort);
+    return _HealthCheckServer._(url, server);
+  }
+
+  _HealthCheckServer._(Uri url, this._httpServer) {
+    final Completer<void> completer = Completer<void>();
+    whenHealthCheckPingReceived = completer.future;
+    _httpServer.forEach((HttpRequest request) async {
+      try {
+        request.response.headers.set(HttpHeaders.contentTypeHeader, 'text/html');
+        request.response.write('''
+  <script>
+    location = ${json.encode(url.toString())};
+  </script>
+        ''');
+
+        // We need to flush because we won't keep the health check server
+        // around. So we need to make sure the client has received the bytes
+        // prior to shutting it down.
+        await request.response.flush();
+        await request.response.close();
+        completer.complete();
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+  }
+
+  final HttpServer _httpServer;
+
+  /// Resolves when the health check server receives an HTTP request.
+  late final Future<void> whenHealthCheckPingReceived;
+
+  /// Shuts down the health check server.
+  Future<void> close() async {
+    await _httpServer.close(force: true);
+  }
 }

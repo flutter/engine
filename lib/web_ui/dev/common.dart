@@ -16,6 +16,10 @@ import 'safari_macos.dart';
 
 /// The port number for debugging.
 const int kDevtoolsPort = 12345;
+
+/// The port number for the temporary local server used to health-check the
+/// browser.
+const int kHealthCheckServerPort = 12346;
 const int kMaxScreenshotWidth = 1024;
 const int kMaxScreenshotHeight = 1024;
 const double kMaxDiffRateFailure = 0.28 / 100; // 0.28%

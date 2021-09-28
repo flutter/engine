@@ -573,7 +573,7 @@ class BrowserManager {
   }) {
     final Browser browser = _newBrowser(url, browserEnvironment, debug: debug);
 
-    final Completer<BrowserManager> completer = Completer<BrowserManager>();
+    final Completer<BrowserManager?> completer = Completer<BrowserManager?>();
 
     // For the cases where we use a delegator such as `adb` (for Android) or
     // `xcrun` (for IOS), these delegator processes can shut down before the

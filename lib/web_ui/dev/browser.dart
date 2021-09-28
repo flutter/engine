@@ -49,6 +49,13 @@ abstract class BrowserEnvironment {
   ScreenshotManager? getScreenshotManager();
 }
 
+/// Starts a browser for testing.
+///
+/// This function must ensure the browser has started successfully prior to
+/// returning the browser [Process]. For example, it should establish a healthy
+/// debug connection. If this function fails it will be retried.
+typedef BrowserStarter = Future<Process> Function();
+
 /// An interface for running browser instances.
 ///
 /// This is intentionally coarse-grained: browsers are controlled primary from
@@ -93,16 +100,16 @@ abstract class Browser {
 
   /// Creates a new browser.
   ///
-  /// This is intended to be called by subclasses. They pass in [startBrowser],
+  /// This is intended to be called by subclasses. They pass in [browserStarter],
   /// which asynchronously returns the browser process. Any errors in
-  /// [startBrowser] (even those raised asynchronously after it returns) are
+  /// [browserStarter] (even those raised asynchronously after it returns) are
   /// piped to [onExit] and will cause the browser to be killed.
-  Browser(Future<Process> Function() startBrowser) {
+  Browser(BrowserStarter browserStarter) {
     // Don't return a Future here because there's no need for the caller to wait
     // for the process to actually start. They should just wait for the HTTP
     // request instead.
     runZonedGuarded(() async {
-      final Process process = await startBrowser();
+      final Process process = await _startBrowserWithRetry(browserStarter);
       _processCompleter.complete(process);
 
       final Uint8Buffer output = Uint8Buffer();
@@ -199,4 +206,22 @@ abstract class ScreenshotManager {
   /// - Chrome, no-suffix: backdrop_filter_clip_moved.actual.png
   /// - iOS Safari: backdrop_filter_clip_moved.iOS_Safari.actual.png
   String get filenameSuffix;
+}
+
+Future<Process> _startBrowserWithRetry(BrowserStarter browserStarter) async {
+  const int maxAttempts = 3;
+  int attemptCount = 0;
+  while (attemptCount < maxAttempts) {
+    attemptCount += 1;
+    try {
+      return await browserStarter();
+    } catch (error, stackTrace) {
+      stderr.writeln(error);
+      stderr.writeln(stackTrace);
+      if (attemptCount < maxAttempts) {
+        stderr.writeln('Will try launching the browser again.');
+      }
+    }
+  }
+  throw Exception('Failed to start the browser. Giving up after $maxAttempts failed attempts.');
 }
