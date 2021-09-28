@@ -9,8 +9,7 @@ import androidx.annotation.Nullable;
 /**
  * Provides a {@link SplashScreen} to display while Flutter initializes and renders its first frame.
  *
- * <p>Please use the new Splash screen API available on Android S. On lower versions of Android,
- * it's no longer necessary to display a splash screen to wait for the Flutter first frame, and
+ * <p>Flutter now automatically keeps the Android launch screen displayed until Flutter has drawn the first frame, and
  * thus, there is no longer a need to provide an implementation of this interface.
  *
  * @deprecated
