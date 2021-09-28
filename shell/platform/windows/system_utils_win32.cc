@@ -116,11 +116,7 @@ std::wstring GetPreferredBrightness() {
       &use_light_theme_size);
 
   if (result == 0) {
-    if (use_light_theme == 1) {
-      return kPlatformBrightnessLight;
-    } else {
-      return kPlatformBrightnessDark;
-    }
+    return use_light_theme ? kPlatformBrightnessLight : kPlatformBrightnessDark;
   } else {
     // The current OS does not support dark mode. (Older Windows 10 or before
     // Windows 10)
