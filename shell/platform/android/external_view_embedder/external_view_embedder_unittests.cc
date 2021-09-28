@@ -889,8 +889,9 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
       std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   auto window = fml::MakeRefCounted<AndroidNativeWindow>(nullptr);
   auto gr_context = GrDirectContext::MakeMock(nullptr);
+  auto frame_size = SkISize::Make(1000, 1000);
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
-      [&android_context, gr_context, window]() {
+      [&android_context, gr_context, window, frame_size]() {
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
             SkSurface::MakeNull(1000, 1000), false,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
@@ -898,8 +899,15 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
             });
 
         auto surface_mock = std::make_unique<SurfaceMock>();
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+            .WillOnce(Return(ByMove(std::move(surface_frame_1))));
+
         auto android_surface_mock =
             std::make_unique<AndroidSurfaceMock>(android_context);
+        EXPECT_CALL(*android_surface_mock, IsValid()).WillOnce(Return(true));
+        EXPECT_CALL(*android_surface_mock, CreateGPUSurface(gr_context.get()))
+            .WillOnce(Return(ByMove(std::move(surface_mock))));
+
         return android_surface_mock;
       });
 
@@ -909,7 +917,6 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
   auto raster_thread_merger =
       GetThreadMergerFromPlatformThread(&rasterizer_thread);
 
-  auto frame_size = SkISize::Make(1000, 1000);
   embedder->BeginFrame(frame_size, nullptr, 1.5, raster_thread_merger);
 
   // Add an Android view.
@@ -922,6 +929,12 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
   // This simulates Flutter UI that intersects with the Android view.
   embedder->CompositeEmbeddedView(0)->drawRect(
       SkRect::MakeXYWH(50, 50, 200, 200), SkPaint());
+
+  // Create a new overlay surface.
+  EXPECT_CALL(*jni_mock, FlutterViewCreateOverlaySurface())
+      .WillOnce(Return(
+          ByMove(std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
+              0, window))));
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
       SkSurface::MakeNull(1000, 1000), false,
