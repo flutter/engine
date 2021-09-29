@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 
+#include <chrono>
 #include <map>
 #include <memory>
 #include <optional>
@@ -144,6 +145,9 @@ class FlutterWindowsEngine {
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
+  // Invoke on the embedder's vsync callback to schedule a frame.
+  void OnVsync(intptr_t baton);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -200,6 +204,16 @@ class FlutterWindowsEngine {
   // is being destroyed.
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_ = nullptr;
+
+  // The approximate time between vblank events.
+  std::chrono::nanoseconds FrameInterval();
+
+  // The start time used to align frames.
+  std::chrono::nanoseconds start_time_ = std::chrono::nanoseconds::zero();
+
+  // An override of the frame interval used by EngineModifier for testing.
+  std::optional<std::chrono::nanoseconds> frame_interval_override_ =
+      std::nullopt;
 
 #ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.
