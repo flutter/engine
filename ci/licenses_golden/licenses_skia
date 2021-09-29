@@ -1,4 +1,4 @@
-Signature: 458aeb414e8f8529e3d64c578598410b
+Signature: 902b266d4d65e5c3c83b4291e40fcaeb
 
 UNUSED LICENSES:
 
@@ -2933,7 +2933,11 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/CanvasSaveRestoreBench.cpp
 FILE: ../../../third_party/skia/bench/TriangulatorBench.cpp
 FILE: ../../../third_party/skia/experimental/graphite/include/Context.h
+FILE: ../../../third_party/skia/experimental/graphite/include/GraphiteTypes.h
 FILE: ../../../third_party/skia/experimental/graphite/include/SkStuff.h
+FILE: ../../../third_party/skia/experimental/graphite/include/TextureInfo.h
+FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlBackendContext.h
+FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlTypes.h
 FILE: ../../../third_party/skia/experimental/graphite/src/BoundsManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.h
@@ -2943,6 +2947,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Context.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.h
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.cpp
@@ -2962,8 +2968,17 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Task.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Task.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCaps.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCaps.mm
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCommandBuffer.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCommandBuffer.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlGpu.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlGpu.mm
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlPipeline.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlPipeline.mm
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlResourceProvider.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlResourceProvider.mm
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlTypesPriv.mm
 FILE: ../../../third_party/skia/experimental/lowp-basic/QMath.h
 FILE: ../../../third_party/skia/experimental/lowp-basic/bilerp-study.cpp
 FILE: ../../../third_party/skia/experimental/lowp-basic/lerp-study.cpp
@@ -4058,6 +4073,7 @@ ORIGIN: ../../../third_party/skia/bench/MSKPBench.cpp + ../../../third_party/ski
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bench/MSKPBench.cpp
 FILE: ../../../third_party/skia/bench/MSKPBench.h
+FILE: ../../../third_party/skia/experimental/graphite/include/private/MtlTypesPriv.h
 FILE: ../../../third_party/skia/fuzz/FuzzDDLThreading.cpp
 FILE: ../../../third_party/skia/gm/aarecteffect.cpp
 FILE: ../../../third_party/skia/gm/colorspace.cpp

@@ -8,9 +8,9 @@
 #include <functional>
 #include <memory>
 
-#include "flow/embedded_views.h"
 #include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
@@ -28,8 +28,6 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
-
-class Shell;
 
 //------------------------------------------------------------------------------
 /// @brief      Platform views are created by the shell on the platform task
