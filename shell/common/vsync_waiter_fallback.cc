@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#define FML_USED_ON_EMBEDDER
-
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 
 #include <memory>
@@ -46,8 +44,7 @@ void VsyncWaiterFallback::AwaitVSync() {
   std::weak_ptr<VsyncWaiterFallback> weak_this =
       std::static_pointer_cast<VsyncWaiterFallback>(shared_from_this());
 
-  auto current_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-  current_task_runner->PostTaskForTime(
+  task_runners_.GetUITaskRunner()->PostTaskForTime(
       [frame_start_time, frame_target_time, weak_this]() {
         if (auto vsync_waiter = weak_this.lock()) {
           vsync_waiter->FireCallback(frame_start_time, frame_target_time,
