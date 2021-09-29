@@ -19,6 +19,11 @@ FLUTTER_ASSERT_ARC
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
+- (void)cut;
+- (void)copy;
+- (void)paste;
+- (void)delete;
+- (void)selectAll;
 
 @end
 
@@ -245,6 +250,30 @@ FLUTTER_ASSERT_ARC
   range = [FlutterTextRange rangeWithNSRange:NSMakeRange(10, 20)];
   substring = [inputView textInRange:range];
   XCTAssertEqual(substring.length, 0ul);
+}
+
+- (void)testStandardEditActions {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"aaaa"];
+  [inputView selectAll:nil];
+  [inputView cut:nil];
+  [inputView insertText:@"bbbb"];
+  [inputView paste:nil];
+  [inputView selectAll:nil];
+  [inputView copy:nil];
+  [inputView paste:nil];
+  [inputView selectAll:nil];
+  [inputView delete:nil];
+  [inputView paste:nil];
+  [inputView paste:nil];
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 30)];
+  NSString* substring = [inputView textInRange:range];
+  XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
 }
 
 - (void)testNoZombies {
