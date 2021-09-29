@@ -12,10 +12,10 @@ namespace flutter {
 static constexpr double kControllerScrollMultiplier = 3;
 
 // Minimum pointer ID that gets emitted by the pointer ID generator.
-static constexpr auto kMinPointerId = 0;
+static constexpr uint32_t kMinPointerId = 0;
 
 // Maximum pointer ID that gets emitted by the pointer ID generator.
-static constexpr auto kMaxPointerId = 128;
+static constexpr uint32_t kMaxPointerId = 128;
 
 // Maps a Flutter cursor name to a CoreCursor.
 //
