@@ -219,6 +219,8 @@ static void store_redispatched_event(gpointer event) {
   g_ptr_array_add(redispatched_events(), new_event);
 }
 
+// Make sure that the keyboard can be disposed without crashes when there are
+// unresolved pending events.
 TEST(FlKeyboardManagerTest, DisposeWithUnresolvedPends) {
   FlKeyboardManager* manager =
       fl_keyboard_manager_new(nullptr, store_redispatched_event);
