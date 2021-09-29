@@ -134,7 +134,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
       settings_.persistent_isolate_data      // persistent isolate data
   );
-  result->initial_route_ = std::move(initial_route);
+  result->initial_route_ = initial_route;
   return result;
 }
 

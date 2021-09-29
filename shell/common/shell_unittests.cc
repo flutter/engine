@@ -2722,7 +2722,7 @@ TEST_F(ShellTest, Spawn) {
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [this, &spawner = shell, &second_configuration, &second_latch,
-       &initial_route]() {
+       initial_route]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
             std::move(second_configuration), initial_route,
@@ -2739,11 +2739,11 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
         PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner] {
+                 [&spawn, &spawner, initial_route] {
                    // Check second shell ran the second entrypoint.
                    ASSERT_EQ("testCanLaunchSecondaryIsolate",
                              spawn->GetEngine()->GetLastEntrypoint());
-                   ASSERT_EQ("/foo", spawn->GetEngine()->InitialRoute());
+                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
 
                    // TODO(74520): Remove conditional once isolate groups are
                    // supported by JIT.

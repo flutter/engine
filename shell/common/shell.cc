@@ -489,8 +489,7 @@ std::unique_ptr<Shell> Shell::Spawn(
         PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
         GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
         on_create_platform_view, on_create_rasterizer,
-        [engine = this->engine_.get(),
-         initial_route = std::move(initial_route)](
+        [engine = this->engine_.get(), initial_route](
             Engine::Delegate& delegate,
             const PointerDataDispatcherMaker& dispatcher_maker, DartVM& vm,
             fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -504,7 +503,7 @@ std::unique_ptr<Shell> Shell::Spawn(
                                /*dispatcher_maker=*/dispatcher_maker,
                                /*settings=*/settings,
                                /*animator=*/std::move(animator),
-                               /*initial_route*/ initial_route);
+                               /*initial_route=*/initial_route);
         },
         is_gpu_disabled));
     return result;
