@@ -538,7 +538,7 @@ def main():
       help='A single Java test class to run.')
   parser.add_argument('--android-variant', dest='android_variant', action='store',
       default='android_debug_unopt',
-      help='The engine build variant to run java/android tests for')
+      help='The engine build variant to run java or android tests for')
   parser.add_argument('--ios-variant', dest='ios_variant', action='store',
       default='ios_debug_sim_unopt',
       help='The engine build variant to run objective-c tests for')
