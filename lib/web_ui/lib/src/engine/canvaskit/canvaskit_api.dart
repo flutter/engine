@@ -115,7 +115,6 @@ class CanvasKit {
     ColorSpace colorSpace,
   );
   external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
-  external void setCurrentContext(int glContext);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
