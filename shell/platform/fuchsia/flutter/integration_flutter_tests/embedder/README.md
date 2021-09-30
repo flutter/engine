@@ -15,9 +15,9 @@ $ fx build
 ```
 
 Note 1: You could use `--with-base` here, instead of `--with`, but if so, you
-would also need to add `--with //garnet/packages/testing:run_test_component`.
-More on this below, under
-[Start the package servers](#start-the-package-servers).
+would also need to add
+`--with-base //garnet/packages/testing:run_test_component`.  More on this below,
+under [Start the package servers](#start-the-package-servers).
 
 Note 2: The `fx set` flags, above, offer a minimized fuchsia platform
 configuration to successfully execute the test, but some optional services may
@@ -79,33 +79,33 @@ need to be published to the Fuchsia package repo:
 
 ```shell
 $ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
-  -f "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test-0.far
+  -f "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64/flutter-embedder-test2-0.far
 $ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
-  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far)
+  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view2.far)
 $ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
-  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name child-view.far)
+  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name child-view2.far)
 ```
 
 ## Run the test (using the package server at `fuchsia.com`)
 
 ```shell
 $ fx shell run-test-component \
-    fuchsia-pkg://fuchsia.com/flutter-embedder-test#meta/flutter-embedder-test.cmx
+    fuchsia-pkg://fuchsia.com/flutter-embedder-test2#meta/flutter-embedder-test2.cmx
 ```
 
 ## Make a change and re-run the test
 
-If, for example, you only make a change to the Dart code in `parent-view`, you
-can rebuild only the parent-view package target, republish it, and then re-run
+If, for example, you only make a change to the Dart code in `parent-view2`, you
+can rebuild only the parent-view2 package target, republish it, and then re-run
 the test, with:
 
 ```shell
 $ ninja -C out/fuchsia_debug_x64 \
-    flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view:package
+    flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view2:package
 $ fx pm publish -a -repo "$(cat $FUCHSIA_DIR/.fx-build-dir)/amber-files/" \
-  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view.far)
+  -f $(find "$FLUTTER_ENGINE_DIR"/src/out/fuchsia_*64 -name parent-view2.far)
 $ fx shell run-test-component \
-    fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
+    fuchsia-pkg://fuchsia.com/flutter-embedder-test2#meta/flutter-embedder-test2.cmx
 ```
 
 From here, you can modify the Flutter test, rebuild flutter, and usually rerun
@@ -118,8 +118,8 @@ such as `core` because it starts and stops Scenic.
 
 If you want to use a custom package server, you will need to edit these sources:
 
-    * `//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test.cc`
-    * `//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view/parent_view.dart`
+    * `//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/flutter-embedder-test2.cc`
+    * `//flutter/shell/platform/fuchsia/flutter/integration_flutter_tests/embedder/parent-view2/parent_view2.dart`
 
 Search for the component URLs with `fuchsia.com`, and change it to `engine`,
 which is the domain currently registered with the custom package server in
@@ -172,7 +172,7 @@ $ flutter/tools/fuchsia/devshell/serve.sh --out out/fuchsia_debug_x64 --only-ser
 
 ```shell
 $ fx shell run-test-component \
-    fuchsia-pkg://engine/flutter-embedder-test#meta/flutter-embedder-test.cmx
+    fuchsia-pkg://engine/flutter-embedder-test2#meta/flutter-embedder-test2.cmx
 ```
 
 You can recompile and run the test without needing to re-publish the `.far`.

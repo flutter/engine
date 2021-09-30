@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter-embedder-test.h"
+#include "flutter-embedder-test2.h"
 
-namespace flutter_embedder_test {
+namespace flutter_embedder_test2 {
 
 // TODO(richkadel): To run the test serving the runner and test packages from
 // the flutter/engine package server (via
 // `//flutter/tools/fuchsia/devshell/serve.sh`), change `fuchsia.com` to
 // `engine`.
 constexpr char kParentViewUrl[] =
-    "fuchsia-pkg://fuchsia.com/parent-view#meta/parent-view.cmx";
+    "fuchsia-pkg://fuchsia.com/parent-view2#meta/parent-view2.cmx";
 
 constexpr scenic::Color kParentBackgroundColor = {0x00, 0x00, 0xFF,
                                                   0xFF};                // Blue
@@ -101,7 +101,7 @@ const std::vector<std::pair<const char*, const char*>> GetInjectedServices() {
 TEST_F(FlutterScenicEmbedderTests, Embedding) {
   RunAppWithArgs(kParentViewUrl);
 
-  // Take screenshot until we see the child-view's embedded color.
+  // Take screenshot until we see the child-view2's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildBackgroundColor, [](scenic::Screenshot screenshot,
                                 std::map<scenic::Color, size_t> histogram) {
@@ -112,7 +112,7 @@ TEST_F(FlutterScenicEmbedderTests, Embedding) {
         EXPECT_GT(histogram[kParentBackgroundColor],
                   histogram[kChildBackgroundColor]);
 
-        // Expect all corners to be the parent-view background color
+        // Expect all corners to be the parent-view2 background color
         EXPECT_EQ(kParentBackgroundColor, screenshot.ColorAtPixelXY(10, 10));
         EXPECT_EQ(kParentBackgroundColor,
                   screenshot.ColorAtPixelXY(screenshot.width() - 10, 0));
@@ -127,13 +127,13 @@ TEST_F(FlutterScenicEmbedderTests, Embedding) {
 TEST_F(FlutterScenicEmbedderTests, HittestEmbedding) {
   RunAppWithArgs(kParentViewUrl);
 
-  // Take screenshot until we see the child-view's embedded color.
+  // Take screenshot until we see the child-view2's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(kChildBackgroundColor));
 
-  // Tap the center of child view.
+  // Tap the center of child view2.
   InjectInput();
 
-  // Take screenshot until we see the child-view's tapped color.
+  // Take screenshot until we see the child-view2's tapped color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildTappedColor, [](scenic::Screenshot screenshot,
                             std::map<scenic::Color, size_t> histogram) {
@@ -150,14 +150,14 @@ TEST_F(FlutterScenicEmbedderTests, HittestEmbedding) {
 TEST_F(FlutterScenicEmbedderTests, HittestDisabledEmbedding) {
   RunAppWithArgs(kParentViewUrl, {"--no-hitTestable"});
 
-  // Take screenshots until we see the child-view's embedded color.
+  // Take screenshots until we see the child-view2's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(kChildBackgroundColor));
 
-  // Tap the center of child view. Since it's not hit-testable, the tap should
+  // Tap the center of child view2. Since it's not hit-testable, the tap should
   // go to the parent.
   InjectInput();
 
-  // The parent-view should change color.
+  // The parent-view2 should change color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kParentTappedColor, [](scenic::Screenshot screenshot,
                              std::map<scenic::Color, size_t> histogram) {
@@ -175,7 +175,7 @@ TEST_F(FlutterScenicEmbedderTests, HittestDisabledEmbedding) {
 TEST_F(FlutterScenicEmbedderTests, EmbeddingWithOverlay) {
   RunAppWithArgs(kParentViewUrl, {"--showOverlay"});
 
-  // Take screenshot until we see the child-view's embedded color.
+  // Take screenshot until we see the child-view2's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildBackgroundColor, [](scenic::Screenshot screenshot,
                                 std::map<scenic::Color, size_t> histogram) {
@@ -194,13 +194,13 @@ TEST_F(FlutterScenicEmbedderTests, EmbeddingWithOverlay) {
 TEST_F(FlutterScenicEmbedderTests, HittestEmbeddingWithOverlay) {
   RunAppWithArgs(kParentViewUrl, {"--showOverlay"});
 
-  // Take screenshot until we see the child-view's embedded color.
+  // Take screenshot until we see the child-view2's embedded color.
   ASSERT_TRUE(TakeScreenshotUntil(kChildBackgroundColor));
 
-  // Tap the center of child view.
+  // Tap the center of child view2.
   InjectInput();
 
-  // Take screenshot until we see the child-view's tapped color.
+  // Take screenshot until we see the child-view2's tapped color.
   ASSERT_TRUE(TakeScreenshotUntil(
       kChildTappedColor, [](scenic::Screenshot screenshot,
                             std::map<scenic::Color, size_t> histogram) {
@@ -217,4 +217,4 @@ TEST_F(FlutterScenicEmbedderTests, HittestEmbeddingWithOverlay) {
       }));
 }
 
-}  // namespace flutter_embedder_test
+}  // namespace flutter_embedder_test2

@@ -7,21 +7,29 @@ import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
 import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
-dart_library("child-view_dart_library") {
-  package_name = "child-view"
+dart_library("parent-view2_dart_library") {
+  package_name = "parent-view2"
 
   source_dir = "."
-  sources = [ "child_view.dart" ]
+  sources = [ "parent_view2.dart" ]
 
-  deps = []
+  deps = [
+    "//flutter/shell/platform/fuchsia/dart:args",
+    "//flutter/shell/platform/fuchsia/dart:vector_math",
+    "//flutter/tools/fuchsia/dart:fuchsia_services",
+    "//flutter/tools/fuchsia/dart:zircon",
+    "//flutter/tools/fuchsia/fidl:fuchsia.sys",
+    "//flutter/tools/fuchsia/fidl:fuchsia.ui.app",
+    "//flutter/tools/fuchsia/fidl:fuchsia.ui.views",
+  ]
 }
 
-flutter_component("child-view_flutter_component") {
-  main_package = "child-view"
-  component_name = "child-view"
-  main_dart = "child_view.dart"
-  manifest = rebase_path("meta/child-view.cmx")
-  deps = [ ":child-view_dart_library" ]
+flutter_component("parent-view2_flutter_component") {
+  main_package = "parent-view2"
+  component_name = "parent-view2"
+  main_dart = "parent_view2.dart"
+  manifest = rebase_path("meta/parent-view2.cmx")
+  deps = [ ":parent-view2_dart_library" ]
 }
 
 # TODO(richkadel): The target name is set differently compared to fuchsia.git's flutter_app().
@@ -33,6 +41,6 @@ flutter_component("child-view_flutter_component") {
 # So I have to change the fuchsia_package name to something that is NOT the component name,
 # and then set the package_name (which fuchsia_package does support).
 fuchsia_package("package") {
-  package_name = "child-view"
-  deps = [ ":child-view_flutter_component" ]
+  package_name = "parent-view2"
+  deps = [ ":parent-view2_flutter_component" ]
 }

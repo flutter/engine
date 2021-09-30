@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test_H_
-#define SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test_H_
+#ifndef SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test2_H_
+#define SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test2_H_
 
 #include <fuchsia/ui/lifecycle/cpp/fidl.h>
 #include <fuchsia/ui/policy/cpp/fidl.h>
@@ -26,7 +26,7 @@
 #include "src/ui/testing/views/color.h"
 #include "src/ui/testing/views/embedder_view.h"
 
-namespace flutter_embedder_test {
+namespace flutter_embedder_test2 {
 
 /// Defines a list of services that are injected into the test environment.
 /// Unlike the injected-services in CMX which are injected per test package,
@@ -57,7 +57,7 @@ class FlutterScenicEmbedderTests : public sys::testing::TestWithEnvironment,
     }
 
     environment_ = CreateNewEnclosingEnvironment(
-        "flutter-embedder-tests", std::move(services),
+        "flutter-embedder-test2s", std::move(services),
         {.inherit_parent_services = true});
     WaitForEnclosingEnvToStart(environment());
 
@@ -229,6 +229,6 @@ class FlutterScenicEmbedderTests : public sys::testing::TestWithEnvironment,
   std::optional<scenic::EmbedderView> embedder_view_;
 };
 
-}  // namespace flutter_embedder_test
+}  // namespace flutter_embedder_test2
 
-#endif  // SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test_H_
+#endif  // SRC_UI_TESTS_INTEGRATION_FLUTTER_TESTS_EMBEDDER_flutter_embedder_test2_H_

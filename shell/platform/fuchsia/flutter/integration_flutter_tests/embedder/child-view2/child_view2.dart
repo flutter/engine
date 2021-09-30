@@ -3,11 +3,10 @@
 // found in the LICENSE file.
 
 import 'dart:ui';
-import 'dart:async';
 
 TestApp app;
 
-Future<void> main(List<String> args) async {
+void main(List<String> args) {
   app = TestApp();
   app.run();
 }

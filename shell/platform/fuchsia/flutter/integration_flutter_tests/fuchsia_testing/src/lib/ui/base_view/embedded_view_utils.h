@@ -43,7 +43,7 @@ struct EmbeddedViewInfo {
 };
 
 // Launch a component and connect to its ViewProvider service, passing it the
-// necessary information to attach itself as a child view.  Populates the
+// necessary information to attach itself as a child view2.  Populates the
 // returned EmbeddedViewInfo, which the caller can use to embed the child.
 // For example, an interface to a ViewProvider is obtained, a pair of
 // zx::eventpairs is created, CreateView is called, etc.  This encapsulates

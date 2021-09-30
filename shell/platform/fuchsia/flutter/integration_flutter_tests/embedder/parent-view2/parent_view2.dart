@@ -18,18 +18,18 @@ import 'package:zircon/zircon.dart';
 // `//flutter/tools/fuchsia/devshell/serve.sh`), change `fuchsia.com` to
 // `engine`.
 const _kChildAppUrl =
-    'fuchsia-pkg://fuchsia.com/child-view#meta/child-view.cmx';
+    'fuchsia-pkg://fuchsia.com/child-view2#meta/child-view2.cmx';
 
 TestApp app;
 
-Future<void> main(List<String> args) async {
+void main(List<String> args) {
   final parser = ArgParser()
     ..addFlag('showOverlay', defaultsTo: false)
     ..addFlag('hitTestable', defaultsTo: true)
     ..addFlag('focusable', defaultsTo: true);
   final arguments = parser.parse(args);
   for (final option in arguments.options) {
-    print('parent-view: $option: ${arguments[option]}');
+    print('parent-view2: $option: ${arguments[option]}');
   }
 
   final childViewToken = _launchApp(_kChildAppUrl);
@@ -64,7 +64,7 @@ class TestApp {
 
   void run() {
     childView.create(hitTestable, focusable, (ByteData reply) {
-        // The child-view should be attached to Scenic now.
+        // The child-view2 should be attached to Scenic now.
         // Ready to build the scene.
         window.onPointerDataPacket = (PointerDataPacket packet) {
           for (final data in packet.data) {
@@ -197,7 +197,7 @@ class ChildView {
     PlatformMessageResponseCallback callback) {
     // Construct the dart:ui platform message to create the view, and when the
     // return callback is invoked, build the scene. At that point, it is safe
-    // to embed the child-view in the scene.
+    // to embed the child-view2 in the scene.
     final viewOcclusionHint = Rect.zero;
 
     final Map<String, dynamic> args = <String, dynamic>{
