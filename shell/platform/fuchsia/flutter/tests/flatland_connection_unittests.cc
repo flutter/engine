@@ -45,7 +45,8 @@ class FlatlandConnectionTest : public ::testing::Test {
  protected:
   FlatlandConnectionTest()
       : session_subloop_(loop_.StartNewLoop()),
-        flatland_handle_(fake_flatland_.Bind(session_subloop_->dispatcher())) {}
+        flatland_handle_(
+            fake_flatland_.Connect(session_subloop_->dispatcher())) {}
   ~FlatlandConnectionTest() override = default;
 
   async::TestLoop& loop() { return loop_; }

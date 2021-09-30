@@ -4,6 +4,8 @@
 
 #include "flatland_connection.h"
 
+#include <zircon/status.h>
+
 #include "flutter/fml/logging.h"
 
 namespace flutter_runner {
@@ -18,6 +20,10 @@ FlatlandConnection::FlatlandConnection(
     : flatland_(flatland.Bind()),
       error_callback_(error_callback),
       on_frame_presented_callback_(std::move(on_frame_presented_callback)) {
+  flatland_.set_error_handler([callback = error_callback_](zx_status_t status) {
+    FML_LOG(ERROR) << "Flatland disconnected" << zx_status_get_string(status);
+    callback();
+  });
   flatland_->SetDebugName(debug_label);
   flatland_.events().OnError =
       fit::bind_member(this, &FlatlandConnection::OnError);

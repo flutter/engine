@@ -7,7 +7,6 @@
 #include <fuchsia/accessibility/semantics/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/async/cpp/task.h>
-#include <lib/fdio/directory.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
 #include <memory>
@@ -161,6 +160,16 @@ void Engine::Initialize(
   }
   scenic->CreateSessionT(std::move(gfx_protocols), [] {});
 
+  // Connect to Flatland.
+  fidl::InterfaceHandle<fuchsia::ui::composition::Flatland> flatland;
+  zx_status_t flatland_status =
+      runner_services->Connect<fuchsia::ui::composition::Flatland>(
+          flatland.NewRequest());
+  if (flatland_status != ZX_OK && use_flatland) {
+    FML_LOG(WARNING) << "fuchsia::ui::composition::Flatland connection failed: "
+                     << zx_status_get_string(flatland_status);
+  }
+
   // Connect to SemanticsManager service.
   fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticsManager>
       semantics_manager;
@@ -227,7 +236,7 @@ void Engine::Initialize(
   task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [this, &view_embedder_latch,
        session_inspect_node = std::move(session_inspect_node),
-       session = std::move(session),
+       session = std::move(session), flatland = std::move(flatland),
        session_error_callback = std::move(session_error_callback), use_flatland,
        view_token = std::move(view_token_),
        view_creation_token = std::move(view_creation_token_),
@@ -237,12 +246,6 @@ void Engine::Initialize(
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
        vsync_offset = product_config.get_vsync_offset()]() mutable {
         if (use_flatland) {
-          fidl::InterfaceHandle<fuchsia::ui::composition::Flatland> flatland;
-          zx_status_t status = fdio_service_connect(
-              "/svc/fuchsia.ui.composition.Flatland",
-              flatland.NewRequest().TakeChannel().release());
-          FML_CHECK(status == ZX_OK);
-
           flatland_connection_ = std::make_shared<FlatlandConnection>(
               thread_label_, std::move(flatland),
               std::move(session_error_callback), [](auto) {},
