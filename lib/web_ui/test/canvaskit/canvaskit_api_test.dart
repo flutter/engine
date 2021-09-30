@@ -452,7 +452,7 @@ void _imageFilterTests() {
   });
 
   test('toSkFilterOptions', () {
-    for (ui.FilterQuality filterQuality in ui.FilterQuality.values) {
+    for (final ui.FilterQuality filterQuality in ui.FilterQuality.values) {
       expect(toSkFilterOptions(filterQuality), isNotNull);
     }
   });
