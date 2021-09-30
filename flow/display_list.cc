@@ -1428,7 +1428,7 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                     render_with_attributes)
       : Push<DrawSkPictureOp>(0, 1, std::move(picture), render_with_attributes);
   nested_bytes_ += picture->approximateBytesUsed();
-  nested_op_count_ += picture->approximateOpCount();
+  nested_op_count_ += picture->approximateOpCount(true);
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
