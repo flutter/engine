@@ -228,8 +228,7 @@ GfxSessionConnection::GfxSessionConnection(
   // Set the |fuchsia::ui::scenic::OnFramePresented()| event handler that will
   // fire every time a set of one or more frames is presented.
   session_wrapper_.set_on_frame_presented_handler(
-      [thiz = this,  // Forces us to be explicit with |this|. Prefer |weak|.
-       weak = weak_factory_.GetWeakPtr()](
+      [weak = weak_factory_.GetWeakPtr()](
           fuchsia::scenic::scheduling::FramePresentedInfo info) {
         if (!weak) {
           return;
@@ -254,15 +253,15 @@ GfxSessionConnection::GfxSessionConnection(
             fml::TimeDelta::FromNanoseconds(info.actual_presentation_time));
 
         // Scenic retired a given number of frames, so mark them as completed.
+        // Inspect updates must run on the inspect dispatcher.
         //
-        // Inspect updates must run on the inspect dispatcher. We don't pass
-        // |weak| to the callback because there is no guarantee that the
-        // callback will run on the same thread, and WeakPtrs can only
-        // be used on the same thread.
-        async::PostTask(weak->inspect_dispatcher_, [thiz, now = Now(),
+        // TODO(akbiggs): It might not be necessary to post an async task for
+        // the inspect updates. Read over the Inspect API's thread safety and
+        // adjust accordingly.
+        async::PostTask(weak->inspect_dispatcher_, [weak, now = Now(),
                                                     num_presents_handled]() {
-          thiz->presents_completed_.Add(num_presents_handled);
-          thiz->last_frame_completed_.Set(now.ToEpochDelta().ToNanoseconds());
+          weak->presents_completed_.Add(num_presents_handled);
+          weak->last_frame_completed_.Set(now.ToEpochDelta().ToNanoseconds());
         });
 
         if (weak->fire_callback_request_pending_) {
@@ -275,8 +274,7 @@ GfxSessionConnection::GfxSessionConnection(
 
         // Call the client-provided callback once we are done using |info|.
         weak->on_frame_presented_callback_(std::move(info));
-      }  // callback
-  );
+      });
 
   session_wrapper_.SetDebugName(debug_label);
 
