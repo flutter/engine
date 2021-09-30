@@ -800,8 +800,10 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
       dl->RenderTo(&recorder);
       sk_sp<DisplayList> sk_copy = recorder.Build();
       auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
-      EXPECT_EQ(sk_copy->op_count(false), group.variants[i].sk_op_count()) << desc;
-      EXPECT_EQ(sk_copy->bytes(false), group.variants[i].sk_byte_count()) << desc;
+      EXPECT_EQ(sk_copy->op_count(false), group.variants[i].sk_op_count())
+          << desc;
+      EXPECT_EQ(sk_copy->bytes(false), group.variants[i].sk_byte_count())
+          << desc;
       if (group.variants[i].sk_version_matches()) {
         EXPECT_EQ(sk_copy->bounds(), dl->bounds()) << desc;
         EXPECT_TRUE(dl->Equals(*sk_copy)) << desc << " == sk_copy";
