@@ -174,6 +174,10 @@ class GfxSessionConnection final {
   // thread.
   FireCallbackCallback fire_callback_;
 
+  // Generates WeakPtrs to the instance of the class for use in FIDL callbacks.
+  // This must be the last field in the class.
+  fml::WeakPtrFactory<GfxSessionConnection> weak_factory_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(GfxSessionConnection);
 };
 

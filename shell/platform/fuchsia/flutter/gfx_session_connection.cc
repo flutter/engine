@@ -215,7 +215,8 @@ GfxSessionConnection::GfxSessionConnection(
       inspect_dispatcher_(async_get_default_dispatcher()),
       on_frame_presented_callback_(std::move(on_frame_presented_callback)),
       kMaxFramesInFlight(max_frames_in_flight),
-      vsync_offset_(vsync_offset) {
+      vsync_offset_(vsync_offset),
+      weak_factory_(this) {
   FML_CHECK(kMaxFramesInFlight > 0);
   last_presentation_time_ = Now();
 
@@ -227,43 +228,53 @@ GfxSessionConnection::GfxSessionConnection(
   // Set the |fuchsia::ui::scenic::OnFramePresented()| event handler that will
   // fire every time a set of one or more frames is presented.
   session_wrapper_.set_on_frame_presented_handler(
-      [this](fuchsia::scenic::scheduling::FramePresentedInfo info) {
-        std::lock_guard<std::mutex> lock(mutex_);
+      [thiz = this,  // Forces us to be explicit with |this|. Prefer |weak|.
+       weak = weak_factory_.GetWeakPtr()](
+          fuchsia::scenic::scheduling::FramePresentedInfo info) {
+        if (!weak) {
+          return;
+        }
+
+        std::lock_guard<std::mutex> lock(weak->mutex_);
 
         // Update Scenic's limit for our remaining frames in flight allowed.
         size_t num_presents_handled = info.presentation_infos.size();
 
         // A frame was presented: Update our |frames_in_flight| to match the
         // updated unfinalized present requests.
-        frames_in_flight_ -= num_presents_handled;
+        weak->frames_in_flight_ -= num_presents_handled;
 
         TRACE_DURATION("gfx", "OnFramePresented5", "frames_in_flight",
-                       frames_in_flight_, "max_frames_in_flight",
-                       kMaxFramesInFlight, "num_presents_handled",
+                       weak->frames_in_flight_, "max_frames_in_flight",
+                       weak->kMaxFramesInFlight, "num_presents_handled",
                        num_presents_handled);
-        FML_DCHECK(frames_in_flight_ >= 0);
+        FML_DCHECK(weak->frames_in_flight_ >= 0);
 
-        last_presentation_time_ = fml::TimePoint::FromEpochDelta(
+        weak->last_presentation_time_ = fml::TimePoint::FromEpochDelta(
             fml::TimeDelta::FromNanoseconds(info.actual_presentation_time));
 
         // Scenic retired a given number of frames, so mark them as completed.
-        // Inspect updates must run on the inspect dispatcher.
-        async::PostTask(
-            inspect_dispatcher_, [this, now = Now(), num_presents_handled]() {
-              presents_completed_.Add(num_presents_handled);
-              last_frame_completed_.Set(now.ToEpochDelta().ToNanoseconds());
-            });
+        //
+        // Inspect updates must run on the inspect dispatcher. We don't pass
+        // |weak| to the callback because there is no guarantee that the
+        // callback will run on the same thread, and WeakPtrs can only
+        // be used on the same thread.
+        async::PostTask(weak->inspect_dispatcher_, [thiz, now = Now(),
+                                                    num_presents_handled]() {
+          thiz->presents_completed_.Add(num_presents_handled);
+          thiz->last_frame_completed_.Set(now.ToEpochDelta().ToNanoseconds());
+        });
 
-        if (fire_callback_request_pending_) {
-          FireCallbackMaybe();
+        if (weak->fire_callback_request_pending_) {
+          weak->FireCallbackMaybe();
         }
 
-        if (present_session_pending_) {
-          PresentSession();
+        if (weak->present_session_pending_) {
+          weak->PresentSession();
         }
 
         // Call the client-provided callback once we are done using |info|.
-        on_frame_presented_callback_(std::move(info));
+        weak->on_frame_presented_callback_(std::move(info));
       }  // callback
   );
 
@@ -272,15 +283,20 @@ GfxSessionConnection::GfxSessionConnection(
   // Get information to finish initialization and only then allow Present()s.
   session_wrapper_.RequestPresentationTimes(
       /*requested_prediction_span=*/0,
-      [this](fuchsia::scenic::scheduling::FuturePresentationTimes info) {
-        std::lock_guard<std::mutex> lock(mutex_);
+      [weak = weak_factory_.GetWeakPtr()](
+          fuchsia::scenic::scheduling::FuturePresentationTimes info) {
+        if (!weak) {
+          return;
+        }
 
-        next_presentation_info_ =
-            UpdatePresentationInfo(std::move(info), next_presentation_info_);
+        std::lock_guard<std::mutex> lock(weak->mutex_);
 
-        initialized_ = true;
+        weak->next_presentation_info_ = UpdatePresentationInfo(
+            std::move(info), weak->next_presentation_info_);
 
-        PresentSession();
+        weak->initialized_ = true;
+
+        weak->PresentSession();
       });
   FML_LOG(INFO) << "Flutter GfxSessionConnection: Set vsync_offset to "
                 << vsync_offset_.ToMicroseconds() << "us";
@@ -392,25 +408,30 @@ void GfxSessionConnection::PresentSession() {
       /*requested_presentation_time=*/next_latch_point.ToEpochDelta()
           .ToNanoseconds(),
       /*requested_prediction_span=*/presentation_interval.ToNanoseconds() * 10,
-      [this](fuchsia::scenic::scheduling::FuturePresentationTimes info) {
-        std::lock_guard<std::mutex> lock(mutex_);
+      [weak = weak_factory_.GetWeakPtr()](
+          fuchsia::scenic::scheduling::FuturePresentationTimes info) {
+        if (!weak) {
+          return;
+        }
+
+        std::lock_guard<std::mutex> lock(weak->mutex_);
 
         // Clear |future_presentation_infos_| and replace it with the updated
         // information.
         std::deque<std::pair<fml::TimePoint, fml::TimePoint>>().swap(
-            future_presentation_infos_);
+            weak->future_presentation_infos_);
 
         for (fuchsia::scenic::scheduling::PresentationInfo& presentation_info :
              info.future_presentations) {
-          future_presentation_infos_.push_back(
+          weak->future_presentation_infos_.push_back(
               {fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(
                    presentation_info.latch_point())),
                fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(
                    presentation_info.presentation_time()))});
         }
 
-        next_presentation_info_ =
-            UpdatePresentationInfo(std::move(info), next_presentation_info_);
+        weak->next_presentation_info_ = UpdatePresentationInfo(
+            std::move(info), weak->next_presentation_info_);
       });
 }
 
