@@ -20,6 +20,16 @@ TEST(MockWin32Window, GetDpiAfterCreate) {
   ASSERT_TRUE(window.GetDpi() > 0);
 }
 
+TEST(MockWin32Window, BackgroundColor) {
+  MockWin32Window window;
+  window.InitializeChild("FLUTTERVIEW", 100, 100);
+
+  WNDCLASS window_class;
+  GetClassInfo(GetModuleHandle(nullptr), L"FLUTTERVIEW", &window_class);
+  HBRUSH bg_brush = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+  ASSERT_EQ(window_class.hbrBackground, bg_brush);
+}
+
 TEST(MockWin32Window, VerticalScroll) {
   MockWin32Window window;
   const int scroll_amount = 10;

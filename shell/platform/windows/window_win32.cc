@@ -101,7 +101,7 @@ WNDCLASS WindowWin32::RegisterWindowClass(std::wstring& title) {
   window_class.cbWndExtra = 0;
   window_class.hInstance = GetModuleHandle(nullptr);
   window_class.hIcon = nullptr;
-  window_class.hbrBackground = 0;
+  window_class.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
   window_class.lpszMenuName = nullptr;
   window_class.lpfnWndProc = WndProc;
   RegisterClass(&window_class);
