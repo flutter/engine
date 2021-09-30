@@ -94,7 +94,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   //
   // This should reset necessary states to as if the view has just been
   // created. This is typically caused by a hot restart (Shift-R in CLI.)
-  void OnEngineRestarted();
+  void OnPreEngineRestart();
 
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) override;

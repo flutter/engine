@@ -127,7 +127,7 @@ void FlutterWindowsView::ForceRedraw() {
   }
 }
 
-void FlutterWindowsView::OnEngineRestarted() {
+void FlutterWindowsView::OnPreEngineRestart() {
   keyboard_handlers_.clear();
   InitializeKeyboard();
 }
