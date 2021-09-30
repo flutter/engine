@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flatland_external_view_embedder.h"
+#include <cstdint>
 
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -10,18 +11,22 @@
 
 namespace flutter_runner {
 
+constexpr uint32_t kFlatlandDefaultViewportSize = 32;
+
 FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
     std::string debug_label,
     fuchsia::ui::views::ViewCreationToken view_creation_token,
-    scenic::ViewRefPair view_ref_pair,
+    fuchsia::ui::views::ViewIdentityOnCreation view_identity,
+    fuchsia::ui::composition::ViewBoundProtocols view_protocols,
     fidl::InterfaceRequest<fuchsia::ui::composition::ParentViewportWatcher>
         parent_viewport_watcher_request,
     FlatlandConnection& flatland,
-    VulkanSurfaceProducer& surface_producer,
+    SurfaceProducer& surface_producer,
     bool intercept_all_input)
     : flatland_(flatland), surface_producer_(surface_producer) {
-  flatland_.flatland()->CreateView(std::move(view_creation_token),
-                                   std::move(parent_viewport_watcher_request));
+  flatland_.flatland()->CreateView2(
+      std::move(view_creation_token), std::move(view_identity),
+      std::move(view_protocols), std::move(parent_viewport_watcher_request));
 
   root_transform_id_ = flatland_.NextTransformId();
   flatland_.flatland()->CreateTransform(root_transform_id_);
@@ -309,7 +314,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
   {
     TRACE_EVENT0("flutter", "PresentSurfaces");
 
-    surface_producer_.OnSurfacesPresented(std::move(frame_surfaces));
+    surface_producer_.SubmitSurfaces(std::move(frame_surfaces));
   }
 
   // Submit the underlying render-backend-specific frame for processing.
@@ -318,22 +323,26 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
 void FlatlandExternalViewEmbedder::CreateView(
     int64_t view_id,
-    FlatlandViewCallback on_view_created,
-    FlatlandViewIdCallback on_view_bound) {
+    ViewCallback on_view_created,
+    FlatlandViewCreatedCallback on_view_bound) {
   FML_CHECK(flatland_views_.find(view_id) == flatland_views_.end());
 
   FlatlandView new_view = {.transform_id = flatland_.NextTransformId(),
                            .viewport_id = flatland_.NextContentId()};
   flatland_.flatland()->CreateTransform(new_view.transform_id);
   fuchsia::ui::composition::ViewportProperties properties;
-  // TODO(fxbug.dev/64201): Add initial viewport size.
+  // TODO(fxbug.dev/64201): Investigate if it is possible to avoid using a
+  // default size by finding the size before creation.
+  properties.set_logical_size(
+      {kFlatlandDefaultViewportSize, kFlatlandDefaultViewportSize});
+  fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher;
   flatland_.flatland()->CreateViewport(
       new_view.viewport_id, {zx::channel((zx_handle_t)view_id)},
-      std::move(properties), new_view.content_link.NewRequest());
+      std::move(properties), child_view_watcher.NewRequest());
   flatland_.flatland()->SetContent(new_view.transform_id, new_view.viewport_id);
 
   on_view_created();
-  on_view_bound(new_view.viewport_id);
+  on_view_bound(new_view.viewport_id, std::move(child_view_watcher));
   flatland_views_.emplace(std::make_pair(view_id, std::move(new_view)));
 }
 

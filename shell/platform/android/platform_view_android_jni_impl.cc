@@ -123,15 +123,12 @@ static jmethodID g_mutators_stack_push_cliprect_method = nullptr;
 static jmethodID g_mutators_stack_push_cliprrect_method = nullptr;
 
 // Called By Java
-static jlong AttachJNI(JNIEnv* env,
-                       jclass clazz,
-                       jobject flutterJNI,
-                       jboolean is_background_view) {
+static jlong AttachJNI(JNIEnv* env, jclass clazz, jobject flutterJNI) {
   fml::jni::JavaObjectWeakGlobalRef java_object(env, flutterJNI);
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade =
       std::make_shared<PlatformViewAndroidJNIImpl>(java_object);
   auto shell_holder = std::make_unique<AndroidShellHolder>(
-      FlutterMain::Get().GetSettings(), jni_facade, is_background_view);
+      FlutterMain::Get().GetSettings(), jni_facade);
   if (shell_holder->IsValid()) {
     return reinterpret_cast<jlong>(shell_holder.release());
   } else {
@@ -157,7 +154,8 @@ static jobject SpawnJNI(JNIEnv* env,
                         jobject jcaller,
                         jlong shell_holder,
                         jstring jEntrypoint,
-                        jstring jLibraryUrl) {
+                        jstring jLibraryUrl,
+                        jstring jInitialRoute) {
   jobject jni = env->NewObject(g_flutter_jni_class->obj(), g_jni_constructor);
   if (jni == nullptr) {
     FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
@@ -170,9 +168,10 @@ static jobject SpawnJNI(JNIEnv* env,
 
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
+  auto initial_route = fml::jni::JavaStringToString(env, jInitialRoute);
 
-  auto spawned_shell_holder =
-      ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint, libraryUrl);
+  auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(
+      jni_facade, entrypoint, libraryUrl, initial_route);
 
   if (spawned_shell_holder == nullptr || !spawned_shell_holder->IsValid()) {
     FML_LOG(ERROR) << "Could not spawn Shell";
@@ -613,7 +612,7 @@ bool RegisterApi(JNIEnv* env) {
       // Start of methods from FlutterJNI
       {
           .name = "nativeAttach",
-          .signature = "(Lio/flutter/embedding/engine/FlutterJNI;Z)J",
+          .signature = "(Lio/flutter/embedding/engine/FlutterJNI;)J",
           .fnPtr = reinterpret_cast<void*>(&AttachJNI),
       },
       {
@@ -623,7 +622,8 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSpawn",
-          .signature = "(JLjava/lang/String;Ljava/lang/String;)Lio/flutter/"
+          .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
+                       "String;)Lio/flutter/"
                        "embedding/engine/FlutterJNI;",
           .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },
