@@ -1068,6 +1068,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
   used_ = allocated_ = op_count_ = 0;
+  nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
   return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
                                             nested_bytes, nested_count,
