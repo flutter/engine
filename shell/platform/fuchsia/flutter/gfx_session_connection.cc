@@ -260,6 +260,10 @@ GfxSessionConnection::GfxSessionConnection(
         // adjust accordingly.
         async::PostTask(weak->inspect_dispatcher_, [weak, now = Now(),
                                                     num_presents_handled]() {
+          if (!weak) {
+            return;
+          }
+
           weak->presents_completed_.Add(num_presents_handled);
           weak->last_frame_completed_.Set(now.ToEpochDelta().ToNanoseconds());
         });
