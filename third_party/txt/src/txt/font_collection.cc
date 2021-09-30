@@ -93,17 +93,28 @@ FontCollection::~FontCollection() {
 #endif
 }
 
-size_t FontCollection::GetFontManagersCount() const {
+size_t FontCollection::GetFontManagersCount() {
   return GetFontManagerOrder().size();
 }
 
 void FontCollection::SetupDefaultFontManager(
     uint32_t font_initialization_data) {
-  default_font_manager_ = GetDefaultFontManager(font_initialization_data);
+  default_font_manager_init_data_ = font_initialization_data;
+}
+
+sk_sp<SkFontMgr> FontCollection::GetDefaultFontManager() {
+  if (default_font_manager_init_data_.has_value()) {
+    // Reset the default font manager if this is the first usage since the
+    // last call to SetupDefaultFontManager.
+    SetDefaultFontManager(
+        txt::GetDefaultFontManager(default_font_manager_init_data_.value()));
+  }
+  return default_font_manager_;
 }
 
 void FontCollection::SetDefaultFontManager(sk_sp<SkFontMgr> font_manager) {
   default_font_manager_ = font_manager;
+  default_font_manager_init_data_.reset();
 
 #if FLUTTER_ENABLE_SKSHAPER
   skt_collection_.reset();
@@ -135,7 +146,7 @@ void FontCollection::SetTestFontManager(sk_sp<SkFontMgr> font_manager) {
 }
 
 // Return the available font managers in the order they should be queried.
-std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
+std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() {
   std::vector<sk_sp<SkFontMgr>> order;
   if (dynamic_font_manager_)
     order.push_back(dynamic_font_manager_);
@@ -143,8 +154,9 @@ std::vector<sk_sp<SkFontMgr>> FontCollection::GetFontManagerOrder() const {
     order.push_back(asset_font_manager_);
   if (test_font_manager_)
     order.push_back(test_font_manager_);
-  if (default_font_manager_)
-    order.push_back(default_font_manager_);
+  sk_sp<SkFontMgr> default_font_manager = GetDefaultFontManager();
+  if (default_font_manager)
+    order.push_back(default_font_manager);
   return order;
 }
 
@@ -402,7 +414,7 @@ FontCollection::CreateSktFontCollection() {
     for (const std::string& family : GetDefaultFontFamilies()) {
       default_font_families.emplace_back(family);
     }
-    skt_collection_->setDefaultFontManager(default_font_manager_,
+    skt_collection_->setDefaultFontManager(GetDefaultFontManager(),
                                            default_font_families);
     skt_collection_->setAssetFontManager(asset_font_manager_);
     skt_collection_->setDynamicFontManager(dynamic_font_manager_);

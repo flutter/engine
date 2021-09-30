@@ -43,7 +43,7 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
 
   ~FontCollection();
 
-  size_t GetFontManagersCount() const;
+  size_t GetFontManagersCount();
 
   void SetupDefaultFontManager(uint32_t font_initialization_data);
   void SetDefaultFontManager(sk_sp<SkFontMgr> font_manager);
@@ -90,6 +90,8 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
     };
   };
 
+  std::optional<uint32_t> default_font_manager_init_data_;
+
   sk_sp<SkFontMgr> default_font_manager_;
   sk_sp<SkFontMgr> asset_font_manager_;
   sk_sp<SkFontMgr> dynamic_font_manager_;
@@ -119,7 +121,9 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
       uint32_t ch,
       std::string locale);
 
-  std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder() const;
+  std::vector<sk_sp<SkFontMgr>> GetFontManagerOrder();
+
+  sk_sp<SkFontMgr> GetDefaultFontManager();
 
   std::shared_ptr<minikin::FontFamily> FindFontFamilyInManagers(
       const std::string& family_name);
