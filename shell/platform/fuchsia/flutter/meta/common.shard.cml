@@ -1,0 +1,40 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file
+{
+    include: [
+        // Enable system logging.
+        "syslog/client.shard.cml",
+        // Enable inspection.
+        "inspect/client.shard.cml",
+        // Enable Vulkan support.
+        "vulkan/client.shard.cml",
+    ],
+    use: [
+        {
+            directory: "config-data",
+            rights: [ "r*" ],
+            path: "/config/data",
+        },
+        {
+            protocol: [
+                "fuchsia.accessibility.SettingsManager",
+                "fuchsia.accessibility.semantics.SemanticsManager",
+                "fuchsia.deprecatedtimezone.Timezone",
+                "fuchsia.device.NameProvider",
+                "fuchsia.feedback.CrashReporter",
+                "fuchsia.fonts.Provider",
+                "fuchsia.intl.PropertyProvider",
+                "fuchsia.logger.LogSink",
+                "fuchsia.net.name.Lookup",
+                "fuchsia.posix.socket.Provider",
+                "fuchsia.sysmem.Allocator",
+                "fuchsia.timezone.Timezone",
+                "fuchsia.tracing.provider.Registry",
+                "fuchsia.ui.composition.Allocator",
+                "fuchsia.ui.composition.Flatland",
+                "fuchsia.vulkan.loader.Loader"
+            ]
+        }
+    ]
+}
