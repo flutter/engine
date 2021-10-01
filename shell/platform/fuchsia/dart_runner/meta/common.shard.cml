@@ -4,8 +4,8 @@
 {
     capabilities: [
         // Required for inspect.
-        // Copied from inspect/client.shard.cml because we don't have support
-        // for SDK includes out-of-tree.
+        // Copied from inspect/client.shard.cml because out-of-tree doesn't
+        // have support for CML includes from the SDK.
         {
             directory: "diagnostics",
             rights: [ "connect" ],
@@ -34,8 +34,8 @@
     ],
     expose: [
         // Required for inspect.
-        // Copied from inspect/client.shard.cml because we don't have support
-        // for SDK includes out-of-tree.
+        // Copied from inspect/client.shard.cml because out-of-tree doesn't
+        // have support for CML includes from the SDK.
         {
             directory: "diagnostics",
             from: "self",
