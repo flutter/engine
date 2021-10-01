@@ -501,7 +501,7 @@ class KeyboardConverter {
   }
 
   // Parse the HTML event, update states, and dispatch Flutter key data through
-  // [dispatchKeyData].
+  // [performDispatchKeyData].
   //
   //  * The method might dispatch some synthesized key data first to update states,
   //    results discarded.
