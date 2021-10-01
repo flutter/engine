@@ -152,7 +152,9 @@ class _CkMatrixImageFilter extends CkImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) return false;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
     return other is _CkMatrixImageFilter &&
         other.filterQuality == filterQuality &&
         listEquals<double>(other.matrix, matrix);
