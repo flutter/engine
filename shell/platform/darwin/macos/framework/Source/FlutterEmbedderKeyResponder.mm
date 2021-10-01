@@ -388,7 +388,7 @@ const char* getEventString(NSString* characters) {
  * |modifierFlagOfInterestMask| and excluding |ignoringFlags|.
  *
  * The |guard| is basically a regular guarded callback, but instead of being
- * called, only used to record whether an event is sent.
+ * called, it is only used to record whether an event is sent.
  */
 - (void)synchronizeModifiers:(NSUInteger)currentFlags
                ignoringFlags:(NSUInteger)ignoringFlags
@@ -413,7 +413,7 @@ const char* getEventString(NSString* characters) {
  * Send a synthesized key event, never expecting its event result.
  *
  * The |guard| is basically a regular guarded callback, but instead of being
- * called, only used to record whether an event is sent.
+ * called, it is only used to record whether an event is sent.
  */
 - (void)sendSynthesizedFlutterEvent:(const FlutterKeyEvent&)event
                               guard:(FlutterKeyCallbackGuard*)guard;
