@@ -12,7 +12,6 @@
 #include <lib/fdio/directory.h>
 #include <lib/fdio/fd.h>
 #include <lib/fdio/namespace.h>
-#include <lib/fidl/cpp/optional.h>
 #include <lib/fidl/cpp/string.h>
 #include <lib/sys/cpp/service_directory.h>
 #include <lib/syslog/global.h>
@@ -460,6 +459,10 @@ void DartComponentControllerV2::MessageEpilogue(Dart_Handle result) {
     FX_LOGF(INFO, LOG_TAG, "Idle timer set failed: %s",
             zx_status_get_string(status));
   }
+}
+
+void DartComponentControllerV2::Stop() {
+  Kill();
 }
 
 void DartComponentControllerV2::OnIdleTimer(async_dispatcher_t* dispatcher,

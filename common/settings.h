@@ -185,7 +185,10 @@ struct Settings {
   bool enable_skparagraph = false;
 
   // Selects the DisplayList for storage of rendering operations.
-  bool enable_display_list = false;
+  bool enable_display_list = true;
+
+  // Data set by platform-specific embedders for use in font initialization.
+  uint32_t font_initialization_data = 0;
 
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on

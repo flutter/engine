@@ -131,6 +131,9 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
+  // Informs the engine that the platform brightness has changed.
+  void ReloadPlatformBrightness();
+
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -181,6 +184,9 @@ class FlutterWindowsEngine {
 
   // The texture registrar.
   std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;
+
+  // Resolved OpenGL functions used by external texture implementations.
+  GlProcs gl_procs_ = {};
 
   // An object used for intializing Angle and creating / destroying render
   // surfaces. Surface creation functionality requires a valid render_target.
