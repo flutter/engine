@@ -1,4 +1,4 @@
-Signature: 6450a7f23e0db08f8fd3b1b159c24ac3
+Signature: 5519bc0896e1524c78ba4a2a7510b001
 
 UNUSED LICENSES:
 
@@ -472,7 +472,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/meta.json
@@ -2287,7 +2286,9 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_pipe.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/memory_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/intl.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/io.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/file.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/node.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.ldsvc/ldsvc.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.logger/logger.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.media.audio/gain_control.fidl
@@ -3196,7 +3197,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.recovery/factory_reset.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.scenic.scheduling/prediction_info.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/accessibility.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/audio.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/device.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/display.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/do_not_disturb.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.settings/intl.fidl
@@ -3466,9 +3466,11 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/single_threaded
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_identity.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_identity.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/algorithm.h
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/atomic.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/cstddef.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/functional.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/algorithm.h
+FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/atomic.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/exception.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/functional.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/internal/span.h
