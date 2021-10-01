@@ -128,16 +128,6 @@ public interface FlutterPlugin {
       return applicationContext;
     }
 
-    /**
-     * @deprecated Use {@code getBinaryMessenger()}, {@code getTextureRegistry()}, or {@code
-     *     getPlatformViewRegistry()} instead.
-     */
-    @Deprecated
-    @NonNull
-    public FlutterEngine getFlutterEngine() {
-      return flutterEngine;
-    }
-
     @NonNull
     public BinaryMessenger getBinaryMessenger() {
       return binaryMessenger;
