@@ -13,8 +13,6 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 
-static constexpr char kValueKey[] = "value";
-
 namespace flutter {
 
 namespace {
@@ -232,7 +230,8 @@ void PlatformHandlerWin32::GetPlainText(
 }
 
 void PlatformHandlerWin32::GetHasStrings(
-    std::unique_ptr<MethodResult<rapidjson::Document>> result) {
+    std::unique_ptr<MethodResult<rapidjson::Document>> result,
+    std::string_view key) {
   ScopedClipboard clipboard;
   if (!clipboard.Open(std::get<HWND>(*view_->GetRenderTarget()))) {
     rapidjson::Document error_code;
@@ -244,7 +243,7 @@ void PlatformHandlerWin32::GetHasStrings(
   rapidjson::Document document;
   document.SetObject();
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-  document.AddMember(rapidjson::Value(kValueKey, allocator),
+  document.AddMember(rapidjson::Value(key.data(), allocator),
                      rapidjson::Value(clipboard.HasString()), allocator);
   result->Success(document);
 }

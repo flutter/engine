@@ -14,6 +14,7 @@ static constexpr char kSetClipboardDataMethod[] = "Clipboard.setData";
 
 static constexpr char kTextPlainFormat[] = "text/plain";
 static constexpr char kTextKey[] = "text";
+static constexpr char kValueKey[] = "value";
 
 static constexpr char kUnknownClipboardFormatMessage[] =
     "Unknown clipboard format";
@@ -55,7 +56,7 @@ void PlatformHandler::HandleMethodCall(
       result->Error(kClipboardError, kUnknownClipboardFormatMessage);
       return;
     }
-    GetHasStrings(std::move(result));
+    GetHasStrings(std::move(result), kValueKey);
   } else if (method.compare(kSetClipboardDataMethod) == 0) {
     const rapidjson::Value& document = *method_call.arguments();
     rapidjson::Value::ConstMemberIterator itr = document.FindMember(kTextKey);
