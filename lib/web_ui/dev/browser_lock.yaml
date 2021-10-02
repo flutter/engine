@@ -8,7 +8,7 @@ chrome:
   # `self.m.platform.name.capitalize()` evaluates to. See:
   #
   # recipe_modules/web_util/api.py
-  Linux: 927388 # Major version 96  
+  Linux: 927388 # Major version 96
   Mac: 927385  # Major version 96
   Win: 927369 # Major version 96
 
