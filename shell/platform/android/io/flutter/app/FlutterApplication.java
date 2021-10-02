@@ -9,7 +9,6 @@ import android.app.Application;
 import android.content.Context;
 import androidx.annotation.CallSuper;
 import io.flutter.FlutterInjector;
-import java.lang.reflect.Method;
 
 /**
  * Flutter implementation of {@link android.app.Application}, managing application-level global
