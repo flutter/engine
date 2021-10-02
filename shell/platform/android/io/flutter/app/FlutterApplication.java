@@ -41,7 +41,9 @@ public class FlutterApplication extends Application {
   protected void attachBaseContext(Context base) {
     super.attachBaseContext(base);
     try {
-      Method method = Class.forName("io.flutter.app.FlutterMultiDexSupportUtils").getMethod("installMultiDexSupport", Context.class);
+      MMethod method =
+          Class.forName("io.flutter.app.FlutterMultiDexSupportUtils")
+              .getMethod("installMultiDexSupport", Context.class);
       method.invoke(null, this);
     } catch (Exception e) {
       e.printStackTrace();

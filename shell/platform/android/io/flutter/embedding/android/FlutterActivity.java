@@ -593,7 +593,9 @@ public class FlutterActivity extends Activity
       delegate.onStart();
     }
     try {
-      Method method = Class.forName("io.flutter.app.FlutterMultiDexSupportUtils").getMethod("installMultiDexSupport", Context.class);
+      Method method =
+          Class.forName("io.flutter.app.FlutterMultiDexSupportUtils")
+              .getMethod("installMultiDexSupport", Context.class);
       method.invoke(null, this.getApplicationContext());
     } catch (Exception e) {
       e.printStackTrace();
