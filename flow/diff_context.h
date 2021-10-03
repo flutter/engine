@@ -77,6 +77,9 @@ class DiffContext {
   // Returns transform matrix for current subtree
   const SkMatrix& GetTransform() const { return state_.transform; }
 
+  // Overrides transform matrix for current subtree
+  void SetTransform(const SkMatrix& transform);
+
   // Return cull rect for current subtree (in local coordinates)
   const SkRect& GetCullRect() const { return state_.cull_rect; }
 

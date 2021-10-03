@@ -45,6 +45,10 @@ void DiffContext::PushTransform(const SkMatrix& transform) {
   }
 }
 
+void DiffContext::SetTransform(const SkMatrix& transform) {
+  state_.transform = transform;
+}
+
 Damage DiffContext::ComputeDamage(
     const SkIRect& accumulated_buffer_damage) const {
   SkRect buffer_damage = SkRect::Make(accumulated_buffer_damage);
