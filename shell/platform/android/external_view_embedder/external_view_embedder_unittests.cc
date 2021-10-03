@@ -900,8 +900,9 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
   auto frame_size = SkISize::Make(1000, 1000);
   auto surface_factory = std::make_shared<TestAndroidSurfaceFactory>(
       [&android_context, gr_context, window, frame_size]() {
+        SurfaceFrame::FramebufferInfo framebuffer_info;
         auto surface_frame_1 = std::make_unique<SurfaceFrame>(
-            SkSurface::MakeNull(1000, 1000), false,
+            SkSurface::MakeNull(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
               return true;
             });
@@ -944,8 +945,9 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
           ByMove(std::make_unique<PlatformViewAndroidJNI::OverlayMetadata>(
               0, window))));
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      SkSurface::MakeNull(1000, 1000), false,
+      SkSurface::MakeNull(1000, 1000), framebuffer_info,
       [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
   embedder->SubmitFrame(gr_context.get(), std::move(surface_frame));
 
