@@ -549,12 +549,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
     FrameDamage damage;
-    if (!disable_partial_repaint &&
-        !frame->framebuffer_info().existing_damage.empty()) {
+    if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
       damage.prev_layer_tree = last_layer_tree_.get();
-      for (const auto& r : frame->framebuffer_info().existing_damage) {
-        damage.additional_damage.join(r);
-      }
+      damage.additional_damage = *frame->framebuffer_info().existing_damage;
     }
 
     RasterStatus raster_status =
@@ -565,8 +562,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     SurfaceFrame::SubmitInfo submit_info;
-    submit_info.frame_damage.push_back(damage.damage_out.frame_damage);
-    submit_info.buffer_damage.push_back(damage.damage_out.buffer_damage);
+    submit_info.frame_damage = damage.damage_out.frame_damage;
+    submit_info.buffer_damage = damage.damage_out.buffer_damage;
 
     frame->set_submit_info(submit_info);
 

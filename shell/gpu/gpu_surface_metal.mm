@@ -139,8 +139,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
     for (auto& entry : damage_) {
       if (entry.first != texture) {
         // Accumulate damage for other framebuffers
-        for (const auto& rect : surface_frame.submit_info().frame_damage) {
-          entry.second.join(rect);
+        if (surface_frame.submit_info().frame_damage) {
+          entry.second.join(*surface_frame.submit_info().frame_damage);
         }
       }
     }
@@ -158,7 +158,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
   uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
   auto i = damage_.find(texture);
   if (i != damage_.end()) {
-    framebuffer_info.existing_damage.push_back(i->second);
+    framebuffer_info.existing_damage = i->second;
   }
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback);

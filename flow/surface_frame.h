@@ -6,6 +6,7 @@
 #define FLUTTER_FLOW_SURFACE_FRAME_H_
 
 #include <memory>
+#include <optional>
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/fml/macros.h"
@@ -35,10 +36,10 @@ class SurfaceFrame {
     // repainted alongside of dirty area determined by diffing current and
     // last successfully rasterized layer tree;
     //
-    // If existing damage is unspecified (empty vector), entire frame will be
+    // If existing damage is unspecified (nullopt), entire frame will be
     // rasterized (no partial redraw). To signal that there is no existing
-    // damage use vector with an empty SkIRect.
-    std::vector<SkIRect> existing_damage;
+    // damage use an empty SkIRect.
+    std::optional<SkIRect> existing_damage;
   };
 
   SurfaceFrame(sk_sp<SkSurface> surface,
@@ -57,14 +58,14 @@ class SurfaceFrame {
     // frame (n-1), and represents the area that a compositor must recompose.
     //
     // Corresponds to EGL_KHR_swap_buffers_with_damage
-    std::vector<SkIRect> frame_damage;
+    std::optional<SkIRect> frame_damage;
 
     // The buffer damage for a frame is the area changed since that same buffer
     // was last used. If the buffer has not been used before, the buffer damage
     // is the entire area of the buffer.
     //
     // Corresponds to EGL_KHR_partial_update
-    std::vector<SkIRect> buffer_damage;
+    std::optional<SkIRect> buffer_damage;
   };
 
   bool Submit();
