@@ -27,7 +27,6 @@ Animator::Animator(Delegate& delegate,
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       waiter_(std::move(waiter)),
-      dart_frame_deadline_(0),
 #if SHELL_ENABLE_METAL
       layer_tree_pipeline_(std::make_shared<LayerTreePipeline>(2)),
 #else   // SHELL_ENABLE_METAL
@@ -41,11 +40,6 @@ Animator::Animator(Delegate& delegate,
               : 2)),
 #endif  // SHELL_ENABLE_METAL
       pending_frame_semaphore_(1),
-      paused_(false),
-      regenerate_layer_tree_(false),
-      frame_scheduled_(false),
-      notify_idle_task_id_(0),
-      dimension_change_pending_(false),
       weak_factory_(this) {
 }
 

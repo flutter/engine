@@ -265,7 +265,6 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 
 void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
-  StartAnimatorIfPossible();
   ScheduleFrame();
 }
 
@@ -465,6 +464,7 @@ std::string Engine::DefaultRouteName() {
 }
 
 void Engine::ScheduleFrame(bool regenerate_layer_tree) {
+  StartAnimatorIfPossible();
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
