@@ -86,10 +86,10 @@ const char* Animator::FrameParity() {
   return (frame_number % 2) ? "even" : "odd";
 }
 
-static int64_t FxlToDartOrEarlier(fml::TimePoint time) {
-  int64_t dart_now = Dart_TimelineGetMicros();
+static fml::TimePoint FxlToDartOrEarlier(fml::TimePoint time) {
+  auto dart_now = fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros());
   fml::TimePoint fxl_now = fml::TimePoint::Now();
-  return (time - fxl_now).ToMicroseconds() + dart_now;
+  return fml::TimePoint::FromEpochDelta(time - fxl_now + dart_now);
 }
 
 void Animator::BeginFrame(
@@ -269,7 +269,8 @@ void Animator::AwaitVSync() {
         }
       });
 
-  delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
+  delegate_.OnAnimatorNotifyIdle(
+      dart_frame_deadline_.ToEpochDelta().ToMicroseconds());
 }
 
 void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,

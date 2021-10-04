@@ -106,7 +106,7 @@ class Animator final {
 
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
   uint64_t frame_request_number_ = 1;
-  int64_t dart_frame_deadline_ = 0;
+  fml::TimePoint dart_frame_deadline_;
   std::shared_ptr<LayerTreePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
   LayerTreePipeline::ProducerContinuation producer_continuation_;
