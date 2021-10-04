@@ -45,7 +45,7 @@ GPUSurfaceMetal::GPUSurfaceMetal(GPUSurfaceMetalDelegate* delegate,
       context_(std::move(context)),
       render_to_surface_(render_to_surface) {}
 
-GPUSurfaceMetal::~GPUSurfaceMetal() {}
+GPUSurfaceMetal::~GPUSurfaceMetal() = default;
 
 // |Surface|
 bool GPUSurfaceMetal::IsValid() {
