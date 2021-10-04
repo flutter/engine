@@ -10,6 +10,39 @@
 
 namespace flutter {
 
+std::optional<SkRect> FrameDamage::ComputeClipRect(
+    flutter::LayerTree& layer_tree) {
+  if (layer_tree.root_layer()) {
+    PaintRegionMap empty_paint_region_map;
+    DiffContext context(layer_tree.frame_size(),
+                        layer_tree.device_pixel_ratio(),
+                        layer_tree.paint_region_map(),
+                        prev_layer_tree_ ? prev_layer_tree_->paint_region_map()
+                                         : empty_paint_region_map);
+    context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
+                                         layer_tree.frame_size().height()));
+    {
+      DiffContext::AutoSubtreeRestore subtree(&context);
+      const Layer* prev_root_layer = nullptr;
+      if (!prev_layer_tree_ ||
+          prev_layer_tree_->frame_size() != layer_tree.frame_size()) {
+        // If there is no previous layer tree assume the entire frame must be
+        // repainted.
+        context.MarkSubtreeDirty(SkRect::MakeIWH(
+            layer_tree.frame_size().width(), layer_tree.frame_size().height()));
+      } else {
+        prev_root_layer = prev_layer_tree_->root_layer();
+      }
+      layer_tree.root_layer()->Diff(&context, prev_root_layer);
+    }
+
+    damage_ = context.ComputeDamage(additional_damage_);
+    return SkRect::Make(damage_->buffer_damage);
+  } else {
+    return std::nullopt;
+  }
+}
+
 CompositorContext::CompositorContext(fml::Milliseconds frame_budget)
     : raster_time_(frame_budget), ui_time_(frame_budget) {}
 
@@ -67,50 +100,14 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
-std::optional<SkRect> CompositorContext::ScopedFrame::ComputeClipRect(
-    flutter::LayerTree& layer_tree,
-    FrameDamage* frame_damage) const {
-  if (frame_damage && layer_tree.root_layer()) {
-    PaintRegionMap empty_paint_region_map;
-    DiffContext context(layer_tree.frame_size(),
-                        layer_tree.device_pixel_ratio(),
-                        layer_tree.paint_region_map(),
-                        frame_damage->prev_layer_tree
-                            ? frame_damage->prev_layer_tree->paint_region_map()
-                            : empty_paint_region_map);
-    context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
-                                         layer_tree.frame_size().height()));
-    {
-      DiffContext::AutoSubtreeRestore subtree(&context);
-      const Layer* prev_root_layer = nullptr;
-      if (!frame_damage->prev_layer_tree ||
-          frame_damage->prev_layer_tree->frame_size() !=
-              layer_tree.frame_size()) {
-        // If there is no previous layer tree assume the entire frame must be
-        // repainted.
-        context.MarkSubtreeDirty(SkRect::MakeIWH(
-            layer_tree.frame_size().width(), layer_tree.frame_size().height()));
-      } else {
-        prev_root_layer = frame_damage->prev_layer_tree->root_layer();
-      }
-      layer_tree.root_layer()->Diff(&context, prev_root_layer);
-    }
-
-    frame_damage->damage_out =
-        context.ComputeDamage(frame_damage->additional_damage);
-    return SkRect::Make(frame_damage->damage_out.buffer_damage);
-  } else {
-    return std::nullopt;
-  }
-}
-
 RasterStatus CompositorContext::ScopedFrame::Raster(
     flutter::LayerTree& layer_tree,
     bool ignore_raster_cache,
     FrameDamage* frame_damage) {
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
 
-  std::optional<SkRect> clip_rect = ComputeClipRect(layer_tree, frame_damage);
+  std::optional<SkRect> clip_rect =
+      frame_damage ? frame_damage->ComputeClipRect(layer_tree) : std::nullopt;
 
   bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();

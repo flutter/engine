@@ -550,8 +550,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
     FrameDamage damage;
     if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
-      damage.prev_layer_tree = last_layer_tree_.get();
-      damage.additional_damage = *frame->framebuffer_info().existing_damage;
+      damage.SetPreviousLayerTree(last_layer_tree_.get());
+      damage.AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
     }
 
     RasterStatus raster_status =
@@ -562,8 +562,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     SurfaceFrame::SubmitInfo submit_info;
-    submit_info.frame_damage = damage.damage_out.frame_damage;
-    submit_info.buffer_damage = damage.damage_out.buffer_damage;
+    submit_info.frame_damage = damage.GetFrameDamage();
+    submit_info.buffer_damage = damage.GetBufferDamage();
 
     frame->set_submit_info(submit_info);
 

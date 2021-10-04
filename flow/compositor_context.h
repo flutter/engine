@@ -55,15 +55,41 @@ enum class RasterStatus {
   kYielded,
 };
 
-struct FrameDamage {
-  // IN: Previous layer tree
-  const LayerTree* prev_layer_tree = nullptr;
+class FrameDamage {
+ public:
+  // Sets previous layer tree for calculating frame damage. If not set, entire
+  // frame will be repainted.
+  void SetPreviousLayerTree(const LayerTree* prev_layer_tree) {
+    prev_layer_tree_ = prev_layer_tree;
+  }
 
-  // IN: Additional damage (accumulated for double / triple buffering)
-  SkIRect additional_damage = SkIRect::MakeEmpty();
+  // Adds additional damage (accumulated for double / triple buffering).
+  // This is area that will be repainted alongside any changed part.
+  void AddAdditonalDamage(const SkIRect& damage) {
+    additional_damage_.join(damage);
+  }
 
-  // OUT: Damage (area changed between last and current frame)
-  Damage damage_out;
+  // Calculates clip rect for current rasterization. This is diff of layer tree
+  // and previous layer tree + any additional provideddamage.
+  // If previous layer tree is not specified, clip rect will be nulloptional,
+  // but the paint region of layer_tree will be calculated so that it can be
+  // used for diffing of subsequent frames.
+  std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree);
+
+  // See Damage::frame_damage.
+  std::optional<SkIRect> GetFrameDamage() const {
+    return damage_ ? std::make_optional(damage_->frame_damage) : std::nullopt;
+  }
+
+  // See Damage::buffer_damage.
+  std::optional<SkIRect> GetBufferDamage() {
+    return damage_ ? std::make_optional(damage_->buffer_damage) : std::nullopt;
+  }
+
+ private:
+  SkIRect additional_damage_ = SkIRect::MakeEmpty();
+  std::optional<Damage> damage_;
+  const LayerTree* prev_layer_tree_ = nullptr;
 };
 
 class CompositorContext {
@@ -100,9 +126,6 @@ class CompositorContext {
                                 FrameDamage* frame_damage);
 
    private:
-    std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree,
-                                          FrameDamage* frame_damage) const;
-
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     SkCanvas* canvas_;
