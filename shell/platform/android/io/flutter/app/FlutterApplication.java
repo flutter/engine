@@ -9,6 +9,7 @@ import android.app.Application;
 import android.content.Context;
 import androidx.annotation.CallSuper;
 import io.flutter.FlutterInjector;
+import java.lang.reflect.Method;
 
 /**
  * Flutter implementation of {@link android.app.Application}, managing application-level global
@@ -40,7 +41,7 @@ public class FlutterApplication extends Application {
   protected void attachBaseContext(Context base) {
     super.attachBaseContext(base);
     try {
-      MMethod method =
+      Method method =
           Class.forName("io.flutter.app.FlutterMultiDexSupportUtils")
               .getMethod("installMultiDexSupport", Context.class);
       method.invoke(null, this);
