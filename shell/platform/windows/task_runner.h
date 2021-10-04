@@ -24,11 +24,15 @@ class TaskRunnerTimer {
  public:
   class Delegate {
    public:
+    // Executes expired task, and returns the duration until the next task
+    // deadline if exists, otherwise returns `std::chrono::nanoseconds::max()`.
     virtual std::chrono::nanoseconds ProcessTasks() = 0;
   };
 
+  // Schedules timers to call ProcessTasks at the timer's thread.
   virtual void WakeUp() = 0;
 
+  // Returns `true` if the current thread is this timer's thread.
   virtual bool RunsOnCurrentThread() const = 0;
 
   virtual ~TaskRunnerTimer() = default;
@@ -48,7 +52,7 @@ class TaskRunner : public TaskRunnerTimer::Delegate {
   TaskRunner(CurrentTimeProc get_current_time,
              const TaskExpiredCallback& on_task_expired);
 
-  // Returns if the current thread is the UI thread.
+  // Returns `true` if the current thread is this runner's thread.
   bool RunsTasksOnCurrentThread() const;
 
   // Post a Flutter engine task to the event loop for delayed execution.
