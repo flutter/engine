@@ -100,6 +100,9 @@ class CompositorContext {
                                 FrameDamage* frame_damage);
 
    private:
+    std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree,
+                                          FrameDamage* frame_damage) const;
+
     CompositorContext& context_;
     GrDirectContext* gr_context_;
     SkCanvas* canvas_;

@@ -100,6 +100,7 @@ class DiffContext {
   // added to damage.
   void MarkSubtreeDirty(
       const PaintRegion& previous_paint_region = PaintRegion());
+  void MarkSubtreeDirty(const SkRect& previous_paint_region);
 
   bool IsSubtreeDirty() const { return state_.dirty; }
 

@@ -116,6 +116,12 @@ void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
   state_.dirty = true;
 }
 
+void DiffContext::MarkSubtreeDirty(const SkRect& previous_paint_region) {
+  FML_DCHECK(!IsSubtreeDirty());
+  AddDamage(previous_paint_region);
+  state_.dirty = true;
+}
+
 void DiffContext::AddLayerBounds(const SkRect& rect) {
   // During painting we cull based on non-overriden transform and then
   // override the transform right before paint. Do the same thing here to get

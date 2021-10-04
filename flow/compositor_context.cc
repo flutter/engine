@@ -67,14 +67,9 @@ CompositorContext::ScopedFrame::~ScopedFrame() {
   context_.EndFrame(*this, instrumentation_enabled_);
 }
 
-RasterStatus CompositorContext::ScopedFrame::Raster(
+std::optional<SkRect> CompositorContext::ScopedFrame::ComputeClipRect(
     flutter::LayerTree& layer_tree,
-    bool ignore_raster_cache,
-    FrameDamage* frame_damage) {
-  TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
-
-  std::optional<SkRect> clip_rect;
-
+    FrameDamage* frame_damage) const {
   if (frame_damage && layer_tree.root_layer()) {
     PaintRegionMap empty_paint_region_map;
     DiffContext context(layer_tree.frame_size(),
@@ -91,7 +86,10 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
       if (!frame_damage->prev_layer_tree ||
           frame_damage->prev_layer_tree->frame_size() !=
               layer_tree.frame_size()) {
-        context.MarkSubtreeDirty();
+        // If there is no previous layer tree assume the entire frame must be
+        // repainted.
+        context.MarkSubtreeDirty(SkRect::MakeIWH(
+            layer_tree.frame_size().width(), layer_tree.frame_size().height()));
       } else {
         prev_root_layer = frame_damage->prev_layer_tree->root_layer();
       }
@@ -100,8 +98,19 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
 
     frame_damage->damage_out =
         context.ComputeDamage(frame_damage->additional_damage);
-    clip_rect = SkRect::Make(frame_damage->damage_out.buffer_damage);
+    return SkRect::Make(frame_damage->damage_out.buffer_damage);
+  } else {
+    return std::nullopt;
   }
+}
+
+RasterStatus CompositorContext::ScopedFrame::Raster(
+    flutter::LayerTree& layer_tree,
+    bool ignore_raster_cache,
+    FrameDamage* frame_damage) {
+  TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
+
+  std::optional<SkRect> clip_rect = ComputeClipRect(layer_tree, frame_damage);
 
   bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
