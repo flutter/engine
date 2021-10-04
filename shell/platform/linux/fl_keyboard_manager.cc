@@ -277,11 +277,8 @@ static bool fl_keyboard_manager_remove_redispatched(FlKeyboardManager* self,
       self->pending_redispatches, static_cast<const uint64_t*>(&hash),
       compare_pending_by_hash, &result_index);
   if (found) {
-    FlKeyboardPendingEvent* removed =
-        FL_KEYBOARD_PENDING_EVENT(g_ptr_array_remove_index_fast(
-            self->pending_redispatches, result_index));
-    g_return_val_if_fail(removed != nullptr, TRUE);
-    g_object_unref(removed);
+    // The removed object is freed due to `pending_redispatches`'s free_func.
+    g_ptr_array_remove_index_fast(self->pending_redispatches, result_index);
     return TRUE;
   } else {
     return FALSE;
