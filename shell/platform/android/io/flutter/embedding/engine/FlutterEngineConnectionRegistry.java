@@ -299,26 +299,6 @@ import java.util.Set;
   }
 
   @Override
-  public void attachToActivity(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
-    Log.v(
-        TAG,
-        "Attaching to an Activity: "
-            + activity
-            + "."
-            + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
-    if (this.exclusiveActivity != null) {
-      this.exclusiveActivity.detachFromFlutterEngine();
-    }
-    // If we were already attached to an app component, detach from it.
-    detachFromAppComponent();
-
-    if (this.exclusiveActivity != null) {
-      throw new AssertionError("Only activity or exclusiveActivity should be set");
-    }
-    attachToActivityInternal(activity, lifecycle);
-  }
-
-  @Override
   public void attachToActivity(
       @NonNull ExclusiveAppComponent<Activity> exclusiveActivity, @NonNull Lifecycle lifecycle) {
     Log.v(
