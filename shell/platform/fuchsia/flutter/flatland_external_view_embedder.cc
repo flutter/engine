@@ -16,15 +16,17 @@ constexpr uint32_t kFlatlandDefaultViewportSize = 32;
 FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
     std::string debug_label,
     fuchsia::ui::views::ViewCreationToken view_creation_token,
-    scenic::ViewRefPair view_ref_pair,
+    fuchsia::ui::views::ViewIdentityOnCreation view_identity,
+    fuchsia::ui::composition::ViewBoundProtocols view_protocols,
     fidl::InterfaceRequest<fuchsia::ui::composition::ParentViewportWatcher>
         parent_viewport_watcher_request,
     FlatlandConnection& flatland,
     SurfaceProducer& surface_producer,
     bool intercept_all_input)
     : flatland_(flatland), surface_producer_(surface_producer) {
-  flatland_.flatland()->CreateView(std::move(view_creation_token),
-                                   std::move(parent_viewport_watcher_request));
+  flatland_.flatland()->CreateView2(
+      std::move(view_creation_token), std::move(view_identity),
+      std::move(view_protocols), std::move(parent_viewport_watcher_request));
 
   root_transform_id_ = flatland_.NextTransformId();
   flatland_.flatland()->CreateTransform(root_transform_id_);
@@ -244,18 +246,19 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // Create a new layer if needed for the surface.
         FML_CHECK(flatland_layer_index <= flatland_layers_.size());
         if (flatland_layer_index == flatland_layers_.size()) {
-          FlatlandLayer new_layer{
-              .transform_id = flatland_.NextTransformId(),
-              .image_id = {surface_for_layer->GetImageId()}};
+          FlatlandLayer new_layer{.transform_id = flatland_.NextTransformId()};
           flatland_.flatland()->CreateTransform(new_layer.transform_id);
-          flatland_.flatland()->SetContent(new_layer.transform_id,
-                                           new_layer.image_id);
-          const auto& size = surface_for_layer->GetSize();
-          flatland_.flatland()->SetImageDestinationSize(
-              new_layer.image_id, {static_cast<uint32_t>(size.width()),
-                                   static_cast<uint32_t>(size.height())});
           flatland_layers_.emplace_back(std::move(new_layer));
         }
+
+        // Update the image content and set size.
+        flatland_.flatland()->SetContent(
+            flatland_layers_[flatland_layer_index].transform_id,
+            {surface_for_layer->GetImageId()});
+        flatland_.flatland()->SetImageDestinationSize(
+            {surface_for_layer->GetImageId()},
+            {static_cast<uint32_t>(surface_for_layer->GetSize().width()),
+             static_cast<uint32_t>(surface_for_layer->GetSize().height())});
 
         // Attach the FlatlandLayer to the main scene graph.
         flatland_.flatland()->AddChild(

@@ -112,7 +112,8 @@ std::unique_ptr<Engine> Engine::Spawn(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
     Settings settings,
-    std::unique_ptr<Animator> animator) const {
+    std::unique_ptr<Animator> animator,
+    const std::string& initial_route) const {
   auto result = std::make_unique<Engine>(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
@@ -133,6 +134,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
       settings_.persistent_isolate_data      // persistent isolate data
   );
+  result->initial_route_ = initial_route;
   return result;
 }
 
@@ -200,6 +202,13 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   UpdateAssetManager(configuration.GetAssetManager());
 
+  // If the embedding prefetched the default font manager, then set up the
+  // font manager later in the engine launch process.  This makes it less
+  // likely that the setup will need to wait for the prefetch to complete.
+  if (settings_.prefetched_default_font_manager) {
+    SetupDefaultFontManager();
+  }
+
   if (runtime_controller_->IsRootIsolateRunning()) {
     return RunStatus::FailureAlreadyRunning;
   }
@@ -263,7 +272,6 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 
 void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
-  StartAnimatorIfPossible();
   ScheduleFrame();
 }
 
@@ -463,6 +471,7 @@ std::string Engine::DefaultRouteName() {
 }
 
 void Engine::ScheduleFrame(bool regenerate_layer_tree) {
+  StartAnimatorIfPossible();
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
