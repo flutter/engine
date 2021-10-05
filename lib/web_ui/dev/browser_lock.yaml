@@ -9,7 +9,7 @@ chrome:
   #
   # recipe_modules/web_util/api.py
   Linux: 927388 # Major version 96
-  Mac: 927385  # Major version 96
+  Mac: 927385 # Major version 96
   Win: 927369 # Major version 96
 
 ## Firefox does not use CIPD. To update the version, simply update it in this
