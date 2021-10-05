@@ -144,7 +144,13 @@ class _MacBinding implements PlatformBinding {
 
   @override
   String getChromeExecutablePath(io.Directory versionDir) => path.join(
-      versionDir.path, 'Chromium.app', 'Contents', 'MacOS', 'Chromium');
+        versionDir.path,
+        'chrome-mac',
+        'Chromium.app',
+        'Contents',
+        'MacOS',
+        'Chromium',
+      );
 
   @override
   String getFirefoxDownloadUrl(String version) =>
