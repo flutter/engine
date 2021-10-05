@@ -1,4 +1,4 @@
-Signature: 1de64ab3f627e8062de425ea8c6092c4
+Signature: 08673a9adc8b8fb54a4379c519a874d4
 
 UNUSED LICENSES:
 
@@ -2946,6 +2946,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/CommandBuffer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Context.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
@@ -2953,17 +2955,15 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.h
-FILE: ../../../third_party/skia/experimental/graphite/src/Pipeline.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/Pipeline.h
-FILE: ../../../third_party/skia/experimental/graphite/src/PipelineDesc.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/PipelineDesc.h
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPassTask.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPassTask.h
+FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipeline.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipeline.h
+FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipelineDesc.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipelineDesc.h
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceProvider.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceProvider.h
 FILE: ../../../third_party/skia/experimental/graphite/src/SkStuff.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/SurfaceDrawContext.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/SurfaceDrawContext.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Task.cpp
@@ -2976,8 +2976,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCommandBuffer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCommandBuffer.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlGpu.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlGpu.mm
-FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlPipeline.h
-FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlPipeline.mm
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlRenderPipeline.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlRenderPipeline.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlResourceProvider.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlResourceProvider.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlTexture.h
@@ -3058,6 +3058,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLIntrinsicList.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramVisitor.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBinaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLChildCall.cpp
@@ -3093,7 +3094,9 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLPostfixExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwitchStatement.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwizzle.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLTernaryExpression.cpp
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLTypeReference.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVarDeclarations.cpp
+FILE: ../../../third_party/skia/src/sksl/transform/SkSLProgramWriter.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC
 

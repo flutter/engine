@@ -202,6 +202,13 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   UpdateAssetManager(configuration.GetAssetManager());
 
+  // If the embedding prefetched the default font manager, then set up the
+  // font manager later in the engine launch process.  This makes it less
+  // likely that the setup will need to wait for the prefetch to complete.
+  if (settings_.prefetched_default_font_manager) {
+    SetupDefaultFontManager();
+  }
+
   if (runtime_controller_->IsRootIsolateRunning()) {
     return RunStatus::FailureAlreadyRunning;
   }
@@ -265,7 +272,6 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 
 void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
-  StartAnimatorIfPossible();
   ScheduleFrame();
 }
 
@@ -465,6 +471,7 @@ std::string Engine::DefaultRouteName() {
 }
 
 void Engine::ScheduleFrame(bool regenerate_layer_tree) {
+  StartAnimatorIfPossible();
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
