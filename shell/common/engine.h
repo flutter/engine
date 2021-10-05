@@ -979,6 +979,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 
+  std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner() const {
+    FML_DCHECK(runtime_controller_);
+    return runtime_controller_->GetDartVM()->GetConcurrentWorkerTaskRunner();
+  }
+
   friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);

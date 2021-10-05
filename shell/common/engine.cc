@@ -118,7 +118,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
       /*image_decoder_task_runner=*/
-      runtime_controller_->GetDartVM()->GetConcurrentWorkerTaskRunner(),
+      concurrent_task_runner(),
       /*task_runners=*/task_runners_,
       /*settings=*/settings,
       /*animator=*/std::move(animator),
@@ -548,14 +548,17 @@ void Engine::HandleAssetPlatformMessage(
                          data.GetSize());
 
   if (asset_manager_) {
-    std::unique_ptr<fml::Mapping> asset_mapping =
-        asset_manager_->GetAsMapping(asset_name);
-    if (asset_mapping) {
-      response->Complete(std::move(asset_mapping));
-      return;
-    }
+    concurrent_task_runner()->PostTask([asset_manager = asset_manager_,
+                                        asset_name = std::move(asset_name),
+                                        response = std::move(response)] {
+      std::unique_ptr<fml::Mapping> asset_mapping =
+          asset_manager->GetAsMapping(asset_name);
+      if (asset_mapping) {
+        response->Complete(std::move(asset_mapping));
+      }
+    });
+    return;
   }
-
   response->CompleteEmpty();
 }
 
