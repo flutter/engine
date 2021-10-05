@@ -104,6 +104,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterResizeSynchronizer.mm",
     "framework/Source/FlutterSurfaceManager.h",
     "framework/Source/FlutterSurfaceManager.mm",
+    "framework/Source/FlutterTextEditingDelta.h",
+    "framework/Source/FlutterTextEditingDelta.mm",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
     "framework/Source/FlutterTextInputSemanticsObject.h",
