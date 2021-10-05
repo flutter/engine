@@ -35,14 +35,6 @@ DiffContext::State::State()
 
 void DiffContext::PushTransform(const SkMatrix& transform) {
   state_.transform.preConcat(transform);
-  SkMatrix inverse_transform;
-  // Perspective projections don't produce rectangles that are useful for
-  // culling for some reason.
-  if (!transform.hasPerspective() && transform.invert(&inverse_transform)) {
-    inverse_transform.mapRect(&state_.cull_rect);
-  } else {
-    state_.cull_rect = kGiantRect;
-  }
 }
 
 void DiffContext::SetTransform(const SkMatrix& transform) {
@@ -76,7 +68,20 @@ Damage DiffContext::ComputeDamage(
 }
 
 bool DiffContext::PushCullRect(const SkRect& clip) {
-  return state_.cull_rect.intersect(clip);
+  SkRect cull_rect = state_.transform.mapRect(clip);
+  return state_.cull_rect.intersect(cull_rect);
+}
+
+SkRect DiffContext::GetCullRect() const {
+  SkMatrix inverse_transform;
+  // Perspective projections don't produce rectangles that are useful for
+  // culling for some reason.
+  if (!state_.transform.hasPerspective() &&
+      state_.transform.invert(&inverse_transform)) {
+    return inverse_transform.mapRect(state_.cull_rect);
+  } else {
+    return kGiantRect;
+  }
 }
 
 void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
@@ -89,13 +94,11 @@ void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
 
 void DiffContext::AddLayerBounds(const SkRect& rect) {
   SkRect r(rect);
-  if (r.intersect(state_.cull_rect)) {
-    state_.transform.mapRect(&r);
-    if (!r.isEmpty()) {
-      rects_->push_back(r);
-      if (IsSubtreeDirty()) {
-        AddDamage(r);
-      }
+  state_.transform.mapRect(&r);
+  if (r.intersects(state_.cull_rect)) {
+    rects_->push_back(r);
+    if (IsSubtreeDirty()) {
+      AddDamage(r);
     }
   }
 }

@@ -81,7 +81,7 @@ class DiffContext {
   void SetTransform(const SkMatrix& transform);
 
   // Return cull rect for current subtree (in local coordinates)
-  const SkRect& GetCullRect() const { return state_.cull_rect; }
+  SkRect GetCullRect() const;
 
   // Sets the dirty flag on current subtree;
   //
@@ -177,7 +177,7 @@ class DiffContext {
     State();
 
     bool dirty;
-    SkRect cull_rect;
+    SkRect cull_rect;  // in screen coordinates
     SkMatrix transform;
     size_t rect_index_;
   };
