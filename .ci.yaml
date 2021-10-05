@@ -4,8 +4,9 @@
 # for every commit.
 #
 # More information at:
-#  * https://github.com/flutter/cocoon/blob/master/CI_YAML.md
+#  * https://github.com/flutter/cocoon/blob/main/CI_YAML.md
 enabled_branches:
+  - main
   - master
   - dev
   - beta
@@ -36,7 +37,8 @@ platform_properties:
       # CIPD flutter_internal/java/openjdk/$platform
       dependencies: >-
         [
-          {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"}
+          {"dependency": "open_jdk", "version": "version:1.8.0u202-b08"},
+          {"dependency": "gradle_cache"}
         ]
       device_type: none
       os: Linux
@@ -137,11 +139,21 @@ targets:
 
   - name: Linux Benchmarks
     enabled_branches:
+      - main
       - master
     recipe: engine/engine_metrics
     presubmit: false
     properties:
       build_host: "true"
+      upload_metrics: "true"
+    timeout: 60
+    scheduler: luci
+
+  - name: Linux Benchmarks (no-upload)
+    recipe: engine/engine_metrics
+    properties:
+      build_host: "true"
+      upload_metrics: "false"
     timeout: 60
     scheduler: luci
 

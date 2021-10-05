@@ -7,19 +7,25 @@ package io.flutter.embedding.engine.loader;
 import static android.os.Looper.getMainLooper;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import io.flutter.embedding.engine.FlutterJNI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -77,5 +83,30 @@ public class FlutterLoaderTest {
             anyLong());
     List<String> arguments = Arrays.asList(shellArgsCaptor.getValue());
     assertTrue(arguments.contains(oldGenHeapArg));
+  }
+
+  @Test
+  public void itUsesCorrectExecutorService() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    ExecutorService mockExecutorService = mock(ExecutorService.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI, mockExecutorService);
+
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(RuntimeEnvironment.application);
+    verify(mockExecutorService, times(1)).submit(any(Callable.class));
+  }
+
+  @Test
+  @TargetApi(23)
+  @Config(sdk = 23)
+  public void itReportsFpsToVsyncWaiterAndroidM() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
+
+    Context appContextSpy = spy(RuntimeEnvironment.application);
+
+    assertFalse(flutterLoader.initialized());
+    flutterLoader.startInitialization(appContextSpy);
+    verify(appContextSpy, never()).getSystemService(anyString());
   }
 }

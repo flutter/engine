@@ -440,6 +440,11 @@ TEST_F(ShellTest, LastEntrypoint) {
 }
 
 TEST_F(ShellTest, DisallowedDartVMFlag) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires fix";
+#endif  // defined(WINUWP)
+
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -454,6 +459,10 @@ TEST_F(ShellTest, DisallowedDartVMFlag) {
 }
 
 TEST_F(ShellTest, AllowedDartVMFlag) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires fix";
+#endif  // defined(WINUWP)
   std::vector<const char*> flags = {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
@@ -466,6 +475,7 @@ TEST_F(ShellTest, AllowedDartVMFlag) {
     flags.push_back("--enable_mirrors");
   }
 #endif
+
   TestDartVmFlags(flags);
 }
 
@@ -756,6 +766,10 @@ TEST_F(ShellTest,
        OnPlatformViewDestroyDisablesThreadMerger
 #endif
 ) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP. Not yet implemented";
+#endif  // defined(WINUWP)
   auto settings = CreateSettingsForFixture();
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
   auto end_frame_callback =
@@ -1336,6 +1350,11 @@ TEST_F(ShellTest, ReloadSystemFonts) {
 }
 
 TEST_F(ShellTest, WaitForFirstFrame) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires fix";
+#endif  // defined(WINUWP)
+
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
@@ -1391,6 +1410,11 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
 }
 
 TEST_F(ShellTest, WaitForFirstFrameMultiple) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires threading fix";
+#endif  // defined(WINUWP)
+
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
@@ -1415,6 +1439,11 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 /// Makes sure that WaitForFirstFrame works if we rendered a frame with the
 /// single-thread setup.
 TEST_F(ShellTest, WaitForFirstFrameInlined) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires threading fix";
+#endif  // defined(WINUWP)
+
   Settings settings = CreateSettingsForFixture();
   auto task_runner = CreateNewThread();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
@@ -2001,6 +2030,11 @@ TEST_F(ShellTest, CanRegisterImageDecoders) {
 }
 
 TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires vm service sandboxing fix";
+#endif  // defined(WINUWP)
+
   fml::ScopedTemporaryDirectory base_dir;
   ASSERT_TRUE(base_dir.fd().is_valid());
   PersistentCache::SetCacheDirectoryPath(base_dir.path());
@@ -2146,23 +2180,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
       [&shell, &rasterized, &picture, &picture_layer] {
         auto* compositor_context = shell->GetRasterizer()->compositor_context();
         auto& raster_cache = compositor_context->raster_cache();
-        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
-        // access threshold (default to 3) so a cache can be generated.
-        SkCanvas dummy_canvas;
-        bool picture_cache_generated;
-        for (int i = 0; i < 4; i += 1) {
-          picture_cache_generated =
-              raster_cache.Prepare(nullptr,  // GrDirectContext
-                                   picture.get(), SkMatrix::I(),
-                                   nullptr,  // SkColorSpace
-                                   true,     // isComplex
-                                   false     // willChange
-              );
-          raster_cache.Draw(*picture, dummy_canvas);
-        }
-        ASSERT_TRUE(picture_cache_generated);
 
-        // 2.2. Rasterize the picture layer.
         Stopwatch raster_time;
         Stopwatch ui_time;
         MutatorsStack mutators_stack;
@@ -2179,6 +2197,21 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             1.0f,  /* frame_device_pixel_ratio */
             false, /* has_platform_view */
         };
+
+        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
+        // access threshold (default to 3) so a cache can be generated.
+        SkCanvas dummy_canvas;
+        bool picture_cache_generated;
+        for (int i = 0; i < 4; i += 1) {
+          SkMatrix matrix = SkMatrix::I();
+
+          picture_cache_generated = raster_cache.Prepare(
+              &preroll_context, picture.get(), true, false, matrix);
+          raster_cache.Draw(*picture, dummy_canvas);
+        }
+        ASSERT_TRUE(picture_cache_generated);
+
+        // 2.2. Rasterize the picture layer.
         raster_cache.Prepare(&preroll_context, picture_layer.get(),
                              SkMatrix::I());
         rasterized.set_value(true);
@@ -2277,6 +2310,92 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, DiscardResubmittedLayerTreeOnResize) {
+  auto settings = CreateSettingsForFixture();
+
+  SkISize origin_size = SkISize::Make(400, 100);
+  SkISize new_size = SkISize::Make(400, 200);
+
+  fml::AutoResetWaitableEvent end_frame_latch;
+
+  fml::AutoResetWaitableEvent resize_latch;
+
+  std::shared_ptr<ShellTestExternalViewEmbedder> external_view_embedder;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_ref;
+  auto end_frame_callback =
+      [&](bool should_merge_thread,
+          fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+        if (!raster_thread_merger_ref) {
+          raster_thread_merger_ref = raster_thread_merger;
+        }
+        if (should_merge_thread) {
+          raster_thread_merger->MergeWithLease(10);
+          external_view_embedder->UpdatePostPrerollResult(
+              PostPrerollResult::kSuccess);
+        }
+        end_frame_latch.Signal();
+
+        if (should_merge_thread) {
+          resize_latch.Wait();
+        }
+      };
+
+  external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
+      std::move(end_frame_callback), PostPrerollResult::kResubmitFrame, true);
+
+  std::unique_ptr<Shell> shell = CreateShell(
+      settings, GetTaskRunnersForFixture(), false, external_view_embedder);
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &origin_size]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(origin_size.width()),
+             static_cast<double>(origin_size.height()), 22});
+      });
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+
+  RunEngine(shell.get(), std::move(configuration));
+
+  PumpOneFrame(shell.get(), static_cast<double>(origin_size.width()),
+               static_cast<double>(origin_size.height()));
+
+  end_frame_latch.Wait();
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &new_size, &resize_latch]() {
+        shell->GetPlatformView()->SetViewportMetrics(
+            {1.0, static_cast<double>(new_size.width()),
+             static_cast<double>(new_size.height()), 22});
+        resize_latch.Signal();
+      });
+
+  end_frame_latch.Wait();
+
+  // The frame resubmitted with origin size should be discarded after the
+  // viewport metrics changed.
+  ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
+
+  // Threads will be merged at the end of this frame.
+  PumpOneFrame(shell.get(), static_cast<double>(new_size.width()),
+               static_cast<double>(new_size.height()));
+
+  end_frame_latch.Wait();
+  ASSERT_TRUE(raster_thread_merger_ref->IsMerged());
+  ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
+  ASSERT_EQ(new_size, external_view_embedder->GetLastSubmittedFrameSize());
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
+}
+
 TEST_F(ShellTest, IgnoresInvalidMetrics) {
   fml::AutoResetWaitableEvent latch;
   double last_device_pixel_ratio;
@@ -2347,6 +2466,11 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
 }
 
 TEST_F(ShellTest, OnServiceProtocolSetAssetBundlePathWorks) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires vm service sandboxing fix";
+#endif  // defined(WINUWP)
+
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
   RunConfiguration configuration =
@@ -2419,6 +2543,11 @@ TEST_F(ShellTest, EngineRootIsolateLaunchesDontTakeVMDataSettings) {
 }
 
 TEST_F(ShellTest, AssetManagerSingle) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires filesystem sandboxing fix";
+#endif  // defined(WINUWP)
+
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
       asset_dir.path().c_str(), false, fml::FilePermission::kRead);
@@ -2444,6 +2573,11 @@ TEST_F(ShellTest, AssetManagerSingle) {
 }
 
 TEST_F(ShellTest, AssetManagerMulti) {
+#if defined(WINUWP)
+  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
+  GTEST_SKIP() << "Skipped on WinUWP; requires filesystem sandboxing fix";
+#endif  // defined(WINUWP)
+
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
       asset_dir.path().c_str(), false, fml::FilePermission::kRead);
@@ -2561,6 +2695,8 @@ TEST_F(ShellTest, Spawn) {
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
 
+  const std::string initial_route("/foo");
+
   fml::AutoResetWaitableEvent main_latch;
   std::string last_entry_point;
   // Fulfill native function for the first Shell's entrypoint.
@@ -2585,10 +2721,11 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration, &second_latch]() {
+      [this, &spawner = shell, &second_configuration, &second_latch,
+       initial_route]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
-            std::move(second_configuration),
+            std::move(second_configuration), initial_route,
             [&platform_view_delegate](Shell& shell) {
               auto result = std::make_unique<MockPlatformView>(
                   platform_view_delegate, shell.GetTaskRunners());
@@ -2602,10 +2739,11 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
         PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner] {
+                 [&spawn, &spawner, initial_route] {
                    // Check second shell ran the second entrypoint.
                    ASSERT_EQ("testCanLaunchSecondaryIsolate",
                              spawn->GetEngine()->GetLastEntrypoint());
+                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
 
                    // TODO(74520): Remove conditional once isolate groups are
                    // supported by JIT.
@@ -2904,6 +3042,39 @@ TEST_F(ShellTest, UserTagSetOnStartup) {
 
   DestroyShell(std::move(shell));
   isolate_create_latch.Wait();
+}
+
+TEST_F(ShellTest, PrefetchDefaultFontManager) {
+  auto settings = CreateSettingsForFixture();
+  settings.prefetched_default_font_manager = true;
+
+  auto shell = CreateShell(std::move(settings));
+
+  auto get_font_manager_count = [&] {
+    fml::AutoResetWaitableEvent latch;
+    size_t font_manager_count;
+    fml::TaskRunner::RunNowOrPostTask(
+        shell->GetTaskRunners().GetUITaskRunner(),
+        [this, &shell, &latch, &font_manager_count]() {
+          font_manager_count =
+              GetFontCollection(shell.get())->GetFontManagersCount();
+          latch.Signal();
+        });
+    latch.Wait();
+    return font_manager_count;
+  };
+
+  size_t initial_font_manager_count = get_font_manager_count();
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  // If the prefetched_default_font_manager flag is set, then the default font
+  // manager will not be added until the engine starts running.
+  ASSERT_EQ(get_font_manager_count(), initial_font_manager_count + 1);
+
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

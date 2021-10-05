@@ -351,6 +351,16 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   RunCmd(command, cwd=test_runner_dir, env=env)
 
 
+def RunAndroidTests(android_variant='android_debug_unopt', adb_path=None):
+  test_runner_name = 'flutter_shell_native_unittests'
+  tests_path = os.path.join(out_dir, android_variant, test_runner_name)
+  remote_path = '/data/local/tmp'
+  remote_tests_path = os.path.join(remote_path, test_runner_name)
+  if adb_path == None:
+    adb_path = 'adb'
+  RunCmd([adb_path, 'push', tests_path, remote_path], cwd=buildroot_dir)
+  RunCmd([adb_path, 'shell', remote_tests_path])
+
 def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
@@ -428,11 +438,12 @@ def RunFrontEndServerTests(build_dir):
     opts = [
       '--disable-dart-dev',
       dart_test_file,
+      build_dir,
       os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
       os.path.join(build_dir, 'flutter_patched_sdk')]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -445,7 +456,12 @@ def RunConstFinderTests(build_dir):
     os.path.join(test_dir, 'const_finder_test.dart'),
     os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
     os.path.join(build_dir, 'flutter_patched_sdk')]
-  RunEngineExecutable(build_dir, 'dart', None, flags=opts, cwd=test_dir)
+  RunEngineExecutable(
+    build_dir,
+    os.path.join('dart-sdk', 'bin', 'dart'),
+    None,
+    flags=opts,
+    cwd=test_dir)
 
 
 def RunLitetestTests(build_dir):
@@ -457,7 +473,7 @@ def RunLitetestTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -472,7 +488,7 @@ def RunBenchmarkTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -487,7 +503,7 @@ def RunGithooksTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -504,7 +520,7 @@ def RunClangTidyTests(build_dir):
       os.path.join(buildroot_dir, 'flutter')]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -524,7 +540,7 @@ def main():
       help='A single Java test class to run.')
   parser.add_argument('--android-variant', dest='android_variant', action='store',
       default='android_debug_unopt',
-      help='The engine build variant to run java tests for')
+      help='The engine build variant to run java or android tests for')
   parser.add_argument('--ios-variant', dest='ios_variant', action='store',
       default='ios_debug_sim_unopt',
       help='The engine build variant to run objective-c tests for')
@@ -538,6 +554,8 @@ def main():
       default=False, help='Capture core dumps from crashes of engine tests.')
   parser.add_argument('--use-sanitizer-suppressions', dest='sanitizer_suppressions', action='store_true',
       default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
+  parser.add_argument('--adb-path', dest='adb_path', action='store',
+      default=None, help='Provide the path of adb used for android tests.  By default it looks on $PATH.')
 
   args = parser.parse_args()
 
@@ -547,7 +565,7 @@ def main():
     types = args.type.split(',')
 
   build_dir = os.path.join(out_dir, args.variant)
-  if args.type != 'java':
+  if args.type != 'java' and args.type != 'android':
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
   if args.sanitizer_suppressions:
@@ -585,6 +603,10 @@ def main():
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
     RunJavaTests(java_filter, args.android_variant)
+
+  if 'android' in types:
+    assert not IsWindows(), "Android engine files can't be compiled on Windows."
+    RunAndroidTests(args.android_variant, args.adb_path)
 
   if 'objc' in types:
     assert IsMac(), "iOS embedding tests can only be run on macOS."

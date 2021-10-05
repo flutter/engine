@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.8
+#!/usr/bin/env python3
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -77,7 +77,7 @@ def main():
 
     response_file = []
 
-    response_file.append('--experimental allow_new_syntax')
+    response_file.append('--experimental new_syntax_only')
 
     if args.json:
         response_file.append("--json %s" % args.json)

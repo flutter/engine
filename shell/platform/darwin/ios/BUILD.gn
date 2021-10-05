@@ -76,6 +76,10 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterPluginAppLifeCycleDelegate.mm",
     "framework/Source/FlutterRestorationPlugin.h",
     "framework/Source/FlutterRestorationPlugin.mm",
+    "framework/Source/FlutterSemanticsScrollView.h",
+    "framework/Source/FlutterSemanticsScrollView.mm",
+    "framework/Source/FlutterTextEditingDelta.h",
+    "framework/Source/FlutterTextEditingDelta.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
@@ -245,6 +249,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterKeyboardManagerTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
     "framework/Source/FlutterRestorationPluginTest.mm",
+    "framework/Source/FlutterTextEditingDeltaTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
@@ -318,10 +323,16 @@ action("copy_framework_info_plist") {
   sources = [ "framework/Info.plist" ]
   outputs = [ "$_flutter_framework_dir/Info.plist" ]
   args = [
+    "--source",
     rebase_path(sources[0]),
+    "--destination",
     rebase_path(outputs[0]),
-    "--bitcode=$enable_bitcode",
+    "--minversion",
+    ios_deployment_target,
   ]
+  if (enable_bitcode) {
+    args += [ "--bitcode" ]
+  }
 }
 
 copy("copy_framework_module_map") {

@@ -16,7 +16,7 @@ static constexpr double kControllerScrollMultiplier = 3;
 // touch. See https://github.com/flutter/flutter/issues/70201
 static constexpr int32_t kDefaultPointerDeviceId = 0;
 
-// Maps a Flutter cursor name to an CoreCursor.
+// Maps a Flutter cursor name to a CoreCursor.
 //
 // Returns the arrow cursor for unknown constants.
 //
@@ -155,6 +155,9 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   window_.PointerMoved({this, &FlutterWindowWinUWP::OnPointerMoved});
   window_.PointerWheelChanged(
       {this, &FlutterWindowWinUWP::OnPointerWheelChanged});
+
+  ui_settings_.ColorValuesChanged(
+      {this, &FlutterWindowWinUWP::OnColorValuesChanged});
 
   // TODO(clarkezone) support mouse leave handling
   // https://github.com/flutter/flutter/issues/70199
@@ -353,6 +356,12 @@ void FlutterWindowWinUWP::OnCharacterReceived(
     std::u16string text({keycode});
     binding_handler_delegate_->OnText(text);
   }
+}
+
+void FlutterWindowWinUWP::OnColorValuesChanged(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::Foundation::IInspectable const&) {
+  binding_handler_delegate_->OnPlatformBrightnessChanged();
 }
 
 bool FlutterWindowWinUWP::OnBitmapSurfaceUpdated(const void* allocation,

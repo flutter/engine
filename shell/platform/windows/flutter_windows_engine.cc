@@ -164,7 +164,10 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_.get());
-  texture_registrar_ = std::make_unique<FlutterWindowsTextureRegistrar>(this);
+
+  FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
+  texture_registrar_ =
+      std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
   surface_manager_ = AngleSurfaceManager::Create();
 #ifndef WINUWP
   window_proc_delegate_manager_ =
@@ -253,6 +256,10 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
          void* user_data) -> void {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     return host->HandlePlatformMessage(engine_message);
+  };
+  args.on_pre_engine_restart_callback = [](void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    host->view()->OnPreEngineRestart();
   };
 
   args.custom_task_runners = &custom_task_runners;
@@ -388,6 +395,12 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
   embedder_api_.ReloadSystemFonts(engine_);
 }
 
+void FlutterWindowsEngine::ReloadPlatformBrightness() {
+  if (engine_) {
+    SendSystemSettings();
+  }
+}
+
 void FlutterWindowsEngine::SendSystemSettings() {
   std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
   std::vector<FlutterLocale> flutter_locales;
@@ -410,9 +423,8 @@ void FlutterWindowsEngine::SendSystemSettings() {
   settings.AddMember("alwaysUse24HourFormat",
                      Prefer24HourTime(GetUserTimeFormat()), allocator);
   settings.AddMember("textScaleFactor", 1.0, allocator);
-  // TODO: Implement dark mode support.
-  // https://github.com/flutter/flutter/issues/54612
-  settings.AddMember("platformBrightness", "light", allocator);
+  settings.AddMember("platformBrightness",
+                     Utf8FromUtf16(GetPreferredBrightness()), allocator);
   settings_channel_->Send(settings);
 }
 

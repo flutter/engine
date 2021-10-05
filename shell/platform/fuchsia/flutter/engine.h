@@ -9,6 +9,7 @@
 
 #include <fuchsia/intl/cpp/fidl.h>
 #include <fuchsia/io/cpp/fidl.h>
+#include <fuchsia/memorypressure/cpp/fidl.h>
 #include <fuchsia/ui/composition/cpp/fidl.h>
 #include <fuchsia/ui/gfx/cpp/fidl.h>
 #include <fuchsia/ui/views/cpp/fidl.h>
@@ -16,7 +17,6 @@
 #include <lib/sys/cpp/service_directory.h>
 #include <lib/ui/scenic/cpp/id.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
-#include <lib/zx/event.h>
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
@@ -28,7 +28,7 @@
 #include "flatland_connection.h"
 #include "flatland_external_view_embedder.h"
 #include "flutter_runner_product_configuration.h"
-#include "fuchsia_external_view_embedder.h"
+#include "gfx_external_view_embedder.h"
 #include "gfx_session_connection.h"
 #include "isolate_configurator.h"
 #include "vulkan_surface_producer.h"
@@ -41,7 +41,7 @@ class EngineTest;
 
 // Represents an instance of running Flutter engine along with the threads
 // that host the same.
-class Engine final {
+class Engine final : public fuchsia::memorypressure::Watcher {
  public:
   class Delegate {
    public:
@@ -85,37 +85,9 @@ class Engine final {
 #endif  // !defined(DART_PRODUCT)
 
  private:
-  Delegate& delegate_;
-
-  const std::string thread_label_;
-  flutter::ThreadHost thread_host_;
-
-  fuchsia::ui::views::ViewToken view_token_;
-  fuchsia::ui::views::ViewCreationToken view_creation_token_;
-  std::shared_ptr<GfxSessionConnection>
-      session_connection_;  // Must come before surface_producer_
-  std::shared_ptr<FlatlandConnection>
-      flatland_connection_;  // Must come before surface_producer_
-  std::optional<VulkanSurfaceProducer> surface_producer_;
-  std::shared_ptr<FuchsiaExternalViewEmbedder> external_view_embedder_;
-  std::shared_ptr<FlatlandExternalViewEmbedder> flatland_view_embedder_;
-
-  scenic::ViewRefPair view_ref_pair_;
-
-  std::unique_ptr<IsolateConfigurator> isolate_configurator_;
-  std::unique_ptr<flutter::Shell> shell_;
-  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
-
-  fuchsia::intl::PropertyProviderPtr intl_property_provider_;
-
-  zx::event vsync_event_;
-
-  bool intercept_all_input_ = false;
-
-  fml::WeakPtrFactory<Engine> weak_factory_;
-
   void Initialize(
       bool use_flatland,
+      scenic::ViewRefPair view_ref_pair,
       std::shared_ptr<sys::ServiceDirectory> svc,
       std::shared_ptr<sys::ServiceDirectory> runner_services,
       flutter::Settings settings,
@@ -140,24 +112,67 @@ class Engine final {
   void Terminate();
 
   void DebugWireframeSettingsChanged(bool enabled);
-  void CreateView(int64_t view_id,
-                  ViewCallback on_view_created,
-                  ViewIdCallback on_view_bound,
-                  bool hit_testable,
-                  bool focusable);
+  void CreateGfxView(int64_t view_id,
+                     ViewCallback on_view_created,
+                     GfxViewIdCallback on_view_bound,
+                     bool hit_testable,
+                     bool focusable);
+  void CreateFlatlandView(int64_t view_id,
+                          ViewCallback on_view_created,
+                          FlatlandViewCreatedCallback on_view_bound,
+                          bool hit_testable,
+                          bool focusable);
   void UpdateView(int64_t view_id,
                   SkRect occlusion_hint,
                   bool hit_testable,
-                  bool focusable);
-  void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
+                  bool focusable,
+                  bool use_flatland);
+  void DestroyGfxView(int64_t view_id, GfxViewIdCallback on_view_unbound);
+  void DestroyFlatlandView(int64_t view_id,
+                           FlatlandViewIdCallback on_view_unbound);
+
+  // |fuchsia::memorypressure::Watcher|
+  void OnLevelChanged(fuchsia::memorypressure::Level level,
+                      fuchsia::memorypressure::Watcher::OnLevelChangedCallback
+                          callback) override;
 
   std::shared_ptr<flutter::ExternalViewEmbedder> GetExternalViewEmbedder();
 
   std::unique_ptr<flutter::Surface> CreateSurface();
 
-  friend class testing::EngineTest;
+  Delegate& delegate_;
 
-  fidl::InterfacePtr<fuchsia::ui::input3::Keyboard> keyboard_svc_;
+  const std::string thread_label_;
+  flutter::ThreadHost thread_host_;
+
+  fuchsia::ui::views::ViewToken view_token_;
+  fuchsia::ui::views::ViewCreationToken view_creation_token_;
+  std::shared_ptr<GfxSessionConnection>
+      session_connection_;  // Must come before surface_producer_
+  std::shared_ptr<FlatlandConnection>
+      flatland_connection_;  // Must come before surface_producer_
+  std::optional<VulkanSurfaceProducer> surface_producer_;
+  std::shared_ptr<GfxExternalViewEmbedder> external_view_embedder_;
+  std::shared_ptr<FlatlandExternalViewEmbedder> flatland_view_embedder_;
+
+  std::unique_ptr<IsolateConfigurator> isolate_configurator_;
+  std::unique_ptr<flutter::Shell> shell_;
+  std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
+
+  fuchsia::intl::PropertyProviderPtr intl_property_provider_;
+
+  fuchsia::memorypressure::ProviderPtr memory_pressure_provider_;
+  fidl::Binding<fuchsia::memorypressure::Watcher>
+      memory_pressure_watcher_binding_;
+  // We need to track the latest memory pressure level to determine
+  // the direction of change when a new level is provided.
+  fuchsia::memorypressure::Level latest_memory_pressure_level_;
+
+  bool intercept_all_input_ = false;
+
+  fml::WeakPtrFactory<Engine> weak_factory_;
+
+  friend class testing::EngineTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };
