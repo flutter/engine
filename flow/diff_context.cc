@@ -22,6 +22,10 @@ DiffContext::DiffContext(SkISize frame_size,
 void DiffContext::BeginSubtree() {
   state_stack_.push_back(state_);
   state_.rect_index_ = rects_->size();
+  if (state_.transform_override) {
+    state_.transform = *state_.transform_override;
+    state_.transform_override = std::nullopt;
+  }
 }
 
 void DiffContext::EndSubtree() {
@@ -38,7 +42,7 @@ void DiffContext::PushTransform(const SkMatrix& transform) {
 }
 
 void DiffContext::SetTransform(const SkMatrix& transform) {
-  state_.transform = transform;
+  state_.transform_override = transform;
 }
 
 Damage DiffContext::ComputeDamage(
@@ -93,12 +97,15 @@ void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
 }
 
 void DiffContext::AddLayerBounds(const SkRect& rect) {
-  SkRect r(rect);
-  state_.transform.mapRect(&r);
-  if (r.intersects(state_.cull_rect)) {
-    rects_->push_back(r);
+  auto layer_cull_rect = state_.transform.mapRect(rect);
+  if (layer_cull_rect.intersects(state_.cull_rect)) {
+    const auto& paint_transform = state_.transform_override
+                                      ? *state_.transform_override
+                                      : state_.transform;
+    auto paint_rect = paint_transform.mapRect(rect);
+    rects_->push_back(paint_rect);
     if (IsSubtreeDirty()) {
-      AddDamage(r);
+      AddDamage(paint_rect);
     }
   }
 }
