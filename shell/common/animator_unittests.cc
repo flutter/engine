@@ -18,6 +18,25 @@
 namespace flutter {
 namespace testing {
 
+class FakeAnimatorDelegate : public Animator::Delegate {
+ public:
+  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+                            uint64_t frame_number) override {}
+
+  void OnAnimatorNotifyIdle(int64_t deadline) override {
+    notify_idle_called_ = true;
+  }
+
+  void OnAnimatorDraw(
+      std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
+
+  void OnAnimatorDrawLastLayerTree(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
+
+  bool notify_idle_called_ = false;
+};
+
 TEST_F(ShellTest, VSyncTargetTime) {
   // Add native callbacks to listen for window.onBeginFrame
   int64_t target_time;
@@ -103,7 +122,8 @@ TEST_F(ShellTest, AnimatorStartsPaused) {
   auto settings = CreateSettingsForFixture();
   TaskRunners task_runners = GetTaskRunnersForFixture();
 
-  auto shell = CreateShell(std::move(settings), task_runners);
+  auto shell = CreateShell(std::move(settings), task_runners,
+                           /* simulate_vsync=*/true);
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -118,6 +138,65 @@ TEST_F(ShellTest, AnimatorStartsPaused) {
   // teardown.
   DestroyShell(std::move(shell), std::move(task_runners));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
+  FakeAnimatorDelegate delegate;
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+  auto vsync_waiter = static_cast<std::unique_ptr<VsyncWaiter>>(
+      std::make_unique<ConstantFiringVsyncWaiter>(task_runners));
+
+  fml::AutoResetWaitableEvent latch;
+  std::shared_ptr<Animator> animator;
+
+  // Create the animator on the UI task runner.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    animator = std::make_unique<Animator>(delegate, task_runners,
+                                          std::move(vsync_waiter));
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Validate it has not notified idle and start it.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_FALSE(delegate.notify_idle_called_);
+    animator->Start();
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Validate it has not notified idle and request a frame.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_FALSE(delegate.notify_idle_called_);
+    animator->RequestFrame();
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Validate it has not notified idle and try to render.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_FALSE(delegate.notify_idle_called_);
+    auto layer_tree = std::make_unique<LayerTree>(SkISize::Make(600, 800), 1.0);
+    animator->Render(std::move(layer_tree));
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Still hasn't notified idle because there has been no frame request.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_FALSE(delegate.notify_idle_called_);
+    animator->RequestFrame();
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Now it should notify idle. Make sure it is destroyed on the UI thread.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_TRUE(delegate.notify_idle_called_);
+    animator.reset();
+    latch.Signal();
+  });
+  latch.Wait();
 }
 
 }  // namespace testing
