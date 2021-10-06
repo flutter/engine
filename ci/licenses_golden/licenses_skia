@@ -3066,10 +3066,14 @@ FILE: ../../../third_party/skia/src/sksl/SkSLIntrinsicList.h
 FILE: ../../../third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLOperators.h
+<<<<<<< HEAD
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramVisitor.h
+=======
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLCheckProgramUnrolledSize.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramVisitor.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLSwitchCaseContainsExit.cpp
+>>>>>>> upstream/main
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBinaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLChildCall.cpp
@@ -3107,8 +3111,11 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLSwizzle.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLTernaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLTypeReference.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLVarDeclarations.cpp
+<<<<<<< HEAD
+=======
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateDeadLocalVariables.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateUnreachableCode.cpp
+>>>>>>> upstream/main
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLProgramWriter.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google LLC
