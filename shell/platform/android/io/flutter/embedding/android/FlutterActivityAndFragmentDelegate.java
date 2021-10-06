@@ -379,7 +379,7 @@ import java.util.Arrays;
       Method method =
           Class.forName("io.flutter.app.FlutterMultiDexSupportUtils")
               .getMethod("installMultiDexSupport", Context.class);
-      method.invoke(null, this.getApplicationContext());
+      method.invoke(null, host.getContext().getApplicationContext());
     } catch (Exception e) {
       e.printStackTrace();
     }
