@@ -48,7 +48,6 @@ import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.ViewUtils;
-import java.lang.reflect.Method;
 
 /**
  * {@code Activity} which displays a fullscreen Flutter UI.
@@ -591,14 +590,6 @@ public class FlutterActivity extends Activity
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_START);
     if (stillAttachedForEvent("onStart")) {
       delegate.onStart();
-    }
-    try {
-      Method method =
-          Class.forName("io.flutter.app.FlutterMultiDexSupportUtils")
-              .getMethod("installMultiDexSupport", Context.class);
-      method.invoke(null, this.getApplicationContext());
-    } catch (Exception e) {
-      e.printStackTrace();
     }
   }
 

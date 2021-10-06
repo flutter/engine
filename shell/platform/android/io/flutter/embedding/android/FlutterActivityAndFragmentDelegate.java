@@ -29,6 +29,7 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.ViewUtils;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /**
@@ -374,6 +375,14 @@ import java.util.Arrays;
   void onStart() {
     Log.v(TAG, "onStart()");
     ensureAlive();
+    try {
+      Method method =
+          Class.forName("io.flutter.app.FlutterMultiDexSupportUtils")
+              .getMethod("installMultiDexSupport", Context.class);
+      method.invoke(null, this.getApplicationContext());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     doInitialFlutterViewRun();
   }
 
