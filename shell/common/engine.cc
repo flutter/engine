@@ -547,19 +547,19 @@ void Engine::HandleAssetPlatformMessage(
   std::string asset_name(reinterpret_cast<const char*>(data.GetMapping()),
                          data.GetSize());
 
-  if (asset_manager_) {
-    concurrent_task_runner()->PostTask([asset_manager = asset_manager_,
-                                        asset_name = std::move(asset_name),
-                                        response = std::move(response)] {
-      std::unique_ptr<fml::Mapping> asset_mapping =
-          asset_manager->GetAsMapping(asset_name);
-      if (asset_mapping) {
-        response->Complete(std::move(asset_mapping));
-      }
-    });
+  if (!asset_manager_) {
+    response->CompleteEmpty();
     return;
   }
-  response->CompleteEmpty();
+  concurrent_task_runner()->PostTask([asset_manager = asset_manager_,
+                                      asset_name = std::move(asset_name),
+                                      response = std::move(response)] {
+    std::unique_ptr<fml::Mapping> asset_mapping =
+        asset_manager->GetAsMapping(asset_name);
+    if (asset_mapping) {
+      response->Complete(std::move(asset_mapping));
+    }
+  });
 }
 
 const std::string& Engine::GetLastEntrypoint() const {
