@@ -374,13 +374,13 @@ public class PlatformChannel {
     // TODO(mattcarroll): add color annotation
     Integer statusBarColor = null;
     Brightness statusBarIconBrightness = null;
-    boolean systemStatusBarContrastEnforced = null;
+    Boolean systemStatusBarContrastEnforced = null;
     // TODO(mattcarroll): add color annotation
     Integer systemNavigationBarColor = null;
     Brightness systemNavigationBarIconBrightness = null;
     // TODO(mattcarroll): add color annotation
     Integer systemNavigationBarDividerColor = null;
-    boolean systemNavigationBarContrastEnforced = null;
+    Boolean systemNavigationBarContrastEnforced = null;
 
     if (!encodedStyle.isNull("statusBarColor")) {
       statusBarColor = encodedStyle.getInt("statusBarColor");
