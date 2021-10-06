@@ -104,7 +104,7 @@ static void fl_view_init_keyboard(FlView* self) {
 
 // Called when the engine is restarted.
 //
-// This method should reset states to as if the engine has just been started,
+// This method should reset states to be as if the engine had just been started,
 // which usually indicates the user has requested a hot restart (Shift-R in the
 // Flutter CLI.)
 static void fl_view_on_pre_engine_restart_cb(FlEngine* engine,
