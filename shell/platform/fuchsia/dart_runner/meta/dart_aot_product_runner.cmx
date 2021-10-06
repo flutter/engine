@@ -8,7 +8,7 @@
             "root-ssl-certificates"
         ],
         "services": [
-            "fuchsia.deprecatedtimezone.Timezone",
+            "fuchsia.device.NameProvider",
             "fuchsia.feedback.CrashReporter",
             "fuchsia.intl.PropertyProvider",
             "fuchsia.logger.LogSink",

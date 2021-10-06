@@ -9,14 +9,12 @@
             "root-ssl-certificates"
         ],
         "services": [
-            "fuchsia.deprecatedtimezone.Timezone",
+            "fuchsia.device.NameProvider",
             "fuchsia.feedback.CrashReporter",
             "fuchsia.intl.PropertyProvider",
             "fuchsia.logger.LogSink",
             "fuchsia.net.name.Lookup",
             "fuchsia.posix.socket.Provider",
-            "fuchsia.process.Launcher",
-            "fuchsia.process.Resolver",
             "fuchsia.tracing.provider.Registry"
         ]
     }

@@ -12,7 +12,6 @@
 #include <lib/fdio/directory.h>
 #include <lib/fdio/fd.h>
 #include <lib/fdio/namespace.h>
-#include <lib/fidl/cpp/optional.h>
 #include <lib/fidl/cpp/string.h>
 #include <lib/sys/cpp/service_directory.h>
 #include <lib/syslog/global.h>
@@ -393,9 +392,30 @@ bool DartComponentControllerV2::RunDartMain() {
   Dart_EnterScope();
 
   // TODO(fxb/79871): Support argument passing.
+  // Note: Even though we do not support argument passing via the cml files
+  // at this time, we still need to create an argument list and pass it off
+  // to the invocation of main below. If we do not do this dart will look for
+  // a function with the signature `void main()` but existing dart components
+  // that run in the dart runner are written with main functions that have the
+  // signature `void main(List<String> args)`. In order to ensure that these
+  // components do not break we need to have this stub argument list.
+  Dart_Handle dart_arguments = Dart_NewListOf(Dart_CoreType_String, 0);
+
+  if (Dart_IsError(dart_arguments)) {
+    FX_LOGF(ERROR, LOG_TAG, "Failed to allocate Dart arguments list: %s",
+            Dart_GetError(dart_arguments));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle argv[] = {
+      dart_arguments,
+  };
+
   Dart_Handle main_result =
       Dart_Invoke(Dart_RootLibrary() /* target */, ToDart("main") /* name */,
-                  0 /* number_of_arguments */, {} /* arguments */);
+                  dart_utils::ArraySize(argv) /* number_of_arguments */,
+                  argv /* arguments */);
 
   if (Dart_IsError(main_result)) {
     auto dart_state = tonic::DartState::Current();

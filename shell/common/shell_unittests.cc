@@ -2695,6 +2695,8 @@ TEST_F(ShellTest, Spawn) {
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
 
+  const std::string initial_route("/foo");
+
   fml::AutoResetWaitableEvent main_latch;
   std::string last_entry_point;
   // Fulfill native function for the first Shell's entrypoint.
@@ -2719,10 +2721,11 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration, &second_latch]() {
+      [this, &spawner = shell, &second_configuration, &second_latch,
+       initial_route]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
-            std::move(second_configuration),
+            std::move(second_configuration), initial_route,
             [&platform_view_delegate](Shell& shell) {
               auto result = std::make_unique<MockPlatformView>(
                   platform_view_delegate, shell.GetTaskRunners());
@@ -2736,10 +2739,11 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
         PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner] {
+                 [&spawn, &spawner, initial_route] {
                    // Check second shell ran the second entrypoint.
                    ASSERT_EQ("testCanLaunchSecondaryIsolate",
                              spawn->GetEngine()->GetLastEntrypoint());
+                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
 
                    // TODO(74520): Remove conditional once isolate groups are
                    // supported by JIT.
@@ -3038,6 +3042,39 @@ TEST_F(ShellTest, UserTagSetOnStartup) {
 
   DestroyShell(std::move(shell));
   isolate_create_latch.Wait();
+}
+
+TEST_F(ShellTest, PrefetchDefaultFontManager) {
+  auto settings = CreateSettingsForFixture();
+  settings.prefetched_default_font_manager = true;
+
+  auto shell = CreateShell(std::move(settings));
+
+  auto get_font_manager_count = [&] {
+    fml::AutoResetWaitableEvent latch;
+    size_t font_manager_count;
+    fml::TaskRunner::RunNowOrPostTask(
+        shell->GetTaskRunners().GetUITaskRunner(),
+        [this, &shell, &latch, &font_manager_count]() {
+          font_manager_count =
+              GetFontCollection(shell.get())->GetFontManagersCount();
+          latch.Signal();
+        });
+    latch.Wait();
+    return font_manager_count;
+  };
+
+  size_t initial_font_manager_count = get_font_manager_count();
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  // If the prefetched_default_font_manager flag is set, then the default font
+  // manager will not be added until the engine starts running.
+  ASSERT_EQ(get_font_manager_count(), initial_font_manager_count + 1);
+
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing
