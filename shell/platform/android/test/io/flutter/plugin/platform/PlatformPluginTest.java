@@ -169,6 +169,8 @@ public class PlatformPluginTest {
       verify(fakeWindow).setStatusBarColor(0xFF000000);
       verify(fakeWindow).setNavigationBarColor(0XFFC70039);
       verify(fakeWindow).setNavigationBarDividerColor(0XFF006DB3);
+      verify(fakeWindow).setStatusBarContrastEnforced(true);
+      verify(fakeWindow).setNavigationBarContrastEnforced(true);
 
       // Regression test for https://github.com/flutter/flutter/issues/88431
       // A null brightness should not affect changing color settings.
@@ -176,17 +178,38 @@ public class PlatformPluginTest {
           new SystemChromeStyle(
               0XFF006DB3, // statusBarColor
               null, // statusBarIconBrightness
-              true, // systemStatusBarContrastEnforced
+              false, // systemStatusBarContrastEnforced
               0XFF000000, // systemNavigationBarColor
               null, // systemNavigationBarIconBrightness
               0XFF006DB3, // systemNavigationBarDividerColor
-              true); // systemNavigationBarContrastEnforced
+              false); // systemNavigationBarContrastEnforced
 
       platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindow).setStatusBarColor(0XFF006DB3);
       verify(fakeWindow).setNavigationBarColor(0XFF000000);
       verify(fakeWindow, times(2)).setNavigationBarDividerColor(0XFF006DB3);
+      verify(fakeWindow).setStatusBarContrastEnforced(false);
+      verify(fakeWindow).setNavigationBarContrastEnforced(false);
+
+      // Null contrasts values should be allowed.
+      style =
+          new SystemChromeStyle(
+              0XFF006DB3, // statusBarColor
+              null, // statusBarIconBrightness
+              null, // systemStatusBarContrastEnforced
+              0XFF000000, // systemNavigationBarColor
+              null, // systemNavigationBarIconBrightness
+              0XFF006DB3, // systemNavigationBarDividerColor
+              null); // systemNavigationBarContrastEnforced
+
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+
+      verify(fakeWindow).setStatusBarColor(0XFF006DB3);
+      verify(fakeWindow).setNavigationBarColor(0XFF000000);
+      verify(fakeWindow, times(2)).setNavigationBarDividerColor(0XFF006DB3);
+      verify(fakeWindow, never()).setStatusBarContrastEnforced();
+      verify(fakeWindow, never()).setNavigationBarContrastEnforced();
     }
   }
 
