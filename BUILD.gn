@@ -234,3 +234,7 @@ if (is_fuchsia) {
     deps = [ "//flutter/shell/platform/fuchsia:tests" ]
   }
 }
+
+group("canvaskit") {
+  testonly = true
+}
