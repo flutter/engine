@@ -5,6 +5,7 @@
 import 'package:meta/meta.dart';
 
 import '../../engine.dart';
+import '../configuration.dart';
 
 /// Caches surfaces used to overlay platform views.
 class SurfaceFactory {
@@ -12,7 +13,7 @@ class SurfaceFactory {
   ///
   /// [debugClear] causes this singleton to be reinitialized.
   static SurfaceFactory get instance =>
-      _instance ??= SurfaceFactory(HtmlViewEmbedder.maximumSurfaces);
+      _instance ??= SurfaceFactory(configuration.canvasKitMaximumSurfaces);
 
   /// Returns the raw (potentially uninitialized) value of the singleton.
   ///
