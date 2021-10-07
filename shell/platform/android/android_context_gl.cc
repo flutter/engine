@@ -191,19 +191,21 @@ AndroidContextGL::AndroidContextGL(
 }
 
 AndroidContextGL::~AndroidContextGL() {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   sk_sp<GrDirectContext> main_context = GetMainSkiaContext();
   SetMainSkiaContext(nullptr);
   fml::AutoResetWaitableEvent latch;
+  // This context needs to be deallocated from the raster thread in order to
+  // keep a coherent usage of egl from a single thread.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(), [&] {
     if (main_context) {
       std::unique_ptr<AndroidEGLSurface> pbuffer_surface =
-          CreateOffscreenSurface();
+          CreatePbufferSurface();
       if (pbuffer_surface->MakeCurrent()) {
         main_context->releaseResourcesAndAbandonContext();
         main_context.reset();
         ClearCurrent();
       }
-      pbuffer_surface.reset();
     }
     latch.Signal();
   });
