@@ -188,6 +188,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterMetalSurfaceManagerTest.mm",
     "framework/Source/FlutterOpenGLRendererTest.mm",
     "framework/Source/FlutterPlatformNodeDelegateMacTest.mm",
+    "framework/Source/FlutterTextEditingDeltaTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterTextInputSemanticsObjectTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
