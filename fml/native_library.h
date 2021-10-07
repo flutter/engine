@@ -36,7 +36,7 @@ class NativeLibrary : public fml::RefCountedThreadSafe<NativeLibrary> {
   static fml::RefPtr<NativeLibrary> CreateForCurrentProcess();
 
   template <typename T>
-  const std::optional<T> ResolveSymbol(const char* symbol) {
+  const std::optional<T> ResolveFunction(const char* symbol) {
     auto* resolved_symbol = Resolve(symbol);
     if (!resolved_symbol) {
       return std::nullopt;

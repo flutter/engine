@@ -47,7 +47,7 @@ bool IsATraceEnabled() {
   auto libandroid = fml::NativeLibrary::Create("libandroid.so");
   FML_CHECK(libandroid);
   auto atrace_fn =
-      libandroid->ResolveSymbol<bool (*)(void)>("ATrace_isEnabled");
+      libandroid->ResolveFunction<bool (*)(void)>("ATrace_isEnabled");
   if (atrace_fn) {
     return atrace_fn.value()();
   }
