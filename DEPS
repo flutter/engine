@@ -468,7 +468,7 @@ deps = {
     'dep_type': 'cipd'
   },
 
-  'src/third_party/trace_to_text': {
+  'src/third_party/android_tools/trace_to_text': {
     'packages': [
       {
         'version': 'git_tag:v20.1',

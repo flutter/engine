@@ -75,7 +75,7 @@ def CollectAndValidateTrace(adb_path = 'adb'):
 
   print('Validating trace')
   traceconv = os.path.join(BUILDROOT_DIR, 'third_party',
-      'trace_to_text', 'trace_to_text')
+      'android_tools', 'trace_to_text', 'trace_to_text')
   traceconv_output = subprocess.check_output([traceconv, 'systrace', 'trace.pb'], stderr=subprocess.STDOUT, universal_newlines=True)
   if 'ShellSetupUISubsystem' in traceconv_output:
     return 0
