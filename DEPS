@@ -27,11 +27,11 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '923d83bf18758a59daee4108525d33a7a6fe2526',
+  'skia_revision': '29eed809a315d6f5f6e233d5bf24943eaef009f5',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-  'canvaskit_cipd_instance': 'srPdrAoUIWOde-KMPE5S8koi64mejhae7NzvfR_7m3gC',
+  'canvaskit_cipd_instance': '1e8cK_8LOs0dz4lqd20LwTUYNqfu_4YL-dFG5yK1xXQC',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
