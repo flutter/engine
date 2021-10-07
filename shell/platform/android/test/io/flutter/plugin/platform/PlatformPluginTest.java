@@ -208,8 +208,10 @@ public class PlatformPluginTest {
       verify(fakeWindow).setStatusBarColor(0XFF006DB3);
       verify(fakeWindow).setNavigationBarColor(0XFF000000);
       verify(fakeWindow, times(2)).setNavigationBarDividerColor(0XFF006DB3);
-      verify(fakeWindow, never()).setStatusBarContrastEnforced();
-      verify(fakeWindow, never()).setNavigationBarContrastEnforced();
+      verify(fakeWindow, never()).setStatusBarContrastEnforced(true);
+      verify(fakeWindow, never()).setNavigationBarContrastEnforced(true);
+      verify(fakeWindow, never()).setStatusBarContrastEnforced(false);
+      verify(fakeWindow, never()).setNavigationBarContrastEnforced(false);
     }
   }
 
