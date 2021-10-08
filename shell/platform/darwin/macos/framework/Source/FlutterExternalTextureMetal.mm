@@ -83,6 +83,7 @@
       /*texture=*/&uvCVMetalTextureRef);
 
   if (uvCVReturn != kCVReturnSuccess) {
+    CVBufferRelease(yCVMetalTexture);
     NSLog(@"Could not create Metal texture from pixel buffer: CVReturn %d", uvCVReturn);
     return NO;
   }
