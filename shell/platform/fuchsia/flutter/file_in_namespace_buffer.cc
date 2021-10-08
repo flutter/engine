@@ -71,10 +71,10 @@ size_t FileInNamespaceBuffer::GetSize() const {
 }
 
 std::unique_ptr<fml::Mapping> LoadFile(int namespace_fd,
-                                       const char* file_path,
+                                       const char* path,
                                        bool executable) {
-  FML_TRACE_EVENT("flutter", "LoadFile", "path", file_path);
-  return std::make_unique<FileInNamespaceBuffer>(namespace_fd, file_path,
+  FML_TRACE_EVENT("flutter", "LoadFile", "path", path);
+  return std::make_unique<FileInNamespaceBuffer>(namespace_fd, path,
                                                  executable);
 }
 

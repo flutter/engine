@@ -8,8 +8,14 @@
 
 namespace flutter_runner {
 
+/// The buffer for a file that has been loaded into a namespace.
 class FileInNamespaceBuffer final : public fml::Mapping {
  public:
+  /// Loads the file at |path| into the namespace |namespace_fd|, storing
+  /// the buffer in this mapping.
+  ///
+  /// The file will be loaded with the readable permission. If |executable| is
+  /// true, the file will also be loaded with the executable permission.
   FileInNamespaceBuffer(int namespace_fd, const char* path, bool executable);
   ~FileInNamespaceBuffer();
 
@@ -20,16 +26,28 @@ class FileInNamespaceBuffer final : public fml::Mapping {
   size_t GetSize() const override;
 
  private:
+  /// The address that was mapped to the buffer.
   void* address_;
+
+  /// The size of the buffer.
   size_t size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FileInNamespaceBuffer);
 };
 
+/// Loads a file from |file_path| into the namespace |namespace_fd|, returning
+/// the mapping for that file.
+///
+/// The file will be loaded with the readable permission. If |executable| is
+/// true, the file will be also be loaded with the executable permission.
 std::unique_ptr<fml::Mapping> LoadFile(int namespace_fd,
-                                       const char* file_path,
+                                       const char* path,
                                        bool executable);
 
+/// Opens the file at |path| and creates a file mapping for the file.
+///
+/// The file will be opened with the readable permission. If |executable| is
+/// true, the file will also be opened with the executable permission.
 std::unique_ptr<fml::FileMapping> MakeFileMapping(const char* path,
                                                   bool executable);
 
