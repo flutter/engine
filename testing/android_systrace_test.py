@@ -60,6 +60,7 @@ def LaunchPackage(package_name, adb_path='adb'):
       [adb_path, 'shell', 'monkey ', '-p', package_name, '-c',
       'android.intent.category.LAUNCHER', '1'], stderr=subprocess.STDOUT)
   for line in logcat.stdout:
+    print('>>>>>>>> ' + line)
     if 'Observatory listening' in line:
       print('Found observatory: ' + line)
       logcat.kill()
