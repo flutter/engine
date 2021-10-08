@@ -49,16 +49,16 @@ def StartPerfetto(package_name, adb_path='adb'):
   subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
 
-def LaunchPackage(package_name, adb_path='adb'):
+def LaunchPackage(package_name, activity_name, adb_path='adb'):
   print('Scanning logcat')
   subprocess.check_output([adb_path, 'logcat', '-c'], stderr=subprocess.STDOUT)
   logcat = subprocess.Popen([adb_path, 'logcat'], stdout=subprocess.PIPE,
       stderr=subprocess.STDOUT, universal_newlines=True)
 
-  print('Launching %s' % package_name)
+  print('Launching %s (%s)' % (package_name, activity_name))
   subprocess.check_output(
-      [adb_path, 'shell', 'monkey ', '-p', package_name, '-c',
-      'android.intent.category.DEFAULT', '1'], stderr=subprocess.STDOUT)
+      [adb_path, 'shell', 'am ', 'start', '-n',
+          '%s/%s' % (package_name, activity_name)], stderr=subprocess.STDOUT)
   for line in logcat.stdout:
     print('>>>>>>>> ' + line.strip())
     if 'Observatory listening' in line:
@@ -93,6 +93,9 @@ def main():
       help='Provide the path to the APK to install')
   parser.add_argument('--package-name', dest='package_name', action='store',
       help='The package name of the APK, e.g. dev.flutter.scenarios')
+  parser.add_argument('--activity-name', dest='activity_name', action='store',
+      help='The activity to launch as it appears in AndroidManifest.xml, '
+           'e.g. .TextPlatformViewActivity')
   parser.add_argument('--adb-path', dest='adb_path', action='store',
       default='adb', help='Provide the path of adb used for android tests. '
           'By default it looks on $PATH.')
@@ -101,7 +104,7 @@ def main():
 
   InstallApk(args.apk_path, args.package_name, args.adb_path)
   StartPerfetto(args.package_name, args.adb_path)
-  LaunchPackage(args.package_name, args.adb_path)
+  LaunchPackage(args.package_name, args.activity_name, args.adb_path)
   return CollectAndValidateTrace(args.adb_path)
 
 

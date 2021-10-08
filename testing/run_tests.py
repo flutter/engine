@@ -366,7 +366,8 @@ def RunAndroidTests(android_variant='android_debug_unopt', adb_path=None):
   scenario_apk = os.path.join(out_dir, android_variant, 'firebase_apks',
       'scenario_app.apk')
   RunCmd([systrace_test, '--adb-path', adb_path, '--apk-path', scenario_apk,
-      '--package-name', 'dev.flutter.scenarios'])
+      '--package-name', 'dev.flutter.scenarios',
+      '--activity-name', '.TextPlatformViewActivity'])
 
 
 def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
