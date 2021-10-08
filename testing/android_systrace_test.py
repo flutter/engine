@@ -86,6 +86,7 @@ def CollectAndValidateTrace(adb_path = 'adb'):
   print('Trace did not contain ShellSetupUISubsystem, failing.')
   return 1
 
+
 def main():
   parser = argparse.ArgumentParser()
 
