@@ -64,9 +64,6 @@ def LaunchPackage(package_name, adb_path='adb'):
     if 'Observatory listening' in line:
       logcat.kill()
       break
-  # If it takes longer than 10 minutes to find the observatory, avoid tying up
-  # the bot.
-  logcat.wait(timeout=(10 * 60))
 
 
 def CollectAndValidateTrace(adb_path = 'adb'):
