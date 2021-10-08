@@ -31,6 +31,13 @@ public class VsyncWaiter {
                   new Choreographer.FrameCallback() {
                     @Override
                     public void doFrame(long frameTimeNanos) {
+                      // Some device is calling doFrame with a timestamp that is greater than
+                      // System.nanoTime. We should ensure that frameTimeNanos passed to
+                      // VsyncWaiterAndroid is not greater than System.nanoTime.
+                      long now = System.nanoTime();
+                      if (frameTimeNanos > now) {
+                        frameTimeNanos = now;
+                      }
                       long refreshPeriodNanos = (long) (1000000000.0 / fps);
                       FlutterJNI.nativeOnVsync(
                           frameTimeNanos, frameTimeNanos + refreshPeriodNanos, cookie);
