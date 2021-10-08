@@ -8,11 +8,11 @@
 
 namespace flutter_runner {
 
-/// The buffer for a file that has been loaded into a namespace.
+/// A mapping to a buffer for a file that has been loaded into a namespace.
 class FileInNamespaceBuffer final : public fml::Mapping {
  public:
-  /// Loads the file at |path| into the namespace |namespace_fd|, storing
-  /// the buffer in this mapping.
+  /// Loads the file at |path| into the namespace |namespace_fd|, creating
+  /// a mapping to the loaded buffer.
   ///
   /// The file will be loaded with the readable permission. If |executable| is
   /// true, the file will also be loaded with the executable permission.
