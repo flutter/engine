@@ -58,7 +58,7 @@ def LaunchPackage(package_name, adb_path='adb'):
   print('Launching %s' % package_name)
   subprocess.check_output(
       [adb_path, 'shell', 'monkey ', '-p', package_name, '-c',
-      'android.intent.category.LAUNCHER', '1'], stderr=subprocess.STDOUT)
+      'android.intent.category.DEFAULT', '1'], stderr=subprocess.STDOUT)
   for line in logcat.stdout:
     print('>>>>>>>> ' + line.strip())
     if 'Observatory listening' in line:
