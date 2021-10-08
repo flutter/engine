@@ -34,20 +34,6 @@ class Runner final : public fuchsia::sys::Runner {
   ~Runner();
 
  private:
-  fml::RefPtr<fml::TaskRunner> task_runner_;
-
-  sys::ComponentContext* context_;
-  fidl::BindingSet<fuchsia::sys::Runner> active_components_bindings_;
-  std::unordered_map<const Component*, ActiveComponent> active_components_;
-
-#if !defined(DART_PRODUCT)
-  // The connection between the Dart VM service and The Hub.
-  std::unique_ptr<dart_utils::VMServiceObject> vmservice_object_;
-
-  std::unique_ptr<trace::TraceObserver> trace_observer_;
-  trace_prolonged_context_t* prolonged_context_;
-#endif  // !defined(DART_PRODUCT)
-
   // |fuchsia::sys::Runner|
   void StartComponent(fuchsia::sys::Package package,
                       fuchsia::sys::StartupInfo startup_info,
@@ -55,8 +41,6 @@ class Runner final : public fuchsia::sys::Runner {
                           controller) override;
 
   void RegisterComponent(fidl::InterfaceRequest<fuchsia::sys::Runner> request);
-
-  void UnregisterComponent(const Component* component);
 
   void OnComponentTerminate(const Component* component);
 
@@ -74,6 +58,20 @@ class Runner final : public fuchsia::sys::Runner {
   FRIEND_TEST(RunnerTest, TZData);
   FRIEND_TEST(RunnerTZDataTest, LoadsWithoutTZDataPresent);
 #endif  // defined(FRIEND_TEST)
+
+  fml::RefPtr<fml::TaskRunner> task_runner_;
+
+  sys::ComponentContext* context_;
+  fidl::BindingSet<fuchsia::sys::Runner> active_components_bindings_;
+  std::unordered_map<const Component*, ActiveComponent> active_components_;
+
+#if !defined(DART_PRODUCT)
+  // The connection between the Dart VM service and The Hub.
+  std::unique_ptr<dart_utils::VMServiceObject> vmservice_object_;
+
+  std::unique_ptr<trace::TraceObserver> trace_observer_;
+  trace_prolonged_context_t* prolonged_context_;
+#endif  // !defined(DART_PRODUCT)
 
   FML_DISALLOW_COPY_AND_ASSIGN(Runner);
 };
