@@ -391,7 +391,7 @@ class PlatformView {
   ///             may use the `DispatchPlatformMessage` method. This method is
   ///             for messages that go the other way.
   ///
-  /// @see        DisplatchPlatformMessage()
+  /// @see        DispatchPlatformMessage()
   ///
   /// @param[in]  message  The message
   ///
