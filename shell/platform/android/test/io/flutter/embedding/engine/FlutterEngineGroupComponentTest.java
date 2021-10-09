@@ -121,7 +121,11 @@ public class FlutterEngineGroupComponentTest {
 
     doReturn(mock(FlutterEngine.class))
         .when(firstEngine)
-        .spawn(any(Context.class), any(DartEntrypoint.class), nullable(String.class));
+        .spawn(
+            any(Context.class),
+            any(DartEntrypoint.class),
+            nullable(String.class),
+            nullable(Object.class));
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
@@ -133,7 +137,11 @@ public class FlutterEngineGroupComponentTest {
 
     // Now the second spawned engine is the only one left and it will be called to spawn the next
     // engine in the chain.
-    when(secondEngine.spawn(any(Context.class), any(DartEntrypoint.class), nullable(String.class)))
+    when(secondEngine.spawn(
+            any(Context.class),
+            any(DartEntrypoint.class),
+            nullable(String.class),
+            nullable(Object.class)))
         .thenReturn(mock(FlutterEngine.class));
 
     FlutterEngine thirdEngine =
@@ -156,7 +164,8 @@ public class FlutterEngineGroupComponentTest {
             eq("some/path/to/flutter_assets"),
             eq("other entrypoint"),
             isNull(String.class),
-            any(AssetManager.class));
+            any(AssetManager.class),
+            nullable(Object.class));
   }
 
   @Test
@@ -176,7 +185,11 @@ public class FlutterEngineGroupComponentTest {
     doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
     doReturn(secondMockflutterJNI)
         .when(mockflutterJNI)
-        .spawn(nullable(String.class), nullable(String.class), nullable(String.class));
+        .spawn(
+            nullable(String.class),
+            nullable(String.class),
+            nullable(String.class),
+            nullable(Object.class));
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
@@ -184,6 +197,6 @@ public class FlutterEngineGroupComponentTest {
 
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
-        .spawn(nullable(String.class), nullable(String.class), eq("/bar"));
+        .spawn(nullable(String.class), nullable(String.class), eq("/bar"), nullable(Object.class));
   }
 }
