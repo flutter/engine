@@ -155,7 +155,9 @@ static jobject SpawnJNI(JNIEnv* env,
                         jlong shell_holder,
                         jstring jEntrypoint,
                         jstring jLibraryUrl,
-                        jstring jInitialRoute) {
+                        jstring jInitialRoute,
+                        jobject jPersistentIsolateData,
+                        jint position) {
   jobject jni = env->NewObject(g_flutter_jni_class->obj(), g_jni_constructor);
   if (jni == nullptr) {
     FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
@@ -170,8 +172,17 @@ static jobject SpawnJNI(JNIEnv* env,
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto initial_route = fml::jni::JavaStringToString(env, jInitialRoute);
 
-  auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(
-      jni_facade, entrypoint, libraryUrl, initial_route);
+  std::shared_ptr<fml::MallocMapping> persistent_isolate_data;
+  if (!env->IsSameObject(jPersistentIsolateData, NULL)) {
+    uint8_t* data = static_cast<uint8_t*>(
+        env->GetDirectBufferAddress(jPersistentIsolateData));
+    persistent_isolate_data = std::make_shared<fml::MallocMapping>(
+        fml::MallocMapping::Copy(data, position));
+  }
+
+  auto spawned_shell_holder =
+      ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint, libraryUrl,
+                                  initial_route, persistent_isolate_data);
 
   if (spawned_shell_holder == nullptr || !spawned_shell_holder->IsValid()) {
     FML_LOG(ERROR) << "Could not spawn Shell";
@@ -237,7 +248,9 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jBundlePath,
                                             jstring jEntrypoint,
                                             jstring jLibraryUrl,
-                                            jobject jAssetManager) {
+                                            jobject jAssetManager,
+                                            jobject jPersistentIsolateData,
+                                            jint position) {
   auto asset_manager = std::make_shared<flutter::AssetManager>();
 
   asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
@@ -249,7 +262,16 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
 
-  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl);
+  std::shared_ptr<fml::MallocMapping> persistent_isolate_data;
+  if (!env->IsSameObject(jPersistentIsolateData, NULL)) {
+    uint8_t* data = static_cast<uint8_t*>(
+        env->GetDirectBufferAddress(jPersistentIsolateData));
+    persistent_isolate_data = std::make_shared<fml::MallocMapping>(
+        fml::MallocMapping::Copy(data, position));
+  }
+
+  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
+                               persistent_isolate_data);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
@@ -623,14 +645,15 @@ bool RegisterApi(JNIEnv* env) {
       {
           .name = "nativeSpawn",
           .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
-                       "String;)Lio/flutter/"
+                       "String;Ljava/nio/ByteBuffer;I)Lio/flutter/"
                        "embedding/engine/FlutterJNI;",
           .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
           .signature = "(JLjava/lang/String;Ljava/lang/String;"
-                       "Ljava/lang/String;Landroid/content/res/AssetManager;)V",
+                       "Ljava/lang/String;Landroid/content/res/"
+                       "AssetManager;Ljava/nio/ByteBuffer;I)V",
           .fnPtr = reinterpret_cast<void*>(&RunBundleAndSnapshotFromLibrary),
       },
       {

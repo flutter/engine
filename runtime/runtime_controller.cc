@@ -177,6 +177,11 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   return false;
 }
 
+void RuntimeController::SetPersistentIsolateData(
+    std::shared_ptr<const fml::Mapping> persistent_isolate_data) {
+  persistent_isolate_data_ = persistent_isolate_data;
+}
+
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
                                    uint64_t frame_number) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {

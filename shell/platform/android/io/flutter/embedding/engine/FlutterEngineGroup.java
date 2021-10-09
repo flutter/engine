@@ -117,6 +117,28 @@ public class FlutterEngineGroup {
       @NonNull Context context,
       @Nullable DartEntrypoint dartEntrypoint,
       @Nullable String initialRoute) {
+    return createAndRunEngine(context, dartEntrypoint, initialRoute, null);
+  }
+
+  /**
+   * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
+   * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint}, the
+   * specified {@code initialRoute} and the {@code initialArguments}.
+   *
+   * <p>If no prior {@link io.flutter.embedding.engine.FlutterEngine} were created in this group,
+   * the initialization cost will be slightly higher than subsequent engines. The very first {@link
+   * io.flutter.embedding.engine.FlutterEngine} created per program, regardless of
+   * FlutterEngineGroup, also incurs the Dart VM creation time.
+   *
+   * <p>Subsequent engine creations will share resources with existing engines. However, if all
+   * existing engines were {@link io.flutter.embedding.engine.FlutterEngine#destroy()}ed, the next
+   * engine created will recreate its dependencies.
+   */
+  public FlutterEngine createAndRunEngine(
+      @NonNull Context context,
+      @Nullable DartEntrypoint dartEntrypoint,
+      @Nullable String initialRoute,
+      @Nullable Object initialArguments) {
     FlutterEngine engine = null;
 
     if (dartEntrypoint == null) {
@@ -128,9 +150,9 @@ public class FlutterEngineGroup {
       if (initialRoute != null) {
         engine.getNavigationChannel().setInitialRoute(initialRoute);
       }
-      engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint);
+      engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, initialArguments);
     } else {
-      engine = activeEngines.get(0).spawn(context, dartEntrypoint, initialRoute);
+      engine = activeEngines.get(0).spawn(context, dartEntrypoint, initialRoute, initialArguments);
     }
 
     activeEngines.add(engine);

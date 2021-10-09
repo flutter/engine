@@ -118,6 +118,21 @@ public class DartExecutor implements BinaryMessenger {
    * @param dartEntrypoint specifies which Dart function to run, and where to find it
    */
   public void executeDartEntrypoint(@NonNull DartEntrypoint dartEntrypoint) {
+    executeDartEntrypoint(dartEntrypoint, null);
+  }
+
+  /**
+   * Starts executing Dart code based on the given {@code dartEntrypoint} and the {@code
+   * initialArguments}.
+   *
+   * <p>See {@link DartEntrypoint} for configuration options.
+   *
+   * @param dartEntrypoint specifies which Dart function to run, and where to find it
+   * @param initialArguments The structured data for Flutter app at startup.It must be serializable
+   *     via the {@link io.flutter.plugin.common.StandardMessageCodec}.
+   */
+  public void executeDartEntrypoint(
+      @NonNull DartEntrypoint dartEntrypoint, @Nullable Object initialArguments) {
     if (isApplicationRunning) {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
@@ -129,7 +144,8 @@ public class DartExecutor implements BinaryMessenger {
         dartEntrypoint.pathToBundle,
         dartEntrypoint.dartEntrypointFunctionName,
         dartEntrypoint.dartEntrypointLibrary,
-        assetManager);
+        assetManager,
+        initialArguments);
 
     isApplicationRunning = true;
   }
@@ -153,7 +169,8 @@ public class DartExecutor implements BinaryMessenger {
         dartCallback.pathToBundle,
         dartCallback.callbackHandle.callbackName,
         dartCallback.callbackHandle.callbackLibraryPath,
-        dartCallback.androidAssetManager);
+        dartCallback.androidAssetManager,
+        null);
 
     isApplicationRunning = true;
   }

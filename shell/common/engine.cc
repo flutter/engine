@@ -213,6 +213,11 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     return RunStatus::FailureAlreadyRunning;
   }
 
+  auto persistent_isolate_data = configuration.GetPersistentIsolateData();
+  if (persistent_isolate_data) {
+    runtime_controller_->SetPersistentIsolateData(persistent_isolate_data);
+  }
+
   if (!runtime_controller_->LaunchRootIsolate(
           settings_,                                 //
           configuration.GetEntrypoint(),             //

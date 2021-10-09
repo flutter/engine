@@ -19,6 +19,7 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
+#import "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
@@ -240,6 +241,14 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
 - (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil {
+  return [self runConfigurationForEntrypoint:entrypointOrNil
+                                libraryOrNil:dartLibraryOrNil
+                            initialArguments:nil];
+}
+
+- (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
+                                              libraryOrNil:(nullable NSString*)dartLibraryOrNil
+                                          initialArguments:(nullable id)initialArguments {
   auto config = flutter::RunConfiguration::InferFromSettings(_settings);
   if (dartLibraryOrNil && entrypointOrNil) {
     config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
@@ -248,6 +257,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   } else if (entrypointOrNil) {
     config.SetEntrypoint(std::string([entrypointOrNil UTF8String]));
   }
+  if (initialArguments) {
+    NSData* data = [[FlutterStandardMessageCodec sharedInstance] encode:initialArguments];
+    config.SetPersistentIsolateData(flutter::ConvertNSDataToMappingPtr(data));
+  }
+
   return config;
 }
 
@@ -326,15 +340,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
     return;
   }
 
-  NSData* persistent_isolate_data = [data copy];
-  fml::NonOwnedMapping::ReleaseProc data_release_proc = [persistent_isolate_data](auto, auto) {
-    [persistent_isolate_data release];
-  };
-  _settings.persistent_isolate_data = std::make_shared<fml::NonOwnedMapping>(
-      static_cast<const uint8_t*>(persistent_isolate_data.bytes),  // bytes
-      persistent_isolate_data.length,                              // byte length
-      data_release_proc                                            // release proc
-  );
+  _settings.persistent_isolate_data = flutter::ConvertNSDataToMappingPtr(data);
 }
 
 #pragma mark - PlatformData utilities

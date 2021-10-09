@@ -231,6 +231,16 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   bool SetAccessibilityFeatures(int32_t flags);
 
+  /// The embedder can specify data that the isolate can request synchronously
+  /// on launch. Engines launched using this configuration can access the
+  /// persistent isolate data via the
+  /// `PlatformDispatcher.getPersistentIsolateData` accessor.
+  ///
+  /// @param[in]  persistent_isolate_data  Unstructured persistent read-only
+  ///             data that the root isolate can access in a synchronous manner.
+  void SetPersistentIsolateData(
+      std::shared_ptr<const fml::Mapping> persistent_isolate_data);
+
   //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate that it should start generating a
   ///             new frame.
