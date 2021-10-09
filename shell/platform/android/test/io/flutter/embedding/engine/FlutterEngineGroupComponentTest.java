@@ -24,6 +24,8 @@ import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.plugins.GeneratedPluginRegistrant;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -198,5 +200,52 @@ public class FlutterEngineGroupComponentTest {
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
         .spawn(nullable(String.class), nullable(String.class), eq("/bar"), nullable(Object.class));
+  }
+
+  @Test
+  public void canCreateAndRunWithCustomInitialArguments() {
+    Map<String, String> firstInitialArguments = new HashMap<String, String>();
+    FlutterEngine firstEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application,
+            mock(DartEntrypoint.class),
+            null,
+            firstInitialArguments);
+    assertEquals(1, engineGroupUnderTest.activeEngines.size());
+    verify(mockflutterJNI, times(1))
+        .runBundleAndSnapshotFromLibrary(
+            nullable(String.class),
+            nullable(String.class),
+            isNull(String.class),
+            any(AssetManager.class),
+            eq(firstInitialArguments));
+
+    when(mockflutterJNI.isAttached()).thenReturn(true);
+    jniAttached = false;
+    FlutterJNI secondMockflutterJNI = mock(FlutterJNI.class);
+    when(secondMockflutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(secondMockflutterJNI).attachToNative();
+    doReturn(secondMockflutterJNI)
+        .when(mockflutterJNI)
+        .spawn(
+            nullable(String.class),
+            nullable(String.class),
+            nullable(String.class),
+            nullable(Object.class));
+    Map<String, String> secondInitialArguments = new HashMap<String, String>();
+    FlutterEngine secondEngine =
+        engineGroupUnderTest.createAndRunEngine(
+            RuntimeEnvironment.application,
+            mock(DartEntrypoint.class),
+            null,
+            secondInitialArguments);
+
+    assertEquals(2, engineGroupUnderTest.activeEngines.size());
+    verify(mockflutterJNI, times(1))
+        .spawn(
+            nullable(String.class),
+            nullable(String.class),
+            nullable(String.class),
+            eq(secondInitialArguments));
   }
 }
