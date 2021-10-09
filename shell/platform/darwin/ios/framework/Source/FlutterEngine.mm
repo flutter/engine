@@ -1055,7 +1055,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   result->_profiler = _profiler;
   result->_profiler_metrics = _profiler_metrics;
   [result setupShell:std::move(shell) withObservatoryPublication:NO];
-  return result;
+  return [result autorelease];
 }
 
 - (const flutter::ThreadHost&)threadHost {

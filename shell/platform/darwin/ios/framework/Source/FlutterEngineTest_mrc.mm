@@ -53,7 +53,6 @@ FLUTTER_ASSERT_NOT_ARC
   XCTAssertTrue(engine_context->GetMainContext() != nullptr);
   XCTAssertEqual(engine_context->GetMainContext(), spawn_context->GetMainContext());
   [engine release];
-  [spawn release];
 }
 
 - (void)testEnableSemanticsWhenFlutterViewAccessibilityDidCall {

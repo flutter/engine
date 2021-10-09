@@ -51,10 +51,9 @@
                                 libraryURI:(nullable NSString*)libraryURI
                               initialRoute:(nullable NSString*)initialRoute
                           initialArguments:(nullable id)initialArguments {
-  NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_enginesCreatedCount];
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
-    engine = [[FlutterEngine alloc] initWithName:engineName project:self.project];
+    engine = [self createEngine];
     [engine runWithEntrypoint:entrypoint
                    libraryURI:libraryURI
                  initialRoute:initialRoute
@@ -74,7 +73,13 @@
                  name:FlutterEngineWillDealloc
                object:engine];
 
-  return [engine autorelease];
+  return engine;
+}
+
+- (FlutterEngine*)createEngine {
+  NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_enginesCreatedCount];
+  FlutterEngine* result = [[FlutterEngine alloc] initWithName:engineName project:self.project];
+  return [result autorelease];
 }
 
 - (void)onEngineWillBeDealloced:(NSNotification*)notification {
