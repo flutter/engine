@@ -241,6 +241,9 @@ class RuntimeController : public PlatformConfigurationClient {
   void SetPersistentIsolateData(
       std::shared_ptr<const fml::Mapping> persistent_isolate_data);
 
+  // |PlatformConfigurationClient|
+  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
+
   //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate that it should start generating a
   ///             new frame.
@@ -624,9 +627,6 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   void SetNeedsReportTimings(bool value) override;
-
-  // |PlatformConfigurationClient|
-  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
 
   // |PlatformConfigurationClient|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
