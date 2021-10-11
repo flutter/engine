@@ -133,22 +133,10 @@ public class DartMessengerTest {
     /// Setup test.
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
-    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     final String channel = "foobar";
-    message.rewind();
-    message.putChar('a');
-    message.putChar('b');
-    message.putChar('c');
-    message.putChar('d');
-    final ByteBuffer[] byteBuffers = {null};
-    BinaryMessenger.BinaryReply callback =
-        (reply) -> {
-          assertTrue(reply.isDirect());
-          byteBuffers[0] = reply;
-        };
-    messenger.send(channel, null, callback);
+    messenger.send(channel, null, null);
     verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(0));
-    messenger.send(channel, null, callback);
+    messenger.send(channel, null, null);
     verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(1));
   }
 }
