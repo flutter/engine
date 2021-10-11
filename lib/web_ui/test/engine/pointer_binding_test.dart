@@ -2325,6 +2325,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? deltaX,
     required double? deltaY,
   }) {
+    // ignore: implicit_dynamic_function
     final Function jsWheelEvent = js_util.getProperty(html.window, 'WheelEvent') as Function;
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
@@ -2336,8 +2337,10 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         'deltaY': deltaY,
       }
     ];
+    // ignore: implicit_dynamic_function
     return js_util.callConstructor(
       jsWheelEvent,
+      // ignore: implicit_dynamic_function
       js_util.jsify(eventArgs) as List<Object?>,
     ) as html.Event;
   }
@@ -2553,6 +2556,7 @@ class _MouseEventContext extends _BasicEventContext
     double? clientY,
   }) {
     final Function jsMouseEvent =
+        // ignore: implicit_dynamic_function
         js_util.getProperty(html.window, 'MouseEvent') as Function;
     final List<dynamic> eventArgs = <dynamic>[
       type,
@@ -2563,8 +2567,10 @@ class _MouseEventContext extends _BasicEventContext
         'clientY': clientY,
       }
     ];
+    // ignore: implicit_dynamic_function
     return js_util.callConstructor(
       jsMouseEvent,
+      // ignore: implicit_dynamic_function
       js_util.jsify(eventArgs) as List<Object?>,
     ) as html.MouseEvent;
   }
