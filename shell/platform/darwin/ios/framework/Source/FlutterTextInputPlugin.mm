@@ -1875,7 +1875,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 // The UIView to add FlutterTextInputViews to.
 - (UIView*)keyWindow {
-  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
+  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow
+                            ?: [UIApplication sharedApplication].delegate.window;
   NSAssert(keyWindow != nullptr,
            @"The application must have a key window since the keyboard client "
            @"must be part of the responder chain to function");
