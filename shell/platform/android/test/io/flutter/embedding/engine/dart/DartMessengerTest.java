@@ -147,8 +147,8 @@ public class DartMessengerTest {
           byteBuffers[0] = reply;
         };
     messenger.send(channel, null, callback);
-    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), 0);
+    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(0));
     messenger.send(channel, null, callback);
-    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), 1);
+    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(1));
   }
 }
