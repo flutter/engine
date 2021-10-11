@@ -11,6 +11,7 @@
 #import "FlutterBinaryMessenger.h"
 #import "FlutterDartProject.h"
 #import "FlutterEngine.h"
+#import "FlutterEngineGroup.h"
 #import "FlutterMacros.h"
 #import "FlutterPlugin.h"
 #import "FlutterTexture.h"
@@ -67,6 +68,27 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+/** Initializes this FlutterViewController with the specified `FlutterEngineGroup`.
+ *
+ * @param engineGroup The `FlutterEngineGroup` for this view controller to create `FlutterEngine`
+ * @param nibName The NIB name to initialize this UIViewController with.
+ * @param nibBundle The NIB bundle.
+ * @param entrypoint The name of a top-level function from a Dart library.  If this is
+ *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
+ *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
+ *   method is not tree-shaken by the Dart compiler.
+ * @param libraryURI The URI of the Dart library which contains the entrypoint method.  IF nil,
+ *   this will default to the same library as the `main()` function in the Dart program.
+ * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
+ *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
+ */
+- (instancetype)initWithEngineGroup:(FlutterEngineGroup*)engineGroup
+                            nibName:(nullable NSString*)nibName
+                             bundle:(nullable NSBundle*)nibBundle
+                         entrypoint:(nullable NSString*)entrypoint
+                         libraryURI:(nullable NSString*)libraryURI
+                        initalRoute:(nullable NSString*)initalRoute NS_DESIGNATED_INITIALIZER;
 
 /**
  * Initializes a new FlutterViewController and `FlutterEngine` with the specified
