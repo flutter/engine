@@ -135,8 +135,8 @@ public class DartMessengerTest {
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
     final String channel = "foobar";
     messenger.send(channel, null, null);
-    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(0));
-    messenger.send(channel, null, null);
     verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(1));
+    messenger.send(channel, null, null);
+    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), eq(2));
   }
 }
