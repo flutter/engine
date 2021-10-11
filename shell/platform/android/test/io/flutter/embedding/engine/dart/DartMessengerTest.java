@@ -4,7 +4,11 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -123,5 +127,31 @@ public class DartMessengerTest {
     messenger.send(channel, null, callback);
     messenger.handlePlatformMessageResponse(1, message);
     assertEquals(0, byteBuffers[0].limit());
+  }
+
+  @Test
+  public void replyIdIncrementsOnNullReply() {
+    /// Setup test.
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni);
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    final String channel = "foobar";
+    message.rewind();
+    message.putChar('a');
+    message.putChar('b');
+    message.putChar('c');
+    message.putChar('d');
+    final ByteBuffer[] byteBuffers = {null};
+    BinaryMessenger.BinaryReply callback =
+        (reply) -> {
+          assertTrue(reply.isDirect());
+          byteBuffers[0] = reply;
+        };
+    messenger.send(channel, null, callback);
+    verify(fakeFlutterJni, times(1))
+        .dispatchEmptyPlatformMessage(eq("foobar"), 0);
+    messenger.send(channel, null, callback);
+    verify(fakeFlutterJni, times(1))
+        .dispatchEmptyPlatformMessage(eq("foobar"), 1);
   }
 }
