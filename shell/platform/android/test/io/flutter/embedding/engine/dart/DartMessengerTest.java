@@ -4,7 +4,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -148,10 +147,8 @@ public class DartMessengerTest {
           byteBuffers[0] = reply;
         };
     messenger.send(channel, null, callback);
-    verify(fakeFlutterJni, times(1))
-        .dispatchEmptyPlatformMessage(eq("foobar"), 0);
+    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), 0);
     messenger.send(channel, null, callback);
-    verify(fakeFlutterJni, times(1))
-        .dispatchEmptyPlatformMessage(eq("foobar"), 1);
+    verify(fakeFlutterJni, times(1)).dispatchEmptyPlatformMessage(eq("foobar"), 1);
   }
 }
