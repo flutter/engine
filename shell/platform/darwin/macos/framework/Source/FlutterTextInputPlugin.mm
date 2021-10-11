@@ -153,6 +153,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  */
 - (void)updateEditState;
 
+// TODO(justinmc): Make sure these names match their iOS counterparts.
 /**
  * Informs the Flutter framework of changes to the text input model's state by
  * sending only the difference.
@@ -532,18 +533,19 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _activeModel->SetSelection(flutter::TextRange(base, extent));
   }
 
+  NSString* textBeforeChange = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
   _activeModel->AddText([string UTF8String]);
   if (_activeModel->composing()) {
     _activeModel->CommitComposing();
     _activeModel->EndComposing();
   }
   if (_enableDeltaModel) {
-    NSLog(@"justin insertText calling updateEditStateWithDeltas");
+    NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
+    flutter::TextRange selection = _activeModel->selection();
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
-                                        deltaWithNonText:[NSString
-                                                             stringWithUTF8String:_activeModel
-                                                                                      ->GetText()
-                                                                                      .c_str()]]];
+                                          textEditingDelta:textBeforeChange
+                                             replacedRange:range
+                                               updatedText:text]];
   } else {
     [self updateEditState];
   }
