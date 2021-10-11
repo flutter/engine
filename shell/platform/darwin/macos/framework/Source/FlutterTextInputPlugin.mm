@@ -274,13 +274,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     // Close the loop, since the framework state could have been updated by the
     // engine since it sent this update, and needs to now be made to match the
     // engine's version of the state.
-    if (_enableDeltaModel) {
-      [self updateEditStateWithDeltas:[FlutterTextEditingDelta
-                                          deltaWithNonText:[NSString
-                                                               stringWithUTF8String:_activeModel
-                                                                                        ->GetText()
-                                                                                        .c_str()]]];
-    } else {
+    if (!_enableDeltaModel) {
       [self updateEditState];
     }
   } else if ([method isEqualToString:kSetEditableSizeAndTransform]) {
@@ -406,6 +400,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     @"deltas" : @[ deltaToFramework ],
   };
 
+  NSLog(@"justin updateEditStateWithDeltas %@", deltaToFramework);
   [_channel invokeMethod:kUpdateEditStateWithDeltasResponseMethod
                arguments:@[ self.clientID, deltas ]];
 }
@@ -543,6 +538,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _activeModel->EndComposing();
   }
   if (_enableDeltaModel) {
+    NSLog(@"justin insertText calling updateEditStateWithDeltas");
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
                                         deltaWithNonText:[NSString
                                                              stringWithUTF8String:_activeModel
@@ -594,6 +590,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->UpdateComposingText([marked_text UTF8String]);
 
   if (_enableDeltaModel) {
+    NSLog(@"justin setMarkedText calling updateEditStateWithDeltas");
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
                                         deltaWithNonText:[NSString
                                                              stringWithUTF8String:_activeModel
@@ -611,6 +608,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->CommitComposing();
   _activeModel->EndComposing();
   if (_enableDeltaModel) {
+    NSLog(@"justin unmarkText calling updateEditStateWithDeltas");
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
                                         deltaWithNonText:[NSString
                                                              stringWithUTF8String:_activeModel
