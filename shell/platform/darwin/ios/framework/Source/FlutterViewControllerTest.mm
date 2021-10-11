@@ -59,7 +59,7 @@ class PointerDataPacket {};
   // NSAssert(callback != nullptr, @"Invalid callback");
   // Response is async, so we have to post it to the run loop instead of calling
   // it directly.
-  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, ^() {
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), (CFStringRef) @"messageloop", ^() {
     callback(true, userData);
   });
 }
@@ -763,7 +763,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // Response is async, so we have to post it to the run loop instead of calling
   // it directly.
   self.messageSent = message;
-  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), kCFRunLoopDefaultMode, ^() {
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), (CFStringRef) @"messageloop", ^() {
     callback(replyMessage);
   });
 }

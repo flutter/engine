@@ -5,6 +5,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h"
 #include "flutter/fml/memory/weak_ptr.h"
 
+static constexpr CFTimeInterval kDistantFuture = 1.0e10;
+
 @interface FlutterKeyboardManager ()
 
 /**
@@ -102,7 +104,9 @@
       // framework. Once the completeCallback is called, this run loop will exit
       // and the main one will resume. The completeCallback MUST be called, or
       // the app will get stuck in this run loop indefinitely.
-      CFRunLoopRun();
+      // We need to run in this mode so that UIKit doesn't give us new
+      // events until we are done processing this one.
+      CFRunLoopRunInMode((CFStringRef) @"messageloop", kDistantFuture, NO);
       break;
     }
     case UIPressPhaseChanged:

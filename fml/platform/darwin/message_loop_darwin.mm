@@ -29,11 +29,14 @@ MessageLoopDarwin::MessageLoopDarwin()
                            &timer_context /* context */));
   FML_DCHECK(delayed_wake_timer_ != nullptr);
   CFRunLoopAddTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
+  // Register mode with only this timer for use in FlutterKeyboardManager
+  CFRunLoopAddTimer(loop_, delayed_wake_timer_, (CFStringRef) @"messageloop");
 }
 
 MessageLoopDarwin::~MessageLoopDarwin() {
   CFRunLoopTimerInvalidate(delayed_wake_timer_);
   CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
+  CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, (CFStringRef) @"messageloop");
 }
 
 void MessageLoopDarwin::Run() {
