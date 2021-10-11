@@ -19,11 +19,6 @@ FLUTTER_ASSERT_ARC
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
-- (void)cut;
-- (void)copy;
-- (void)paste;
-- (void)delete;
-- (void)selectAll;
 
 @end
 
