@@ -26,11 +26,11 @@ TaskRunnerWinUwp::~TaskRunnerWinUwp() = default;
 
 bool TaskRunnerWinUwp::RunsTasksOnCurrentThread() const {
   return dispatcher_queue_.HasThreadAccess();
-};
+}
 
 void TaskRunnerWinUwp::WakeUp() {
   dispatcher_queue_.TryEnqueue([this]() { ProcessTasksAndScheduleNext(); });
-};
+}
 
 void TaskRunnerWinUwp::OnTick(
     winrt::Windows::System::DispatcherQueueTimer const&,

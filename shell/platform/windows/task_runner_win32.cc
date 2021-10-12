@@ -27,7 +27,7 @@ TaskRunnerWin32::~TaskRunnerWin32() {
 
 bool TaskRunnerWin32::RunsTasksOnCurrentThread() const {
   return GetCurrentThreadId() == main_thread_id_;
-};
+}
 
 std::chrono::nanoseconds TaskRunnerWin32::ProcessTasks() {
   return TaskRunner::ProcessTasks();
@@ -35,6 +35,6 @@ std::chrono::nanoseconds TaskRunnerWin32::ProcessTasks() {
 
 void TaskRunnerWin32::WakeUp() {
   task_runner_window_->WakeUp();
-};
+}
 
 }  // namespace flutter
