@@ -97,12 +97,14 @@ void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
 }
 
 void DiffContext::AddLayerBounds(const SkRect& rect) {
-  auto layer_cull_rect = state_.transform.mapRect(rect);
-  if (layer_cull_rect.intersects(state_.cull_rect)) {
-    const auto& paint_transform = state_.transform_override
-                                      ? *state_.transform_override
-                                      : state_.transform;
-    auto paint_rect = paint_transform.mapRect(rect);
+  // During painting we cull based on non-overriden transform and then
+  // override the transform right before paint. Do the same thing here to get
+  // identical paint rect.
+  auto transformed_rect = state_.transform.mapRect(rect);
+  if (transformed_rect.intersects(state_.cull_rect)) {
+    auto paint_rect = state_.transform_override
+                          ? state_.transform_override->mapRect(rect)
+                          : transformed_rect;
     rects_->push_back(paint_rect);
     if (IsSubtreeDirty()) {
       AddDamage(paint_rect);
