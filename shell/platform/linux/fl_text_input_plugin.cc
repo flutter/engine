@@ -21,6 +21,10 @@ static constexpr char kClearClientMethod[] = "TextInput.clearClient";
 static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
+    /*
+static constexpr char kUpdateEditStateWithDeltasResponseMethod[] =
+    "TextInputClient.updateEditingStateWithDeltas";
+    */
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 static constexpr char kSetEditableSizeAndTransform[] =
     "TextInput.setEditableSizeAndTransform";
@@ -28,6 +32,7 @@ static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
 
 static constexpr char kInputActionKey[] = "inputAction";
 static constexpr char kTextInputTypeKey[] = "inputType";
+static constexpr char kEnableDeltaModel[] = "enableDeltaModel";
 static constexpr char kTextInputTypeNameKey[] = "name";
 static constexpr char kTextKey[] = "text";
 static constexpr char kSelectionBaseKey[] = "selectionBase";
@@ -66,6 +71,12 @@ struct FlTextInputPluginPrivate {
 
   // The type of the input method.
   FlTextInputType input_type;
+
+  // Whether to enable that the engine sends text input updates to the framework
+  // as TextEditingDeltas or as one TextEditingValue.
+  // For more information on the delta model, see:
+  // https://master-api.flutter.dev/flutter/services/TextInputConfiguration/enableDeltaModel.html
+  gboolean enable_delta_model;
 
   // Input method.
   GtkIMContext* im_context;
@@ -273,6 +284,11 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
   if (fl_value_get_type(input_action_value) == FL_VALUE_TYPE_STRING) {
     priv->input_action = g_strdup(fl_value_get_string(input_action_value));
   }
+
+  FlValue* enable_delta_model_value = fl_value_lookup_string(config_value, kEnableDeltaModel);
+  gboolean enable_delta_model =
+      fl_value_get_bool(enable_delta_model_value);
+  priv->enable_delta_model = enable_delta_model;
 
   // Reset the input type, then set only if appropriate.
   priv->input_type = FL_TEXT_INPUT_TYPE_TEXT;
