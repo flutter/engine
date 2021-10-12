@@ -748,6 +748,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         waiting_for_first_frame.store(true);
       });
 
+  // TODO(dnfield): This probably isn't necessary. The engine should be able to
+  // handle things here via normal lifecycle messages.
+  // https://github.com/flutter/flutter/issues/91717
   auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
@@ -776,11 +779,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       }
       io_manager->NotifyResourceContextAvailable(resource_context);
     }
-    // Step 1: Next, post a task on the UI thread to tell the engine that it has
+    // Step 1: Post a task on the UI thread to tell the engine that it has
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
 
-    // Step 2: Next, tell the raster thread that it should create a surface for
+    // Step 2: Tell the raster thread that it should create a surface for
     // its rasterizer.
     if (should_post_raster_task) {
       fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
