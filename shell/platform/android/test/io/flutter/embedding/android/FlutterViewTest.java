@@ -17,10 +17,10 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.hardware.HardwareBuffer;
 import android.graphics.Canvas;
 import android.graphics.Insets;
 import android.graphics.Region;
+import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
@@ -747,10 +747,8 @@ public class FlutterViewTest {
     when(mockImage.getPlanes()).thenReturn(new Plane[0]);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       final HardwareBuffer mockHardwareBuffer = mock(HardwareBuffer.class);
-      when(mockHardwareBuffer.getUsage())
-          .thenReturn(HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
-      when(mockImage.getHardwareBuffer())
-          .thenReturn(mockHardwareBuffer);
+      when(mockHardwareBuffer.getUsage()).thenReturn(HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+      when(mockImage.getHardwareBuffer()).thenReturn(mockHardwareBuffer);
     }
     // Mock no latest image on the second time
     when(mockReader.acquireLatestImage())
