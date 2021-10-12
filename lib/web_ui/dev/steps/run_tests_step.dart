@@ -4,6 +4,8 @@
 
 import 'dart:io' as io;
 
+import 'package:file/file.dart';
+import 'package:file/local.dart';
 import 'package:path/path.dart' as pathlib;
 // TODO(yjbanov): remove hacks when this is fixed:
 //                https://github.com/dart-lang/test/issues/1521
@@ -15,8 +17,10 @@ import 'package:test_core/src/runner/configuration/reporters.dart' as hack;
 import 'package:test_core/src/runner/engine.dart' as hack;
 import 'package:test_core/src/runner/hack_register_platform.dart' as hack;
 import 'package:test_core/src/runner/reporter.dart' as hack;
+import 'package:web_test_utils/skia_client.dart';
 
 import '../browser.dart';
+import '../common.dart';
 import '../environment.dart';
 import '../exceptions.dart';
 import '../pipeline.dart';
@@ -70,6 +74,8 @@ class RunTestsStep implements PipelineStep {
     await _prepareTestResultsDirectory();
     await browserEnvironment.prepareEnvironment();
 
+    final SkiaGoldClient skiaClient = await _setupSkiaGoldClient();
+
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
     // Separate screenshot tests from unit-tests. Screenshot tests must run
@@ -114,6 +120,7 @@ class RunTestsStep implements PipelineStep {
         expectFailure: true,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
       );
     }
 
@@ -126,6 +133,7 @@ class RunTestsStep implements PipelineStep {
         expectFailure: false,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
       );
       _checkExitCode('Unit tests');
     }
@@ -140,6 +148,7 @@ class RunTestsStep implements PipelineStep {
         expectFailure: false,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
       );
       _checkExitCode('Golden tests');
     }
@@ -197,6 +206,29 @@ void _copyTestFontsIntoWebUi() {
   }
 }
 
+Future<SkiaGoldClient> _setupSkiaGoldClient() async {
+  const FileSystem fs = LocalFileSystem();
+  final Directory goldensRoot =
+      fs.directory(environment.webUiSkiaGoldDirectory.path);
+  final SkiaGoldClient skiaClient = SkiaGoldClient(goldensRoot);
+
+  if (isLuci) {
+    await skiaClient.auth();
+  } else {
+    try {
+      // Check if we can reach Gold.
+      await skiaClient.getExpectationForTest('');
+    } on io.OSError catch (_) {
+      // TODO(mdebbar): What else should we do here? Maybe fail if we are in pre-submit?
+      print('OSError occurred, could not reach Gold.');
+    } on io.SocketException catch (_) {
+      print('SocketException occurred, could not reach Gold.');
+    }
+  }
+
+  return skiaClient;
+}
+
 /// Runs a batch of tests.
 ///
 /// Unless [expectFailure] is set to false, sets [io.exitCode] to a non-zero
@@ -208,6 +240,7 @@ Future<void> _runTestBatch({
   required bool doUpdateScreenshotGoldens,
   required int concurrency,
   required bool expectFailure,
+  required SkiaGoldClient skiaClient,
 }) async {
   final String configurationFilePath = pathlib.join(
     environment.webUiRootDir.path,
@@ -244,6 +277,7 @@ Future<void> _runTestBatch({
       // It doesn't make sense to update a screenshot for a test that is
       // expected to fail.
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
+      skiaClient: skiaClient,
     );
   });
 
