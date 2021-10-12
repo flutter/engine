@@ -7,32 +7,34 @@
 namespace flutter {
 
 // static
-std::unique_ptr<TaskRunnerTimer> TaskRunnerTimer::Create(
-    TaskRunnerTimer::Delegate* delegate) {
-  return std::make_unique<TaskRunnerTimerWin32>(delegate);
+std::unique_ptr<TaskRunner> TaskRunner::Create(
+    CurrentTimeProc get_current_time,
+    const TaskExpiredCallback& on_task_expired) {
+  return std::make_unique<TaskRunnerWin32>(get_current_time, on_task_expired);
 }
 
-TaskRunnerTimerWin32::TaskRunnerTimerWin32(TaskRunnerTimer::Delegate* delegate)
-    : delegate_(delegate) {
+TaskRunnerWin32::TaskRunnerWin32(CurrentTimeProc get_current_time,
+                                 const TaskExpiredCallback& on_task_expired)
+    : TaskRunner(get_current_time, on_task_expired) {
   main_thread_id_ = GetCurrentThreadId();
   task_runner_window_ = TaskRunnerWin32Window::GetSharedInstance();
   task_runner_window_->AddDelegate(this);
 }
 
-TaskRunnerTimerWin32::~TaskRunnerTimerWin32() {
+TaskRunnerWin32::~TaskRunnerWin32() {
   task_runner_window_->RemoveDelegate(this);
 }
 
-void TaskRunnerTimerWin32::WakeUp() {
-  task_runner_window_->WakeUp();
-};
-
-bool TaskRunnerTimerWin32::RunsOnCurrentThread() const {
+bool TaskRunnerWin32::RunsTasksOnCurrentThread() const {
   return GetCurrentThreadId() == main_thread_id_;
 };
 
-std::chrono::nanoseconds TaskRunnerTimerWin32::ProcessTasks() {
-  return delegate_->ProcessTasks();
+std::chrono::nanoseconds TaskRunnerWin32::ProcessTasks() {
+  return TaskRunner::ProcessTasks();
 }
+
+void TaskRunnerWin32::WakeUp() {
+  task_runner_window_->WakeUp();
+};
 
 }  // namespace flutter

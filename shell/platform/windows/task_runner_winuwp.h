@@ -13,31 +13,31 @@
 
 namespace flutter {
 
-// A custom timer that uses a DispatcherQueue.
-class TaskRunnerTimerWinUwp : public TaskRunnerTimer {
+// A custom task runner that uses a DispatcherQueue.
+class TaskRunnerWinUwp : public TaskRunner {
  public:
-  TaskRunnerTimerWinUwp(TaskRunnerTimer::Delegate* delegate);
-  virtual ~TaskRunnerTimerWinUwp();
+  TaskRunnerWinUwp(CurrentTimeProc get_current_time,
+                   const TaskExpiredCallback& on_task_expired);
+  virtual ~TaskRunnerWinUwp();
 
-  // |TaskRunnerTimer|
+  // |TaskRunner|
+  bool RunsTasksOnCurrentThread() const override;
+
+ protected:
+  // |TaskRunner|
   void WakeUp() override;
-
-  // |TaskRunnerTimer|
-  bool RunsOnCurrentThread() const override;
 
  private:
   void OnTick(winrt::Windows::System::DispatcherQueueTimer const&,
               winrt::Windows::Foundation::IInspectable const&);
 
-  void ProcessTasks();
-
-  TaskRunnerTimer::Delegate* delegate_;
+  void ProcessTasksAndScheduleNext();
 
   winrt::Windows::System::DispatcherQueue dispatcher_queue_{nullptr};
   winrt::Windows::System::DispatcherQueueTimer dispatcher_queue_timer_{nullptr};
 
-  TaskRunnerTimerWinUwp(const TaskRunnerTimerWinUwp&) = delete;
-  TaskRunnerTimerWinUwp& operator=(const TaskRunnerTimerWinUwp&) = delete;
+  TaskRunnerWinUwp(const TaskRunnerWinUwp&) = delete;
+  TaskRunnerWinUwp& operator=(const TaskRunnerWinUwp&) = delete;
 };
 
 }  // namespace flutter

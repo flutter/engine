@@ -19,41 +19,16 @@ namespace flutter {
 
 typedef uint64_t (*CurrentTimeProc)();
 
-// Abstract custom timer.
-class TaskRunnerTimer {
- public:
-  class Delegate {
-   public:
-    // Executes expired task, and returns the duration until the next task
-    // deadline if exists, otherwise returns `std::chrono::nanoseconds::max()`.
-    virtual std::chrono::nanoseconds ProcessTasks() = 0;
-  };
-
-  // Schedules timers to call ProcessTasks at the timer's thread.
-  virtual void WakeUp() = 0;
-
-  // Returns `true` if the current thread is this timer's thread.
-  virtual bool RunsOnCurrentThread() const = 0;
-
-  virtual ~TaskRunnerTimer() = default;
-
-  // Creates a new timer with the current thread.
-  static std::unique_ptr<TaskRunnerTimer> Create(Delegate* delegate);
-};
-
-class TaskRunner : public TaskRunnerTimer::Delegate {
+class TaskRunner {
  public:
   using TaskTimePoint = std::chrono::steady_clock::time_point;
   using TaskExpiredCallback = std::function<void(const FlutterTask*)>;
   using TaskClosure = std::function<void()>;
 
-  // Creates a new task runner with the current thread, current time
-  // provider, and callback for tasks that are ready to be run.
-  TaskRunner(CurrentTimeProc get_current_time,
-             const TaskExpiredCallback& on_task_expired);
+  virtual ~TaskRunner() = default;
 
   // Returns `true` if the current thread is this runner's thread.
-  bool RunsTasksOnCurrentThread() const;
+  virtual bool RunsTasksOnCurrentThread() const = 0;
 
   // Post a Flutter engine task to the event loop for delayed execution.
   void PostFlutterTask(FlutterTask flutter_task,
@@ -62,11 +37,8 @@ class TaskRunner : public TaskRunnerTimer::Delegate {
   // Post a task to the event loop.
   void PostTask(TaskClosure task);
 
-  // |TaskRunnerTimer::Delegate|
-  std::chrono::nanoseconds ProcessTasks() override;
-
   // Post a task to the event loop or run it immediately if this is being called
-  // from the main thread.
+  // from the runner's thread.
   void RunNowOrPostTask(TaskClosure task) {
     if (RunsTasksOnCurrentThread()) {
       task();
@@ -74,6 +46,25 @@ class TaskRunner : public TaskRunnerTimer::Delegate {
       PostTask(std::move(task));
     }
   }
+
+  // Creates a new task runner with the current thread, current time
+  // provider, and callback for tasks that are ready to be run.
+  static std::unique_ptr<TaskRunner> Create(
+      CurrentTimeProc get_current_time,
+      const TaskExpiredCallback& on_task_expired);
+
+ protected:
+  TaskRunner(CurrentTimeProc get_current_time,
+             const TaskExpiredCallback& on_task_expired);
+
+  // Schedules timers to call `ProcessTasks()` at the runner's thread.
+  virtual void WakeUp() = 0;
+
+  // Executes expired task, and returns the duration until the next task
+  // deadline if exists, otherwise returns `std::chrono::nanoseconds::max()`.
+  //
+  // Each platform implementations must call this to schedule the tasks.
+  std::chrono::nanoseconds ProcessTasks();
 
  private:
   typedef std::variant<FlutterTask, TaskClosure> TaskVariant;
@@ -104,7 +95,6 @@ class TaskRunner : public TaskRunnerTimer::Delegate {
   TaskExpiredCallback on_task_expired_;
   std::mutex task_queue_mutex_;
   std::priority_queue<Task, std::deque<Task>, Task::Comparer> task_queue_;
-  std::unique_ptr<TaskRunnerTimer> timer_;
 
   TaskRunner(const TaskRunner&) = delete;
   TaskRunner& operator=(const TaskRunner&) = delete;

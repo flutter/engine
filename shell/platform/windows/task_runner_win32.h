@@ -13,31 +13,32 @@
 
 namespace flutter {
 
-// A custom timer that integrates with user32 GetMessage semantics so that
+// A custom task runner that integrates with user32 GetMessage semantics so that
 // host app can own its own message loop and flutter still gets to process
 // tasks on a timely basis.
-class TaskRunnerTimerWin32 : public TaskRunnerTimer,
-                             public TaskRunnerWin32Window::Delegate {
+class TaskRunnerWin32 : public TaskRunner,
+                        public TaskRunnerWin32Window::Delegate {
  public:
-  TaskRunnerTimerWin32(TaskRunnerTimer::Delegate* delegate);
-  virtual ~TaskRunnerTimerWin32();
+  TaskRunnerWin32(CurrentTimeProc get_current_time,
+                  const TaskExpiredCallback& on_task_expired);
+  virtual ~TaskRunnerWin32();
 
-  // |TaskRunnerTimer|
-  void WakeUp() override;
+  // |TaskRunner|
+  bool RunsTasksOnCurrentThread() const override;
 
-  // |TaskRunnerTimer|
-  bool RunsOnCurrentThread() const override;
-
-  // |TaskRunnerTimer|
+  // |TaskRunnerWin32Window::Delegate|
   std::chrono::nanoseconds ProcessTasks() override;
 
+ protected:
+  // |TaskRunner|
+  void WakeUp() override;
+
  private:
-  TaskRunnerTimer::Delegate* delegate_;
   DWORD main_thread_id_;
   std::shared_ptr<TaskRunnerWin32Window> task_runner_window_;
 
-  TaskRunnerTimerWin32(const TaskRunnerTimerWin32&) = delete;
-  TaskRunnerTimerWin32& operator=(const TaskRunnerTimerWin32&) = delete;
+  TaskRunnerWin32(const TaskRunnerWin32&) = delete;
+  TaskRunnerWin32& operator=(const TaskRunnerWin32&) = delete;
 };
 
 }  // namespace flutter

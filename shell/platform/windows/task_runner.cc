@@ -12,13 +12,7 @@ namespace flutter {
 TaskRunner::TaskRunner(CurrentTimeProc get_current_time,
                        const TaskExpiredCallback& on_task_expired)
     : get_current_time_(get_current_time),
-      on_task_expired_(std::move(on_task_expired)) {
-  timer_ = TaskRunnerTimer::Create(this);
-}
-
-bool TaskRunner::RunsTasksOnCurrentThread() const {
-  return timer_->RunsOnCurrentThread();
-}
+      on_task_expired_(std::move(on_task_expired)) {}
 
 std::chrono::nanoseconds TaskRunner::ProcessTasks() {
   const TaskTimePoint now = TaskTimePoint::clock::now();
@@ -104,7 +98,7 @@ void TaskRunner::EnqueueTask(Task task) {
     // the lock here momentarily till the end of the scope is a pessimization.
   }
 
-  timer_->WakeUp();
+  WakeUp();
 }
 
 }  // namespace flutter
