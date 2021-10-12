@@ -9,6 +9,7 @@
 #include "flutter/shell/platform/common/text_input_model.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_text_editing_delta.h"
 
 static constexpr char kChannelName[] = "flutter/textinput";
 
@@ -21,10 +22,8 @@ static constexpr char kClearClientMethod[] = "TextInput.clearClient";
 static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
-    /*
-static constexpr char kUpdateEditStateWithDeltasResponseMethod[] =
+static constexpr char kUpdateEditingStateWithDeltasMethod[] =
     "TextInputClient.updateEditingStateWithDeltas";
-    */
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 static constexpr char kSetEditableSizeAndTransform[] =
     "TextInput.setEditableSizeAndTransform";
@@ -169,6 +168,55 @@ static void update_editing_state(FlTextInputPlugin* self) {
                                   update_editing_state_response_cb, self);
 }
 
+// Informs Flutter of text input changes by passing just the delta.
+static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditingDelta* delta) {
+  FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
+      fl_text_input_plugin_get_instance_private(self));
+
+  g_autoptr(FlValue) args = fl_value_new_list();
+  fl_value_append_take(args, fl_value_new_int(priv->client_id));
+
+  g_autoptr(FlValue) deltaValue = fl_value_new_map();
+  fl_value_set_string_take(
+      deltaValue, "oldText",
+      fl_value_new_string(priv->text_model->GetText().c_str()));
+
+  /*
+  flutter::TextRange selection = priv->text_model->selection();
+  fl_value_set_string_take(
+      value, kTextKey,
+      fl_value_new_string(priv->text_model->GetText().c_str()));
+  fl_value_set_string_take(value, kSelectionBaseKey,
+                           fl_value_new_int(selection.base()));
+  fl_value_set_string_take(value, kSelectionExtentKey,
+                           fl_value_new_int(selection.extent()));
+
+  int composing_base = priv->text_model->composing()
+                           ? priv->text_model->composing_range().base()
+                           : -1;
+  int composing_extent = priv->text_model->composing()
+                             ? priv->text_model->composing_range().extent()
+                             : -1;
+  fl_value_set_string_take(value, kComposingBaseKey,
+                           fl_value_new_int(composing_base));
+  fl_value_set_string_take(value, kComposingExtentKey,
+                           fl_value_new_int(composing_extent));
+
+  // The following keys are not implemented and set to default values.
+  fl_value_set_string_take(value, kSelectionAffinityKey,
+                           fl_value_new_string(kTextAffinityDownstream));
+  fl_value_set_string_take(value, kSelectionIsDirectionalKey,
+                           fl_value_new_bool(FALSE));
+  */
+
+  //fl_value_append(args, value);
+  fl_value_append(args, deltaValue);
+
+  fl_method_channel_invoke_method(priv->channel, kUpdateEditingStateWithDeltasMethod,
+                                  args, nullptr,
+                                  update_editing_state_response_cb, self);
+}
+
 // Called when a response is received from TextInputClient.performAction()
 static void perform_action_response_cb(GObject* object,
                                        GAsyncResult* result,
@@ -212,6 +260,7 @@ static void im_preedit_start_cb(FlTextInputPlugin* self) {
 static void im_preedit_changed_cb(FlTextInputPlugin* self) {
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
+  std::string text_before_change = priv->text_model->GetText();
   g_autofree gchar* buf = nullptr;
   gint cursor_offset = 0;
   gtk_im_context_get_preedit_string(priv->im_context, &buf, nullptr,
@@ -221,7 +270,15 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
   priv->text_model->SetSelection(
       flutter::TextRange(cursor_offset, cursor_offset));
 
-  update_editing_state(self);
+  // TODO(justinmc): Also add calls to update_editing_state_with_delta to all of
+  // the other update_editing_state calls.
+  if (priv->enable_delta_model) {
+    std::string text(buf);
+    FlTextEditingDelta* delta = fl_text_editing_delta_new(text_before_change, priv->text_model->composing_range(), text);
+    update_editing_state_with_delta(self, delta);
+  } else {
+    update_editing_state(self);
+  }
 }
 
 // Signal handler for GtkIMContext::commit
