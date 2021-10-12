@@ -37,7 +37,9 @@ struct FlTextEditingDelta {
  *
  * Returns: a new #FlTextEditingDelta.
  */
-FlTextEditingDelta* fl_text_editing_delta_new(std::string textBeforeChange, flutter::TextRange range, std::string text);
+FlTextEditingDelta* fl_text_editing_delta_new(std::string textBeforeChange,
+                                              flutter::TextRange range,
+                                              std::string text);
 
 G_END_DECLS
 

@@ -8,7 +8,10 @@
 
 #include <cstring>
 
-G_MODULE_EXPORT FlTextEditingDelta* fl_text_editing_delta_new(std::string textBeforeChange, flutter::TextRange range, std::string text) {
+G_MODULE_EXPORT FlTextEditingDelta* fl_text_editing_delta_new(
+    std::string textBeforeChange,
+    flutter::TextRange range,
+    std::string text) {
   FlTextEditingDelta delta = FlTextEditingDelta();
   FlTextEditingDelta* self = &delta;
   self->textBeforeChange = textBeforeChange;

@@ -169,7 +169,8 @@ static void update_editing_state(FlTextInputPlugin* self) {
 }
 
 // Informs Flutter of text input changes by passing just the delta.
-static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditingDelta* delta) {
+static void update_editing_state_with_delta(FlTextInputPlugin* self,
+                                            FlTextEditingDelta* delta) {
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
 
@@ -181,48 +182,39 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditi
       deltaValue, "oldText",
       fl_value_new_string(delta->textBeforeChange.c_str()));
 
-  fl_value_set_string_take(
-      deltaValue, "deltaText",
-      fl_value_new_string(delta->text.c_str()));
+  fl_value_set_string_take(deltaValue, "deltaText",
+                           fl_value_new_string(delta->text.c_str()));
 
-  fl_value_set_string_take(
-      deltaValue, "deltaStart",
-      fl_value_new_int(delta->range.start()));
+  fl_value_set_string_take(deltaValue, "deltaStart",
+                           fl_value_new_int(delta->range.start()));
 
-  fl_value_set_string_take(
-      deltaValue, "deltaEnd",
-      fl_value_new_int(delta->range.end()));
+  fl_value_set_string_take(deltaValue, "deltaEnd",
+                           fl_value_new_int(delta->range.end()));
 
   flutter::TextRange selection = priv->text_model->selection();
-  fl_value_set_string_take(
-      deltaValue, "selectionBase",
-      fl_value_new_int(selection.base()));
+  fl_value_set_string_take(deltaValue, "selectionBase",
+                           fl_value_new_int(selection.base()));
 
-  fl_value_set_string_take(
-      deltaValue, "selectionExtent",
-      fl_value_new_int(selection.extent()));
+  fl_value_set_string_take(deltaValue, "selectionExtent",
+                           fl_value_new_int(selection.extent()));
 
-  fl_value_set_string_take(
-      deltaValue, "selectionAffinity",
-      fl_value_new_string(kTextAffinityDownstream));
+  fl_value_set_string_take(deltaValue, "selectionAffinity",
+                           fl_value_new_string(kTextAffinityDownstream));
 
-  fl_value_set_string_take(
-      deltaValue, "selectionIsDirectional",
-      fl_value_new_bool(FALSE));
+  fl_value_set_string_take(deltaValue, "selectionIsDirectional",
+                           fl_value_new_bool(FALSE));
 
   int composing_base = priv->text_model->composing()
                            ? priv->text_model->composing_range().base()
                            : -1;
-  fl_value_set_string_take(
-      deltaValue, "composingBase",
-      fl_value_new_int(composing_base));
+  fl_value_set_string_take(deltaValue, "composingBase",
+                           fl_value_new_int(composing_base));
 
   int composing_extent = priv->text_model->composing()
                              ? priv->text_model->composing_range().extent()
                              : -1;
-  fl_value_set_string_take(
-      deltaValue, "composingExtent",
-      fl_value_new_int(composing_extent));
+  fl_value_set_string_take(deltaValue, "composingExtent",
+                           fl_value_new_int(composing_extent));
 
   g_autoptr(FlValue) deltas = fl_value_new_list();
   fl_value_append(deltas, deltaValue);
@@ -231,9 +223,9 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditi
 
   fl_value_append(args, value);
 
-  fl_method_channel_invoke_method(priv->channel, kUpdateEditingStateWithDeltasMethod,
-                                  args, nullptr,
-                                  update_editing_state_response_cb, self);
+  fl_method_channel_invoke_method(
+      priv->channel, kUpdateEditingStateWithDeltasMethod, args, nullptr,
+      update_editing_state_response_cb, self);
 }
 
 // Called when a response is received from TextInputClient.performAction()
@@ -293,7 +285,8 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
   // the other update_editing_state calls.
   if (priv->enable_delta_model) {
     std::string text(buf);
-    FlTextEditingDelta* delta = fl_text_editing_delta_new(text_before_change, priv->text_model->composing_range(), text);
+    FlTextEditingDelta* delta = fl_text_editing_delta_new(
+        text_before_change, priv->text_model->composing_range(), text);
     update_editing_state_with_delta(self, delta);
   } else {
     update_editing_state(self);
@@ -361,9 +354,9 @@ static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
     priv->input_action = g_strdup(fl_value_get_string(input_action_value));
   }
 
-  FlValue* enable_delta_model_value = fl_value_lookup_string(config_value, kEnableDeltaModel);
-  gboolean enable_delta_model =
-      fl_value_get_bool(enable_delta_model_value);
+  FlValue* enable_delta_model_value =
+      fl_value_lookup_string(config_value, kEnableDeltaModel);
+  gboolean enable_delta_model = fl_value_get_bool(enable_delta_model_value);
   priv->enable_delta_model = enable_delta_model;
 
   // Reset the input type, then set only if appropriate.
