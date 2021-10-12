@@ -541,7 +541,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
   if (_enableDeltaModel) {
     NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
-    flutter::TextRange selection = _activeModel->selection();
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
                                           textEditingDelta:textBeforeChange
                                              replacedRange:range
@@ -582,6 +581,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (_activeModel == nullptr) {
     return;
   }
+  NSString* textBeforeChange = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
   if (!_activeModel->composing()) {
     _activeModel->BeginComposing();
   }
@@ -592,12 +592,13 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->UpdateComposingText([marked_text UTF8String]);
 
   if (_enableDeltaModel) {
-    NSLog(@"justin setMarkedText calling updateEditStateWithDeltas");
+    flutter::TextRange composing = _activeModel->composing_range();
+    NSInteger composingLocation = MIN(composing.base(), composing.end());
+    NSInteger composingLength = ABS(composing.end() - composing.base());
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
-                                        deltaWithNonText:[NSString
-                                                             stringWithUTF8String:_activeModel
-                                                                                      ->GetText()
-                                                                                      .c_str()]]];
+                                          textEditingDelta:textBeforeChange
+                                             replacedRange:NSMakeRange(composingLocation, composingLength)
+                                               updatedText:marked_text]];
   } else {
     [self updateEditState];
   }
