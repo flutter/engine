@@ -810,6 +810,8 @@ class PlatformView {
   virtual std::unique_ptr<SnapshotSurfaceProducer>
   CreateSnapshotSurfaceProducer();
 
+  // This is temporary until all embedders start handling thread dispatching to
+  // allow messages to be handled on background threads.
   virtual bool DoesHandlePlatformMessagesOnPlatformThread() const {
     return true;
   }

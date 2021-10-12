@@ -26,6 +26,13 @@ import java.nio.ByteBuffer;
  * @see EventChannel , which supports communication using event streams.
  */
 public interface BinaryMessenger {
+  public interface TaskQueue {
+    void dispatch(@NonNull Runnable runnable);
+  }
+
+  @UiThread
+  TaskQueue makeBackgroundTaskQueue();
+
   /**
    * Sends a binary message to the Flutter application.
    *
@@ -64,7 +71,10 @@ public interface BinaryMessenger {
    * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
    */
   @UiThread
-  void setMessageHandler(@NonNull String channel, @Nullable BinaryMessageHandler handler);
+  void setMessageHandler(
+      @NonNull String channel,
+      @Nullable BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue);
 
   /** Handler for incoming binary messages from Flutter. */
   interface BinaryMessageHandler {
@@ -97,7 +107,6 @@ public interface BinaryMessenger {
      *     outgoing replies must place the reply bytes between position zero and current position.
      *     Reply receivers can read from the buffer directly.
      */
-    @UiThread
     void reply(@Nullable ByteBuffer reply);
   }
 }

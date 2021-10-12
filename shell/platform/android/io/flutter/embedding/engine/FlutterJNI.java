@@ -958,10 +958,9 @@ public class FlutterJNI {
       long nativeShellHolderId, int responseId);
 
   // TODO(mattcarroll): differentiate between channel responses and platform responses.
-  @UiThread
   public void invokePlatformMessageResponseCallback(
       int responseId, @NonNull ByteBuffer message, int position) {
-    ensureRunningOnMainThread();
+    // Called on any thread.
     if (!message.isDirect()) {
       throw new IllegalArgumentException("Expected a direct ByteBuffer.");
     }

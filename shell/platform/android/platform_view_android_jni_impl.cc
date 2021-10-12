@@ -490,6 +490,8 @@ static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                                   jint responseId,
                                                   jobject message,
                                                   jint position) {
+  // NOTE(gaaclarke): Crash here because substantiating weakptr on thread other
+  // than platform thread.
   ANDROID_SHELL_HOLDER->GetPlatformView()
       ->InvokePlatformMessageResponseCallback(env,         //
                                               responseId,  //

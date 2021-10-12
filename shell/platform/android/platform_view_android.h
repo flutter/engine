@@ -133,6 +133,7 @@ class PlatformViewAndroid final : public PlatformView {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<flutter::PlatformMessageResponse>>
       pending_responses_;
+  std::mutex pending_responses_mutex_;
 
   // |PlatformView|
   void UpdateSemantics(
