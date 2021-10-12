@@ -153,12 +153,11 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  */
 - (void)updateEditState;
 
-// TODO(justinmc): Make sure these names match their iOS counterparts.
 /**
  * Informs the Flutter framework of changes to the text input model's state by
  * sending only the difference.
  */
-- (void)updateEditStateWithDeltas:(FlutterTextEditingDelta*)delta;
+- (void)updateEditStateWithDelta:(FlutterTextEditingDelta*)delta;
 
 /**
  * Updates the stringValue and selectedRange that stored in the NSTextView interface
@@ -373,7 +372,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   [self updateTextAndSelection];
 }
 
-- (void)updateEditStateWithDeltas:(FlutterTextEditingDelta*)delta {
+- (void)updateEditStateWithDelta:(FlutterTextEditingDelta*)delta {
   NSUInteger selectionBase = _activeModel->selection().base();
   NSUInteger selectionExtent = _activeModel->selection().extent();
   int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
@@ -540,7 +539,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
   if (_enableDeltaModel) {
     NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
-    [self updateEditStateWithDeltas:[FlutterTextEditingDelta
+    [self updateEditStateWithDelta:[FlutterTextEditingDelta
                                           textEditingDelta:textBeforeChange
                                              replacedRange:range
                                                updatedText:text]];
@@ -594,7 +593,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     flutter::TextRange composing = _activeModel->composing_range();
     NSInteger composingLocation = MIN(composing.base(), composing.end());
     NSInteger composingLength = ABS(composing.end() - composing.base());
-    [self updateEditStateWithDeltas:[FlutterTextEditingDelta
+    [self updateEditStateWithDelta:[FlutterTextEditingDelta
                                           textEditingDelta:textBeforeChange
                                              replacedRange:NSMakeRange(composingLocation, composingLength)
                                                updatedText:marked_text]];
@@ -610,7 +609,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->CommitComposing();
   _activeModel->EndComposing();
   if (_enableDeltaModel) {
-    [self updateEditStateWithDeltas:[FlutterTextEditingDelta
+    [self updateEditStateWithDelta:[FlutterTextEditingDelta
                                         deltaWithNonText:[NSString
                                                              stringWithUTF8String:_activeModel
                                                                                       ->GetText()
