@@ -109,7 +109,8 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   std::optional<SkRect> clip_rect =
       frame_damage ? frame_damage->ComputeClipRect(layer_tree) : std::nullopt;
 
-  bool root_needs_readback = layer_tree.Preroll(*this, ignore_raster_cache);
+  bool root_needs_readback = layer_tree.Preroll(
+      *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();
   PostPrerollResult post_preroll_result = PostPrerollResult::kSuccess;
   if (view_embedder_ && raster_thread_merger_) {

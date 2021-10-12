@@ -29,7 +29,8 @@ class LayerTree {
   //   layer tree performs any operations that require readback
   //   from the root surface.
   bool Preroll(CompositorContext::ScopedFrame& frame,
-               bool ignore_raster_cache = false);
+               bool ignore_raster_cache = false,
+               SkRect cull_rect = kGiantRect);
 
   void Paint(CompositorContext::ScopedFrame& frame,
              bool ignore_raster_cache = false) const;
