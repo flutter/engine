@@ -168,6 +168,12 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  */
 - (void)updateTextAndSelection;
 
+/**
+ * Given a FlutterTextAffinity, return its string representation as it should be
+ * sent over the FlutterMethodChannel.
+ */
+- (NSString*)textAffinityString;
+
 @end
 
 @implementation FlutterTextInputPlugin {
@@ -351,9 +357,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     return;
   }
 
-  NSString* const textAffinity = (self.textAffinity == FlutterTextAffinityUpstream)
-                                     ? kTextAffinityUpstream
-                                     : kTextAffinityDownstream;
+  NSString* const textAffinity = [self textAffinityString];
 
   int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
   int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
@@ -378,10 +382,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
   int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
 
-  // TODO(justinmc): Dedupe this with updateEditState above if possible.
-  NSString* const textAffinity = (self.textAffinity == FlutterTextAffinityUpstream)
-                                     ? kTextAffinityUpstream
-                                     : kTextAffinityDownstream;
+  NSString* const textAffinity = [self textAffinityString];
 
   NSDictionary* deltaToFramework = @{
     @"oldText" : delta.oldText,
@@ -420,6 +421,12 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     self.string = text;
     [self setSelectedRange:selection];
   }
+}
+
+- (NSString*)textAffinityString {
+  return (self.textAffinity == FlutterTextAffinityUpstream)
+                                     ? kTextAffinityUpstream
+                                     : kTextAffinityDownstream;
 }
 
 #pragma mark -
