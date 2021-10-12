@@ -18,6 +18,7 @@
 
 #include <hb.h>
 #include <minikin/Layout.h>
+#include "build/build_config.h"
 
 #include <algorithm>
 #include <cstring>
@@ -730,12 +731,23 @@ void ParagraphTxt::Layout(double width) {
 
     // Exclude trailing whitespace from justified lines so the last visible
     // character in the line will be flush with the right margin.
+#if OS_ANDROID
+    bool lastLine = line_number == line_limit - 1;
+    size_t line_end_index =
+        (paragraph_style_.effective_align() == TextAlign::right ||
+         paragraph_style_.effective_align() == TextAlign::center ||
+         paragraph_style_.effective_align() == TextAlign::justify) &&
+                !lastLine
+            ? line_metrics.end_excluding_whitespace
+            : line_metrics.end_index;
+#else
     size_t line_end_index =
         (paragraph_style_.effective_align() == TextAlign::right ||
          paragraph_style_.effective_align() == TextAlign::center ||
          paragraph_style_.effective_align() == TextAlign::justify)
             ? line_metrics.end_excluding_whitespace
             : line_metrics.end_index;
+#endif
 
     // Find the runs comprising this line.
     std::vector<BidiRun> line_runs;
