@@ -181,33 +181,48 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditi
       deltaValue, "oldText",
       fl_value_new_string(delta->textBeforeChange.c_str()));
 
-  /*
+  fl_value_set_string_take(
+      deltaValue, "deltaText",
+      fl_value_new_string(delta->text.c_str()));
+
+  fl_value_set_string_take(
+      deltaValue, "deltaStart",
+      fl_value_new_int(delta->range.start()));
+
+  fl_value_set_string_take(
+      deltaValue, "deltaEnd",
+      fl_value_new_int(delta->range.end()));
+
   flutter::TextRange selection = priv->text_model->selection();
   fl_value_set_string_take(
-      value, kTextKey,
-      fl_value_new_string(priv->text_model->GetText().c_str()));
-  fl_value_set_string_take(value, kSelectionBaseKey,
-                           fl_value_new_int(selection.base()));
-  fl_value_set_string_take(value, kSelectionExtentKey,
-                           fl_value_new_int(selection.extent()));
+      deltaValue, "selectionBase",
+      fl_value_new_int(selection.base()));
+
+  fl_value_set_string_take(
+      deltaValue, "selectionExtent",
+      fl_value_new_int(selection.extent()));
+
+  fl_value_set_string_take(
+      deltaValue, "selectionAffinity",
+      fl_value_new_string(kTextAffinityDownstream));
+
+  fl_value_set_string_take(
+      deltaValue, "selectionIsDirectional",
+      fl_value_new_bool(FALSE));
 
   int composing_base = priv->text_model->composing()
                            ? priv->text_model->composing_range().base()
                            : -1;
+  fl_value_set_string_take(
+      deltaValue, "composingBase",
+      fl_value_new_int(composing_base));
+
   int composing_extent = priv->text_model->composing()
                              ? priv->text_model->composing_range().extent()
                              : -1;
-  fl_value_set_string_take(value, kComposingBaseKey,
-                           fl_value_new_int(composing_base));
-  fl_value_set_string_take(value, kComposingExtentKey,
-                           fl_value_new_int(composing_extent));
-
-  // The following keys are not implemented and set to default values.
-  fl_value_set_string_take(value, kSelectionAffinityKey,
-                           fl_value_new_string(kTextAffinityDownstream));
-  fl_value_set_string_take(value, kSelectionIsDirectionalKey,
-                           fl_value_new_bool(FALSE));
-  */
+  fl_value_set_string_take(
+      deltaValue, "composingExtent",
+      fl_value_new_int(composing_extent));
 
   g_autoptr(FlValue) deltas = fl_value_new_list();
   fl_value_append(deltas, deltaValue);
