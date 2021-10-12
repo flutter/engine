@@ -401,7 +401,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     @"deltas" : @[ deltaToFramework ],
   };
 
-  NSLog(@"justin updateEditStateWithDeltas %@", deltaToFramework);
   [_channel invokeMethod:kUpdateEditStateWithDeltasResponseMethod
                arguments:@[ self.clientID, deltas ]];
 }
