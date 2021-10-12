@@ -227,6 +227,7 @@ executable("flutter_windows_unittests") {
     "sequential_id_generator_unittests.cc",
     "string_conversion_unittests.cc",
     "system_utils_unittests.cc",
+    "task_runner_unittests.cc",
     "testing/engine_modifier.h",
     "testing/mock_gl_functions.h",
   ]
