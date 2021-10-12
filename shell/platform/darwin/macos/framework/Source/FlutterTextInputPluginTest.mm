@@ -217,11 +217,14 @@
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        never(), [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:[OCMArg checkWithBlock:^BOOL(NSData* callData) {
-          FlutterMethodCall* call = [[FlutterJSONMethodCodec sharedInstance]
-              decodeMethodCall:callData];
-          return [[call method] isEqualToString:@"TextInputClient.updateEditingStateWithDeltas"];
-        }]]);
+        never(), [binaryMessengerMock
+                     sendOnChannel:@"flutter/textinput"
+                           message:[OCMArg checkWithBlock:^BOOL(NSData* callData) {
+                             FlutterMethodCall* call = [[FlutterJSONMethodCodec sharedInstance]
+                                 decodeMethodCall:callData];
+                             return [[call method]
+                                 isEqualToString:@"TextInputClient.updateEditingStateWithDeltas"];
+                           }]]);
   } @catch (...) {
     return false;
   }
@@ -274,7 +277,7 @@
   NSData* updateCall = [[FlutterJSONMethodCodec sharedInstance]
       encodeMethodCall:[FlutterMethodCall
                            methodCallWithMethodName:@"TextInputClient.updateEditingStateWithDeltas"
-                                            arguments:@[ @(1), expectedState ]]];
+                                          arguments:@[ @(1), expectedState ]]];
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
@@ -304,7 +307,7 @@
   updateCall = [[FlutterJSONMethodCodec sharedInstance]
       encodeMethodCall:[FlutterMethodCall
                            methodCallWithMethodName:@"TextInputClient.updateEditingStateWithDeltas"
-                                            arguments:@[ @(1), expectedState ]]];
+                                          arguments:@[ @(1), expectedState ]]];
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
@@ -334,7 +337,7 @@
   updateCall = [[FlutterJSONMethodCodec sharedInstance]
       encodeMethodCall:[FlutterMethodCall
                            methodCallWithMethodName:@"TextInputClient.updateEditingStateWithDeltas"
-                                            arguments:@[ @(1), expectedState ]]];
+                                          arguments:@[ @(1), expectedState ]]];
 
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)

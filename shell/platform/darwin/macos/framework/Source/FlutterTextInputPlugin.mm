@@ -424,9 +424,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (NSString*)textAffinityString {
-  return (self.textAffinity == FlutterTextAffinityUpstream)
-                                     ? kTextAffinityUpstream
-                                     : kTextAffinityDownstream;
+  return (self.textAffinity == FlutterTextAffinityUpstream) ? kTextAffinityUpstream
+                                                            : kTextAffinityDownstream;
 }
 
 #pragma mark -
@@ -546,10 +545,9 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
   if (_enableDeltaModel) {
     NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
-    [self updateEditStateWithDelta:[FlutterTextEditingDelta
-                                          textEditingDelta:textBeforeChange
-                                             replacedRange:range
-                                               updatedText:text]];
+    [self updateEditStateWithDelta:[FlutterTextEditingDelta textEditingDelta:textBeforeChange
+                                                               replacedRange:range
+                                                                 updatedText:text]];
   } else {
     [self updateEditState];
   }
@@ -601,9 +599,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     NSInteger composingLocation = MIN(composing.base(), composing.end());
     NSInteger composingLength = ABS(composing.end() - composing.base());
     [self updateEditStateWithDelta:[FlutterTextEditingDelta
-                                          textEditingDelta:textBeforeChange
-                                             replacedRange:NSMakeRange(composingLocation, composingLength)
-                                               updatedText:marked_text]];
+                                       textEditingDelta:textBeforeChange
+                                          replacedRange:NSMakeRange(composingLocation,
+                                                                    composingLength)
+                                            updatedText:marked_text]];
   } else {
     [self updateEditState];
   }
@@ -617,10 +616,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->EndComposing();
   if (_enableDeltaModel) {
     [self updateEditStateWithDelta:[FlutterTextEditingDelta
-                                        deltaWithNonText:[NSString
-                                                             stringWithUTF8String:_activeModel
-                                                                                      ->GetText()
-                                                                                      .c_str()]]];
+                                       deltaWithNonText:[NSString
+                                                            stringWithUTF8String:_activeModel
+                                                                                     ->GetText()
+                                                                                     .c_str()]]];
   } else {
     [self updateEditState];
   }
