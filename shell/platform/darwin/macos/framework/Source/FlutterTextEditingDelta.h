@@ -6,9 +6,7 @@
 #define SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_
 
 #import <Cocoa/Cocoa.h>
-//#import <UIKit/UIKit.h>
 
-// TODO(justinmc): Can this stuff be in the common folder?
 @interface FlutterTextEditingDelta : NSObject
 
 @property(nonatomic, readonly) NSString* oldText;

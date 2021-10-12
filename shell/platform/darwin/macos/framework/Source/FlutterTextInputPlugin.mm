@@ -169,7 +169,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 - (void)updateTextAndSelection;
 
 /**
- * Given a FlutterTextAffinity, return its string representation as it should be
+ * Return the string representation of the current textAffinity as it should be
  * sent over the FlutterMethodChannel.
  */
 - (NSString*)textAffinityString;
