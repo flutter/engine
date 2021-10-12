@@ -733,16 +733,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
-  // Note:
-  // This is a synchronous operation because certain platforms depend on
-  // setup/suspension of all activities that may be interacting with the GPU in
-  // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto raster_task =
       fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface),            //
-                         &latch]() mutable {
+                         surface = std::move(surface)]() mutable {
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
@@ -751,28 +746,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         }
 
         waiting_for_first_frame.store(true);
-
-        // Step 3: All done. Signal the latch that the platform thread is
-        // waiting on.
-        latch.Signal();
       });
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),                            //
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
-                  raster_task, should_post_raster_task,
-                  &latch  //
-  ] {
+  auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
-    }
-    // Step 2: Next, tell the raster thread that it should create a surface for
-    // its rasterizer.
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
     }
   };
 
@@ -786,7 +764,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
-                  shared_resource_context = shared_resource_context_] {
+                  shared_resource_context = shared_resource_context_,
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
+                  raster_task, should_post_raster_task, &latch] {
     if (io_manager && !io_manager->GetResourceContext()) {
       sk_sp<GrDirectContext> resource_context;
       if (shared_resource_context) {
@@ -799,6 +779,13 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
     // Step 1: Next, post a task on the UI thread to tell the engine that it has
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
+
+    // Step 2: Next, tell the raster thread that it should create a surface for
+    // its rasterizer.
+    if (should_post_raster_task) {
+      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
+    }
+    latch.Signal();
   };
 
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
