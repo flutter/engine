@@ -179,7 +179,7 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditi
   g_autoptr(FlValue) deltaValue = fl_value_new_map();
   fl_value_set_string_take(
       deltaValue, "oldText",
-      fl_value_new_string(priv->text_model->GetText().c_str()));
+      fl_value_new_string(delta->textBeforeChange.c_str()));
 
   /*
   flutter::TextRange selection = priv->text_model->selection();
@@ -209,8 +209,12 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self, FlTextEditi
                            fl_value_new_bool(FALSE));
   */
 
-  //fl_value_append(args, value);
-  fl_value_append(args, deltaValue);
+  g_autoptr(FlValue) deltas = fl_value_new_list();
+  fl_value_append(deltas, deltaValue);
+  g_autoptr(FlValue) value = fl_value_new_map();
+  fl_value_set_string_take(value, "deltas", deltas);
+
+  fl_value_append(args, value);
 
   fl_method_channel_invoke_method(priv->channel, kUpdateEditingStateWithDeltasMethod,
                                   args, nullptr,
