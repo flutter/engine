@@ -611,7 +611,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->CommitComposing();
   _activeModel->EndComposing();
   if (_enableDeltaModel) {
-    NSLog(@"justin unmarkText calling updateEditStateWithDeltas");
     [self updateEditStateWithDeltas:[FlutterTextEditingDelta
                                         deltaWithNonText:[NSString
                                                              stringWithUTF8String:_activeModel
