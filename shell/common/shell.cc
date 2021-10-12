@@ -1192,13 +1192,19 @@ void Shell::OnEngineHandlePlatformMessage(
     return;
   }
 
-  task_runners_.GetPlatformTaskRunner()->PostTask(
-      fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
-                         message = std::move(message)]() mutable {
-        if (view) {
-          view->HandlePlatformMessage(std::move(message));
-        }
-      }));
+  if (platform_view_->DoesHandlePlatformMessagesOnPlatformThread()) {
+    task_runners_.GetPlatformTaskRunner()->PostTask(
+        fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
+                           message = std::move(message)]() mutable {
+          if (view) {
+            view->HandlePlatformMessage(std::move(message));
+          }
+        }));
+  } else {
+    if (platform_view_) {
+      platform_view_->HandlePlatformMessage(std::move(message));
+    }
+  }
 }
 
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {

@@ -810,6 +810,10 @@ class PlatformView {
   virtual std::unique_ptr<SnapshotSurfaceProducer>
   CreateSnapshotSurfaceProducer();
 
+  virtual bool DoesHandlePlatformMessagesOnPlatformThread() const {
+    return true;
+  }
+
  protected:
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;

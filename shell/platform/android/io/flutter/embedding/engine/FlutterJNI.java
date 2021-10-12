@@ -858,14 +858,23 @@ public class FlutterJNI {
     this.platformMessageHandler = platformMessageHandler;
   }
 
+  private native void nativeCleanupMessageData(long messageData);
+
+  public void cleanupMessageData(long messageData) {
+    // This doesn't rely on being attached like other methods.
+    nativeCleanupMessageData(messageData);
+  }
+
   // Called by native.
   // TODO(mattcarroll): determine if message is nonull or nullable
   @SuppressWarnings("unused")
   @VisibleForTesting
   public void handlePlatformMessage(
-      @NonNull final String channel, ByteBuffer message, final int replyId) {
+      @NonNull final String channel, ByteBuffer message, final int replyId, long messageData) {
     if (platformMessageHandler != null) {
-      platformMessageHandler.handleMessageFromDart(channel, message, replyId);
+      platformMessageHandler.handleMessageFromDart(channel, message, replyId, messageData);
+    } else {
+      nativeCleanupMessageData(messageData);
     }
     // TODO(mattcarroll): log dropped messages when in debug mode
     // (https://github.com/flutter/flutter/issues/25391)

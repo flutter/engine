@@ -116,6 +116,10 @@ class PlatformViewAndroid final : public PlatformView {
     return android_context_;
   }
 
+  bool DoesHandlePlatformMessagesOnPlatformThread() const override {
+    return false;
+  }
+
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
   std::shared_ptr<AndroidContext> android_context_;

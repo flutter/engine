@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine.dart;
 
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -72,8 +74,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
-  @Override
-  public void handleMessageFromDart(
+  private void handleMessageFromDartPlatformThread(
       @NonNull final String channel, @Nullable ByteBuffer message, final int replyId) {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
     BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
@@ -96,6 +97,26 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       Log.v(TAG, "No registered handler for message. Responding to Dart with empty reply message.");
       flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
     }
+  }
+
+  @Override
+  public void handleMessageFromDart(
+      @NonNull final String channel,
+      @Nullable ByteBuffer message,
+      final int replyId,
+      long messageData) {
+    // TODO(gaaclarke): Dispatch to a TaskQueue other than the platform channel if specified by the
+    // handler.
+    Handler mainHandler = new Handler(Looper.getMainLooper());
+    Runnable myRunnable =
+        () -> {
+          try {
+            handleMessageFromDartPlatformThread(channel, message, replyId);
+          } finally {
+            flutterJNI.cleanupMessageData(messageData);
+          }
+        };
+    mainHandler.post(myRunnable);
   }
 
   @Override

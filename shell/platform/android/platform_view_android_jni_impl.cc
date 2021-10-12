@@ -405,6 +405,13 @@ static void DispatchEmptyPlatformMessage(JNIEnv* env,
   );
 }
 
+static void CleanupMessageData(JNIEnv* env,
+                               jobject jcaller,
+                               jlong message_data) {
+  // Called from any thread.
+  free(reinterpret_cast<void*>(message_data));
+}
+
 static void DispatchPointerDataPacket(JNIEnv* env,
                                       jobject jcaller,
                                       jlong shell_holder,
@@ -639,6 +646,11 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&DispatchEmptyPlatformMessage),
       },
       {
+          .name = "nativeCleanupMessageData",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&CleanupMessageData),
+      },
+      {
           .name = "nativeDispatchPlatformMessage",
           .signature = "(JLjava/lang/String;Ljava/nio/ByteBuffer;II)V",
           .fnPtr = reinterpret_cast<void*>(&DispatchPlatformMessage),
@@ -819,7 +831,7 @@ bool RegisterApi(JNIEnv* env) {
 
   g_handle_platform_message_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "handlePlatformMessage",
-                       "(Ljava/lang/String;Ljava/nio/ByteBuffer;I)V");
+                       "(Ljava/lang/String;Ljava/nio/ByteBuffer;IJ)V");
 
   if (g_handle_platform_message_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate handlePlatformMessage method";
@@ -1102,6 +1114,7 @@ PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message,
     int responseId) {
+  // Called from the ui thread.
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1117,11 +1130,14 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
         env, env->NewDirectByteBuffer(
                  const_cast<uint8_t*>(message->data().GetMapping()),
                  message->data().GetSize()));
+    // Message data is deleted in CleanupMessageData.
+    fml::MallocMapping mapping = message->releaseData();
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
-                        java_channel.obj(), message_array.obj(), responseId);
+                        java_channel.obj(), message_array.obj(), responseId,
+                        mapping.Release());
   } else {
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
-                        java_channel.obj(), nullptr, responseId);
+                        java_channel.obj(), nullptr, responseId, nullptr);
   }
 
   FML_CHECK(fml::jni::CheckException(env));
