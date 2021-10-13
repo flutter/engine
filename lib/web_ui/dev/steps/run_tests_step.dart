@@ -207,6 +207,11 @@ void _copyTestFontsIntoWebUi() {
 }
 
 Future<SkiaGoldClient> _setupSkiaGoldClient() async {
+  print('_setupSkiaGoldClient:::GOLDCTL ${io.Platform.environment['GOLDCTL']}');
+  print('_setupSkiaGoldClient:::SWARMING_TASK_ID ${io.Platform.environment['SWARMING_TASK_ID']}');
+  print('_setupSkiaGoldClient:::LUCI_CONTEXT ${io.Platform.environment['LUCI_CONTEXT']}');
+  print('_setupSkiaGoldClient:::ENGINE_PATH ${io.Platform.environment['ENGINE_PATH']}');
+
   const FileSystem fs = LocalFileSystem();
   final Directory goldensRoot =
       fs.directory(environment.webUiSkiaGoldDirectory.path);
