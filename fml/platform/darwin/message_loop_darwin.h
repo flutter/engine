@@ -20,7 +20,7 @@ class MessageLoopDarwin : public MessageLoopImpl {
   // Define a custom CFRunLoop mode for use with flutter messages
   // This is so CFRunLoop can be run without being interrupted by UIKit,
   // but still receive and be interrupted by framework messages
-  static CFStringRef kCFRunLoopMode;
+  static CFStringRef kMessageLoopCFRunLoopMode;
 
  private:
   std::atomic_bool running_;

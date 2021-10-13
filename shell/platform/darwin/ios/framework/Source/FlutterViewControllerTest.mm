@@ -60,9 +60,10 @@ class PointerDataPacket {};
   // NSAssert(callback != nullptr, @"Invalid callback");
   // Response is async, so we have to post it to the run loop instead of calling
   // it directly.
-  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kCFRunLoopMode, ^() {
-    callback(true, userData);
-  });
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode,
+                        ^() {
+                          callback(true, userData);
+                        });
 }
 @end
 
@@ -764,9 +765,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // Response is async, so we have to post it to the run loop instead of calling
   // it directly.
   self.messageSent = message;
-  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kCFRunLoopMode, ^() {
-    callback(replyMessage);
-  });
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode,
+                        ^() {
+                          callback(replyMessage);
+                        });
 }
 
 - (void)testValidKeyUpEvent API_AVAILABLE(ios(13.4)) {

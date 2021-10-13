@@ -108,7 +108,7 @@ static constexpr CFTimeInterval kDistantFuture = 1.0e10;
       //
       // We need to run in this mode so that UIKit doesn't give us new
       // events until we are done processing this one.
-      CFRunLoopRunInMode(fml::MessageLoopDarwin::kCFRunLoopMode, kDistantFuture, NO);
+      CFRunLoopRunInMode(fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode, kDistantFuture, NO);
       break;
     }
     case UIPressPhaseChanged:

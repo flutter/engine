@@ -106,9 +106,10 @@ typedef BOOL (^BoolGetter)();
         FlutterAsyncKeyCallback callback;
         [invocation getArgument:&press atIndex:2];
         [invocation getArgument:&callback atIndex:3];
-        CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kCFRunLoopMode, ^() {
-          callbackSetter(press, callback);
-        });
+        CFRunLoopPerformBlock(CFRunLoopGetCurrent(),
+                              fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode, ^() {
+                                callbackSetter(press, callback);
+                              });
       }));
   return mock;
 }
@@ -341,7 +342,7 @@ typedef BOOL (^BoolGetter)();
       });
   CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer1, kCFRunLoopCommonModes);
 
-  // Add the callbacks to the CFRunLoop with mode kCFRunLoopMode
+  // Add the callbacks to the CFRunLoop with mode kMessageLoopCFRunLoopMode
   // This allows them to interrupt the loop started within handlePress
   CFRunLoopTimerRef timer2 = CFRunLoopTimerCreateWithHandler(
       kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 2, 0, 0, 0, ^(CFRunLoopTimerRef timerRef) {
@@ -350,7 +351,8 @@ typedef BOOL (^BoolGetter)();
         XCTAssertTrue(key2Callback == nil);
         key1Callback(false);
       });
-  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer2, fml::MessageLoopDarwin::kCFRunLoopMode);
+  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer2,
+                    fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode);
   CFRunLoopTimerRef timer3 = CFRunLoopTimerCreateWithHandler(
       kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 3, 0, 0, 0, ^(CFRunLoopTimerRef timerRef) {
         // Both keys should be processed by now
@@ -358,7 +360,8 @@ typedef BOOL (^BoolGetter)();
         XCTAssertTrue(key2Callback != nil);
         key2Callback(false);
       });
-  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer3, fml::MessageLoopDarwin::kCFRunLoopMode);
+  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer3,
+                    fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode);
 
   // Start a nested CFRunLoop so we can wait for both presses to complete before exiting the test
   CFRunLoopRun();
