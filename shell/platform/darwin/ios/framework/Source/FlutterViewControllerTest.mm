@@ -5,6 +5,7 @@
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
+#include "flutter/fml/platform/darwin/message_loop_darwin.h"
 #import "flutter/lib/ui/window/viewport_metrics.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
@@ -59,7 +60,7 @@ class PointerDataPacket {};
   // NSAssert(callback != nullptr, @"Invalid callback");
   // Response is async, so we have to post it to the run loop instead of calling
   // it directly.
-  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), (CFStringRef) @"messageloop", ^() {
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kCFRunLoopMode, ^() {
     callback(true, userData);
   });
 }
@@ -763,7 +764,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // Response is async, so we have to post it to the run loop instead of calling
   // it directly.
   self.messageSent = message;
-  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), (CFStringRef) @"messageloop", ^() {
+  CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kCFRunLoopMode, ^() {
     callback(replyMessage);
   });
 }

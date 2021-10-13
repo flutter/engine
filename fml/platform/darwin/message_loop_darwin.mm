@@ -13,6 +13,8 @@ namespace fml {
 
 static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 
+CFStringRef MessageLoopDarwin::kCFRunLoopMode = CFSTR("fmlMessageLoop");
+
 MessageLoopDarwin::MessageLoopDarwin()
     : running_(false), loop_((CFRunLoopRef)CFRetain(CFRunLoopGetCurrent())) {
   FML_DCHECK(loop_ != nullptr);
@@ -30,13 +32,13 @@ MessageLoopDarwin::MessageLoopDarwin()
   FML_DCHECK(delayed_wake_timer_ != nullptr);
   CFRunLoopAddTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
   // Register mode with only this timer for use in FlutterKeyboardManager
-  CFRunLoopAddTimer(loop_, delayed_wake_timer_, (CFStringRef) @"messageloop");
+  CFRunLoopAddTimer(loop_, delayed_wake_timer_, kCFRunLoopMode);
 }
 
 MessageLoopDarwin::~MessageLoopDarwin() {
   CFRunLoopTimerInvalidate(delayed_wake_timer_);
   CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
-  CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, (CFStringRef) @"messageloop");
+  CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, kCFRunLoopMode);
 }
 
 void MessageLoopDarwin::Run() {

@@ -8,6 +8,7 @@
 #import <XCTest/XCTest.h>
 #include <_types/_uint32_t.h>
 
+#include "flutter/fml/platform/darwin/message_loop_darwin.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKeyEvents.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h"
@@ -105,7 +106,7 @@ typedef BOOL (^BoolGetter)();
         FlutterAsyncKeyCallback callback;
         [invocation getArgument:&press atIndex:2];
         [invocation getArgument:&callback atIndex:3];
-        CFRunLoopPerformBlock(CFRunLoopGetCurrent(), (CFStringRef) @"messageloop", ^() {
+        CFRunLoopPerformBlock(CFRunLoopGetCurrent(), fml::MessageLoopDarwin::kCFRunLoopMode, ^() {
           callbackSetter(press, callback);
         });
       }));
@@ -340,7 +341,7 @@ typedef BOOL (^BoolGetter)();
       });
   CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer1, kCFRunLoopCommonModes);
 
-  // Add the callbacks to the CFRunLoop with messageloop mode
+  // Add the callbacks to the CFRunLoop with mode kCFRunLoopMode
   // This allows them to interrupt the loop started within handlePress
   CFRunLoopTimerRef timer2 = CFRunLoopTimerCreateWithHandler(
       kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 2, 0, 0, 0, ^(CFRunLoopTimerRef timerRef) {
@@ -349,7 +350,7 @@ typedef BOOL (^BoolGetter)();
         XCTAssertTrue(key2Callback == nil);
         key1Callback(false);
       });
-  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer2, (CFStringRef) @"messageloop");
+  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer2, fml::MessageLoopDarwin::kCFRunLoopMode);
   CFRunLoopTimerRef timer3 = CFRunLoopTimerCreateWithHandler(
       kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 3, 0, 0, 0, ^(CFRunLoopTimerRef timerRef) {
         // Both keys should be processed by now
@@ -357,7 +358,7 @@ typedef BOOL (^BoolGetter)();
         XCTAssertTrue(key2Callback != nil);
         key2Callback(false);
       });
-  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer3, (CFStringRef) @"messageloop");
+  CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer3, fml::MessageLoopDarwin::kCFRunLoopMode);
 
   // Start a nested CFRunLoop so we can wait for both presses to complete before exiting the test
   CFRunLoopRun();
