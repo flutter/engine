@@ -135,7 +135,7 @@ void TextInputManagerWin32::AbortComposing() {
 
   ImmContext imm_context(window_handle_);
   if (imm_context.IsValid()) {
-      // Cancel composing and close the candidates window.
+    // Cancel composing and close the candidates window.
     ::ImmNotifyIME(imm_context.get(), NI_COMPOSITIONSTR, CPS_CANCEL, 0);
     ::ImmNotifyIME(imm_context.get(), NI_CLOSECANDIDATE, 0, 0);
 
