@@ -56,6 +56,9 @@ void VsyncWaiterIOS::AwaitVSync() {
       [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
     };
     display_link_.get().paused = YES;
+    if (@available(iOS 15.0, *)) {
+      [display_link_.get() setPreferredFrameRateRange:CAFrameRateRangeMake(60, 120, 120)];
+    }
 
     task_runner->PostTask([client = [self retain]]() {
       [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
