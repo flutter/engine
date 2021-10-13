@@ -32,9 +32,12 @@ static std::unique_ptr<std::vector<uint8_t>> CreateResponse(bool handled) {
 class EmptyTextInputPluginDelegate : public TextInputPluginDelegate {
  public:
   void OnCursorRectUpdated(const Rect& rect) override {}
-  void OnResetImeComposing() override { ime_was_reset = true; }
+  void OnResetImeComposing() override { ime_was_reset_ = true; }
 
-  bool ime_was_reset = false;
+  bool ime_was_reset() const { return ime_was_reset_; }
+
+ private:
+  bool ime_was_reset_ = false;
 };
 }  // namespace
 
@@ -75,7 +78,7 @@ TEST(TextInputPluginTest, ClearClientResetsComposing) {
   auto message = codec.EncodeMethodCall({"TextInput.clearClient", nullptr});
   messenger.SimulateEngineMessage("flutter/textinput", message->data(),
                                   message->size(), reply_handler);
-  EXPECT_TRUE(delegate.ime_was_reset);
+  EXPECT_TRUE(delegate.ime_was_reset());
 }
 
 }  // namespace testing
