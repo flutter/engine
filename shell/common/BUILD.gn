@@ -167,7 +167,6 @@ if (enable_unittests) {
       ":shell_unittests_fixtures",
       "//flutter/benchmarking",
       "//flutter/flow",
-      "//flutter/shell/gpu:gpu_surface_software",
       "//flutter/testing:dart",
       "//flutter/testing:fixture_test",
       "//flutter/testing:testing_lib",
