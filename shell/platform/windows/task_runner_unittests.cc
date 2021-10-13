@@ -22,11 +22,12 @@ class MockTaskRunner : public TaskRunner {
 
   virtual bool RunsTasksOnCurrentThread() const override { return true; }
 
-  void DoProcessTasks() { ProcessTasks(); }
+  void SimulateTimerAwake() { ProcessTasks(); }
 
  protected:
   virtual void WakeUp() override {
-    // Do nothing to avoid processing tasks immediately.
+    // Do nothing to avoid processing tasks immediately after the tasks is
+    // posted.
   }
 };
 
@@ -37,42 +38,52 @@ uint64_t MockGetCurrentTime() {
 }  // namespace
 
 TEST(TaskRunnerTest, MaybeExecuteTaskWithExactOrder) {
-  std::vector<uint64_t> executed_order;
-  auto runner = MockTaskRunner(
-      MockGetCurrentTime, [&executed_order](const FlutterTask* expired_task) {
-        executed_order.push_back(expired_task->task);
-      });
+  std::vector<uint64_t> executed_task_order;
+  auto runner =
+      MockTaskRunner(MockGetCurrentTime,
+                     [&executed_task_order](const FlutterTask* expired_task) {
+                       executed_task_order.push_back(expired_task->task);
+                     });
 
-  uint64_t time_1 = MockGetCurrentTime();
-  runner.PostFlutterTask(FlutterTask{nullptr, 1}, time_1);
-  runner.PostFlutterTask(FlutterTask{nullptr, 2}, time_1);
-  runner.PostTask([&executed_order]() { executed_order.push_back(3); });
-  runner.PostTask([&executed_order]() { executed_order.push_back(4); });
+  uint64_t time_now = MockGetCurrentTime();
 
-  runner.DoProcessTasks();
+  runner.PostFlutterTask(FlutterTask{nullptr, 1}, time_now);
+  runner.PostFlutterTask(FlutterTask{nullptr, 2}, time_now);
+  runner.PostTask(
+      [&executed_task_order]() { executed_task_order.push_back(3); });
+  runner.PostTask(
+      [&executed_task_order]() { executed_task_order.push_back(4); });
 
-  std::vector<uint64_t> expect{1, 2, 3, 4};
-  EXPECT_EQ(executed_order, expect);
+  runner.SimulateTimerAwake();
+
+  std::vector<uint64_t> posted_task_order{1, 2, 3, 4};
+  EXPECT_EQ(executed_task_order, posted_task_order);
 }
 
 TEST(TaskRunnerTest, MaybeExecuteTaskOnlyExpired) {
-  std::vector<uint64_t> executed_order;
+  std::set<uint64_t> executed_task;
   auto runner = MockTaskRunner(
-      MockGetCurrentTime, [&executed_order](const FlutterTask* expired_task) {
-        executed_order.push_back(expired_task->task);
+      MockGetCurrentTime, [&executed_task](const FlutterTask* expired_task) {
+        executed_task.insert(expired_task->task);
       });
 
-  uint64_t time_1 = MockGetCurrentTime();
-  runner.PostFlutterTask(FlutterTask{nullptr, 1}, time_1);
-  runner.PostFlutterTask(FlutterTask{nullptr, 2}, time_1 + 100000);
+  uint64_t time_now = MockGetCurrentTime();
 
-  runner.DoProcessTasks();
+  uint64_t task_expired_before_now = 1;
+  uint64_t time_before_now = time_now - 10000;
+  runner.PostFlutterTask(FlutterTask{nullptr, task_expired_before_now},
+                         time_before_now);
 
-  std::vector<uint64_t> expect{1};
-  EXPECT_EQ(executed_order, expect);
+  uint64_t task_expired_after_now = 2;
+  uint64_t time_after_now = time_now + 10000;
+  runner.PostFlutterTask(FlutterTask{nullptr, task_expired_after_now},
+                         time_after_now);
+
+  runner.SimulateTimerAwake();
+
+  std::set<uint64_t> only_task_expired_before_now{task_expired_before_now};
+  EXPECT_EQ(executed_task, only_task_expired_before_now);
 }
-
-// TEST(TaskRunnerTest, TimerAwakeAfterTheDuration) {}
 
 }  // namespace testing
 }  // namespace flutter
