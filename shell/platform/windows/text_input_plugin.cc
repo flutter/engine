@@ -147,12 +147,12 @@ void TextInputPlugin::HandleMethodCall(
   if (method.compare(kShowMethod) == 0 || method.compare(kHideMethod) == 0) {
     // These methods are no-ops.
   } else if (method.compare(kClearClientMethod) == 0) {
-    if (active_model_->composing()) {
+    if (active_model_ != nullptr && active_model_->composing()) {
       active_model_->CommitComposing();
       active_model_->EndComposing();
       SendStateUpdate(*active_model_);
-      delegate_->OnResetImeComposing();
     }
+    delegate_->OnResetImeComposing();
     active_model_ = nullptr;
   } else if (method.compare(kSetClientMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
