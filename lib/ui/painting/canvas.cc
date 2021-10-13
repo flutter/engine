@@ -94,19 +94,28 @@ Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas) {}
 Canvas::~Canvas() {}
 
 void Canvas::save() {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->save();
+  } else if (canvas_) {
+    canvas_->save();
   }
-  canvas_->save();
 }
 
 void Canvas::saveLayerWithoutBounds(const Paint& paint,
                                     const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    bool restore_with_paint =
+        paint.sync_to(builder(),
+                      DisplayListAttributeFlags::kSaveLayerWithPaintFlags);
+    FML_DCHECK(restore_with_paint);
+    TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+    builder()->saveLayer(nullptr, restore_with_paint);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+    canvas_->saveLayer(nullptr, paint.paint(sk_paint));
   }
-  TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
-  canvas_->saveLayer(nullptr, paint.paint());
 }
 
 void Canvas::saveLayer(double left,
@@ -115,64 +124,85 @@ void Canvas::saveLayer(double left,
                        double bottom,
                        const Paint& paint,
                        const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
-  }
-  TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+  FML_DCHECK(paint.isNotNull());
   SkRect bounds = SkRect::MakeLTRB(left, top, right, bottom);
-  canvas_->saveLayer(&bounds, paint.paint());
+  if (display_list_recorder_) {
+    bool restore_with_paint =
+        paint.sync_to(builder(),
+                      DisplayListAttributeFlags::kSaveLayerWithPaintFlags);
+    FML_DCHECK(restore_with_paint);
+    TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+    builder()->saveLayer(&bounds, restore_with_paint);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+    canvas_->saveLayer(&bounds, paint.paint(sk_paint));
+  }
 }
 
 void Canvas::restore() {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->restore();
+  } else if (canvas_) {
+    canvas_->restore();
   }
-  canvas_->restore();
 }
 
 int Canvas::getSaveCount() {
-  if (!canvas_) {
+  if (display_list_recorder_) {
+    return builder()->getSaveCount();
+  } else if (canvas_) {
+    return canvas_->getSaveCount();
+  } else {
     return 0;
   }
-  return canvas_->getSaveCount();
 }
 
 void Canvas::translate(double dx, double dy) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->translate(dx, dy);
+  } else if (canvas_) {
+    canvas_->translate(dx, dy);
   }
-  canvas_->translate(dx, dy);
 }
 
 void Canvas::scale(double sx, double sy) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->scale(sx, sy);
+  } else if (canvas_) {
+    canvas_->scale(sx, sy);
   }
-  canvas_->scale(sx, sy);
 }
 
 void Canvas::rotate(double radians) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->rotate(radians * 180.0 / M_PI);
+  } if (canvas_) {
+    canvas_->rotate(radians * 180.0 / M_PI);
   }
-  canvas_->rotate(radians * 180.0 / M_PI);
 }
 
 void Canvas::skew(double sx, double sy) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->skew(sx, sy);
+  } else if (canvas_) {
+    canvas_->skew(sx, sy);
   }
-  canvas_->skew(sx, sy);
 }
 
 void Canvas::transform(const tonic::Float64List& matrix4) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->transformFullPerspective(
+        matrix4[ 0], matrix4[ 1], matrix4[ 2], matrix4[ 3],
+        matrix4[ 4], matrix4[ 5], matrix4[ 6], matrix4[ 7],
+        matrix4[ 8], matrix4[ 9], matrix4[10], matrix4[11],
+        matrix4[12], matrix4[13], matrix4[14], matrix4[15]);
+  } else if (canvas_) {
+    canvas_->concat(SkM44(matrix4[0], matrix4[4], matrix4[8], matrix4[12],
+                          matrix4[1], matrix4[5], matrix4[9], matrix4[13],
+                          matrix4[2], matrix4[6], matrix4[10], matrix4[14],
+                          matrix4[3], matrix4[7], matrix4[11], matrix4[15]));
   }
-  canvas_->concat(SkM44(matrix4[0], matrix4[4], matrix4[8], matrix4[12],
-                        matrix4[1], matrix4[5], matrix4[9], matrix4[13],
-                        matrix4[2], matrix4[6], matrix4[10], matrix4[14],
-                        matrix4[3], matrix4[7], matrix4[11], matrix4[15]));
 }
 
 void Canvas::clipRect(double left,
@@ -181,37 +211,42 @@ void Canvas::clipRect(double left,
                       double bottom,
                       SkClipOp clipOp,
                       bool doAntiAlias) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp,
+                        doAntiAlias);
+  } else if (canvas_) {
+    canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp,
+                      doAntiAlias);
   }
-  canvas_->clipRect(SkRect::MakeLTRB(left, top, right, bottom), clipOp,
-                    doAntiAlias);
 }
 
 void Canvas::clipRRect(const RRect& rrect, bool doAntiAlias) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->clipRRect(rrect.sk_rrect, SkClipOp::kIntersect, doAntiAlias);
+  } else if (canvas_) {
+    canvas_->clipRRect(rrect.sk_rrect, doAntiAlias);
   }
-  canvas_->clipRRect(rrect.sk_rrect, doAntiAlias);
 }
 
 void Canvas::clipPath(const CanvasPath* path, bool doAntiAlias) {
-  if (!canvas_) {
-    return;
-  }
   if (!path) {
     Dart_ThrowException(
         ToDart("Canvas.clipPath called with non-genuine Path."));
     return;
   }
-  canvas_->clipPath(path->path(), doAntiAlias);
+  if (display_list_recorder_) {
+    builder()->clipPath(path->path(), SkClipOp::kIntersect, doAntiAlias);
+  } else if (canvas_) {
+    canvas_->clipPath(path->path(), doAntiAlias);
+  }
 }
 
 void Canvas::drawColor(SkColor color, SkBlendMode blend_mode) {
-  if (!canvas_) {
-    return;
+  if (display_list_recorder_) {
+    builder()->drawColor(color, blend_mode);
+  } else if (canvas_) {
+    canvas_->drawColor(color, blend_mode);
   }
-  canvas_->drawColor(color, blend_mode);
 }
 
 void Canvas::drawLine(double x1,
@@ -220,24 +255,38 @@ void Canvas::drawLine(double x1,
                       double y2,
                       const Paint& paint,
                       const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawLineFlags);
+    builder()->drawLine(SkPoint::Make(x1, y1), SkPoint::Make(x2, y2));
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawLine(x1, y1, x2, y2, *paint.paint(sk_paint));
   }
-  canvas_->drawLine(x1, y1, x2, y2, *paint.paint());
 }
 
 void Canvas::drawPaint(const Paint& paint, const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawPaintFlags);
+    sk_sp<SkImageFilter> filter = builder()->getImageFilter();
+    if (filter && !filter->asColorFilter(nullptr)) {
+      // drawPaint does an implicit saveLayer if an SkImageFilter is
+      // present that cannot be replaced by an SkColorFilter.
+      TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+    }
+    builder()->drawPaint();
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    paint.paint(sk_paint);
+    SkImageFilter* filter = sk_paint.getImageFilter();
+    if (filter && !filter->asColorFilter(nullptr)) {
+      // drawPaint does an implicit saveLayer if an SkImageFilter is
+      // present that cannot be replaced by an SkColorFilter.
+      TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
+    }
+    canvas_->drawPaint(sk_paint);
   }
-  const SkPaint* sk_paint = paint.paint();
-  SkImageFilter* filter = sk_paint->getImageFilter();
-  if (filter && !filter->asColorFilter(nullptr)) {
-    // drawPaint does an implicit saveLayer if an SkImageFilter is
-    // present that cannot be replaced by an SkColorFilter.
-    TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
-  }
-  canvas_->drawPaint(*paint.paint());
 }
 
 void Canvas::drawRect(double left,
@@ -246,29 +295,41 @@ void Canvas::drawRect(double left,
                       double bottom,
                       const Paint& paint,
                       const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawRectFlags);
+    builder()->drawRect(SkRect::MakeLTRB(left, top, right, bottom));
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawRect(SkRect::MakeLTRB(left, top, right, bottom), *paint.paint(sk_paint));
   }
-  canvas_->drawRect(SkRect::MakeLTRB(left, top, right, bottom), *paint.paint());
 }
 
 void Canvas::drawRRect(const RRect& rrect,
                        const Paint& paint,
                        const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawRRectFlags);
+    builder()->drawRRect(rrect.sk_rrect);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawRRect(rrect.sk_rrect, *paint.paint(sk_paint));
   }
-  canvas_->drawRRect(rrect.sk_rrect, *paint.paint());
 }
 
 void Canvas::drawDRRect(const RRect& outer,
                         const RRect& inner,
                         const Paint& paint,
                         const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawDRRectFlags);
+    builder()->drawDRRect(outer.sk_rrect, inner.sk_rrect);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawDRRect(outer.sk_rrect, inner.sk_rrect, *paint.paint(sk_paint));
   }
-  canvas_->drawDRRect(outer.sk_rrect, inner.sk_rrect, *paint.paint());
 }
 
 void Canvas::drawOval(double left,
@@ -277,10 +338,14 @@ void Canvas::drawOval(double left,
                       double bottom,
                       const Paint& paint,
                       const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawOvalFlags);
+    builder()->drawOval(SkRect::MakeLTRB(left, top, right, bottom));
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawOval(SkRect::MakeLTRB(left, top, right, bottom), *paint.paint(sk_paint));
   }
-  canvas_->drawOval(SkRect::MakeLTRB(left, top, right, bottom), *paint.paint());
 }
 
 void Canvas::drawCircle(double x,
@@ -288,10 +353,14 @@ void Canvas::drawCircle(double x,
                         double radius,
                         const Paint& paint,
                         const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawCircleFlags);
+    builder()->drawCircle(SkPoint::Make(x, y), radius);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawCircle(x, y, radius, *paint.paint(sk_paint));
   }
-  canvas_->drawCircle(x, y, radius, *paint.paint());
 }
 
 void Canvas::drawArc(double left,
@@ -303,26 +372,36 @@ void Canvas::drawArc(double left,
                      bool useCenter,
                      const Paint& paint,
                      const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawArcFlags);
+    builder()->drawArc(SkRect::MakeLTRB(left, top, right, bottom),
+                       startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI,
+                       useCenter);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawArc(SkRect::MakeLTRB(left, top, right, bottom),
+                    startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI,
+                    useCenter, *paint.paint(sk_paint));
   }
-  canvas_->drawArc(SkRect::MakeLTRB(left, top, right, bottom),
-                   startAngle * 180.0 / M_PI, sweepAngle * 180.0 / M_PI,
-                   useCenter, *paint.paint());
 }
 
 void Canvas::drawPath(const CanvasPath* path,
                       const Paint& paint,
                       const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
-  }
+  FML_DCHECK(paint.isNotNull());
   if (!path) {
     Dart_ThrowException(
         ToDart("Canvas.drawPath called with non-genuine Path."));
     return;
   }
-  canvas_->drawPath(path->path(), *paint.paint());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawPathFlags);
+    builder()->drawPath(path->path());
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawPath(path->path(), *paint.paint(sk_paint));
+  }
 }
 
 void Canvas::drawImage(const CanvasImage* image,
@@ -331,16 +410,21 @@ void Canvas::drawImage(const CanvasImage* image,
                        const Paint& paint,
                        const PaintData& paint_data,
                        int filterQualityIndex) {
-  if (!canvas_) {
-    return;
-  }
+  FML_DCHECK(paint.isNotNull());
   if (!image) {
     Dart_ThrowException(
         ToDart("Canvas.drawImage called with non-genuine Image."));
     return;
   }
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  canvas_->drawImage(image->image(), x, y, sampling, paint.paint());
+  if (display_list_recorder_) {
+    bool with_attributes =
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawImageWithPaintFlags);
+    builder()->drawImage(image->image(), SkPoint::Make(x, y), sampling, with_attributes);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawImage(image->image(), x, y, sampling, paint.paint(sk_paint));
+  }
 }
 
 void Canvas::drawImageRect(const CanvasImage* image,
@@ -355,9 +439,7 @@ void Canvas::drawImageRect(const CanvasImage* image,
                            const Paint& paint,
                            const PaintData& paint_data,
                            int filterQualityIndex) {
-  if (!canvas_) {
-    return;
-  }
+  FML_DCHECK(paint.isNotNull());
   if (!image) {
     Dart_ThrowException(
         ToDart("Canvas.drawImageRect called with non-genuine Image."));
@@ -366,8 +448,16 @@ void Canvas::drawImageRect(const CanvasImage* image,
   SkRect src = SkRect::MakeLTRB(src_left, src_top, src_right, src_bottom);
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
-  canvas_->drawImageRect(image->image(), src, dst, sampling, paint.paint(),
-                         SkCanvas::kFast_SrcRectConstraint);
+  if (display_list_recorder_) {
+    bool with_attributes =
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawImageRectWithPaintFlags);
+    builder()->drawImageRect(image->image(), src, dst, sampling, with_attributes,
+                             SkCanvas::kFast_SrcRectConstraint);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawImageRect(image->image(), src, dst, sampling, paint.paint(sk_paint),
+                          SkCanvas::kFast_SrcRectConstraint);
+  }
 }
 
 void Canvas::drawImageNine(const CanvasImage* image,
@@ -382,9 +472,7 @@ void Canvas::drawImageNine(const CanvasImage* image,
                            const Paint& paint,
                            const PaintData& paint_data,
                            int bitmapSamplingIndex) {
-  if (!canvas_) {
-    return;
-  }
+  FML_DCHECK(paint.isNotNull());
   if (!image) {
     Dart_ThrowException(
         ToDart("Canvas.drawImageNine called with non-genuine Image."));
@@ -397,35 +485,32 @@ void Canvas::drawImageNine(const CanvasImage* image,
   SkRect dst = SkRect::MakeLTRB(dst_left, dst_top, dst_right, dst_bottom);
   auto filter = ImageFilter::FilterModeFromIndex(bitmapSamplingIndex);
   if (display_list_recorder_) {
-    // SkCanvas turns a simple 2-rect DrawImageNine operation into a
-    // drawImageLattice operation which has arrays to allocate and
-    // pass along. For simplicity, we will bypass the canvas and ask
-    // the recorder to record our paint attributes and record a much
-    // simpler DrawImageNineOp record directly.
-    display_list_recorder_->RecordPaintAttributes(
-        paint.paint(), DisplayListCanvasRecorder::DrawType::kImageOpType);
-    builder()->drawImageNine(image->image(), icenter, dst, filter, true);
-  } else {
+    bool with_attributes =
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawImageNineWithPaintFlags);
+    builder()->drawImageNine(image->image(), icenter, dst, filter, with_attributes);
+  } else if (canvas_) {
+    SkPaint sk_paint;
     canvas_->drawImageNine(image->image().get(), icenter, dst, filter,
-                           paint.paint());
+                           paint.paint(sk_paint));
   }
 }
 
 void Canvas::drawPicture(Picture* picture) {
-  if (!canvas_) {
-    return;
-  }
   if (!picture) {
     Dart_ThrowException(
         ToDart("Canvas.drawPicture called with non-genuine Picture."));
     return;
   }
   if (picture->picture()) {
-    canvas_->drawPicture(picture->picture().get());
+    if (display_list_recorder_) {
+      builder()->drawPicture(picture->picture(), nullptr, false);
+    } else if (canvas_) {
+      canvas_->drawPicture(picture->picture().get());
+    }
   } else if (picture->display_list()) {
     if (display_list_recorder_) {
       builder()->drawDisplayList(picture->display_list());
-    } else {
+    } else if (canvas_) {
       picture->display_list()->RenderTo(canvas_);
     }
   } else {
@@ -437,32 +522,51 @@ void Canvas::drawPoints(const Paint& paint,
                         const PaintData& paint_data,
                         SkCanvas::PointMode point_mode,
                         const tonic::Float32List& points) {
-  if (!canvas_) {
-    return;
-  }
-
   static_assert(sizeof(SkPoint) == sizeof(float) * 2,
                 "SkPoint doesn't use floats.");
 
-  canvas_->drawPoints(point_mode,
-                      points.num_elements() / 2,  // SkPoints have two floats.
-                      reinterpret_cast<const SkPoint*>(points.data()),
-                      *paint.paint());
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    switch (point_mode) {
+      case SkCanvas::kPoints_PointMode:
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawPointsAsPointsFlags);
+        break;
+      case SkCanvas::kLines_PointMode:
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawPointsAsLinesFlags);
+        break;
+      case SkCanvas::kPolygon_PointMode:
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawPointsAsPolygonFlags);
+        break;
+    }
+    builder()->drawPoints(point_mode,
+                          points.num_elements() / 2,  // SkPoints have two floats.
+                          reinterpret_cast<const SkPoint*>(points.data()));
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawPoints(point_mode,
+                        points.num_elements() / 2,  // SkPoints have two floats.
+                        reinterpret_cast<const SkPoint*>(points.data()),
+                        *paint.paint(sk_paint));
+  }
 }
 
 void Canvas::drawVertices(const Vertices* vertices,
                           SkBlendMode blend_mode,
                           const Paint& paint,
                           const PaintData& paint_data) {
-  if (!canvas_) {
-    return;
-  }
   if (!vertices) {
     Dart_ThrowException(
         ToDart("Canvas.drawVertices called with non-genuine Vertices."));
     return;
   }
-  canvas_->drawVertices(vertices->vertices(), blend_mode, *paint.paint());
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    paint.sync_to(builder(), DisplayListAttributeFlags::kDrawVerticesFlags);
+    builder()->drawVertices(vertices->vertices(), blend_mode);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawVertices(vertices->vertices(), blend_mode, *paint.paint(sk_paint));
+  }
 }
 
 void Canvas::drawAtlas(const Paint& paint,
@@ -474,9 +578,6 @@ void Canvas::drawAtlas(const Paint& paint,
                        const tonic::Int32List& colors,
                        SkBlendMode blend_mode,
                        const tonic::Float32List& cull_rect) {
-  if (!canvas_) {
-    return;
-  }
   if (!atlas) {
     Dart_ThrowException(
         ToDart("Canvas.drawAtlas or Canvas.drawRawAtlas called with "
@@ -493,13 +594,27 @@ void Canvas::drawAtlas(const Paint& paint,
 
   auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
 
-  canvas_->drawAtlas(
-      skImage.get(), reinterpret_cast<const SkRSXform*>(transforms.data()),
-      reinterpret_cast<const SkRect*>(rects.data()),
-      reinterpret_cast<const SkColor*>(colors.data()),
-      rects.num_elements() / 4,  // SkRect have four floats.
-      blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
-      paint.paint());
+  FML_DCHECK(paint.isNotNull());
+  if (display_list_recorder_) {
+    bool with_attributes =
+        paint.sync_to(builder(), DisplayListAttributeFlags::kDrawAtlasWithPaintFlags);
+    builder()->drawAtlas(
+        skImage, reinterpret_cast<const SkRSXform*>(transforms.data()),
+        reinterpret_cast<const SkRect*>(rects.data()),
+        reinterpret_cast<const SkColor*>(colors.data()),
+        rects.num_elements() / 4,  // SkRect have four floats.
+        blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
+        with_attributes);
+  } else if (canvas_) {
+    SkPaint sk_paint;
+    canvas_->drawAtlas(
+        skImage.get(), reinterpret_cast<const SkRSXform*>(transforms.data()),
+        reinterpret_cast<const SkRect*>(rects.data()),
+        reinterpret_cast<const SkColor*>(colors.data()),
+        rects.num_elements() / 4,  // SkRect have four floats.
+        blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
+        paint.paint(sk_paint));
+  }
 }
 
 void Canvas::drawShadow(const CanvasPath* path,
@@ -526,7 +641,7 @@ void Canvas::drawShadow(const CanvasPath* path,
     // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
     builder()->drawShadow(path->path(), color, elevation, transparentOccluder,
                           dpr);
-  } else {
+  } else if (canvas_) {
     flutter::PhysicalShapeLayer::DrawShadow(
         canvas_, path->path(), color, elevation, transparentOccluder, dpr);
   }
@@ -534,6 +649,7 @@ void Canvas::drawShadow(const CanvasPath* path,
 
 void Canvas::Invalidate() {
   canvas_ = nullptr;
+  display_list_recorder_ = nullptr;
   if (dart_wrapper()) {
     ClearDartWrapper();
   }
