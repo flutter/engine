@@ -97,6 +97,12 @@ void DisplayListLayer::Preroll(PrerollContext* context,
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
     cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
                    offset_);
+    if (!matrix.hasPerspective()) {
+      DisplayListCacheDispatcher dispatcher(context, cache);
+      dispatcher.transform2DAffine(matrix[0], matrix[1], matrix[2],  //
+                                   matrix[3], matrix[4], matrix[5]);
+      disp_list->Dispatch(dispatcher);
+    }
   }
 
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
@@ -121,7 +127,33 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     return;
   }
 
-  display_list()->RenderTo(context.leaf_nodes_canvas);
+  DisplayListCanvasDispatcher dispatcher(context.leaf_nodes_canvas,
+                                         context.raster_cache);
+  display_list()->Dispatch(dispatcher);
+}
+
+void DisplayListCacheDispatcher::drawPicture(const sk_sp<SkPicture> picture,
+                                             const SkMatrix* picture_matrix,
+                                             bool render_with_attributes) {
+  if (render_with_attributes) {
+    return;
+  }
+  TRACE_EVENT0("flutter",
+               "DisplayListLayer::EmbeddedPicture::RasterCache (Preroll)");
+  SkMatrix cache_matrix = matrix();
+  if (picture_matrix != nullptr) {
+    cache_matrix.preConcat(*picture_matrix);
+  }
+  cache_->Prepare(context_, picture.get(), false, false, cache_matrix,
+                  SkPoint::Make(0, 0));
+}
+
+void DisplayListCacheDispatcher::drawDisplayList(
+    const sk_sp<DisplayList> display_list) {
+  TRACE_EVENT0("flutter",
+               "DisplayListLayer::EmbeddedDisplayList::RasterCache (Preroll)");
+  cache_->Prepare(context_, display_list.get(), false, false, matrix(),
+                  SkPoint::Make(0, 0));
 }
 
 }  // namespace flutter

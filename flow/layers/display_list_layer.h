@@ -6,10 +6,36 @@
 #define FLUTTER_FLOW_LAYERS_DISPLAY_LIST_LAYER_H_
 
 #include "flutter/flow/display_list.h"
+#include "flutter/flow/display_list_utils.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/skia_gpu_object.h"
 
 namespace flutter {
+
+class DisplayListCacheDispatcher : public virtual Dispatcher,
+                                   public SkMatrixDispatchHelper,
+                                   public IgnoreAttributeDispatchHelper,
+                                   public IgnoreClipDispatchHelper,
+                                   public IgnoreRenderingDispatchHelper {
+ public:
+  DisplayListCacheDispatcher(PrerollContext* context, RasterCache* cache)
+      : context_(context), cache_(cache) {}
+
+  void save() override { SkMatrixDispatchHelper::save(); }
+  void saveLayer(const SkRect* bounds, bool restore_with_paint) override {
+    SkMatrixDispatchHelper::save();
+  }
+  void restore() override { SkMatrixDispatchHelper::restore(); }
+
+  void drawPicture(const sk_sp<SkPicture> picture,
+                   const SkMatrix* matrix,
+                   bool render_with_attributes) override;
+  void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+
+ private:
+  PrerollContext* context_;
+  RasterCache* cache_;
+};
 
 class DisplayListLayer : public Layer {
  public:

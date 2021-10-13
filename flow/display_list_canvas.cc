@@ -170,11 +170,31 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<SkImage> atlas,
 void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* matrix,
                                               bool render_with_attributes) {
+  if (cache_ && !render_with_attributes) {
+    SkAutoCanvasRestore save(canvas_, true);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    canvas_->setMatrix(
+        RasterCache::GetIntegralTransCTM(canvas_->getTotalMatrix()));
+#endif
+    if (cache_->Draw(*picture, *canvas_)) {
+      return;
+    }
+  }
   canvas_->drawPicture(picture, matrix,
                        render_with_attributes ? &paint() : nullptr);
 }
 void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
+  if (cache_) {
+    SkAutoCanvasRestore save(canvas_, true);
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+    canvas_->setMatrix(
+        RasterCache::GetIntegralTransCTM(canvas_->getTotalMatrix()));
+#endif
+    if (cache_->Draw(*display_list, *canvas_)) {
+      return;
+    }
+  }
   int save_count = canvas_->save();
   {
     DisplayListCanvasDispatcher dispatcher(canvas_);

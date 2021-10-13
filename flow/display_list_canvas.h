@@ -7,6 +7,7 @@
 
 #include "flutter/flow/display_list.h"
 #include "flutter/flow/display_list_utils.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/fml/logging.h"
 
 #include "third_party/skia/include/core/SkCanvasVirtualEnforcer.h"
@@ -27,7 +28,9 @@ namespace flutter {
 class DisplayListCanvasDispatcher : public virtual Dispatcher,
                                     public SkPaintDispatchHelper {
  public:
-  DisplayListCanvasDispatcher(SkCanvas* canvas) : canvas_(canvas) {}
+  DisplayListCanvasDispatcher(SkCanvas* canvas,
+                              const RasterCache* cache = nullptr)
+      : canvas_(canvas), cache_(cache) {}
 
   void save() override;
   void restore() override;
@@ -115,6 +118,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
 
  private:
   SkCanvas* canvas_;
+  const RasterCache* cache_;
 };
 
 // Receives all methods on SkCanvas and sends them to a DisplayListBuilder
