@@ -79,6 +79,8 @@ source_set("flutter_shell_native_src") {
     "flutter_main.cc",
     "flutter_main.h",
     "library_loader.cc",
+    "platform_message_handler.cc",
+    "platform_message_handler.h",
     "platform_message_response_android.cc",
     "platform_message_response_android.h",
     "platform_view_android.cc",

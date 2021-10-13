@@ -59,21 +59,25 @@ PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    bool use_software_rendering)
+    bool use_software_rendering,
+    const std::shared_ptr<PlatformMessageHandler>& platform_message_handler)
     : PlatformViewAndroid(delegate,
                           std::move(task_runners),
                           std::move(jni_facade),
-                          CreateAndroidContext(use_software_rendering)) {}
+                          CreateAndroidContext(use_software_rendering),
+                          platform_message_handler) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-    const std::shared_ptr<flutter::AndroidContext>& android_context)
+    const std::shared_ptr<flutter::AndroidContext>& android_context,
+    const std::shared_ptr<PlatformMessageHandler>& platform_message_handler)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
       android_context_(std::move(android_context)),
-      platform_view_android_delegate_(jni_facade) {
+      platform_view_android_delegate_(jni_facade),
+      platform_message_handler_(platform_message_handler) {
   // TODO(dnfield): always create a pbuffer surface for background use to
   // resolve https://github.com/flutter/flutter/issues/73675
   if (android_context_) {
@@ -190,63 +194,11 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
                                                  std::move(response)));
 }
 
-void PlatformViewAndroid::InvokePlatformMessageResponseCallback(
-    JNIEnv* env,
-    jint response_id,
-    jobject java_response_data,
-    jint java_response_position) {
-  // Called from any thread.
-  if (!response_id) {
-    return;
-  }
-  // TODO(gaaclarke): Move the jump to the ui thread here from
-  // PlatformMessageResponseDart so we won't need to use a mutex anymore.
-  std::unique_lock lock(pending_responses_mutex_);
-  auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
-    return;
-  uint8_t* response_data =
-      static_cast<uint8_t*>(env->GetDirectBufferAddress(java_response_data));
-  FML_DCHECK(response_data != nullptr);
-  std::vector<uint8_t> response = std::vector<uint8_t>(
-      response_data, response_data + java_response_position);
-  auto message_response = std::move(it->second);
-  pending_responses_.erase(it);
-  lock.unlock();
-  message_response->Complete(
-      std::make_unique<fml::DataMapping>(std::move(response)));
-}
-
-void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
-    JNIEnv* env,
-    jint response_id) {
-  // Called from any thread.
-  if (!response_id) {
-    return;
-  }
-  std::unique_lock lock(pending_responses_mutex_);
-  auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
-    return;
-  auto message_response = std::move(it->second);
-  pending_responses_.erase(it);
-  lock.unlock();
-  message_response->CompleteEmpty();
-}
-
 // |PlatformView|
 void PlatformViewAndroid::HandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) {
   // Called from the ui thread.
-  int response_id = next_response_id_++;
-  if (auto response = message->response()) {
-    std::lock_guard lock(pending_responses_mutex_);
-    pending_responses_[response_id] = response;
-  }
-  // This call can re-enter in InvokePlatformMessageXxxResponseCallback.
-  jni_facade_->FlutterViewHandlePlatformMessage(std::move(message),
-                                                response_id);
-  message = nullptr;
+  platform_message_handler_->HandlePlatformMessage(std::move(message));
 }
 
 // |PlatformView|
