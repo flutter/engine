@@ -172,6 +172,9 @@ void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                               bool render_with_attributes) {
   if (cache_ && !render_with_attributes) {
     SkAutoCanvasRestore save(canvas_, true);
+    if (matrix) {
+      canvas_->concat(*matrix);
+    }
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     canvas_->setMatrix(
         RasterCache::GetIntegralTransCTM(canvas_->getTotalMatrix()));
