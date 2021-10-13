@@ -1,4 +1,4 @@
-Signature: 25afaa5b5af2c27919ff0f6ac5ae6bdf
+Signature: 42735299c988e8522607f82d0d20513c
 
 UNUSED LICENSES:
 
@@ -723,6 +723,9 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/gpu.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/helper.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/karma.conf.js
 FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/package.json
+FILE: ../../../third_party/skia/experimental/webgpu-bazel/WORKSPACE
+FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
+FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
@@ -2945,6 +2948,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Caps.h
 FILE: ../../../third_party/skia/experimental/graphite/src/CommandBuffer.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/CommandBuffer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Context.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ContextPriv.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ContextPriv.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.cpp
@@ -2954,6 +2959,7 @@ FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.h
+FILE: ../../../third_party/skia/experimental/graphite/src/GpuWorkSubmission.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Recorder.cpp
@@ -2981,6 +2987,7 @@ FILE: ../../../third_party/skia/experimental/graphite/src/TextureInfo.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/BoundsManager.h
+FILE: ../../../third_party/skia/experimental/graphite/src/geom/Rect.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/Shape.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/Shape.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCaps.h
@@ -3004,12 +3011,16 @@ FILE: ../../../third_party/skia/experimental/lowp-basic/lowp_experiments.cpp
 FILE: ../../../third_party/skia/experimental/tskit/bindings/bindings.h
 FILE: ../../../third_party/skia/experimental/tskit/bindings/core.cpp
 FILE: ../../../third_party/skia/experimental/tskit/bindings/extension.cpp
+FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/bindings.cpp
 FILE: ../../../third_party/skia/gm/composecolorfilter.cpp
 FILE: ../../../third_party/skia/gm/crbug_1167277.cpp
 FILE: ../../../third_party/skia/gm/crbug_1174186.cpp
 FILE: ../../../third_party/skia/gm/crbug_1174354.cpp
 FILE: ../../../third_party/skia/gm/crbug_1177833.cpp
+FILE: ../../../third_party/skia/gm/crbug_1257515.cpp
 FILE: ../../../third_party/skia/gm/crop_imagefilter.cpp
+FILE: ../../../third_party/skia/gm/fillrect_gradient.cpp
+FILE: ../../../third_party/skia/gm/hardstop_gradients_many.cpp
 FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/particles.cpp
 FILE: ../../../third_party/skia/include/core/SkBlender.h
@@ -3056,7 +3067,7 @@ FILE: ../../../third_party/skia/src/gpu/geometry/GrInnerFanTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/glx/GrGLMakeNativeInterface_glx.cpp
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlTypesPriv.mm
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrTessTypes.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/TessTypes.h
 FILE: ../../../third_party/skia/src/gpu/v2/Device.cpp
 FILE: ../../../third_party/skia/src/gpu/v2/Device_v2.h
 FILE: ../../../third_party/skia/src/gpu/v2/SurfaceDrawContext.cpp
@@ -4058,9 +4069,9 @@ FILE: ../../../third_party/skia/src/gpu/ops/SmallPathAtlasMgr.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/SmallPathAtlasMgr.h
 FILE: ../../../third_party/skia/src/gpu/ops/SmallPathShapeData.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/SmallPathShapeData.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrMiddleOutPolygonTriangulator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeIterator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrVectorXform.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/MiddleOutPolygonTriangulator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeIterator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/VectorXform.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFTControl.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFTControl.h
 FILE: ../../../third_party/skia/src/opts/SkOpts_skx.cpp
@@ -4169,7 +4180,7 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlPipeline.h
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrCullTest.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/CullTest.h
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
 FILE: ../../../third_party/skia/src/utils/SkOrderedFontMgr.cpp
@@ -5552,8 +5563,8 @@ FILE: ../../../third_party/skia/src/gpu/GrVx.h
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasInstancedHelper.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/StrokeTessellateOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/StrokeTessellateOp.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeHardwareTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeHardwareTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeHardwareTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeHardwareTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrStrokeTessellationShader.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrStrokeTessellationShader.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrStrokeTessellationShader_HardwareImpl.cpp
@@ -5825,15 +5836,15 @@ FILE: ../../../third_party/skia/src/gpu/ops/PathStencilCoverOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/PathStencilCoverOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/PathTessellateOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/PathTessellateOp.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathCurveTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathWedgeTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrPathXform.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator.cpp
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeFixedCountTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/GrStrokeTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/PathCurveTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/PathCurveTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/PathTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/PathWedgeTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/PathWedgeTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/PathXform.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeFixedCountTessellator.cpp
+FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeFixedCountTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrTessellationShader.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.h
