@@ -95,19 +95,16 @@ class EngineImageShader implements ui.ImageShader {
         /// To draw image flipped we set translate and scale and pass
         /// negative width/height to drawImage.
         if (flipX != 1 || flipY != 1) {
-          // ignore: implicit_dynamic_function
-          js_util.callMethod(renderContext, 'scale', <dynamic>[flipX, flipY]);
+          js_util.callMethod<void>(renderContext, 'scale', <dynamic>[flipX, flipY]);
         }
-        // ignore: implicit_dynamic_function
-        js_util.callMethod(renderContext, 'drawImage', <dynamic>[
+        js_util.callMethod<void>(renderContext, 'drawImage', <dynamic>[
           image.imgElement,
           if (x == 0) 0 else -2 * imageWidth,
           if (y == 0) 0 else -2 * imageHeight,
         ]);
         if (flipX != 1 || flipY != 1) {
           /// Restore transform. This is faster than save/restore on context.
-          // ignore: implicit_dynamic_function
-          js_util.callMethod(renderContext, 'scale', <dynamic>[flipX, flipY]);
+          js_util.callMethod<void>(renderContext, 'scale', <dynamic>[flipX, flipY]);
         }
       }
     }
@@ -208,8 +205,7 @@ class EngineImageShader implements ui.ImageShader {
     bufferVertexData(gl, vertices, ui.window.devicePixelRatio);
 
     /// Setup data format for attribute.
-    // ignore: implicit_dynamic_function
-    js_util.callMethod(gl.glContext, 'vertexAttribPointer', <dynamic>[
+    js_util.callMethod<void>(gl.glContext, 'vertexAttribPointer', <dynamic>[
       positionAttributeLocation,
       2,
       gl.kFloat,

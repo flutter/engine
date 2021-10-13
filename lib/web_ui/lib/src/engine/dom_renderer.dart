@@ -109,14 +109,12 @@ class DomRenderer {
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
   bool get windowHasFocus =>
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) as bool;
+      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]);
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState =
-        // ignore: implicit_dynamic_function
-        js_util.getProperty(html.window, _staleHotRestartStore) as List<html.Element?>?;
+        js_util.getProperty(html.window, _staleHotRestartStore);
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <html.Element?>[];
       js_util.setProperty(
@@ -234,8 +232,7 @@ class DomRenderer {
 
   static void setElementTransform(html.Element element, String transformValue) {
     js_util.setProperty(
-      // ignore: implicit_dynamic_function
-      js_util.getProperty(element, 'style') as Object,
+      js_util.getProperty(element, 'style'),
       'transform',
       transformValue,
     );
@@ -456,8 +453,7 @@ class DomRenderer {
 
   // Creates a [HostNode] into a `root` [html.Element].
   HostNode _createHostNode(html.Element root) {
-    // ignore: implicit_dynamic_function
-    if (js_util.getProperty(root, 'attachShadow') != null) {
+    if (js_util.getProperty<dynamic>(root, 'attachShadow') != null) {
       return ShadowDomHostNode(root);
     } else {
       // attachShadow not available, fall back to ElementHostNode.
@@ -527,8 +523,7 @@ class DomRenderer {
       double startAngle,
       double endAngle,
       bool antiClockwise) {
-    // ignore: implicit_dynamic_function
-    _ellipseFeatureDetected ??= js_util.getProperty(context, 'ellipse') != null;
+    _ellipseFeatureDetected ??= js_util.getProperty<dynamic>(context, 'ellipse') != null;
     if (_ellipseFeatureDetected!) {
       context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
           endAngle, antiClockwise);
@@ -654,8 +649,7 @@ class DomRenderer {
   void vibrate(int durationMs) {
     final html.Navigator navigator = html.window.navigator;
     if (js_util.hasProperty(navigator, 'vibrate')) {
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(navigator, 'vibrate', <num>[durationMs]);
+      js_util.callMethod<void>(navigator, 'vibrate', <num>[durationMs]);
     }
   }
 

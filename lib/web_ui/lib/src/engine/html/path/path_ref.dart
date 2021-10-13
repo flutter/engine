@@ -429,10 +429,8 @@ class PathRef {
     resetToSize(verbCount, pointCount, weightCount, additionalReserveVerbs,
         additionalReservePoints);
 
-    // ignore: implicit_dynamic_function
-    js_util.callMethod(_fVerbs, 'set', <dynamic>[ref._fVerbs]);
-    // ignore: implicit_dynamic_function
-    js_util.callMethod(fPoints, 'set', <dynamic>[ref.fPoints]);
+    js_util.callMethod<void>(_fVerbs, 'set', <dynamic>[ref._fVerbs]);
+    js_util.callMethod<void>(fPoints, 'set', <dynamic>[ref.fPoints]);
     if (ref._conicWeights == null) {
       _conicWeights = null;
     } else {
@@ -458,8 +456,7 @@ class PathRef {
     if (newLength > _fPointsCapacity) {
       _fPointsCapacity = newLength + 10;
       final Float32List newPoints = Float32List(_fPointsCapacity * 2);
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(newPoints, 'set', <dynamic>[fPoints]);
+        js_util.callMethod<void>(newPoints, 'set', <dynamic>[fPoints]);
       fPoints = newPoints;
     }
     _fPointsLength = newLength;
@@ -469,8 +466,7 @@ class PathRef {
     if (newLength > _fVerbsCapacity) {
       _fVerbsCapacity = newLength + 8;
       final Uint8List newVerbs = Uint8List(_fVerbsCapacity);
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(newVerbs, 'set', <dynamic>[_fVerbs]);
+        js_util.callMethod<void>(newVerbs, 'set', <dynamic>[_fVerbs]);
       _fVerbs = newVerbs;
     }
     _fVerbsLength = newLength;
@@ -481,8 +477,7 @@ class PathRef {
       _conicWeightsCapacity = newLength + 4;
       final Float32List newWeights = Float32List(_conicWeightsCapacity);
       if (_conicWeights != null) {
-        // ignore: implicit_dynamic_function
-        js_util.callMethod(newWeights, 'set', <dynamic>[_conicWeights]);
+            js_util.callMethod<void>(newWeights, 'set', <dynamic>[_conicWeights]);
       }
       _conicWeights = newWeights;
     }

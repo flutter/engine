@@ -180,8 +180,7 @@ abstract class _BaseAdapter {
     // For native listener, we will need to remove it through native javascript
     // api.
     _nativeListeners.forEach((String eventName, html.EventListener listener) {
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(
+      js_util.callMethod<void>(
         glassPaneElement,
         'removeEventListener', <dynamic>[
           'wheel',
@@ -294,13 +293,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(html.EventListener handler) {
-    // ignore: implicit_dynamic_function
-    final Object eventOptions = js_util.newObject() as Object;
+    final Object eventOptions = js_util.newObject();
     final html.EventListener jsHandler = js.allowInterop((html.Event event) => handler(event));
     _BaseAdapter._nativeListeners['wheel'] = jsHandler;
     js_util.setProperty(eventOptions, 'passive', false);
-    // ignore: implicit_dynamic_function
-    js_util.callMethod(
+    js_util.callMethod<void>(
       glassPaneElement,
       'addEventListener', <dynamic>[
         'wheel',
