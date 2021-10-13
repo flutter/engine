@@ -1,4 +1,4 @@
-Signature: 6e9ed90684a57e54938af86b650cf4e5
+Signature: e6b6835a3b03ab861233c24c4aeff12f
 
 UNUSED LICENSES:
 
@@ -10517,7 +10517,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/objectpool_
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/persistent_handles.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/ports.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/timeline_page.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/view_footer.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/sample_profile/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.js
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/allocation_profile.dart
@@ -10536,7 +10535,6 @@ FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectpoo
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/persistent_handles.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/ports.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/timeline_page.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/view_footer.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/sample_profile/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline.js
 FILE: ../../../third_party/dart/runtime/vm/atomic_test.cc
@@ -10680,7 +10678,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/singletarge
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/singletargetcache_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/subtypetestcache_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/subtypetestcache_view.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/timeline/dashboard.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unlinkedcall_ref.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/unlinkedcall_view.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/models/objects/service.dart
