@@ -140,9 +140,9 @@ void TextInputManagerWin32::AbortComposing() {
     ::ImmNotifyIME(imm_context.get(), NI_CLOSECANDIDATE, 0, 0);
 
     // Clear the composing string.
-    wchar_t completion_str[] = L"";
+    wchar_t composition_str[] = L"";
     wchar_t reading_str[] = L"";
-    ::ImmSetCompositionStringW(imm_context.get(), SCS_SETSTR, completion_str,
+    ::ImmSetCompositionStringW(imm_context.get(), SCS_SETSTR, composition_str,
                                sizeof(wchar_t), reading_str, sizeof(wchar_t));
   }
 }
