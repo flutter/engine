@@ -187,6 +187,10 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     settings.root_isolate_create_callback(*isolate.get());
   }
 
+  if (dart_entrypoint_args.empty()) {
+    dart_entrypoint_args = settings.dart_entrypoint_args;
+  }
+
   if (!isolate->RunFromLibrary(dart_entrypoint_library,  //
                                dart_entrypoint,          //
                                dart_entrypoint_args      //

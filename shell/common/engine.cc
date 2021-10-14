@@ -199,9 +199,7 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   last_entry_point_ = configuration.GetEntrypoint();
   last_entry_point_library_ = configuration.GetEntrypointLibrary();
-  last_entry_point_args_ = configuration.GetEntrypointArgs().empty()
-                               ? configuration.GetEntrypointArgs()
-                               : settings_.dart_entrypoint_args;
+  last_entry_point_args_ = configuration.GetEntrypointArgs();
 
   UpdateAssetManager(configuration.GetAssetManager());
 
