@@ -221,6 +221,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // Attach the FlatlandView to the main scene graph.
         flatland_.flatland()->AddChild(root_transform_id_,
                                        viewport.transform_id);
+        child_transforms_.emplace_back(viewport.transform_id);
       }
 
       // Acquire the surface associated with the layer.
@@ -263,6 +264,8 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // Attach the FlatlandLayer to the main scene graph.
         flatland_.flatland()->AddChild(
             root_transform_id_,
+            flatland_layers_[flatland_layer_index].transform_id);
+        child_transforms_.emplace_back(
             flatland_layers_[flatland_layer_index].transform_id);
       }
 
@@ -374,9 +377,15 @@ void FlatlandExternalViewEmbedder::Reset() {
   frame_composition_order_.clear();
   frame_size_ = SkISize::Make(0, 0);
 
+  // Clear all children from root.
+  for (const auto& transform : child_transforms_) {
+    flatland_.flatland()->RemoveChild(root_transform_id_, transform);
+  }
+  child_transforms_.clear();
+
   // Clear images on all layers so they aren't cached unnecessarily.
-  for (auto& layer : flatland_layers_) {
-    flatland_.flatland()->RemoveChild(root_transform_id_, layer.transform_id);
+  for (const auto& layer : flatland_layers_) {
+    flatland_.flatland()->SetContent(layer.transform_id, {0});
   }
 }
 
