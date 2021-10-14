@@ -109,6 +109,7 @@ ComponentV2::ComponentV2(
       debug_label_(DebugLabelForUrl(start_info.resolved_url())),
       component_controller_(this),
       outgoing_dir_(new vfs::PseudoDir()),
+      runtime_dir_(new vfs::PseudoDir()),
       runner_incoming_services_(runner_incoming_services),
       weak_factory_(this) {
   component_controller_.set_error_handler([this](zx_status_t status) {
@@ -121,6 +122,7 @@ ComponentV2::ComponentV2(
   FML_DCHECK(fdio_ns_.is_valid());
 
   // TODO(fxb/50694): Dart launch arguments.
+  FML_LOG(WARNING) << "program() arguments are currently ignored (fxb/50694).";
 
   // Determine where data and assets are stored within /pkg.
   std::string data_path;
@@ -139,17 +141,18 @@ ComponentV2::ComponentV2(
   // ComponentStartInfo::ns (optional)
   if (start_info.has_ns()) {
     for (auto& entry : *start_info.mutable_ns()) {
-      // TODO(akbiggs): We check that a directory exists first so we can
-      // dereference safely, but it's unclear when the namespace has an entry
-      // without a directory.
-      if (!entry.has_directory()) {
+      // /tmp/ is mapped separately to the process-level memfs, so we ignore it
+      // here.
+      const auto& path = entry.path();
+      if (path == kTmpPath) {
         continue;
       }
 
-      const auto& path = entry.path();
-
-      // Mapped separately to the process-level memfs, so we ignore it here.
-      if (path == kTmpPath) {
+      // We should never receive namespace entries without a directory, but we
+      // check it anyways to avoid crashing if we do.
+      if (!entry.has_directory()) {
+        FML_DLOG(ERROR) << "Namespace entry at path (" << path
+                        << ") has no directory.";
         continue;
       }
 
