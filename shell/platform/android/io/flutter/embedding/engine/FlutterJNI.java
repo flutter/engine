@@ -27,6 +27,7 @@ import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
+import io.flutter.plugin.common.JSONMessageCodec;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -337,11 +338,11 @@ public class FlutterJNI {
       @Nullable Object initialArguments) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    ByteBuffer persistentIsolateData = null;
+    ByteBuffer encodedArgs = null;
     int position = 0;
     if (initialArguments != null) {
-      persistentIsolateData = StandardMessageCodec.INSTANCE.encodeMessage(initialArguments);
-      position = persistentIsolateData.position();
+      encodedArgs = JSONMessageCodec.INSTANCE.encodeMessage(initialArguments);
+      position = encodedArgs.position();
     }
     FlutterJNI spawnedJNI =
         nativeSpawn(
@@ -349,7 +350,7 @@ public class FlutterJNI {
             entrypointFunctionName,
             pathToEntrypointFunction,
             initialRoute,
-            persistentIsolateData,
+            encodedArgs,
             position);
     Preconditions.checkState(
         spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId != 0,
@@ -363,7 +364,7 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @Nullable String initialRoute,
-      @Nullable ByteBuffer persistentIsolateData,
+      @Nullable ByteBuffer encodedArgs,
       int position);
 
   /**
@@ -825,11 +826,11 @@ public class FlutterJNI {
       @Nullable Object initialArguments) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    ByteBuffer persistentIsolateData = null;
+    ByteBuffer encodedArgs = null;
     int position = 0;
     if (initialArguments != null) {
-      persistentIsolateData = StandardMessageCodec.INSTANCE.encodeMessage(initialArguments);
-      position = persistentIsolateData.position();
+      encodedArgs = JSONMessageCodec.INSTANCE.encodeMessage(initialArguments);
+      position = encodedArgs.position();
     }
 
     nativeRunBundleAndSnapshotFromLibrary(
@@ -838,7 +839,7 @@ public class FlutterJNI {
         entrypointFunctionName,
         pathToEntrypointFunction,
         assetManager,
-        persistentIsolateData,
+        encodedArgs,
         position);
   }
 
@@ -848,7 +849,7 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @NonNull AssetManager manager,
-      @Nullable ByteBuffer persistentIsolateData,
+      @Nullable ByteBuffer encodedArgs,
       int position);
   // ------ End Dart Execution Support -------
 

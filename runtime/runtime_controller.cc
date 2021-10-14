@@ -177,11 +177,6 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   return false;
 }
 
-void RuntimeController::SetPersistentIsolateData(
-    std::shared_ptr<const fml::Mapping> persistent_isolate_data) {
-  persistent_isolate_data_ = persistent_isolate_data;
-}
-
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
                                    uint64_t frame_number) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
@@ -362,6 +357,7 @@ bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
+    std::vector<std::string> dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration) {
   if (root_isolate_.lock()) {
     FML_LOG(ERROR) << "Root isolate was already running.";
@@ -378,6 +374,7 @@ bool RuntimeController::LaunchRootIsolate(
           isolate_shutdown_callback_,                     //
           dart_entrypoint,                                //
           dart_entrypoint_library,                        //
+          dart_entrypoint_args,                           //
           std::move(isolate_configuration),               //
           context_,                                       //
           spawning_isolate_.lock().get())                 //

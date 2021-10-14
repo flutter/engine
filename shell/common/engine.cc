@@ -199,6 +199,9 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   last_entry_point_ = configuration.GetEntrypoint();
   last_entry_point_library_ = configuration.GetEntrypointLibrary();
+  last_entry_point_args_ = configuration.GetEntrypointArgs().empty()
+                               ? configuration.GetEntrypointArgs()
+                               : settings_.dart_entrypoint_args;
 
   UpdateAssetManager(configuration.GetAssetManager());
 
@@ -213,15 +216,11 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     return RunStatus::FailureAlreadyRunning;
   }
 
-  auto persistent_isolate_data = configuration.GetPersistentIsolateData();
-  if (persistent_isolate_data) {
-    runtime_controller_->SetPersistentIsolateData(persistent_isolate_data);
-  }
-
   if (!runtime_controller_->LaunchRootIsolate(
           settings_,                                 //
           configuration.GetEntrypoint(),             //
           configuration.GetEntrypointLibrary(),      //
+          configuration.GetEntrypointArgs(),         //
           configuration.TakeIsolateConfiguration())  //
   ) {
     return RunStatus::Failure;
@@ -570,6 +569,10 @@ const std::string& Engine::GetLastEntrypoint() const {
 
 const std::string& Engine::GetLastEntrypointLibrary() const {
   return last_entry_point_library_;
+}
+
+const std::vector<std::string> Engine::GetLastEntrypointArgs() const {
+  return last_entry_point_args_;
 }
 
 // |RuntimeDelegate|

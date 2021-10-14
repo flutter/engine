@@ -135,6 +135,7 @@ class RuntimeController : public PlatformConfigurationClient {
       const Settings& settings,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
+      std::vector<std::string> dart_entrypoint_args,
       std::unique_ptr<IsolateConfiguration> isolate_configuration);
 
   //----------------------------------------------------------------------------
@@ -230,19 +231,6 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             the running isolate.
   ///
   bool SetAccessibilityFeatures(int32_t flags);
-
-  /// The embedder can specify data that the isolate can request synchronously
-  /// on launch. Engines launched using this configuration can access the
-  /// persistent isolate data via the
-  /// `PlatformDispatcher.getPersistentIsolateData` accessor.
-  ///
-  /// @param[in]  persistent_isolate_data  Unstructured persistent read-only
-  ///             data that the root isolate can access in a synchronous manner.
-  void SetPersistentIsolateData(
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data);
-
-  // |PlatformConfigurationClient|
-  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate that it should start generating a
@@ -627,6 +615,9 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   void SetNeedsReportTimings(bool value) override;
+
+  // |PlatformConfigurationClient|
+  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
 
   // |PlatformConfigurationClient|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(

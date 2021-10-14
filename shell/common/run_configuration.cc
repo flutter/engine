@@ -44,19 +44,8 @@ RunConfiguration::RunConfiguration(
 RunConfiguration::RunConfiguration(
     std::unique_ptr<IsolateConfiguration> configuration,
     std::shared_ptr<AssetManager> asset_manager)
-    : RunConfiguration(std::move(configuration),
-                       std::move(asset_manager),
-                       std::shared_ptr<const fml::Mapping>()) {
-  PersistentCache::SetAssetManager(asset_manager_);
-}
-
-RunConfiguration::RunConfiguration(
-    std::unique_ptr<IsolateConfiguration> configuration,
-    std::shared_ptr<AssetManager> asset_manager,
-    std::shared_ptr<const fml::Mapping> persistent_isolate_data)
     : isolate_configuration_(std::move(configuration)),
-      asset_manager_(std::move(asset_manager)),
-      persistent_isolate_data_(persistent_isolate_data) {
+      asset_manager_(std::move(asset_manager)) {
   PersistentCache::SetAssetManager(asset_manager_);
 }
 
@@ -88,9 +77,9 @@ void RunConfiguration::SetEntrypointAndLibrary(std::string entrypoint,
   entrypoint_library_ = std::move(library);
 }
 
-void RunConfiguration::SetPersistentIsolateData(
-    std::shared_ptr<const fml::Mapping> persistent_isolate_data) {
-  persistent_isolate_data_ = persistent_isolate_data;
+void RunConfiguration::SetEntrypointArgs(
+    std::vector<std::string> entrypoint_args) {
+  entrypoint_args_ = entrypoint_args;
 }
 
 std::shared_ptr<AssetManager> RunConfiguration::GetAssetManager() const {
@@ -105,9 +94,8 @@ const std::string& RunConfiguration::GetEntrypointLibrary() const {
   return entrypoint_library_;
 }
 
-std::shared_ptr<const fml::Mapping> RunConfiguration::GetPersistentIsolateData()
-    const {
-  return persistent_isolate_data_;
+std::vector<std::string> RunConfiguration::GetEntrypointArgs() const {
+  return entrypoint_args_;
 }
 
 std::unique_ptr<IsolateConfiguration>

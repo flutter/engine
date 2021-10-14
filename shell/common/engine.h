@@ -834,6 +834,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   const std::string& GetLastEntrypointLibrary() const;
 
+  const std::vector<std::string> GetLastEntrypointArgs() const;
+
   //----------------------------------------------------------------------------
   /// @brief      Getter for the initial route.  This can be set with a platform
   ///             message.
@@ -922,6 +924,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   std::string last_entry_point_;
   std::string last_entry_point_library_;
+  std::vector<std::string> last_entry_point_args_;
   std::string initial_route_;
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;

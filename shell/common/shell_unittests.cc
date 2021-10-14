@@ -1767,45 +1767,6 @@ TEST_F(ShellTest, IsolateCanAccessPersistentIsolateData) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-TEST_F(ShellTest, ConfigPersistentIsolateDataViaRunConfiguration) {
-  const std::string message = "dummy isolate launch data.";
-  Settings settings = CreateSettingsForFixture();
-  TaskRunners task_runners("test",                  // label
-                           GetCurrentTaskRunner(),  // platform
-                           CreateNewThread(),       // raster
-                           CreateNewThread(),       // ui
-                           CreateNewThread()        // io
-  );
-
-  fml::AutoResetWaitableEvent message_latch;
-  AddNativeCallback("NotifyMessage",
-                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
-                      const auto message_from_dart =
-                          tonic::DartConverter<std::string>::FromDart(
-                              Dart_GetNativeArgument(args, 0));
-                      ASSERT_EQ(message, message_from_dart);
-                      message_latch.Signal();
-                    }));
-
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
-
-  ASSERT_TRUE(shell->IsSetup());
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("canAccessIsolateLaunchData");
-
-  auto persistent_isolate_data = std::make_shared<fml::DataMapping>(message);
-  configuration.SetPersistentIsolateData(persistent_isolate_data);
-
-  fml::AutoResetWaitableEvent event;
-  shell->RunEngine(std::move(configuration), [&](auto result) {
-    ASSERT_EQ(result, Engine::RunStatus::Success);
-  });
-
-  message_latch.Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
-}
-
 static void LogSkData(sk_sp<SkData> data, const char* title) {
   FML_LOG(ERROR) << "---------- " << title;
   std::ostringstream ostr;
@@ -2754,9 +2715,6 @@ TEST_F(ShellTest, Spawn) {
   auto second_configuration = RunConfiguration::InferFromSettings(settings);
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
-  const std::string message = "dummy isolate launch data.";
-  auto persistent_isolate_data = std::make_shared<fml::DataMapping>(message);
-  second_configuration.SetPersistentIsolateData(persistent_isolate_data);
 
   const std::string initial_route("/foo");
 
@@ -2785,7 +2743,7 @@ TEST_F(ShellTest, Spawn) {
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
       [this, &spawner = shell, &second_configuration, &second_latch,
-       initial_route, persistent_isolate_data]() {
+       initial_route]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
             std::move(second_configuration), initial_route,
@@ -2802,16 +2760,11 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
         PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner, initial_route, persistent_isolate_data] {
+                 [&spawn, &spawner, initial_route] {
                    // Check second shell ran the second entrypoint.
                    ASSERT_EQ("testCanLaunchSecondaryIsolate",
                              spawn->GetEngine()->GetLastEntrypoint());
                    ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
-                   ASSERT_EQ(const_cast<RuntimeController*>(
-                                 spawn->GetEngine()->GetRuntimeController())
-                                 ->GetPersistentIsolateData()
-                                 ->GetMapping(),
-                             persistent_isolate_data->GetMapping());
 
                    // TODO(74520): Remove conditional once isolate groups are
                    // supported by JIT.

@@ -79,19 +79,21 @@ class RunConfiguration {
   RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration,
                    std::shared_ptr<AssetManager> asset_manager);
 
-  //----------------------------------------------------------------------------
-  /// @brief      Creates a run configuration with the specified isolate
-  ///             configuration,asset manager and persistent isolate data. The
-  ///             default entrypoint and root library are used ("main" in root
-  ///             library).
-  ///
-  /// @param[in]  configuration  The configuration
-  /// @param[in]  asset_manager  The asset manager
-  /// @param[in]  persistent_isolate_data  The persistent isolate data
-  ///
-  RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration,
-                   std::shared_ptr<AssetManager> asset_manager,
-                   std::shared_ptr<const fml::Mapping> persistent_isolate_data);
+  //   //----------------------------------------------------------------------------
+  //   /// @brief      Creates a run configuration with the specified isolate
+  //   ///             configuration,asset manager and persistent isolate data.
+  //   The
+  //   ///             default entrypoint and root library are used ("main" in
+  //   root
+  //   ///             library).
+  //   ///
+  //   /// @param[in]  configuration  The configuration
+  //   /// @param[in]  asset_manager  The asset manager
+  //   /// @param[in]  entrypoint_args_  The persistent isolate data
+  //   ///
+  //   RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration,
+  //                    std::shared_ptr<AssetManager> asset_manager,
+  //                    std::vector<std::string> entrypoint_args_);
 
   //----------------------------------------------------------------------------
   /// @brief      Run configurations cannot be copied because it may not always
@@ -164,16 +166,11 @@ class RunConfiguration {
   ///
   void SetEntrypointAndLibrary(std::string entrypoint, std::string library);
 
-  //--------------------------------------------------------------------------
-  /// @brief      The embedder can specify data that the isolate can request
-  ///             synchronously on launch. Engines launched using this
-  ///             configuration can access the persistent isolate data via the
-  ///             `PlatformDispatcher.getPersistentIsolateData` accessor.
+  //----------------------------------------------------------------------------
+  /// @brief      Updates the main application entrypoint arguments.
   ///
-  /// @param[in]  persistent_isolate_data  Unstructured persistent read-only
-  ///             data that the root isolate can access in a synchronous manner.
-  void SetPersistentIsolateData(
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data);
+  /// @param[in]  entrypoint_args  The entrypoint arguments to use.
+  void SetEntrypointArgs(std::vector<std::string> entrypoint_args);
 
   //----------------------------------------------------------------------------
   /// @return     The asset manager referencing all previously registered asset
@@ -192,11 +189,11 @@ class RunConfiguration {
   ///
   const std::string& GetEntrypointLibrary() const;
 
-  //--------------------------------------------------------------------------
-  /// @return     A map of the isolate data that the framework can request upon
-  ///             launch.
+  //----------------------------------------------------------------------------
+  /// @return     Arguments passed as a List<String> to Dart's entrypoint
+  /// function.
   ///
-  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() const;
+  std::vector<std::string> GetEntrypointArgs() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The engine uses this to take the isolate configuration from
@@ -214,7 +211,7 @@ class RunConfiguration {
   std::shared_ptr<AssetManager> asset_manager_;
   std::string entrypoint_ = "main";
   std::string entrypoint_library_ = "";
-  std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
+  std::vector<std::string> entrypoint_args_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RunConfiguration);
 };
