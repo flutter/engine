@@ -31,7 +31,7 @@ MessageLoopDarwin::MessageLoopDarwin()
                            &timer_context /* context */));
   FML_DCHECK(delayed_wake_timer_ != nullptr);
   CFRunLoopAddTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
-  // Register mode with only this timer for use in FlutterKeyboardManager
+  // This mode will be used by FlutterKeyboardManager.
   CFRunLoopAddTimer(loop_, delayed_wake_timer_, kMessageLoopCFRunLoopMode);
 }
 

@@ -17,9 +17,9 @@ namespace fml {
 
 class MessageLoopDarwin : public MessageLoopImpl {
  public:
-  // Define a custom CFRunLoop mode for use with flutter messages
-  // This is so CFRunLoop can be run without being interrupted by UIKit,
-  // but still receive and be interrupted by framework messages
+  // A custom CFRunLoop mode used when processing flutter messages,
+  // so that the CFRunLoop can be run without being interrupted by UIKit,
+  // while still being able to receive and be interrupted by framework messages.
   static CFStringRef kMessageLoopCFRunLoopMode;
 
  private:
