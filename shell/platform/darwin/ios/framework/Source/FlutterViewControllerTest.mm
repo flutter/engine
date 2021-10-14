@@ -78,6 +78,13 @@ class PointerDataPacket {};
 - (void)notifyLowMemory;
 @end
 
+@interface FlutterEngineGroup ()
+@property (nonatomic, strong) NSMutableArray<FlutterEngine*>* engines;
+- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
+                                libraryURI:(nullable NSString*)libraryURI
+                              initialRoute:(nullable NSString*)initialRoute;
+@end
+
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 /// A simple mock class for FlutterEngine.
@@ -147,6 +154,14 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
   self.messageSent = nil;
+}
+
+- (void)testViewControllerInitWithEngineGroup {
+    FlutterEngineGroup* engineGroup = OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"io.flutter" project:nil]);
+    
+    FlutterViewController* controller = [[FlutterViewController alloc] initWithEngineGroup:engineGroup nibName:nil bundle:nil entrypoint:nil libraryURI:nil initalRoute:nil];
+    OCMStub([[engineGroup engines] firstObject]).andReturn(controller.engine);
+    OCMVerify([engineGroup makeEngineWithEntrypoint:nil libraryURI:nil initialRoute:nil]);
 }
 
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
