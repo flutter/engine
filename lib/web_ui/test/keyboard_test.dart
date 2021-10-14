@@ -678,7 +678,6 @@ html.KeyboardEvent dispatchKeyboardEvent(
   // ignore: implicit_dynamic_function
   final html.KeyboardEvent event = js_util.callConstructor(
     jsKeyboardEvent,
-    // ignore: implicit_dynamic_function
     js_util.jsify(eventArgs) as List<Object?>,
   ) as html.KeyboardEvent;
   target.dispatchEvent(event);

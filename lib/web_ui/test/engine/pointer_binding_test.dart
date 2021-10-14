@@ -2340,7 +2340,6 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     // ignore: implicit_dynamic_function
     return js_util.callConstructor(
       jsWheelEvent,
-      // ignore: implicit_dynamic_function
       js_util.jsify(eventArgs) as List<Object?>,
     ) as html.Event;
   }
@@ -2570,7 +2569,6 @@ class _MouseEventContext extends _BasicEventContext
     // ignore: implicit_dynamic_function
     return js_util.callConstructor(
       jsMouseEvent,
-      // ignore: implicit_dynamic_function
       js_util.jsify(eventArgs) as List<Object?>,
     ) as html.MouseEvent;
   }
