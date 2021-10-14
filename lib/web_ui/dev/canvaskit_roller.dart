@@ -133,10 +133,10 @@ Future<void> _updateDepsFile(String cipdInstanceId) async {
 
 Future<void> _updateCanvaskitInitializationCode(String canvaskitVersion) async {
   const String kCanvasKitVersionKey = 'const String _canvaskitVersion';
-  const String kPathToInitializationCode = 'lib/src/engine/configuration.dart';
+  const String kPathToConfigurationCode = 'lib/src/engine/configuration.dart';
   final File initializationFile = File(pathlib.join(
     environment.webUiRootDir.path,
-    kPathToInitializationCode,
+    kPathToConfigurationCode,
   ));
   final String originalInitializationCode = await initializationFile.readAsString();
 
@@ -155,9 +155,9 @@ Future<void> _updateCanvaskitInitializationCode(String canvaskitVersion) async {
 
   if (!canvaskitVersionFound) {
     stderr.writeln(
-      'Failed to update CanvasKit version in $kPathToInitializationCode.\n'
+      'Failed to update CanvasKit version in $kPathToConfigurationCode.\n'
       'Could not to locate the constant that defines the version. Make sure the '
-      '$kPathToInitializationCode file contains a line like this:\n'
+      '$kPathToConfigurationCode file contains a line like this:\n'
       '\n'
       'const String _canvaskitVersion = \'VERSION\';'
     );

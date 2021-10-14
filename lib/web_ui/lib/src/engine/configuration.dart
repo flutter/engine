@@ -21,7 +21,7 @@
 /// Configuration properties supplied via `window.flutterConfiguration`
 /// override those supplied using the corresponding environment variables. For
 /// example, if both `window.flutterConfiguration.canvasKitBaseUrl` and the
-/// `FLUTTER_WEB_CANVASKIT_URL` environment variable are provided,
+/// `FLUTTER_WEB_CANVASKIT_URL` environment variables are provided,
 /// `window.flutterConfiguration.canvasKitBaseUrl` is used.
 
 @JS()
