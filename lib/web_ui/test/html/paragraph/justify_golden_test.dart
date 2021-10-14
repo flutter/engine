@@ -53,6 +53,37 @@ Future<void> testMain() async {
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify');
   });
 
+  test('TextAlign.justify with single space and empty line', () {
+    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+
+    void build(CanvasParagraphBuilder builder) {
+      builder.pushStyle(bg(yellow));
+      builder.pushStyle(EngineTextStyle.only(color: black));
+      builder.addText('Loremipsumdolorsit');
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('amet,                consectetur\n\n');
+      builder.pushStyle(EngineTextStyle.only(color: lightPurple));
+      builder.addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText('labore et dolore magna aliqua.');
+    }
+
+    final CanvasParagraph paragraph = rich(
+      EngineParagraphStyle(
+        fontFamily: 'Roboto',
+        fontSize: 20.0,
+        textAlign: TextAlign.justify,
+      ),
+      build,
+    );
+    paragraph.layout(constrain(250.0));
+    canvas.drawParagraph(paragraph, Offset.zero);
+
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_justify_empty_line');
+  });
+
   test('TextAlign.justify with ellipsis', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 300);
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
@@ -72,10 +103,11 @@ Future<void> testMain() async {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('amet, consectetur ');
         builder.pushStyle(EngineTextStyle.only(color: green));
-        builder.addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
-        builder.pushStyle(EngineTextStyle.only(color: red));
         builder
-            .addText('labore et dolore magna aliqua. Ut enim ad minim veniam, ');
+            .addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
+        builder.pushStyle(EngineTextStyle.only(color: red));
+        builder.addText(
+            'labore et dolore magna aliqua. Ut enim ad minim veniam, ');
         builder.pushStyle(EngineTextStyle.only(color: lightPurple));
         builder.addText('quis nostrud exercitation ullamco ');
         builder.pushStyle(EngineTextStyle.only(color: blue));
@@ -85,8 +117,7 @@ Future<void> testMain() async {
     paragraph.layout(constrain(250));
     canvas.drawParagraph(paragraph, Offset.zero);
 
-    return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_ellipsis');
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_ellipsis');
   });
 
   test('TextAlign.justify with background', () {

@@ -155,7 +155,9 @@ double _calculateJustifyPerSpaceBox(
     if (lastBox is SpanBox && lastBox.isSpaceOnly) {
       spaceBoxesToJustify--;
     }
-    return justifyTotal / spaceBoxesToJustify;
+    if (spaceBoxesToJustify > 0) {
+      return justifyTotal / spaceBoxesToJustify;
+    }
   }
 
   return 0.0;
