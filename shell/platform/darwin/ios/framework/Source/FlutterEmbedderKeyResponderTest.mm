@@ -186,8 +186,8 @@ typedef void (^ResponseCallback)(bool handled);
   }];
   
   last_handled = FALSE;
-  // Verify that the eject key (keycode 0xb8 is not present in the keymap) should be
-  // translated to the right logical and physical keys.
+  // Verify that the eject key (keycode 0xb8, which is not present in the keymap)
+  // should be translated to the right logical and physical keys.
   [responder handlePress:keyDownEvent(kKeyCodeEject, kModifierFlagNone, 123.0f)
                 callback:^(BOOL handled) {
     last_handled = handled;
