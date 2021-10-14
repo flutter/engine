@@ -258,8 +258,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   }
   if (initialArguments) {
     NSData* data = [[FlutterJSONMessageCodec sharedInstance] encode:initialArguments];
-    std::string entrypoint_args(reinterpret_cast<const char*>(data.bytes), data.length);
-    config.SetEntrypointArgs({entrypoint_args});
+    std::string cppInitialArguments(reinterpret_cast<const char*>(data.bytes), data.length);
+    config.SetEntrypointArgs({cppInitialArguments});
   }
 
   return config;

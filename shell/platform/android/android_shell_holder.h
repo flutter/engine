@@ -80,12 +80,12 @@ class AndroidShellHolder {
       const std::string& entrypoint,
       const std::string& libraryUrl,
       const std::string& initial_route,
-      const std::string& entrypoint_args) const;
+      const std::vector<std::string>& entrypoint_args) const;
 
   void Launch(std::shared_ptr<AssetManager> asset_manager,
               const std::string& entrypoint,
               const std::string& libraryUrl,
-              const std::string& entrypoint_args);
+              const std::vector<std::string>& entrypoint_args);
 
   const flutter::Settings& GetSettings() const;
 
@@ -129,7 +129,7 @@ class AndroidShellHolder {
       std::shared_ptr<flutter::AssetManager> asset_manager,
       const std::string& entrypoint,
       const std::string& libraryUrl,
-      const std::string& entrypoint_args) const;
+      const std::vector<std::string>& entrypoint_args) const;
 
   bool IsNDKImageDecoderAvailable();
 

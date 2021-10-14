@@ -176,7 +176,7 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     const std::string& entrypoint,
     const std::string& libraryUrl,
     const std::string& initial_route,
-    const std::string& entrypoint_args) const {
+    const std::vector<std::string>& entrypoint_args) const {
   FML_DCHECK(shell_ && shell_->IsSetup())
       << "A new Shell can only be spawned "
          "if the current Shell is properly constructed";
@@ -238,10 +238,11 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
                              std::move(shell), weak_platform_view));
 }
 
-void AndroidShellHolder::Launch(std::shared_ptr<AssetManager> asset_manager,
-                                const std::string& entrypoint,
-                                const std::string& libraryUrl,
-                                const std::string& entrypoint_args) {
+void AndroidShellHolder::Launch(
+    std::shared_ptr<AssetManager> asset_manager,
+    const std::string& entrypoint,
+    const std::string& libraryUrl,
+    const std::vector<std::string>& entrypoint_args) {
   if (!IsValid()) {
     return;
   }
@@ -278,7 +279,7 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
     std::shared_ptr<flutter::AssetManager> asset_manager,
     const std::string& entrypoint,
     const std::string& libraryUrl,
-    const std::string& entrypoint_args) const {
+    const std::vector<std::string>& entrypoint_args) const {
   std::unique_ptr<IsolateConfiguration> isolate_configuration;
   if (flutter::DartVM::IsRunningPrecompiledCode()) {
     isolate_configuration = IsolateConfiguration::CreateForAppSnapshot();
@@ -305,7 +306,7 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
       config.SetEntrypoint(std::move(entrypoint));
     }
     if (entrypoint_args.size() > 0) {
-      config.SetEntrypointArgs({std::move(entrypoint_args)});
+      config.SetEntrypointArgs(std::move(entrypoint_args));
     }
   }
   return config;

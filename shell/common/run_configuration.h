@@ -79,22 +79,6 @@ class RunConfiguration {
   RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration,
                    std::shared_ptr<AssetManager> asset_manager);
 
-  //   //----------------------------------------------------------------------------
-  //   /// @brief      Creates a run configuration with the specified isolate
-  //   ///             configuration,asset manager and persistent isolate data.
-  //   The
-  //   ///             default entrypoint and root library are used ("main" in
-  //   root
-  //   ///             library).
-  //   ///
-  //   /// @param[in]  configuration  The configuration
-  //   /// @param[in]  asset_manager  The asset manager
-  //   /// @param[in]  entrypoint_args_  The persistent isolate data
-  //   ///
-  //   RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration,
-  //                    std::shared_ptr<AssetManager> asset_manager,
-  //                    std::vector<std::string> entrypoint_args_);
-
   //----------------------------------------------------------------------------
   /// @brief      Run configurations cannot be copied because it may not always
   ///             be possible to copy the underlying isolate snapshots. If
