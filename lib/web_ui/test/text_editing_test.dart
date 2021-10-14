@@ -2155,8 +2155,8 @@ KeyboardEvent dispatchKeyboardEvent(
       'cancelable': true,
     }
   ];
-  final KeyboardEvent event =
-      js_util.callConstructor(jsKeyboardEvent, js_util.jsify(eventArgs) as List<Object?>?);
+  final KeyboardEvent event = js_util.callConstructor(
+      jsKeyboardEvent, js_util.jsify(eventArgs) as List<Object?>?);
   target.dispatchEvent(event);
 
   return event;

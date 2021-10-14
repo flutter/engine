@@ -456,7 +456,7 @@ class PathRef {
     if (newLength > _fPointsCapacity) {
       _fPointsCapacity = newLength + 10;
       final Float32List newPoints = Float32List(_fPointsCapacity * 2);
-        js_util.callMethod<void>(newPoints, 'set', <dynamic>[fPoints]);
+      js_util.callMethod<void>(newPoints, 'set', <dynamic>[fPoints]);
       fPoints = newPoints;
     }
     _fPointsLength = newLength;
@@ -466,7 +466,7 @@ class PathRef {
     if (newLength > _fVerbsCapacity) {
       _fVerbsCapacity = newLength + 8;
       final Uint8List newVerbs = Uint8List(_fVerbsCapacity);
-        js_util.callMethod<void>(newVerbs, 'set', <dynamic>[_fVerbs]);
+      js_util.callMethod<void>(newVerbs, 'set', <dynamic>[_fVerbs]);
       _fVerbs = newVerbs;
     }
     _fVerbsLength = newLength;
@@ -477,7 +477,7 @@ class PathRef {
       _conicWeightsCapacity = newLength + 4;
       final Float32List newWeights = Float32List(_conicWeightsCapacity);
       if (_conicWeights != null) {
-            js_util.callMethod<void>(newWeights, 'set', <dynamic>[_conicWeights]);
+        js_util.callMethod<void>(newWeights, 'set', <dynamic>[_conicWeights]);
       }
       _conicWeights = newWeights;
     }

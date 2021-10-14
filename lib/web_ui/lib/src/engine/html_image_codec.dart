@@ -13,7 +13,7 @@ import 'browser_detection.dart';
 import 'util.dart';
 
 Object? get _jsImageDecodeFunction => js_util.getProperty(
-  js_util.getProperty(  
+  js_util.getProperty(
     js_util.getProperty(html.window, 'Image'),
     'prototype',
   ),

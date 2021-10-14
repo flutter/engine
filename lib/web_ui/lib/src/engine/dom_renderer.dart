@@ -523,7 +523,8 @@ class DomRenderer {
       double startAngle,
       double endAngle,
       bool antiClockwise) {
-    _ellipseFeatureDetected ??= js_util.getProperty<dynamic>(context, 'ellipse') != null;
+    _ellipseFeatureDetected ??= 
+        js_util.getProperty<dynamic>(context, 'ellipse') != null;
     if (_ellipseFeatureDetected!) {
       context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
           endAngle, antiClockwise);

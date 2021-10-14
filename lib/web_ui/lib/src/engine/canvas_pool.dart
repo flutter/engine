@@ -61,8 +61,8 @@ class CanvasPool extends _SaveStackTracking {
   final double _density;
 
   /// Initializes canvas pool for target size and dpi.
-  CanvasPool(
-      this._widthInBitmapPixels, this._heightInBitmapPixels, this._density);
+  CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels,
+      this._density);
 
   /// Initializes canvas pool to be hosted on a surface.
   void mount(html.HtmlElement rootElement) {
@@ -82,6 +82,7 @@ class CanvasPool extends _SaveStackTracking {
 
   /// Returns true if a canvas has been allocated for use.
   bool get isNotEmpty => _canvas != null;
+
 
   /// Returns [CanvasRenderingContext2D] api to draw into this canvas.
   html.CanvasRenderingContext2D get context {
@@ -146,10 +147,10 @@ class CanvasPool extends _SaveStackTracking {
       // * To satisfy the invariant: pixel size = css size * device pixel ratio.
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
-      final double cssWidth = _widthInBitmapPixels /
-          EnginePlatformDispatcher.browserDevicePixelRatio;
-      final double cssHeight = _heightInBitmapPixels /
-          EnginePlatformDispatcher.browserDevicePixelRatio;
+      final double cssWidth =
+          _widthInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
+      final double cssHeight =
+          _heightInBitmapPixels / EnginePlatformDispatcher.browserDevicePixelRatio;
       canvas = _allocCanvas(_widthInBitmapPixels, _heightInBitmapPixels);
       _canvas = canvas;
 
@@ -388,7 +389,8 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   /// Returns effective dpi (browser DPI and pixel density due to transform).
-  double get dpi => EnginePlatformDispatcher.browserDevicePixelRatio * _density;
+  double get dpi =>
+      EnginePlatformDispatcher.browserDevicePixelRatio * _density;
 
   void _resetTransform() {
     final html.CanvasElement? canvas = _canvas;
@@ -684,12 +686,12 @@ class CanvasPool extends _SaveStackTracking {
           ctx.lineTo(p[2] + offsetX, p[3] + offsetY);
           break;
         case SPath.kCubicVerb:
-          ctx.bezierCurveTo(p[2] + offsetX, p[3] + offsetY, p[4] + offsetX,
-              p[5] + offsetY, p[6] + offsetX, p[7] + offsetY);
+          ctx.bezierCurveTo(p[2] + offsetX, p[3] + offsetY,
+              p[4] + offsetX, p[5] + offsetY, p[6] + offsetX, p[7] + offsetY);
           break;
         case SPath.kQuadVerb:
-          ctx.quadraticCurveTo(
-              p[2] + offsetX, p[3] + offsetY, p[4] + offsetX, p[5] + offsetY);
+          ctx.quadraticCurveTo(p[2] + offsetX, p[3] + offsetY,
+              p[4] + offsetX, p[5] + offsetY);
           break;
         case SPath.kConicVerb:
           final double w = iter.conicWeight;
@@ -701,8 +703,8 @@ class CanvasPool extends _SaveStackTracking {
             final double p1y = points[i].dy;
             final double p2x = points[i + 1].dx;
             final double p2y = points[i + 1].dy;
-            ctx.quadraticCurveTo(
-                p1x + offsetX, p1y + offsetY, p2x + offsetX, p2y + offsetY);
+            ctx.quadraticCurveTo(p1x + offsetX, p1y + offsetY,
+                p2x + offsetX, p2y + offsetY);
           }
           break;
         case SPath.kCloseVerb:
@@ -717,9 +719,9 @@ class CanvasPool extends _SaveStackTracking {
   /// Draws a rounded rectangle filled or stroked based on [style].
   void drawRRect(ui.RRect roundRect, ui.PaintingStyle? style) {
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    RRectToCanvasRenderer(context).render(shaderBounds == null
-        ? roundRect
-        : roundRect.shift(ui.Offset(-shaderBounds.left, -shaderBounds.top)));
+    RRectToCanvasRenderer(context).render(
+        shaderBounds == null ? roundRect
+            : roundRect.shift(ui.Offset(-shaderBounds.left, -shaderBounds.top)));
     contextHandle.paint(style);
   }
 
@@ -744,14 +746,12 @@ class CanvasPool extends _SaveStackTracking {
   void drawOval(ui.Rect rect, ui.PaintingStyle? style) {
     context.beginPath();
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    final double cx = shaderBounds == null
-        ? rect.center.dx
-        : rect.center.dx - shaderBounds.left;
-    final double cy = shaderBounds == null
-        ? rect.center.dy
-        : rect.center.dy - shaderBounds.top;
-    DomRenderer.ellipse(context, cx, cy, rect.width / 2, rect.height / 2, 0, 0,
-        2.0 * math.pi, false);
+    final double cx = shaderBounds == null ? rect.center.dx :
+        rect.center.dx - shaderBounds.left;
+    final double cy = shaderBounds == null ? rect.center.dy :
+        rect.center.dy - shaderBounds.top;
+    DomRenderer.ellipse(context, cx, cy, rect.width / 2,
+        rect.height / 2, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -761,8 +761,7 @@ class CanvasPool extends _SaveStackTracking {
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
     final double cx = shaderBounds == null ? c.dx : c.dx - shaderBounds.left;
     final double cy = shaderBounds == null ? c.dy : c.dy - shaderBounds.top;
-    DomRenderer.ellipse(
-        context, cx, cy, radius, radius, 0, 0, 2.0 * math.pi, false);
+    DomRenderer.ellipse(context, cx, cy, radius, radius, 0, 0, 2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -772,8 +771,8 @@ class CanvasPool extends _SaveStackTracking {
     if (shaderBounds == null) {
       _runPath(context, path as SurfacePath);
     } else {
-      _runPathWithOffset(
-          context, path as SurfacePath, -shaderBounds.left, -shaderBounds.top);
+      _runPathWithOffset(context, path as SurfacePath,
+          -shaderBounds.left, -shaderBounds.top);
     }
     contextHandle.paintPath(style, path.fillType);
   }
@@ -781,8 +780,7 @@ class CanvasPool extends _SaveStackTracking {
   /// Draws a shadow for a Path representing the given material elevation.
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    final SurfaceShadowData? shadow =
-        computeShadow(path.getBounds(), elevation);
+    final SurfaceShadowData? shadow = computeShadow(path.getBounds(), elevation);
     if (shadow != null) {
       // On April 2020 Web canvas 2D did not support shadow color alpha. So
       // instead we apply alpha separately using globalAlpha, then paint a
@@ -881,7 +879,6 @@ class ContextStateHandle {
   /// Associated canvas element context tracked by this context state.
   final html.CanvasRenderingContext2D context;
   final CanvasPool _canvasPool;
-
   /// Dpi of context.
   final double density;
 
@@ -969,8 +966,7 @@ class ContextStateHandle {
   /// This is used in screenshot tests to test Safari codepaths.
   static bool debugEmulateWebKitMaskFilter = false;
 
-  bool get _renderMaskFilterForWebkit =>
-      browserEngine == BrowserEngine.webkit || debugEmulateWebKitMaskFilter;
+  bool get _renderMaskFilterForWebkit => browserEngine == BrowserEngine.webkit || debugEmulateWebKitMaskFilter;
 
   /// Sets paint properties on the current canvas.
   ///
@@ -990,18 +986,19 @@ class ContextStateHandle {
     if (paint.shader != null) {
       if (paint.shader is EngineGradient) {
         final EngineGradient engineShader = paint.shader! as EngineGradient;
-        final Object paintStyle = engineShader.createPaintStyle(
-            _canvasPool.context, shaderBounds, density);
+        final Object paintStyle =
+            engineShader.createPaintStyle(_canvasPool.context, shaderBounds,
+                density);
         fillStyle = paintStyle;
         strokeStyle = paintStyle;
         _shaderBounds = shaderBounds;
         // Align pattern origin to destination.
         context.translate(shaderBounds!.left, shaderBounds.top);
       } else if (paint.shader is EngineImageShader) {
-        final EngineImageShader imageShader =
-            paint.shader! as EngineImageShader;
-        final Object paintStyle = imageShader.createPaintStyle(
-            _canvasPool.context, shaderBounds, density);
+        final EngineImageShader imageShader = paint.shader! as EngineImageShader;
+        final Object paintStyle =
+            imageShader.createPaintStyle(_canvasPool.context, shaderBounds,
+                density);
         fillStyle = paintStyle;
         strokeStyle = paintStyle;
         if (imageShader.requiresTileOffset) {

@@ -95,7 +95,8 @@ class EngineImageShader implements ui.ImageShader {
         /// To draw image flipped we set translate and scale and pass
         /// negative width/height to drawImage.
         if (flipX != 1 || flipY != 1) {
-          js_util.callMethod<void>(renderContext, 'scale', <dynamic>[flipX, flipY]);
+          js_util.callMethod<void>(
+              renderContext, 'scale', <dynamic>[flipX, flipY]);
         }
         js_util.callMethod<void>(renderContext, 'drawImage', <dynamic>[
           image.imgElement,
@@ -104,7 +105,8 @@ class EngineImageShader implements ui.ImageShader {
         ]);
         if (flipX != 1 || flipY != 1) {
           /// Restore transform. This is faster than save/restore on context.
-          js_util.callMethod<void>(renderContext, 'scale', <dynamic>[flipX, flipY]);
+          js_util.callMethod<void>(
+              renderContext, 'scale', <dynamic>[flipX, flipY]);
         }
       }
     }
