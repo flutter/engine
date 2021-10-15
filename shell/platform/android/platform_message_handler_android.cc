@@ -18,18 +18,21 @@ void PlatformMessageHandlerAndroid::InvokePlatformMessageResponseCallback(
   }
   // TODO(gaaclarke): Move the jump to the ui thread here from
   // PlatformMessageResponseDart so we won't need to use a mutex anymore.
-  std::unique_lock lock(pending_responses_mutex_);
-  auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
-    return;
+  fml::RefPtr<flutter::PlatformMessageResponse> message_response;
+  {
+    std::lock_guard lock(pending_responses_mutex_);
+    auto it = pending_responses_.find(response_id);
+    if (it == pending_responses_.end())
+      return;
+    message_response = std::move(it->second);
+    pending_responses_.erase(it);
+  }
+
   uint8_t* response_data =
       static_cast<uint8_t*>(env->GetDirectBufferAddress(java_response_data));
   FML_DCHECK(response_data != nullptr);
   std::vector<uint8_t> response = std::vector<uint8_t>(
       response_data, response_data + java_response_position);
-  auto message_response = std::move(it->second);
-  pending_responses_.erase(it);
-  lock.unlock();
   message_response->Complete(
       std::make_unique<fml::DataMapping>(std::move(response)));
 }
@@ -41,13 +44,15 @@ void PlatformMessageHandlerAndroid::InvokePlatformMessageEmptyResponseCallback(
   if (!response_id) {
     return;
   }
-  std::unique_lock lock(pending_responses_mutex_);
-  auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
-    return;
-  auto message_response = std::move(it->second);
-  pending_responses_.erase(it);
-  lock.unlock();
+  fml::RefPtr<flutter::PlatformMessageResponse> message_response;
+  {
+    std::lock_guard lock(pending_responses_mutex_);
+    auto it = pending_responses_.find(response_id);
+    if (it == pending_responses_.end())
+      return;
+    message_response = std::move(it->second);
+    pending_responses_.erase(it);
+  }
   message_response->CompleteEmpty();
 }
 
@@ -63,7 +68,6 @@ void PlatformMessageHandlerAndroid::HandlePlatformMessage(
   // This call can re-enter in InvokePlatformMessageXxxResponseCallback.
   jni_facade_->FlutterViewHandlePlatformMessage(std::move(message),
                                                 response_id);
-  message = nullptr;
 }
 
 }  // namespace flutter

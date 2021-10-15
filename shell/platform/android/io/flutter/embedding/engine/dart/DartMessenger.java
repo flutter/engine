@@ -37,6 +37,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
   private int nextReplyId = 1;
 
+  @NonNull private final TaskQueue platformTaskQueue = new PlatformTaskQueue();
+
   DartMessenger(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
     this.messageHandlers = new ConcurrentHashMap<>();
@@ -66,6 +68,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     @Override
     public void dispatch(@NonNull Runnable runnable) {
       executor.submit(runnable);
+    }
+  }
+
+  private static class PlatformTaskQueue implements TaskQueue {
+    @NonNull private final Handler handler = new Handler(Looper.getMainLooper());
+
+    @Override
+    public void dispatch(@NonNull Runnable runnable) {
+      handler.post(runnable);
     }
   }
 
@@ -119,11 +130,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
         handlerInfo.handler.onMessage(message, new Reply(flutterJNI, replyId));
-        if (message != null && message.isDirect()) {
-          // This ensures that if a user retains an instance to the ByteBuffer and it happens to
-          // be direct they will get a deterministic error.
-          message.limit(0);
-        }
       } catch (Exception ex) {
         Log.e(TAG, "Uncaught exception in binary message listener", ex);
         flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
@@ -153,13 +159,18 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         () -> {
           try {
             invokeHandler(handlerInfo, message, replyId);
+            if (message != null && message.isDirect()) {
+              // This ensures that if a user retains an instance to the ByteBuffer and it happens to
+              // be direct they will get a deterministic error.
+              message.limit(0);
+            }
           } finally {
+            // This is deleting the data underneath the message object.
             flutterJNI.cleanupMessageData(messageData);
           }
         };
     if (taskQueue == null) {
-      Handler mainHandler = new Handler(Looper.getMainLooper());
-      mainHandler.post(myRunnable);
+      platformTaskQueue.dispatch(myRunnable);
     } else {
       taskQueue.dispatch(myRunnable);
     }

@@ -211,7 +211,7 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
             android_context,         // Android context
-            platform_message_handler);
+            std::make_shared<PlatformMessageHandlerAndroid>(jni_facade));
         weak_platform_view = platform_view_android->GetWeakPtr();
         auto display = Display(jni_facade->GetDisplayRefreshRate());
         shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});
