@@ -1109,20 +1109,8 @@ num? _parseFontSize(html.Element element) {
   if (fontSize == null) {
     // Fallback to `getComputedStyle`.
     final String fontSizeString = element.getComputedStyle().fontSize;
-    fontSize = _parseFloat(fontSizeString);
+    fontSize = parseFloat(fontSizeString);
   }
 
   return fontSize;
-}
-
-num? _parseFloat(String source) {
-  // Using JavaScript's `window.parseFloat` here because it can parse values
-  // like "20px", while Dart's `double.tryParse` fails.
-  final num? result =
-      js_util.callMethod(html.window, 'parseFloat', <Object>[source]) as num?;
-
-  if (result == null || result.isNaN) {
-    return null;
-  }
-  return result;
 }
