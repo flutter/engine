@@ -129,8 +129,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 @property(nonatomic, nonnull) NSString* inputAction;
 
 /**
- * Whether to enable that the engine sends text input updates to the framework
- * as TextEditingDeltas or as one TextEditingValue.
+ * Whether to enable the sending of text input updates from the engine to the
+ * framework as TextEditingDeltas rather than as one TextEditingValue.
  * For more information on the delta model, see:
  * https://master-api.flutter.dev/flutter/services/TextInputConfiguration/enableDeltaModel.html
  */
