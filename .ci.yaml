@@ -208,6 +208,10 @@ targets:
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
     timeout: 60
     scheduler: luci
     runIf:
@@ -274,6 +278,10 @@ targets:
     recipe: web_engine
     properties:
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
     timeout: 60
     scheduler: luci
     runIf:
@@ -299,6 +307,24 @@ targets:
     properties:
       add_recipes_cq: "true"
       build_host: "true"
+    scheduler: luci
+
+  - name: Windows windows_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_android_aot_engine
+      environment: Staging
+    scheduler: luci
+
+  - name: Windows windows_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_host_engine
+      environment: Staging
     scheduler: luci
 
   - name: Windows Unopt
