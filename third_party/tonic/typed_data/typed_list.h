@@ -51,12 +51,28 @@ class TypedList {
 
 template <Dart_TypedData_Type kTypeName, typename ElemType>
 struct DartConverter<TypedList<kTypeName, ElemType>> {
+  using NativeType = TypedList<kTypeName, ElemType>;
+  using FfiType = Dart_Handle;
+  static constexpr const char* kFfiSig = "Handle";  // TypedList
+  static constexpr const char* kDartSig = "Object";
+  static constexpr bool kAllowedInLeaf = false;
+
   static void SetReturnValue(Dart_NativeArguments args,
                              TypedList<kTypeName, ElemType> val);
   static TypedList<kTypeName, ElemType> FromArguments(Dart_NativeArguments args,
                                                       int index,
                                                       Dart_Handle& exception);
   static Dart_Handle ToDart(const ElemType* buffer, unsigned int length);
+
+  static NativeType FromFfi(FfiType val) { return NativeType(val); }
+  static FfiType ToFfi(NativeType val) {
+    Dart_Handle handle = val.dart_handle();
+    val.Release();
+    return handle;
+  }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 #define TONIC_TYPED_DATA_FOREACH(F) \

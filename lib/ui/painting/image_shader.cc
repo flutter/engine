@@ -35,6 +35,13 @@ fml::RefPtr<ImageShader> ImageShader::Create() {
   return fml::MakeRefCounted<ImageShader>();
 }
 
+fml::RefPtr<ImageShader> ImageShader::CreateOrThrow(Dart_Handle wrapper) {
+  // TODO(cskau): Is throw missing here?
+  auto res = Create();
+  res->AssociateWithDartWrapper(wrapper);
+  return res;
+}
+
 void ImageShader::initWithImage(CanvasImage* image,
                                 SkTileMode tmx,
                                 SkTileMode tmy,

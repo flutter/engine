@@ -36,11 +36,27 @@ struct DartConverterTypes {
   using ValueType = T;
 };
 
+template <>
+struct DartConverter<void> {
+  using FfiType = void;
+  static constexpr const char* kFfiSig = "Void";
+  static constexpr const char* kDartSig = "void";
+  static constexpr bool kAllowedInLeaf = true;
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 // Boolean
 
 template <>
 struct DartConverter<bool> {
+  using FfiType = int8_t;
+  static constexpr const char* kFfiSig = "Int8";
+  static constexpr const char* kDartSig = "bool";
+  static constexpr bool kAllowedInLeaf = true;
+
   static Dart_Handle ToDart(bool val) { return Dart_NewBoolean(val); }
 
   static void SetReturnValue(Dart_NativeArguments args, bool val) {
@@ -60,6 +76,12 @@ struct DartConverter<bool> {
     Dart_GetNativeBooleanArgument(args, index, &result);
     return result;
   }
+
+  static bool FromFfi(FfiType val) { return val != 0; }
+  static FfiType ToFfi(bool val) { return val ? 1 : 0; }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,6 +89,10 @@ struct DartConverter<bool> {
 
 template <typename T>
 struct DartConverterInteger {
+  using FfiType = T;
+  static constexpr const char* kDartSig = "int";
+  static constexpr bool kAllowedInLeaf = true;
+
   static Dart_Handle ToDart(T val) { return Dart_NewInteger(val); }
 
   static void SetReturnValue(Dart_NativeArguments args, T val) {
@@ -86,26 +112,68 @@ struct DartConverterInteger {
     Dart_GetNativeIntegerArgument(args, index, &result);
     return static_cast<T>(result);
   }
+
+  static const char* ToIntStr() {
+    if (sizeof(T) == 2) {
+      return "Int16";
+    } else if (sizeof(T) == 4) {
+      return "Int32";
+    } else if (sizeof(T) == 8) {
+      return "Int64";
+    }
+    return "Int";
+  }
+
+  static const char* ToUintStr() {
+    if (sizeof(T) == 2) {
+      return "Uint16";
+    } else if (sizeof(T) == 4) {
+      return "Uint32";
+    } else if (sizeof(T) == 8) {
+      return "Uint64";
+    }
+    return "Uint";
+  }
+
+  static T FromFfi(FfiType val) { return val; }
+  static FfiType ToFfi(T val) { return val; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 template <>
-struct DartConverter<int> : public DartConverterInteger<int> {};
+struct DartConverter<int> : public DartConverterInteger<int> {
+  static const char* ToFfiSig() { return ToIntStr(); }
+};
 
 template <>
-struct DartConverter<long int> : public DartConverterInteger<long int> {};
+struct DartConverter<long int> : public DartConverterInteger<long int> {
+  static const char* ToFfiSig() { return ToIntStr(); }
+};
 
 template <>
-struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {};
+struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {
+  static const char* ToFfiSig() { return ToUintStr(); }
+};
 
 template <>
-struct DartConverter<long long> : public DartConverterInteger<long long> {};
+struct DartConverter<long long> : public DartConverterInteger<long long> {
+  static const char* ToFfiSig() { return ToIntStr(); }
+};
 
 template <>
 struct DartConverter<unsigned long>
-    : public DartConverterInteger<unsigned long> {};
+    : public DartConverterInteger<unsigned long> {
+  static const char* ToFfiSig() { return ToUintStr(); }
+};
 
 template <>
 struct DartConverter<unsigned long long> {
+  using FfiType = unsigned long long;
+  static constexpr const char* kFfiSig = "Uint64";
+  static constexpr const char* kDartSig = "int";
+  static constexpr bool kAllowedInLeaf = true;
+
   // TODO(abarth): The Dart VM API doesn't yet have an entry-point for
   // an unsigned 64-bit type. We will need to add a Dart API for
   // constructing an integer from uint64_t.
@@ -137,10 +205,25 @@ struct DartConverter<unsigned long long> {
     Dart_GetNativeIntegerArgument(args, index, &result);
     return result;
   }
+
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
+  static FfiType FromFfi(FfiType val) {
+    TONIC_DCHECK(val <= 0x7fffffffffffffffLL);
+    return val;
+  }
+  static FfiType ToFfi(FfiType val) {
+    TONIC_DCHECK(val <= 0x7fffffffffffffffLL);
+    return val;
+  }
 };
 
 template <typename T>
 struct DartConverterFloatingPoint {
+  using FfiType = T;
+  static constexpr bool kAllowedInLeaf = true;
+
   static Dart_Handle ToDart(T val) { return Dart_NewDouble(val); }
 
   static void SetReturnValue(Dart_NativeArguments args, T val) {
@@ -160,19 +243,39 @@ struct DartConverterFloatingPoint {
     Dart_GetNativeDoubleArgument(args, index, &result);
     return result;
   }
+
+  static T FromFfi(FfiType val) { return val; }
+  static FfiType ToFfi(T val) { return val; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 template <>
-struct DartConverter<float> : public DartConverterFloatingPoint<float> {};
+struct DartConverter<float> : public DartConverterFloatingPoint<float> {
+  static constexpr const char* kFfiSig = "Float";
+  static constexpr const char* kDartSig = "double";
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+};
 
 template <>
-struct DartConverter<double> : public DartConverterFloatingPoint<double> {};
+struct DartConverter<double> : public DartConverterFloatingPoint<double> {
+  static constexpr const char* kFfiSig = "Double";
+  static constexpr const char* kDartSig = "double";
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Enum Classes
 
 template <typename T>
 struct DartConverter<T, typename std::enable_if<std::is_enum<T>::value>::type> {
+  // TODO(cskau): Determine the correct bit-width.
+  using FfiType = int32_t;
+  static constexpr const char* kFfiSig = "Int32";
+  static constexpr const char* kDartSig = "int";
+  static constexpr bool kAllowedInLeaf = true;
+
   static Dart_Handle ToDart(T val) {
     return Dart_NewInteger(
         static_cast<typename std::underlying_type<T>::type>(val));
@@ -196,6 +299,11 @@ struct DartConverter<T, typename std::enable_if<std::is_enum<T>::value>::type> {
     Dart_GetNativeIntegerArgument(args, index, &result);
     return static_cast<T>(result);
   }
+
+  static T FromFfi(FfiType val) { return static_cast<T>(val); }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -203,6 +311,11 @@ struct DartConverter<T, typename std::enable_if<std::is_enum<T>::value>::type> {
 
 template <>
 struct DartConverter<std::string> {
+  using FfiType = Dart_Handle;
+  static constexpr const char* kFfiSig = "Handle";  // String
+  static constexpr const char* kDartSig = "String";
+  static constexpr bool kAllowedInLeaf = false;
+
   static Dart_Handle ToDart(const std::string& val) {
     return Dart_NewStringFromUTF8(reinterpret_cast<const uint8_t*>(val.data()),
                                   val.length());
@@ -226,10 +339,21 @@ struct DartConverter<std::string> {
                                    Dart_Handle& exception) {
     return FromDart(Dart_GetNativeArgument(args, index));
   }
+
+  static std::string FromFfi(FfiType val) { return FromDart(val); }
+  static FfiType ToFfi(std::string val) { return ToDart(val); }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 template <>
 struct DartConverter<std::u16string> {
+  using FfiType = Dart_Handle;
+  static constexpr const char* kFfiSig = "Handle";  // String
+  static constexpr const char* kDartSig = "String";
+  static constexpr bool kAllowedInLeaf = false;
+
   static Dart_Handle ToDart(const std::u16string& val) {
     return Dart_NewStringFromUTF16(
         reinterpret_cast<const uint16_t*>(val.data()), val.length());
@@ -253,6 +377,12 @@ struct DartConverter<std::u16string> {
                                       Dart_Handle& exception) {
     return FromDart(Dart_GetNativeArgument(args, index));
   }
+
+  static std::u16string FromFfi(FfiType val) { return FromDart(val); }
+  static FfiType ToFfi(std::u16string val) { return ToDart(val); }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 template <>
@@ -360,6 +490,11 @@ struct DartListFactory {
 
 template <typename T>
 struct DartConverter<std::vector<T>> {
+  using FfiType = Dart_Handle;
+  static constexpr const char* kFfiSig = "Handle";  // TODO(cskau)
+  static constexpr const char* kDartSig = "String";
+  static constexpr bool kAllowedInLeaf = true;
+
   using ValueType = typename DartConverterTypes<T>::ValueType;
   using ConverterType = typename DartConverterTypes<T>::ConverterType;
 
@@ -413,6 +548,12 @@ struct DartConverter<std::vector<T>> {
                                               Dart_Handle& exception) {
     return FromDart(Dart_GetNativeArgument(args, index));
   }
+
+  static std::vector<ValueType> FromFfi(FfiType val) { return FromDart(val); }
+  static FfiType ToFfi(std::vector<ValueType> val) { return ToDart(val); }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -420,6 +561,11 @@ struct DartConverter<std::vector<T>> {
 
 template <>
 struct DartConverter<Dart_Handle> {
+  using FfiType = Dart_Handle;
+  static constexpr const char* kFfiSig = "Handle";
+  static constexpr const char* kDartSig = "Object";
+  static constexpr bool kAllowedInLeaf = false;
+
   static Dart_Handle ToDart(Dart_Handle val) { return val; }
 
   static void SetReturnValue(Dart_NativeArguments args, Dart_Handle val) {
@@ -433,6 +579,12 @@ struct DartConverter<Dart_Handle> {
                                    Dart_Handle& exception) {
     return Dart_GetNativeArgument(args, index);
   }
+
+  static Dart_Handle FromFfi(FfiType val) { return val; }
+  static FfiType ToFfi(Dart_Handle val) { return val; }
+  static const char* ToFfiSig() { return kFfiSig; }
+  static const char* ToDartSig() { return kDartSig; }
+  static bool AllowedInLeaf() { return kAllowedInLeaf; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

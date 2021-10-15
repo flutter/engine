@@ -35,7 +35,7 @@ namespace flutter {
 
 static void SceneBuilder_constructor(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&SceneBuilder::create, args);
+  DartCallConstructor(&SceneBuilder::Create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
@@ -80,13 +80,14 @@ SceneBuilder::SceneBuilder() {
 SceneBuilder::~SceneBuilder() = default;
 
 void SceneBuilder::pushTransform(Dart_Handle layer_handle,
-                                 tonic::Float64List& matrix4,
+                                 const tonic::Float64List& matrix4,
                                  fml::RefPtr<EngineLayer> oldLayer) {
   SkMatrix sk_matrix = ToSkMatrix(matrix4);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
-  matrix4.Release();
+  // matrix4.Release();  // TODO(cskau): Do we need this?
+  const_cast<tonic::Float64List&>(matrix4).Release();
   EngineLayer::MakeRetained(layer_handle, layer);
 
   if (oldLayer && oldLayer->Layer()) {

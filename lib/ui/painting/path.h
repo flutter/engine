@@ -7,6 +7,7 @@
 
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/rrect.h"
+#include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/volatile_path_tracker.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/pathops/SkPathOps.h"
@@ -24,6 +25,7 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
 
  public:
   ~CanvasPath() override;
+
   static fml::RefPtr<CanvasPath> CreateNew(Dart_Handle path_handle) {
     return fml::MakeRefCounted<CanvasPath>();
   }
@@ -39,6 +41,13 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
     fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
     path->tracked_path_->path = src;
     return path;
+  }
+
+  static fml::RefPtr<CanvasPath> CreateOrThrow(Dart_Handle wrapper) {
+    UIDartState::ThrowIfUIOperationsProhibited();
+    auto res = CreateNew(wrapper);
+    res->AssociateWithDartWrapper(wrapper);
+    return res;
   }
 
   int getFillType();
@@ -94,17 +103,17 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   void addPathWithMatrix(CanvasPath* path,
                          double dx,
                          double dy,
-                         tonic::Float64List& matrix4);
+                         const tonic::Float64List& matrix4);
   void extendWithPath(CanvasPath* path, double dx, double dy);
   void extendWithPathAndMatrix(CanvasPath* path,
                                double dx,
                                double dy,
-                               tonic::Float64List& matrix4);
+                               const tonic::Float64List& matrix4);
   void close();
   void reset();
   bool contains(double x, double y);
   void shift(Dart_Handle path_handle, double dx, double dy);
-  void transform(Dart_Handle path_handle, tonic::Float64List& matrix4);
+  void transform(Dart_Handle path_handle, const tonic::Float64List& matrix4);
   tonic::Float32List getBounds();
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
   void clone(Dart_Handle path_handle);

@@ -17,6 +17,7 @@ source_set("tonic") {
     "common/macros.h",
     "converter/dart_converter.cc",
     "converter/dart_converter.h",
+    "dart_args.cc",
     "dart_args.h",
     "dart_binding_macros.h",
     "dart_class_library.cc",

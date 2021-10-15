@@ -26,8 +26,19 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   FML_FRIEND_MAKE_REF_COUNTED(ParagraphBuilder);
 
  public:
-  static fml::RefPtr<ParagraphBuilder> create(
-      tonic::Int32List& encoded,
+  static fml::RefPtr<ParagraphBuilder> Create(
+      const tonic::Int32List& encoded,
+      Dart_Handle strutData,
+      const std::string& fontFamily,
+      const std::vector<std::string>& strutFontFamilies,
+      double fontSize,
+      double height,
+      const std::u16string& ellipsis,
+      const std::string& locale);
+
+  static fml::RefPtr<ParagraphBuilder> CreateOrThrow(
+      Dart_Handle wrapper,
+      const tonic::Int32List& encoded,
       Dart_Handle strutData,
       const std::string& fontFamily,
       const std::vector<std::string>& strutFontFamilies,
@@ -38,7 +49,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
 
   ~ParagraphBuilder() override;
 
-  void pushStyle(tonic::Int32List& encoded,
+  void pushStyle(const tonic::Int32List& encoded,
                  const std::vector<std::string>& fontFamilies,
                  double fontSize,
                  double letterSpacing,
@@ -74,7 +85,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit ParagraphBuilder(tonic::Int32List& encoded,
+  explicit ParagraphBuilder(const tonic::Int32List& encoded,
                             Dart_Handle strutData,
                             const std::string& fontFamily,
                             const std::vector<std::string>& strutFontFamilies,

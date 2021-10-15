@@ -10,6 +10,7 @@
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/matrix.h"
+#include "flutter/lib/ui/painting/paint.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/window.h"
@@ -87,6 +88,18 @@ fml::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
   recorder->set_canvas(canvas);
   canvas->display_list_recorder_ = recorder->display_list_recorder();
   return canvas;
+}
+
+fml::RefPtr<Canvas> Canvas::CreateOrThrow(Dart_Handle wrapper,
+                                          PictureRecorder* recorder,
+                                          double left,
+                                          double top,
+                                          double right,
+                                          double bottom) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = Create(recorder, left, top, right, bottom);
+  res->AssociateWithDartWrapper(wrapper);
+  return res;
 }
 
 Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas) {}

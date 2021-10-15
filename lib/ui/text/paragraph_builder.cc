@@ -137,7 +137,7 @@ const int sForceStrutHeightMask = 1 << sForceStrutHeightIndex;
 
 static void ParagraphBuilder_constructor(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&ParagraphBuilder::create, args);
+  DartCallConstructor(&ParagraphBuilder::Create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ParagraphBuilder);
@@ -157,8 +157,8 @@ void ParagraphBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
        FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
-    tonic::Int32List& encoded,
+fml::RefPtr<ParagraphBuilder> ParagraphBuilder::Create(
+    const tonic::Int32List& encoded,
     Dart_Handle strutData,
     const std::string& fontFamily,
     const std::vector<std::string>& strutFontFamilies,
@@ -169,6 +169,23 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::create(
   return fml::MakeRefCounted<ParagraphBuilder>(encoded, strutData, fontFamily,
                                                strutFontFamilies, fontSize,
                                                height, ellipsis, locale);
+}
+
+fml::RefPtr<ParagraphBuilder> ParagraphBuilder::CreateOrThrow(
+    Dart_Handle wrapper,
+    const tonic::Int32List& encoded,
+    Dart_Handle strutData,
+    const std::string& fontFamily,
+    const std::vector<std::string>& strutFontFamilies,
+    double fontSize,
+    double height,
+    const std::u16string& ellipsis,
+    const std::string& locale) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = Create(encoded, strutData, fontFamily, strutFontFamilies, fontSize,
+                    height, ellipsis, locale);
+  res->AssociateWithDartWrapper(wrapper);
+  return res;
 }
 
 // returns true if there is a font family defined. Font family is the only
@@ -235,7 +252,7 @@ void decodeStrut(Dart_Handle strut_data,
 }
 
 ParagraphBuilder::ParagraphBuilder(
-    tonic::Int32List& encoded,
+    const tonic::Int32List& encoded,
     Dart_Handle strutData,
     const std::string& fontFamily,
     const std::vector<std::string>& strutFontFamilies,
@@ -365,7 +382,7 @@ void decodeFontFeatures(Dart_Handle font_features_data,
   }
 }
 
-void ParagraphBuilder::pushStyle(tonic::Int32List& encoded,
+void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
                                  const std::vector<std::string>& fontFamilies,
                                  double fontSize,
                                  double letterSpacing,

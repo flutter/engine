@@ -5,6 +5,8 @@
 #ifndef LIB_TONIC_DART_ARGS_H_
 #define LIB_TONIC_DART_ARGS_H_
 
+#include <iostream>
+#include <sstream>
 #include <type_traits>
 #include <utility>
 
@@ -101,6 +103,7 @@ void DartReturn(T result, Dart_NativeArguments args) {
 template <typename IndicesType, typename T>
 class DartDispatcher {};
 
+// void f(ArgTypes...)
 template <size_t... indices, typename... ArgTypes>
 struct DartDispatcher<IndicesHolder<indices...>, void (*)(ArgTypes...)>
     : public DartArgHolder<indices, ArgTypes>... {
@@ -116,6 +119,7 @@ struct DartDispatcher<IndicesHolder<indices...>, void (*)(ArgTypes...)>
   }
 };
 
+// ResultType f(ArgTypes...)
 template <size_t... indices, typename ResultType, typename... ArgTypes>
 struct DartDispatcher<IndicesHolder<indices...>, ResultType (*)(ArgTypes...)>
     : public DartArgHolder<indices, ArgTypes>... {
@@ -137,6 +141,7 @@ struct DartDispatcher<IndicesHolder<indices...>, ResultType (*)(ArgTypes...)>
   }
 };
 
+// void C::m(ArgTypes...)
 template <size_t... indices, typename C, typename... ArgTypes>
 struct DartDispatcher<IndicesHolder<indices...>, void (C::*)(ArgTypes...)>
     : public DartArgHolder<indices, ArgTypes>... {
@@ -153,6 +158,7 @@ struct DartDispatcher<IndicesHolder<indices...>, void (C::*)(ArgTypes...)>
   }
 };
 
+// ReturnType (C::m)(ArgTypes...) const
 template <size_t... indices,
           typename C,
           typename ReturnType,
@@ -174,6 +180,7 @@ struct DartDispatcher<IndicesHolder<indices...>,
   }
 };
 
+// ReturnType (C::m)(ArgTypes...)
 template <size_t... indices,
           typename C,
           typename ResultType,
@@ -191,6 +198,374 @@ struct DartDispatcher<IndicesHolder<indices...>, ResultType (C::*)(ArgTypes...)>
     DartReturn((GetReceiver<C>(it_->args())->*func)(
                    DartArgHolder<indices, ArgTypes>::value...),
                it_->args());
+  }
+};
+
+// Format a string like `@FfiNative<FT>("name")` for a given function signature.
+intptr_t FormatFfiNativeAnnotation(char* buf,
+                                   intptr_t buf_size,
+                                   const char* ret_type,
+                                   const char* name,
+                                   bool has_self,
+                                   size_t n_args,
+                                   va_list args);
+
+std::unique_ptr<char[]> FormatFfiNativeAnnotation(const char* ret_type,
+                                                  const char* name,
+                                                  bool has_self,
+                                                  size_t n_args,
+                                                  ...);
+
+// external static DT FUNCTION(Pointer, ...);
+intptr_t FormatFfiNativeFunction(char* buf,
+                                 intptr_t buf_size,
+                                 const char* ret_type,
+                                 const char* name,
+                                 bool has_self,
+                                 size_t n_args,
+                                 va_list args);
+
+std::unique_ptr<char[]> FormatFfiNativeFunction(const char* ret_type,
+                                                const char* name,
+                                                bool has_self,
+                                                size_t n_args,
+                                                ...);
+
+// Template voodoo to automatically setup static entry points for FFI Native
+// functions.
+// Entry points for instance methods take the instance as the first argument and
+// call the given method with the remaining arguments.
+// Arguments will automatically get converted to and from their FFI
+// representations with the DartConverter templates.
+template <typename Object, typename Signature, Signature Method>
+struct FfiDispatcher;
+
+template <typename Arg, typename... Args>
+void print_args(std::ostringstream* stream) {
+  *stream << tonic::DartConverter<typename std::remove_const<
+      typename std::remove_reference<Arg>::type>::type>::ToFfiSig();
+  if constexpr (sizeof...(Args) > 0) {
+    *stream << ", ";
+    print_args<Args...>(stream);
+  }
+}
+
+template <typename Arg, typename... Args>
+void print_dart_args(std::ostringstream* stream) {
+  *stream << tonic::DartConverter<typename std::remove_const<
+      typename std::remove_reference<Arg>::type>::type>::ToDartSig();
+  if constexpr (sizeof...(Args) > 0) {
+    *stream << ", ";
+    print_dart_args<Args...>(stream);
+  }
+}
+
+template <typename Arg, typename... Args>
+bool AllowedInLeaf() {
+  bool result = tonic::DartConverter<typename std::remove_const<
+      typename std::remove_reference<Arg>::type>::type>::AllowedInLeaf();
+  if constexpr (sizeof...(Args) > 0) {
+    result &= AllowedInLeaf<Args...>();
+  }
+  return result;
+}
+
+// TODO(cskau): Can we remove const from functions without specialisation?
+
+// Match `Return Function(...)`.
+template <typename Return, typename... Args, Return (*Function)(Args...)>
+struct FfiDispatcher<void, Return (*)(Args...), Function> {
+  using FfiReturn = typename DartConverter<Return>::FfiType;
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static FfiReturn Call(
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ function, forwarding converted native arguments.
+    return DartConverter<Return>::ToFfi(Function(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...));
+  }
+
+  static void PrintSig(std::ostringstream* stream, const char* name) {
+    // name
+    *stream << name << "\t";
+    // leaf, ffi_ret, ffi_args
+    if constexpr (sizeof...(Args) > 0) {
+      bool leaf = AllowedInLeaf<Return>() && AllowedInLeaf<Args...>();
+      *stream << (leaf ? "true" : "false") << "\t";
+      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
+      print_args<Args...>(stream);
+      *stream << "\t";
+    } else {
+      *stream << (AllowedInLeaf<Return>() ? "true" : "false") << "\t";
+      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
+      *stream << "\t";
+    }
+    // dart_ret
+    *stream << tonic::DartConverter<Return>::ToDartSig() << "\t";
+    // dart_args
+    if constexpr (sizeof...(Args) > 0) {
+      print_dart_args<Args...>(stream);
+    }
+  }
+
+  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
+    return FormatFfiNativeAnnotation(
+        tonic::DartConverter<Return>::ToFfiSig(), name, /*has_self=*/false,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
+  }
+
+  static std::unique_ptr<char[]> ToDartSig(const char* name) {
+    return FormatFfiNativeFunction(
+        tonic::DartConverter<Return>::ToDartSig(), name, /*has_self=*/false,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
+  }
+};
+
+// Match `Return Object::Method(...)`.
+template <typename Object,
+          typename Return,
+          typename... Args,
+          Return (Object::*Method)(Args...)>
+struct FfiDispatcher<Object, Return (Object::*)(Args...), Method> {
+  using FfiReturn = typename DartConverter<Return>::FfiType;
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static FfiReturn Call(
+      Object* obj,
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ method on obj, forwarding converted native arguments.
+    return DartConverter<Return>::ToFfi((obj->*Method)(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...));
+  }
+
+  static void PrintSig(std::ostringstream* stream, const char* name) {
+    // name
+    *stream << name << "\t";
+    // leaf, ffi_ret, ffi_args
+    if constexpr (sizeof...(Args) > 0) {
+      bool leaf = AllowedInLeaf<Return>() && AllowedInLeaf<Args...>();
+      *stream << (leaf ? "true" : "false") << "\t";
+      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
+      *stream << "Pointer<Void>, ";
+      print_args<Args...>(stream);
+      *stream << "\t";
+    } else {
+      *stream << (AllowedInLeaf<Return>() ? "true" : "false") << "\t";
+      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
+      *stream << "Pointer<Void>\t";
+    }
+    // dart_ret
+    *stream << tonic::DartConverter<Return>::ToDartSig() << "\t";
+    // dart_args
+    *stream << "Pointer<Void>";
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      print_dart_args<Args...>(stream);
+    }
+  }
+
+  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
+    return FormatFfiNativeAnnotation(
+        tonic::DartConverter<Return>::ToFfiSig(), name, /*has_self=*/true,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
+  }
+
+  static std::unique_ptr<char[]> ToDartSig(const char* name) {
+    return FormatFfiNativeFunction(
+        tonic::DartConverter<Return>::ToDartSig(), name, /*has_self=*/true,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
+  }
+};
+
+// Match `Return Object::Method(...) const`.
+template <typename Object,
+          typename Return,
+          typename... Args,
+          Return (Object::*Method)(Args...) const>
+struct FfiDispatcher<Object, Return (Object::*)(Args...) const, Method> {
+  using FfiReturn = typename DartConverter<Return>::FfiType;
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static FfiReturn Call(
+      Object* obj,
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ method on obj, forwarding converted native arguments.
+    return DartConverter<Return>::ToFfi((obj->*Method)(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...));
+  }
+
+  static void PrintSig(std::ostringstream* stream, const char* name) {
+    // name
+    *stream << name << "\t";
+    // leaf, ffi_ret, ffi_args
+    if constexpr (sizeof...(Args) > 0) {
+      bool leaf = AllowedInLeaf<Return>() && AllowedInLeaf<Args...>();
+      *stream << (leaf ? "true" : "false") << "\t";
+      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
+      *stream << "Pointer<Void>, ";
+      print_args<Args...>(stream);
+      *stream << "\t";
+    } else {
+      *stream << (AllowedInLeaf<Return>() ? "true" : "false") << "\t";
+      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
+      *stream << "Pointer<Void>\t";
+    }
+    // dart_ret
+    *stream << tonic::DartConverter<Return>::ToDartSig() << "\t";
+    // dart_args
+    *stream << "Pointer<Void>";
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      print_dart_args<Args...>(stream);
+    }
+  }
+
+  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
+    return FormatFfiNativeAnnotation(
+        tonic::DartConverter<Return>::ToFfiSig(), name, /*has_self=*/true,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
+  }
+
+  static std::unique_ptr<char[]> ToDartSig(const char* name) {
+    return FormatFfiNativeFunction(
+        tonic::DartConverter<Return>::ToDartSig(), name, /*has_self=*/true,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
+  }
+};
+
+// `void` specialisation since we can't declare `ToFfi` to take void rvalues.
+// Match `void Function(...)`.
+template <typename... Args, void (*Function)(Args...)>
+struct FfiDispatcher<void, void (*)(Args...), Function> {
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static void Call(
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ function, forwarding converted native arguments.
+    Function(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...);
+  }
+
+  static void PrintSig(std::ostringstream* stream, const char* name) {
+    // name
+    *stream << name << "\t";
+    // leaf, ffi_ret, ffi_args
+    if constexpr (sizeof...(Args) > 0) {
+      bool leaf = AllowedInLeaf<Args...>();
+      *stream << (leaf ? "true" : "false") << "\t";
+      *stream << "Void\t";
+      print_args<Args...>(stream);
+      *stream << "\t";
+    } else {
+      *stream << "true\t";
+      *stream << "Void\t";
+      *stream << "\t";
+    }
+    // dart_ret
+    *stream << "void\t";
+    // dart_args
+    if constexpr (sizeof...(Args) > 0) {
+      print_dart_args<Args...>(stream);
+    }
+  }
+
+  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
+    return FormatFfiNativeAnnotation(
+        tonic::DartConverter<void>::ToFfiSig(), name, /*has_self=*/false,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
+  }
+
+  static std::unique_ptr<char[]> ToDartSig(const char* name) {
+    return FormatFfiNativeFunction(
+        tonic::DartConverter<void>::ToDartSig(), name, /*has_self=*/false,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
+  }
+};
+
+// `void` specialisation since we can't declare `ToFfi` to take void rvalues.
+// Match `void Object::Method(...)`.
+template <typename Object, typename... Args, void (Object::*Method)(Args...)>
+struct FfiDispatcher<Object, void (Object::*)(Args...), Method> {
+  static const size_t n_args = sizeof...(Args);
+
+  // Static C entry-point with Dart FFI signature.
+  static void Call(
+      Object* obj,
+      typename DartConverter<typename std::remove_const<
+          typename std::remove_reference<Args>::type>::type>::FfiType... args) {
+    // Call C++ method on obj, forwarding converted native arguments.
+    (obj->*Method)(
+        DartConverter<typename std::remove_const<typename std::remove_reference<
+            Args>::type>::type>::FromFfi(args)...);
+  }
+
+  static void PrintSig(std::ostringstream* stream, const char* name) {
+    // name
+    *stream << name << "\t";
+    // leaf, ffi_ret, ffi_args
+    if constexpr (sizeof...(Args) > 0) {
+      bool leaf = AllowedInLeaf<Args...>();
+      *stream << (leaf ? "true" : "false") << "\t";
+      *stream << "Void\t";
+      *stream << "Pointer<Void>, ";
+      print_args<Args...>(stream);
+      *stream << "\t";
+    } else {
+      *stream << "true\t";
+      *stream << "Void\t";
+      *stream << "Pointer<Void>\t";
+    }
+    // dart_ret
+    *stream << "void\t";
+    // dart_args
+    *stream << "Pointer<Void>";
+    if constexpr (sizeof...(Args) > 0) {
+      *stream << ", ";
+      print_dart_args<Args...>(stream);
+    }
+  }
+
+  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
+    return FormatFfiNativeAnnotation(
+        tonic::DartConverter<void>::ToFfiSig(), name, /*has_self=*/true, n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
+  }
+
+  static std::unique_ptr<char[]> ToDartSig(const char* name) {
+    return FormatFfiNativeFunction(
+        tonic::DartConverter<void>::ToDartSig(), name, /*has_self=*/true,
+        n_args,
+        tonic::DartConverter<typename std::remove_const<
+            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
   }
 };
 
@@ -219,6 +594,7 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
   DartArgIterator it(args);
   using Indices = typename IndicesForSignature<Sig>::type;
   using Wrappable = typename DartDispatcher<Indices, Sig>::CtorResultType;
+  // Call native Create function to construct native obj.
   Wrappable wrappable;
   {
     DartDispatcher<Indices, Sig> decoder(&it);
@@ -227,12 +603,16 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
     wrappable = decoder.DispatchCtor(func);
   }
 
+  // Get first arg which is the Handle for the Dart object being constructed.
   Dart_Handle wrapper = Dart_GetNativeArgument(args, 0);
   TONIC_CHECK(!LogIfError(wrapper));
 
+  // There's only one field which is the native object reference.
   intptr_t native_fields[DartWrappable::kNumberOfNativeFields];
+  // Copy native field into array.
   TONIC_CHECK(!LogIfError(Dart_GetNativeFieldsOfArgument(
       args, 0, DartWrappable::kNumberOfNativeFields, native_fields)));
+  // Check the native reference .. is null?
   TONIC_CHECK(!native_fields[DartWrappable::kPeerIndex]);
 
   wrappable->AssociateWithDartWrapper(wrapper);

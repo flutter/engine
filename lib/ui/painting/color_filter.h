@@ -26,6 +26,7 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
 
  public:
   static fml::RefPtr<ColorFilter> Create();
+  static fml::RefPtr<ColorFilter> CreateOrThrow(Dart_Handle wrapper);
 
   // Flutter still defines the matrix to be biased by 255 in the last column
   // (translate). skia is normalized, treating the last column as 0...1, so we

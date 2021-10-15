@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 
-// @dart = 2.12
+// @dart = 2.14
 part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
@@ -694,11 +694,10 @@ class SpellOutStringAttribute extends StringAttribute {
     _initSpellOutStringAttribute(this, range.start, range.end);
   }
 
-  void _initSpellOutStringAttribute(
-    SpellOutStringAttribute instance,
-    int start,
-    int end,
-  ) native 'NativeStringAttribute_initSpellOutStringAttribute';
+  @FfiNative<Void Function(Handle, Int32, Int32)>(
+      'NativeStringAttribute::initSpellOutStringAttribute')
+  external static void _initSpellOutStringAttribute(
+      SpellOutStringAttribute instance, int start, int end);
 
   @override
   StringAttribute copy({required TextRange range}) {
@@ -733,12 +732,10 @@ class LocaleStringAttribute extends StringAttribute {
   /// The lanuage of this attribute.
   final Locale locale;
 
-  void _initLocaleStringAttribute(
-    LocaleStringAttribute instance,
-    int start,
-    int end,
-    String locale,
-  ) native 'NativeStringAttribute_initLocaleStringAttribute';
+  @FfiNative<Void Function(Handle, Int32, Int32, Handle)>(
+      'NativeStringAttribute::initLocaleStringAttribute')
+  external static void _initLocaleStringAttribute(
+      LocaleStringAttribute instance, int start, int end, String locale);
 
   @override
   StringAttribute copy({required TextRange range}) {
@@ -921,43 +918,80 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
       additionalActions,
     );
   }
-  void _updateNode(
-    int id,
-    int flags,
-    int actions,
-    int maxValueLength,
-    int currentValueLength,
-    int textSelectionBase,
-    int textSelectionExtent,
-    int platformViewId,
-    int scrollChildren,
-    int scrollIndex,
-    double scrollPosition,
-    double scrollExtentMax,
-    double scrollExtentMin,
-    double left,
-    double top,
-    double right,
-    double bottom,
-    double elevation,
-    double thickness,
-    String label,
-    List<StringAttribute> labelAttributes,
-    String value,
-    List<StringAttribute> valueAttributes,
-    String increasedValue,
-    List<StringAttribute> increasedValueAttributes,
-    String decreasedValue,
-    List<StringAttribute> decreasedValueAttributes,
-    String hint,
-    List<StringAttribute> hintAttributes,
-    String? tooltip,
-    int textDirection,
-    Float64List transform,
-    Int32List childrenInTraversalOrder,
-    Int32List childrenInHitTestOrder,
-    Int32List additionalActions,
-  ) native 'SemanticsUpdateBuilder_updateNode';
+  @FfiNative<
+      Void Function(
+          Pointer<Void>,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Int32,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Int32,
+          Handle,
+          Handle,
+          Handle,
+          Handle)>('SemanticsUpdateBuilder::updateNode')
+  external void _updateNode(
+      int id,
+      int flags,
+      int actions,
+      int maxValueLength,
+      int currentValueLength,
+      int textSelectionBase,
+      int textSelectionExtent,
+      int platformViewId,
+      int scrollChildren,
+      int scrollIndex,
+      double scrollPosition,
+      double scrollExtentMax,
+      double scrollExtentMin,
+      double left,
+      double top,
+      double right,
+      double bottom,
+      double elevation,
+      double thickness,
+      String label,
+      List<StringAttribute> labelAttributes,
+      String value,
+      List<StringAttribute> valueAttributes,
+      String increasedValue,
+      List<StringAttribute> increasedValueAttributes,
+      String decreasedValue,
+      List<StringAttribute> decreasedValueAttributes,
+      String hint,
+      List<StringAttribute> hintAttributes,
+      String? tooltip,
+      int textDirection,
+      Float64List transform,
+      Int32List childrenInTraversalOrder,
+      Int32List childrenInHitTestOrder,
+      Int32List additionalActions);
 
   /// Update the custom semantics action associated with the given `id`.
   ///
@@ -979,11 +1013,10 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     assert(overrideId != null);
     _updateCustomAction(id, label, hint, overrideId);
   }
-  void _updateCustomAction(
-      int id,
-      String? label,
-      String? hint,
-      int overrideId) native 'SemanticsUpdateBuilder_updateCustomAction';
+  @FfiNative<Void Function(Pointer<Void>, Int32, Handle, Handle, Int32)>(
+      'SemanticsUpdateBuilder::updateCustomAction')
+  external void _updateCustomAction(
+      int id, String? label, String? hint, int overrideId);
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
@@ -995,7 +1028,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     _build(semanticsUpdate);
     return semanticsUpdate;
   }
-  void _build(SemanticsUpdate outSemanticsUpdate) native 'SemanticsUpdateBuilder_build';
+  @FfiNative<Void Function(Pointer<Void>, Handle)>(
+      'SemanticsUpdateBuilder::build')
+  external void _build(SemanticsUpdate outSemanticsUpdate);
 }
 
 /// An opaque object representing a batch of semantics updates.
@@ -1017,5 +1052,7 @@ class SemanticsUpdate extends NativeFieldWrapperClass1 {
   ///
   /// After calling this function, the semantics update is cannot be used
   /// further.
-  void dispose() native 'SemanticsUpdate_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('SemanticsUpdate::dispose',
+      isLeaf: false)
+  external void dispose();
 }

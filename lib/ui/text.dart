@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
+// @dart = 2.14
 part of dart.ui;
 
 /// Whether to slant the glyphs in the font
@@ -3127,38 +3127,50 @@ class Paragraph extends NativeFieldWrapperClass1 {
   /// The amount of horizontal space this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double get width native 'Paragraph_width';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::width', isLeaf: true)
+  external double get width;
 
   /// The amount of vertical space this paragraph occupies.
   ///
   /// Valid only after [layout] has been called.
-  double get height native 'Paragraph_height';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::height', isLeaf: true)
+  external double get height;
 
   /// The distance from the left edge of the leftmost glyph to the right edge of
   /// the rightmost glyph in the paragraph.
   ///
   /// Valid only after [layout] has been called.
-  double get longestLine native 'Paragraph_longestLine';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::longestLine',
+      isLeaf: true)
+  external double get longestLine;
 
   /// The minimum width that this paragraph could be without failing to paint
   /// its contents within itself.
   ///
   /// Valid only after [layout] has been called.
-  double get minIntrinsicWidth native 'Paragraph_minIntrinsicWidth';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::minIntrinsicWidth',
+      isLeaf: true)
+  external double get minIntrinsicWidth;
 
   /// Returns the smallest width beyond which increasing the width never
   /// decreases the height.
   ///
   /// Valid only after [layout] has been called.
-  double get maxIntrinsicWidth native 'Paragraph_maxIntrinsicWidth';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::maxIntrinsicWidth',
+      isLeaf: true)
+  external double get maxIntrinsicWidth;
 
   /// The distance from the top of the paragraph to the alphabetic
   /// baseline of the first line, in logical pixels.
-  double get alphabeticBaseline native 'Paragraph_alphabeticBaseline';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::alphabeticBaseline',
+      isLeaf: true)
+  external double get alphabeticBaseline;
 
   /// The distance from the top of the paragraph to the ideographic
   /// baseline of the first line, in logical pixels.
-  double get ideographicBaseline native 'Paragraph_ideographicBaseline';
+  @FfiNative<Double Function(Pointer<Void>)>('Paragraph::ideographicBaseline',
+      isLeaf: true)
+  external double get ideographicBaseline;
 
   /// True if there is more vertical content, but the text was truncated, either
   /// because we reached `maxLines` lines of text or because the `maxLines` was
@@ -3167,13 +3179,17 @@ class Paragraph extends NativeFieldWrapperClass1 {
   ///
   /// See the discussion of the `maxLines` and `ellipsis` arguments at
   /// [new ParagraphStyle].
-  bool get didExceedMaxLines native 'Paragraph_didExceedMaxLines';
+  @FfiNative<Bool Function(Pointer<Void>)>('Paragraph::didExceedMaxLines',
+      isLeaf: true)
+  external bool get didExceedMaxLines;
 
   /// Computes the size and position of each glyph in the paragraph.
   ///
   /// The [ParagraphConstraints] control how wide the text is allowed to be.
   void layout(ParagraphConstraints constraints) => _layout(constraints.width);
-  void _layout(double width) native 'Paragraph_layout';
+  @FfiNative<Void Function(Pointer<Void>, Double)>('Paragraph::layout',
+      isLeaf: true)
+  external void _layout(double width);
 
   List<TextBox> _decodeTextBoxes(Float32List encoded) {
     final int count = encoded.length ~/ 5;
@@ -3209,8 +3225,12 @@ class Paragraph extends NativeFieldWrapperClass1 {
     assert(boxWidthStyle != null);
     return _decodeTextBoxes(_getBoxesForRange(start, end, boxHeightStyle.index, boxWidthStyle.index));
   }
+
   // See paragraph.cc for the layout of this return value.
-  Float32List _getBoxesForRange(int start, int end, int boxHeightStyle, int boxWidthStyle) native 'Paragraph_getRectsForRange';
+  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Uint32, Uint32)>(
+      'Paragraph::getRectsForRange')
+  external Float32List _getBoxesForRange(
+      int start, int end, int boxHeightStyle, int boxWidthStyle);
 
   /// Returns a list of text boxes that enclose all placeholders in the paragraph.
   ///
@@ -3222,14 +3242,20 @@ class Paragraph extends NativeFieldWrapperClass1 {
   List<TextBox> getBoxesForPlaceholders() {
     return _decodeTextBoxes(_getBoxesForPlaceholders());
   }
-  Float32List _getBoxesForPlaceholders() native 'Paragraph_getRectsForPlaceholders';
+
+  @FfiNative<Handle Function(Pointer<Void>)>(
+      'Paragraph::getRectsForPlaceholders')
+  external Float32List _getBoxesForPlaceholders();
 
   /// Returns the text position closest to the given offset.
   TextPosition getPositionForOffset(Offset offset) {
     final List<int> encoded = _getPositionForOffset(offset.dx, offset.dy);
     return TextPosition(offset: encoded[0], affinity: TextAffinity.values[encoded[1]]);
   }
-  List<int> _getPositionForOffset(double dx, double dy) native 'Paragraph_getPositionForOffset';
+
+  @FfiNative<Handle Function(Pointer<Void>, Double, Double)>(
+      'Paragraph::getPositionForOffset')
+  external List<int> _getPositionForOffset(double dx, double dy);
 
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///
@@ -3241,7 +3267,10 @@ class Paragraph extends NativeFieldWrapperClass1 {
     final List<int> boundary = _getWordBoundary(position.offset);
     return TextRange(start: boundary[0], end: boundary[1]);
   }
-  List<int> _getWordBoundary(int offset) native 'Paragraph_getWordBoundary';
+
+  @FfiNative<Handle Function(Pointer<Void>, Uint32)>(
+      'Paragraph::getWordBoundary')
+  external List<int> _getWordBoundary(int offset);
 
   /// Returns the [TextRange] of the line at the given [TextPosition].
   ///
@@ -3273,12 +3302,17 @@ class Paragraph extends NativeFieldWrapperClass1 {
     }
     return line;
   }
-  List<int> _getLineBoundary(int offset) native 'Paragraph_getLineBoundary';
+
+  @FfiNative<Handle Function(Pointer<Void>, Uint32)>(
+      'Paragraph::getLineBoundary')
+  external List<int> _getLineBoundary(int offset);
 
   // Redirecting the paint function in this way solves some dependency problems
   // in the C++ code. If we straighten out the C++ dependencies, we can remove
   // this indirection.
-  void _paint(Canvas canvas, double x, double y) native 'Paragraph_paint';
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>(
+      'Paragraph::paint')
+  external void _paint(Canvas canvas, double x, double y);
 
   /// Returns the full list of [LineMetrics] that describe in detail the various
   /// metrics of each laid out line.
@@ -3307,7 +3341,9 @@ class Paragraph extends NativeFieldWrapperClass1 {
     ];
     return metrics;
   }
-  Float64List _computeLineMetrics() native 'Paragraph_computeLineMetrics';
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Paragraph::computeLineMetrics')
+  external Float64List _computeLineMetrics();
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
@@ -3415,11 +3451,11 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _pushStyle(
       encoded,
       fullFontFamilies,
-      style._fontSize,
-      style._letterSpacing,
-      style._wordSpacing,
-      style._height,
-      style._decorationThickness,
+      style._fontSize ?? 0,
+      style._letterSpacing ?? 0,
+      style._wordSpacing ?? 0,
+      style._height ?? 0,
+      style._decorationThickness ?? 0,
       _encodeLocale(style._locale),
       style._background?._objects,
       style._background?._data,
@@ -3430,22 +3466,38 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     );
   }
 
-  void _pushStyle(
-    Int32List encoded,
-    List<dynamic> fontFamilies,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    double? decorationThickness,
-    String locale,
-    List<dynamic>? backgroundObjects,
-    ByteData? backgroundData,
-    List<dynamic>? foregroundObjects,
-    ByteData? foregroundData,
-    ByteData shadowsData,
-    ByteData? fontFeaturesData,
-  ) native 'ParagraphBuilder_pushStyle';
+  @FfiNative<
+      Void Function(
+          Pointer<Void>,
+          Handle,
+          Handle,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle,
+          Handle)>('ParagraphBuilder::pushStyle')
+  external void _pushStyle(
+      Int32List encoded,
+      List<dynamic> fontFamilies,
+      double fontSize,
+      double letterSpacing,
+      double wordSpacing,
+      double height,
+      double decorationThickness,
+      String locale,
+      List<dynamic>? backgroundObjects,
+      ByteData? backgroundData,
+      List<dynamic>? foregroundObjects,
+      ByteData? foregroundData,
+      ByteData shadowsData,
+      ByteData? fontFeaturesData);
 
   static String _encodeLocale(Locale? locale) => locale?.toString() ?? '';
 
@@ -3455,7 +3507,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// added to the paragraph is affected by all the styles in the stack. Calling
   /// [pop] removes the topmost style in the stack, leaving the remaining styles
   /// in effect.
-  void pop() native 'ParagraphBuilder_pop';
+  @FfiNative<Void Function(Pointer<Void>)>('ParagraphBuilder::pop',
+      isLeaf: true)
+  external void pop();
 
   /// Adds the given text to the paragraph.
   ///
@@ -3465,7 +3519,10 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     if (error != null)
       throw ArgumentError(error);
   }
-  String? _addText(String text) native 'ParagraphBuilder_addText';
+
+  @FfiNative<Handle Function(Pointer<Void>, Handle)>(
+      'ParagraphBuilder::addText')
+  external String? _addText(String text);
 
   /// Adds an inline placeholder space to the paragraph.
   ///
@@ -3530,7 +3587,12 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
-  String? _addPlaceholder(double width, double height, int alignment, double baselineOffset, int? baseline) native 'ParagraphBuilder_addPlaceholder';
+
+  @FfiNative<
+      Handle Function(Pointer<Void>, Double, Double, Uint32, Double,
+          Uint32)>('ParagraphBuilder::addPlaceholder')
+  external String? _addPlaceholder(double width, double height, int alignment,
+      double baselineOffset, int? baseline);
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
@@ -3542,7 +3604,9 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     _build(paragraph);
     return paragraph;
   }
-  void _build(Paragraph outParagraph) native 'ParagraphBuilder_build';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('ParagraphBuilder::build')
+  external void _build(Paragraph outParagraph);
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.

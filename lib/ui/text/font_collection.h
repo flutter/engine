@@ -11,6 +11,7 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "third_party/tonic/typed_data/typed_list.h"
 #include "txt/font_collection.h"
 
 namespace tonic {
@@ -38,6 +39,14 @@ class FontCollection {
   void LoadFontFromList(const uint8_t* font_data,
                         int length,
                         std::string family_name);
+
+  static void LoadFontFromListEntry(const tonic::Uint8List& font_data,
+                                    Dart_Handle callback,
+                                    std::string family_name);
+
+  static void LoadFontFromListOrThrow(const tonic::Uint8List& font_data,
+                                      Dart_Handle callback,
+                                      std::string family_name);
 
  private:
   std::shared_ptr<txt::FontCollection> collection_;

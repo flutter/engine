@@ -4,6 +4,9 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
+// #include <iostream>
+// #include <iomanip>
+
 #include "flutter/lib/ui/painting/matrix.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -20,12 +23,9 @@ static void ImageFilter_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, ImageFilter);
 
-#define FOR_EACH_BINDING(V)       \
-  V(ImageFilter, initImage)       \
-  V(ImageFilter, initPicture)     \
-  V(ImageFilter, initBlur)        \
-  V(ImageFilter, initMatrix)      \
-  V(ImageFilter, initColorFilter) \
+#define FOR_EACH_BINDING(V)  \
+  V(ImageFilter, initBlur)   \
+  V(ImageFilter, initMatrix) \
   V(ImageFilter, initComposeFilter)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
@@ -38,6 +38,13 @@ void ImageFilter::RegisterNatives(tonic::DartLibraryNatives* natives) {
 
 fml::RefPtr<ImageFilter> ImageFilter::Create() {
   return fml::MakeRefCounted<ImageFilter>();
+}
+
+fml::RefPtr<ImageFilter> ImageFilter::CreateOrThrow(Dart_Handle wrapper) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = Create();
+  res->AssociateWithDartWrapper(wrapper);
+  return res;
 }
 
 static const std::array<SkSamplingOptions, 4> filter_qualities = {
@@ -67,14 +74,6 @@ SkFilterMode ImageFilter::FilterModeFromIndex(int filterQualityIndex) {
 ImageFilter::ImageFilter() {}
 
 ImageFilter::~ImageFilter() {}
-
-void ImageFilter::initImage(CanvasImage* image) {
-  filter_ = SkImageFilters::Image(image->image());
-}
-
-void ImageFilter::initPicture(Picture* picture) {
-  filter_ = SkImageFilters::Picture(picture->picture());
-}
 
 void ImageFilter::initBlur(double sigma_x,
                            double sigma_y,

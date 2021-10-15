@@ -23,7 +23,7 @@ void pushStringAttributes(
 
 static void SemanticsUpdateBuilder_constructor(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&SemanticsUpdateBuilder::create, args);
+  DartCallConstructor(&SemanticsUpdateBuilder::Create, args);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, SemanticsUpdateBuilder);

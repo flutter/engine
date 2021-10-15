@@ -27,22 +27,9 @@ namespace flutter {
 
 namespace {
 
-void LoadFontFromList(tonic::Uint8List& font_data,  // NOLINT
-                      Dart_Handle callback,
-                      std::string family_name) {
-  FontCollection& font_collection = UIDartState::Current()
-                                        ->platform_configuration()
-                                        ->client()
-                                        ->GetFontCollection();
-  font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
-                                   family_name);
-  font_data.Release();
-  tonic::DartInvoke(callback, {tonic::ToDart(0)});
-}
-
 void _LoadFontFromList(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  tonic::DartCallStatic(LoadFontFromList, args);
+  tonic::DartCallStatic(FontCollection::LoadFontFromListEntry, args);
 }
 
 }  // namespace
@@ -172,6 +159,28 @@ void FontCollection::LoadFontFromList(const uint8_t* font_data,
     font_provider.RegisterTypeface(typeface, family_name);
   }
   collection_->ClearFontFamilyCache();
+}
+
+void FontCollection::LoadFontFromListEntry(
+    const tonic::Uint8List& font_data,  // NOLINT
+    Dart_Handle callback,
+    std::string family_name) {
+  FontCollection& font_collection = UIDartState::Current()
+                                        ->platform_configuration()
+                                        ->client()
+                                        ->GetFontCollection();
+  font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
+                                   family_name);
+  // font_data.Release();  // TODO(cskau): Can we do this?
+  tonic::DartInvoke(callback, {tonic::ToDart(0)});
+}
+
+void FontCollection::LoadFontFromListOrThrow(
+    const tonic::Uint8List& font_data,  // NOLINT
+    Dart_Handle callback,
+    std::string family_name) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  LoadFontFromListEntry(font_data, callback, family_name);
 }
 
 }  // namespace flutter

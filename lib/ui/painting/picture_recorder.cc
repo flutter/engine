@@ -34,6 +34,14 @@ fml::RefPtr<PictureRecorder> PictureRecorder::Create() {
   return fml::MakeRefCounted<PictureRecorder>();
 }
 
+fml::RefPtr<PictureRecorder> PictureRecorder::CreateOrThrow(
+    Dart_Handle wrapper) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = Create();
+  res->AssociateWithDartWrapper(wrapper);
+  return res;
+}
+
 PictureRecorder::PictureRecorder() {}
 
 PictureRecorder::~PictureRecorder() {}

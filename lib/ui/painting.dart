@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 
-// @dart = 2.12
+// @dart = 2.14
 part of dart.ui;
 
 // Some methods in this file assert that their arguments are not null. These
@@ -1845,9 +1845,11 @@ class _Image extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   _Image._();
 
-  int get width native 'Image_width';
+  @FfiNative<Int32 Function(Pointer<Void>)>('Image::width', isLeaf: true)
+  external int get width;
 
-  int get height native 'Image_height';
+  @FfiNative<Int32 Function(Pointer<Void>)>('Image::height', isLeaf: true)
+  external int get height;
 
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
@@ -1858,7 +1860,8 @@ class _Image extends NativeFieldWrapperClass1 {
   }
 
   /// Returns an error message on failure, null on success.
-  String? _toByteData(int format, _Callback<Uint8List?> callback) native 'Image_toByteData';
+  @FfiNative<Handle Function(Pointer<Void>, Int32, Handle)>('Image::toByteData')
+  external String? _toByteData(int format, _Callback<Uint8List?> callback);
 
   bool _disposed = false;
   void dispose() {
@@ -1874,7 +1877,8 @@ class _Image extends NativeFieldWrapperClass1 {
     _dispose();
   }
 
-  void _dispose() native 'Image_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('Image::dispose', isLeaf: false)
+  external void _dispose();
 
   Set<Image> _handles = <Image>{};
 
@@ -1969,17 +1973,24 @@ class Codec extends NativeFieldWrapperClass1 {
   Codec._();
 
   int? _cachedFrameCount;
+
   /// Number of frames in this image.
   int get frameCount => _cachedFrameCount ??= _frameCount;
-  int get _frameCount native 'Codec_frameCount';
+
+  @FfiNative<Int32 Function(Pointer<Void>)>('Codec::frameCount', isLeaf: true)
+  external int get _frameCount;
 
   int? _cachedRepetitionCount;
+
   /// Number of times to repeat the animation.
   ///
   /// * 0 when the animation should be played once.
   /// * -1 for infinity repetitions.
   int get repetitionCount => _cachedRepetitionCount ??= _repetitionCount;
-  int get _repetitionCount native 'Codec_repetitionCount';
+
+  @FfiNative<Int32 Function(Pointer<Void>)>('Codec::repetitionCount',
+      isLeaf: true)
+  external int get _repetitionCount;
 
   /// Fetches the next animation frame.
   ///
@@ -2008,11 +2019,13 @@ class Codec extends NativeFieldWrapperClass1 {
   }
 
   /// Returns an error message on failure, null on success.
-  String? _getNextFrame(void Function(_Image?, int) callback) native 'Codec_getNextFrame';
+  @FfiNative<Handle Function(Pointer<Void>, Handle)>('Codec::getNextFrame')
+  external String? _getNextFrame(void Function(_Image?, int) callback);
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'Codec_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('Codec::dispose', isLeaf: false)
+  external void dispose();
 }
 
 /// Instantiates an image [Codec].
@@ -2261,7 +2274,9 @@ class EngineLayer extends NativeFieldWrapperClass1 {
   /// Once this EngineLayer is disposed, it is no longer eligible for use as a
   /// retained layer, and must not be passed as an `oldLayer` to any of the
   /// [SceneBuilder] methods which accept that parameter.
-  void dispose() native 'EngineLayer_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('EngineLayer::dispose',
+      isLeaf: false)
+  external void dispose();
 }
 
 /// A complex, one-dimensional subset of a plane.
@@ -2301,7 +2316,9 @@ class Path extends NativeFieldWrapperClass1 {
     source._clone(clonedPath);
     return clonedPath;
   }
-  void _clone(Path outPath) native 'Path_clone';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Path::clone')
+  external void _clone(Path outPath);
 
   /// Determines how the interior of this path is calculated.
   ///
@@ -2309,51 +2326,81 @@ class Path extends NativeFieldWrapperClass1 {
   PathFillType get fillType => PathFillType.values[_getFillType()];
   set fillType(PathFillType value) => _setFillType(value.index);
 
-  int _getFillType() native 'Path_getFillType';
-  void _setFillType(int fillType) native 'Path_setFillType';
+  @FfiNative<Int32 Function(Pointer<Void>)>('Path::getFillType', isLeaf: true)
+  external int _getFillType();
+
+  @FfiNative<Void Function(Pointer<Void>, Int32)>('Path::setFillType',
+      isLeaf: true)
+  external void _setFillType(int fillType);
 
   /// Starts a new sub-path at the given coordinate.
-  void moveTo(double x, double y) native 'Path_moveTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::moveTo',
+      isLeaf: true)
+  external void moveTo(double x, double y);
 
   /// Starts a new sub-path at the given offset from the current point.
-  void relativeMoveTo(double dx, double dy) native 'Path_relativeMoveTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::relativeMoveTo',
+      isLeaf: true)
+  external void relativeMoveTo(double dx, double dy);
 
   /// Adds a straight line segment from the current point to the given
   /// point.
-  void lineTo(double x, double y) native 'Path_lineTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::lineTo',
+      isLeaf: true)
+  external void lineTo(double x, double y);
 
   /// Adds a straight line segment from the current point to the point
   /// at the given offset from the current point.
-  void relativeLineTo(double dx, double dy) native 'Path_relativeLineTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::relativeLineTo',
+      isLeaf: true)
+  external void relativeLineTo(double dx, double dy);
 
   /// Adds a quadratic bezier segment that curves from the current
   /// point to the given point (x2,y2), using the control point
   /// (x1,y1).
-  void quadraticBezierTo(double x1, double y1, double x2, double y2) native 'Path_quadraticBezierTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>(
+      'Path::quadraticBezierTo',
+      isLeaf: true)
+  external void quadraticBezierTo(double x1, double y1, double x2, double y2);
 
   /// Adds a quadratic bezier segment that curves from the current
   /// point to the point at the offset (x2,y2) from the current point,
   /// using the control point at the offset (x1,y1) from the current
   /// point.
-  void relativeQuadraticBezierTo(double x1, double y1, double x2, double y2) native 'Path_relativeQuadraticBezierTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>(
+      'Path::relativeQuadraticBezierTo',
+      isLeaf: true)
+  external void relativeQuadraticBezierTo(
+      double x1, double y1, double x2, double y2);
 
   /// Adds a cubic bezier segment that curves from the current point
   /// to the given point (x3,y3), using the control points (x1,y1) and
   /// (x2,y2).
-  void cubicTo(double x1, double y1, double x2, double y2, double x3, double y3) native 'Path_cubicTo';
+  @FfiNative<
+      Void Function(Pointer<Void>, Float, Float, Float, Float, Float,
+          Float)>('Path::cubicTo', isLeaf: true)
+  external void cubicTo(
+      double x1, double y1, double x2, double y2, double x3, double y3);
 
   /// Adds a cubic bezier segment that curves from the current point
-  /// to the point at the offset (x3,y3) from the current point, using
+/// to the point at the offset (x3,y3) from the current point, using
   /// the control points at the offsets (x1,y1) and (x2,y2) from the
   /// current point.
-  void relativeCubicTo(double x1, double y1, double x2, double y2, double x3, double y3) native 'Path_relativeCubicTo';
+@FfiNative<
+      Void Function(Pointer<Void>, Float, Float, Float, Float, Float,
+          Float)>('Path::relativeCubicTo', isLeaf: true)
+  external void relativeCubicTo(
+      double x1, double y1, double x2, double y2, double x3, double y3);
 
   /// Adds a bezier segment that curves from the current point to the
   /// given point (x2,y2), using the control points (x1,y1) and the
   /// weight w. If the weight is greater than 1, then the curve is a
   /// hyperbola; if the weight equals 1, it's a parabola; and if it is
   /// less than 1, it is an ellipse.
-  void conicTo(double x1, double y1, double x2, double y2, double w) native 'Path_conicTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>(
+      'Path::conicTo',
+      isLeaf: true)
+  external void conicTo(double x1, double y1, double x2, double y2, double w);
 
   /// Adds a bezier segment that curves from the current point to the
   /// point at the offset (x2,y2) from the current point, using the
@@ -2361,7 +2408,11 @@ class Path extends NativeFieldWrapperClass1 {
   /// the weight w. If the weight is greater than 1, then the curve is
   /// a hyperbola; if the weight equals 1, it's a parabola; and if it
   /// is less than 1, it is an ellipse.
-  void relativeConicTo(double x1, double y1, double x2, double y2, double w) native 'Path_relativeConicTo';
+  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>(
+      'Path::relativeConicTo',
+      isLeaf: true)
+  external void relativeConicTo(
+      double x1, double y1, double x2, double y2, double w);
 
   /// If the `forceMoveTo` argument is false, adds a straight line
   /// segment and an arc segment.
@@ -2383,8 +2434,12 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_rectIsValid(rect));
     _arcTo(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, forceMoveTo);
   }
-  void _arcTo(double left, double top, double right, double bottom,
-              double startAngle, double sweepAngle, bool forceMoveTo) native 'Path_arcTo';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float,
+          Bool)>('Path::arcTo', isLeaf: true)
+  external void _arcTo(double left, double top, double right, double bottom,
+      double startAngle, double sweepAngle, bool forceMoveTo);
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
   /// and rotated by `rotation`.
@@ -2409,9 +2464,12 @@ class Path extends NativeFieldWrapperClass1 {
     _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, rotation,
                 largeArc, clockwise);
   }
-  void _arcToPoint(double arcEndX, double arcEndY, double radiusX,
-                   double radiusY, double rotation, bool largeArc,
-                   bool clockwise) native 'Path_arcToPoint';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Bool,
+          Bool)>('Path::arcToPoint', isLeaf: true)
+  external void _arcToPoint(double arcEndX, double arcEndY, double radiusX,
+      double radiusY, double rotation, bool largeArc, bool clockwise);
 
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
@@ -2439,10 +2497,18 @@ class Path extends NativeFieldWrapperClass1 {
     _relativeArcToPoint(arcEndDelta.dx, arcEndDelta.dy, radius.x, radius.y,
                         rotation, largeArc, clockwise);
   }
-  void _relativeArcToPoint(double arcEndX, double arcEndY, double radiusX,
-                           double radiusY, double rotation,
-                           bool largeArc, bool clockwise)
-                           native 'Path_relativeArcToPoint';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Bool,
+          Bool)>('Path::relativeArcToPoint', isLeaf: true)
+  external void _relativeArcToPoint(
+      double arcEndX,
+      double arcEndY,
+      double radiusX,
+      double radiusY,
+      double rotation,
+      bool largeArc,
+      bool clockwise);
 
   /// Adds a new sub-path that consists of four lines that outline the
   /// given rectangle.
@@ -2450,7 +2516,11 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_rectIsValid(rect));
     _addRect(rect.left, rect.top, rect.right, rect.bottom);
   }
-  void _addRect(double left, double top, double right, double bottom) native 'Path_addRect';
+
+  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>(
+      'Path::addRect',
+      isLeaf: true)
+  external void _addRect(double left, double top, double right, double bottom);
 
   /// Adds a new sub-path that consists of a curve that forms the
   /// ellipse that fills the given rectangle.
@@ -2461,7 +2531,11 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_rectIsValid(oval));
     _addOval(oval.left, oval.top, oval.right, oval.bottom);
   }
-  void _addOval(double left, double top, double right, double bottom) native 'Path_addOval';
+
+  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>(
+      'Path::addOval',
+      isLeaf: true)
+  external void _addOval(double left, double top, double right, double bottom);
 
   /// Adds a new sub-path with one arc segment that consists of the arc
   /// that follows the edge of the oval bounded by the given
@@ -2475,8 +2549,12 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_rectIsValid(oval));
     _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
   }
-  void _addArc(double left, double top, double right, double bottom,
-               double startAngle, double sweepAngle) native 'Path_addArc';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Float, Float, Float, Float, Float,
+          Float)>('Path::addArc', isLeaf: true)
+  external void _addArc(double left, double top, double right, double bottom,
+      double startAngle, double sweepAngle);
 
   /// Adds a new sub-path with a sequence of line segments that connect the given
   /// points.
@@ -2489,7 +2567,9 @@ class Path extends NativeFieldWrapperClass1 {
     assert(points != null);
     _addPolygon(_encodePointList(points), close);
   }
-  void _addPolygon(Float32List points, bool close) native 'Path_addPolygon';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('Path::addPolygon')
+  external void _addPolygon(Float32List points, bool close);
 
   /// Adds a new sub-path that consists of the straight lines and
   /// curves needed to form the rounded rectangle described by the
@@ -2498,7 +2578,9 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_rrectIsValid(rrect));
     _addRRect(rrect._value32);
   }
-  void _addRRect(Float32List rrect) native 'Path_addRRect';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Path::addRRect')
+  external void _addRRect(Float32List rrect);
 
   /// Adds the sub-paths of `path`, offset by `offset`, to this path.
   ///
@@ -2515,8 +2597,16 @@ class Path extends NativeFieldWrapperClass1 {
       _addPath(path, offset.dx, offset.dy);
     }
   }
-  void _addPath(Path path, double dx, double dy) native 'Path_addPath';
-  void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_addPathWithMatrix';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>(
+      'Path::addPath')
+  external void _addPath(Path path, double dx, double dy);
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Pointer<Void>, Double, Double,
+          Handle)>('Path::addPathWithMatrix')
+  external void _addPathWithMatrix(
+      Path path, double dx, double dy, Float64List matrix);
 
   /// Adds the sub-paths of `path`, offset by `offset`, to this path.
   /// The current sub-path is extended with the first sub-path
@@ -2535,17 +2625,26 @@ class Path extends NativeFieldWrapperClass1 {
       _extendWithPath(path, offset.dx, offset.dy);
     }
   }
-  void _extendWithPath(Path path, double dx, double dy) native 'Path_extendWithPath';
-  void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix) native 'Path_extendWithPathAndMatrix';
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>(
+      'Path::extendWithPath')
+  external void _extendWithPath(Path path, double dx, double dy);
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Pointer<Void>, Double, Double,
+          Handle)>('Path::extendWithPathAndMatrix')
+  external void _extendWithPathAndMatrix(
+      Path path, double dx, double dy, Float64List matrix);
 
   /// Closes the last sub-path, as if a straight line had been drawn
   /// from the current point to the first point of the sub-path.
-  void close() native 'Path_close';
+  @FfiNative<Void Function(Pointer<Void>)>('Path::close', isLeaf: true)
+  external void close();
 
   /// Clears the [Path] object of all sub-paths, returning it to the
   /// same state it had when it was created. The _current point_ is
   /// reset to the origin.
-  void reset() native 'Path_reset';
+  @FfiNative<Void Function(Pointer<Void>)>('Path::reset', isLeaf: true)
+  external void reset();
 
   /// Tests to see if the given point is within the path. (That is, whether the
   /// point would be in the visible portion of the path if the path was used
@@ -2558,7 +2657,10 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_offsetIsValid(point));
     return _contains(point.dx, point.dy);
   }
-  bool _contains(double x, double y) native 'Path_contains';
+
+  @FfiNative<Bool Function(Pointer<Void>, Double, Double)>('Path::contains',
+      isLeaf: true)
+  external bool _contains(double x, double y);
 
   /// Returns a copy of the path with all the segments of every
   /// sub-path translated by the given offset.
@@ -2568,7 +2670,10 @@ class Path extends NativeFieldWrapperClass1 {
     _shift(path, offset.dx, offset.dy);
     return path;
   }
-  void _shift(Path outPath, double dx, double dy) native 'Path_shift';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Double, Double)>(
+      'Path::shift')
+  external void _shift(Path outPath, double dx, double dy);
 
   /// Returns a copy of the path with all the segments of every
   /// sub-path transformed by the given matrix.
@@ -2578,7 +2683,9 @@ class Path extends NativeFieldWrapperClass1 {
     _transform(path, matrix4);
     return path;
   }
-  void _transform(Path outPath, Float64List matrix4) native 'Path_transform';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transform')
+  external void _transform(Path outPath, Float64List matrix4);
 
   /// Computes the bounding rectangle for this path.
   ///
@@ -2599,7 +2706,9 @@ class Path extends NativeFieldWrapperClass1 {
     final Float32List rect = _getBounds();
     return Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
   }
-  Float32List _getBounds() native 'Path_getBounds';
+
+  @FfiNative<Handle Function(Pointer<Void>)>('Path::getBounds')
+  external Float32List _getBounds();
 
   /// Combines the two paths according to the manner specified by the given
   /// `operation`.
@@ -2616,7 +2725,10 @@ class Path extends NativeFieldWrapperClass1 {
     }
     throw StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
   }
-  bool _op(Path path1, Path path2, int operation) native 'Path_op';
+
+  @FfiNative<Bool Function(Pointer<Void>, Pointer<Void>, Pointer<Void>, Int32)>(
+      'Path::op')
+  external bool _op(Path path1, Path path2, int operation);
 
   /// Creates a [PathMetrics] object for this path, which can describe various
   /// properties about the contours of the path.
@@ -2843,7 +2955,10 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
     return _length(contourIndex);
   }
-  double _length(int contourIndex) native 'PathMeasure_getLength';
+
+  @FfiNative<Float Function(Pointer<Void>, Int32)>('PathMeasure::getLength',
+      isLeaf: true)
+  external double _length(int contourIndex);
 
   Tangent? getTangentForOffset(int contourIndex, double distance) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
@@ -2858,21 +2973,31 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
       );
     }
   }
-  Float32List _getPosTan(int contourIndex, double distance) native 'PathMeasure_getPosTan';
+
+  @FfiNative<Handle Function(Pointer<Void>, Int32, Float)>(
+      'PathMeasure::getPosTan')
+  external Float32List _getPosTan(int contourIndex, double distance);
 
   Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
     final Path path = Path._();
-    _extractPath(path, contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    _extractPath(path, contourIndex, start, end, startWithMoveTo);
     return path;
   }
-  void _extractPath(Path outPath, int contourIndex, double start, double end, {bool startWithMoveTo = true}) native 'PathMeasure_getSegment';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Int32, Float, Float, Bool)>(
+      'PathMeasure::getSegment')
+  external void _extractPath(Path outPath, int contourIndex, double start,
+      double end, bool startWithMoveTo);
 
   bool isClosed(int contourIndex) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
     return _isClosed(contourIndex);
   }
-  bool _isClosed(int contourIndex) native 'PathMeasure_isClosed';
+
+  @FfiNative<Bool Function(Pointer<Void>, Int32)>('PathMeasure::isClosed',
+      isLeaf: true)
+  external bool _isClosed(int contourIndex);
 
   // Move to the next contour in the path.
   //
@@ -2885,7 +3010,10 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     }
     return next;
   }
-  bool _nativeNextContour() native 'PathMeasure_nextContour';
+
+  @FfiNative<Bool Function(Pointer<Void>)>('PathMeasure::nextContour',
+      isLeaf: true)
+  external bool _nativeNextContour();
 
   /// The index of the current contour in the list of contours in the path.
   ///
@@ -3196,10 +3324,21 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
   final ColorFilter creator;
 
   void _constructor() native 'ColorFilter_constructor';
-  void _initMode(int color, int blendMode) native 'ColorFilter_initMode';
-  void _initMatrix(Float32List matrix) native 'ColorFilter_initMatrix';
-  void _initLinearToSrgbGamma() native 'ColorFilter_initLinearToSrgbGamma';
-  void _initSrgbToLinearGamma() native 'ColorFilter_initSrgbToLinearGamma';
+
+  @FfiNative<Void Function(Pointer<Void>, Int32, Int32)>(
+      'ColorFilter::initMode',
+      isLeaf: true)
+  external void _initMode(int color, int blendMode);
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('ColorFilter::initMatrix')
+  external void _initMatrix(Float32List matrix);
+  @FfiNative<Void Function(Pointer<Void>)>('ColorFilter::initLinearToSrgbGamma',
+      isLeaf: true)
+  external void _initLinearToSrgbGamma();
+
+  @FfiNative<Void Function(Pointer<Void>)>('ColorFilter::initSrgbToLinearGamma',
+      isLeaf: true)
+  external void _initSrgbToLinearGamma();
 }
 
 /// A filter operation to apply to a raster image.
@@ -3369,7 +3508,11 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     _constructor();
     _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
   }
-  void _initBlur(double sigmaX, double sigmaY, int tileMode) native 'ImageFilter_initBlur';
+
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Int32)>(
+      'ImageFilter::initBlur',
+      isLeaf: true)
+  external void _initBlur(double sigmaX, double sigmaY, int tileMode);
 
   /// Creates an image filter that applies a matrix transformation.
   ///
@@ -3383,7 +3526,10 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     _constructor();
     _initMatrix(filter.data, filter.filterQuality.index);
   }
-  void _initMatrix(Float64List matrix4, int filterQuality) native 'ImageFilter_initMatrix';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Int32)>(
+      'ImageFilter::initMatrix')
+  external void _initMatrix(Float64List matrix4, int filterQuality);
 
   /// Converts a color filter to an image filter.
   _ImageFilter.fromColorFilter(ColorFilter filter)
@@ -3393,7 +3539,10 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
     _initColorFilter(nativeFilter);
   }
-  void _initColorFilter(_ColorFilter? colorFilter) native 'ImageFilter_initColorFilter';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>(
+      'ImageFilter::initColorFilter')
+  external void _initColorFilter(_ColorFilter? colorFilter);
 
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
@@ -3404,7 +3553,12 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     final _ImageFilter nativeFilterOuter = filter.outerFilter._toNativeImageFilter();
     _initComposed(nativeFilterOuter,  nativeFilterInner);
   }
-  void _initComposed(_ImageFilter outerFilter, _ImageFilter innerFilter) native 'ImageFilter_initComposeFilter';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Pointer<Void>)>(
+      'ImageFilter::initComposeFilter')
+  external void _initComposed(
+      _ImageFilter outerFilter, _ImageFilter innerFilter);
+
   /// The original Dart object that created the native wrapper, which retains
   /// the values used for the filter.
   final ImageFilter creator;
@@ -3598,7 +3752,12 @@ class Gradient extends Shader {
     _constructor();
     _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
   }
-  void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4) native 'Gradient_initLinear';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Handle, Handle, Handle, Int32,
+          Handle)>('Gradient::initLinear')
+  external void _initLinear(Float32List endPoints, Int32List colors,
+      Float32List? colorStops, int tileMode, Float64List? matrix4);
 
   /// Creates a radial gradient centered at `center` that ends at `radius`
   /// distance from the center.
@@ -3659,8 +3818,43 @@ class Gradient extends Shader {
       _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
     }
   }
-  void _initRadial(double centerX, double centerY, double radius, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4) native 'Gradient_initRadial';
-  void _initConical(double startX, double startY, double startRadius, double endX, double endY, double endRadius, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4) native 'Gradient_initTwoPointConical';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle,
+          Int32, Handle)>('Gradient::initRadial')
+  external void _initRadial(
+      double centerX,
+      double centerY,
+      double radius,
+      Int32List colors,
+      Float32List? colorStops,
+      int tileMode,
+      Float64List? matrix4);
+
+  @FfiNative<
+      Void Function(
+          Pointer<Void>,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Handle,
+          Handle,
+          Int32,
+          Handle)>('Gradient::initTwoPointConical')
+  external void _initConical(
+      double startX,
+      double startY,
+      double startRadius,
+      double endX,
+      double endY,
+      double endRadius,
+      Int32List colors,
+      Float32List? colorStops,
+      int tileMode,
+      Float64List? matrix4);
 
   /// Creates a sweep gradient centered at `center` that starts at `startAngle`
   /// and ends at `endAngle`.
@@ -3711,7 +3905,19 @@ class Gradient extends Shader {
     _constructor();
     _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
   }
-  void _initSweep(double centerX, double centerY, Int32List colors, Float32List? colorStops, int tileMode, double startAngle, double endAngle, Float64List? matrix) native 'Gradient_initSweep';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Handle, Handle, Int32,
+          Double, Double, Handle)>('Gradient::initSweep')
+  external void _initSweep(
+      double centerX,
+      double centerY,
+      Int32List colors,
+      Float32List? colorStops,
+      int tileMode,
+      double startAngle,
+      double endAngle,
+      Float64List? matrix);
 
   static void _validateColorStops(List<Color> colors, List<double>? colorStops) {
     if (colorStops == null) {
@@ -3747,8 +3953,14 @@ class ImageShader extends Shader {
     _constructor();
     _initWithImage(image._image, tmx.index, tmy.index, filterQuality?.index ?? -1, matrix4);
   }
+
   void _constructor() native 'ImageShader_constructor';
-  void _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4) native 'ImageShader_initWithImage';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32,
+          Handle)>('ImageShader::initWithImage')
+  external void _initWithImage(_Image image, int tmx, int tmy,
+      int filterQualityIndex, Float64List matrix4);
 }
 
 /// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
@@ -3970,12 +4182,15 @@ class Vertices extends NativeFieldWrapperClass1 {
       throw ArgumentError('Invalid configuration for vertices.');
   }
 
-  bool _init(Vertices outVertices,
-             int mode,
-             Float32List positions,
-             Float32List? textureCoordinates,
-             Int32List? colors,
-             Uint16List? indices) native 'Vertices_init';
+  @FfiNative<Bool Function(Handle, Int32, Handle, Handle, Handle, Handle)>(
+      'Vertices::init')
+  external static bool _init(
+      Vertices outVertices,
+      int mode,
+      Float32List positions,
+      Float32List? textureCoordinates,
+      Int32List? colors,
+      Uint16List? indices);
 }
 
 /// Defines how a list of points is interpreted when drawing a set of points.
@@ -4079,7 +4294,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   ///  * [saveLayer], which does the same thing but additionally also groups the
   ///    commands done until the matching [restore].
-  void save() native 'Canvas_save';
+  @FfiNative<Void Function(Pointer<Void>)>('Canvas::save', isLeaf: true)
+  external void save();
 
   /// Saves a copy of the current transform and clip on the save stack, and then
   /// creates a new group which subsequent calls will become a part of. When the
@@ -4200,8 +4416,10 @@ class Canvas extends NativeFieldWrapperClass1 {
                  paint._objects, paint._data);
     }
   }
+
   void _saveLayerWithoutBounds(List<dynamic>? paintObjects, ByteData paintData)
       native 'Canvas_saveLayerWithoutBounds';
+
   void _saveLayer(double left,
                   double top,
                   double right,
@@ -4216,7 +4434,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// If the state was pushed with with [saveLayer], then this call will also
   /// cause the new layer to be composited into the previous layer.
-  void restore() native 'Canvas_restore';
+  @FfiNative<Void Function(Pointer<Void>)>('Canvas::restore', isLeaf: true)
+  external void restore();
 
   /// Returns the number of items on the save stack, including the
   /// initial state. This means it returns 1 for a clean canvas, and
@@ -4224,11 +4443,15 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// each matching call to [restore] decrements it.
   ///
   /// This number cannot go below 1.
-  int getSaveCount() native 'Canvas_getSaveCount';
+  @FfiNative<Int32 Function(Pointer<Void>)>('Canvas::getSaveCount',
+      isLeaf: true)
+  external int getSaveCount();
 
   /// Add a translation to the current transform, shifting the coordinate space
   /// horizontally by the first argument and vertically by the second argument.
-  void translate(double dx, double dy) native 'Canvas_translate';
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('Canvas::translate',
+      isLeaf: true)
+  external void translate(double dx, double dy);
 
   /// Add an axis-aligned scale to the current transform, scaling by the first
   /// argument in the horizontal direction and the second in the vertical
@@ -4238,16 +4461,22 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// directions.
   void scale(double sx, [double? sy]) => _scale(sx, sy ?? sx);
 
-  void _scale(double sx, double sy) native 'Canvas_scale';
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('Canvas::scale',
+      isLeaf: true)
+  external void _scale(double sx, double sy);
 
   /// Add a rotation to the current transform. The argument is in radians clockwise.
-  void rotate(double radians) native 'Canvas_rotate';
+  @FfiNative<Void Function(Pointer<Void>, Double)>('Canvas::rotate',
+      isLeaf: true)
+  external void rotate(double radians);
 
   /// Add an axis-aligned skew to the current transform, with the first argument
   /// being the horizontal skew in rise over run units clockwise around the
   /// origin, and the second argument being the vertical skew in rise over run
   /// units clockwise around the origin.
-  void skew(double sx, double sy) native 'Canvas_skew';
+  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('Canvas::skew',
+      isLeaf: true)
+  external void skew(double sx, double sy);
 
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
   /// specified as a list of values in column-major order.
@@ -4257,7 +4486,9 @@ class Canvas extends NativeFieldWrapperClass1 {
       throw ArgumentError('"matrix4" must have 16 entries.');
     _transform(matrix4);
   }
-  void _transform(Float64List matrix4) native 'Canvas_transform';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::transform')
+  external void _transform(Float64List matrix4);
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rectangle.
@@ -4276,12 +4507,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(doAntiAlias != null);
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
-  void _clipRect(double left,
-                 double top,
-                 double right,
-                 double bottom,
-                 int clipOp,
-                 bool doAntiAlias) native 'Canvas_clipRect';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Double, Int32,
+          Bool)>('Canvas::clipRect', isLeaf: true)
+  external void _clipRect(double left, double top, double right, double bottom,
+      int clipOp, bool doAntiAlias);
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given rounded rectangle.
@@ -4296,7 +4527,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(doAntiAlias != null);
     _clipRRect(rrect._value32, doAntiAlias);
   }
-  void _clipRRect(Float32List rrect, bool doAntiAlias) native 'Canvas_clipRRect';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('Canvas::clipRRect')
+  external void _clipRRect(Float32List rrect, bool doAntiAlias);
 
   /// Reduces the clip region to the intersection of the current clip and the
   /// given [Path].
@@ -4311,7 +4544,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(doAntiAlias != null);
     _clipPath(path, doAntiAlias);
   }
-  void _clipPath(Path path, bool doAntiAlias) native 'Canvas_clipPath';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Bool)>(
+      'Canvas::clipPath')
+  external void _clipPath(Path path, bool doAntiAlias);
 
   /// Paints the given [Color] onto the canvas, applying the given
   /// [BlendMode], with the given color being the source and the background
@@ -4321,7 +4557,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(blendMode != null);
     _drawColor(color.value, blendMode.index);
   }
-  void _drawColor(int color, int blendMode) native 'Canvas_drawColor';
+
+  @FfiNative<Void Function(Pointer<Void>, Uint32, Int32)>('Canvas::drawColor',
+      isLeaf: true)
+  external void _drawColor(int color, int blendMode);
 
   /// Draws a line between the given points using the given paint. The line is
   /// stroked, the value of the [Paint.style] is ignored for this call.
@@ -4333,12 +4572,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
   }
-  void _drawLine(double x1,
-                 double y1,
-                 double x2,
-                 double y2,
-                 List<dynamic>? paintObjects,
-                 ByteData paintData) native 'Canvas_drawLine';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Double, Handle,
+          Handle)>('Canvas::drawLineHandle')
+  external void _drawLine(double x1, double y1, double x2, double y2,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Fills the canvas with the given [Paint].
   ///
@@ -4348,7 +4587,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawPaint(paint._objects, paint._data);
   }
-  void _drawPaint(List<dynamic>? paintObjects, ByteData paintData) native 'Canvas_drawPaint';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>(
+      'Canvas::drawPaintHandle')
+  external void _drawPaint(List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
   /// or stroked (or both) is controlled by [Paint.style].
@@ -4358,12 +4600,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRect(rect.left, rect.top, rect.right, rect.bottom,
               paint._objects, paint._data);
   }
-  void _drawRect(double left,
-                 double top,
-                 double right,
-                 double bottom,
-                 List<dynamic>? paintObjects,
-                 ByteData paintData) native 'Canvas_drawRect';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Double, Handle,
+          Handle)>('Canvas::drawRectHandle')
+  external void _drawRect(double left, double top, double right, double bottom,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
   /// filled or stroked (or both) is controlled by [Paint.style].
@@ -4372,9 +4614,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawRRect(rrect._value32, paint._objects, paint._data);
   }
-  void _drawRRect(Float32List rrect,
-                  List<dynamic>? paintObjects,
-                  ByteData paintData) native 'Canvas_drawRRect';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>(
+      'Canvas::drawRRectHandle')
+  external void _drawRRect(
+      Float32List rrect, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a shape consisting of the difference between two rounded rectangles
   /// with the given [Paint]. Whether this shape is filled or stroked (or both)
@@ -4387,10 +4631,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawDRRect(outer._value32, inner._value32, paint._objects, paint._data);
   }
-  void _drawDRRect(Float32List outer,
-                   Float32List inner,
-                   List<dynamic>? paintObjects,
-                   ByteData paintData) native 'Canvas_drawDRRect';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>(
+      'Canvas::drawDRRectHandle')
+  external void _drawDRRect(Float32List outer, Float32List inner,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
   /// with the given [Paint]. Whether the oval is filled or stroked (or both) is
@@ -4401,12 +4646,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawOval(rect.left, rect.top, rect.right, rect.bottom,
               paint._objects, paint._data);
   }
-  void _drawOval(double left,
-                 double top,
-                 double right,
-                 double bottom,
-                 List<dynamic>? paintObjects,
-                 ByteData paintData) native 'Canvas_drawOval';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Double, Handle,
+          Handle)>('Canvas::drawOvalHandle')
+  external void _drawOval(double left, double top, double right, double bottom,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws a circle centered at the point given by the first argument and
   /// that has the radius given by the second argument, with the [Paint] given in
@@ -4417,11 +4662,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
   }
-  void _drawCircle(double x,
-                   double y,
-                   double radius,
-                   List<dynamic>? paintObjects,
-                   ByteData paintData) native 'Canvas_drawCircle';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Handle,
+          Handle)>('Canvas::drawCircleHandle')
+  external void _drawCircle(double x, double y, double radius,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draw an arc scaled to fit inside the given rectangle.
   ///
@@ -4440,15 +4686,20 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle,
              sweepAngle, useCenter, paint._objects, paint._data);
   }
-  void _drawArc(double left,
-                double top,
-                double right,
-                double bottom,
-                double startAngle,
-                double sweepAngle,
-                bool useCenter,
-                List<dynamic>? paintObjects,
-                ByteData paintData) native 'Canvas_drawArc';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Double, Double,
+          Double, Bool, Handle, Handle)>('Canvas::drawArcHandle')
+  external void _drawArc(
+      double left,
+      double top,
+      double right,
+      double bottom,
+      double startAngle,
+      double sweepAngle,
+      bool useCenter,
+      List<dynamic>? paintObjects,
+      ByteData paintData);
 
   /// Draws the given [Path] with the given [Paint].
   ///
@@ -4460,9 +4711,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawPath(path, paint._objects, paint._data);
   }
-  void _drawPath(Path path,
-                 List<dynamic>? paintObjects,
-                 ByteData paintData) native 'Canvas_drawPath';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>(
+      'Canvas::drawPathHandle')
+  external void _drawPath(
+      Path path, List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
   /// given [Offset]. The image is composited into the canvas using the given [Paint].
@@ -4472,12 +4725,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(paint != null);
     _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
   }
-  void _drawImage(_Image image,
-                  double x,
-                  double y,
-                  List<dynamic>? paintObjects,
-                  ByteData paintData,
-                  int filterQualityIndex) native 'Canvas_drawImage';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle,
+          Handle, Int32)>('Canvas::drawImageHandle')
+  external void _drawImage(_Image image, double x, double y,
+      List<dynamic>? paintObjects, ByteData paintData, int filterQualityIndex);
 
   /// Draws the subset of the given image described by the `src` argument into
   /// the canvas in the axis-aligned rectangle given by the `dst` argument.
@@ -4506,18 +4759,35 @@ class Canvas extends NativeFieldWrapperClass1 {
                    paint._data,
                    paint.filterQuality.index);
   }
-  void _drawImageRect(_Image image,
-                      double srcLeft,
-                      double srcTop,
-                      double srcRight,
-                      double srcBottom,
-                      double dstLeft,
-                      double dstTop,
-                      double dstRight,
-                      double dstBottom,
-                      List<dynamic>? paintObjects,
-                      ByteData paintData,
-                      int filterQualityIndex) native 'Canvas_drawImageRect';
+
+  @FfiNative<
+      Void Function(
+          Pointer<Void>,
+          Pointer<Void>,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Handle,
+          Handle,
+          Int32)>('Canvas::drawImageRectHandle')
+  external void _drawImageRect(
+      _Image image,
+      double srcLeft,
+      double srcTop,
+      double srcRight,
+      double srcBottom,
+      double dstLeft,
+      double dstTop,
+      double dstRight,
+      double dstBottom,
+      List<dynamic>? paintObjects,
+      ByteData paintData,
+      int filterQualityIndex);
 
   /// Draws the given [Image] into the canvas using the given [Paint].
   ///
@@ -4550,18 +4820,35 @@ class Canvas extends NativeFieldWrapperClass1 {
                    paint._data,
                    paint.filterQuality.index);
   }
-  void _drawImageNine(_Image image,
-                      double centerLeft,
-                      double centerTop,
-                      double centerRight,
-                      double centerBottom,
-                      double dstLeft,
-                      double dstTop,
-                      double dstRight,
-                      double dstBottom,
-                      List<dynamic>? paintObjects,
-                      ByteData paintData,
-                      int filterQualityIndex) native 'Canvas_drawImageNine';
+
+  @FfiNative<
+      Void Function(
+          Pointer<Void>,
+          Pointer<Void>,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Double,
+          Handle,
+          Handle,
+          Int32)>('Canvas::drawImageNineHandle')
+  external void _drawImageNine(
+      _Image image,
+      double centerLeft,
+      double centerTop,
+      double centerRight,
+      double centerBottom,
+      double dstLeft,
+      double dstTop,
+      double dstRight,
+      double dstBottom,
+      List<dynamic>? paintObjects,
+      ByteData paintData,
+      int filterQualityIndex);
 
   /// Draw the given picture onto the canvas. To create a picture, see
   /// [PictureRecorder].
@@ -4569,7 +4856,9 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(picture != null); // picture is checked on the engine side
     _drawPicture(picture);
   }
-  void _drawPicture(Picture picture) native 'Canvas_drawPicture';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>('Canvas::drawPicture')
+  external void _drawPicture(Picture picture);
 
   /// Draws the text in the given [Paragraph] into this canvas at the given
   /// [Offset].
@@ -4630,10 +4919,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
 
-  void _drawPoints(List<dynamic>? paintObjects,
-                   ByteData paintData,
-                   int pointMode,
-                   Float32List points) native 'Canvas_drawPoints';
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>(
+      'Canvas::drawPointsHandle')
+  external void _drawPoints(List<dynamic>? paintObjects, ByteData paintData,
+      int pointMode, Float32List points);
 
   /// Draws the set of [Vertices] onto the canvas.
   ///
@@ -4650,10 +4939,12 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(blendMode != null);
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
   }
-  void _drawVertices(Vertices vertices,
-                     int blendMode,
-                     List<dynamic>? paintObjects,
-                     ByteData paintData) native 'Canvas_drawVertices';
+
+  @FfiNative<
+      Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle,
+          Handle)>('Canvas::drawVerticesHandle')
+  external void _drawVertices(Vertices vertices, int blendMode,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
   ///
@@ -5001,15 +5292,19 @@ class Canvas extends NativeFieldWrapperClass1 {
     );
   }
 
-  void _drawAtlas(List<dynamic>? paintObjects,
-                  ByteData paintData,
-                  int filterQualityIndex,
-                  _Image atlas,
-                  Float32List rstTransforms,
-                  Float32List rects,
-                  Int32List? colors,
-                  int blendMode,
-                  Float32List? cullRect) native 'Canvas_drawAtlas';
+  @FfiNative<
+      Void Function(Pointer<Void>, Handle, Handle, Int32, Pointer<Void>, Handle,
+          Handle, Handle, Int32, Handle)>('Canvas::drawAtlasHandle')
+  external void _drawAtlas(
+      List<dynamic>? paintObjects,
+      ByteData paintData,
+      int filterQualityIndex,
+      _Image atlas,
+      Float32List rstTransforms,
+      Float32List rects,
+      Int32List? colors,
+      int blendMode,
+      Float32List? cullRect);
 
   /// Draws a shadow for a [Path] representing the given material elevation.
   ///
@@ -5023,10 +5318,11 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(transparentOccluder != null);
     _drawShadow(path, color.value, elevation, transparentOccluder);
   }
-  void _drawShadow(Path path,
-                   int color,
-                   double elevation,
-                   bool transparentOccluder) native 'Canvas_drawShadow';
+
+  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(
+      'Canvas::drawShadow')
+  external void _drawShadow(
+      Path path, int color, double elevation, bool transparentOccluder);
 }
 
 /// An object representing a sequence of recorded graphical operations.
@@ -5067,17 +5363,23 @@ class Picture extends NativeFieldWrapperClass1 {
     );
   }
 
-  String? _toImage(int width, int height, _Callback<_Image?> callback) native 'Picture_toImage';
+  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(
+      'Picture::toImage')
+  external String? _toImage(
+      int width, int height, void Function(_Image?) callback);
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'Picture_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('Picture::dispose', isLeaf: false)
+  external void dispose();
 
   /// Returns the approximate number of bytes allocated for this object.
   ///
   /// The actual size of this picture may be larger, particularly if it contains
   /// references to image or other large objects.
-  int get approximateBytesUsed native 'Picture_GetAllocationSize';
+  @FfiNative<Uint64 Function(Pointer<Void>)>('Picture::GetAllocationSize',
+      isLeaf: true)
+  external int get approximateBytesUsed;
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -5116,7 +5418,9 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
     return picture;
   }
 
-  void _endRecording(Picture outPicture) native 'PictureRecorder_endRecording';
+  @FfiNative<Handle Function(Pointer<Void>, Handle)>(
+      'PictureRecorder::endRecording')
+  external void _endRecording(Picture outPicture);
 
   Canvas? _canvas;
 }
@@ -5376,7 +5680,9 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     _dispose();
   }
 
-  void _dispose() native 'ImmutableBuffer_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('ImmutableBuffer::dispose',
+      isLeaf: false)
+  external void _dispose();
 }
 
 /// A descriptor of data that can be turned into an [Image] via a [Codec].
@@ -5417,24 +5723,45 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
     _bytesPerPixel = 4;
     _initRaw(this, buffer, width, height, rowBytes ?? -1, pixelFormat.index);
   }
-  void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat) native 'ImageDescriptor_initRaw';
+
+  @FfiNative<Void Function(Handle, Handle, Int32, Int32, Int32, Int32)>(
+      'ImageDescriptor::initRaw')
+  external static void _initRaw(
+      ImageDescriptor outDescriptor,
+      ImmutableBuffer buffer,
+      int width,
+      int height,
+      int rowBytes,
+      int pixelFormat);
 
   int? _width;
-  int _getWidth() native 'ImageDescriptor_width';
+
+  @FfiNative<Int32 Function(Pointer<Void>)>('ImageDescriptor::width',
+      isLeaf: true)
+  external int _getWidth();
+
   /// The width, in pixels, of the image.
   ///
   /// On the Web, this is only supported for [raw] images.
   int get width => _width ??= _getWidth();
 
   int? _height;
-  int _getHeight() native 'ImageDescriptor_height';
+
+  @FfiNative<Int32 Function(Pointer<Void>)>('ImageDescriptor::height',
+      isLeaf: true)
+  external int _getHeight();
+
   /// The height, in pixels, of the image.
   ///
   /// On the Web, this is only supported for [raw] images.
   int get height => _height ??= _getHeight();
 
   int? _bytesPerPixel;
-  int _getBytesPerPixel() native 'ImageDescriptor_bytesPerPixel';
+
+  @FfiNative<Int32 Function(Pointer<Void>)>('ImageDescriptor::bytesPerPixel',
+      isLeaf: true)
+  external int _getBytesPerPixel();
+
   /// The number of bytes per pixel in the image.
   ///
   /// On web, this is only supported for [raw] images.
@@ -5442,7 +5769,9 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  void dispose() native 'ImageDescriptor_dispose';
+  @FfiNative<Void Function(Pointer<Void>)>('ImageDescriptor::dispose',
+      isLeaf: false)
+  external void dispose();
 
   /// Creates a [Codec] object which is suitable for decoding the data in the
   /// buffer to an [Image].
@@ -5478,7 +5807,11 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
     _instantiateCodec(codec, targetWidth!, targetHeight!);
     return codec;
   }
-  void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight) native 'ImageDescriptor_instantiateCodec';
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Int32, Int32)>(
+      'ImageDescriptor::instantiateCodec')
+  external void _instantiateCodec(
+      Codec outCodec, int targetWidth, int targetHeight);
 }
 
 /// Generic callback signature, used by [_futurize].

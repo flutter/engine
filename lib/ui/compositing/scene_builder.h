@@ -28,13 +28,21 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
   FML_FRIEND_MAKE_REF_COUNTED(SceneBuilder);
 
  public:
-  static fml::RefPtr<SceneBuilder> create() {
+  static fml::RefPtr<SceneBuilder> Create() {
     return fml::MakeRefCounted<SceneBuilder>();
   }
+
+  static fml::RefPtr<SceneBuilder> CreateOrThrow(Dart_Handle wrapper) {
+    UIDartState::ThrowIfUIOperationsProhibited();
+    auto res = Create();
+    res->AssociateWithDartWrapper(wrapper);
+    return res;
+  }
+
   ~SceneBuilder() override;
 
   void pushTransform(Dart_Handle layer_handle,
-                     tonic::Float64List& matrix4,
+                     const tonic::Float64List& matrix4,
                      fml::RefPtr<EngineLayer> oldLayer);
   void pushOffset(Dart_Handle layer_handle,
                   double dx,
