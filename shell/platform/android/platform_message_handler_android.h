@@ -11,14 +11,15 @@
 #include <unordered_map>
 
 #include "flutter/lib/ui/window/platform_message.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
 namespace flutter {
-class PlatformMessageHandler {
+class PlatformMessageHandlerAndroid : public PlatformMessageHandler {
  public:
-  PlatformMessageHandler(
+  PlatformMessageHandlerAndroid(
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
-  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
   void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                              jint response_id,
                                              jobject java_response_data,

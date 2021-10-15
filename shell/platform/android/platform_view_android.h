@@ -17,7 +17,7 @@
 #include "flutter/shell/common/snapshot_surface_producer.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
-#include "flutter/shell/platform/android/platform_message_handler.h"
+#include "flutter/shell/platform/android/platform_message_handler_android.h"
 #include "flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
@@ -42,12 +42,12 @@ class PlatformViewAndroid final : public PlatformView {
  public:
   static bool Register(JNIEnv* env);
 
-  PlatformViewAndroid(
-      PlatformView::Delegate& delegate,
-      flutter::TaskRunners task_runners,
-      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-      bool use_software_rendering,
-      const std::shared_ptr<PlatformMessageHandler>& platform_message_handler);
+  PlatformViewAndroid(PlatformView::Delegate& delegate,
+                      flutter::TaskRunners task_runners,
+                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                      bool use_software_rendering,
+                      const std::shared_ptr<PlatformMessageHandlerAndroid>&
+                          platform_message_handler);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new PlatformViewAndroid but using an existing
@@ -59,7 +59,8 @@ class PlatformViewAndroid final : public PlatformView {
       flutter::TaskRunners task_runners,
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
       const std::shared_ptr<flutter::AndroidContext>& android_context,
-      const std::shared_ptr<PlatformMessageHandler>& platform_message_handler);
+      const std::shared_ptr<PlatformMessageHandlerAndroid>&
+          platform_message_handler);
 
   ~PlatformViewAndroid() override;
 
@@ -112,8 +113,9 @@ class PlatformViewAndroid final : public PlatformView {
     return android_context_;
   }
 
-  bool DoesHandlePlatformMessagesOnPlatformThread() const override {
-    return false;
+  std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const override {
+    return platform_message_handler_;
   }
 
  private:
@@ -124,7 +126,7 @@ class PlatformViewAndroid final : public PlatformView {
   PlatformViewAndroidDelegate platform_view_android_delegate_;
 
   std::unique_ptr<AndroidSurface> android_surface_;
-  std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
+  std::shared_ptr<PlatformMessageHandlerAndroid> platform_message_handler_;
 
   // |PlatformView|
   void UpdateSemantics(

@@ -16,7 +16,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
-#include "flutter/shell/platform/android/platform_message_handler.h"
+#include "flutter/shell/platform/android/platform_message_handler_android.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
 namespace flutter {
@@ -97,8 +97,8 @@ class AndroidShellHolder {
 
   void NotifyLowMemoryWarning();
 
-  const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
-      const {
+  const std::shared_ptr<PlatformMessageHandlerAndroid>&
+  GetPlatformMessageHandler() const {
     return platform_message_handler_;
   }
 
@@ -111,7 +111,7 @@ class AndroidShellHolder {
   bool is_valid_ = false;
   uint64_t next_pointer_flow_id_ = 0;
   std::shared_ptr<AssetManager> asset_manager_;
-  std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
+  std::shared_ptr<PlatformMessageHandlerAndroid> platform_message_handler_;
 
   //----------------------------------------------------------------------------
   /// @brief      Constructor with its components injected.

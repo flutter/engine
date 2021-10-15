@@ -60,7 +60,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering,
-    const std::shared_ptr<PlatformMessageHandler>& platform_message_handler)
+    const std::shared_ptr<PlatformMessageHandlerAndroid>&
+        platform_message_handler)
     : PlatformViewAndroid(delegate,
                           std::move(task_runners),
                           std::move(jni_facade),
@@ -72,7 +73,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     flutter::TaskRunners task_runners,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     const std::shared_ptr<flutter::AndroidContext>& android_context,
-    const std::shared_ptr<PlatformMessageHandler>& platform_message_handler)
+    const std::shared_ptr<PlatformMessageHandlerAndroid>&
+        platform_message_handler)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
       android_context_(std::move(android_context)),

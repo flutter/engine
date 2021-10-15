@@ -625,6 +625,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   }
 
   platform_view_ = std::move(platform_view);
+  platform_message_handler_ = platform_view_->GetPlatformMessageHandler();
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
   io_manager_ = std::move(io_manager);
@@ -1192,7 +1193,9 @@ void Shell::OnEngineHandlePlatformMessage(
     return;
   }
 
-  if (platform_view_->DoesHandlePlatformMessagesOnPlatformThread()) {
+  if (platform_message_handler_) {
+    platform_message_handler_->HandlePlatformMessage(std::move(message));
+  } else {
     task_runners_.GetPlatformTaskRunner()->PostTask(
         fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
                            message = std::move(message)]() mutable {
@@ -1200,10 +1203,6 @@ void Shell::OnEngineHandlePlatformMessage(
             view->HandlePlatformMessage(std::move(message));
           }
         }));
-  } else {
-    if (platform_view_) {
-      platform_view_->HandlePlatformMessage(std::move(message));
-    }
   }
 }
 

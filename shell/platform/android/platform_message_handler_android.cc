@@ -1,13 +1,13 @@
 
-#include "flutter/shell/platform/android/platform_message_handler.h"
+#include "flutter/shell/platform/android/platform_message_handler_android.h"
 
 namespace flutter {
 
-PlatformMessageHandler::PlatformMessageHandler(
+PlatformMessageHandlerAndroid::PlatformMessageHandlerAndroid(
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade)
     : jni_facade_(jni_facade) {}
 
-void PlatformMessageHandler::InvokePlatformMessageResponseCallback(
+void PlatformMessageHandlerAndroid::InvokePlatformMessageResponseCallback(
     JNIEnv* env,
     jint response_id,
     jobject java_response_data,
@@ -34,7 +34,7 @@ void PlatformMessageHandler::InvokePlatformMessageResponseCallback(
       std::make_unique<fml::DataMapping>(std::move(response)));
 }
 
-void PlatformMessageHandler::InvokePlatformMessageEmptyResponseCallback(
+void PlatformMessageHandlerAndroid::InvokePlatformMessageEmptyResponseCallback(
     JNIEnv* env,
     jint response_id) {
   // Called from any thread.
@@ -52,7 +52,7 @@ void PlatformMessageHandler::InvokePlatformMessageEmptyResponseCallback(
 }
 
 // |PlatformView|
-void PlatformMessageHandler::HandlePlatformMessage(
+void PlatformMessageHandlerAndroid::HandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) {
   // Called from the ui thread.
   int response_id = next_response_id_++;

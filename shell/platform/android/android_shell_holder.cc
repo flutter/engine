@@ -42,7 +42,7 @@ AndroidShellHolder::AndroidShellHolder(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
     : settings_(std::move(settings)),
       jni_facade_(jni_facade),
-      platform_message_handler_(new PlatformMessageHandler(jni_facade)) {
+      platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 

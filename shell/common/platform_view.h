@@ -22,6 +22,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/skia/include/core/SkSize.h"
@@ -810,10 +811,10 @@ class PlatformView {
   virtual std::unique_ptr<SnapshotSurfaceProducer>
   CreateSnapshotSurfaceProducer();
 
-  // This is temporary until all embedders start handling thread dispatching to
-  // allow messages to be handled on background threads.
-  virtual bool DoesHandlePlatformMessagesOnPlatformThread() const {
-    return true;
+  // Returning nullptr means send message to the PlatformView.
+  virtual std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const {
+    return nullptr;
   }
 
  protected:
