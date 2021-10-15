@@ -172,11 +172,17 @@ static jobject SpawnJNI(JNIEnv* env,
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto initial_route = fml::jni::JavaStringToString(env, jInitialRoute);
 
-  std::string initial_arguments(
-      reinterpret_cast<const char*>(env->GetDirectBufferAddress(jEncodedArgs)),
-      position);
+  std::vector<std::string> entrypoint_args;
+  if (!env->IsSameObject(jEncodedArgs, NULL)) {
+    std::string initial_arguments(
+        reinterpret_cast<const char*>(
+            env->GetDirectBufferAddress(jEncodedArgs)),
+        position);
+    entrypoint_args.push_back(std::move(initial_arguments));
+  }
+
   auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(
-      jni_facade, entrypoint, libraryUrl, initial_route, {initial_arguments});
+      jni_facade, entrypoint, libraryUrl, initial_route, entrypoint_args);
 
   if (spawned_shell_holder == nullptr || !spawned_shell_holder->IsValid()) {
     FML_LOG(ERROR) << "Could not spawn Shell";
@@ -256,12 +262,17 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
 
-  std::string initial_arguments(
-      reinterpret_cast<const char*>(env->GetDirectBufferAddress(jEncodedArgs)),
-      position);
+  std::vector<std::string> entrypoint_args;
+  if (!env->IsSameObject(jEncodedArgs, NULL)) {
+    std::string initial_arguments(
+        reinterpret_cast<const char*>(
+            env->GetDirectBufferAddress(jEncodedArgs)),
+        position);
+    entrypoint_args.push_back(std::move(initial_arguments));
+  }
 
   ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
-                               {initial_arguments});
+                               entrypoint_args);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
