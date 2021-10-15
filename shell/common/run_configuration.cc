@@ -79,7 +79,7 @@ void RunConfiguration::SetEntrypointAndLibrary(std::string entrypoint,
 
 void RunConfiguration::SetEntrypointArgs(
     std::vector<std::string> entrypoint_args) {
-  entrypoint_args_ = entrypoint_args;
+  entrypoint_args_ = std::move(entrypoint_args);
 }
 
 std::shared_ptr<AssetManager> RunConfiguration::GetAssetManager() const {

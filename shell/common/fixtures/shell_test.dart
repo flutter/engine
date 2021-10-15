@@ -247,3 +247,17 @@ void canAccessResourceFromAssetDir() async {
     },
   );
 }
+
+void notifyNativeWhenEngineRun(bool success) native 'NotifyNativeWhenEngineRun';
+
+void notifyNativeWhenEngineSpawn(bool success) native 'NotifyNativeWhenEngineSpawn';
+
+@pragma('vm:entry-point')
+void canRecieveArgumentsWhenEngineRun(List<String> args) {
+  notifyNativeWhenEngineRun(args.length == 1 && args[0] == 'arg1');
+}
+
+@pragma('vm:entry-point')
+void canRecieveArgumentsWhenEngineSpawn(List<String> args) {
+  notifyNativeWhenEngineSpawn(args.length == 1 && args[0] == 'arg2');
+}
