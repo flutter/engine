@@ -355,7 +355,20 @@ void FlatlandExternalViewEmbedder::DestroyView(
     FlatlandViewIdCallback on_view_unbound) {
   auto flatland_view = flatland_views_.find(view_id);
   FML_CHECK(flatland_view != flatland_views_.end());
+
   auto viewport_id = flatland_view->second.viewport_id;
+  auto transform_id = flatland_view->second.transform_id;
+  flatland_.flatland()->ReleaseViewport(viewport_id, [](auto) {});
+  auto itr =
+      std::find_if(child_transforms_.begin(), child_transforms_.end(),
+                   [transform_id](fuchsia::ui::composition::TransformId id) {
+                     return id.value == transform_id.value;
+                   });
+  if (itr != child_transforms_.end()) {
+    flatland_.flatland()->RemoveChild(root_transform_id_, transform_id);
+    child_transforms_.erase(itr);
+  }
+  flatland_.flatland()->ReleaseTransform(transform_id);
 
   flatland_views_.erase(flatland_view);
   on_view_unbound(viewport_id);
