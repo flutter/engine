@@ -834,7 +834,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   const std::string& GetLastEntrypointLibrary() const;
 
-  const std::vector<std::string> GetLastEntrypointArgs() const;
+  //----------------------------------------------------------------------------
+  /// @brief      Get the last Entrypoint Arguments that was used in the
+  ///             RunConfiguration when |Engine::Run| was called.
+  ///
+  const std::vector<std::string>& GetLastEntrypointArgs() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Getter for the initial route.  This can be set with a platform

@@ -175,7 +175,7 @@ class RunConfiguration {
 
   //----------------------------------------------------------------------------
   /// @return     Arguments passed as a List<String> to Dart's entrypoint
-  /// function.
+  ///             function.
   ///
   std::vector<std::string> GetEntrypointArgs() const;
 

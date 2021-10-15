@@ -79,7 +79,7 @@ FLUTTER_DARWIN_EXPORT
  * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
  *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
  * @param initialArguments The structured data for Flutter app at startup.It must be serializable
- *   via the FlutterStandardMessageCodec.
+ *   via the FlutterJSONMessageCodec.
  * @see FlutterEngineGroup
  */
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint

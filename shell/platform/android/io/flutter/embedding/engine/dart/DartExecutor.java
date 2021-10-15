@@ -129,7 +129,7 @@ public class DartExecutor implements BinaryMessenger {
    *
    * @param dartEntrypoint specifies which Dart function to run, and where to find it
    * @param initialArguments The structured data for Flutter app at startup.It must be serializable
-   *     via the {@link io.flutter.plugin.common.StandardMessageCodec}.
+   *     via the {@link io.flutter.plugin.common.JSONMessageCodec}.
    */
   public void executeDartEntrypoint(
       @NonNull DartEntrypoint dartEntrypoint, @Nullable Object initialArguments) {

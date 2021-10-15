@@ -569,7 +569,7 @@ const std::string& Engine::GetLastEntrypointLibrary() const {
   return last_entry_point_library_;
 }
 
-const std::vector<std::string> Engine::GetLastEntrypointArgs() const {
+const std::vector<std::string>& Engine::GetLastEntrypointArgs() const {
   return last_entry_point_args_;
 }
 

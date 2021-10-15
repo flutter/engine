@@ -383,7 +383,7 @@ public class FlutterEngine {
    * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
    *     null, it will default to the "/" route.
    * @param initialArguments The structured data for Flutter app at startup.It must be serializable
-   *     via the {@link io.flutter.plugin.common.StandardMessageCodec}.
+   *     via the {@link io.flutter.plugin.common.JSONMessageCodec}.
    * @return a new {@link io.flutter.embedding.engine.FlutterEngine}.
    */
   @NonNull

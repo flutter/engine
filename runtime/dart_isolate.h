@@ -169,6 +169,8 @@ class DartIsolate : public UIDartState {
   ///                                         function to invoke.
   /// @param[in]  dart_entrypoint_library     The name of the dart library
   ///                                         containing the entrypoint.
+  /// @param[in]  dart_entrypoint_args        Arguments passed as a List<String>
+  ///                                         to Dart's entrypoint function.
   /// @param[in]  isolate_configuration       The isolate configuration used to
   ///                                         configure the isolate before
   ///                                         invoking the entrypoint.
