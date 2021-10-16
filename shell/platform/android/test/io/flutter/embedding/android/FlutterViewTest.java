@@ -270,10 +270,7 @@ public class FlutterViewTest {
 
     // Verify.
     verify(flutterRenderer, times(3)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingTop);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 100);
   }
 
   // This test uses the pre-API 30 Algorithm for window insets.
@@ -311,10 +308,7 @@ public class FlutterViewTest {
 
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 100, 0);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -354,10 +348,7 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(3)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingTop);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 100);
   }
 
   // This test uses the pre-API 30 Algorithm for window insets.
@@ -394,10 +385,7 @@ public class FlutterViewTest {
     // Verify.
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is reported as-is.
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingTop);
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 100, 100, 0);
   }
 
   @Test
@@ -443,12 +431,9 @@ public class FlutterViewTest {
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
-    // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
     // Right padding is zero because the rotation is 90deg
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingRight);
+    // Bottom padding is removed due to hide navigation.
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 0, 0);
   }
 
   @Test
@@ -494,12 +479,9 @@ public class FlutterViewTest {
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
     // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
-    // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
     // Right padding is zero because the rotation is 270deg under SDK 23
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingRight);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    // Bottom padding is removed due to hide navigation.
+    validateViewportMetricPadding(viewportMetricsCaptor, 100, 0, 0, 0);
   }
 
   @Test
@@ -544,13 +526,10 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
-    // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
     // Left padding is zero because the rotation is 270deg
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(100, viewportMetricsCaptor.getValue().viewPaddingRight);
+    // Top padding is removed due to full screen.
+    // Bottom padding is removed due to hide navigation.
+    validateViewportMetricPadding(viewportMetricsCaptor, 0, 0, 100, 0);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -597,10 +576,7 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(20, viewportMetricsCaptor.getValue().viewPaddingTop);
-    assertEquals(30, viewportMetricsCaptor.getValue().viewPaddingRight);
-    assertEquals(40, viewportMetricsCaptor.getValue().viewPaddingBottom);
+    validateViewportMetricPadding(viewportMetricsCaptor, 10, 20, 30, 40);
   }
 
   // This test uses the pre-API 30 Algorithm for window insets.
@@ -644,13 +620,10 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    // Top padding is removed due to full screen.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
-    // Bottom padding is removed due to hide navigation.
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
     // Left padding is zero because the rotation is 270deg
-    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(103, viewportMetricsCaptor.getValue().viewPaddingRight);
+    // Top padding is removed due to full screen.
+    // Bottom padding is removed due to hide navigation.
+    validateViewportMetricPadding(viewportMetricsCaptor, 0, 0, 103, 0);
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -706,10 +679,7 @@ public class FlutterViewTest {
     flutterView.onApplyWindowInsets(windowInsets);
 
     verify(flutterRenderer, times(2)).setViewportMetrics(viewportMetricsCaptor.capture());
-    assertEquals(150, viewportMetricsCaptor.getValue().viewPaddingTop);
-    assertEquals(150, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(200, viewportMetricsCaptor.getValue().viewPaddingLeft);
-    assertEquals(200, viewportMetricsCaptor.getValue().viewPaddingRight);
+    validateViewportMetricPadding(viewportMetricsCaptor, 200, 150, 200, 150);
 
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetTop);
   }
@@ -911,6 +881,14 @@ public class FlutterViewTest {
     verify(flutterRenderer).setViewportMetrics(viewportMetricsCaptor.capture());
 
     assertFalse(-1 == viewportMetricsCaptor.getValue().physicalTouchSlop);
+  }
+
+  private void validateViewportMetricPadding(ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor,
+                                             int left, int top, int right, int bottom) {
+    assertEquals(left, viewportMetricsCaptor.getValue().viewPaddingLeft);
+    assertEquals(top, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(right, viewportMetricsCaptor.getValue().viewPaddingRight);
+    assertEquals(bottom, viewportMetricsCaptor.getValue().viewPaddingBottom);
   }
 
   /*
