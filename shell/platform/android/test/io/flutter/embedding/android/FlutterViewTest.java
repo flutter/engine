@@ -826,22 +826,27 @@ public class FlutterViewTest {
 
   private void setExpectedDisplayRotation(int rotation) {
     ShadowDisplay display =
-            Shadows.shadowOf(
-                    ((WindowManager)
-                            RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
-                            .getDefaultDisplay());
+        Shadows.shadowOf(
+            ((WindowManager)
+                    RuntimeEnvironment.systemContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay());
     display.setRotation(rotation);
   }
 
-  private void validateViewportMetricPadding(ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor,
-                                             int left, int top, int right, int bottom) {
+  private void validateViewportMetricPadding(
+      ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor,
+      int left,
+      int top,
+      int right,
+      int bottom) {
     assertEquals(left, viewportMetricsCaptor.getValue().viewPaddingLeft);
     assertEquals(top, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(right, viewportMetricsCaptor.getValue().viewPaddingRight);
     assertEquals(bottom, viewportMetricsCaptor.getValue().viewPaddingBottom);
   }
 
-  private void mockSystemWindowInsets(WindowInsets windowInsets, int left, int top, int right, int bottom) {
+  private void mockSystemWindowInsets(
+      WindowInsets windowInsets, int left, int top, int right, int bottom) {
     when(windowInsets.getSystemWindowInsetLeft()).thenReturn(left);
     when(windowInsets.getSystemWindowInsetTop()).thenReturn(top);
     when(windowInsets.getSystemWindowInsetRight()).thenReturn(right);
