@@ -300,10 +300,7 @@ public class FlutterViewTest {
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
     flutterView.onApplyWindowInsets(windowInsets);
 
     // Verify.
@@ -376,10 +373,7 @@ public class FlutterViewTest {
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
     flutterView.onApplyWindowInsets(windowInsets);
 
     // Verify.
@@ -419,10 +413,7 @@ public class FlutterViewTest {
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
       when(windowInsets.getSystemGestureInsets()).thenReturn(Insets.NONE);
     }
@@ -467,10 +458,7 @@ public class FlutterViewTest {
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
       when(windowInsets.getSystemGestureInsets()).thenReturn(Insets.NONE);
     }
@@ -515,10 +503,7 @@ public class FlutterViewTest {
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(100);
+    mockSystemWindowInsets(windowInsets, 100, 100, 100, 100);
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
       when(windowInsets.getSystemGestureInsets()).thenReturn(Insets.NONE);
     }
@@ -567,10 +552,7 @@ public class FlutterViewTest {
     Insets insets = Insets.of(10, 20, 30, 40);
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(-1);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(-1);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
+    mockSystemWindowInsets(windowInsets, -1, -1, -1, -1);
     when(windowInsets.getInsets(anyInt())).thenReturn(insets);
 
     flutterView.onApplyWindowInsets(windowInsets);
@@ -612,10 +594,7 @@ public class FlutterViewTest {
 
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(100);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(101);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(102);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(103);
+    mockSystemWindowInsets(windowInsets, 102, 100, 103, 101);
 
     flutterView.onApplyWindowInsets(windowInsets);
 
@@ -661,10 +640,7 @@ public class FlutterViewTest {
     // Then we simulate the system applying a window inset.
     WindowInsets windowInsets = mock(WindowInsets.class);
     DisplayCutout displayCutout = mock(DisplayCutout.class);
-    when(windowInsets.getSystemWindowInsetTop()).thenReturn(-1);
-    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(-1);
-    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(-1);
-    when(windowInsets.getSystemWindowInsetRight()).thenReturn(-1);
+    mockSystemWindowInsets(windowInsets, -1, -1, -1, -1);
     when(windowInsets.getInsets(anyInt())).thenReturn(insets);
     when(windowInsets.getSystemGestureInsets()).thenReturn(systemGestureInsets);
     when(windowInsets.getDisplayCutout()).thenReturn(displayCutout);
@@ -889,6 +865,13 @@ public class FlutterViewTest {
     assertEquals(top, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(right, viewportMetricsCaptor.getValue().viewPaddingRight);
     assertEquals(bottom, viewportMetricsCaptor.getValue().viewPaddingBottom);
+  }
+
+  private void mockSystemWindowInsets(WindowInsets windowInsets, int left, int top, int right, int bottom) {
+    when(windowInsets.getSystemWindowInsetLeft()).thenReturn(left);
+    when(windowInsets.getSystemWindowInsetTop()).thenReturn(top);
+    when(windowInsets.getSystemWindowInsetRight()).thenReturn(right);
+    when(windowInsets.getSystemWindowInsetBottom()).thenReturn(bottom);
   }
 
   /*
