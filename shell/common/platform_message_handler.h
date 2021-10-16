@@ -15,6 +15,11 @@ class PlatformMessageHandler {
   virtual ~PlatformMessageHandler() = default;
   virtual void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) = 0;
+  virtual void InvokePlatformMessageResponseCallback(
+      int response_id,
+      std::unique_ptr<fml::Mapping> mapping) = 0;
+
+  virtual void InvokePlatformMessageEmptyResponseCallback(int response_id) = 0;
 };
 }  // namespace flutter
 

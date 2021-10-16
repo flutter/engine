@@ -8,10 +8,8 @@ PlatformMessageHandlerAndroid::PlatformMessageHandlerAndroid(
     : jni_facade_(jni_facade) {}
 
 void PlatformMessageHandlerAndroid::InvokePlatformMessageResponseCallback(
-    JNIEnv* env,
-    jint response_id,
-    jobject java_response_data,
-    jint java_response_position) {
+    int response_id,
+    std::unique_ptr<fml::Mapping> mapping) {
   // Called from any thread.
   if (!response_id) {
     return;
@@ -28,18 +26,11 @@ void PlatformMessageHandlerAndroid::InvokePlatformMessageResponseCallback(
     pending_responses_.erase(it);
   }
 
-  uint8_t* response_data =
-      static_cast<uint8_t*>(env->GetDirectBufferAddress(java_response_data));
-  FML_DCHECK(response_data != nullptr);
-  std::vector<uint8_t> response = std::vector<uint8_t>(
-      response_data, response_data + java_response_position);
-  message_response->Complete(
-      std::make_unique<fml::DataMapping>(std::move(response)));
+  message_response->Complete(std::move(mapping));
 }
 
 void PlatformMessageHandlerAndroid::InvokePlatformMessageEmptyResponseCallback(
-    JNIEnv* env,
-    jint response_id) {
+    int response_id) {
   // Called from any thread.
   if (!response_id) {
     return;

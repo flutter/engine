@@ -102,7 +102,7 @@ TEST(AndroidShellHolder, HandlePlatformMessage) {
   holder->GetPlatformMessageHandler()->HandlePlatformMessage(
       std::move(message));
   holder->GetPlatformMessageHandler()
-      ->InvokePlatformMessageEmptyResponseCallback(nullptr, response_id);
+      ->InvokePlatformMessageEmptyResponseCallback(response_id);
 }
 }  // namespace testing
 }  // namespace flutter

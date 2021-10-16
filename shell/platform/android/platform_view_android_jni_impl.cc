@@ -490,12 +490,13 @@ static void InvokePlatformMessageResponseCallback(JNIEnv* env,
                                                   jint responseId,
                                                   jobject message,
                                                   jint position) {
+  uint8_t* response_data =
+      static_cast<uint8_t*>(env->GetDirectBufferAddress(message));
+  FML_DCHECK(response_data != nullptr);
+  auto mapping = std::make_unique<fml::MallocMapping>(
+      fml::MallocMapping::Copy(response_data, response_data + position));
   ANDROID_SHELL_HOLDER->GetPlatformMessageHandler()
-      ->InvokePlatformMessageResponseCallback(env,         //
-                                              responseId,  //
-                                              message,     //
-                                              position     //
-      );
+      ->InvokePlatformMessageResponseCallback(responseId, std::move(mapping));
 }
 
 static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
@@ -503,9 +504,7 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
                                                        jlong shell_holder,
                                                        jint responseId) {
   ANDROID_SHELL_HOLDER->GetPlatformMessageHandler()
-      ->InvokePlatformMessageEmptyResponseCallback(env,        //
-                                                   responseId  //
-      );
+      ->InvokePlatformMessageEmptyResponseCallback(responseId);
 }
 
 static void NotifyLowMemoryWarning(JNIEnv* env,

@@ -97,9 +97,9 @@ class AndroidShellHolder {
 
   void NotifyLowMemoryWarning();
 
-  const std::shared_ptr<PlatformMessageHandlerAndroid>&
-  GetPlatformMessageHandler() const {
-    return platform_message_handler_;
+  const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
+      const {
+    return shell_->GetPlatformMessageHandler();
   }
 
  private:
@@ -111,7 +111,6 @@ class AndroidShellHolder {
   bool is_valid_ = false;
   uint64_t next_pointer_flow_id_ = 0;
   std::shared_ptr<AssetManager> asset_manager_;
-  std::shared_ptr<PlatformMessageHandlerAndroid> platform_message_handler_;
 
   //----------------------------------------------------------------------------
   /// @brief      Constructor with its components injected.

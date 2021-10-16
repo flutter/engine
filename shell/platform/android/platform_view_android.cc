@@ -59,27 +59,22 @@ PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    bool use_software_rendering,
-    const std::shared_ptr<PlatformMessageHandlerAndroid>&
-        platform_message_handler)
+    bool use_software_rendering)
     : PlatformViewAndroid(delegate,
                           std::move(task_runners),
                           std::move(jni_facade),
-                          CreateAndroidContext(use_software_rendering),
-                          platform_message_handler) {}
+                          CreateAndroidContext(use_software_rendering)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-    const std::shared_ptr<flutter::AndroidContext>& android_context,
-    const std::shared_ptr<PlatformMessageHandlerAndroid>&
-        platform_message_handler)
+    const std::shared_ptr<flutter::AndroidContext>& android_context)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
       android_context_(std::move(android_context)),
       platform_view_android_delegate_(jni_facade),
-      platform_message_handler_(platform_message_handler) {
+      platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
   // TODO(dnfield): always create a pbuffer surface for background use to
   // resolve https://github.com/flutter/flutter/issues/73675
   if (android_context_) {

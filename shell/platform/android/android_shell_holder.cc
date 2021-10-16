@@ -40,9 +40,7 @@ static PlatformData GetDefaultPlatformData() {
 AndroidShellHolder::AndroidShellHolder(
     flutter::Settings settings,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
-    : settings_(std::move(settings)),
-      jni_facade_(jni_facade),
-      platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
+    : settings_(std::move(settings)), jni_facade_(jni_facade) {
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
@@ -53,16 +51,15 @@ AndroidShellHolder::AndroidShellHolder(
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [&jni_facade, &weak_platform_view,
-       platform_message_handler = platform_message_handler_](Shell& shell) {
+      [&jni_facade, &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         platform_view_android = std::make_unique<PlatformViewAndroid>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
             shell.GetSettings()
-                .enable_software_rendering,  // use software rendering
-            platform_message_handler);
+                .enable_software_rendering  // use software rendering
+        );
         weak_platform_view = platform_view_android->GetWeakPtr();
         auto display = Display(jni_facade->GetDisplayRefreshRate());
         shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});
@@ -203,15 +200,14 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
 
   // This is a synchronous call, so the captures don't have race checks.
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [&jni_facade, android_context, &weak_platform_view,
-       platform_message_handler = platform_message_handler_](Shell& shell) {
+      [&jni_facade, android_context, &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         platform_view_android = std::make_unique<PlatformViewAndroid>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
-            android_context,         // Android context
-            std::make_shared<PlatformMessageHandlerAndroid>(jni_facade));
+            android_context          // Android context
+        );
         weak_platform_view = platform_view_android->GetWeakPtr();
         auto display = Display(jni_facade->GetDisplayRefreshRate());
         shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});

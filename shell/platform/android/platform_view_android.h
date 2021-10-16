@@ -45,9 +45,7 @@ class PlatformViewAndroid final : public PlatformView {
   PlatformViewAndroid(PlatformView::Delegate& delegate,
                       flutter::TaskRunners task_runners,
                       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                      bool use_software_rendering,
-                      const std::shared_ptr<PlatformMessageHandlerAndroid>&
-                          platform_message_handler);
+                      bool use_software_rendering);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a new PlatformViewAndroid but using an existing
@@ -58,9 +56,7 @@ class PlatformViewAndroid final : public PlatformView {
       PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-      const std::shared_ptr<flutter::AndroidContext>& android_context,
-      const std::shared_ptr<PlatformMessageHandlerAndroid>&
-          platform_message_handler);
+      const std::shared_ptr<flutter::AndroidContext>& android_context);
 
   ~PlatformViewAndroid() override;
 

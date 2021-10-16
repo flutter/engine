@@ -395,6 +395,11 @@ class Shell final : public PlatformView::Delegate,
   /// @see        `CreateCompatibleGenerator`
   void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
 
+  const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
+      const {
+    return platform_message_handler_;
+  }
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,

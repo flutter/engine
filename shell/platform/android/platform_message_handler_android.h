@@ -20,13 +20,11 @@ class PlatformMessageHandlerAndroid : public PlatformMessageHandler {
   PlatformMessageHandlerAndroid(
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
-  void InvokePlatformMessageResponseCallback(JNIEnv* env,
-                                             jint response_id,
-                                             jobject java_response_data,
-                                             jint java_response_position);
+  void InvokePlatformMessageResponseCallback(
+      int response_id,
+      std::unique_ptr<fml::Mapping> mapping) override;
 
-  void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
-                                                  jint response_id);
+  void InvokePlatformMessageEmptyResponseCallback(int response_id) override;
 
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
