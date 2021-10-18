@@ -254,10 +254,18 @@ void notifyNativeWhenEngineSpawn(bool success) native 'NotifyNativeWhenEngineSpa
 
 @pragma('vm:entry-point')
 void canRecieveArgumentsWhenEngineRun(List<String> args) {
-  notifyNativeWhenEngineRun(args.length == 1 && args[0] == 'arg1');
+  final dynamic initialArguments = PlatformDispatcher.instance.getInitialArguments(rawArgs: args);
+  notifyNativeWhenEngineRun(initialArguments['foo'] == 'arg1' && initialArguments['bar'] == 'arg2');
 }
 
 @pragma('vm:entry-point')
 void canRecieveArgumentsWhenEngineSpawn(List<String> args) {
-  notifyNativeWhenEngineSpawn(args.length == 1 && args[0] == 'arg2');
+  final dynamic initialArguments = PlatformDispatcher.instance.getInitialArguments(rawArgs: args);
+  notifyNativeWhenEngineSpawn(initialArguments[0] == 'arg1' && initialArguments[1] == 'arg2');
+}
+
+@pragma('vm:entry-point')
+void canRecieveEmptyArguments(List<String> args) {
+  final dynamic initialArguments = PlatformDispatcher.instance.getInitialArguments(rawArgs: args);
+  notifyNativeWhenEngineRun(args.isEmpty && initialArguments == null);
 }
