@@ -247,6 +247,30 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(substring.length, 0ul);
 }
 
+- (void)testStandardEditActions {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"aaaa"];
+  [inputView selectAll:nil];
+  [inputView cut:nil];
+  [inputView insertText:@"bbbb"];
+  [inputView paste:nil];
+  [inputView selectAll:nil];
+  [inputView copy:nil];
+  [inputView paste:nil];
+  [inputView selectAll:nil];
+  [inputView delete:nil];
+  [inputView paste:nil];
+  [inputView paste:nil];
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 30)];
+  NSString* substring = [inputView textInRange:range];
+  XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
+}
+
 - (void)testNoZombies {
   // Regression test for https://github.com/flutter/flutter/issues/62501.
   FlutterSecureTextInputView* passwordView = [[FlutterSecureTextInputView alloc] init];
@@ -823,6 +847,16 @@ FLUTTER_ASSERT_ARC
     FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
     XCTAssertGreaterThan(inputView.interactions.count, 0ul);
   }
+}
+
+- (void)testFloatingCursorDoesNotThrow {
+  // The keyboard implementation may send unbalanced calls to the input view.
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  [inputView endFloatingCursor];
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  [inputView endFloatingCursor];
 }
 
 - (void)testBoundsForFloatingCursor {

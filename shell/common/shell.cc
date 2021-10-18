@@ -480,6 +480,7 @@ Shell::~Shell() {
 
 std::unique_ptr<Shell> Shell::Spawn(
     RunConfiguration run_configuration,
+    const std::string& initial_route,
     const CreateCallback<PlatformView>& on_create_platform_view,
     const CreateCallback<Rasterizer>& on_create_rasterizer) const {
   FML_DCHECK(task_runners_.IsValid());
@@ -488,7 +489,7 @@ std::unique_ptr<Shell> Shell::Spawn(
         PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
         GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
         on_create_platform_view, on_create_rasterizer,
-        [engine = this->engine_.get()](
+        [engine = this->engine_.get(), initial_route](
             Engine::Delegate& delegate,
             const PointerDataDispatcherMaker& dispatcher_maker, DartVM& vm,
             fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -501,7 +502,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           return engine->Spawn(/*delegate=*/delegate,
                                /*dispatcher_maker=*/dispatcher_maker,
                                /*settings=*/settings,
-                               /*animator=*/std::move(animator));
+                               /*animator=*/std::move(animator),
+                               /*initial_route=*/initial_route);
         },
         is_gpu_disabled));
     return result;
@@ -640,12 +642,14 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   weak_platform_view_ = platform_view_->GetWeakPtr();
 
   // Setup the time-consuming default font manager right after engine created.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
-                                    [engine = weak_engine_] {
-                                      if (engine) {
-                                        engine->SetupDefaultFontManager();
-                                      }
-                                    });
+  if (!settings_.prefetched_default_font_manager) {
+    fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
+                                      [engine = weak_engine_] {
+                                        if (engine) {
+                                          engine->SetupDefaultFontManager();
+                                        }
+                                      });
+  }
 
   is_setup_ = true;
 
@@ -1831,7 +1835,7 @@ bool Shell::ReloadSystemFonts() {
   if (!engine_) {
     return false;
   }
-  engine_->GetFontCollection().GetFontCollection()->SetupDefaultFontManager();
+  engine_->SetupDefaultFontManager();
   engine_->GetFontCollection().GetFontCollection()->ClearFontFamilyCache();
   // After system fonts are reloaded, we send a system channel message
   // to notify flutter framework.

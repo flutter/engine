@@ -222,20 +222,41 @@ static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");
 typedef const std::function<void(DisplayListBuilder&)> DlInvoker;
 
 struct DisplayListInvocation {
-  int op_count;
-  size_t byte_count;
+  int op_count_;
+  size_t byte_count_;
 
   // in some cases, running the sequence through an SkCanvas will result
   // in fewer ops/bytes. Attribute invocations are recorded in an SkPaint
   // and not forwarded on, and SkCanvas culls unused save/restore/transforms.
-  int sk_op_count;
-  size_t sk_byte_count;
+  int sk_op_count_;
+  size_t sk_byte_count_;
 
   DlInvoker invoker;
 
   bool sk_version_matches() {
-    return (op_count == sk_op_count && byte_count == sk_byte_count);
+    return (op_count_ == sk_op_count_ && byte_count_ == sk_byte_count_);
   }
+
+  // A negative sk_op_count means "do not test this op".
+  // Used mainly for these cases:
+  // - we cannot encode a DrawShadowRec (Skia private header)
+  // - SkCanvas cannot receive a DisplayList
+  // - SkCanvas may or may not inline an SkPicture
+  bool sk_testing_invalid() { return sk_op_count_ < 0; }
+
+  bool is_empty() { return byte_count_ == 0; }
+
+  int op_count() { return op_count_; }
+  // byte count for the individual ops, no DisplayList overhead
+  size_t raw_byte_count() { return byte_count_; }
+  // byte count for the ops with DisplayList overhead, comparable
+  // to |DisplayList.byte_count().
+  size_t byte_count() { return sizeof(DisplayList) + byte_count_; }
+
+  int sk_op_count() { return sk_op_count_; }
+  // byte count for the ops with DisplayList overhead as translated
+  // through an SkCanvas interface, comparable to |DisplayList.byte_count().
+  size_t sk_byte_count() { return sizeof(DisplayList) + sk_byte_count_; }
 
   sk_sp<DisplayList> Build() {
     DisplayListBuilder builder;
@@ -250,9 +271,9 @@ struct DisplayListInvocationGroup {
 };
 
 std::vector<DisplayListInvocationGroup> allGroups = {
-  { "SetAA", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAA(false);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAA(true);}},
+  { "SetAntiAlias", {
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAntiAlias(false);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAntiAlias(true);}},
     }
   },
   { "SetDither", {
@@ -266,20 +287,20 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "SetStrokeCap", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kButt_Cap);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kRound_Cap);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setCaps(SkPaint::kSquare_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(SkPaint::kButt_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(SkPaint::kRound_Cap);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(SkPaint::kSquare_Cap);}},
     }
   },
   { "SetStrokeJoin", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kBevel_Join);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kRound_Join);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setJoins(SkPaint::kMiter_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(SkPaint::kBevel_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(SkPaint::kRound_Join);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(SkPaint::kMiter_Join);}},
     }
   },
-  { "SetDrawStyle", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDrawStyle(SkPaint::kFill_Style);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDrawStyle(SkPaint::kStroke_Style);}},
+  { "SetStyle", {
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(SkPaint::kFill_Style);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(SkPaint::kStroke_Style);}},
     }
   },
   { "SetStrokeWidth", {
@@ -287,9 +308,9 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(5.0);}},
     }
   },
-  { "SetMiterLimit", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMiterLimit(0.0);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setMiterLimit(5.0);}},
+  { "SetStrokeMiter", {
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeMiter(0.0);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeMiter(5.0);}},
     }
   },
   { "SetColor", {
@@ -384,47 +405,58 @@ std::vector<DisplayListInvocationGroup> allGroups = {
       {1, 16, 1, 32, [](DisplayListBuilder& b) {b.skew(0.2, 0.1);}},
     }
   },
-  { "Transform2x3", {
-      // cv.transform(identity) is ignored
-      {1, 32, 0, 0, [](DisplayListBuilder& b) {b.transform2x3(1, 0, 0, 0, 1, 0);}},
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform2x3(0, 1, 12, 1, 0, 33);}},
+  { "Transform2DAffine", {
+      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform2DAffine(0, 1, 12, 1, 0, 33);}},
+      // b.transform(identity) is ignored
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transform2DAffine(1, 0, 0, 0, 1, 0);}},
     }
   },
-  { "Transform3x3", {
-      // cv.transform(identity) is ignored
-      {1, 40, 0, 0, [](DisplayListBuilder& b) {b.transform3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.transform3x3(0, 1, 12, 1, 0, 33, 0, 0, 12);}},
+  { "TransformFullPerspective", {
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.transformFullPerspective(0, 1, 0, 12,
+                                                                           1, 0, 0, 33,
+                                                                           3, 2, 5, 29,
+                                                                           0, 0, 0, 12);}},
+      // b.transform(2D affine) is reduced to 2x3
+      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transformFullPerspective(2, 1, 0, 4,
+                                                                           1, 3, 0, 5,
+                                                                           0, 0, 1, 0,
+                                                                           0, 0, 0, 1);}},
+      // b.transform(identity) is ignored
+      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transformFullPerspective(1, 0, 0, 0,
+                                                                         0, 1, 0, 0,
+                                                                         0, 0, 1, 0,
+                                                                         0, 0, 0, 1);}},
     }
   },
   { "ClipRect", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, true, SkClipOp::kIntersect);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kIntersect, true);}},
       {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds.makeOffset(1, 1),
-                                                           true, SkClipOp::kIntersect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, false, SkClipOp::kIntersect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, true, SkClipOp::kDifference);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, false, SkClipOp::kDifference);}},
+                                                           SkClipOp::kIntersect, true);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kIntersect, false);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kDifference, true);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kDifference, false);}},
     }
   },
   { "ClipRRect", {
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, true, SkClipOp::kIntersect);}},
+      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kIntersect, true);}},
       {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect.makeOffset(1, 1),
-                                                            true, SkClipOp::kIntersect);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, false, SkClipOp::kIntersect);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, true, SkClipOp::kDifference);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, false, SkClipOp::kDifference);}},
+                                                            SkClipOp::kIntersect, true);}},
+      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kIntersect, false);}},
+      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kDifference, true);}},
+      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kDifference, false);}},
     }
   },
   { "ClipPath", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, true, SkClipOp::kIntersect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath2, true, SkClipOp::kIntersect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath3, true, SkClipOp::kIntersect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, false, SkClipOp::kIntersect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, true, SkClipOp::kDifference);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, false, SkClipOp::kDifference);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kIntersect, true);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath2, SkClipOp::kIntersect, true);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath3, SkClipOp::kIntersect, true);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kIntersect, false);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kDifference, true);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kDifference, false);}},
       // clipPath(rect) becomes clipRect
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPathRect, true, SkClipOp::kIntersect);}},
+      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPathRect, SkClipOp::kIntersect, true);}},
       // clipPath(oval) becomes clipRRect
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipPath(TestPathOval, true, SkClipOp::kIntersect);}},
+      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipPath(TestPathOval, SkClipOp::kIntersect, true);}},
     }
   },
   { "DrawPaint", {
@@ -520,41 +552,46 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "DrawImage", {
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::NearestSampling);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {20, 10}, DisplayList::NearestSampling);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 20}, DisplayList::NearestSampling);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::LinearSampling);}},
-      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage2, {10, 10}, DisplayList::NearestSampling);}},
+      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::NearestSampling, false);}},
+      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::NearestSampling, true);}},
+      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {20, 10}, DisplayList::NearestSampling, false);}},
+      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 20}, DisplayList::NearestSampling, false);}},
+      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, DisplayList::LinearSampling, false);}},
+      {1, 40, 1, 40, [](DisplayListBuilder& b) {b.drawImage(TestImage2, {10, 10}, DisplayList::NearestSampling, false);}},
     }
   },
   { "DrawImageRect", {
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling,
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                DisplayList::NearestSampling, false);}},
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                DisplayList::NearestSampling, true);}},
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                DisplayList::NearestSampling, false,
                                                                 SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                                                                DisplayList::NearestSampling);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                DisplayList::LinearSampling);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                                                                DisplayList::NearestSampling);}},
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
+                                                                DisplayList::NearestSampling, false);}},
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
+                                                                DisplayList::NearestSampling, false);}},
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                DisplayList::LinearSampling, false);}},
+      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
+                                                                DisplayList::NearestSampling, false);}},
     }
   },
   { "DrawImageNine", {
       // SkVanvas::drawImageNine is immediately converted to drawImageLattice
       {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest);}},
-      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                                                                SkFilterMode::kNearest);}},
+                                                                SkFilterMode::kNearest, false);}},
       {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kLinear);}},
+                                                                SkFilterMode::kNearest, true);}},
+      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
+                                                                SkFilterMode::kNearest, false);}},
+      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
+                                                                SkFilterMode::kNearest, false);}},
+      {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
+                                                                SkFilterMode::kLinear, false);}},
       {1, 48, 1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest);}},
+                                                                SkFilterMode::kNearest, false);}},
     }
   },
   { "DrawImageLattice", {
@@ -605,46 +642,51 @@ std::vector<DisplayListInvocationGroup> allGroups = {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr);}},
+                    DisplayList::NearestSampling, nullptr, false);}},
+      {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
+        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
+        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
+        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
+                    DisplayList::NearestSampling, nullptr, true);}},
       {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {0, 1, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr);}},
+                    DisplayList::NearestSampling, nullptr, false);}},
       {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 25, 30, 30} };
         b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr);}},
+                    DisplayList::NearestSampling, nullptr, false);}},
       {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::LinearSampling, nullptr);}},
+                    DisplayList::LinearSampling, nullptr, false);}},
       {1, 40 + 32 + 32, 1, 40 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kDstIn,
-                    DisplayList::NearestSampling, nullptr);}},
+                    DisplayList::NearestSampling, nullptr, false);}},
       {1, 56 + 32 + 32, 1, 56 + 32 + 32, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         static SkRect cullRect = { 0, 0, 200, 200 };
         b.drawAtlas(TestImage2, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, &cullRect);}},
+                    DisplayList::NearestSampling, &cullRect, false);}},
       {1, 40 + 32 + 32 + 8, 1, 40 + 32 + 32 + 8, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         static SkColor colors[] = { SK_ColorBLUE, SK_ColorGREEN };
         b.drawAtlas(TestImage1, xforms, texs, colors, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, nullptr);}},
+                    DisplayList::NearestSampling, nullptr, false);}},
       {1, 56 + 32 + 32 + 8, 1, 56 + 32 + 32 + 8, [](DisplayListBuilder& b) {
         static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
         static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
         static SkColor colors[] = { SK_ColorBLUE, SK_ColorGREEN };
         static SkRect cullRect = { 0, 0, 200, 200 };
         b.drawAtlas(TestImage1, xforms, texs, colors, 2, SkBlendMode::kSrcIn,
-                    DisplayList::NearestSampling, &cullRect);}},
+                    DisplayList::NearestSampling, &cullRect, false);}},
     }
   },
   { "DrawPicture", {
@@ -693,8 +735,8 @@ TEST(DisplayList, SingleOpSizes) {
       auto& invocation = group.variants[i];
       sk_sp<DisplayList> dl = invocation.Build();
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
-      ASSERT_EQ(dl->op_count(), invocation.op_count) << desc;
-      EXPECT_EQ(dl->bytes(), invocation.byte_count) << desc;
+      ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
+      EXPECT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
     }
   }
 }
@@ -706,8 +748,13 @@ TEST(DisplayList, SingleOpDisplayListsNotEqualEmpty) {
       sk_sp<DisplayList> dl = group.variants[i].Build();
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " != empty)";
-      ASSERT_FALSE(dl->Equals(*empty)) << desc;
-      ASSERT_FALSE(empty->Equals(*dl)) << desc;
+      if (group.variants[i].is_empty()) {
+        ASSERT_TRUE(dl->Equals(*empty)) << desc;
+        ASSERT_TRUE(empty->Equals(*dl)) << desc;
+      } else {
+        ASSERT_FALSE(dl->Equals(*empty)) << desc;
+        ASSERT_FALSE(empty->Equals(*dl)) << desc;
+      }
     }
   }
 }
@@ -723,8 +770,10 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
       sk_sp<DisplayList> copy = builder.Build();
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " == copy)";
-      ASSERT_EQ(copy->op_count(), dl->op_count()) << desc;
-      ASSERT_EQ(copy->bytes(), dl->bytes()) << desc;
+      ASSERT_EQ(copy->op_count(false), dl->op_count(false)) << desc;
+      ASSERT_EQ(copy->bytes(false), dl->bytes(false)) << desc;
+      ASSERT_EQ(copy->op_count(true), dl->op_count(true)) << desc;
+      ASSERT_EQ(copy->bytes(true), dl->bytes(true)) << desc;
       ASSERT_EQ(copy->bounds(), dl->bounds()) << desc;
       ASSERT_TRUE(copy->Equals(*dl)) << desc;
       ASSERT_TRUE(dl->Equals(*copy)) << desc;
@@ -735,12 +784,7 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
 TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      if (group.variants[i].sk_op_count < 0) {
-        // A negative sk_op_count means "do not test this op".
-        // Used mainly for these cases:
-        // - we cannot encode a DrawShadowRec (Skia private header)
-        // - SkCanvas cannot receive a DisplayList
-        // - SkCanvas may or may not inline an SkPicture
+      if (group.variants[i].sk_testing_invalid()) {
         continue;
       }
       // Verify a DisplayList (re)built by "rendering" it to an
@@ -756,8 +800,10 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
       dl->RenderTo(&recorder);
       sk_sp<DisplayList> sk_copy = recorder.Build();
       auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
-      EXPECT_EQ(sk_copy->op_count(), group.variants[i].sk_op_count) << desc;
-      EXPECT_EQ(sk_copy->bytes(), group.variants[i].sk_byte_count) << desc;
+      EXPECT_EQ(sk_copy->op_count(false), group.variants[i].sk_op_count())
+          << desc;
+      EXPECT_EQ(sk_copy->bytes(false), group.variants[i].sk_byte_count())
+          << desc;
       if (group.variants[i].sk_version_matches()) {
         EXPECT_EQ(sk_copy->bounds(), dl->bounds()) << desc;
         EXPECT_TRUE(dl->Equals(*sk_copy)) << desc << " == sk_copy";
@@ -788,8 +834,10 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
         auto desc = group.op_name + "(variant " + std::to_string(i + 1) +
                     " ==? variant " + std::to_string(j + 1) + ")";
         if (i == j) {
-          ASSERT_EQ(listA->op_count(), listB->op_count()) << desc;
-          ASSERT_EQ(listA->bytes(), listB->bytes()) << desc;
+          ASSERT_EQ(listA->op_count(false), listB->op_count(false)) << desc;
+          ASSERT_EQ(listA->bytes(false), listB->bytes(false)) << desc;
+          ASSERT_EQ(listA->op_count(true), listB->op_count(true)) << desc;
+          ASSERT_EQ(listA->bytes(true), listB->bytes(true)) << desc;
           ASSERT_EQ(listA->bounds(), listB->bounds()) << desc;
           ASSERT_TRUE(listA->Equals(*listB)) << desc;
           ASSERT_TRUE(listB->Equals(*listA)) << desc;
@@ -814,8 +862,8 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
     if (j >= group.variants.size())
       continue;
     DisplayListInvocation& invocation = group.variants[j];
-    op_count += invocation.op_count;
-    byte_count += invocation.byte_count;
+    op_count += invocation.op_count();
+    byte_count += invocation.raw_byte_count();
     invocation.invoker(builder);
   }
   sk_sp<DisplayList> dl = builder.Build();
@@ -830,8 +878,8 @@ static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
       name += " variant " + std::to_string(v_index + 1);
     }
   }
-  EXPECT_EQ(dl->op_count(), op_count) << name;
-  EXPECT_EQ(dl->bytes(), byte_count) << name;
+  EXPECT_EQ(dl->op_count(false), op_count) << name;
+  EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
   return dl;
 }
 
@@ -857,8 +905,13 @@ TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
         ASSERT_FALSE(variant_dl->Equals(*default_dl)) << desc << " != Default";
         ASSERT_FALSE(default_dl->Equals(*variant_dl)) << "Default != " << desc;
       }
-      ASSERT_FALSE(variant_dl->Equals(*missing_dl)) << desc << " != omitted";
-      ASSERT_FALSE(missing_dl->Equals(*variant_dl)) << "omitted != " << desc;
+      if (group.variants[vi].is_empty()) {
+        ASSERT_TRUE(variant_dl->Equals(*missing_dl)) << desc << " != omitted";
+        ASSERT_TRUE(missing_dl->Equals(*variant_dl)) << "omitted != " << desc;
+      } else {
+        ASSERT_FALSE(variant_dl->Equals(*missing_dl)) << desc << " != omitted";
+        ASSERT_FALSE(missing_dl->Equals(*variant_dl)) << "omitted != " << desc;
+      }
     }
   }
 }

@@ -896,6 +896,30 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return _textInputClient != 0;
 }
 
+#pragma mark - UIResponderStandardEditActions Overrides
+
+- (void)cut:(id)sender {
+  [UIPasteboard generalPasteboard].string = [self textInRange:_selectedTextRange];
+  [self replaceRange:_selectedTextRange withText:@""];
+}
+
+- (void)copy:(id)sender {
+  [UIPasteboard generalPasteboard].string = [self textInRange:_selectedTextRange];
+}
+
+- (void)paste:(id)sender {
+  [self insertText:[UIPasteboard generalPasteboard].string];
+}
+
+- (void)delete:(id)sender {
+  [self replaceRange:_selectedTextRange withText:@""];
+}
+
+- (void)selectAll:(id)sender {
+  [self setSelectedTextRange:[self textRangeFromPosition:[self beginningOfDocument]
+                                              toPosition:[self endOfDocument]]];
+}
+
 #pragma mark - UITextInput Overrides
 
 - (id<UITextInputTokenizer>)tokenizer {
@@ -1368,7 +1392,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   // It seems impossible to use a negative "width" or "height", as the "convertRect"
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
-  NSAssert(!_isFloatingCursorActive, @"Another floating cursor is currently active.");
   _isFloatingCursorActive = true;
   [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
@@ -1376,16 +1399,13 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  NSAssert(_isFloatingCursorActive,
-           @"updateFloatingCursorAtPoint is called without an active floating cursor.");
+  _isFloatingCursorActive = true;
   [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
                                     withClient:_textInputClient
                                   withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
 - (void)endFloatingCursor {
-  NSAssert(_isFloatingCursorActive,
-           @"endFloatingCursor is called without an active floating cursor.");
   _isFloatingCursorActive = false;
   [self.textInputDelegate updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient

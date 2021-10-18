@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show NullTreeSanitizer, platformViewManager;
+import '../configuration.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
 import '../util.dart';
@@ -27,18 +28,18 @@ class HtmlViewEmbedder {
 
   HtmlViewEmbedder._();
 
-  /// The maximum number of overlay surfaces that can be live at once.
-  static const int maximumSurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_SURFACES',
-    defaultValue: 8,
-  );
-
   /// If `true`, overlay canvases are disabled.
   ///
   /// This causes all drawing to go to a single canvas, with all of the platform
   /// views rendered over top. This may result in incorrect rendering with
   /// platform views.
-  static const bool disableOverlays = maximumSurfaces <= 1;
+  static bool get disableOverlays =>
+      debugDisableOverlays || configuration.canvasKitMaximumSurfaces <= 1;
+
+  /// Force the view embedder to disable overlays.
+  ///
+  /// This should never be used outside of tests.
+  static bool debugDisableOverlays = false;
 
   /// The set of platform views using the backup surface.
   final Set<int> _viewsUsingBackupSurface = <int>{};
@@ -170,12 +171,14 @@ class HtmlViewEmbedder {
   CkCanvas? compositeEmbeddedView(int viewId) {
     final int compositedViewCount = _compositionOrder.length;
     _compositionOrder.add(viewId);
-    if (compositedViewCount < _pictureRecordersCreatedDuringPreroll.length) {
-      _pictureRecorders[viewId] =
-          _pictureRecordersCreatedDuringPreroll[compositedViewCount];
-    } else {
-      _viewsUsingBackupSurface.add(viewId);
-      _pictureRecorders[viewId] = _backupPictureRecorder!;
+    if (!disableOverlays) {
+      if (compositedViewCount < _pictureRecordersCreatedDuringPreroll.length) {
+        _pictureRecorders[viewId] =
+            _pictureRecordersCreatedDuringPreroll[compositedViewCount];
+      } else {
+        _viewsUsingBackupSurface.add(viewId);
+        _pictureRecorders[viewId] = _backupPictureRecorder!;
+      }
     }
 
     // Do nothing if this view doesn't need to be composited.
@@ -530,6 +533,7 @@ class HtmlViewEmbedder {
           skiaSceneHost!.append(overlay.htmlElement);
         }
         _activeCompositionOrder.add(viewId);
+        unusedViews.remove(viewId);
       }
       if (_didPaintBackupSurface) {
         skiaSceneHost!

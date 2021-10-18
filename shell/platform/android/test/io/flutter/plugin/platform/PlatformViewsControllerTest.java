@@ -19,6 +19,7 @@ import android.widget.FrameLayout.LayoutParams;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.MotionEventTracker;
+import io.flutter.embedding.android.RenderMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.FlutterOverlaySurface;
@@ -441,7 +442,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     attach(jni, platformViewsController);
 
     jni.onFirstFrame();
@@ -504,7 +505,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     attach(jni, platformViewsController);
 
     jni.onFirstFrame();
@@ -540,7 +541,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
 
     final FlutterView flutterView = attach(jni, platformViewsController);
 
@@ -577,7 +578,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     attach(jni, platformViewsController);
 
     jni.onFirstFrame();
@@ -632,7 +633,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     attach(jni, platformViewsController);
 
     final FlutterImageView overlayImageView = mock(FlutterImageView.class);
@@ -670,7 +671,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     attach(jni, platformViewsController);
 
     final FlutterImageView overlayImageView = mock(FlutterImageView.class);
@@ -710,7 +711,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     final FlutterView flutterView = attach(jni, platformViewsController);
 
     jni.onFirstFrame();
@@ -756,7 +757,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
 
     final FlutterJNI jni = new FlutterJNI();
-    jni.attachToNative(false);
+    jni.attachToNative();
     final FlutterView flutterView = attach(jni, platformViewsController);
 
     jni.onFirstFrame();
@@ -874,7 +875,7 @@ public class PlatformViewsControllerTest {
     platformViewsController.attach(context, registry, executor);
 
     final FlutterView view =
-        new FlutterView(context, FlutterView.RenderMode.surface) {
+        new FlutterView(context, RenderMode.surface) {
           @Override
           public FlutterImageView createImageView() {
             final FlutterImageView view = mock(FlutterImageView.class);
@@ -912,7 +913,7 @@ public class PlatformViewsControllerTest {
     }
 
     @Implementation
-    public long performNativeAttach(FlutterJNI flutterJNI, boolean isBackgroundView) {
+    public long performNativeAttach(FlutterJNI flutterJNI) {
       return 1;
     }
 

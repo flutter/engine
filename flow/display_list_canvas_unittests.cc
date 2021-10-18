@@ -367,7 +367,7 @@ class CanvasCompareTester {
         },
         [=](DisplayListBuilder& b) {
           b.save();
-          b.clipRect(clip, false, SkClipOp::kIntersect);
+          b.clipRect(clip, SkClipOp::kIntersect, false);
           b.drawRect(rect);
           b.restore();
         },
@@ -472,11 +472,11 @@ class CanvasCompareTester {
                cv_renderer, dl_renderer, adjuster, tolerance, "Base Test");
 
     RenderWith([=](SkCanvas*, SkPaint& p) { p.setAntiAlias(true); },  //
-               [=](DisplayListBuilder& b) { b.setAA(true); },         //
+               [=](DisplayListBuilder& b) { b.setAntiAlias(true); },  //
                cv_renderer, dl_renderer, adjuster, tolerance,
                "AntiAlias == True");
     RenderWith([=](SkCanvas*, SkPaint& p) { p.setAntiAlias(false); },  //
-               [=](DisplayListBuilder& b) { b.setAA(false); },         //
+               [=](DisplayListBuilder& b) { b.setAntiAlias(false); },  //
                cv_renderer, dl_renderer, adjuster, tolerance,
                "AntiAlias == False");
 
@@ -649,7 +649,7 @@ class CanvasCompareTester {
               b.setStrokeWidth(5.0);
               // A Discrete(3, 5) effect produces miters that are near
               // maximal for a miter limit of 3.0.
-              b.setMiterLimit(3.0);
+              b.setStrokeMiter(3.0);
               b.setPathEffect(effect);
             },
             cv_renderer, dl_renderer, adjuster,
@@ -676,7 +676,7 @@ class CanvasCompareTester {
               b.setStrokeWidth(5.0);
               // A Discrete(2, 3) effect produces miters that are near
               // maximal for a miter limit of 2.5.
-              b.setMiterLimit(2.5);
+              b.setStrokeMiter(2.5);
               b.setPathEffect(effect);
             },
             cv_renderer, dl_renderer, adjuster,
@@ -766,13 +766,13 @@ class CanvasCompareTester {
     // by a couple of pixels so we will relax bounds testing for strokes by
     // a couple of pixels.
     BoundsTolerance tolerance = tolerance_in.addBoundsPadding(2, 2);
-    RenderWith(
+    RenderWith(  //
         [=](SkCanvas*, SkPaint& p) { p.setStyle(SkPaint::kFill_Style); },
-        [=](DisplayListBuilder& b) { b.setDrawStyle(SkPaint::kFill_Style); },
+        [=](DisplayListBuilder& b) { b.setStyle(SkPaint::kFill_Style); },
         cv_renderer, dl_renderer, adjuster, tolerance, "Fill");
     RenderWith(
         [=](SkCanvas*, SkPaint& p) { p.setStyle(SkPaint::kStroke_Style); },
-        [=](DisplayListBuilder& b) { b.setDrawStyle(SkPaint::kStroke_Style); },
+        [=](DisplayListBuilder& b) { b.setStyle(SkPaint::kStroke_Style); },
         cv_renderer, dl_renderer, adjuster, tolerance, "Stroke + defaults");
 
     RenderWith(
@@ -781,7 +781,7 @@ class CanvasCompareTester {
           p.setStrokeWidth(10.0);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kFill_Style);
+          b.setStyle(SkPaint::kFill_Style);
           b.setStrokeWidth(10.0);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
@@ -793,7 +793,7 @@ class CanvasCompareTester {
           p.setStrokeWidth(10.0);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(10.0);
         },
         cv_renderer, dl_renderer, adjuster, tolerance, "Stroke Width 10");
@@ -803,7 +803,7 @@ class CanvasCompareTester {
           p.setStrokeWidth(5.0);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
         },
         cv_renderer, dl_renderer, adjuster, tolerance, "Stroke Width 5");
@@ -815,9 +815,9 @@ class CanvasCompareTester {
           p.setStrokeCap(SkPaint::kButt_Cap);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
-          b.setCaps(SkPaint::kButt_Cap);
+          b.setStrokeCap(SkPaint::kButt_Cap);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
         "Stroke Width 5, Butt Cap");
@@ -828,9 +828,9 @@ class CanvasCompareTester {
           p.setStrokeCap(SkPaint::kRound_Cap);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
-          b.setCaps(SkPaint::kRound_Cap);
+          b.setStrokeCap(SkPaint::kRound_Cap);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
         "Stroke Width 5, Round Cap");
@@ -842,9 +842,9 @@ class CanvasCompareTester {
           p.setStrokeJoin(SkPaint::kBevel_Join);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
-          b.setJoins(SkPaint::kBevel_Join);
+          b.setStrokeJoin(SkPaint::kBevel_Join);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
         "Stroke Width 5, Bevel Join");
@@ -855,9 +855,9 @@ class CanvasCompareTester {
           p.setStrokeJoin(SkPaint::kRound_Join);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
-          b.setJoins(SkPaint::kRound_Join);
+          b.setStrokeJoin(SkPaint::kRound_Join);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
         "Stroke Width 5, Round Join");
@@ -873,13 +873,13 @@ class CanvasCompareTester {
           p.setAntiAlias(true);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
-          b.setMiterLimit(10.0);
-          b.setJoins(SkPaint::kMiter_Join);
+          b.setStrokeMiter(10.0);
+          b.setStrokeJoin(SkPaint::kMiter_Join);
           // AA helps fill in the peaks of the really thin miters better
           // for bounds accuracy testing
-          b.setAA(true);
+          b.setAntiAlias(true);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
         "Stroke Width 5, Miter 10");
@@ -892,10 +892,10 @@ class CanvasCompareTester {
           p.setStrokeJoin(SkPaint::kMiter_Join);
         },
         [=](DisplayListBuilder& b) {
-          b.setDrawStyle(SkPaint::kStroke_Style);
+          b.setStyle(SkPaint::kStroke_Style);
           b.setStrokeWidth(5.0);
-          b.setMiterLimit(0.0);
-          b.setJoins(SkPaint::kMiter_Join);
+          b.setStrokeMiter(0.0);
+          b.setStrokeJoin(SkPaint::kMiter_Join);
         },
         cv_renderer, dl_renderer, adjuster, tolerance,
         "Stroke Width 5, Miter 0");
@@ -915,7 +915,7 @@ class CanvasCompareTester {
             },
             [=](DisplayListBuilder& b) {
               // Need stroke style to see dashing properly
-              b.setDrawStyle(SkPaint::kStroke_Style);
+              b.setStyle(SkPaint::kStroke_Style);
               // Provide some non-trivial stroke size to get dashed
               b.setStrokeWidth(5.0);
               b.setPathEffect(effect);
@@ -936,7 +936,7 @@ class CanvasCompareTester {
             },
             [=](DisplayListBuilder& b) {
               // Need stroke style to see dashing properly
-              b.setDrawStyle(SkPaint::kStroke_Style);
+              b.setStyle(SkPaint::kStroke_Style);
               // Provide some non-trivial stroke size to get dashed
               b.setStrokeWidth(5.0);
               b.setPathEffect(effect);
@@ -978,24 +978,30 @@ class CanvasCompareTester {
                                       0, 0, 1);
       RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(tx); },  //
                  [=](DisplayListBuilder& b) {
-                   b.transform2x3(tx[0], tx[1], tx[2],  //
-                                  tx[3], tx[4], tx[5]);
+                   b.transform2DAffine(tx[0], tx[1], tx[2],  //
+                                       tx[3], tx[4], tx[5]);
                  },  //
                  cv_renderer, dl_renderer, adjuster, skewed_tolerance,
-                 "Transform 2x3");
+                 "Transform 2D Affine");
     }
     {
-      SkMatrix tx = SkMatrix::MakeAll(1.10, 0.10, 5,   //
-                                      0.05, 1.05, 10,  //
-                                      0, 0, 1.01);
-      RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(tx); },  //
+      SkM44 m44 = SkM44(1, 0, 0, RenderCenterX,  //
+                        0, 1, 0, RenderCenterY,  //
+                        0, 0, 1, 0,              //
+                        0, 0, .001, 1);
+      m44.preConcat(SkM44::Rotate({1, 0, 0}, M_PI / 60));  // 3 degrees around X
+      m44.preConcat(SkM44::Rotate({0, 1, 0}, M_PI / 45));  // 4 degrees around Y
+      m44.preTranslate(-RenderCenterX, -RenderCenterY);
+      RenderWith([=](SkCanvas* c, SkPaint&) { c->concat(m44); },  //
                  [=](DisplayListBuilder& b) {
-                   b.transform3x3(tx[0], tx[1], tx[2],  //
-                                  tx[3], tx[4], tx[5],  //
-                                  tx[6], tx[7], tx[8]);
+                   b.transformFullPerspective(
+                       m44.rc(0, 0), m44.rc(0, 1), m44.rc(0, 2), m44.rc(0, 3),
+                       m44.rc(1, 0), m44.rc(1, 1), m44.rc(1, 2), m44.rc(1, 3),
+                       m44.rc(2, 0), m44.rc(2, 1), m44.rc(2, 2), m44.rc(2, 3),
+                       m44.rc(3, 0), m44.rc(3, 1), m44.rc(3, 2), m44.rc(3, 3));
                  },  //
                  cv_renderer, dl_renderer, adjuster, skewed_tolerance,
-                 "Transform 3x3");
+                 "Transform Full Perspective");
     }
   }
 
@@ -1012,7 +1018,7 @@ class CanvasCompareTester {
           c->clipRect(r_clip, SkClipOp::kIntersect, false);
         },
         [=](DisplayListBuilder& b) {
-          b.clipRect(r_clip, false, SkClipOp::kIntersect);
+          b.clipRect(r_clip, SkClipOp::kIntersect, false);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
         "Hard ClipRect inset by 15.5");
@@ -1021,7 +1027,7 @@ class CanvasCompareTester {
           c->clipRect(r_clip, SkClipOp::kIntersect, true);
         },
         [=](DisplayListBuilder& b) {
-          b.clipRect(r_clip, true, SkClipOp::kIntersect);
+          b.clipRect(r_clip, SkClipOp::kIntersect, true);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
         "AntiAlias ClipRect inset by 15.5");
@@ -1030,7 +1036,7 @@ class CanvasCompareTester {
           c->clipRect(r_clip, SkClipOp::kDifference, false);
         },
         [=](DisplayListBuilder& b) {
-          b.clipRect(r_clip, false, SkClipOp::kDifference);
+          b.clipRect(r_clip, SkClipOp::kDifference, false);
         },
         cv_renderer, dl_renderer, diff_adjuster, diff_tolerance,
         "Hard ClipRect Diff, inset by 15.5");
@@ -1040,7 +1046,7 @@ class CanvasCompareTester {
           c->clipRRect(rr_clip, SkClipOp::kIntersect, false);
         },
         [=](DisplayListBuilder& b) {
-          b.clipRRect(rr_clip, false, SkClipOp::kIntersect);
+          b.clipRRect(rr_clip, SkClipOp::kIntersect, false);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
         "Hard ClipRRect inset by 15.5");
@@ -1049,7 +1055,7 @@ class CanvasCompareTester {
           c->clipRRect(rr_clip, SkClipOp::kIntersect, true);
         },
         [=](DisplayListBuilder& b) {
-          b.clipRRect(rr_clip, true, SkClipOp::kIntersect);
+          b.clipRRect(rr_clip, SkClipOp::kIntersect, true);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
         "AntiAlias ClipRRect inset by 15.5");
@@ -1058,7 +1064,7 @@ class CanvasCompareTester {
           c->clipRRect(rr_clip, SkClipOp::kDifference, false);
         },
         [=](DisplayListBuilder& b) {
-          b.clipRRect(rr_clip, false, SkClipOp::kDifference);
+          b.clipRRect(rr_clip, SkClipOp::kDifference, false);
         },
         cv_renderer, dl_renderer, diff_adjuster, diff_tolerance,
         "Hard ClipRRect Diff, inset by 15.5");
@@ -1071,7 +1077,7 @@ class CanvasCompareTester {
           c->clipPath(path_clip, SkClipOp::kIntersect, false);
         },
         [=](DisplayListBuilder& b) {
-          b.clipPath(path_clip, false, SkClipOp::kIntersect);
+          b.clipPath(path_clip, SkClipOp::kIntersect, false);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
         "Hard ClipPath inset by 15.5");
@@ -1080,7 +1086,7 @@ class CanvasCompareTester {
           c->clipPath(path_clip, SkClipOp::kIntersect, true);
         },
         [=](DisplayListBuilder& b) {
-          b.clipPath(path_clip, true, SkClipOp::kIntersect);
+          b.clipPath(path_clip, SkClipOp::kIntersect, true);
         },
         cv_renderer, dl_renderer, intersect_adjuster, intersect_tolerance,
         "AntiAlias ClipPath inset by 15.5");
@@ -1089,7 +1095,7 @@ class CanvasCompareTester {
           c->clipPath(path_clip, SkClipOp::kDifference, false);
         },
         [=](DisplayListBuilder& b) {
-          b.clipPath(path_clip, false, SkClipOp::kDifference);
+          b.clipPath(path_clip, SkClipOp::kDifference, false);
         },
         cv_renderer, dl_renderer, diff_adjuster, diff_tolerance,
         "Hard ClipPath Diff, inset by 15.5");
@@ -1872,7 +1878,20 @@ TEST(DisplayListCanvas, DrawImageNearest) {
       [=](DisplayListBuilder& builder) {  //
         builder.drawImage(CanvasCompareTester::testImage,
                           SkPoint::Make(RenderLeft, RenderTop),
-                          DisplayList::NearestSampling);
+                          DisplayList::NearestSampling, true);
+      });
+}
+
+TEST(DisplayListCanvas, DrawImageNearestNoPaint) {
+  CanvasCompareTester::RenderAll(
+      [=](SkCanvas* canvas, SkPaint& paint) {  //
+        canvas->drawImage(CanvasCompareTester::testImage, RenderLeft, RenderTop,
+                          DisplayList::NearestSampling, nullptr);
+      },
+      [=](DisplayListBuilder& builder) {  //
+        builder.drawImage(CanvasCompareTester::testImage,
+                          SkPoint::Make(RenderLeft, RenderTop),
+                          DisplayList::NearestSampling, false);
       });
 }
 
@@ -1885,7 +1904,7 @@ TEST(DisplayListCanvas, DrawImageLinear) {
       [=](DisplayListBuilder& builder) {  //
         builder.drawImage(CanvasCompareTester::testImage,
                           SkPoint::Make(RenderLeft, RenderTop),
-                          DisplayList::LinearSampling);
+                          DisplayList::LinearSampling, true);
       });
 }
 
@@ -1900,7 +1919,22 @@ TEST(DisplayListCanvas, DrawImageRectNearest) {
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawImageRect(CanvasCompareTester::testImage, src, dst,
-                              DisplayList::NearestSampling);
+                              DisplayList::NearestSampling, true);
+      });
+}
+
+TEST(DisplayListCanvas, DrawImageRectNearestNoPaint) {
+  SkRect src = SkRect::MakeIWH(RenderWidth, RenderHeight).makeInset(5, 5);
+  SkRect dst = RenderBounds.makeInset(15.5, 10.5);
+  CanvasCompareTester::RenderAll(
+      [=](SkCanvas* canvas, SkPaint& paint) {  //
+        canvas->drawImageRect(CanvasCompareTester::testImage, src, dst,
+                              DisplayList::NearestSampling, nullptr,
+                              SkCanvas::kFast_SrcRectConstraint);
+      },
+      [=](DisplayListBuilder& builder) {  //
+        builder.drawImageRect(CanvasCompareTester::testImage, src, dst,
+                              DisplayList::NearestSampling, false);
       });
 }
 
@@ -1915,7 +1949,7 @@ TEST(DisplayListCanvas, DrawImageRectLinear) {
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawImageRect(CanvasCompareTester::testImage, src, dst,
-                              DisplayList::LinearSampling);
+                              DisplayList::LinearSampling, true);
       });
 }
 
@@ -1929,7 +1963,21 @@ TEST(DisplayListCanvas, DrawImageNineNearest) {
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawImageNine(CanvasCompareTester::testImage, src, dst,
-                              SkFilterMode::kNearest);
+                              SkFilterMode::kNearest, true);
+      });
+}
+
+TEST(DisplayListCanvas, DrawImageNineNearestNoPaint) {
+  SkIRect src = SkIRect::MakeWH(RenderWidth, RenderHeight).makeInset(5, 5);
+  SkRect dst = RenderBounds.makeInset(15.5, 10.5);
+  CanvasCompareTester::RenderAll(
+      [=](SkCanvas* canvas, SkPaint& paint) {  //
+        canvas->drawImageNine(CanvasCompareTester::testImage.get(), src, dst,
+                              SkFilterMode::kNearest, nullptr);
+      },
+      [=](DisplayListBuilder& builder) {  //
+        builder.drawImageNine(CanvasCompareTester::testImage, src, dst,
+                              SkFilterMode::kNearest, false);
       });
 }
 
@@ -1943,7 +1991,7 @@ TEST(DisplayListCanvas, DrawImageNineLinear) {
       },
       [=](DisplayListBuilder& builder) {  //
         builder.drawImageNine(CanvasCompareTester::testImage, src, dst,
-                              SkFilterMode::kLinear);
+                              SkFilterMode::kLinear, true);
       });
 }
 
@@ -1970,6 +2018,32 @@ TEST(DisplayListCanvas, DrawImageLatticeNearest) {
       [=](DisplayListBuilder& builder) {                                   //
         builder.drawImageLattice(CanvasCompareTester::testImage, lattice,  //
                                  dst, SkFilterMode::kNearest, true);
+      });
+}
+
+TEST(DisplayListCanvas, DrawImageLatticeNearestNoPaint) {
+  const SkRect dst = RenderBounds.makeInset(15.5, 10.5);
+  const int divX[] = {
+      (RenderLeft + RenderCenterX) / 2,
+      RenderCenterX,
+      (RenderRight + RenderCenterX) / 2,
+  };
+  const int divY[] = {
+      (RenderTop + RenderCenterY) / 2,
+      RenderCenterY,
+      (RenderBottom + RenderCenterY) / 2,
+  };
+  SkCanvas::Lattice lattice = {
+      divX, divY, nullptr, 3, 3, nullptr, nullptr,
+  };
+  CanvasCompareTester::RenderAll(
+      [=](SkCanvas* canvas, SkPaint& paint) {  //
+        canvas->drawImageLattice(CanvasCompareTester::testImage.get(), lattice,
+                                 dst, SkFilterMode::kNearest, nullptr);
+      },
+      [=](DisplayListBuilder& builder) {                                   //
+        builder.drawImageLattice(CanvasCompareTester::testImage, lattice,  //
+                                 dst, SkFilterMode::kNearest, false);
       });
 }
 
@@ -2032,7 +2106,44 @@ TEST(DisplayListCanvas, DrawAtlasNearest) {
       [=](DisplayListBuilder& builder) {
         builder.drawAtlas(image, xform, tex, colors, 4,  //
                           SkBlendMode::kSrcOver, DisplayList::NearestSampling,
-                          nullptr);
+                          nullptr, true);
+      });
+}
+
+TEST(DisplayListCanvas, DrawAtlasNearestNoPaint) {
+  const SkRSXform xform[] = {
+      // clang-format off
+      { 1.2f,  0.0f, RenderLeft,  RenderTop},
+      { 0.0f,  1.2f, RenderRight, RenderTop},
+      {-1.2f,  0.0f, RenderRight, RenderBottom},
+      { 0.0f, -1.2f, RenderLeft,  RenderBottom},
+      // clang-format on
+  };
+  const SkRect tex[] = {
+      // clang-format off
+      {0,               0,                RenderHalfWidth, RenderHalfHeight},
+      {RenderHalfWidth, 0,                RenderWidth,     RenderHalfHeight},
+      {RenderHalfWidth, RenderHalfHeight, RenderWidth,     RenderHeight},
+      {0,               RenderHalfHeight, RenderHalfWidth, RenderHeight},
+      // clang-format on
+  };
+  const SkColor colors[] = {
+      SK_ColorBLUE,
+      SK_ColorGREEN,
+      SK_ColorYELLOW,
+      SK_ColorMAGENTA,
+  };
+  const sk_sp<SkImage> image = CanvasCompareTester::testImage;
+  CanvasCompareTester::RenderAtlas(
+      [=](SkCanvas* canvas, SkPaint& paint) {
+        canvas->drawAtlas(image.get(), xform, tex, colors, 4,
+                          SkBlendMode::kSrcOver, DisplayList::NearestSampling,
+                          nullptr, nullptr);
+      },
+      [=](DisplayListBuilder& builder) {
+        builder.drawAtlas(image, xform, tex, colors, 4,  //
+                          SkBlendMode::kSrcOver, DisplayList::NearestSampling,
+                          nullptr, false);
       });
 }
 
@@ -2069,7 +2180,7 @@ TEST(DisplayListCanvas, DrawAtlasLinear) {
       [=](DisplayListBuilder& builder) {
         builder.drawAtlas(image, xform, tex, colors, 2,  //
                           SkBlendMode::kSrcOver, DisplayList::LinearSampling,
-                          nullptr);
+                          nullptr, true);
       });
 }
 
@@ -2149,7 +2260,7 @@ TEST(DisplayListCanvas, DrawPictureWithPaint) {
 
 TEST(DisplayListCanvas, DrawDisplayList) {
   DisplayListBuilder builder;
-  builder.setDrawStyle(SkPaint::kFill_Style);
+  builder.setStyle(SkPaint::kFill_Style);
   builder.setColor(SK_ColorBLUE);
   builder.drawOval(RenderBounds);
   sk_sp<DisplayList> display_list = builder.Build();
@@ -2227,7 +2338,7 @@ TEST(DisplayListCanvas, DrawShadow) {
       CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3));
 }
 
-TEST(DisplayListCanvas, DrawNonOccludedShadow) {
+TEST(DisplayListCanvas, DrawShadowTransparentOccluder) {
   SkPath path;
   path.addRoundRect(
       {
