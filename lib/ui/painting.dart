@@ -3792,7 +3792,7 @@ class ImageShader extends Shader {
 /// c: [4, 5, 6]
 /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
 ///
-class FragmentShader extends Shader {
+class FragmentShaderBuilder {
 
   // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
   // constructor and to [update].
@@ -3814,25 +3814,22 @@ class FragmentShader extends Shader {
   /// Because of this, it is reccommended to construct a FragmentShader asynchrounously,
   /// outside of a widget's `build` method, to minimize the chance of UI jank.
   @pragma('vm:entry-point')
-  FragmentShader({
+  FragmentShaderBuilder({
     required ByteBuffer spirv,
-    Float32List? floatUniforms,
     bool debugPrint = false,
-  }) : super._() {
+  }) {
     _constructor();
     final spv.TranspileResult result = spv.transpile(
       spirv,
       spv.TargetLanguage.sksl,
     );
-    _uniformFloatCount = result.uniformFloatCount;
     _init(result.src, debugPrint);
-    update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
   }
 
   late final int _uniformFloatCount;
 
-  void _constructor() native 'FragmentShader_constructor';
-  void _init(String sksl, bool debugPrint) native 'FragmentShader_init';
+  void _constructor() native 'FragmentShaderBuilder_constructor';
+  void _init(String sksl, bool debugPrint) native 'FragmentShaderBuilder_init';
 
   /// Updates the uniform values that are supplied to the [FragmentShader]
   /// and refreshes the shader.
@@ -3842,17 +3839,28 @@ class FragmentShader extends Shader {
   ///
   /// This method will aquire additional fields as [FragmentShader] is
   /// implemented further.
-  void update({
+  Shader build({
     required Float32List floatUniforms,
   }) {
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
-    _update(floatUniforms);
+    final _FragmentShader shader = _FragmentShader();
+    _build(shader, floatUniforms);
+    return shader;
   }
 
-  void _update(Float32List floatUniforms) native 'FragmentShader_update';
+  void _build(_FragmentShader shader, Float32List floatUniforms) native 'FragmentShaderBuilder_build';
+}
+
+@pragma('vm:entry-point')
+class _FragmentShader extends Shader {
+  /// This class is created by the engine, and should not be instantiated
+  /// or extended directly.
+  ///
+  /// To create a [_FragmentShader], use a [FragmentShaderBuilder].
+  _FragmentShader() : super._();
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.

@@ -32,6 +32,8 @@ source_set("ui") {
     "painting/engine_layer.h",
     "painting/fragment_shader.cc",
     "painting/fragment_shader.h",
+    "painting/fragment_shader_builder.cc",
+    "painting/fragment_shader_builder.h",
     "painting/gradient.cc",
     "painting/gradient.h",
     "painting/image.cc",

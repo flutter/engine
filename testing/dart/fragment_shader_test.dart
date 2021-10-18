@@ -16,13 +16,15 @@ import 'shader_test_file_utils.dart';
 void main() {
   test('throws exception for invalid shader', () {
     final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
-    expect(() => FragmentShader(spirv: invalidBytes), throws);
+    expect(() => FragmentShaderBuilder(spirv: invalidBytes), throws);
   });
 
   test('simple shader renders correctly', () async {
     final Uint8List shaderBytes = await spvFile('general_shaders', 'functions.spv').readAsBytes();
-    final FragmentShader shader = FragmentShader(
+    final FragmentShaderBuilder builder = FragmentShaderBuilder(
       spirv: shaderBytes.buffer,
+    );
+    final Shader shader = builder.build(
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
@@ -30,18 +32,20 @@ void main() {
 
   test('shader with functions renders green', () {
     final ByteBuffer spirv = spvFile('general_shaders', 'functions.spv').readAsBytesSync().buffer;
-    final FragmentShader shader = FragmentShader(
+    final FragmentShaderBuilder builder = FragmentShaderBuilder(
       spirv: spirv,
+    );
+    final Shader shader = builder.build(
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
   });
 
-  test('shader with uniforms renders and updates correctly', () async {
+  test('shader with uniforms renders correctly', () async {
     final Uint8List shaderBytes = await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
-    final FragmentShader shader = FragmentShader(spirv: shaderBytes.buffer);
+    final FragmentShaderBuilder builder = FragmentShaderBuilder(spirv: shaderBytes.buffer);
 
-    shader.update(
+    final Shader shader = builder.build(
         floatUniforms: Float32List.fromList(<double>[
       0.0, // iFloatUniform
       0.25, // iVec2Uniform.x
@@ -83,8 +87,10 @@ void main() {
 void _expectShadersRenderGreen(Map<String, ByteBuffer> shaders) {
   for (final String key in shaders.keys) {
     test('$key renders green', () {
-      final FragmentShader shader = FragmentShader(
+      final FragmentShaderBuilder builder = FragmentShaderBuilder(
         spirv: shaders[key]!,
+      );
+      final Shader shader = builder.build(
         floatUniforms: Float32List.fromList(<double>[1]),
       );
       _expectShaderRendersGreen(shader);
@@ -138,7 +144,7 @@ void _expectShaderHasOp(ByteBuffer spirv, String filename, bool glsl) {
 }
 
 // Expects that a spirv shader only outputs the color green.
-Future<void> _expectShaderRendersGreen(FragmentShader shader) async {
+Future<void> _expectShaderRendersGreen(Shader shader) async {
   final ByteData renderedBytes = (await _imageByteDataFromShader(
     shader: shader,
     imageDimension: _shaderImageDimension,
@@ -149,7 +155,7 @@ Future<void> _expectShaderRendersGreen(FragmentShader shader) async {
 }
 
 Future<ByteData?> _imageByteDataFromShader({
-  required FragmentShader shader,
+  required Shader shader,
   int imageDimension = 100,
 }) async {
   final PictureRecorder recorder = PictureRecorder();
