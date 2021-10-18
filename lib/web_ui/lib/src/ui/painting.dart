@@ -791,7 +791,7 @@ class FragmentShaderBuilder {
   FragmentShaderBuilder({
     required ByteBuffer spirv, // ignore: avoid_unused_constructor_parameters
     bool debugPrint = false, // ignore: avoid_unused_constructor_parameters
-  }) : super._() {
+  }) {
     throw UnsupportedError('FragmentShaderBuilder is not supported for the CanvasKit or HTML renderers.');
   }
 
