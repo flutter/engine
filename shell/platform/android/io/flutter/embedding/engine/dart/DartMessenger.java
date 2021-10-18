@@ -7,6 +7,7 @@ package io.flutter.embedding.engine.dart;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.tracing.Trace;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -60,15 +61,21 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @NonNull String channel,
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
+    Trace.beginSection("DartMessenger send on " + channel);
     Log.v(TAG, "Sending message with callback over channel '" + channel + "'");
-    int replyId = nextReplyId++;
-    if (callback != null) {
-      pendingReplies.put(replyId, callback);
-    }
-    if (message == null) {
-      flutterJNI.dispatchEmptyPlatformMessage(channel, replyId);
-    } else {
-      flutterJNI.dispatchPlatformMessage(channel, message, message.position(), replyId);
+
+    try {
+      int replyId = nextReplyId++;
+      if (callback != null) {
+        pendingReplies.put(replyId, callback);
+      }
+      if (message == null) {
+        flutterJNI.dispatchEmptyPlatformMessage(channel, replyId);
+      } else {
+        flutterJNI.dispatchPlatformMessage(channel, message, message.position(), replyId);
+      }
+    } finally {
+      Trace.endSection();
     }
   }
 
@@ -78,6 +85,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
     BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
     if (handler != null) {
+      Trace.beginSection("DartMessenger handleMessageFromDart on " + channel);
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
         handler.onMessage(message, new Reply(flutterJNI, replyId));
@@ -91,6 +99,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
       } catch (Error err) {
         handleError(err);
+      } finally {
+        Trace.endSection();
       }
     } else {
       Log.v(TAG, "No registered handler for message. Responding to Dart with empty reply message.");

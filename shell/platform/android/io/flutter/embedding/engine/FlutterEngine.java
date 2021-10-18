@@ -9,6 +9,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.tracing.Trace;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -356,11 +357,18 @@ public class FlutterEngine {
   }
 
   private void attachToJni() {
+    Trace.beginSection("FlutterEngine attachToJni");
     Log.v(TAG, "Attaching to JNI.");
-    flutterJNI.attachToNative();
 
-    if (!isAttachedToJni()) {
-      throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
+    try {
+      flutterJNI.attachToNative();
+
+      if (!isAttachedToJni()) {
+        throw new RuntimeException(
+            "FlutterEngine failed to attach to its native Object reference.");
+      }
+    } finally {
+      Trace.endSection();
     }
   }
 
@@ -411,20 +419,26 @@ public class FlutterEngine {
    * <p>This {@code FlutterEngine} instance should be discarded after invoking this method.
    */
   public void destroy() {
+    Trace.beginSection("FlutterEngine destroy");
     Log.v(TAG, "Destroying.");
-    for (EngineLifecycleListener listener : engineLifecycleListeners) {
-      listener.onEngineWillDestroy();
-    }
-    // The order that these things are destroyed is important.
-    pluginRegistry.destroy();
-    platformViewsController.onDetachedFromJNI();
-    dartExecutor.onDetachedFromJNI();
-    flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
-    flutterJNI.setDeferredComponentManager(null);
-    flutterJNI.detachFromNativeAndReleaseResources();
-    if (FlutterInjector.instance().deferredComponentManager() != null) {
-      FlutterInjector.instance().deferredComponentManager().destroy();
-      deferredComponentChannel.setDeferredComponentManager(null);
+
+    try {
+      for (EngineLifecycleListener listener : engineLifecycleListeners) {
+        listener.onEngineWillDestroy();
+      }
+      // The order that these things are destroyed is important.
+      pluginRegistry.destroy();
+      platformViewsController.onDetachedFromJNI();
+      dartExecutor.onDetachedFromJNI();
+      flutterJNI.removeEngineLifecycleListener(engineLifecycleListener);
+      flutterJNI.setDeferredComponentManager(null);
+      flutterJNI.detachFromNativeAndReleaseResources();
+      if (FlutterInjector.instance().deferredComponentManager() != null) {
+        FlutterInjector.instance().deferredComponentManager().destroy();
+        deferredComponentChannel.setDeferredComponentManager(null);
+      }
+    } finally {
+      Trace.endSection();
     }
   }
 
