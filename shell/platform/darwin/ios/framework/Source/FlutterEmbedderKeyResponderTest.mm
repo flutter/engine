@@ -176,23 +176,23 @@ typedef void (^ResponseCallback)(bool handled);
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
   FlutterKeyEvent* event;
-  
+
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
-                                            initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                                                                _Nullable _VoidPtr user_data) {
-    [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
-                                                 callback:callback
-                                                 userData:user_data]];
-  }];
-  
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
   last_handled = FALSE;
   // Verify that the eject key (keycode 0xb8, which is not present in the keymap)
   // should be translated to the right logical and physical keys.
   [responder handlePress:keyDownEvent(kKeyCodeEject, kModifierFlagNone, 123.0f)
                 callback:^(BOOL handled) {
-    last_handled = handled;
-  }];
-  
+                  last_handled = handled;
+                }];
+
   XCTAssertEqual([events count], 1u);
   event = [events lastObject].data;
   XCTAssertEqual(event->type, kFlutterKeyEventTypeDown);
@@ -200,20 +200,20 @@ typedef void (^ResponseCallback)(bool handled);
   XCTAssertEqual(event->logical, kKeyCodeEject | kIosPlane);
   XCTAssertEqual(event->character, nullptr);
   XCTAssertEqual(event->synthesized, false);
-  
+
   XCTAssertEqual(last_handled, FALSE);
   XCTAssert([[events lastObject] hasCallback]);
   [[events lastObject] respond:TRUE];
   XCTAssertEqual(last_handled, TRUE);
-  
+
   [events removeAllObjects];
-  
+
   last_handled = TRUE;
   [responder handlePress:keyUpEvent(kKeyCodeEject, kModifierFlagNone, 123.0f)
                 callback:^(BOOL handled) {
-    last_handled = handled;
-  }];
-  
+                  last_handled = handled;
+                }];
+
   XCTAssertEqual([events count], 1u);
   event = [events lastObject].data;
   XCTAssertEqual(event->type, kFlutterKeyEventTypeUp);
@@ -221,12 +221,12 @@ typedef void (^ResponseCallback)(bool handled);
   XCTAssertEqual(event->logical, kKeyCodeEject | kIosPlane);
   XCTAssertEqual(event->character, nullptr);
   XCTAssertEqual(event->synthesized, false);
-  
+
   XCTAssertEqual(last_handled, TRUE);
   XCTAssert([[events lastObject] hasCallback]);
-  [[events lastObject] respond: FALSE];  // Check if responding FALSE works
+  [[events lastObject] respond:FALSE];  // Check if responding FALSE works
   XCTAssertEqual(last_handled, FALSE);
-  
+
   [events removeAllObjects];
 }
 
