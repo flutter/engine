@@ -45,6 +45,8 @@ static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
+static NSString* const kStartCapturingTextFromCameraMethod =
+    @"TextInput.startCapturingTextFromCamera";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -1672,6 +1674,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
+  } else if ([method isEqualToString:kStartCapturingTextFromCameraMethod]) {
+    [self startCapturingTextFromCamera];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -1725,6 +1730,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   [_activeView resignFirstResponder];
   [_activeView removeFromSuperview];
   [_inputHider removeFromSuperview];
+}
+
+- (void)startCapturingTextFromCamera {
+  if (@available(iOS 15.0, *)) {
+    [_activeView captureTextFromCamera:nil];
+  }
 }
 
 - (void)triggerAutofillSave:(BOOL)saveEntries {

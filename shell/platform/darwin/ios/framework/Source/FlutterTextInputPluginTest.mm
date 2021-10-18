@@ -328,6 +328,19 @@ FLUTTER_ASSERT_ARC
   }
 }
 
+- (void)testCaptureTextFromCamera {
+  FlutterTextInputView* activeView = textInputPlugin.activeView;
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.startCapturingTextFromCamera"
+                                        arguments:nil];
+  [textInputPlugin handleMethodCall:methodCall
+                             result:^(id _Nullable result){
+                             }];
+  if (@available(iOS 15.0, *)) {
+    OCMVerify([activeView captureTextFromCamera:nil]);
+  }
+}
+
 #pragma mark - TextEditingDelta tests
 - (void)testTextEditingDeltasAreGeneratedOnTextInput {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
