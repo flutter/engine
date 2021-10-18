@@ -513,6 +513,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/viewport_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/configuration.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
@@ -1413,9 +1414,11 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/meta/vmservi
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_unittest.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1_unittest.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/file_in_namespace_buffer.cc
