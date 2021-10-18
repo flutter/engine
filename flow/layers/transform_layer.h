@@ -26,7 +26,10 @@ class TransformLayer : public ContainerLayer {
   void Paint(PaintContext& context) const override;
 
  private:
+  static constexpr int kMinimumRendersBeforeCachingTransformLayer = 3;
+
   SkMatrix transform_;
+  int render_count_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TransformLayer);
 };

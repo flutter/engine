@@ -9,7 +9,7 @@
 namespace flutter {
 
 TransformLayer::TransformLayer(const SkMatrix& transform)
-    : transform_(transform) {
+    : transform_(transform), render_count_(1) {
   // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
   //
   // If transform_ is uninitialized, this assert may look flaky as it doesn't
@@ -66,6 +66,12 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   transform_.mapRect(&child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
 
+  if (render_count_ >= kMinimumRendersBeforeCachingTransformLayer) {
+    TryToPrepareRasterCache(context, this, matrix);
+  } else {
+    render_count_++;
+  }
+
   context->cull_rect = previous_cull_rect;
   context->mutators_stack.Pop();
 }
@@ -73,6 +79,11 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 void TransformLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting(context));
+
+  if (context.raster_cache &&
+      context.raster_cache->Draw(this, *context.leaf_nodes_canvas)) {
+    return;
+  }
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->concat(transform_);

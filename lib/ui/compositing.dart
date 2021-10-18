@@ -100,9 +100,9 @@ abstract class _EngineLayerWrapper implements EngineLayer {
 /// Instances of this class are created by [SceneBuilder.pushTransform].
 ///
 /// {@template dart.ui.sceneBuilder.oldLayerCompatibility}
-/// `oldLayer` parameter in [SceneBuilder] methods only accepts objects created
-/// by the engine. [SceneBuilder] will throw an [AssertionError] if you pass it
-/// a custom implementation of this class.
+/// The `oldLayer` parameter in [SceneBuilder] methods only accepts objects
+/// created by the engine. [SceneBuilder] will throw an [AssertionError] if you
+/// pass it a custom implementation of this class.
 /// {@endtemplate}
 class TransformEngineLayer extends _EngineLayerWrapper {
   TransformEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
