@@ -3751,22 +3751,15 @@ class ImageShader extends Shader {
   void _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4) native 'ImageShader_initWithImage';
 }
 
-/// A shader (as used by [Paint.shader]) that runs provided SPIR-V code.
+/// Constructs a shader (as used by [Paint.shader]) that runs provided SPIR-V code.
 ///
 /// This API is in beta and does not yet work on web.
 /// See https://github.com/flutter/flutter/projects/207 for roadmap.
 ///
 /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
 ///
-/// When initializing or updating the `floatUniforms`, the length of float
-/// uniforms must match the total number of floats defined as uniforms in
-/// the shader. They will be updated in the order that they are defined.
-///
-/// For example, if there are 3 uniforms: 1 of type float, 1 type float2/vec2,
-/// and 1 of type vec3/float3, and 1 mat2x2 then the length of `floatUniforms`
-/// must be 10.
-///
-/// The uniforms could be updated as follows:
+/// When initializing `floatUniforms`, the length of float uniforms must match
+/// the total number of floats defined as uniforms in the shader.
 ///
 /// Consider the following snippit of GLSL code.
 ///
@@ -3781,38 +3774,33 @@ class ImageShader extends Shader {
 /// and provided to the constructor, `floatUniforms` must always have a length
 /// of 10. One per float-component of each uniform.
 ///
-/// Dart code to update uniforms.
+/// `builder.build(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
 ///
-/// `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
-///
-/// Results of shader uniforms.
+/// The uniforms will be set as follows:
 ///
 /// a: 1
 /// b: [2, 3]
 /// c: [4, 5, 6]
 /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
 ///
+/// Once a [Shader] is built, uniform values cannot be changed. Instead,
+/// [build] must be called again with new uniform values, to obtain a new
+/// [Shader] object.
+///
 class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
 
-  // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
-  // constructor and to [update].
-  // https://github.com/flutter/flutter/issues/85240
-
-  /// Creates a fragment shader from SPIR-V byte data as an input.
+  /// Creates a fragment shader builder from SPIR-V byte data as an input.
+  ///
+  /// One instance should be created per SPIR-V input. The constructed object
+  /// should then be reused via the [build] method to create [Shader] objects
+  /// that can be used by [Shader.paint].
   ///
   /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
   /// SPIR-V not meeting this specification will throw an exception.
   ///
-  /// `floatUniforms` can be passed optionally to initialize the shader's
-  /// uniforms. If they are not initially set, they will default
-  /// to 0. They can later be updated by invoking the [update] method.
-  ///
-  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShader] docs for details.
-  ///
-  /// The compilation of a shader gets more expensive the more complicated the source is.
-  /// Because of this, it is reccommended to construct a FragmentShader asynchrounously,
-  /// outside of a widget's `build` method, to minimize the chance of UI jank.
+  /// Performance of shader-compilation is platform dependent and is not well-specified.
+  /// Because of this, it is reccommended to construct FragmentShaderBuilder asynchrounously,
+  /// outside of a widget's `build` method; this will minimize the chance of UI jank.
   @pragma('vm:entry-point')
   FragmentShaderBuilder({
     required ByteBuffer spirv,
@@ -3832,13 +3820,19 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   void _constructor() native 'FragmentShaderBuilder_constructor';
   void _init(String sksl, bool debugPrint) native 'FragmentShaderBuilder_init';
 
-  /// Updates the uniform values that are supplied to the [FragmentShader]
-  /// and refreshes the shader.
+  // TODO(chriscraws): Add `List<ImageShader>? children` as a parameter to [build].
+  // https://github.com/flutter/flutter/issues/85240
+
+  /// Constructs a [Shader] object suitable for use by [Paint.shader] with
+  /// the given uniforms.
+  ///
+  /// `floatUniforms` can be passed optionally to initialize the shader's
+  /// uniforms. If they are not set, they will each default to 0.
   ///
   /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShader] docs for details.
+  /// be thrown. See [FragmentShaderBuilder] docs for details.
   ///
-  /// This method will aquire additional fields as [FragmentShader] is
+  /// This method will aquire additional fields as [FragmentShaderBuilder] is
   /// implemented further.
   Shader build({
     required Float32List floatUniforms,
