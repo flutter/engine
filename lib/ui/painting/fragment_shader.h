@@ -29,7 +29,8 @@ class FragmentShader : public Shader {
 
  public:
   ~FragmentShader() override;
-  static fml::RefPtr<FragmentShader> Create(Dart_Handle dart_handle, sk_sp<SkShader> shader);
+  static fml::RefPtr<FragmentShader> Create(Dart_Handle dart_handle,
+                                            sk_sp<SkShader> shader);
 
   sk_sp<SkShader> shader(SkSamplingOptions) override;
 

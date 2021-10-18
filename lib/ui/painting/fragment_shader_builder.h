@@ -20,7 +20,8 @@ class DartLibraryNatives;
 
 namespace flutter {
 
-class FragmentShaderBuilder : public RefCountedDartWrappable<FragmentShaderBuilder> {
+class FragmentShaderBuilder
+    : public RefCountedDartWrappable<FragmentShaderBuilder> {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(FragmentShaderBuilder);
 
@@ -30,7 +31,8 @@ class FragmentShaderBuilder : public RefCountedDartWrappable<FragmentShaderBuild
 
   void init(std::string sksl, bool debugPrintSksl);
 
-  fml::RefPtr<FragmentShader> build(Dart_Handle shader, const tonic::Float32List& uniforms);
+  fml::RefPtr<FragmentShader> build(Dart_Handle shader,
+                                    const tonic::Float32List& uniforms);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -42,4 +44,3 @@ class FragmentShaderBuilder : public RefCountedDartWrappable<FragmentShaderBuild
 }  // namespace flutter
 
 #endif  // FLUTTER_LIB_UI_PAINTING_FRAGMENT_SHADER_BUILDER_H_
-

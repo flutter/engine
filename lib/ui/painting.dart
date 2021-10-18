@@ -3792,7 +3792,7 @@ class ImageShader extends Shader {
 /// c: [4, 5, 6]
 /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
 ///
-class FragmentShaderBuilder {
+class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
 
   // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
   // constructor and to [update].
@@ -3824,6 +3824,7 @@ class FragmentShaderBuilder {
       spv.TargetLanguage.sksl,
     );
     _init(result.src, debugPrint);
+    _uniformFloatCount = result.uniformFloatCount;
   }
 
   late final int _uniformFloatCount;

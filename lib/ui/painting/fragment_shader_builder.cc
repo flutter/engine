@@ -25,16 +25,17 @@ static void FragmentShaderBuilder_constructor(Dart_NativeArguments args) {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShaderBuilder);
 
-#define FOR_EACH_BINDING(V) \
-  V(FragmentShaderBuilder, init)   \
+#define FOR_EACH_BINDING(V)      \
+  V(FragmentShaderBuilder, init) \
   V(FragmentShaderBuilder, build)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
-void FragmentShaderBuilder::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"FragmentShaderBuilder_constructor", FragmentShaderBuilder_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+void FragmentShaderBuilder::RegisterNatives(
+    tonic::DartLibraryNatives* natives) {
+  natives->Register({{"FragmentShaderBuilder_constructor",
+                      FragmentShaderBuilder_constructor, 1, true},
+                     FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
 void FragmentShaderBuilder::init(std::string sksl, bool debugPrintSksl) {
@@ -54,11 +55,12 @@ void FragmentShaderBuilder::init(std::string sksl, bool debugPrintSksl) {
 }
 
 fml::RefPtr<FragmentShader> FragmentShaderBuilder::build(
-    Dart_Handle shader, const tonic::Float32List& uniforms) {
+    Dart_Handle shader,
+    const tonic::Float32List& uniforms) {
   auto sk_shader = runtime_effect_->makeShader(
-       SkData::MakeWithCopy(uniforms.data(),
-                            uniforms.num_elements() * sizeof(float)),
-       0, 0, nullptr, false);
+      SkData::MakeWithCopy(uniforms.data(),
+                           uniforms.num_elements() * sizeof(float)),
+      0, 0, nullptr, false);
   return FragmentShader::Create(shader, std::move(sk_shader));
 }
 

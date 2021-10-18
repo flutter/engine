@@ -19,7 +19,8 @@ using tonic::ToDart;
 
 namespace flutter {
 
-// Since _FragmentShader is a private class, we can't use IMPLEMENT_WRAPPERTYPEINFO
+// Since _FragmentShader is a private class, we can't use
+// IMPLEMENT_WRAPPERTYPEINFO
 static const tonic::DartWrapperInfo kDartWrapperInfo_ui_FragmentShader = {
     "ui",
     "_FragmentShader",
@@ -38,8 +39,8 @@ sk_sp<SkShader> FragmentShader::shader(SkSamplingOptions sampling) {
   return shader_;
 }
 
-fml::RefPtr<FragmentShader> FragmentShader::Create(
-    Dart_Handle dart_handle, sk_sp<SkShader> shader) {
+fml::RefPtr<FragmentShader> FragmentShader::Create(Dart_Handle dart_handle,
+                                                   sk_sp<SkShader> shader) {
   auto fragment_shader = fml::MakeRefCounted<FragmentShader>(std::move(shader));
   fragment_shader->AssociateWithDartWrapper(dart_handle);
   return fragment_shader;
