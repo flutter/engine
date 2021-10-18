@@ -4,8 +4,6 @@
 
 package io.flutter.embedding.engine.dart;
 
-import android.os.Handler;
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
@@ -27,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>See {@link PlatformMessageHandler}, which handles messages to Android from Dart
  */
-class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
+public class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   private static final String TAG = "DartMessenger";
 
   @NonNull private final FlutterJNI flutterJNI;
@@ -68,15 +66,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     @Override
     public void dispatch(@NonNull Runnable runnable) {
       executor.submit(runnable);
-    }
-  }
-
-  private static class PlatformTaskQueue implements TaskQueue {
-    @NonNull private final Handler handler = new Handler(Looper.getMainLooper());
-
-    @Override
-    public void dispatch(@NonNull Runnable runnable) {
-      handler.post(runnable);
     }
   }
 
