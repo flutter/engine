@@ -1096,11 +1096,14 @@ num? _parseFontSize(html.Element element) {
   if (js_util.hasProperty(element, 'computedStyleMap')) {
     // Use the newer `computedStyleMap` API available on some browsers.
     final dynamic computedStyleMap =
+        // ignore: implicit_dynamic_function
         js_util.callMethod(element, 'computedStyleMap', <Object?>[]);
     if (computedStyleMap is Object) {
       final dynamic fontSizeObject =
+          // ignore: implicit_dynamic_function
           js_util.callMethod(computedStyleMap, 'get', <Object?>['font-size']);
       if (fontSizeObject is Object) {
+        // ignore: implicit_dynamic_function
         fontSize = js_util.getProperty(fontSizeObject, 'value') as num;
       }
     }
