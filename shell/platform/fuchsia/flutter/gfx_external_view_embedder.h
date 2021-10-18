@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/ui/scenic/cpp/id.h>
@@ -33,7 +33,7 @@
 namespace flutter_runner {
 
 using ViewCallback = std::function<void()>;
-using ViewIdCallback = std::function<void(scenic::ResourceId)>;
+using GfxViewIdCallback = std::function<void(scenic::ResourceId)>;
 
 // This struct represents a transformed clip rect.
 struct TransformedClip {
@@ -62,7 +62,7 @@ struct ViewMutators {
 // This class orchestrates interaction with the Scenic compositor on Fuchsia. It
 // ensures that flutter content and platform view content are both rendered
 // correctly in a unified scene.
-class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
+class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
  public:
   // Layer separation is as infinitesimal as possible without introducing
   // Z-fighting.
@@ -72,13 +72,13 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   constexpr static SkAlpha kBackgroundLayerOpacity = SK_AlphaOPAQUE;
   constexpr static SkAlpha kOverlayLayerOpacity = SK_AlphaOPAQUE - 1;
 
-  FuchsiaExternalViewEmbedder(std::string debug_label,
-                              fuchsia::ui::views::ViewToken view_token,
-                              scenic::ViewRefPair view_ref_pair,
-                              GfxSessionConnection& session,
-                              SurfaceProducer& surface_producer,
-                              bool intercept_all_input = false);
-  ~FuchsiaExternalViewEmbedder();
+  GfxExternalViewEmbedder(std::string debug_label,
+                          fuchsia::ui::views::ViewToken view_token,
+                          scenic::ViewRefPair view_ref_pair,
+                          GfxSessionConnection& session,
+                          SurfaceProducer& surface_producer,
+                          bool intercept_all_input = false);
+  ~GfxExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
   SkCanvas* GetRootCanvas() override;
@@ -126,8 +126,8 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   void EnableWireframe(bool enable);
   void CreateView(int64_t view_id,
                   ViewCallback on_view_created,
-                  ViewIdCallback on_view_bound);
-  void DestroyView(int64_t view_id, ViewIdCallback on_view_unbound);
+                  GfxViewIdCallback on_view_bound);
+  void DestroyView(int64_t view_id, GfxViewIdCallback on_view_unbound);
   void SetViewProperties(int64_t view_id,
                          const SkRect& occlusion_hint,
                          bool hit_testable,
@@ -195,9 +195,9 @@ class FuchsiaExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   SkISize frame_size_ = SkISize::Make(0, 0);
   float frame_dpr_ = 1.f;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FuchsiaExternalViewEmbedder);
+  FML_DISALLOW_COPY_AND_ASSIGN(GfxExternalViewEmbedder);
 };
 
 }  // namespace flutter_runner
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FUCHSIA_EXTERNAL_VIEW_EMBEDDER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_GFX_EXTERNAL_VIEW_EMBEDDER_H_

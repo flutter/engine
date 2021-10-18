@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLATLAND_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include <fuchsia/ui/composition/cpp/fidl.h>
+#include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
 #include <cstdint>  // For uint32_t & uint64_t
@@ -30,7 +31,10 @@
 
 namespace flutter_runner {
 
-using FlatlandViewCallback = std::function<void()>;
+using ViewCallback = std::function<void()>;
+using FlatlandViewCreatedCallback = std::function<void(
+    fuchsia::ui::composition::ContentId,
+    fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher)>;
 using FlatlandViewIdCallback =
     std::function<void(fuchsia::ui::composition::ContentId)>;
 
@@ -43,7 +47,8 @@ class FlatlandExternalViewEmbedder final
   FlatlandExternalViewEmbedder(
       std::string debug_label,
       fuchsia::ui::views::ViewCreationToken view_creation_token,
-      scenic::ViewRefPair view_ref_pair,
+      fuchsia::ui::views::ViewIdentityOnCreation view_identity,
+      fuchsia::ui::composition::ViewBoundProtocols endpoints,
       fidl::InterfaceRequest<fuchsia::ui::composition::ParentViewportWatcher>
           parent_viewport_watcher_request,
       FlatlandConnection& flatland,
@@ -95,8 +100,8 @@ class FlatlandExternalViewEmbedder final
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.
   void CreateView(int64_t view_id,
-                  FlatlandViewCallback on_view_created,
-                  FlatlandViewIdCallback on_view_bound);
+                  ViewCallback on_view_created,
+                  FlatlandViewCreatedCallback on_view_bound);
   void DestroyView(int64_t view_id, FlatlandViewIdCallback on_view_unbound);
   void SetViewProperties(int64_t view_id,
                          const SkRect& occlusion_hint,
@@ -153,14 +158,12 @@ class FlatlandExternalViewEmbedder final
   struct FlatlandView {
     fuchsia::ui::composition::TransformId transform_id;
     fuchsia::ui::composition::ContentId viewport_id;
-    fuchsia::ui::composition::ChildViewWatcherPtr content_link;
     ViewMutators mutators;
     SkSize size = SkSize::MakeEmpty();
   };
 
   struct FlatlandLayer {
     fuchsia::ui::composition::TransformId transform_id;
-    fuchsia::ui::composition::ContentId image_id;
   };
 
   FlatlandConnection& flatland_;

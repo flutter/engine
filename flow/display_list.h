@@ -105,8 +105,8 @@ namespace flutter {
   V(Scale)                          \
   V(Rotate)                         \
   V(Skew)                           \
-  V(Transform2x3)                   \
-  V(Transform3x3)                   \
+  V(Transform2DAffine)              \
+  V(TransformFullPerspective)       \
                                     \
   V(ClipIntersectRect)              \
   V(ClipIntersectRRect)             \
@@ -167,8 +167,10 @@ class DisplayList : public SkRefCnt {
   static const SkSamplingOptions CubicSampling;
 
   DisplayList()
-      : used_(0),
+      : byte_count_(0),
         op_count_(0),
+        nested_byte_count_(0),
+        nested_op_count_(0),
         unique_id_(0),
         bounds_({0, 0, 0, 0}),
         bounds_cull_({0, 0, 0, 0}) {}
@@ -177,13 +179,21 @@ class DisplayList : public SkRefCnt {
 
   void Dispatch(Dispatcher& ctx) const {
     uint8_t* ptr = storage_.get();
-    Dispatch(ctx, ptr, ptr + used_);
+    Dispatch(ctx, ptr, ptr + byte_count_);
   }
 
   void RenderTo(SkCanvas* canvas) const;
 
-  size_t bytes() const { return used_; }
-  int op_count() const { return op_count_; }
+  // SkPicture always includes nested bytes, but nested ops are
+  // only included if requested. The defaults used here for these
+  // accessors follow that pattern.
+  size_t bytes(bool nested = true) const {
+    return sizeof(DisplayList) + byte_count_ +
+           (nested ? nested_byte_count_ : 0);
+  }
+  int op_count(bool nested = false) const {
+    return op_count_ + (nested ? nested_op_count_ : 0);
+  }
   uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds() {
@@ -198,11 +208,19 @@ class DisplayList : public SkRefCnt {
   bool Equals(const DisplayList& other) const;
 
  private:
-  DisplayList(uint8_t* ptr, size_t used, int op_count, const SkRect& cull_rect);
+  DisplayList(uint8_t* ptr,
+              size_t byte_count,
+              int op_count,
+              size_t nested_byte_count,
+              int nested_op_count,
+              const SkRect& cull_rect);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
-  size_t used_;
+  size_t byte_count_;
   int op_count_;
+
+  size_t nested_byte_count_;
+  int nested_op_count_;
 
   uint32_t unique_id_;
   SkRect bounds_;
@@ -271,26 +289,105 @@ class Dispatcher {
   virtual void scale(SkScalar sx, SkScalar sy) = 0;
   virtual void rotate(SkScalar degrees) = 0;
   virtual void skew(SkScalar sx, SkScalar sy) = 0;
-  // |transform2x3| is equivalent to concatenating an SkMatrix
-  // with only the upper 2x3 affine 2D parameters and the rest
-  // of the transformation parameters set to their identity values.
-  virtual void transform2x3(SkScalar mxx,
-                            SkScalar mxy,
-                            SkScalar mxt,
-                            SkScalar myx,
-                            SkScalar myy,
-                            SkScalar myt) = 0;
-  // |transform3x3| is equivalent to concatenating an SkMatrix
-  // with no promises about the non-affine-2D parameters.
-  virtual void transform3x3(SkScalar mxx,
-                            SkScalar mxy,
-                            SkScalar mxt,
-                            SkScalar myx,
-                            SkScalar myy,
-                            SkScalar myt,
-                            SkScalar px,
-                            SkScalar py,
-                            SkScalar pt) = 0;
+
+  // The transform methods all assume the following math for transforming
+  // an arbitrary 3D homogenous point (x, y, z, w).
+  // All coordinates in the rendering methods (and SkPoint and SkRect objects)
+  // represent a simplified coordinate (x, y, 0, 1).
+  //   x' = x * mxx + y * mxy + z * mxz + w * mxt
+  //   y' = x * myx + y * myy + z * myz + w * myt
+  //   z' = x * mzx + y * mzy + z * mzz + w * mzt
+  //   w' = x * mwx + y * mwy + z * mwz + w * mwt
+  // Note that for non-homogenous 2D coordinates, the last column in those
+  // equations is multiplied by 1 and is simply adding a translation and
+  // so is referred to with the final letter "t" here instead of "w".
+  //
+  // In 2D coordinates, z=0 and so the 3rd column always evaluates to 0.
+  //
+  // In non-perspective transforms, the 4th row has identity values
+  // and so w` = w. (i.e. w'=1 for 2d points transformed by a matrix
+  // with identity values in the last row).
+  //
+  // In affine 2D transforms, the 3rd and 4th row and 3rd column are all
+  // identity values and so z` = z (which is 0 for 2D coordinates) and
+  // the x` and y` equations don't see a contribution from a z coordinate
+  // and the w' ends up being the same as the w from the source coordinate
+  // (which is 1 for a 2D coordinate).
+  //
+  // Here is the math for transforming a 2D source coordinate and
+  // looking for the destination 2D coordinate (for a surface that
+  // does not have a Z buffer or track the Z coordinates in any way)
+  //  Source coordinate = (x, y, 0, 1)
+  //   x' = x * mxx + y * mxy + 0 * mxz + 1 * mxt
+  //   y' = x * myx + y * myy + 0 * myz + 1 * myt
+  //   z' = x * mzx + y * mzy + 0 * mzz + 1 * mzt
+  //   w' = x * mwx + y * mwy + 0 * mwz + 1 * mwt
+  //  Destination coordinate does not need z', so this reduces to:
+  //   x' = x * mxx + y * mxy + mxt
+  //   y' = x * myx + y * myy + myt
+  //   w' = x * mwx + y * mwy + mwt
+  //  Destination coordinate is (x' / w', y' / w', 0, 1)
+  // Note that these are the matrix values in SkMatrix which means that
+  // an SkMatrix contains enough data to transform a 2D source coordinate
+  // and place it on a 2D surface, but is otherwise not enough to continue
+  // concatenating with further matrices as its missing elements will not
+  // be able to model the interplay between the rows and columns that
+  // happens during a full 4x4 by 4x4 matrix multiplication.
+  //
+  // If the transform doesn't have any perspective parts (the last
+  // row is identity - 0, 0, 0, 1), then this further simplifies to:
+  //   x' = x * mxx + y * mxy + mxt
+  //   y' = x * myx + y * myy + myt
+  //   w' = x * 0 + y * 0 + 1         = 1
+  //
+  // In short, while the full 4x4 set of matrix entries needs to be
+  // maintained for accumulating transform mutations accurately, the
+  // actual end work of transforming a single 2D coordinate (or, in
+  // the case of bounds transformations, 4 of them) can be accomplished
+  // with the 9 values from transform3x3 or SkMatrix.
+  //
+  // The only need for the w value here is for homogenous coordinates
+  // which only come up if the perspective elements (the 4th row) of
+  // a transform are non-identity. Otherwise the w always ends up
+  // being 1 in all calculations. If the matrix has perspecitve elements
+  // then the final transformed coordinates will have a w that is not 1
+  // and the actual coordinates are determined by dividing out that w
+  // factor resulting in a real-world point expressed as (x, y, z, 1).
+  //
+  // Because of the predominance of 2D affine transforms the
+  // 2x3 subset of the 4x4 transform matrix is special cased with
+  // its own dispatch method that omits the last 2 rows and the 3rd
+  // column. Even though a 3x3 subset is enough for transforming
+  // leaf coordinates as shown above, no method is provided for
+  // representing a 3x3 transform in the DisplayList since if there
+  // is perspective involved then a full 4x4 matrix should be provided
+  // for accurate concatenations. Providing a 3x3 method or record
+  // in the stream would encourage developers to prematurely subset
+  // a full perspective matrix.
+
+  // clang-format off
+
+  // |transform2DAffine| is equivalent to concatenating the internal
+  // 4x4 transform with the following row major transform matrix:
+  //   [ mxx  mxy   0   mxt ]
+  //   [ myx  myy   0   myt ]
+  //   [  0    0    1    0  ]
+  //   [  0    0    0    1  ]
+  virtual void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                                 SkScalar myx, SkScalar myy, SkScalar myt) = 0;
+  // |transformFullPerspective| is equivalent to concatenating the internal
+  // 4x4 transform with the following row major transform matrix:
+  //   [ mxx  mxy  mxz  mxt ]
+  //   [ myx  myy  myz  myt ]
+  //   [ mzx  mzy  mzz  mzt ]
+  //   [ mwx  mwy  mwz  mwt ]
+  virtual void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) = 0;
+
+  // clang-format on
 
   virtual void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) = 0;
   virtual void clipRRect(const SkRRect& rrect,
@@ -373,7 +470,7 @@ class Dispatcher {
 // the DisplayListCanvasRecorder class.
 class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
  public:
-  DisplayListBuilder(const SkRect& cull = kMaxCull_);
+  DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect_);
   ~DisplayListBuilder();
 
   void setAntiAlias(bool aa) override;
@@ -402,21 +499,20 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void scale(SkScalar sx, SkScalar sy) override;
   void rotate(SkScalar degrees) override;
   void skew(SkScalar sx, SkScalar sy) override;
-  void transform2x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt) override;
-  void transform3x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt,
-                    SkScalar px,
-                    SkScalar py,
-                    SkScalar pt) override;
+
+  // clang-format off
+
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override;
+  // full 4x4 transform in row major order
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+
+  // clang-format on
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool isAA) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool isAA) override;
@@ -493,8 +589,12 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   int op_count_ = 0;
   int save_level_ = 0;
 
-  SkRect cull_;
-  static constexpr SkRect kMaxCull_ =
+  // bytes and ops from |drawPicture| and |drawDisplayList|
+  size_t nested_bytes_ = 0;
+  int nested_op_count_ = 0;
+
+  SkRect cull_rect_;
+  static constexpr SkRect kMaxCullRect_ =
       SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   template <typename T, typename... Args>

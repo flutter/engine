@@ -1110,6 +1110,30 @@ static BOOL isScribbleAvailable() {
   return [super canPerformAction:action withSender:sender];
 }
 
+#pragma mark - UIResponderStandardEditActions Overrides
+
+- (void)cut:(id)sender {
+  [UIPasteboard generalPasteboard].string = [self textInRange:_selectedTextRange];
+  [self replaceRange:_selectedTextRange withText:@""];
+}
+
+- (void)copy:(id)sender {
+  [UIPasteboard generalPasteboard].string = [self textInRange:_selectedTextRange];
+}
+
+- (void)paste:(id)sender {
+  [self insertText:[UIPasteboard generalPasteboard].string];
+}
+
+- (void)delete:(id)sender {
+  [self replaceRange:_selectedTextRange withText:@""];
+}
+
+- (void)selectAll:(id)sender {
+  [self setSelectedTextRange:[self textRangeFromPosition:[self beginningOfDocument]
+                                              toPosition:[self endOfDocument]]];
+}
+
 #pragma mark - UITextInput Overrides
 
 - (id<UITextInputTokenizer>)tokenizer {
@@ -1704,7 +1728,6 @@ static BOOL isScribbleAvailable() {
   // It seems impossible to use a negative "width" or "height", as the "convertRect"
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
-  NSAssert(!_isFloatingCursorActive, @"Another floating cursor is currently active.");
   _isFloatingCursorActive = true;
   // This makes sure UITextSelectionView.interactionAssistant is not nil so
   // UITextSelectionView has access to this view (and its bounds). Otherwise
@@ -1721,8 +1744,7 @@ static BOOL isScribbleAvailable() {
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  NSAssert(_isFloatingCursorActive,
-           @"updateFloatingCursorAtPoint is called without an active floating cursor.");
+  _isFloatingCursorActive = true;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
                                     withClient:_textInputClient
@@ -1730,8 +1752,6 @@ static BOOL isScribbleAvailable() {
 }
 
 - (void)endFloatingCursor {
-  NSAssert(_isFloatingCursorActive,
-           @"endFloatingCursor is called without an active floating cursor.");
   _isFloatingCursorActive = false;
   if (@available(iOS 13.0, *)) {
     if (_textInteraction != NULL) {
