@@ -39,7 +39,7 @@ void skiaDecodeImageFromPixels(
         width: width,
         height: height,
         colorType: format == ui.PixelFormat.rgba8888 ? canvasKit.ColorType.RGBA_8888 : canvasKit.ColorType.BGRA_8888,
-        alphaType: canvasKit.AlphaType.Unpremul,
+        alphaType: canvasKit.AlphaType.Premul,
         colorSpace: SkColorSpaceSRGB,
       ),
       pixels,
