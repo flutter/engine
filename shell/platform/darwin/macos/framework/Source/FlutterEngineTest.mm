@@ -27,28 +27,7 @@
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
 @end
 
-typedef struct _FlutterPlatformMessageResponseHandle {
-  std::unique_ptr<flutter::PlatformMessage> message;
-} FlutterPlatformMessageResponseHandle;
-
 namespace flutter::testing {
-
-class MockPlatformMessageResponse : public flutter::PlatformMessageResponse {
- public:
-  using ResponseCallback = std::function<void(std::unique_ptr<fml::Mapping>)>;
-
-  explicit MockPlatformMessageResponse(ResponseCallback callback)
-      : callback_(std::move(callback)) {}
-
-  void Complete(std::unique_ptr<fml::Mapping> data) override { callback_(std::move(data)); }
-
-  void CompleteEmpty() override { callback_(nil); }
-
- private:
-  ResponseCallback callback_;
-
-  FML_FRIEND_MAKE_REF_COUNTED(MockPlatformMessageResponse);
-};
 
 TEST_F(FlutterEngineTest, CanLaunch) {
   FlutterEngine* engine = GetFlutterEngine();
@@ -428,19 +407,6 @@ TEST(FlutterEngine, DartEntrypointArguments) {
 
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   EXPECT_TRUE(called);
-}
-
-FlutterPlatformMessageResponseHandle* MockResponseHandle(
-    const char* channel,
-    MockPlatformMessageResponse ::ResponseCallback callback) {
-  const char test_message[] = "a";
-
-  std::unique_ptr<PlatformMessage> platform_message = std::make_unique<PlatformMessage>(
-      "", fml::MallocMapping::Copy(test_message, sizeof(test_message)),
-      fml::MakeRefCounted<MockPlatformMessageResponse>(callback));
-  return new FlutterPlatformMessageResponseHandle{
-      .message = std::move(platform_message),
-  };
 }
 
 // If a channel overrides a previous channel with the same name, cleaning
