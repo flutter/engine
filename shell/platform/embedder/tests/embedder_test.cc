@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
@@ -31,6 +32,11 @@ EmbedderTestContext& EmbedderTest::GetEmbedderContext(
       case EmbedderTestContextType::kSoftwareContext:
         embedder_contexts_[type] =
             std::make_unique<EmbedderTestContextSoftware>(
+                GetFixturesDirectory());
+        break;
+      case EmbedderTestContextType::kVulkanContext:
+        embedder_contexts_[type] =
+            std::make_unique<EmbedderTestContextVulkan>(
                 GetFixturesDirectory());
         break;
 #ifdef SHELL_ENABLE_GL

@@ -13,6 +13,10 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
 #endif
 
+//#ifdef SHELL_ENABLE_VULKAN
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
+//#endif
+
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
 #endif
@@ -68,6 +72,41 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
         ->GetRootSurfaceTransformation();
   };
 #endif
+
+  //#ifdef SHELL_ENABLE_VULKAN
+  vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
+  vulkan_renderer_config_.get_proc_address_callback =
+      [](void* context, const char* name) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)
+        ->vk_->AcquireProc(name, nullptr);
+  };
+  vulkan_renderer_config_.get_instance_proc_address_callback =
+      [](void* context, uintptr_t* instance, const char* name) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)
+        ->vk_->AcquireProc(name, instance);
+  };
+  vulkan_renderer_config_.get_instance_handle_callback =
+      [](void* context) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)
+        ->application_->GetInstance();
+  };
+  vulkan_renderer_config_.get_physical_device_handle_callback =
+      [](void* context) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)
+        ->logical_device_->GetPhysicalDeviceHandle();
+  };
+  vulkan_renderer_config_.get_device_handle_callback =
+      [](void* context) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)
+        ->logical_device_->GetHandle();
+  };
+  vulkan_renderer_config_->acquire_next_image_callback =
+      [](void* context) -> void* {
+    // TODO(bdero): Return VkImage handles
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)
+        ->GetNextImage();
+  };
+  //#endif
 
 #ifdef SHELL_ENABLE_METAL
   InitializeMetalRendererConfig();

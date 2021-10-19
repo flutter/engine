@@ -8,37 +8,19 @@
 
 namespace flutter {
 
-GPUSurfaceVulkan::GPUSurfaceVulkan(
-    GPUSurfaceVulkanDelegate* delegate,
-    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
-    bool render_to_surface)
-    : GPUSurfaceVulkan(/*context=*/nullptr,
-                       delegate,
-                       std::move(native_surface),
-                       render_to_surface) {}
-
-GPUSurfaceVulkan::GPUSurfaceVulkan(
-    const sk_sp<GrDirectContext>& context,
-    GPUSurfaceVulkanDelegate* delegate,
-    std::unique_ptr<vulkan::VulkanNativeSurface> native_surface,
-    bool render_to_surface)
-    : window_(context,
-              delegate->vk(),
-              std::move(native_surface),
-              render_to_surface),
-      render_to_surface_(render_to_surface),
-      weak_factory_(this) {}
+GPUSurfaceVulkan::GPUSurfaceVulkan(const sk_sp<GrDirectContext>& skia_context,
+                                   GPUSurfaceVulkanDelegate* delegate)
+    : skia_context_(skia_context), delegate_(delegate), weak_factory_(this) {}
 
 GPUSurfaceVulkan::~GPUSurfaceVulkan() = default;
 
 bool GPUSurfaceVulkan::IsValid() {
-  return window_.IsValid();
+  return image_ != nullptr;
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     const SkISize& size) {
-  SurfaceFrame::FramebufferInfo framebuffer_info;
-  framebuffer_info.supports_readback = true;
+  VkImage image = delegate_->AcquireImage(size);
 
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface.
@@ -50,7 +32,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
         });
   }
 
-  auto surface = window_.AcquireSurface();
+  sk_sp<SkSurface> surface = window_.AcquireSurface();
 
   if (surface == nullptr) {
     return nullptr;
@@ -65,11 +47,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
     if (canvas == nullptr || !weak_this) {
       return false;
     }
-    return weak_this->window_.SwapBuffers();
+    return weak_this->Present();
   };
   return std::make_unique<SurfaceFrame>(
       std::move(surface), std::move(framebuffer_info), std::move(callback));
 }
+
+bool GPUSurfaceVulkan::Present() {}
 
 SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
   // This backend does not support delegating to the underlying platform to
@@ -80,7 +64,7 @@ SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
 }
 
 GrDirectContext* GPUSurfaceVulkan::GetContext() {
-  return window_.GetSkiaGrContext();
+  return skia_context_;
 }
 
 }  // namespace flutter

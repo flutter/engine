@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "vulkan/vulkan.h"
+
 #include "embedder.h"
 #include "embedder_engine.h"
 #include "flutter/flow/raster_cache.h"
@@ -15,6 +17,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -31,6 +34,7 @@
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/test_vulkan_context.h"
 #include "flutter/testing/testing.h"
+#include "flutter/vulkan/vulkan_proc_table.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/src/gpu/gl/GrGLDefines.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -48,6 +52,11 @@ using EmbedderTest = testing::EmbedderTest;
 TEST_F(EmbedderTest, CanInitializeTestVulkanContext) {
   TestVulkanContext ctx;
   ASSERT_TRUE(ctx.IsValid());
+}
+
+TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kVulkanContext);
+  EmbedderConfigBuilder builder(context);
 }
 
 TEST_F(EmbedderTest, CanCreateOpenGLRenderingEngine) {

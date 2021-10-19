@@ -70,6 +70,11 @@ inline bool operator==(const FlutterMetalTexture& a,
   return a.texture_id == b.texture_id && a.texture == b.texture;
 }
 
+inline bool operator==(const FlutterVulkanBackingStore& a,
+                       const FlutterVulkanBackingStore& b) {
+  return a.handle == b.handle && a.image_ready == b.image_ready;
+}
+
 inline bool operator==(const FlutterMetalBackingStore& a,
                        const FlutterMetalBackingStore& b) {
   return a.texture == b.texture;
@@ -112,6 +117,8 @@ inline bool operator==(const FlutterBackingStore& a,
       return a.software == b.software;
     case kFlutterBackingStoreTypeMetal:
       return a.metal == b.metal;
+    case kFlutterBackingStoreTypeVulkan:
+      return a.vulkan == b.vulkan;
   }
 
   return false;
@@ -230,6 +237,8 @@ inline std::string FlutterBackingStoreTypeToString(
       return "kFlutterBackingStoreTypeSoftware";
     case kFlutterBackingStoreTypeMetal:
       return "kFlutterBackingStoreTypeMetal";
+    case kFlutterBackingStoreTypeVulkan:
+      return "kFlutterBackingStoreTypeVulkan";
   }
   return "Unknown";
 }
@@ -348,6 +357,12 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterVulkanBackingStore& item) {
+  return out << "(FlutterVulkanBackingStore) Handle: " << item.handle
+             << "Image Ready Semaphore: " << item.image_ready;
+}
+
+inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterBackingStore& backing_store) {
   out << "(FlutterBackingStore) Struct size: " << backing_store.struct_size
       << " User Data: " << backing_store.user_data
@@ -365,6 +380,10 @@ inline std::ostream& operator<<(std::ostream& out,
 
     case kFlutterBackingStoreTypeMetal:
       out << backing_store.metal;
+      break;
+
+    case kFlutterBackingStoreTypeVulkan:
+      out << backing_store.vulkan;
       break;
   }
 

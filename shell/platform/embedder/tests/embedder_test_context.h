@@ -44,6 +44,7 @@ enum class EmbedderTestContextType {
   kSoftwareContext,
   kOpenGLContext,
   kMetalContext,
+  kVulkanContext,
 };
 
 class EmbedderTestContext {
