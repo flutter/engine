@@ -462,7 +462,11 @@ TEST_F(ShellTest, LastEntrypointArgs) {
 
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
-  EXPECT_EQ(entry_point_args, last_entry_point_args);
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  EXPECT_EQ(last_entry_point_args, entry_point_args);
+#else
+  ASSERT_TRUE(last_entry_point_args.empty());
+#endif
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
