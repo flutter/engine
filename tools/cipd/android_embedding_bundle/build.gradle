@@ -55,6 +55,10 @@ android {
     // dynamic features.
     embedding "com.google.android.play:core:1.8.0"
   }
+
+  lintOptions {
+     abortOnError false
+  }
 }
 
 task updateDependencies() {

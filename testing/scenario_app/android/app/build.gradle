@@ -11,7 +11,7 @@ screenshots {
 
 android {
     lintOptions {
-        abortOnError true
+        abortOnError false
         checkAllWarnings true
         showAll true
         warningsAsErrors true
