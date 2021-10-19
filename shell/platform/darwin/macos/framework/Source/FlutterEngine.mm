@@ -134,6 +134,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A mapping of channel names to the registered handlers for those channels.
   NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
 
+  // A mapping of channel names to the registered connections for those channels.
+  NSMutableDictionary<NSString*, NSNumber*>* _messageConnections;
+
+  // An self-incremental integer to identify newly assigned channels.
+  FlutterBinaryMessengerConnection _currentMessageConnection;
+
   // Whether the engine can continue running after the view controller is removed.
   BOOL _allowHeadlessExecution;
 
@@ -161,6 +167,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   _project = project ?: [[FlutterDartProject alloc] init];
   _messageHandlers = [[NSMutableDictionary alloc] init];
+  _messageConnections = [[NSMutableDictionary alloc] init];
+  _currentMessageConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
 
@@ -640,12 +648,28 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(nonnull NSString*)channel
                                           binaryMessageHandler:
                                               (nullable FlutterBinaryMessageHandler)handler {
+  _currentMessageConnection += 1;
   _messageHandlers[channel] = [handler copy];
-  return 0;
+  _messageConnections[channel] = @(_currentMessageConnection);
+  return _currentMessageConnection;
 }
 
 - (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
-  // There hasn't been a need to implement this yet for macOS.
+  // Search _messageConnections for the key for value @(connection).
+  NSString *foundChannel = nil;
+  NSArray *allKeys = [_messageConnections allKeys];
+  for (NSUInteger i = 0; i < [allKeys count]; i += 1) {
+      NSString *key = [allKeys objectAtIndex:i];
+      NSNumber *obj = [_messageConnections objectForKey:key];
+      if ([obj isEqual: @(connection)]) {
+          foundChannel = key;
+          break;
+      }
+  }
+  if (foundChannel) {
+    [_messageConnections removeObjectForKey:foundChannel];
+    [_messageHandlers removeObjectForKey:foundChannel];
+  }
 }
 
 #pragma mark - FlutterPluginRegistry
