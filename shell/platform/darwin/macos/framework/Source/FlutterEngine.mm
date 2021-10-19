@@ -656,15 +656,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
   // Search _messageConnections for the key for value @(connection).
-  NSString *foundChannel = nil;
-  NSArray *allKeys = [_messageConnections allKeys];
+  NSString* foundChannel = nil;
+  NSArray* allKeys = [_messageConnections allKeys];
   for (NSUInteger i = 0; i < [allKeys count]; i += 1) {
-      NSString *key = [allKeys objectAtIndex:i];
-      NSNumber *obj = [_messageConnections objectForKey:key];
-      if ([obj isEqual: @(connection)]) {
-          foundChannel = key;
-          break;
-      }
+    NSString* key = [allKeys objectAtIndex:i];
+    NSNumber* obj = [_messageConnections objectForKey:key];
+    if ([obj isEqual:@(connection)]) {
+      foundChannel = key;
+      break;
+    }
   }
   if (foundChannel) {
     [_messageConnections removeObjectForKey:foundChannel];

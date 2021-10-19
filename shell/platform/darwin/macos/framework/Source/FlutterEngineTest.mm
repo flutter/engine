@@ -13,6 +13,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 
@@ -28,7 +29,6 @@
 
 typedef struct _FlutterPlatformMessageResponseHandle {
   std::unique_ptr<flutter::PlatformMessage> message;
-  int pivot;
 } FlutterPlatformMessageResponseHandle;
 
 namespace flutter::testing {
@@ -38,15 +38,11 @@ class MockPlatformMessageResponse : public flutter::PlatformMessageResponse {
   using ResponseCallback = std::function<void(std::unique_ptr<fml::Mapping>)>;
 
   explicit MockPlatformMessageResponse(ResponseCallback callback)
-    : callback_(std::move(callback)) { }
+      : callback_(std::move(callback)) {}
 
-  void Complete(std::unique_ptr<fml::Mapping> data) override {
-    callback_(std::move(data));
-  }
+  void Complete(std::unique_ptr<fml::Mapping> data) override { callback_(std::move(data)); }
 
-  void CompleteEmpty() override {
-    callback_(nil);
-  }
+  void CompleteEmpty() override { callback_(nil); }
 
  private:
   ResponseCallback callback_;
@@ -434,15 +430,16 @@ TEST(FlutterEngine, DartEntrypointArguments) {
   EXPECT_TRUE(called);
 }
 
-FlutterPlatformMessageResponseHandle* create_message(const char* channel, MockPlatformMessageResponse ::ResponseCallback callback) {
+FlutterPlatformMessageResponseHandle* MockResponseHandle(
+    const char* channel,
+    MockPlatformMessageResponse ::ResponseCallback callback) {
   const char test_message[] = "a";
 
   std::unique_ptr<PlatformMessage> platform_message = std::make_unique<PlatformMessage>(
-        channel, fml::MallocMapping::Copy(test_message, sizeof(test_message)),
-        fml::MakeRefCounted<MockPlatformMessageResponse>(callback));
-  return new FlutterPlatformMessageResponseHandle {
-    .message = std::move(platform_message),
-    .pivot = 123,
+      "", fml::MallocMapping::Copy(test_message, sizeof(test_message)),
+      fml::MakeRefCounted<MockPlatformMessageResponse>(callback));
+  return new FlutterPlatformMessageResponseHandle{
+      .message = std::move(platform_message),
   };
 }
 
@@ -451,42 +448,53 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
   const char* channel = "_test_";
-  bool called = false;
 
-  engine.embedderAPI.PlatformMessageCreateResponseHandle =
-      MOCK_ENGINE_PROC(
-          PlatformMessageCreateResponseHandle,
-          ([channel, &called](auto engine, auto reply, auto user_data,
-                                   auto response_handle) {
-            printf("Created response\n");fflush(stdout);
-            *response_handle = create_message(channel, [&called](std::unique_ptr<fml::Mapping> data) {
-              called = true;
-            });
-            return kSuccess;
-          }));
+  engine.embedderAPI.PlatformMessageCreateResponseHandle = MOCK_ENGINE_PROC(
+      PlatformMessageCreateResponseHandle,
+      ([channel](auto engine, auto reply, auto user_data, auto response_handle) {
+        *response_handle = MockResponseHandle(channel, [](std::unique_ptr<fml::Mapping> data) {});
+        return kSuccess;
+      }));
   engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
-      SendPlatformMessage, ([](auto engine_, auto message) {
-        printf("1\n");fflush(stdout);
-        const FlutterPlatformMessageResponseHandle* handle = message->response_handle;
-        // printf("Got 0x%llx 0x%llx\n", (uint64_t)ex_handle, (uint64_t)handle);fflush(stdout);
-        printf("2 %d\n", handle->pivot);fflush(stdout);
-        const std::unique_ptr<flutter::PlatformMessage>& m2 = handle->message;
-        printf("3\n");fflush(stdout);
-        auto response = m2->response();
-        printf("4\n");fflush(stdout);
-        response->CompleteEmpty();
-        printf("5\n");fflush(stdout);
-        // engine.embedderAPI.SendPlatformMessageResponse(
-        //     engine_,
-        //     message->response_handle,
-        //     nullptr,
-        //     0);
+      SendPlatformMessage, ([channel](auto engine_, auto message_) {
+        std::string message = R"|({"method": "a"})|";
+        reinterpret_cast<EmbedderEngine*>(engine_)
+            ->GetShell()
+            .GetPlatformView()
+            ->HandlePlatformMessage(std::make_unique<PlatformMessage>(
+                channel, fml::MallocMapping::Copy(message.c_str(), message.length()),
+                fml::RefPtr<PlatformMessageResponse>()));
         return kSuccess;
       }));
 
-  [engine.binaryMessenger sendOnChannel:@(channel) message:nil binaryReply:^(NSData* reply){}];
-  EXPECT_TRUE(called);
-}
+  __block int record = 0;
 
+  FlutterMethodChannel* channel1 =
+      [FlutterMethodChannel methodChannelWithName:@(channel)
+                                  binaryMessenger:engine.binaryMessenger
+                                            codec:[FlutterJSONMethodCodec sharedInstance]];
+  [channel1 setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    record += 1;
+  }];
+
+  [engine.binaryMessenger sendOnChannel:@"_controller_" message:nil];
+  EXPECT_EQ(record, 1);
+
+  FlutterMethodChannel* channel2 =
+      [FlutterMethodChannel methodChannelWithName:@(channel)
+                                  binaryMessenger:engine.binaryMessenger
+                                            codec:[FlutterJSONMethodCodec sharedInstance]];
+  [channel2 setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
+    record += 10;
+  }];
+
+  [engine.binaryMessenger sendOnChannel:@"_controller_" message:nil];
+  EXPECT_EQ(record, 11);
+
+  [channel1 setMethodCallHandler:nil];
+
+  [engine.binaryMessenger sendOnChannel:@"_controller_" message:nil];
+  EXPECT_EQ(record, 21);
+}
 
 }  // namespace flutter::testing
