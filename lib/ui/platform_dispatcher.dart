@@ -571,7 +571,7 @@ class PlatformDispatcher {
 
   /// Get structured data provided by embedder from dart entrypoint args. it can be passed by
   /// `FlutterEngineGroup` when creating the engine.
-  dynamic getInitialArguments({required List<String> rawArgs}) {
+  Object? getInitialArguments({required List<String> rawArgs}) {
     if (rawArgs.isEmpty) return null;
     final int initialArgumentsIndex = rawArgs.indexOf('--initial-arguments') + 1;
     if (initialArgumentsIndex <= 0 || initialArgumentsIndex == rawArgs.length) return null;

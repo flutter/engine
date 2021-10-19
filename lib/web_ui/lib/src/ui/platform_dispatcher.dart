@@ -55,7 +55,7 @@ abstract class PlatformDispatcher {
 
   ByteData? getPersistentIsolateData() => null;
 
-  dynamic getInitialArguments({required List<String> rawArgs}) => null;
+  Object? getInitialArguments({required List<String> rawArgs}) => null;
 
   void scheduleFrame();
 
