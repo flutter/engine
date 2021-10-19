@@ -614,7 +614,7 @@ deps = {
     'packages': [
       {
         'package': 'fuchsia/third_party/clang/mac-amd64',
-        'version': 'KP-N5ruFeLjj1oFUPn4i0_BP2ThkpDYJh7yprjt0JLIC'
+        'version': 'HpW96jrB88KywoOfefFMDzkNHrBnKJb9FCLvDtrxlAEC'
       }
     ],
     'condition': 'host_os == "mac"',
@@ -625,7 +625,7 @@ deps = {
     'packages': [
       {
         'package': 'fuchsia/third_party/clang/linux-amd64',
-        'version': 'FMLihg51sSNvqIi8NvP9oVfFAYy5DnKP4SSo6TSeV_oC'
+        'version': 'usfKkGnw00OEgzxLzcWeF1xLd9SsPtL9BxNhxTcawLkC'
       }
     ],
     'condition': 'host_os == "linux"',
