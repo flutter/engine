@@ -443,21 +443,34 @@ FlutterPlatformMessageResponseHandle* MockResponseHandle(
   };
 }
 
+// If a channel overrides a previous channel with the same name, cleaning
+// the previous channel should not affect the new channel.
+//
+// This is important when recreating classes that uses a channel, because the
+// new instance would create the channel before the first class is deallocated
+// and clears the channel.
 TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
 
-  const char* channel = "_test_";
+  NSString* channel = @"_test_";
+  NSData* channel_data = [channel dataUsingEncoding:NSUTF8StringEncoding];
 
+  // Mock SendPlatformMessage so that if a message is sent to
+  // "test/send_message", act as if the framework has sent an empty message to
+  // the channel marked by the `sendOnChannel:message:` call's message.
   engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
-      SendPlatformMessage, ([channel](auto engine_, auto message_) {
+      SendPlatformMessage, ([](auto engine_, auto message_) {
         if (strcmp(message_->channel, "test/send_message") == 0) {
+          // The simplest message that is acceptable to a method channel.
           std::string message = R"|({"method": "a"})|";
+          std::string channel(reinterpret_cast<const char*>(message_->message),
+                              message_->message_size);
           reinterpret_cast<EmbedderEngine*>(engine_)
               ->GetShell()
               .GetPlatformView()
               ->HandlePlatformMessage(std::make_unique<PlatformMessage>(
-                  channel, fml::MallocMapping::Copy(message.c_str(), message.length()),
+                  channel.c_str(), fml::MallocMapping::Copy(message.c_str(), message.length()),
                   fml::RefPtr<PlatformMessageResponse>()));
         }
         return kSuccess;
@@ -466,30 +479,30 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   __block int record = 0;
 
   FlutterMethodChannel* channel1 =
-      [FlutterMethodChannel methodChannelWithName:@(channel)
+      [FlutterMethodChannel methodChannelWithName:channel
                                   binaryMessenger:engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
   [channel1 setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     record += 1;
   }];
 
-  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:nil];
+  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:channel_data];
   EXPECT_EQ(record, 1);
 
   FlutterMethodChannel* channel2 =
-      [FlutterMethodChannel methodChannelWithName:@(channel)
+      [FlutterMethodChannel methodChannelWithName:channel
                                   binaryMessenger:engine.binaryMessenger
                                             codec:[FlutterJSONMethodCodec sharedInstance]];
   [channel2 setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     record += 10;
   }];
 
-  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:nil];
+  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:channel_data];
   EXPECT_EQ(record, 11);
 
   [channel1 setMethodCallHandler:nil];
 
-  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:nil];
+  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:channel_data];
   EXPECT_EQ(record, 21);
 }
 
