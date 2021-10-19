@@ -3797,9 +3797,10 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
   /// SPIR-V not meeting this specification will throw an exception.
   ///
-  /// Performance of shader-compilation is platform dependent and is not well-specified.
-  /// Because of this, it is reccommended to construct FragmentShaderBuilder asynchrounously,
-  /// outside of a widget's `build` method; this will minimize the chance of UI jank.
+  /// Performance of shader-compilation is platform dependent and is not
+  /// well-specified.  Because of this, it is reccommended to construct
+  /// `FragmentShaderBuilder` asynchronously, outside of a widget's `build`
+  /// method; this will minimize the chance of UI jank.
   @pragma('vm:entry-point')
   FragmentShaderBuilder({
     required ByteBuffer spirv,
@@ -3826,10 +3827,15 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   /// the given uniforms.
   ///
   /// `floatUniforms` can be passed optionally to initialize the shader's
-  /// uniforms. If they are not set, they will each default to 0.
+  /// uniforms. If they are not set they will each default to 0.
   ///
   /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
   /// be thrown. See [FragmentShaderBuilder] docs for details.
+  ///
+  /// This method is suitable to be called synchronously within a widget's
+  /// `build` method or from [CustomPainter.paint]. It is recommended to
+  /// re-use the same [Float32List] object across calls on the same
+  /// [FragmentShaderBuilder].
   ///
   /// This method will aquire additional fields as [FragmentShaderBuilder] is
   /// implemented further.
@@ -3853,7 +3859,7 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
 
 @pragma('vm:entry-point')
 class _FragmentShader extends Shader {
-  /// This class is created by the engine, and should not be instantiated
+  /// This class is created by the engine and should not be instantiated
   /// or extended directly.
   ///
   /// To create a [_FragmentShader], use a [FragmentShaderBuilder].
@@ -3866,6 +3872,8 @@ class _FragmentShader extends Shader {
   bool operator ==(Object other) {
     if (identical(this, other))
       return true;
+    if (other.runtimeType != runtimeType)
+      return false;
     return other is _FragmentShader
         && other._builder == _builder
         && other._floatUniforms == _floatUniforms;
