@@ -60,6 +60,16 @@ public class MethodChannel {
     this(messenger, name, codec, null);
   }
 
+  /**
+   * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
+   * specified name and {@link MethodCodec}.
+   *
+   * @param messenger a {@link BinaryMessenger}.
+   * @param name a channel name String.
+   * @param codec a {@link MessageCodec}.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null mean execute on the platform thread.
+   */
   public MethodChannel(
       BinaryMessenger messenger,
       String name,

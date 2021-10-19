@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>See {@link PlatformMessageHandler}, which handles messages to Android from Dart
  */
-public class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
+class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   private static final String TAG = "DartMessenger";
 
   @NonNull private final FlutterJNI flutterJNI;

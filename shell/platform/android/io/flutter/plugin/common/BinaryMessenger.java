@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
  * @see EventChannel , which supports communication using event streams.
  */
 public interface BinaryMessenger {
+  /** An abstraction over dispatching a Runnable to be executed on some thread. */
   public interface TaskQueue {
     void dispatch(@NonNull Runnable runnable);
   }
@@ -69,6 +70,8 @@ public interface BinaryMessenger {
    *
    * @param channel the name {@link String} of the channel.
    * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null mean execute on the platform thread.
    */
   @UiThread
   void setMessageHandler(

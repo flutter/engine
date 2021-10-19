@@ -1872,4 +1872,9 @@ fml::TimePoint Shell::GetCurrentTimePoint() {
   return fml::TimePoint::Now();
 }
 
+const std::shared_ptr<PlatformMessageHandler>&
+Shell::GetPlatformMessageHandler() const {
+  return platform_message_handler_;
+}
+
 }  // namespace flutter

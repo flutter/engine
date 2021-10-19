@@ -10,15 +10,25 @@
 #include "flutter/lib/ui/window/platform_message.h"
 
 namespace flutter {
+
+/// An interface over the ability to handle PlatformMessages that are being sent
+/// from Flutter to the host platform.
 class PlatformMessageHandler {
  public:
   virtual ~PlatformMessageHandler() = default;
+
+  /// Ultimately sends the PlatformMessage to the host platform.
   virtual void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) = 0;
+
+  /// Performs the return procedure for an associated call to
+  /// HandlePlatformMessage.
   virtual void InvokePlatformMessageResponseCallback(
       int response_id,
       std::unique_ptr<fml::Mapping> mapping) = 0;
 
+  /// Performs the return procedure for an associated call to
+  /// HandlePlatformMessage where there is no return value.
   virtual void InvokePlatformMessageEmptyResponseCallback(int response_id) = 0;
 };
 }  // namespace flutter

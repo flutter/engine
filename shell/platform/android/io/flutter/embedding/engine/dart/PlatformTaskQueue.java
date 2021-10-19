@@ -9,6 +9,7 @@ import android.os.Looper;
 import androidx.annotation.NonNull;
 import io.flutter.plugin.common.BinaryMessenger;
 
+/** A BinaryMessenger.TaskQueue that posts to the platform thread (aka main thread). */
 public class PlatformTaskQueue implements BinaryMessenger.TaskQueue {
   @NonNull private final Handler handler = new Handler(Looper.getMainLooper());
 

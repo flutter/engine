@@ -877,6 +877,13 @@ public class FlutterJNI {
 
   private native void nativeCleanupMessageData(long messageData);
 
+  /**
+   * Destroys the resources provided sent to `handlePlatformMessage`.
+   *
+   * <p>This can be called on any thread.
+   *
+   * @param messageData the argument sent to handlePlatformMessage.
+   */
   public void cleanupMessageData(long messageData) {
     // This doesn't rely on being attached like other methods.
     nativeCleanupMessageData(messageData);
