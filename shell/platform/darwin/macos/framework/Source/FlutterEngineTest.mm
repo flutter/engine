@@ -449,21 +449,17 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
 
   const char* channel = "_test_";
 
-  engine.embedderAPI.PlatformMessageCreateResponseHandle = MOCK_ENGINE_PROC(
-      PlatformMessageCreateResponseHandle,
-      ([channel](auto engine, auto reply, auto user_data, auto response_handle) {
-        *response_handle = MockResponseHandle(channel, [](std::unique_ptr<fml::Mapping> data) {});
-        return kSuccess;
-      }));
   engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage, ([channel](auto engine_, auto message_) {
-        std::string message = R"|({"method": "a"})|";
-        reinterpret_cast<EmbedderEngine*>(engine_)
-            ->GetShell()
-            .GetPlatformView()
-            ->HandlePlatformMessage(std::make_unique<PlatformMessage>(
-                channel, fml::MallocMapping::Copy(message.c_str(), message.length()),
-                fml::RefPtr<PlatformMessageResponse>()));
+        if (strcmp(message_->channel, "test/send_message") == 0) {
+          std::string message = R"|({"method": "a"})|";
+          reinterpret_cast<EmbedderEngine*>(engine_)
+              ->GetShell()
+              .GetPlatformView()
+              ->HandlePlatformMessage(std::make_unique<PlatformMessage>(
+                  channel, fml::MallocMapping::Copy(message.c_str(), message.length()),
+                  fml::RefPtr<PlatformMessageResponse>()));
+        }
         return kSuccess;
       }));
 
@@ -477,7 +473,7 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
     record += 1;
   }];
 
-  [engine.binaryMessenger sendOnChannel:@"_controller_" message:nil];
+  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:nil];
   EXPECT_EQ(record, 1);
 
   FlutterMethodChannel* channel2 =
@@ -488,12 +484,12 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
     record += 10;
   }];
 
-  [engine.binaryMessenger sendOnChannel:@"_controller_" message:nil];
+  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:nil];
   EXPECT_EQ(record, 11);
 
   [channel1 setMethodCallHandler:nil];
 
-  [engine.binaryMessenger sendOnChannel:@"_controller_" message:nil];
+  [engine.binaryMessenger sendOnChannel:@"test/send_message" message:nil];
   EXPECT_EQ(record, 21);
 }
 
