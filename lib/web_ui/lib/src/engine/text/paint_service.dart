@@ -22,8 +22,16 @@ class TextPaintService {
     // individually.
     final List<EngineLineMetrics> lines = paragraph.computeLineMetrics();
 
+    if (lines.isEmpty) {
+      return;
+    }
+
     final EngineLineMetrics lastLine = lines.last;
     for (final EngineLineMetrics line in lines) {
+      if (line.boxes.isEmpty) {
+        continue;
+      }
+
       final RangeBox lastBox = line.boxes.last;
       final double justifyPerSpaceBox =
           _calculateJustifyPerSpaceBox(paragraph, line, lastLine, lastBox);
