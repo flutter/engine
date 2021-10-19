@@ -3770,9 +3770,8 @@ class ImageShader extends Shader {
 /// layout (location = 3) uniform mat2x2 d;
 /// ```
 ///
-/// After being compiled to SPIR-V using [shaderc](https://github.com/google/shaderc)
-/// and provided to the constructor, `floatUniforms` must always have a length
-/// of 10. One per float-component of each uniform.
+/// When compiled to SPIR-V and provided to the constructor, `floatUniforms`
+/// must have a length of 10. One per float-component of each uniform.
 ///
 /// `builder.build(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
 ///
@@ -3835,8 +3834,11 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   /// This method will aquire additional fields as [FragmentShaderBuilder] is
   /// implemented further.
   Shader build({
-    required Float32List floatUniforms,
+    Float32List? floatUniforms,
   }) {
+    if (floatUniforms == null) {
+      floatUniforms = Float32List(_uniformFloatCount);
+    }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
