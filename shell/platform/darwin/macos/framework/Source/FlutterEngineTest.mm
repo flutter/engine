@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <functional>
+
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
@@ -23,7 +26,33 @@
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
 @end
 
+typedef struct _FlutterPlatformMessageResponseHandle {
+  std::unique_ptr<flutter::PlatformMessage> message;
+  int pivot;
+} FlutterPlatformMessageResponseHandle;
+
 namespace flutter::testing {
+
+class MockPlatformMessageResponse : public flutter::PlatformMessageResponse {
+ public:
+  using ResponseCallback = std::function<void(std::unique_ptr<fml::Mapping>)>;
+
+  explicit MockPlatformMessageResponse(ResponseCallback callback)
+    : callback_(std::move(callback)) { }
+
+  void Complete(std::unique_ptr<fml::Mapping> data) override {
+    callback_(std::move(data));
+  }
+
+  void CompleteEmpty() override {
+    callback_(nil);
+  }
+
+ private:
+  ResponseCallback callback_;
+
+  FML_FRIEND_MAKE_REF_COUNTED(MockPlatformMessageResponse);
+};
 
 TEST_F(FlutterEngineTest, CanLaunch) {
   FlutterEngine* engine = GetFlutterEngine();
@@ -404,5 +433,60 @@ TEST(FlutterEngine, DartEntrypointArguments) {
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   EXPECT_TRUE(called);
 }
+
+FlutterPlatformMessageResponseHandle* create_message(const char* channel, MockPlatformMessageResponse ::ResponseCallback callback) {
+  const char test_message[] = "a";
+
+  std::unique_ptr<PlatformMessage> platform_message = std::make_unique<PlatformMessage>(
+        channel, fml::MallocMapping::Copy(test_message, sizeof(test_message)),
+        fml::MakeRefCounted<MockPlatformMessageResponse>(callback));
+  return new FlutterPlatformMessageResponseHandle {
+    .message = std::move(platform_message),
+    .pivot = 123,
+  };
+}
+
+TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  const char* channel = "_test_";
+  bool called = false;
+
+  engine.embedderAPI.PlatformMessageCreateResponseHandle =
+      MOCK_ENGINE_PROC(
+          PlatformMessageCreateResponseHandle,
+          ([channel, &called](auto engine, auto reply, auto user_data,
+                                   auto response_handle) {
+            printf("Created response\n");fflush(stdout);
+            *response_handle = create_message(channel, [&called](std::unique_ptr<fml::Mapping> data) {
+              called = true;
+            });
+            return kSuccess;
+          }));
+  engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
+      SendPlatformMessage, ([](auto engine_, auto message) {
+        printf("1\n");fflush(stdout);
+        const FlutterPlatformMessageResponseHandle* handle = message->response_handle;
+        // printf("Got 0x%llx 0x%llx\n", (uint64_t)ex_handle, (uint64_t)handle);fflush(stdout);
+        printf("2 %d\n", handle->pivot);fflush(stdout);
+        const std::unique_ptr<flutter::PlatformMessage>& m2 = handle->message;
+        printf("3\n");fflush(stdout);
+        auto response = m2->response();
+        printf("4\n");fflush(stdout);
+        response->CompleteEmpty();
+        printf("5\n");fflush(stdout);
+        // engine.embedderAPI.SendPlatformMessageResponse(
+        //     engine_,
+        //     message->response_handle,
+        //     nullptr,
+        //     0);
+        return kSuccess;
+      }));
+
+  [engine.binaryMessenger sendOnChannel:@(channel) message:nil binaryReply:^(NSData* reply){}];
+  EXPECT_TRUE(called);
+}
+
 
 }  // namespace flutter::testing
