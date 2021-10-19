@@ -3833,9 +3833,7 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   /// be thrown. See [FragmentShaderBuilder] docs for details.
   ///
   /// This method is suitable to be called synchronously within a widget's
-  /// `build` method or from [CustomPainter.paint]. It is recommended to
-  /// re-use the same [Float32List] object across calls on the same
-  /// [FragmentShaderBuilder].
+  /// `build` method or from [CustomPainter.paint].
   ///
   /// This method will aquire additional fields as [FragmentShaderBuilder] is
   /// implemented further.
@@ -3849,7 +3847,7 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
       throw ArgumentError(
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
-    final _FragmentShader shader = _FragmentShader(this, floatUniforms);
+    final _FragmentShader shader = _FragmentShader(this, Float32List.fromList(floatUniforms));
     _build(shader, floatUniforms);
     return shader;
   }
