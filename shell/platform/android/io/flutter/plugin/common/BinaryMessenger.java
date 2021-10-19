@@ -77,7 +77,7 @@ public interface BinaryMessenger {
    * @param channel the name {@link String} of the channel.
    * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
    * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
-   *     the handler. Specifying null mean execute on the platform thread.
+   *     the handler. Specifying null means execute on the platform thread.
    */
   @UiThread
   void setMessageHandler(

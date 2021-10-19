@@ -894,7 +894,10 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @VisibleForTesting
   public void handlePlatformMessage(
-      @NonNull final String channel, ByteBuffer message, final int replyId, long messageData) {
+      @NonNull final String channel,
+      ByteBuffer message,
+      final int replyId,
+      final long messageData) {
     if (platformMessageHandler != null) {
       platformMessageHandler.handleMessageFromDart(channel, message, replyId, messageData);
     } else {
