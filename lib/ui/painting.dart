@@ -3843,7 +3843,7 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
       throw ArgumentError(
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
-    final _FragmentShader shader = _FragmentShader();
+    final _FragmentShader shader = _FragmentShader(this, floatUniforms);
     _build(shader, floatUniforms);
     return shader;
   }
@@ -3857,7 +3857,22 @@ class _FragmentShader extends Shader {
   /// or extended directly.
   ///
   /// To create a [_FragmentShader], use a [FragmentShaderBuilder].
-  _FragmentShader() : super._();
+  _FragmentShader(this._builder, this._floatUniforms) : super._();
+
+  final FragmentShaderBuilder _builder;
+  final Float32List _floatUniforms;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other))
+      return true;
+    return other is _FragmentShader
+        && other._builder == _builder
+        && other._floatUniforms == _floatUniforms;
+  }
+
+  @override
+  int get hashCode => hashValues(_builder, _floatUniforms);
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
