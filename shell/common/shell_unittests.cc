@@ -2841,13 +2841,14 @@ TEST_F(ShellTest, SpawnWithDartEntrypointArgs) {
   ASSERT_TRUE(configuration.IsValid());
   configuration.SetEntrypoint("canRecieveArgumentsWhenEngineRun");
   const std::vector<std::string> entrypoint_args{
-      "{\"foo\":\"arg1\",\"bar\":\"arg2\"}"};
+      "--initial-arguments", "{\"foo\":\"arg1\",\"bar\":\"arg2\"}"};
   configuration.SetEntrypointArgs(entrypoint_args);
 
   auto second_configuration = RunConfiguration::InferFromSettings(settings);
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("canRecieveArgumentsWhenEngineSpawn");
-  const std::vector<std::string> second_entrypoint_args{"[\"arg1\",\"arg2\"]"};
+  const std::vector<std::string> second_entrypoint_args{"--initial-arguments",
+                                                        "[\"arg1\",\"arg2\"]"};
   second_configuration.SetEntrypointArgs(second_entrypoint_args);
 
   const std::string initial_route("/foo");

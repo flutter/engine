@@ -178,6 +178,7 @@ static jobject SpawnJNI(JNIEnv* env,
         reinterpret_cast<const char*>(
             env->GetDirectBufferAddress(jEncodedArgs)),
         position);
+    entrypoint_args.push_back("--initial-arguments");
     entrypoint_args.push_back(std::move(initial_arguments));
   }
 
@@ -268,6 +269,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
         reinterpret_cast<const char*>(
             env->GetDirectBufferAddress(jEncodedArgs)),
         position);
+    entrypoint_args.push_back("--initial-arguments");
     entrypoint_args.push_back(std::move(initial_arguments));
   }
 

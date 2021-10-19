@@ -573,7 +573,9 @@ class PlatformDispatcher {
   /// `FlutterEngineGroup` when creating the engine.
   dynamic getInitialArguments({required List<String> rawArgs}) {
     if (rawArgs.isEmpty) return null;
-    return json.decode(rawArgs[0]);
+    final int initialArgumentsIndex = rawArgs.indexOf('--initial-arguments') + 1;
+    if (initialArgumentsIndex <= 0 || initialArgumentsIndex == rawArgs.length) return null;
+    return json.decode(rawArgs[initialArgumentsIndex]);
   }
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
