@@ -18,17 +18,20 @@ class PlatformMessageHandler {
   virtual ~PlatformMessageHandler() = default;
 
   /// Ultimately sends the PlatformMessage to the host platform.
+  /// This method is invoked on the ui thread.
   virtual void HandlePlatformMessage(
       std::unique_ptr<PlatformMessage> message) = 0;
 
   /// Performs the return procedure for an associated call to
   /// HandlePlatformMessage.
+  /// This method should be thread-safe and able to be invoked on any thread.
   virtual void InvokePlatformMessageResponseCallback(
       int response_id,
       std::unique_ptr<fml::Mapping> mapping) = 0;
 
   /// Performs the return procedure for an associated call to
   /// HandlePlatformMessage where there is no return value.
+  /// This method should be thread-safe and able to be invoked on any thread.
   virtual void InvokePlatformMessageEmptyResponseCallback(int response_id) = 0;
 };
 }  // namespace flutter
