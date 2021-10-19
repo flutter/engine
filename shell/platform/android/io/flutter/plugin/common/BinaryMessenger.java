@@ -31,6 +31,12 @@ public interface BinaryMessenger {
     void dispatch(@NonNull Runnable runnable);
   }
 
+  /**
+   * Creates a TaskQueue that executes the tasks serially on a background thread.
+   *
+   * <p>There is no guarantee that the tasks will execute on the same thread, just that execution is
+   * serial.
+   */
   @UiThread
   TaskQueue makeBackgroundTaskQueue();
 
