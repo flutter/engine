@@ -139,11 +139,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       long messageData) {
     // Called from the ui thread.
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
-    @Nullable HandlerInfo handlerInfo = messageHandlers.get(channel);
-    @Nullable TaskQueue taskQueue = null;
-    if (handlerInfo != null) {
-      taskQueue = handlerInfo.taskQueue;
-    }
+    @Nullable final HandlerInfo handlerInfo = messageHandlers.get(channel);
+    @Nullable final TaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
     Runnable myRunnable =
         () -> {
           try {
@@ -158,11 +155,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
             flutterJNI.cleanupMessageData(messageData);
           }
         };
-    if (taskQueue == null) {
-      platformTaskQueue.dispatch(myRunnable);
-    } else {
-      taskQueue.dispatch(myRunnable);
-    }
+    @NonNull final TaskQueue nonnullTaskQueue = taskQueue == null ? platformTaskQueue : taskQueue;
+    nonnullTaskQueue.dispatch(myRunnable);
   }
 
   @Override
