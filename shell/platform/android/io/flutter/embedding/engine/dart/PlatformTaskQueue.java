@@ -7,10 +7,9 @@ package io.flutter.embedding.engine.dart;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
-import io.flutter.plugin.common.BinaryMessenger;
 
 /** A BinaryMessenger.TaskQueue that posts to the platform thread (aka main thread). */
-public class PlatformTaskQueue implements BinaryMessenger.TaskQueue {
+public class PlatformTaskQueue implements DartMessenger.DartMessengerTaskQueue {
   @NonNull private final Handler handler = new Handler(Looper.getMainLooper());
 
   @Override

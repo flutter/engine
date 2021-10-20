@@ -68,7 +68,8 @@ public class MethodChannel {
    * @param name a channel name String.
    * @param codec a {@link MessageCodec}.
    * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
-   *     the handler. Specifying null means execute on the platform thread.
+   *     the handler. Specifying null means execute on the platform thread. See also {@link
+   *     BinaryMessenger#makeBackgroundTaskQueue()}.
    */
   public MethodChannel(
       BinaryMessenger messenger,

@@ -27,9 +27,7 @@ import java.nio.ByteBuffer;
  */
 public interface BinaryMessenger {
   /** An abstraction over dispatching a Runnable to be executed on some thread. */
-  public interface TaskQueue {
-    void dispatch(@NonNull Runnable runnable);
-  }
+  public interface TaskQueue {}
 
   /**
    * Creates a TaskQueue that executes the tasks serially on a background thread.
