@@ -38,9 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Manages platform views.
- */
+/** Manages platform views. */
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
 

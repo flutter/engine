@@ -5,14 +5,10 @@
 package io.flutter.plugin.common;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.platform.PlatformViewRegistry;
-import io.flutter.view.TextureRegistry;
-
 /**
  * Container class for Android API listeners used by {@link ActivityPluginBinding}.
  *
@@ -21,7 +17,8 @@ import io.flutter.view.TextureRegistry;
  * <p>In v1 Android applications, an auto-generated and auto-updated plugin registrant class
  * (GeneratedPluginRegistrant) makes use of a {@link PluginRegistry} to register contributions from
  * each plugin mentioned in the application's pubspec file. The generated registrant class is, again
- * by default, called from the application's main {@link android.app.Activity}, itself a {@link PluginRegistry}.
+ * by default, called from the application's main {@link android.app.Activity}, itself a {@link
+ * PluginRegistry}.
  */
 public interface PluginRegistry {
   /**
