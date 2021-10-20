@@ -69,7 +69,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
     @Override
     public void dispatch(@NonNull Runnable runnable) {
-      executor.submit(runnable);
+      executor.execute(runnable);
     }
   }
 
