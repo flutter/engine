@@ -33,6 +33,33 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
   return flutterLocale;
 }
 
+#pragma mark -
+
+// Records an active client of the messenger (FlutterEngine) that listens to
+// platform messages on a given channel.
+@interface MessengerConnectionRecord : NSObject
+
+- (instancetype)initWithConnection:(NSNumber*)connection
+                           handler:(FlutterBinaryMessageHandler)handler;
+
+@property(nonatomic, readonly) FlutterBinaryMessageHandler handler;
+@property(nonatomic, readonly) NSNumber* connection;
+
+@end
+
+@implementation MessengerConnectionRecord
+- (instancetype)initWithConnection:(NSNumber*)connection
+                           handler:(FlutterBinaryMessageHandler)handler {
+  self = [super init];
+  NSAssert(self, @"Super init cannot be nil");
+  _connection = connection;
+  _handler = handler;
+  return self;
+}
+@end
+
+#pragma mark -
+
 /**
  * Private interface declaration for FlutterEngine.
  */
@@ -131,11 +158,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // The project being run by this engine.
   FlutterDartProject* _project;
 
-  // A mapping of channel names to the registered handlers for those channels.
-  NSMutableDictionary<NSString*, FlutterBinaryMessageHandler>* _messageHandlers;
-
-  // A mapping of channel names to the registered connections for those channels.
-  NSMutableDictionary<NSString*, NSNumber*>* _messageConnections;
+  // A mapping of channel names to the registered information for those channels.
+  NSMutableDictionary<NSString*, MessengerConnectionRecord*>* _messengerRecords;
 
   // An self-incremental integer to identify newly assigned channels.
   FlutterBinaryMessengerConnection _currentMessageConnection;
@@ -166,8 +190,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(self, @"Super init cannot be nil");
 
   _project = project ?: [[FlutterDartProject alloc] init];
-  _messageHandlers = [[NSMutableDictionary alloc] init];
-  _messageConnections = [[NSMutableDictionary alloc] init];
+  _messengerRecords = [[NSMutableDictionary alloc] init];
   _currentMessageConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
@@ -552,9 +575,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     }
   };
 
-  FlutterBinaryMessageHandler channelHandler = _messageHandlers[channel];
-  if (channelHandler) {
-    channelHandler(messageData, binaryResponseHandler);
+  MessengerConnectionRecord* channelRecord = _messengerRecords[channel];
+  if (channelRecord) {
+    channelRecord.handler(messageData, binaryResponseHandler);
   } else {
     binaryResponseHandler(nil);
   }
@@ -649,26 +672,24 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                           binaryMessageHandler:
                                               (nullable FlutterBinaryMessageHandler)handler {
   _currentMessageConnection += 1;
-  _messageHandlers[channel] = [handler copy];
-  _messageConnections[channel] = @(_currentMessageConnection);
+  _messengerRecords[channel] =
+      [[MessengerConnectionRecord alloc] initWithConnection:@(_currentMessageConnection)
+                                                    handler:[handler copy]];
   return _currentMessageConnection;
 }
 
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
-  // Search _messageConnections for the key for value @(connection).
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
+  // Search _messengerRecords for the key for value @(connection).
   NSString* foundChannel = nil;
-  NSArray* allKeys = [_messageConnections allKeys];
-  for (NSUInteger i = 0; i < [allKeys count]; i += 1) {
-    NSString* key = [allKeys objectAtIndex:i];
-    NSNumber* obj = [_messageConnections objectForKey:key];
-    if ([obj isEqual:@(connection)]) {
+  for (NSString* key in [_messengerRecords allKeys]) {
+    MessengerConnectionRecord* record = [_messengerRecords objectForKey:key];
+    if ([record.connection isEqual:@(connection)]) {
       foundChannel = key;
       break;
     }
   }
   if (foundChannel) {
-    [_messageConnections removeObjectForKey:foundChannel];
-    [_messageHandlers removeObjectForKey:foundChannel];
+    [_messengerRecords removeObjectForKey:foundChannel];
   }
 }
 
