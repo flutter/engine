@@ -674,7 +674,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _currentMessageConnection += 1;
   _messengerClients[channel] =
       [[FlutterMessenterClientInfo alloc] initWithConnection:@(_currentMessageConnection)
-                                                    handler:[handler copy]];
+                                                     handler:[handler copy]];
   return _currentMessageConnection;
 }
 
