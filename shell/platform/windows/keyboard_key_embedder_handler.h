@@ -102,15 +102,15 @@ class KeyboardKeyEmbedderHandler
   // Assign |critical_keys_| with basic information.
   void InitCriticalKeys();
   // Update |critical_keys_| with last seen logical and physical key.
-  void UpdateLastSeenCritialKey(int virtual_key,
-                                uint64_t physical_key,
-                                uint64_t logical_key);
+  void UpdateLastSeenCriticalKey(int virtual_key,
+                                 uint64_t physical_key,
+                                 uint64_t logical_key);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their toggling states have been desynchronized.
-  void SynchronizeCritialToggledStates(int this_virtual_key);
+  void SynchronizeCriticalToggledStates(int this_virtual_key);
   // Check each key's state from |get_key_state_| and synthesize events
   // if their pressing states have been desynchronized.
-  void SynchronizeCritialPressedStates();
+  void SynchronizeCriticalPressedStates();
 
   // Wraps perform_send_event_ with state tracking. Use this instead of
   // |perform_send_event_| to send events to the framework.

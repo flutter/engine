@@ -229,8 +229,8 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     }
   }
 
-  UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
-  SynchronizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
+  UpdateLastSeenCriticalKey(key, physical_key, result_logical_key);
+  SynchronizeCriticalToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
 
   if (next_has_record) {
     pressingRecords_[physical_key] = next_logical_record;
@@ -238,7 +238,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     pressingRecords_.erase(last_logical_record_iter);
   }
 
-  SynchronizeCritialPressedStates();
+  SynchronizeCriticalPressedStates();
 
   if (result_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
@@ -310,7 +310,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   }
 }
 
-void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
+void KeyboardKeyEmbedderHandler::UpdateLastSeenCriticalKey(
     int virtual_key,
     uint64_t physical_key,
     uint64_t logical_key) {
@@ -321,8 +321,8 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
   }
 }
 
-void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
-    int toggle_virtual_key) {
+void KeyboardKeyEmbedderHandler::SynchronizeCriticalToggledStates(
+    int key_to_synchronize) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -337,37 +337,50 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
     }
     assert(key_info.logical_key != 0);
 
-    // Check toggling state first, because it might alter pressing state.
     if (key_info.check_toggled) {
       SHORT state = get_key_state_(virtual_key);
-      bool should_toggled = state & kStateMaskToggled;
-      if (virtual_key == toggle_virtual_key) {
+      bool is_currently_on = state & kStateMaskToggled;
+
+      // Check all of the critical keys for agreement, but only update our lock
+      // state of the key matching the current event.
+      if (virtual_key == key_to_synchronize) {
         key_info.toggled_on = !key_info.toggled_on;
       }
-      if (key_info.toggled_on != should_toggled) {
-        // If the key is pressed, release it first.
+
+      // If the states do not agree, synchronize the framework's idea of what
+      // they are by sending the appropriate synthetic events.
+      if (key_info.toggled_on != is_currently_on) {
         if (pressingRecords_.find(key_info.physical_key) !=
             pressingRecords_.end()) {
+          // The lock key is currently pressed, so send an up and then a down.
           SendEvent(SynthesizeSimpleEvent(
                         kFlutterKeyEventTypeUp, key_info.physical_key,
                         key_info.logical_key, empty_character),
                     nullptr, nullptr);
+          SendEvent(SynthesizeSimpleEvent(
+                        kFlutterKeyEventTypeDown, key_info.physical_key,
+                        key_info.logical_key, empty_character),
+                    nullptr, nullptr);
         } else {
-          // This key will always be pressed in the following synthesized event.
-          pressingRecords_[key_info.physical_key] = key_info.logical_key;
+          // The lock key is currently not pressed, so send a down and then an
+          // up.
+          SendEvent(SynthesizeSimpleEvent(
+                        kFlutterKeyEventTypeDown, key_info.physical_key,
+                        key_info.logical_key, empty_character),
+                    nullptr, nullptr);
+          SendEvent(SynthesizeSimpleEvent(
+                        kFlutterKeyEventTypeUp, key_info.physical_key,
+                        key_info.logical_key, empty_character),
+                    nullptr, nullptr);
         }
-        SendEvent(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
-                                        key_info.physical_key,
-                                        key_info.logical_key, empty_character),
-                  nullptr, nullptr);
       }
-      key_info.toggled_on = should_toggled;
+      key_info.toggled_on = is_currently_on;
     }
   }
 #endif
 }
 
-void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
+void KeyboardKeyEmbedderHandler::SynchronizeCriticalPressedStates() {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -385,20 +398,19 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
       SHORT state = get_key_state_(virtual_key);
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
-      bool should_pressed = state & kStateMaskPressed;
-      if (recorded_pressed != should_pressed) {
-        if (should_pressed) {
+      bool should_press = state & kStateMaskPressed;
+      if (recorded_pressed != should_press) {
+        if (should_press) {
           pressingRecords_[key_info.physical_key] = key_info.logical_key;
         } else {
           pressingRecords_.erase(recorded_pressed_iter);
         }
         const char* empty_character = "";
-        SendEvent(
-            SynthesizeSimpleEvent(should_pressed ? kFlutterKeyEventTypeDown
-                                                 : kFlutterKeyEventTypeUp,
-                                  key_info.physical_key, key_info.logical_key,
-                                  empty_character),
-            nullptr, nullptr);
+        SendEvent(SynthesizeSimpleEvent(should_press ? kFlutterKeyEventTypeDown
+                                                     : kFlutterKeyEventTypeUp,
+                                        key_info.physical_key,
+                                        key_info.logical_key, empty_character),
+                  nullptr, nullptr);
       }
     }
   }
