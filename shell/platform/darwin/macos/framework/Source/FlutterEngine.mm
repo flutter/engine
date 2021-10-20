@@ -76,6 +76,14 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
 
 /**
+ * Invoked when the engine is restarted.
+ *
+ * This should reset states to as if the application has just started.  It
+ * usually indicates a hot restart (Shift-R in Flutter CLI.)
+ */
+- (void)engineCallbackOnPreEngineRestart;
+
+/**
  * Requests that the task be posted back the to the Flutter engine at the target time. The target
  * time is in the clock used by the Flutter engine.
  */
@@ -294,6 +302,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 
   flutterArguments.compositor = [self createFlutterCompositor];
+
+  flutterArguments.on_pre_engine_restart_callback  = [](void* user_data) {
+    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+    [engine engineCallbackOnPreEngineRestart];
+  };
 
   FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];
   FlutterEngineResult result = _embedderAPI.Initialize(
@@ -580,6 +593,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     client.handler(messageData, binaryResponseHandler);
   } else {
     binaryResponseHandler(nil);
+  }
+}
+
+- (void)engineCallbackOnPreEngineRestart {
+  if (_viewController) {
+    [_viewController onPreEngineRestart];
   }
 }
 

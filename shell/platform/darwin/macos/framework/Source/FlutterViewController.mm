@@ -358,6 +358,28 @@ static void CommonInit(FlutterViewController* controller) {
   [self configureTrackingArea];
 }
 
+- (void)onPreEngineRestart {
+  FlutterViewController* __weak weakSelf = self;
+  _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
+  _keyboardManager = [[FlutterKeyboardManager alloc] initWithOwner:weakSelf];
+  [_keyboardManager addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
+                                            initWithSendEvent:^(const FlutterKeyEvent& event,
+                                                                FlutterKeyEventCallback callback,
+                                                                void* userData) {
+                                              [weakSelf.engine sendKeyEvent:event
+                                                                   callback:callback
+                                                                   userData:userData];
+                                            }]];
+  [_keyboardManager
+      addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
+                              initWithChannel:[FlutterBasicMessageChannel
+                                                  messageChannelWithName:@"flutter/keyevent"
+                                                         binaryMessenger:_engine.binaryMessenger
+                                                                   codec:[FlutterJSONMessageCodec
+                                                                             sharedInstance]]]];
+  [_keyboardManager addSecondaryResponder:_textInputPlugin];
+}
+
 #pragma mark - Private methods
 
 - (BOOL)launchEngine {
@@ -434,6 +456,7 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)addInternalPlugins {
   __weak FlutterViewController* weakSelf = self;
   [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
   _keyboardManager = [[FlutterKeyboardManager alloc] initWithOwner:weakSelf];
   [_keyboardManager addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
                                             initWithSendEvent:^(const FlutterKeyEvent& event,
