@@ -47,29 +47,6 @@ public class ShimPluginRegistry implements PluginRegistry {
     this.flutterEngine.getPlugins().add(shimRegistrarAggregate);
   }
 
-  @Override
-  public Registrar registrarFor(String pluginKey) {
-    Log.v(TAG, "Creating plugin Registrar for '" + pluginKey + "'");
-    if (pluginMap.containsKey(pluginKey)) {
-      throw new IllegalStateException("Plugin key " + pluginKey + " is already in use");
-    }
-    pluginMap.put(pluginKey, null);
-    ShimRegistrar registrar = new ShimRegistrar(pluginKey, pluginMap);
-    shimRegistrarAggregate.addPlugin(registrar);
-    return registrar;
-  }
-
-  @Override
-  public boolean hasPlugin(String pluginKey) {
-    return pluginMap.containsKey(pluginKey);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T valuePublishedByPlugin(String pluginKey) {
-    return (T) pluginMap.get(pluginKey);
-  }
-
   /**
    * Aggregates all {@link ShimRegistrar}s within one single {@link FlutterPlugin}.
    *
