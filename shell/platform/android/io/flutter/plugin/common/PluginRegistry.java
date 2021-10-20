@@ -6,9 +6,8 @@ package io.flutter.plugin.common;
 
 import android.app.Activity;
 import android.content.Intent;
-import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
-import io.flutter.plugin.platform.PlatformViewRegistry;
+
 /**
  * Container class for Android API listeners used by {@link ActivityPluginBinding}.
  *
