@@ -6,6 +6,7 @@
 
 #include <cstring>
 
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/fixture_test.h"
@@ -15,11 +16,13 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 
+#include "flutter/fml/backtrace.h"
+
 ///\note Deprecated MOCK_METHOD macros used until this issue is resolved:
 // https://github.com/google/googletest/issues/2490
 
 namespace flutter {
-
+namespace testing {
 namespace {
 class MockDelegate : public Engine::Delegate {
  public:
@@ -100,6 +103,37 @@ std::unique_ptr<PlatformMessage> MakePlatformMessage(
   return message;
 }
 
+class FakeAssetResolver : public AssetResolver {
+ public:
+  FakeAssetResolver(std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop)
+      : concurrent_loop_(std::move(concurrent_loop)) {}
+
+  // |AssetResolver|
+  bool IsValid() const override { return true; }
+
+  // |AssetResolver|
+  bool IsValidAfterAssetManagerChange() const override { return true; }
+
+  // |AssetResolver|
+  AssetResolverType GetType() const {
+    return AssetResolverType::kApkAssetProvider;
+  }
+
+  // |AssetResolver|
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const override {
+    FML_LOG(ERROR) << "asset: " << asset_name;
+    if (asset_name != "FontManifest.json")
+      EXPECT_TRUE(concurrent_loop_->RunsTasksOnCurrentThread())
+          << fml::BacktraceHere();
+    return nullptr;
+  }
+
+ private:
+  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
+};
+}  // namespace
+
 class EngineTest : public testing::FixtureTest {
  public:
   EngineTest()
@@ -141,7 +175,6 @@ class EngineTest : public testing::FixtureTest {
   std::unique_ptr<RuntimeController> runtime_controller_;
   std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner_;
 };
-}  // namespace
 
 TEST_F(EngineTest, Create) {
   PostUITaskSync([this] {
@@ -328,4 +361,50 @@ TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
   });
 }
 
+TEST_F(EngineTest, AssetIOIsHandledOnWorkerThread) {
+  PostUITaskSync([this] {
+    FML_LOG(ERROR) << "Test ID: " << std::this_thread::get_id();
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    auto vm_ref = DartVMRef::Create(settings_);
+    EXPECT_CALL(*mock_runtime_controller, GetDartVM())
+        .WillRepeatedly(::testing::Return(vm_ref.get()));
+    EXPECT_CALL(*mock_runtime_controller, IsRootIsolateRunning())
+        .WillRepeatedly(::testing::Return(true));
+    EXPECT_CALL(*mock_runtime_controller, DispatchPlatformMessage(::testing::_))
+        .WillRepeatedly(::testing::Return(true));
+    auto engine = std::make_unique<Engine>(
+        /*delegate=*/delegate_,
+        /*dispatcher_maker=*/dispatcher_maker_,
+        /*image_decoder_task_runner=*/image_decoder_task_runner_,
+        /*task_runners=*/task_runners_,
+        /*settings=*/settings_,
+        /*animator=*/std::move(animator_),
+        /*io_manager=*/io_manager_,
+        /*font_collection=*/std::make_shared<FontCollection>(),
+        /*runtime_controller=*/std::move(mock_runtime_controller));
+
+    fml::RefPtr<PlatformMessageResponse> response =
+        fml::MakeRefCounted<MockResponse>();
+    std::string asset_name = "foo.png";
+    auto message = std::make_unique<PlatformMessage>(
+        "flutter/assets",
+        fml::MallocMapping::Copy(asset_name.c_str(), asset_name.length()),
+        response);
+
+    auto asset_manager = std::make_shared<AssetManager>();
+    auto concurrent_loop = vm_ref->GetConcurrentMessageLoop();
+    asset_manager->PushBack(
+        std::make_unique<FakeAssetResolver>(concurrent_loop));
+    engine->UpdateAssetManager(asset_manager);
+    engine->HandlePlatformMessage(std::move(message));
+
+    fml::CountDownLatch latch(concurrent_loop->GetWorkerCount());
+    concurrent_loop->PostTaskToAllWorkers([&latch] { latch.CountDown(); });
+    latch.Wait();
+  });
+}
+
+}  // namespace testing
 }  // namespace flutter

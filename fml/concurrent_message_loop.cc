@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "concurrent_message_loop.h"
 #include "flutter/fml/thread.h"
 #include "flutter/fml/trace_event.h"
 
@@ -146,6 +147,18 @@ std::vector<fml::closure> ConcurrentMessageLoop::GetThreadTasksLocked() {
   std::swap(pending_tasks, found->second);
   thread_tasks_.erase(found);
   return pending_tasks;
+}
+
+bool ConcurrentMessageLoop::RunsTasksOnCurrentThread() {
+  std::scoped_lock lock(tasks_mutex_);
+  for (const auto& worker_thread_id : worker_thread_ids_) {
+    FML_LOG(ERROR) << "wtid: " << worker_thread_id
+                   << " == " << std::this_thread::get_id();
+    if (worker_thread_id == std::this_thread::get_id()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 ConcurrentTaskRunner::ConcurrentTaskRunner(

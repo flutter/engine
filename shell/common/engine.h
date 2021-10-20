@@ -36,6 +36,10 @@
 
 namespace flutter {
 
+namespace testing {
+class EngineTest;
+}
+
 //------------------------------------------------------------------------------
 /// The engine is a component owned by the shell that resides on the UI task
 /// runner and is responsible for managing the needs of the root isolate and its
@@ -984,6 +988,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     return runtime_controller_->GetDartVM()->GetConcurrentWorkerTaskRunner();
   }
 
+  friend class testing::EngineTest;
   friend class testing::ShellTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);

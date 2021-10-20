@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -496,6 +497,7 @@ void Engine::UpdateSemantics(SemanticsNodeUpdates update,
 
 void Engine::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   if (message->channel() == kAssetChannel) {
+    FML_LOG(ERROR) << "Asset message!";
     HandleAssetPlatformMessage(std::move(message));
   } else {
     delegate_.OnEngineHandlePlatformMessage(std::move(message));
@@ -539,6 +541,7 @@ void Engine::ScheduleSecondaryVsyncCallback(uintptr_t id,
 
 void Engine::HandleAssetPlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
+  FML_LOG(ERROR) << "Here..";
   fml::RefPtr<PlatformMessageResponse> response = message->response();
   if (!response) {
     return;
@@ -554,6 +557,7 @@ void Engine::HandleAssetPlatformMessage(
   concurrent_task_runner()->PostTask([asset_manager = asset_manager_,
                                       asset_name = std::move(asset_name),
                                       response = std::move(response)] {
+    FML_DLOG(ERROR) << "Here: " << std::this_thread::get_id();
     std::unique_ptr<fml::Mapping> asset_mapping =
         asset_manager->GetAsMapping(asset_name);
     if (asset_mapping) {
