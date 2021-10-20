@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -60,7 +61,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     DefaultTaskQueue() {
       // TODO(gaaclarke): Use a shared thread pool with serial queues instead of
       // making a thread for each TaskQueue.
-      this.executor = Executors.newSingleThreadExecutor();
+      ThreadFactory threadFactory = (Runnable runnable) -> {
+        return new Thread(runnable, "DartMessenger.DefaultTaskQueue");
+      };
+      this.executor = Executors.newSingleThreadExecutor(threadFactory);
     }
 
     @Override
