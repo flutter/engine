@@ -37,7 +37,7 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 
 // Records an active client of the messenger (FlutterEngine) that listens to
 // platform messages on a given channel.
-@interface MessengerConnectionRecord : NSObject
+@interface FlutterMessenterClientInfo : NSObject
 
 - (instancetype)initWithConnection:(NSNumber*)connection
                            handler:(FlutterBinaryMessageHandler)handler;
@@ -47,7 +47,7 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 
 @end
 
-@implementation MessengerConnectionRecord
+@implementation FlutterMessenterClientInfo
 - (instancetype)initWithConnection:(NSNumber*)connection
                            handler:(FlutterBinaryMessageHandler)handler {
   self = [super init];
@@ -159,7 +159,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterDartProject* _project;
 
   // A mapping of channel names to the registered information for those channels.
-  NSMutableDictionary<NSString*, MessengerConnectionRecord*>* _messengerRecords;
+  NSMutableDictionary<NSString*, FlutterMessenterClientInfo*>* _messengerClients;
 
   // An self-incremental integer to identify newly assigned channels.
   FlutterBinaryMessengerConnection _currentMessageConnection;
@@ -190,7 +190,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(self, @"Super init cannot be nil");
 
   _project = project ?: [[FlutterDartProject alloc] init];
-  _messengerRecords = [[NSMutableDictionary alloc] init];
+  _messengerClients = [[NSMutableDictionary alloc] init];
   _currentMessageConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
@@ -575,9 +575,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     }
   };
 
-  MessengerConnectionRecord* channelRecord = _messengerRecords[channel];
-  if (channelRecord) {
-    channelRecord.handler(messageData, binaryResponseHandler);
+  FlutterMessenterClientInfo* client = _messengerClients[channel];
+  if (client) {
+    client.handler(messageData, binaryResponseHandler);
   } else {
     binaryResponseHandler(nil);
   }
@@ -672,24 +672,25 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                           binaryMessageHandler:
                                               (nullable FlutterBinaryMessageHandler)handler {
   _currentMessageConnection += 1;
-  _messengerRecords[channel] =
-      [[MessengerConnectionRecord alloc] initWithConnection:@(_currentMessageConnection)
+  _messengerClients[channel] =
+      [[FlutterMessenterClientInfo alloc] initWithConnection:@(_currentMessageConnection)
                                                     handler:[handler copy]];
   return _currentMessageConnection;
 }
 
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
-  // Search _messengerRecords for the key for value @(connection).
+  // Find the _messengerClients that has the required connection, and record its
+  // channel.
   NSString* foundChannel = nil;
-  for (NSString* key in [_messengerRecords allKeys]) {
-    MessengerConnectionRecord* record = [_messengerRecords objectForKey:key];
+  for (NSString* key in [_messengerClients allKeys]) {
+    FlutterMessenterClientInfo* record = [_messengerClients objectForKey:key];
     if ([record.connection isEqual:@(connection)]) {
       foundChannel = key;
       break;
     }
   }
   if (foundChannel) {
-    [_messengerRecords removeObjectForKey:foundChannel];
+    [_messengerClients removeObjectForKey:foundChannel];
   }
 }
 
