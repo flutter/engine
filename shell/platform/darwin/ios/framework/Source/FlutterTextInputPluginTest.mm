@@ -58,6 +58,7 @@ FLUTTER_ASSERT_ARC
                    clearText:(BOOL)clearText
                 delayRemoval:(BOOL)delayRemoval;
 - (NSArray<UIView*>*)textInputViews;
+- (UIView*)hostView;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -1367,6 +1368,12 @@ FLUTTER_ASSERT_ARC
   }
   // This assert proves the myInputPlugin.textInputView is not deallocated.
   XCTAssertNotNil(activeView);
+}
+
+- (void)testFlutterTextInputPluginHostViewNotCrash {
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  [myInputPlugin setViewController:nil];
+  XCTAssertNil([myInputPlugin hostView]);
 }
 
 @end
