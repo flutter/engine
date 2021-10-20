@@ -472,6 +472,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/meta.json
