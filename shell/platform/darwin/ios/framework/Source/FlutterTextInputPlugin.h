@@ -8,6 +8,7 @@
 #import <UIKit/UIKit.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextEditingDelta.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
@@ -16,6 +17,7 @@
 
 @property(nonatomic, assign) id<FlutterTextInputDelegate> textInputDelegate;
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+- (void)setViewController:(FlutterViewController*)viewController;
 
 /**
  * The `UITextInput` implementation used to control text entry.

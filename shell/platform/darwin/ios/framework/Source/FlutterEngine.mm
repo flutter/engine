@@ -345,6 +345,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
+  [_textInputPlugin setViewController:nil];
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else {
@@ -536,6 +537,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         }];
 
     FlutterTextInputPlugin* textInputPlugin = _textInputPlugin.get();
+    [textInputPlugin setViewController:_viewController.get()];
     [_textInputChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [textInputPlugin handleMethodCall:call result:result];
     }];
