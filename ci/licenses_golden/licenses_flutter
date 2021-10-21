@@ -1706,6 +1706,7 @@ FILE: ../../../flutter/shell/platform/common/client_wrapper/include/flutter/plug
 FILE: ../../../flutter/shell/platform/common/client_wrapper/include/flutter/standard_codec_serializer.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h
+FILE: ../../../flutter/shell/platform/common/client_wrapper/include/flutter/string_message_codec.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/include/flutter/texture_registrar.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/method_call_unittests.cc
 FILE: ../../../flutter/shell/platform/common/client_wrapper/method_channel_unittests.cc
@@ -1715,6 +1716,8 @@ FILE: ../../../flutter/shell/platform/common/client_wrapper/plugin_registrar_uni
 FILE: ../../../flutter/shell/platform/common/client_wrapper/standard_codec.cc
 FILE: ../../../flutter/shell/platform/common/client_wrapper/standard_message_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/client_wrapper/standard_method_codec_unittests.cc
+FILE: ../../../flutter/shell/platform/common/client_wrapper/string_codec.cc
+FILE: ../../../flutter/shell/platform/common/client_wrapper/string_message_codec_unittests.cc
 FILE: ../../../flutter/shell/platform/common/client_wrapper/texture_registrar_impl.h
 FILE: ../../../flutter/shell/platform/common/client_wrapper/texture_registrar_unittests.cc
 FILE: ../../../flutter/shell/platform/common/engine_switches.cc
@@ -2488,6 +2491,8 @@ FILE: ../../../flutter/shell/platform/windows/keyboard_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_utils.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_utils.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_utils_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/lifecycle_plugin.cc
+FILE: ../../../flutter/shell/platform/windows/lifecycle_plugin.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler.cc
 FILE: ../../../flutter/shell/platform/windows/platform_handler.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler_unittests.cc
