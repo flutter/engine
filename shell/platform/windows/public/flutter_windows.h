@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
+#include <dxgi.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <windows.h>
@@ -200,6 +201,11 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
+
+// Attempts to return the DXGI adapter used for rendering.
+FLUTTER_EXPORT bool FlutterDesktopViewGetGraphicsAdapter(
+    FlutterDesktopViewRef view,
+    IDXGIAdapter** adapter);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h
