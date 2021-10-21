@@ -135,7 +135,7 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    Trace.beginSection("FlutterLoader startInitialization");
+    Trace.beginSection("FlutterLoader#startInitialization");
 
     try {
       // Ensure that the context is actually the application context.
@@ -215,7 +215,7 @@ public class FlutterLoader {
       throw new IllegalStateException(
           "ensureInitializationComplete must be called after startInitialization");
     }
-    Trace.beginSection("FlutterLoader ensureInitializationComplete");
+    Trace.beginSection("FlutterLoader#ensureInitializationComplete");
 
     try {
       InitResult result = initResultFuture.get();

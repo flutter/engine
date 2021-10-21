@@ -61,7 +61,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @NonNull String channel,
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
-    Trace.beginSection("DartMessenger send on " + channel);
+    Trace.beginSection("DartMessenger#send on " + channel);
     Log.v(TAG, "Sending message with callback over channel '" + channel + "'");
 
     try {
@@ -85,7 +85,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
     BinaryMessenger.BinaryMessageHandler handler = messageHandlers.get(channel);
     if (handler != null) {
-      Trace.beginSection("DartMessenger handleMessageFromDart on " + channel);
+      Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
         handler.onMessage(message, new Reply(flutterJNI, replyId));

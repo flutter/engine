@@ -126,7 +126,7 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Trace.beginSection("DartExecutor executeDartEntrypoint");
+    Trace.beginSection("DartExecutor#executeDartEntrypoint");
     Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
     try {
@@ -155,7 +155,7 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
-    Trace.beginSection("DartExecutor executeDartCallback");
+    Trace.beginSection("DartExecutor#executeDartCallback");
     Log.v(TAG, "Executing Dart callback: " + dartCallback);
 
     try {

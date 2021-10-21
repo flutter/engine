@@ -123,7 +123,7 @@ import java.util.Set;
 
   @Override
   public void add(@NonNull FlutterPlugin plugin) {
-    Trace.beginSection("FlutterEngineConnectionRegistry add " + plugin.getClass().getSimpleName());
+    Trace.beginSection("FlutterEngineConnectionRegistry#add " + plugin.getClass().getSimpleName());
 
     try {
       if (has(plugin.getClass())) {
@@ -220,7 +220,7 @@ import java.util.Set;
       return;
     }
 
-    Trace.beginSection("FlutterEngineConnectionRegistry remove " + pluginClass.getSimpleName());
+    Trace.beginSection("FlutterEngineConnectionRegistry#remove " + pluginClass.getSimpleName());
 
     try {
       Log.v(TAG, "Removing plugin: " + plugin);
@@ -316,7 +316,7 @@ import java.util.Set;
   @Override
   public void attachToActivity(
       @NonNull ExclusiveAppComponent<Activity> exclusiveActivity, @NonNull Lifecycle lifecycle) {
-    Trace.beginSection("FlutterEngineConnectionRegistry attachToActivity");
+    Trace.beginSection("FlutterEngineConnectionRegistry#attachToActivity");
 
     try {
       Log.v(
@@ -362,7 +362,7 @@ import java.util.Set;
   @Override
   public void detachFromActivityForConfigChanges() {
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry detachFromActivityForConfigChanges");
+      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromActivityForConfigChanges");
       Log.v(TAG, "Detaching from an Activity for config changes: " + attachedActivity());
 
       try {
@@ -384,7 +384,7 @@ import java.util.Set;
   @Override
   public void detachFromActivity() {
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry detachFromActivity");
+      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromActivity");
 
       try {
         Log.v(TAG, "Detaching from an Activity: " + attachedActivity());
@@ -414,7 +414,7 @@ import java.util.Set;
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResult) {
     Log.v(TAG, "Forwarding onRequestPermissionsResult() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onRequestPermissionsResult");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onRequestPermissionsResult");
 
       try {
         return activityPluginBinding.onRequestPermissionsResult(
@@ -435,7 +435,7 @@ import java.util.Set;
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
     Log.v(TAG, "Forwarding onActivityResult() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onActivityResult");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onActivityResult");
 
       try {
         return activityPluginBinding.onActivityResult(requestCode, resultCode, data);
@@ -455,7 +455,7 @@ import java.util.Set;
   public void onNewIntent(@NonNull Intent intent) {
     Log.v(TAG, "Forwarding onNewIntent() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onNewIntent");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onNewIntent");
 
       try {
         activityPluginBinding.onNewIntent(intent);
@@ -474,7 +474,7 @@ import java.util.Set;
   public void onUserLeaveHint() {
     Log.v(TAG, "Forwarding onUserLeaveHint() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onUserLeaveHint");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onUserLeaveHint");
 
       try {
         activityPluginBinding.onUserLeaveHint();
@@ -493,7 +493,7 @@ import java.util.Set;
   public void onSaveInstanceState(@NonNull Bundle bundle) {
     Log.v(TAG, "Forwarding onSaveInstanceState() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onSaveInstanceState");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onSaveInstanceState");
 
       try {
         activityPluginBinding.onSaveInstanceState(bundle);
@@ -512,7 +512,7 @@ import java.util.Set;
   public void onRestoreInstanceState(@Nullable Bundle bundle) {
     Log.v(TAG, "Forwarding onRestoreInstanceState() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onRestoreInstanceState");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onRestoreInstanceState");
 
       try {
         activityPluginBinding.onRestoreInstanceState(bundle);
@@ -536,7 +536,7 @@ import java.util.Set;
   @Override
   public void attachToService(
       @NonNull Service service, @Nullable Lifecycle lifecycle, boolean isForeground) {
-    Trace.beginSection("FlutterEngineConnectionRegistry attachToService");
+    Trace.beginSection("FlutterEngineConnectionRegistry#attachToService");
     Log.v(TAG, "Attaching to a Service: " + service);
 
     try {
@@ -558,7 +558,7 @@ import java.util.Set;
   @Override
   public void detachFromService() {
     if (isAttachedToService()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry detachFromService");
+      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromService");
       Log.v(TAG, "Detaching from a Service: " + service);
 
       try {
@@ -580,7 +580,7 @@ import java.util.Set;
   @Override
   public void onMoveToForeground() {
     if (isAttachedToService()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onMoveToForeground");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onMoveToForeground");
 
       try {
         Log.v(TAG, "Attached Service moved to foreground.");
@@ -594,7 +594,7 @@ import java.util.Set;
   @Override
   public void onMoveToBackground() {
     if (isAttachedToService()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry onMoveToBackground");
+      Trace.beginSection("FlutterEngineConnectionRegistry#onMoveToBackground");
       Log.v(TAG, "Attached Service moved to background.");
 
       try {
@@ -614,7 +614,7 @@ import java.util.Set;
   @Override
   public void attachToBroadcastReceiver(
       @NonNull BroadcastReceiver broadcastReceiver, @NonNull Lifecycle lifecycle) {
-    Trace.beginSection("FlutterEngineConnectionRegistry attachToBroadcastReceiver");
+    Trace.beginSection("FlutterEngineConnectionRegistry#attachToBroadcastReceiver");
     Log.v(TAG, "Attaching to BroadcastReceiver: " + broadcastReceiver);
 
     try {
@@ -640,7 +640,7 @@ import java.util.Set;
   @Override
   public void detachFromBroadcastReceiver() {
     if (isAttachedToBroadcastReceiver()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry detachFromBroadcastReceiver");
+      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromBroadcastReceiver");
       Log.v(TAG, "Detaching from BroadcastReceiver: " + broadcastReceiver);
 
       try {
@@ -670,7 +670,7 @@ import java.util.Set;
   @Override
   public void attachToContentProvider(
       @NonNull ContentProvider contentProvider, @NonNull Lifecycle lifecycle) {
-    Trace.beginSection("FlutterEngineConnectionRegistry attachToContentProvider");
+    Trace.beginSection("FlutterEngineConnectionRegistry#attachToContentProvider");
     Log.v(TAG, "Attaching to ContentProvider: " + contentProvider);
 
     try {
@@ -696,7 +696,7 @@ import java.util.Set;
   @Override
   public void detachFromContentProvider() {
     if (isAttachedToContentProvider()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry detachFromContentProvider");
+      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromContentProvider");
       Log.v(TAG, "Detaching from ContentProvider: " + contentProvider);
 
       try {
