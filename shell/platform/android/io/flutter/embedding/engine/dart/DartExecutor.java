@@ -263,12 +263,7 @@ public class DartExecutor implements BinaryMessenger {
    */
   public void notifyLowMemoryWarning() {
     if (flutterJNI.isAttached()) {
-      Trace.beginSection("DartExecutor notifyLowMemoryWarning");
-      try {
-        flutterJNI.notifyLowMemoryWarning();
-      } finally {
-        Trace.endSection();
-      }
+      flutterJNI.notifyLowMemoryWarning();
     }
   }
 
