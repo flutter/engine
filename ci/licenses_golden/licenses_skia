@@ -1,4 +1,4 @@
-Signature: 876e646b9c1b441fb6ea8d5c81c4cdd1
+Signature: 95095052e2ea2a7b783d3bfede971ef6
 
 UNUSED LICENSES:
 
@@ -4076,7 +4076,6 @@ FILE: ../../../third_party/skia/src/gpu/ops/SmallPathShapeData.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/SmallPathShapeData.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/MiddleOutPolygonTriangulator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeIterator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/VectorXform.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/WangsFormula.h
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFTControl.cpp
 FILE: ../../../third_party/skia/src/gpu/text/GrSDFTControl.h
@@ -5335,6 +5334,7 @@ FILE: ../../../third_party/skia/modules/androidkit/src/SurfaceThread.h
 FILE: ../../../third_party/skia/modules/androidkit/src/Text.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
+FILE: ../../../third_party/skia/modules/skottie/src/effects/DirectionalBlur.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/SphereEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ThresholdEffect.cpp
