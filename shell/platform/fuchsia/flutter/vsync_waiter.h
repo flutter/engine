@@ -55,4 +55,4 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
 
 }  // namespace flutter_runner
 
-#endif // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VSYNC_WAITER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_VSYNC_WAITER_H_
