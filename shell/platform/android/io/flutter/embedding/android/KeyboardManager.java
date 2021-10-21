@@ -60,7 +60,7 @@ public class KeyboardManager {
    * Constructor for {@link KeyboardManager} that takes a list of {@link
    * KeyboardManager.Responder}s.
    *
-   * <p>The view is used as the destination to send the synthesized key to. This means that the the
+   * <p>The view is used as the destination to send the synthesized key to. This means that the
    * next thing in the focus chain will get the event when the {@link KeyboardManager.Responder}s
    * return false from onKeyDown/onKeyUp.
    *
