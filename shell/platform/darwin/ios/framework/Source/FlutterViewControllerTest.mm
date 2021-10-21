@@ -126,6 +126,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)keyboardWillChangeFrame:(NSNotification*)notification;
 - (void)keyboardWillBeHidden:(NSNotification*)notification;
+- (void)onDisplayLink;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -153,13 +154,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.messageSent = nil;
 }
 
-- (void)testKeyboardWillChangeFrameWillCallUpdateViewportMetrics {
+- (void)testKeyboardWillChangeFrameWillCallOnDisplayLinkToUpdateViewportMetrics {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  CGRect keyboardFrame = CGRectMake(0, 508, 390, 336);
+
+  CGFloat width = [[UIScreen mainScreen] bounds].size.width;
+  CGRect keyboardFrame = CGRectMake(0, 508, width, 336);
   NSNumber* duration = [NSNumber numberWithDouble:0.25];
   NSNotification* mockNotification = [[NSNotification alloc]
       initWithName:@"UIKeyboardWillChangeFrameNotification"
@@ -168,8 +171,28 @@ typedef enum UIAccessibilityContrast : NSInteger {
             @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
             @"UIKeyboardAnimationDurationUserInfoKey" : duration
           }];
+  id viewControllerMock = OCMPartialMock(viewController);
   [viewController keyboardWillChangeFrame:mockNotification];
-  OCMVerify([viewController updateViewportMetrics]);
+  /// Need to wait until next vsync signal
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.20 * NSEC_PER_SEC)),
+                 dispatch_get_main_queue(), ^{
+                   OCMVerify([viewControllerMock onDisplayLink]);
+                 });
+}
+
+- (void)testKeyboardWillBeHiddenWillNotCallOnDisplayLinkToUpdateViewportMetrics {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController keyboardWillBeHidden:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  /// Need to wait until next vsync signal
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.20 * NSEC_PER_SEC)),
+                 dispatch_get_main_queue(), ^{
+                   OCMVerify(never(), [viewControllerMock onDisplayLink]);
+                 });
 }
 
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
