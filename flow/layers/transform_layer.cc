@@ -66,10 +66,12 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   transform_.mapRect(&child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
 
-  if (render_count_ >= kMinimumRendersBeforeCachingTransformLayer) {
-    TryToPrepareRasterCache(context, this, matrix);
-  } else {
-    render_count_++;
+  if (transform_.isTranslate()) {
+    if (render_count_ >= kMinimumRendersBeforeCachingTransformLayer) {
+      TryToPrepareRasterCache(context, this, matrix);
+    } else {
+      render_count_++;
+    }
   }
 
   context->cull_rect = previous_cull_rect;
