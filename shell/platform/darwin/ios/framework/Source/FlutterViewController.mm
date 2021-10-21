@@ -1147,9 +1147,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   if (self.keyboardAnimationLink == nil) {
-    self.keyboardAnimationLink = [CADisplayLink displayLinkWithTarget:self
-                                                             selector:@selector(onDisplayLink)];
-    [self.keyboardAnimationLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+      [self startKeyboardAnimationLink];
   }
 
   // Set begin value
@@ -1165,6 +1163,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
           self.keyboardAnimationLink = nil;
         }
       }];
+}
+
+- (void)startKeyboardAnimationLink{
+    self.keyboardAnimationLink = [CADisplayLink displayLinkWithTarget:self
+                                                             selector:@selector(onDisplayLink)];
+    [self.keyboardAnimationLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
 }
 
 - (void)onDisplayLink {

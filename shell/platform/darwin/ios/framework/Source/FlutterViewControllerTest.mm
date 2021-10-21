@@ -124,9 +124,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
-- (void)keyboardWillChangeFrame:(NSNotification*)notification;
-- (void)keyboardWillBeHidden:(NSNotification*)notification;
-- (void)onDisplayLink;
+- (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
+           insetBottomEndValue:(CGFloat)insetBottomEndValue
+                      duration:(NSTimeInterval)duration;
+-(void)startKeyboardAnimationLink;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -154,47 +155,16 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.messageSent = nil;
 }
 
-- (void)testKeyboardWillChangeFrameWillCallOnDisplayLinkToUpdateViewportMetrics {
+- (void)testStartKeyboardAnimationWillStartKeyboardDisplaylink {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-
-  CGFloat width = [[UIScreen mainScreen] bounds].size.width;
-  CGRect keyboardFrame = CGRectMake(0, 508, width, 336);
-  NSNumber* duration = [NSNumber numberWithDouble:0.25];
-  NSNotification* mockNotification = [[NSNotification alloc]
-      initWithName:@"UIKeyboardWillChangeFrameNotification"
-            object:nil
-          userInfo:@{
-            @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
-            @"UIKeyboardAnimationDurationUserInfoKey" : duration
-          }];
   id viewControllerMock = OCMPartialMock(viewController);
-  [viewController keyboardWillChangeFrame:mockNotification];
-  /// Need to wait until next vsync signal
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.20 * NSEC_PER_SEC)),
-                 dispatch_get_main_queue(), ^{
-                   OCMVerify([viewControllerMock onDisplayLink]);
-                 });
+    [viewController startKeyBoardAnimation:0 insetBottomEndValue:100 duration:0.25];
+    OCMVerify([viewControllerMock startKeyboardAnimationLink]);
 }
-
-- (void)testKeyboardWillBeHiddenWillNotCallOnDisplayLinkToUpdateViewportMetrics {
-  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
-  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
-                                                                                nibName:nil
-                                                                                 bundle:nil];
-  [viewController keyboardWillBeHidden:nil];
-  id viewControllerMock = OCMPartialMock(viewController);
-  /// Need to wait until next vsync signal
-  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.20 * NSEC_PER_SEC)),
-                 dispatch_get_main_queue(), ^{
-                   OCMVerify(never(), [viewControllerMock onDisplayLink]);
-                 });
-}
-
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
