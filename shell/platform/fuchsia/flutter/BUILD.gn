@@ -449,6 +449,9 @@ executable("flutter_runner_unittests") {
     "tests/engine_unittests.cc",
     "tests/flutter_runner_product_configuration_unittests.cc",
     "tests/gfx_session_connection_unittests.cc",
+    "tests/pointer_event_utility.cc",
+    "tests/pointer_event_utility.h",
+    "vsync_waiter_unittest.cc",
   ]
 
   # This is needed for //third_party/googletest for linking zircon symbols.
