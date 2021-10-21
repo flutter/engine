@@ -236,9 +236,9 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // will synthesize (an up event if the key is recorded pressed, then) a down
   // event.
   //
-  // After this function, all critical keys will have their toggled state updated
-  // to the true state, while the critical keys whose toggled state have been
-  // changed will be left pressed regardless of their true pressed state.
+  // After this function, all critical keys will have their toggled state
+  // updated to the true state, while the critical keys whose toggled state have
+  // been changed will be left pressed regardless of their true pressed state.
   // Updating the pressed state is left to SynchronizeCritialPressedStates.
   SynchronizeCritialToggledStates(key, type == kFlutterKeyEventTypeDown);
   // Synchronize the pressed states of critical keys (such as whether CapsLocks
@@ -337,7 +337,8 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
 }
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
-    int this_virtual_key, bool is_down_event) {
+    int this_virtual_key,
+    bool is_down_event) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -381,7 +382,9 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 #endif
 }
 
-void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(int this_virtual_key, bool pressed_state_will_change) {
+void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
+    int this_virtual_key,
+    bool pressed_state_will_change) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
