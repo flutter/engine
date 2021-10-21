@@ -152,8 +152,6 @@ std::vector<fml::closure> ConcurrentMessageLoop::GetThreadTasksLocked() {
 bool ConcurrentMessageLoop::RunsTasksOnCurrentThread() {
   std::scoped_lock lock(tasks_mutex_);
   for (const auto& worker_thread_id : worker_thread_ids_) {
-    FML_LOG(ERROR) << "wtid: " << worker_thread_id
-                   << " == " << std::this_thread::get_id();
     if (worker_thread_id == std::this_thread::get_id()) {
       return true;
     }

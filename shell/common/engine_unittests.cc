@@ -122,12 +122,16 @@ class FakeAssetResolver : public AssetResolver {
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override {
-    FML_LOG(ERROR) << "asset: " << asset_name;
+    mapping_requests.push_back(asset_name);
+    // TODO(dnfield): FontManifest is loaded differently than most assets.
+    // Should we load it on a background thread?
     if (asset_name != "FontManifest.json")
       EXPECT_TRUE(concurrent_loop_->RunsTasksOnCurrentThread())
           << fml::BacktraceHere();
     return nullptr;
   }
+
+  mutable std::vector<std::string> mapping_requests;
 
  private:
   std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
@@ -155,6 +159,11 @@ class EngineTest : public testing::FixtureTest {
       latch.Signal();
     });
     latch.Wait();
+  }
+
+  void HandlePlatformMessage(Engine* engine,
+                             std::unique_ptr<PlatformMessage> message) {
+    engine->HandlePlatformMessage(std::move(message));
   }
 
  protected:
@@ -363,7 +372,6 @@ TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
 
 TEST_F(EngineTest, AssetIOIsHandledOnWorkerThread) {
   PostUITaskSync([this] {
-    FML_LOG(ERROR) << "Test ID: " << std::this_thread::get_id();
     MockRuntimeDelegate client;
     auto mock_runtime_controller =
         std::make_unique<MockRuntimeController>(client, task_runners_);
@@ -395,14 +403,16 @@ TEST_F(EngineTest, AssetIOIsHandledOnWorkerThread) {
 
     auto asset_manager = std::make_shared<AssetManager>();
     auto concurrent_loop = vm_ref->GetConcurrentMessageLoop();
-    asset_manager->PushBack(
-        std::make_unique<FakeAssetResolver>(concurrent_loop));
+    auto resolver = std::make_unique<FakeAssetResolver>(concurrent_loop);
+    auto raw_resolver = resolver.get();
+    asset_manager->PushBack(std::move(resolver));
     engine->UpdateAssetManager(asset_manager);
-    engine->HandlePlatformMessage(std::move(message));
+    HandlePlatformMessage(engine.get(), std::move(message));
 
     fml::CountDownLatch latch(concurrent_loop->GetWorkerCount());
     concurrent_loop->PostTaskToAllWorkers([&latch] { latch.CountDown(); });
     latch.Wait();
+    EXPECT_EQ(raw_resolver->mapping_requests.back(), "foo.png");
   });
 }
 
