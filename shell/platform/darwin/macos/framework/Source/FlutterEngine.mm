@@ -303,7 +303,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   flutterArguments.compositor = [self createFlutterCompositor];
 
-  flutterArguments.on_pre_engine_restart_callback  = [](void* user_data) {
+  flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
     [engine engineCallbackOnPreEngineRestart];
   };

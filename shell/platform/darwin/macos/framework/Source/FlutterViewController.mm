@@ -139,6 +139,11 @@ struct MouseState {
 - (void)addInternalPlugins;
 
 /**
+ * Creates and registers keyboard related components.
+ */
+- (void)initializeKeyboard;
+
+/**
  * Calls dispatchMouseEvent:phase: with a phase determined by self.mouseState.
  *
  * mouseState.buttons should be updated before calling this method.
@@ -359,25 +364,7 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)onPreEngineRestart {
-  FlutterViewController* __weak weakSelf = self;
-  _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
-  _keyboardManager = [[FlutterKeyboardManager alloc] initWithOwner:weakSelf];
-  [_keyboardManager addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
-                                            initWithSendEvent:^(const FlutterKeyEvent& event,
-                                                                FlutterKeyEventCallback callback,
-                                                                void* userData) {
-                                              [weakSelf.engine sendKeyEvent:event
-                                                                   callback:callback
-                                                                   userData:userData];
-                                            }]];
-  [_keyboardManager
-      addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
-                              initWithChannel:[FlutterBasicMessageChannel
-                                                  messageChannelWithName:@"flutter/keyevent"
-                                                         binaryMessenger:_engine.binaryMessenger
-                                                                   codec:[FlutterJSONMessageCodec
-                                                                             sharedInstance]]]];
-  [_keyboardManager addSecondaryResponder:_textInputPlugin];
+  [self initializeKeyboard];
 }
 
 #pragma mark - Private methods
@@ -453,9 +440,8 @@ static void CommonInit(FlutterViewController* controller) {
   }
 }
 
-- (void)addInternalPlugins {
+- (void)initializeKeyboard {
   __weak FlutterViewController* weakSelf = self;
-  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
   _textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:weakSelf];
   _keyboardManager = [[FlutterKeyboardManager alloc] initWithOwner:weakSelf];
   [_keyboardManager addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc]
@@ -474,6 +460,12 @@ static void CommonInit(FlutterViewController* controller) {
                                                                    codec:[FlutterJSONMessageCodec
                                                                              sharedInstance]]]];
   [_keyboardManager addSecondaryResponder:_textInputPlugin];
+}
+
+- (void)addInternalPlugins {
+  __weak FlutterViewController* weakSelf = self;
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  [self initializeKeyboard];
   _settingsChannel =
       [FlutterBasicMessageChannel messageChannelWithName:@"flutter/settings"
                                          binaryMessenger:_engine.binaryMessenger
