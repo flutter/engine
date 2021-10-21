@@ -39,6 +39,10 @@ void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
 }
 
+bool VsyncWaiterIOS::ShouldAwaitVSyncOnIdle() {
+  return false;
+}
+
 }  // namespace flutter
 
 @implementation VSyncClient {

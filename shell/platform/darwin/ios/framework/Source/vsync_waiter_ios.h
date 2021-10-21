@@ -50,6 +50,9 @@ class VsyncWaiterIOS final : public VsyncWaiter {
   // |VsyncWaiter|
   void AwaitVSync() override;
 
+  // |VsyncWaiter|
+  bool ShouldAwaitVSyncOnIdle() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterIOS);
 };
 

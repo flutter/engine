@@ -159,6 +159,10 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   }
 }
 
+bool VsyncWaiter::ShouldAwaitVSyncOnIdle() {
+  return true;
+}
+
 void VsyncWaiter::PauseDartMicroTasks() {
   auto ui_task_queue_id = task_runners_.GetUITaskRunner()->GetTaskQueueId();
   auto task_queues = fml::MessageLoopTaskQueues::GetInstance();

@@ -38,6 +38,11 @@ void VsyncWaiterAndroid::AwaitVSync() {
   });
 }
 
+// |VsyncWaiter|
+bool VsyncWaiterAndroid::ShouldAwaitVSyncOnIdle() {
+  return false;
+}
+
 // static
 void VsyncWaiterAndroid::OnNativeVsync(JNIEnv* env,
                                        jclass jcaller,

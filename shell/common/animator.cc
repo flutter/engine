@@ -237,22 +237,28 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
     return;
   }
 
-  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
-                           frame_request_number_);
-  AwaitVSync();
+  bool should_await_vsync_on_idle = waiter_->ShouldAwaitVSyncOnIdle();
+  if (!should_await_vsync_on_idle) {
+    AwaitVSync();
+  }
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [self = weak_factory_.GetWeakPtr()]() {
+      [self = weak_factory_.GetWeakPtr(), should_await_vsync_on_idle]() {
         if (!self) {
           return;
         }
-
+        if (should_await_vsync_on_idle) {
+          self->AwaitVSync();
+        }
         self->NotifyIdle();
       });
   frame_scheduled_ = true;
 }
 
 void Animator::AwaitVSync() {
+  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
+                           frame_request_number_);
+
   waiter_->AsyncWaitForVsync(
       [self = weak_factory_.GetWeakPtr()](
           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
