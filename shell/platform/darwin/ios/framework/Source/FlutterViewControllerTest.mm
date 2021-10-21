@@ -127,7 +127,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
            insetBottomEndValue:(CGFloat)insetBottomEndValue
                       duration:(NSTimeInterval)duration;
--(void)startKeyboardAnimationLink;
+- (void)startKeyboardAnimationLink;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -162,8 +162,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                                 nibName:nil
                                                                                  bundle:nil];
   id viewControllerMock = OCMPartialMock(viewController);
-    [viewController startKeyBoardAnimation:0 insetBottomEndValue:100 duration:0.25];
-    OCMVerify([viewControllerMock startKeyboardAnimationLink]);
+  [viewController startKeyBoardAnimation:0 insetBottomEndValue:100 duration:0.25];
+  OCMVerify([viewControllerMock startKeyboardAnimationLink]);
 }
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
