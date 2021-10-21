@@ -95,6 +95,8 @@ class Animator final {
 
   void AwaitVSync();
 
+  void NotifyIdle();
+
   const char* FrameParity();
 
   // Clear |trace_flow_ids_| if |frame_scheduled_| is false.
