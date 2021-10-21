@@ -8,9 +8,7 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 
 static const char _kTextAffinityDownstream[] = "TextAffinity.downstream";
 static const char _kTextAffinityUpstream[] = "TextAffinity.upstream";
@@ -1606,7 +1604,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 @implementation FlutterTextInputPlugin {
   NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
-  fml::WeakPtr<FlutterViewController> _viewController;
 }
 
 @synthesize textInputDelegate = _textInputDelegate;
@@ -1646,11 +1643,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [_enableFlutterTextInputViewAccessibilityTimer release];
     _enableFlutterTextInputViewAccessibilityTimer = nil;
   }
-}
-
-- (void)setViewController:(FlutterViewController*)viewController {
-  _viewController =
-      viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
 }
 
 - (UIView<UITextInput>*)textInputView {
@@ -1883,7 +1875,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 // The UIView to add FlutterTextInputViews to.
 - (UIView*)hostView {
-  return _viewController.get().view;
+  return self.viewController.view;
 }
 
 // The UIView to add FlutterTextInputViews to.
@@ -1957,6 +1949,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [_inputHider addSubview:inputView];
   }
   UIView* parentView = self.hostView;
+  NSAssert(parentView != nullptr, @"The application must have a HostView since the keyboard client "
+                                  @"must be part of the responder chain to function");
   if (_inputHider.superview != parentView) {
     [parentView addSubview:_inputHider];
   }

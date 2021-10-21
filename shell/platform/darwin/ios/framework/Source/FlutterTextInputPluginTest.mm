@@ -59,6 +59,7 @@ FLUTTER_ASSERT_ARC
                 delayRemoval:(BOOL)delayRemoval;
 - (NSArray<UIView*>*)textInputViews;
 - (UIView*)hostView;
+- (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -1370,10 +1371,12 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotNil(activeView);
 }
 
-- (void)testFlutterTextInputPluginHostViewNotCrash {
+- (void)testFlutterTextInputPluginHostViewNilCrash {
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
-  [myInputPlugin setViewController:nil];
+  myInputPlugin.viewController = nil;
   XCTAssertNil([myInputPlugin hostView]);
+  XCTAssertThrows([myInputPlugin addToInputParentViewIfNeeded:nil],
+                  @"Throws exception if host view is nil");
 }
 
 @end
