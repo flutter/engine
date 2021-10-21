@@ -180,7 +180,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // The resulting event's `logical_key`.
   uint64_t result_logical_key;
   // What pressingRecords_[physical_key] should be after the KeyboardHookImpl
-  // returns (0 for empty).
+  // returns (0 if the entry should be removed).
   uint64_t eventual_logical_record;
   char character_bytes[kCharacterCacheSize];
 
@@ -238,15 +238,15 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   //
   // After this function, all critical keys will have their toggled state
   // updated to the true state, while the critical keys whose toggled state have
-  // been changed will be left pressed regardless of their true pressed state.
-  // Updating the pressed state is left to SynchronizeCritialPressedStates.
+  // been changed will be pressed regardless of their true pressed state.
+  // Updating the pressed state will be done by SynchronizeCritialPressedStates.
   SynchronizeCritialToggledStates(key, type == kFlutterKeyEventTypeDown);
   // Synchronize the pressed states of critical keys (such as whether CapsLocks
   // is pressed).
   //
   // After this function, all critical keys except for the target key will have
   // their toggled state and pressed state matched with their true states. The
-  // target key's pressed state will be updated in the immediate statement.
+  // target key's pressed state will be updated immediately after this.
   SynchronizeCritialPressedStates(key, type != kFlutterKeyEventTypeRepeat);
 
   if (eventual_logical_record != 0) {
