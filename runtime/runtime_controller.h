@@ -124,7 +124,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                                      root isolate has launched the Dart
   ///                                      program, but after it has been
   ///                                      created. This is called without
-  ///                                      isolate scope, and before any root
+  ///                                      isolate scope, and after any root
   ///                                      isolate callback in the settings.
   /// @param[in]  dart_entrypoint          The dart entrypoint. If
   ///                                      `std::nullopt` or empty, `main` will

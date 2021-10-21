@@ -177,7 +177,7 @@ class DartIsolate : public UIDartState {
   ///                                         isolate scope. This gives the
   ///                                         caller a chance to finish any
   ///                                         setup before running the Dart
-  ///                                         program, and before any embedder
+  ///                                         program, and after any embedder
   ///                                         callbacks in the settings object.
   /// @param[in]  isolate_create_callback     The isolate create callback. This
   ///                                         will be called when the before the
