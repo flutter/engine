@@ -39,7 +39,6 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
         texture_info->pixel_buffer_config.user_data, gl_procs_));
   } else if (texture_info->type == kFlutterDesktopGpuSurfaceTexture &&
              texture_info->gpu_surface_config.type ==
-                 kFlutterDesktopGpuSurfaceTypeDxgi ==
                  kFlutterDesktopGpuSurfaceTypeDxgi) {
     if (!texture_info->gpu_surface_config.callback) {
       std::cerr << "Invalid DXGI surface callback." << std::endl;
