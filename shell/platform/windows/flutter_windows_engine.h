@@ -22,6 +22,7 @@
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
+#include "flutter/shell/platform/windows/lifecycle_plugin.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
@@ -174,6 +175,15 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
+  // Informs the engine that the app is resumed.
+  void SendAppIsResumed();
+
+  // Informs the engine that the app is inactive.
+  void SendAppIsInactive();
+
+  // Informs the engine that the app is paused.
+  void SendAppIsPaused();
+
   // Informs the engine that a new frame is needed to redraw the content.
   void ScheduleFrame();
 
@@ -286,6 +296,9 @@ class FlutterWindowsEngine {
 
   // The settings plugin.
   std::unique_ptr<SettingsPlugin> settings_plugin_;
+
+  // The lifecycle plugin.
+  std::unique_ptr<LifecyclePlugin> lifecycle_plugin_;
 
   // Callbacks to be called when the engine (and thus the plugin registrar) is
   // being destroyed.

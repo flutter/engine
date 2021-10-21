@@ -108,6 +108,18 @@ class FlutterWindow : public Window, public WindowBindingHandler {
                 int32_t device_id) override;
 
   // |Window|
+  void OnSetFocus() override;
+
+  // |Window|
+  void OnKillFocus() override;
+
+  // |Window|
+  void OnMinimized() override;
+
+  // |Window|
+  void OnRestoredFromMinimized() override;
+
+  // |Window|
   gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
   // |FlutterWindowBindingHandler|

@@ -80,6 +80,8 @@ source_set("flutter_windows_source") {
     "keyboard_manager.h",
     "keyboard_utils.cc",
     "keyboard_utils.h",
+    "lifecycle_plugin.cc",
+    "lifecycle_plugin.h",
     "platform_handler.cc",
     "platform_handler.h",
     "sequential_id_generator.cc",

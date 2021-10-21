@@ -241,6 +241,22 @@ void FlutterWindow::OnScroll(double delta_x,
                                       device_id);
 }
 
+void FlutterWindow::OnSetFocus() {
+  binding_handler_delegate_->OnResumed();
+}
+
+void FlutterWindow::OnKillFocus() {
+  binding_handler_delegate_->OnInactive();
+}
+
+void FlutterWindow::OnMinimized() {
+  binding_handler_delegate_->OnPaused();
+}
+
+void FlutterWindow::OnRestoredFromMinimized() {
+  binding_handler_delegate_->OnInactive();
+}
+
 void FlutterWindow::OnCursorRectUpdated(const Rect& rect) {
   // Convert the rect from Flutter logical coordinates to device coordinates.
   auto scale = GetDpiScale();

@@ -192,6 +192,10 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   // https://github.com/flutter/flutter/issues/71099
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
                                                       task_runner_.get());
+
+  lifecycle_plugin_ =
+      std::make_unique<LifecyclePlugin>(messenger_wrapper_.get());
+  lifecycle_plugin_->SendAppIsDetached();
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -364,6 +368,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   settings_plugin_->StartWatching();
   settings_plugin_->SendSettings();
 
+  lifecycle_plugin_->SendAppIsResumed();
+
   return true;
 }
 
@@ -373,6 +379,9 @@ bool FlutterWindowsEngine::Stop() {
          plugin_registrar_destruction_callbacks_) {
       callback(registrar);
     }
+
+    lifecycle_plugin_->SendAppIsDetached();
+
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     engine_ = nullptr;
     return (result == kSuccess);
@@ -504,6 +513,18 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
   embedder_api_.ReloadSystemFonts(engine_);
 }
 
+void FlutterWindowsEngine::SendAppIsResumed() {
+  lifecycle_plugin_->SendAppIsResumed();
+}
+
+void FlutterWindowsEngine::SendAppIsInactive() {
+  lifecycle_plugin_->SendAppIsInactive();
+}
+
+void FlutterWindowsEngine::SendAppIsPaused() {
+  lifecycle_plugin_->SendAppIsPaused();
+}
+
 void FlutterWindowsEngine::ScheduleFrame() {
   embedder_api_.ScheduleFrame(engine_);
 }
@@ -534,9 +555,10 @@ void FlutterWindowsEngine::SendSystemLocales() {
   // Convert the locale list to the locale pointer list that must be provided.
   std::vector<const FlutterLocale*> flutter_locale_list;
   flutter_locale_list.reserve(flutter_locales.size());
-  std::transform(flutter_locales.begin(), flutter_locales.end(),
-                 std::back_inserter(flutter_locale_list),
-                 [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(
+      flutter_locales.begin(), flutter_locales.end(),
+      std::back_inserter(flutter_locale_list),
+      [](const auto& arg) -> const auto* { return &arg; });
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
 }

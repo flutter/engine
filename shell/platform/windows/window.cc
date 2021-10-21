@@ -408,8 +408,10 @@ Window::HandleMessage(UINT const message,
     }
     case WM_SETFOCUS:
       ::CreateCaret(window_handle_, nullptr, 1, 1);
+      OnSetFocus();
       break;
     case WM_KILLFOCUS:
+      OnKillFocus();
       ::DestroyCaret();
       break;
     case WM_LBUTTONDOWN:
@@ -600,6 +602,17 @@ void Window::Destroy() {
 }
 
 void Window::HandleResize(UINT width, UINT height) {
+  bool next_mimimized = (width <= 0) && (height <= 0);
+  if (current_mimimized != next_mimimized) {
+    current_mimimized = next_mimimized;
+
+    if (next_mimimized) {
+      OnMinimized();
+    } else {
+      OnRestoredFromMinimized();
+    }
+  }
+
   current_width_ = width;
   current_height_ = height;
   if (direct_manipulation_owner_) {

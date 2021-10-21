@@ -546,6 +546,18 @@ void FlutterWindowsView::SendPointerEventWithData(
   }
 }
 
+void FlutterWindowsView::OnResumed() {
+  engine_->SendAppIsResumed();
+}
+
+void FlutterWindowsView::OnInactive() {
+  engine_->SendAppIsInactive();
+}
+
+void FlutterWindowsView::OnPaused() {
+  engine_->SendAppIsPaused();
+}
+
 bool FlutterWindowsView::MakeCurrent() {
   return engine_->surface_manager()->MakeCurrent();
 }

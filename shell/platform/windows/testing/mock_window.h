@@ -59,6 +59,10 @@ class MockWindow : public Window {
   MOCK_METHOD0(GetNativeViewAccessible, gfx::NativeViewAccessible());
   MOCK_METHOD4(OnScroll,
                void(double, double, FlutterPointerDeviceKind, int32_t));
+  MOCK_METHOD0(OnSetFocus, void());
+  MOCK_METHOD0(OnKillFocus, void());
+  MOCK_METHOD0(OnMinimized, void());
+  MOCK_METHOD0(OnRestoredFromMinimized, void());
   MOCK_METHOD0(OnComposeBegin, void());
   MOCK_METHOD0(OnComposeCommit, void());
   MOCK_METHOD0(OnComposeEnd, void());

@@ -62,6 +62,9 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
                     int32_t));
   MOCK_METHOD0(OnPlatformBrightnessChanged, void());
   MOCK_METHOD1(UpdateHighContrastEnabled, void(bool enabled));
+  MOCK_METHOD0(OnResumed, void());
+  MOCK_METHOD0(OnInactive, void());
+  MOCK_METHOD0(OnPaused, void());
 };
 
 }  // namespace testing

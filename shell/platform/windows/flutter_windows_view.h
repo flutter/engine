@@ -184,6 +184,15 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   virtual void OnUpdateSemanticsEnabled(bool enabled) override;
 
   // |WindowBindingHandlerDelegate|
+  void OnResumed() override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnInactive() override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnPaused() override;
+
+  // |WindowBindingHandlerDelegate|
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
   // |TextInputPluginDelegate|

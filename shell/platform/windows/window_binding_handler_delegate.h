@@ -126,6 +126,15 @@ class WindowBindingHandlerDelegate {
   // disabled.
   virtual void OnUpdateSemanticsEnabled(bool enabled) = 0;
 
+  // Notifies delegate that backing window is resumed.
+  virtual void OnResumed() = 0;
+
+  // Notifies delegate that backing window is inactive.
+  virtual void OnInactive() = 0;
+
+  // Notifies delegate that backing window is paused.
+  virtual void OnPaused() = 0;
+
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 

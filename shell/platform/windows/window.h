@@ -198,6 +198,18 @@ class Window : public KeyboardManager::WindowDelegate {
                         FlutterPointerDeviceKind device_kind,
                         int32_t device_id) = 0;
 
+  // Called when window has been received focus.
+  virtual void OnSetFocus() = 0;
+
+  // Called when window has been lost focus.
+  virtual void OnKillFocus() = 0;
+
+  // Called when window has been minimized.
+  virtual void OnMinimized() = 0;
+
+  // Called when window has been restored from minimized.
+  virtual void OnRestoredFromMinimized() = 0;
+
   UINT GetCurrentDPI();
 
   UINT GetCurrentWidth();
@@ -249,6 +261,7 @@ class Window : public KeyboardManager::WindowDelegate {
   int current_dpi_ = 0;
   int current_width_ = 0;
   int current_height_ = 0;
+  int current_mimimized = false;
 
   // Holds the conversion factor from lines scrolled to pixels scrolled.
   float scroll_offset_multiplier_;
