@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/window_win32.h"
 
 #include <imm.h>
+#include <oleacc.h>
 
 #include <cstring>
 
@@ -167,9 +168,11 @@ void WindowWin32::OnGetObject(UINT const message,
     // Microsoft Active Accessibility (MSAA) COM objects.
     OnUpdateSemanticsEnabled(true);
 
-    // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
-    // Once AccessibilityBridge is wired up, look up the IAccessible
-    // representing the root view and call LresultFromObject.
+    // Return the IAccessible for the root view.
+    gfx::NativeViewAccessible root_iaccessible = GetNativeViewAccessible();
+    if (root_iaccessible) {
+      LresultFromObject(IID_IAccessible, wparam, root_iaccessible);
+    }
   }
 }
 

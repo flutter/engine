@@ -16,6 +16,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager_win32.h"
+#include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
 
@@ -217,6 +218,9 @@ class WindowWin32 {
   //
   // Used to process key messages. Exposed for dependency injection.
   virtual uint32_t Win32MapVkToChar(uint32_t virtual_key);
+
+  // Returns the root view accessibility node, or nullptr if none.
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
  private:
   // Release OS resources associated with window.
