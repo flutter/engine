@@ -124,6 +124,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
+- (void)keyboardWillChangeFrame:(NSNotification*)notification;
+- (void)keyboardWillBeHidden:(NSNotification*)notification;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -149,6 +151,19 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
   self.messageSent = nil;
+}
+
+- (void)testKeyboardWillChangeFrameWillCallUpdateViewportMetrics{
+    FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+    [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+    FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                  nibName:nil
+                                                                                   bundle:nil];
+    CGRect keyboardFrame = CGRectMake(0, 508, 390, 336);
+    NSNumber* duration = [NSNumber numberWithDouble:0.25];
+    NSNotification* mockNotification = [[NSNotification alloc] initWithName:@"UIKeyboardWillChangeFrameNotification" object:nil userInfo:@{@"UIKeyboardFrameEndUserInfoKey":[NSValue valueWithCGRect:keyboardFrame],@"UIKeyboardAnimationDurationUserInfoKey":duration}];
+    [viewController keyboardWillChangeFrame:mockNotification];
+    OCMVerify([viewController updateViewportMetrics]);
 }
 
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {

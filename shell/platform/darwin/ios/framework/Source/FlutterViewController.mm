@@ -69,6 +69,10 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
+// Keyboard animation properties
+@property (nonatomic, strong) CADisplayLink* keyboardAnimationLink;
+@property (nonatomic, strong) UIView* keyboardAnimationView;
+
 /**
  * Creates and registers plugins used by this view controller.
  */
@@ -1104,27 +1108,61 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
-
+  NSTimeInterval duration = [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
   // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
   // in the screen to see if the keyboard is visible.
   if (CGRectIntersectsRect(keyboardFrame, screenRect)) {
     CGFloat bottom = CGRectGetHeight(keyboardFrame);
     CGFloat scale = [UIScreen mainScreen].scale;
-
-    // The keyboard is treated as an inset since we want to effectively reduce the window size by
-    // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
-    // bottom padding.
-    _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+      // The keyboard is treated as an inset since we want to effectively reduce the window size by
+      // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+      // bottom padding.
+      [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom insetBottomEndValue:bottom * scale duration:duration];
   } else {
-    _viewportMetrics.physical_view_inset_bottom = 0;
+      [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom insetBottomEndValue:0 duration:duration];
   }
-
-  [self updateViewportMetrics];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  _viewportMetrics.physical_view_inset_bottom = 0;
-  [self updateViewportMetrics];
+    //When keyboard hide,the keyboardWillChangeFrame function will be called to update viewport metrics
+    //So do not call [self updateViewportMetrics] here again
+}
+
+- (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue insetBottomEndValue:(CGFloat)insetBottomEndValue duration:(NSTimeInterval)duration{
+    //Stop animation when start another animation
+    [self.keyboardAnimationView.layer removeAllAnimations];
+    
+    // When called this method first time,
+    // initialize the keyboardAnimationView to get animation value during animation
+    if (self.keyboardAnimationView == nil) {
+        self.keyboardAnimationView = [[UIView alloc] init];
+        [self.view addSubview:self.keyboardAnimationView];
+    }
+    
+    if (self.keyboardAnimationLink == nil) {
+        self.keyboardAnimationLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
+        [self.keyboardAnimationLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+    }
+    
+    //Set begin value
+    self.keyboardAnimationView.frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
+    [UIView animateWithDuration:duration animations:^{
+        //Set end value
+        self.keyboardAnimationView.frame = CGRectMake(0, insetBottomEndValue, 0, 0);
+    } completion:^(BOOL finished) {
+        if (finished) {
+            [self.keyboardAnimationLink invalidate];
+            self.keyboardAnimationLink = nil;
+        }
+    }];
+}
+
+- (void)onDisplayLink{
+    if(self.keyboardAnimationView.layer.presentationLayer){
+        CGFloat value = self.keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+        _viewportMetrics.physical_view_inset_bottom = value;
+        [self updateViewportMetrics];
+    }
 }
 
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
