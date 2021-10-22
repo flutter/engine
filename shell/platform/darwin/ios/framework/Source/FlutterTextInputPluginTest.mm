@@ -75,6 +75,7 @@ FLUTTER_ASSERT_ARC
   NSDictionary* _passwordTemplate;
   id engine;
   FlutterTextInputPlugin* textInputPlugin;
+  FlutterViewController* viewController;
 }
 
 - (void)setUp {
@@ -83,6 +84,8 @@ FLUTTER_ASSERT_ARC
   engine = OCMClassMock([FlutterEngine class]);
   textInputPlugin = [[FlutterTextInputPlugin alloc] init];
   textInputPlugin.textInputDelegate = engine;
+  viewController = [FlutterViewController new];
+  textInputPlugin.viewController = viewController;
 }
 
 - (void)tearDown {
@@ -94,6 +97,7 @@ FLUTTER_ASSERT_ARC
   [textInputPlugin cleanUpViewHierarchy:YES clearText:YES delayRemoval:NO];
   [[[[textInputPlugin textInputView] superview] subviews]
       makeObjectsPerformSelector:@selector(removeFromSuperview)];
+  viewController = nil;
   [super tearDown];
 }
 
@@ -1352,8 +1356,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
+  FlutterViewController* flutterViewController = [FlutterViewController new];
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
   myInputPlugin.textInputDelegate = engine;
+  myInputPlugin.viewController = flutterViewController;
+
   __weak UIView* activeView;
   @autoreleasepool {
     FlutterMethodCall* setClientCall = [FlutterMethodCall
