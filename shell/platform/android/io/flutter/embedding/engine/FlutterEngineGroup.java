@@ -153,7 +153,7 @@ public class FlutterEngineGroup {
   }
 
   @VisibleForTesting
-  /* package */ FlutterEngine createEngine(Context context) {
+  public FlutterEngine createEngine(Context context) {
     return new FlutterEngine(context);
   }
 }

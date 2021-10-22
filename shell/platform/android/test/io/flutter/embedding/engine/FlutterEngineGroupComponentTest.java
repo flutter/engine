@@ -70,7 +70,7 @@ public class FlutterEngineGroupComponentTest {
     engineGroupUnderTest =
         new FlutterEngineGroup(RuntimeEnvironment.application) {
           @Override
-          FlutterEngine createEngine(Context context) {
+          public FlutterEngine createEngine(Context context) {
             return firstEngineUnderTest;
           }
         };

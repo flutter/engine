@@ -35,6 +35,7 @@
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/PluginComponentTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/loader/FlutterLoaderTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/loader/ApplicationInfoLoaderTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/FlutterEngineGroupCacheTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/FlutterEngineGroupComponentTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/TextInputChannelTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/DeferredComponentChannelTest.java" />
@@ -144,6 +145,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/deferredcomponents/DeferredComponentManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineGroup.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineGroupCache.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistry.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java" />
