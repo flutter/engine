@@ -1129,7 +1129,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                            curve:curve];
   } else {
     [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom
-             insetBottomEndValue:0
+             insetBottomEndValue:0.0
                         duration:duration
                            curve:curve];
   }
@@ -1144,15 +1144,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            insetBottomEndValue:(CGFloat)insetBottomEndValue
                       duration:(NSTimeInterval)duration
                          curve:(UIViewAnimationCurve)curve {
-  // Stop animation when start another animation
-  [self.keyboardAnimationView.layer removeAllAnimations];
-
   // When called this method first time,
   // initialize the keyboardAnimationView to get animation value during animation
   if (self.keyboardAnimationView == nil) {
     self.keyboardAnimationView = [[UIView alloc] init];
     [self.view addSubview:self.keyboardAnimationView];
   }
+
+  // Stop animation when start another animation
+  [self.keyboardAnimationView.layer removeAllAnimations];
 
   if (self.keyboardAnimationLink == nil) {
     [self startKeyboardAnimationLink];
@@ -1170,6 +1170,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         if (finished) {
           [self.keyboardAnimationLink invalidate];
           self.keyboardAnimationLink = nil;
+          // Set the target value to avoid that little error due to presentationLayer end value
+          // will not reach normally
+          _viewportMetrics.physical_view_inset_bottom = insetBottomEndValue;
+          [self updateViewportMetrics];
         }
       }];
 }
