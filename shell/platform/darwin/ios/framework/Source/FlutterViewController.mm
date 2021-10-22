@@ -1108,8 +1108,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
+
+  // Get the animation duration and curve
   NSTimeInterval duration =
       [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+  UIViewAnimationCurve curve =
+      (UIViewAnimationCurve)[[info objectForKey:UIKeyboardAnimationCurveUserInfoKey] integerValue];
+
   // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
   // in the screen to see if the keyboard is visible.
   if (CGRectIntersectsRect(keyboardFrame, screenRect)) {
@@ -1120,11 +1125,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // bottom padding.
     [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom
              insetBottomEndValue:bottom * scale
-                        duration:duration];
+                        duration:duration
+                           curve:curve];
   } else {
     [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom
              insetBottomEndValue:0
-                        duration:duration];
+                        duration:duration
+                           curve:curve];
   }
 }
 
@@ -1135,7 +1142,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
            insetBottomEndValue:(CGFloat)insetBottomEndValue
-                      duration:(NSTimeInterval)duration {
+                      duration:(NSTimeInterval)duration
+                         curve:(UIViewAnimationCurve)curve {
   // Stop animation when start another animation
   [self.keyboardAnimationView.layer removeAllAnimations];
 
@@ -1152,6 +1160,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // Set begin value
   self.keyboardAnimationView.frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
+  [UIView setAnimationCurve:curve];
   [UIView animateWithDuration:duration
       animations:^{
         // Set end value

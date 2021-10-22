@@ -126,7 +126,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
            insetBottomEndValue:(CGFloat)insetBottomEndValue
-                      duration:(NSTimeInterval)duration;
+                      duration:(NSTimeInterval)duration
+                         curve:(UIViewAnimationCurve)curve;
 - (void)startKeyboardAnimationLink;
 @end
 
@@ -161,8 +162,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
+
+  UIViewAnimationCurve curve = (UIViewAnimationCurve)7;
   id viewControllerMock = OCMPartialMock(viewController);
-  [viewController startKeyBoardAnimation:0 insetBottomEndValue:100 duration:0.25];
+  [viewController startKeyBoardAnimation:0 insetBottomEndValue:100 duration:0.25 curve:curve];
   OCMVerify([viewControllerMock startKeyboardAnimationLink]);
 }
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
