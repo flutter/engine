@@ -1137,15 +1137,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
   // When keyboard hide,the keyboardWillChangeFrame function will be called to update viewport
-  // metrics So do not call [self updateViewportMetrics] here again
+  // metrics. So do not call [self updateViewportMetrics] here again
 }
 
 - (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
            insetBottomEndValue:(CGFloat)insetBottomEndValue
                       duration:(NSTimeInterval)duration
                          curve:(UIViewAnimationCurve)curve {
-  // When called this method first time,
-  // initialize the keyboardAnimationView to get animation value during animation
+  // When call this method first time,
+  // initialize the keyboardAnimationView to get animation interpolation during animation
   if (self.keyboardAnimationView == nil) {
     self.keyboardAnimationView = [[UIView alloc] init];
     [self.view addSubview:self.keyboardAnimationView];
@@ -1170,8 +1170,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         if (finished) {
           [self.keyboardAnimationLink invalidate];
           self.keyboardAnimationLink = nil;
-          // Set the target value to avoid that little error due to presentationLayer end value
-          // will not reach normally
+
+          // Set the end value to avoid that little error because presentationLayer will not reach
+          // end value normally
           _viewportMetrics.physical_view_inset_bottom = insetBottomEndValue;
           [self updateViewportMetrics];
         }
