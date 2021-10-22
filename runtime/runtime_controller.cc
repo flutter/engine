@@ -355,6 +355,7 @@ tonic::DartErrorHandleType RuntimeController::GetLastError() {
 
 bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
+    fml::closure root_isolate_create_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     const std::vector<std::string>& dart_entrypoint_args,
@@ -370,6 +371,7 @@ bool RuntimeController::LaunchRootIsolate(
           isolate_snapshot_,                              //
           std::make_unique<PlatformConfiguration>(this),  //
           DartIsolate::Flags{},                           //
+          root_isolate_create_callback,                   //
           isolate_create_callback_,                       //
           isolate_shutdown_callback_,                     //
           dart_entrypoint,                                //

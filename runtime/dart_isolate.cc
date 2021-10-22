@@ -96,6 +96,7 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
       GetIsolateGroupData().GetIsolateSnapshot(),        //
       std::move(platform_configuration),                 //
       flags,                                             //
+      nullptr,                                           //
       isolate_create_callback,                           //
       isolate_shutdown_callback,                         //
       dart_entrypoint,                                   //
@@ -120,6 +121,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     std::unique_ptr<PlatformConfiguration> platform_configuration,
     Flags isolate_flags,
+    fml::closure root_isolate_create_callback,
     const fml::closure& isolate_create_callback,
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
@@ -187,10 +189,13 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     settings.root_isolate_create_callback(*isolate.get());
   }
 
+  if (root_isolate_create_callback) {
+    root_isolate_create_callback();
+  }
+
   const std::vector<std::string>& args = !dart_entrypoint_args.empty()
                                              ? dart_entrypoint_args
                                              : settings.dart_entrypoint_args;
-
   if (!isolate->RunFromLibrary(dart_entrypoint_library,  //
                                dart_entrypoint,          //
                                args)) {
