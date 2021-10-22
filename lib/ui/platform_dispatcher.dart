@@ -569,15 +569,6 @@ class PlatformDispatcher {
   /// platform channel may be used.
   ByteData? getPersistentIsolateData() native 'PlatformConfiguration_getPersistentIsolateData';
 
-  /// Get structured data provided by embedder from dart entrypoint args. it can be passed by
-  /// `FlutterEngineGroup` when creating the engine.
-  Object? getInitialArguments({required List<String> rawArgs}) {
-    if (rawArgs.isEmpty) return null;
-    final int initialArgumentsIndex = rawArgs.indexOf('--initial-arguments') + 1;
-    if (initialArgumentsIndex <= 0 || initialArgumentsIndex == rawArgs.length) return null;
-    return json.decode(rawArgs[initialArgumentsIndex]);
-  }
-
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
   /// [onDrawFrame] callbacks be invoked.
   ///

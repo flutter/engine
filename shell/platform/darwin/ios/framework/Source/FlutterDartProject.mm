@@ -242,12 +242,13 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil {
   return [self runConfigurationForEntrypoint:entrypointOrNil
                                 libraryOrNil:dartLibraryOrNil
-                            initialArguments:nil];
+                              entrypointArgs:nil];
 }
 
 - (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil
-                                          initialArguments:(nullable id)initialArguments {
+                                            entrypointArgs:
+                                                (nullable NSArray<NSString*>*)entrypointArgs {
   auto config = flutter::RunConfiguration::InferFromSettings(_settings);
   if (dartLibraryOrNil && entrypointOrNil) {
     config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
@@ -256,10 +257,13 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   } else if (entrypointOrNil) {
     config.SetEntrypoint(std::string([entrypointOrNil UTF8String]));
   }
-  if (initialArguments) {
-    NSData* data = [[FlutterJSONMessageCodec sharedInstance] encode:initialArguments];
-    std::string cppInitialArguments(reinterpret_cast<const char*>(data.bytes), data.length);
-    config.SetEntrypointArgs({"--initial-arguments", cppInitialArguments});
+
+  if (entrypointArgs.count) {
+    std::vector<std::string> cppEntrypointArgs;
+    for (NSString* arg in entrypointArgs) {
+      cppEntrypointArgs.push_back(std::string([arg UTF8String]));
+    }
+    config.SetEntrypointArgs(cppEntrypointArgs);
   }
 
   return config;

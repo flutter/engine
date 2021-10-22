@@ -197,7 +197,7 @@ FLUTTER_ASSERT_ARC
   FlutterEngine* spawn = [engine spawnWithEntrypoint:nil
                                           libraryURI:nil
                                         initialRoute:nil
-                                    initialArguments:nil];
+                                      entrypointArgs:nil];
   XCTAssertNotNil(spawn);
 }
 

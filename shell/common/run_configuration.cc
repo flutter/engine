@@ -94,7 +94,7 @@ const std::string& RunConfiguration::GetEntrypointLibrary() const {
   return entrypoint_library_;
 }
 
-std::vector<std::string> RunConfiguration::GetEntrypointArgs() const {
+const std::vector<std::string>& RunConfiguration::GetEntrypointArgs() const {
   return entrypoint_args_;
 }
 

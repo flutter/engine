@@ -51,7 +51,7 @@ extern NSString* _Nonnull const FlutterEngineWillDealloc;
 - (nonnull FlutterRestorationPlugin*)restorationPlugin;
 - (void)launchEngine:(nullable NSString*)entrypoint
           libraryURI:(nullable NSString*)libraryOrNil
-    initialArguments:(nullable id)initialArguments;
+      entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
 - (BOOL)createShell:(nullable NSString*)entrypoint
          libraryURI:(nullable NSString*)libraryOrNil
        initialRoute:(nullable NSString*)initialRoute;
@@ -71,7 +71,7 @@ extern NSString* _Nonnull const FlutterEngineWillDealloc;
 - (nonnull FlutterEngine*)spawnWithEntrypoint:(nullable NSString*)entrypoint
                                    libraryURI:(nullable NSString*)libraryURI
                                  initialRoute:(nullable NSString*)initialRoute
-                             initialArguments:(nullable id)initialArguments;
+                               entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
 
 /**
  * Dispatches the given key event data to the framework through the engine.

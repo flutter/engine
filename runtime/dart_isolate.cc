@@ -89,7 +89,7 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
-    std::vector<std::string> dart_entrypoint_args,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configration) const {
   return CreateRunningRootIsolate(
       settings,                                          //
@@ -124,7 +124,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
-    std::vector<std::string> dart_entrypoint_args,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configration,
     const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
@@ -187,14 +187,13 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     settings.root_isolate_create_callback(*isolate.get());
   }
 
-  if (dart_entrypoint_args.empty()) {
-    dart_entrypoint_args = settings.dart_entrypoint_args;
-  }
+  const std::vector<std::string>& args = !dart_entrypoint_args.empty()
+                                             ? dart_entrypoint_args
+                                             : settings.dart_entrypoint_args;
 
   if (!isolate->RunFromLibrary(dart_entrypoint_library,  //
                                dart_entrypoint,          //
-                               dart_entrypoint_args      //
-                               )) {
+                               args)) {
     FML_LOG(ERROR) << "Could not run the run main Dart entrypoint.";
     return {};
   }

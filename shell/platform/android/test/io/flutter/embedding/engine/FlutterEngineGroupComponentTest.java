@@ -24,8 +24,8 @@ import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.plugins.GeneratedPluginRegistrant;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -127,7 +127,7 @@ public class FlutterEngineGroupComponentTest {
             any(Context.class),
             any(DartEntrypoint.class),
             nullable(String.class),
-            nullable(Object.class));
+            nullable(List.class));
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
@@ -143,7 +143,7 @@ public class FlutterEngineGroupComponentTest {
             any(Context.class),
             any(DartEntrypoint.class),
             nullable(String.class),
-            nullable(Object.class)))
+            nullable(List.class)))
         .thenReturn(mock(FlutterEngine.class));
 
     FlutterEngine thirdEngine =
@@ -167,7 +167,7 @@ public class FlutterEngineGroupComponentTest {
             eq("other entrypoint"),
             isNull(String.class),
             any(AssetManager.class),
-            nullable(Object.class));
+            nullable(List.class));
   }
 
   @Test
@@ -191,7 +191,7 @@ public class FlutterEngineGroupComponentTest {
             nullable(String.class),
             nullable(String.class),
             nullable(String.class),
-            nullable(Object.class));
+            nullable(List.class));
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
@@ -199,18 +199,18 @@ public class FlutterEngineGroupComponentTest {
 
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
-        .spawn(nullable(String.class), nullable(String.class), eq("/bar"), nullable(Object.class));
+        .spawn(nullable(String.class), nullable(String.class), eq("/bar"), nullable(List.class));
   }
 
   @Test
-  public void canCreateAndRunWithCustomInitialArguments() {
-    Map<String, String> firstInitialArguments = new HashMap<String, String>();
+  public void canCreateAndRunWithCustomEntrypointArgs() {
+    List<String> firstDartEntrypointArgs = new ArrayList<String>();
     FlutterEngine firstEngine =
         engineGroupUnderTest.createAndRunEngine(
             RuntimeEnvironment.application,
             mock(DartEntrypoint.class),
             null,
-            firstInitialArguments);
+            firstDartEntrypointArgs);
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
         .runBundleAndSnapshotFromLibrary(
@@ -218,7 +218,7 @@ public class FlutterEngineGroupComponentTest {
             nullable(String.class),
             isNull(String.class),
             any(AssetManager.class),
-            eq(firstInitialArguments));
+            eq(firstDartEntrypointArgs));
 
     when(mockflutterJNI.isAttached()).thenReturn(true);
     jniAttached = false;
@@ -231,14 +231,14 @@ public class FlutterEngineGroupComponentTest {
             nullable(String.class),
             nullable(String.class),
             nullable(String.class),
-            nullable(Object.class));
-    Map<String, String> secondInitialArguments = new HashMap<String, String>();
+            nullable(List.class));
+    List<String> secondDartEntrypointArgs = new ArrayList<String>();
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
             RuntimeEnvironment.application,
             mock(DartEntrypoint.class),
             null,
-            secondInitialArguments);
+            secondDartEntrypointArgs);
 
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
@@ -246,6 +246,6 @@ public class FlutterEngineGroupComponentTest {
             nullable(String.class),
             nullable(String.class),
             nullable(String.class),
-            eq(secondInitialArguments));
+            eq(secondDartEntrypointArgs));
   }
 }

@@ -177,7 +177,7 @@ class RunConfiguration {
   /// @return     Arguments passed as a List<String> to Dart's entrypoint
   ///             function.
   ///
-  std::vector<std::string> GetEntrypointArgs() const;
+  const std::vector<std::string>& GetEntrypointArgs() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The engine uses this to take the isolate configuration from

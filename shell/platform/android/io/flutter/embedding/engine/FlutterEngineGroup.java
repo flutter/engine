@@ -123,7 +123,7 @@ public class FlutterEngineGroup {
   /**
    * Creates a {@link io.flutter.embedding.engine.FlutterEngine} in this group and run its {@link
    * io.flutter.embedding.engine.dart.DartExecutor} with the specified {@link DartEntrypoint}, the
-   * specified {@code initialRoute} and the {@code initialArguments}.
+   * specified {@code initialRoute} and the {@code dartEntrypointArgs}.
    *
    * <p>If no prior {@link io.flutter.embedding.engine.FlutterEngine} were created in this group,
    * the initialization cost will be slightly higher than subsequent engines. The very first {@link
@@ -138,7 +138,7 @@ public class FlutterEngineGroup {
       @NonNull Context context,
       @Nullable DartEntrypoint dartEntrypoint,
       @Nullable String initialRoute,
-      @Nullable Object initialArguments) {
+      @Nullable List<String> dartEntrypointArgs) {
     FlutterEngine engine = null;
 
     if (dartEntrypoint == null) {
@@ -150,9 +150,10 @@ public class FlutterEngineGroup {
       if (initialRoute != null) {
         engine.getNavigationChannel().setInitialRoute(initialRoute);
       }
-      engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, initialArguments);
+      engine.getDartExecutor().executeDartEntrypoint(dartEntrypoint, dartEntrypointArgs);
     } else {
-      engine = activeEngines.get(0).spawn(context, dartEntrypoint, initialRoute, initialArguments);
+      engine =
+          activeEngines.get(0).spawn(context, dartEntrypoint, initialRoute, dartEntrypointArgs);
     }
 
     activeEngines.add(engine);

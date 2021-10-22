@@ -78,14 +78,13 @@ FLUTTER_DARWIN_EXPORT
  *   this will default to the same library as the `main()` function in the Dart program.
  * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
  *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
- * @param initialArguments The structured data for Flutter app at startup.It must be serializable
- *   via the FlutterJSONMessageCodec.
+ * @param entrypointArgs Arguments passed as a list of string to Dart's entrypoint function.
  * @see FlutterEngineGroup
  */
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI
                               initialRoute:(nullable NSString*)initialRoute
-                          initialArguments:(nullable id)initialArguments;
+                            entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
 @end
 
 NS_ASSUME_NONNULL_END

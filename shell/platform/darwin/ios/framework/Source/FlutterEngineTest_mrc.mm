@@ -41,7 +41,7 @@ FLUTTER_ASSERT_NOT_ARC
   FlutterEngine* spawn = [engine spawnWithEntrypoint:nil
                                           libraryURI:nil
                                         initialRoute:nil
-                                    initialArguments:nil];
+                                      entrypointArgs:nil];
   XCTAssertNotNil(spawn);
   XCTAssertTrue([engine iosPlatformView] != nullptr);
   XCTAssertTrue([spawn iosPlatformView] != nullptr);

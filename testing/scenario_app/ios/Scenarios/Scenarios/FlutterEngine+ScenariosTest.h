@@ -11,6 +11,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (FlutterEngine*)spawnWithEntrypoint:(nullable NSString*)entrypoint
                            libraryURI:(nullable NSString*)libraryURI
                          initialRoute:(nullable NSString*)initialRoute
-                     initialArguments:(nullable id)initialArguments;
+                       entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
 @end
 NS_ASSUME_NONNULL_END

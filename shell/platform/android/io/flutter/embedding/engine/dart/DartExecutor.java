@@ -16,6 +16,7 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Configures, bootstraps, and starts executing Dart code.
@@ -123,16 +124,15 @@ public class DartExecutor implements BinaryMessenger {
 
   /**
    * Starts executing Dart code based on the given {@code dartEntrypoint} and the {@code
-   * initialArguments}.
+   * dartEntrypointArgs}.
    *
    * <p>See {@link DartEntrypoint} for configuration options.
    *
    * @param dartEntrypoint specifies which Dart function to run, and where to find it
-   * @param initialArguments The structured data for Flutter app at startup.It must be serializable
-   *     via the {@link io.flutter.plugin.common.JSONMessageCodec}.
+   * @param dartEntrypointArgs Arguments passed as a list of string to Dart's entrypoint function.
    */
   public void executeDartEntrypoint(
-      @NonNull DartEntrypoint dartEntrypoint, @Nullable Object initialArguments) {
+      @NonNull DartEntrypoint dartEntrypoint, @Nullable List<String> dartEntrypointArgs) {
     if (isApplicationRunning) {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
@@ -145,7 +145,7 @@ public class DartExecutor implements BinaryMessenger {
         dartEntrypoint.dartEntrypointFunctionName,
         dartEntrypoint.dartEntrypointLibrary,
         assetManager,
-        initialArguments);
+        dartEntrypointArgs);
 
     isApplicationRunning = true;
   }

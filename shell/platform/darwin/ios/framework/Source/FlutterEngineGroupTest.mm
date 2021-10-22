@@ -52,7 +52,7 @@ FLUTTER_ASSERT_ARC
   OCMStub([mockEngine spawnWithEntrypoint:[OCMArg any]
                                libraryURI:[OCMArg any]
                              initialRoute:[OCMArg any]
-                         initialArguments:[OCMArg any]])
+                           entrypointArgs:[OCMArg any]])
       .andReturn(OCMClassMock([FlutterEngine class]));
   FlutterEngine* spawner = [group makeEngineWithEntrypoint:@"firstEntrypoint"
                                                 libraryURI:@"firstLibraryURI"];
@@ -60,7 +60,7 @@ FLUTTER_ASSERT_ARC
   OCMVerify([spawner runWithEntrypoint:@"firstEntrypoint"
                             libraryURI:@"firstLibraryURI"
                           initialRoute:nil
-                      initialArguments:nil]);
+                        entrypointArgs:nil]);
 
   FlutterEngine* spawnee = [group makeEngineWithEntrypoint:@"secondEntrypoint"
                                                 libraryURI:@"secondLibraryURI"];
@@ -68,7 +68,7 @@ FLUTTER_ASSERT_ARC
   OCMVerify([spawner spawnWithEntrypoint:@"secondEntrypoint"
                               libraryURI:@"secondLibraryURI"
                             initialRoute:nil
-                        initialArguments:nil]);
+                          entrypointArgs:nil]);
 }
 
 - (void)testCustomInitialRoute {
@@ -79,25 +79,22 @@ FLUTTER_ASSERT_ARC
   OCMStub([mockEngine spawnWithEntrypoint:[OCMArg any]
                                libraryURI:[OCMArg any]
                              initialRoute:[OCMArg any]
-                         initialArguments:[OCMArg any]])
+                           entrypointArgs:[OCMArg any]])
       .andReturn(OCMClassMock([FlutterEngine class]));
   FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil libraryURI:nil initialRoute:@"foo"];
   XCTAssertNotNil(spawner);
-  OCMVerify([spawner runWithEntrypoint:nil
-                            libraryURI:nil
-                          initialRoute:@"foo"
-                      initialArguments:nil]);
+  OCMVerify([spawner runWithEntrypoint:nil libraryURI:nil initialRoute:@"foo" entrypointArgs:nil]);
 
   FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil libraryURI:nil initialRoute:@"bar"];
   XCTAssertNotNil(spawnee);
   OCMVerify([spawner spawnWithEntrypoint:nil
                               libraryURI:nil
                             initialRoute:@"bar"
-                        initialArguments:nil]);
+                          entrypointArgs:nil]);
 }
 
-- (void)testCustomInitialArguments {
-  NSDictionary* firstInitialArguments = @{@"foo" : @"first"};
+- (void)testCustomEntrypointArgs {
+  NSArray* firstEntrypointArgs = @[ @"foo", @"first" ];
   FlutterEngineGroup* group = OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"foo"
                                                                               project:nil]);
   FlutterEngine* mockEngine = OCMClassMock([FlutterEngine class]);
@@ -105,28 +102,28 @@ FLUTTER_ASSERT_ARC
   OCMStub([mockEngine spawnWithEntrypoint:[OCMArg any]
                                libraryURI:[OCMArg any]
                              initialRoute:[OCMArg any]
-                         initialArguments:[OCMArg any]])
+                           entrypointArgs:[OCMArg any]])
       .andReturn(OCMClassMock([FlutterEngine class]));
   FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil
                                                 libraryURI:nil
                                               initialRoute:nil
-                                          initialArguments:firstInitialArguments];
+                                            entrypointArgs:firstEntrypointArgs];
   XCTAssertNotNil(spawner);
   OCMVerify([spawner runWithEntrypoint:nil
                             libraryURI:nil
                           initialRoute:nil
-                      initialArguments:firstInitialArguments]);
+                        entrypointArgs:firstEntrypointArgs]);
 
-  NSDictionary* secondInitialArguments = @{@"bar" : @"second"};
+  NSArray* secondEntrypointArgs = @[ @"bar", @"second" ];
   FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil
                                                 libraryURI:nil
                                               initialRoute:nil
-                                          initialArguments:secondInitialArguments];
+                                            entrypointArgs:secondEntrypointArgs];
   XCTAssertNotNil(spawnee);
   OCMVerify([spawner spawnWithEntrypoint:nil
                               libraryURI:nil
                             initialRoute:nil
-                        initialArguments:secondInitialArguments]);
+                          entrypointArgs:secondEntrypointArgs]);
 }
 
 @end

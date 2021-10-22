@@ -2840,15 +2840,13 @@ TEST_F(ShellTest, SpawnWithDartEntrypointArgs) {
   auto configuration = RunConfiguration::InferFromSettings(settings);
   ASSERT_TRUE(configuration.IsValid());
   configuration.SetEntrypoint("canRecieveArgumentsWhenEngineRun");
-  const std::vector<std::string> entrypoint_args{
-      "--initial-arguments", "{\"foo\":\"arg1\",\"bar\":\"arg2\"}"};
+  const std::vector<std::string> entrypoint_args{"foo", "bar"};
   configuration.SetEntrypointArgs(entrypoint_args);
 
   auto second_configuration = RunConfiguration::InferFromSettings(settings);
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("canRecieveArgumentsWhenEngineSpawn");
-  const std::vector<std::string> second_entrypoint_args{"--initial-arguments",
-                                                        "[\"arg1\",\"arg2\"]"};
+  const std::vector<std::string> second_entrypoint_args{"arg1", "arg2"};
   second_configuration.SetEntrypointArgs(second_entrypoint_args);
 
   const std::string initial_route("/foo");
@@ -2936,36 +2934,6 @@ TEST_F(ShellTest, SpawnWithDartEntrypointArgs) {
 
         DestroyShell(std::move(spawn));
       });
-
-  DestroyShell(std::move(shell));
-  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-}
-
-TEST_F(ShellTest, CanRecieveEmptyArguments) {
-  auto settings = CreateSettingsForFixture();
-  auto shell = CreateShell(settings);
-  ASSERT_TRUE(ValidateShell(shell.get()));
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  ASSERT_TRUE(configuration.IsValid());
-  configuration.SetEntrypoint("canRecieveEmptyArguments");
-
-  fml::AutoResetWaitableEvent main_latch;
-  std::string last_entry_point;
-
-  AddNativeCallback("NotifyNativeWhenEngineRun",
-                    CREATE_NATIVE_ENTRY(([&](Dart_NativeArguments args) {
-                      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(
-                          Dart_GetNativeArgument(args, 0)));
-                      last_entry_point =
-                          shell->GetEngine()->GetLastEntrypoint();
-                      main_latch.Signal();
-                    })));
-
-  RunEngine(shell.get(), std::move(configuration));
-  main_latch.Wait();
-  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-  ASSERT_EQ("canRecieveEmptyArguments", last_entry_point);
 
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());

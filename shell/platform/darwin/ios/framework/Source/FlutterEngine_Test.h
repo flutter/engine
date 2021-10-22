@@ -21,6 +21,6 @@ class ThreadHost;
 - (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
                            libraryURI:(/*nullable*/ NSString*)libraryURI
                          initialRoute:(/*nullable*/ NSString*)initialRoute
-                     initialArguments:(/*nullable*/ id)initialArguments;
+                       entrypointArgs:(/*nullable*/ NSArray<NSString*>*)entrypointArgs;
 - (const flutter::ThreadHost&)threadHost;
 @end

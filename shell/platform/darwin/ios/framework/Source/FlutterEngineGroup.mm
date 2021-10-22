@@ -44,26 +44,26 @@
   return [self makeEngineWithEntrypoint:entrypoint
                              libraryURI:libraryURI
                            initialRoute:initialRoute
-                       initialArguments:nil];
+                         entrypointArgs:nil];
 }
 
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI
                               initialRoute:(nullable NSString*)initialRoute
-                          initialArguments:(nullable id)initialArguments {
+                            entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs {
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
     engine = [self createEngine];
     [engine runWithEntrypoint:entrypoint
                    libraryURI:libraryURI
                  initialRoute:initialRoute
-             initialArguments:initialArguments];
+               entrypointArgs:entrypointArgs];
   } else {
     FlutterEngine* spawner = (FlutterEngine*)[self.engines[0] pointerValue];
     engine = [spawner spawnWithEntrypoint:entrypoint
                                libraryURI:libraryURI
                              initialRoute:initialRoute
-                         initialArguments:initialArguments];
+                           entrypointArgs:entrypointArgs];
   }
   [_engines addObject:[NSValue valueWithPointer:engine]];
 

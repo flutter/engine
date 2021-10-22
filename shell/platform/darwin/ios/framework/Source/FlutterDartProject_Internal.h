@@ -29,7 +29,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil;
 - (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil
-                                          initialArguments:(nullable id)initialArguments;
+                                            entrypointArgs:
+                                                (nullable NSArray<NSString*>*)entrypointArgs;
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle;
 + (NSString*)domainNetworkPolicy:(NSDictionary*)appTransportSecurity;

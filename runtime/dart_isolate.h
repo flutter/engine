@@ -208,7 +208,7 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::vector<std::string> dart_entrypoint_args,
+      const std::vector<std::string>& dart_entrypoint_args,
       std::unique_ptr<IsolateConfiguration> isolate_configration,
       const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
@@ -239,7 +239,7 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::vector<std::string> dart_entrypoint_args,
+      const std::vector<std::string>& dart_entrypoint_args,
       std::unique_ptr<IsolateConfiguration> isolate_configration) const;
 
   // |UIDartState|

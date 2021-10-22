@@ -357,7 +357,7 @@ bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
-    std::vector<std::string> dart_entrypoint_args,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration) {
   if (root_isolate_.lock()) {
     FML_LOG(ERROR) << "Root isolate was already running.";

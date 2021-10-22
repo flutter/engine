@@ -55,8 +55,6 @@ abstract class PlatformDispatcher {
 
   ByteData? getPersistentIsolateData() => null;
 
-  Object? getInitialArguments({required List<String> rawArgs}) => null;
-
   void scheduleFrame();
 
   void render(Scene scene, [FlutterView view]);

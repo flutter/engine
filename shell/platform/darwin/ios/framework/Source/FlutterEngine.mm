@@ -549,11 +549,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)launchEngine:(NSString*)entrypoint
           libraryURI:(NSString*)libraryOrNil
-    initialArguments:(id)initialArguments {
+      entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
   // Launch the Dart application with the inferred run configuration.
   self.shell.RunEngine([_dartProject.get() runConfigurationForEntrypoint:entrypoint
                                                             libraryOrNil:libraryOrNil
-                                                        initialArguments:initialArguments]);
+                                                          entrypointArgs:entrypointArgs]);
 }
 
 - (void)setupShell:(std::unique_ptr<flutter::Shell>)shell
@@ -708,15 +708,15 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return [self runWithEntrypoint:entrypoint
                       libraryURI:libraryURI
                     initialRoute:initialRoute
-                initialArguments:nil];
+                  entrypointArgs:nil];
 }
 
 - (BOOL)runWithEntrypoint:(NSString*)entrypoint
                libraryURI:(NSString*)libraryURI
              initialRoute:(NSString*)initialRoute
-         initialArguments:(id)initialArguments {
+           entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
   if ([self createShell:entrypoint libraryURI:libraryURI initialRoute:initialRoute]) {
-    [self launchEngine:entrypoint libraryURI:libraryURI initialArguments:initialArguments];
+    [self launchEngine:entrypoint libraryURI:libraryURI entrypointArgs:entrypointArgs];
   }
 
   return _shell != nullptr;
@@ -1013,7 +1013,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
                            libraryURI:(/*nullable*/ NSString*)libraryURI
                          initialRoute:(/*nullable*/ NSString*)initialRoute
-                     initialArguments:(/*nullable*/ id)initialArguments {
+                       entrypointArgs:(/*nullable*/ NSArray<NSString*>*)entrypointArgs {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
                                                       project:_dartProject.get()
@@ -1021,7 +1021,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::RunConfiguration configuration =
       [_dartProject.get() runConfigurationForEntrypoint:entrypoint
                                            libraryOrNil:libraryURI
-                                       initialArguments:initialArguments];
+                                         entrypointArgs:entrypointArgs];
 
   fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
