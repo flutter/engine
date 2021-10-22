@@ -19,9 +19,12 @@ namespace flutter {
 
 class RasterCacheResult {
  public:
-  RasterCacheResult(sk_sp<SkImage> image, const SkRect& logical_rect);
+  RasterCacheResult(sk_sp<SkImage> image,
+                    const SkRect& logical_rect,
+                    const char* typ = nullptr,
+                    int64_t id = 0);
 
-  virtual ~RasterCacheResult() = default;
+  virtual ~RasterCacheResult();
 
   virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
@@ -36,6 +39,8 @@ class RasterCacheResult {
  private:
   sk_sp<SkImage> image_;
   SkRect logical_rect_;
+  const char* type_;
+  const int64_t id_;
 };
 
 struct PrerollContext;
