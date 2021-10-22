@@ -152,7 +152,7 @@ class MessageLoopTaskQueues
 
   fml::TimePoint GetNextWakeTimeUnlocked(TaskQueueId queue_id) const;
 
-  static std::mutex creation_mutex_;
+  static std::mutex* creation_mutex_;
   static fml::RefPtr<MessageLoopTaskQueues> instance_;
 
   mutable std::mutex queue_mutex_;

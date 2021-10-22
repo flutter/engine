@@ -16,7 +16,7 @@
 
 namespace fml {
 
-std::mutex MessageLoopTaskQueues::creation_mutex_;
+std::mutex* MessageLoopTaskQueues::creation_mutex_ = new std::mutex();
 
 const size_t TaskQueueId::kUnmerged = ULONG_MAX;
 
@@ -48,7 +48,7 @@ TaskQueueEntry::TaskQueueEntry(TaskQueueId created_for_arg)
 }
 
 fml::RefPtr<MessageLoopTaskQueues> MessageLoopTaskQueues::GetInstance() {
-  std::scoped_lock creation(creation_mutex_);
+  std::scoped_lock creation(*creation_mutex_);
   if (!instance_) {
     instance_ = fml::MakeRefCounted<MessageLoopTaskQueues>();
     tls_task_source_grade.reset(
@@ -94,7 +94,7 @@ void MessageLoopTaskQueues::DisposeTasks(TaskQueueId queue_id) {
 }
 
 TaskSourceGrade MessageLoopTaskQueues::GetCurrentTaskSourceGrade() {
-  std::scoped_lock creation(creation_mutex_);
+  std::scoped_lock creation(*creation_mutex_);
   return tls_task_source_grade.get()->task_source_grade;
 }
 
@@ -145,7 +145,7 @@ fml::closure MessageLoopTaskQueues::GetNextTaskToRun(TaskQueueId queue_id,
   queue_entries_.at(top.task_queue_id)
       ->task_source->PopTask(top.task.GetTaskSourceGrade());
   {
-    std::scoped_lock creation(creation_mutex_);
+    std::scoped_lock creation(*creation_mutex_);
     const auto task_source_grade = top.task.GetTaskSourceGrade();
     tls_task_source_grade.reset(new TaskSourceGradeHolder{task_source_grade});
   }
