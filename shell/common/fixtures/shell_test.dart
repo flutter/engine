@@ -259,6 +259,5 @@ void canRecieveArgumentsWhenEngineRun(List<String> args) {
 
 @pragma('vm:entry-point')
 void canRecieveArgumentsWhenEngineSpawn(List<String> args) {
-
   notifyNativeWhenEngineSpawn(args.length == 2 && args[0] == 'arg1' && args[1] == 'arg2');
 }
