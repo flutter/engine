@@ -70,6 +70,9 @@ FLUTTER_DARWIN_EXPORT
                         bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 
 /** Initializes this FlutterViewController with the specified `FlutterEngineGroup`.
+ *  FlutterViewController will create an engine with engineGroup and use this engine do
+ *  the same thing like initWithEngine:nibName:bundle: API,and when this `FlutterViewController`
+ *  pop,the engine will be gone.
  *
  * @param engineGroup The `FlutterEngineGroup` for this view controller to create `FlutterEngine`
  * @param nibName The NIB name to initialize this UIViewController with.
@@ -78,7 +81,7 @@ FLUTTER_DARWIN_EXPORT
  *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
  *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
  *   method is not tree-shaken by the Dart compiler.
- * @param libraryURI The URI of the Dart library which contains the entrypoint method.  IF nil,
+ * @param libraryURI The URI of the Dart library which contains the entrypoint method.  If nil,
  *   this will default to the same library as the `main()` function in the Dart program.
  * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
  *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
