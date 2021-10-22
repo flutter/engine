@@ -1875,6 +1875,9 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 
 // The UIView to add FlutterTextInputViews to.
 - (UIView*)hostView {
+  NSAssert(self.viewController.view != nullptr,
+           @"The application must have a HostView since the keyboard client "
+           @"must be part of the responder chain to function");
   return self.viewController.view;
 }
 
@@ -1949,8 +1952,6 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
     [_inputHider addSubview:inputView];
   }
   UIView* parentView = self.hostView;
-  NSAssert(parentView != nullptr, @"The application must have a HostView since the keyboard client "
-                                  @"must be part of the responder chain to function");
   if (_inputHider.superview != parentView) {
     [parentView addSubview:_inputHider];
   }

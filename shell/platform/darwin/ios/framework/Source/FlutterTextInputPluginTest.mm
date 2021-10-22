@@ -9,8 +9,13 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
 FLUTTER_ASSERT_ARC
+
+@interface FlutterEngine ()
+- (nonnull FlutterTextInputPlugin*)textInputPlugin;
+@end
 
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
@@ -1374,9 +1379,16 @@ FLUTTER_ASSERT_ARC
 - (void)testFlutterTextInputPluginHostViewNilCrash {
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
   myInputPlugin.viewController = nil;
-  XCTAssertNil([myInputPlugin hostView]);
-  XCTAssertThrows([myInputPlugin addToInputParentViewIfNeeded:nil],
-                  @"Throws exception if host view is nil");
+  XCTAssertThrows([myInputPlugin hostView], @"Throws exception if host view is nil");
+}
+
+- (void)testFlutterTextInputPluginHostViewNotNil {
+  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
+  [flutterEngine runWithEntrypoint:nil];
+  flutterEngine.viewController = flutterViewController;
+  XCTAssertNotNil(flutterEngine.textInputPlugin.viewController);
+  XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
 }
 
 @end
