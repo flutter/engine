@@ -173,6 +173,7 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   window_.KeyUp({this, &FlutterWindowWinUWP::OnKeyUp});
   window_.KeyDown({this, &FlutterWindowWinUWP::OnKeyDown});
   window_.CharacterReceived({this, &FlutterWindowWinUWP::OnCharacterReceived});
+  window_.VisibilityChanged({this, &FlutterWindowWinUWP::OnVisibilityChanged});
 
   auto display = winrt::Windows::Graphics::Display::DisplayInformation::
       GetForCurrentView();
@@ -184,13 +185,7 @@ float FlutterWindowWinUWP::GetDpiScale() {
 }
 
 bool FlutterWindowWinUWP::IsVisible() {
-  // This is called from raster thread as an optimization to not wait for vsync
-  // if window is invisible. However CoreWindow is not agile so we can't call
-  // Visible() from raster thread. For now assume window is always visible.
-  // Possible solution would be to register a VisibilityChanged handler and
-  // store the visiblity state in a variable. TODO(knopp)
-  // https://github.com/flutter/flutter/issues/87870
-  return true;
+  return is_visible_.load();
 }
 
 void FlutterWindowWinUWP::OnDpiChanged(
@@ -367,6 +362,12 @@ void FlutterWindowWinUWP::OnColorValuesChanged(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::Foundation::IInspectable const&) {
   binding_handler_delegate_->OnPlatformBrightnessChanged();
+}
+
+void FlutterWindowWinUWP::OnVisibilityChanged(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::UI::Core::VisibilityChangedEventArgs const& args) {
+  is_visible_.store(args.Visible());
 }
 
 bool FlutterWindowWinUWP::OnBitmapSurfaceUpdated(const void* allocation,

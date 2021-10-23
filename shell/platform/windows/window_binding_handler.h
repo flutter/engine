@@ -69,6 +69,9 @@ class WindowBindingHandler {
   virtual float GetDpiScale() = 0;
 
   // Returns whether the PlatformWindow is currently visible.
+  //
+  // This is called from raster thread as an optimization to not wait for vsync
+  // if window is invisible.
   virtual bool IsVisible() = 0;
 
   // Returns the bounds of the backing window in physical pixels.

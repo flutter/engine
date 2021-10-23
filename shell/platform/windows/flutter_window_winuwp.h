@@ -122,6 +122,11 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   void OnColorValuesChanged(winrt::Windows::Foundation::IInspectable const&,
                             winrt::Windows::Foundation::IInspectable const&);
 
+  // Saves current visibility to send |WindowBindingHandlerDelegate|.
+  void OnVisibilityChanged(
+      winrt::Windows::Foundation::IInspectable const&,
+      winrt::Windows::UI::Core::VisibilityChangedEventArgs const& args);
+
   // Converts from logical point to physical X value.
   double GetPosX(winrt::Windows::UI::Core::PointerEventArgs const& args);
 
@@ -163,6 +168,9 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
 
   // UISettings for observing the color change.
   winrt::Windows::UI::ViewManagement::UISettings ui_settings_;
+
+  // Whether Window is visible.
+  std::atomic_bool is_visible_{true};
 
   // GamepadCursorWinUWP object used to manage an emulated cursor visual driven
   // by gamepad.
