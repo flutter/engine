@@ -124,10 +124,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
-- (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
-           insetBottomEndValue:(CGFloat)insetBottomEndValue
-                      duration:(NSTimeInterval)duration
-                         curve:(UIViewAnimationCurve)curve;
+- (void)keyboardWillChangeFrame:(NSNotification*)notification;
 - (void)startKeyboardAnimationLink;
 @end
 
@@ -156,16 +153,27 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.messageSent = nil;
 }
 
-- (void)testStartKeyboardAnimationWillStartKeyboardDisplaylink {
+- (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
 
-  UIViewAnimationCurve curve = (UIViewAnimationCurve)7;
+  CGFloat width = UIScreen.mainScreen.bounds.size.width;
+  CGRect keyboardFrame = CGRectMake(0, 100, width, 400);
+  BOOL isLocal = YES;
+  NSNotification* notification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
+                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal],
+                    @"UIKeyboardAnimationCurveUserInfoKey" : [NSNumber numberWithInteger:7]
+                  }];
   id viewControllerMock = OCMPartialMock(viewController);
-  [viewController startKeyBoardAnimation:0 insetBottomEndValue:100 duration:0.25 curve:curve];
+  [viewControllerMock keyboardWillChangeFrame:notification];
   OCMVerify([viewControllerMock startKeyboardAnimationLink]);
 }
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
