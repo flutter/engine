@@ -169,7 +169,7 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // UISettings for observing the color change.
   winrt::Windows::UI::ViewManagement::UISettings ui_settings_;
 
-  // Whether Window is visible.
+  // Whether window is visible.
   std::atomic_bool is_visible_{true};
 
   // GamepadCursorWinUWP object used to manage an emulated cursor visual driven
