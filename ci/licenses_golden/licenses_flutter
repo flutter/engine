@@ -2285,9 +2285,9 @@ FILE: ../../../flutter/shell/platform/windows/public/flutter_windows.h
 FILE: ../../../flutter/shell/platform/windows/sequential_id_generator.cc
 FILE: ../../../flutter/shell/platform/windows/sequential_id_generator.h
 FILE: ../../../flutter/shell/platform/windows/sequential_id_generator_unittests.cc
-FILE: ../../../flutter/shell/platform/windows/settings_plugin_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/settings_plugin.cc
 FILE: ../../../flutter/shell/platform/windows/settings_plugin.h
+FILE: ../../../flutter/shell/platform/windows/settings_plugin_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/settings_plugin_win32.cc
 FILE: ../../../flutter/shell/platform/windows/settings_plugin_win32.h
 FILE: ../../../flutter/shell/platform/windows/settings_plugin_winuwp.cc
