@@ -12,6 +12,7 @@
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
@@ -21,8 +22,7 @@ class RasterCacheResult {
  public:
   RasterCacheResult(sk_sp<SkImage> image,
                     const SkRect& logical_rect,
-                    const char* typ = nullptr,
-                    int64_t id = 0);
+                    const char* type);
 
   virtual ~RasterCacheResult();
 
@@ -39,8 +39,7 @@ class RasterCacheResult {
  private:
   sk_sp<SkImage> image_;
   SkRect logical_rect_;
-  const char* type_;
-  const int64_t id_;
+  fml::tracing::TraceFlow flow_;
 };
 
 struct PrerollContext;
