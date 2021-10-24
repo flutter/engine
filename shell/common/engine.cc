@@ -200,6 +200,7 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
   last_entry_point_ = configuration.GetEntrypoint();
   last_entry_point_library_ = configuration.GetEntrypointLibrary();
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  // This is only used to support restart.
   last_entry_point_args_ = configuration.GetEntrypointArgs();
 #endif
 

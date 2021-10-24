@@ -836,7 +836,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   //----------------------------------------------------------------------------
   /// @brief      Get the last Entrypoint Arguments that was used in the
-  ///             RunConfiguration when |Engine::Run| was called.
+  ///             RunConfiguration when |Engine::Run| was called.This is only
+  ///             valid in debug mode.
   ///
   const std::vector<std::string>& GetLastEntrypointArgs() const;
 
