@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/windows/settings_plugin.h"
 
 #include <memory>
+#include <optional>
 
 #include "third_party/cppwinrt/generated/winrt/Windows.Foundation.h"
 #include "third_party/cppwinrt/generated/winrt/Windows.UI.ViewManagement.h"
@@ -44,9 +45,7 @@ class SettingsPluginWinUwp : public SettingsPlugin {
 
   winrt::Windows::UI::ViewManagement::UISettings ui_settings_;
 
-  std::unique_ptr<winrt::Windows::UI::ViewManagement::UISettings::
-                      ColorValuesChanged_revoker>
-      color_values_changed_{nullptr};
+  std::optional<winrt::event_token> color_values_changed_ = std::nullopt;
 
   SettingsPluginWinUwp(const SettingsPluginWinUwp&) = delete;
   SettingsPluginWinUwp& operator=(const SettingsPluginWinUwp&) = delete;

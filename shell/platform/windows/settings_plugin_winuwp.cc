@@ -26,16 +26,15 @@ SettingsPluginWinUwp::~SettingsPluginWinUwp() {
 }
 
 void SettingsPluginWinUwp::StartWatching() {
-  color_values_changed_ =
-      std::make_unique<winrt::Windows::UI::ViewManagement::UISettings::
-                           ColorValuesChanged_revoker>(
-          ui_settings_.ColorValuesChanged(
-              winrt::auto_revoke,
-              {this, &SettingsPluginWinUwp::OnColorValuesChanged}));
+  color_values_changed_ = ui_settings_.ColorValuesChanged(
+      {this, &SettingsPluginWinUwp::OnColorValuesChanged});
 }
 
 void SettingsPluginWinUwp::StopWatching() {
-  color_values_changed_ = nullptr;
+  if (color_values_changed_.has_value()) {
+    ui_settings_.ColorValuesChanged(color_values_changed_.value());
+    color_values_changed_ = std::nullopt;
+  }
 }
 
 bool SettingsPluginWinUwp::GetAlwaysUse24HourFormat() {
