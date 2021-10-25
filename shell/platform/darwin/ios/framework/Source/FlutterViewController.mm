@@ -69,9 +69,7 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
-// Keyboard animation properties
 @property(nonatomic, strong) CADisplayLink* keyboardAnimationLink;
-@property(nonatomic, strong) UIView* keyboardAnimationView;
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -117,6 +115,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIPointerInteraction> _pointerInteraction API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
+  fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
 }
 
@@ -544,6 +543,10 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
     return nil;
   }
   return _splashScreenView.get();
+}
+
+- (UIView*)keyboardAnimationView {
+  return _keyboardAnimationView.get();
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1146,25 +1149,25 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                          curve:(UIViewAnimationCurve)curve {
   // When call this method first time,
   // initialize the keyboardAnimationView to get animation interpolation during animation
-  if (self.keyboardAnimationView == nil) {
-    self.keyboardAnimationView = [[UIView alloc] init];
-    [self.view addSubview:self.keyboardAnimationView];
+  if ([self keyboardAnimationView] == nil) {
+    _keyboardAnimationView.reset([[UIView alloc] init]);
+    [self.view addSubview:[self keyboardAnimationView]];
   }
 
   // Stop animation when start another animation
-  [self.keyboardAnimationView.layer removeAllAnimations];
+  [[self keyboardAnimationView].layer removeAllAnimations];
 
   if (self.keyboardAnimationLink == nil) {
     [self startKeyboardAnimationLink];
   }
 
   // Set begin value
-  self.keyboardAnimationView.frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
+  [self keyboardAnimationView].frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
   [UIView setAnimationCurve:curve];
   [UIView animateWithDuration:duration
       animations:^{
         // Set end value
-        self.keyboardAnimationView.frame = CGRectMake(0, insetBottomEndValue, 0, 0);
+        [self keyboardAnimationView].frame = CGRectMake(0, insetBottomEndValue, 0, 0);
       }
       completion:^(BOOL finished) {
         if (finished) {
@@ -1186,8 +1189,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)onDisplayLink {
-  if (self.keyboardAnimationView.layer.presentationLayer) {
-    CGFloat value = self.keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+  if ([self keyboardAnimationView].layer.presentationLayer) {
+    CGFloat value = [self keyboardAnimationView].layer.presentationLayer.frame.origin.y;
     _viewportMetrics.physical_view_inset_bottom = value;
     [self updateViewportMetrics];
   }
