@@ -462,6 +462,13 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onPlatformBrightnessChanged = callback;
   }
 
+  /// A property that indicates this device support capture text from camera (OCR) or not
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// If the device doesn't support OCR ,[captureTextFromCameraEnabled] defaults to false
+  bool get captureTextFromCameraEnabled => platformDispatcher.captureTextFromCameraEnabled;
+
   /// A callback that is invoked to notify the window that it is an appropriate
   /// time to provide a scene using the [SceneBuilder] API and the [render]
   /// method.

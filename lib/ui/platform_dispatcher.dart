@@ -809,6 +809,11 @@ class PlatformDispatcher {
     _onPlatformBrightnessChangedZone = Zone.current;
   }
 
+  /// Indicates this device supports capture text from camera (OCR) or not
+  ///
+  /// Used in [EditableTextState], and decide show "scan" toolbar or not
+  bool get captureTextFromCameraEnabled => configuration.captureTextFromCameraEnabled;
+
   // Called from the engine, via hooks.dart
   void _updateUserSettingsData(String jsonData) {
     final Map<String, dynamic> data = json.decode(jsonData) as Map<String, dynamic>;
@@ -820,6 +825,10 @@ class PlatformDispatcher {
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat'] as bool;
     final Brightness platformBrightness =
     data['platformBrightness'] as String == 'dark' ? Brightness.dark : Brightness.light;
+    bool captureTextFromCameraEnabled = false;
+    if(data['captureTextFromCameraEnabled'] != null){
+      captureTextFromCameraEnabled = data['captureTextFromCameraEnabled'] as bool;
+    }
     final PlatformConfiguration previousConfiguration = configuration;
     final bool platformBrightnessChanged =
         previousConfiguration.platformBrightness != platformBrightness;
@@ -833,6 +842,7 @@ class PlatformDispatcher {
       textScaleFactor: textScaleFactor,
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
+      captureTextFromCameraEnabled: captureTextFromCameraEnabled,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
@@ -972,6 +982,7 @@ class PlatformConfiguration {
     this.textScaleFactor = 1.0,
     this.locales = const <Locale>[],
     this.defaultRouteName,
+    this.captureTextFromCameraEnabled = false,
   });
 
   /// Copy a [PlatformConfiguration] with some fields replaced.
@@ -983,6 +994,7 @@ class PlatformConfiguration {
     double? textScaleFactor,
     List<Locale>? locales,
     String? defaultRouteName,
+    bool? captureTextFromCameraEnabled
   }) {
     return PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -992,6 +1004,7 @@ class PlatformConfiguration {
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
+      captureTextFromCameraEnabled: captureTextFromCameraEnabled ?? this.captureTextFromCameraEnabled
     );
   }
 
@@ -1020,6 +1033,9 @@ class PlatformConfiguration {
   /// The route or path that the embedder requested when the application was
   /// launched.
   final String? defaultRouteName;
+
+  /// Indicates this device supports capture text from camera or not
+  final bool captureTextFromCameraEnabled;
 }
 
 /// An immutable view configuration.
