@@ -25,8 +25,7 @@ SettingsPluginWin32::SettingsPluginWin32(BinaryMessenger* messenger,
                                          TaskRunner* task_runner)
     : SettingsPlugin(messenger, task_runner) {
   RegOpenKeyEx(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
-               RRF_RT_REG_DWORD, KEY_READ | KEY_NOTIFY,
-               &preferred_brightness_reg_hkey_);
+               RRF_RT_REG_DWORD, KEY_NOTIFY, &preferred_brightness_reg_hkey_);
 }
 
 SettingsPluginWin32::~SettingsPluginWin32() {
@@ -35,7 +34,9 @@ SettingsPluginWin32::~SettingsPluginWin32() {
 }
 
 void SettingsPluginWin32::StartWatching() {
-  WatchPreferredBrightnessChanged();
+  if (preferred_brightness_reg_hkey_ != NULL) {
+    WatchPreferredBrightnessChanged();
+  }
 }
 
 void SettingsPluginWin32::StopWatching() {
@@ -54,7 +55,7 @@ SettingsPlugin::PlatformBrightness
 SettingsPluginWin32::GetPreferredBrightness() {
   DWORD use_light_theme;
   DWORD use_light_theme_size = sizeof(use_light_theme);
-  LONG result = RegGetValue(preferred_brightness_reg_hkey_, NULL,
+  LONG result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
                             kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD,
                             nullptr, &use_light_theme, &use_light_theme_size);
 
