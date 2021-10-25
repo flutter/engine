@@ -24,10 +24,6 @@ RasterCacheResult::RasterCacheResult(sk_sp<SkImage> image,
                                      const char* type)
     : image_(std::move(image)), logical_rect_(logical_rect), flow_(type) {}
 
-RasterCacheResult::~RasterCacheResult() {
-  flow_.End();
-}
-
 void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
   TRACE_EVENT0("flutter", "RasterCacheResult::draw");
   SkAutoCanvasRestore auto_restore(&canvas, true);

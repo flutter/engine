@@ -24,7 +24,7 @@ class RasterCacheResult {
                     const SkRect& logical_rect,
                     const char* type);
 
-  virtual ~RasterCacheResult();
+  virtual ~RasterCacheResult() = default;
 
   virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
