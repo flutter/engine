@@ -1330,13 +1330,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
     @"platformContrast" : [self contrastMode],
-    @"captureTextFromCameraEnabled":@([self captureTextFromCameraEnabled]),
+    @"captureTextFromCameraEnabled" : @([self captureTextFromCameraEnabled]),
   }];
 }
 
-- (BOOL)captureTextFromCameraEnabled{
-    ///TODO
-    return YES;
+- (BOOL)captureTextFromCameraEnabled {
+  /// TODO
+  return YES;
 }
 
 - (CGFloat)textScaleFactor {
