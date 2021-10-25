@@ -167,7 +167,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @Nullable HandlerInfo handlerInfo, @Nullable ByteBuffer message, final int replyId) {
     // Called from any thread.
     if (handlerInfo != null) {
-      Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
       try {
         Log.v(TAG, "Deferring to registered handler to process message.");
         handlerInfo.handler.onMessage(message, new Reply(flutterJNI, replyId));
@@ -176,8 +175,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         flutterJNI.invokePlatformMessageEmptyResponseCallback(replyId);
       } catch (Error err) {
         handleError(err);
-      } finally {
-        Trace.endSection();
       }
     } else {
       Log.v(TAG, "No registered handler for message. Responding to Dart with empty reply message.");
@@ -198,6 +195,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
     Runnable myRunnable =
         () -> {
+          Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
           try {
             invokeHandler(handlerInfo, message, replyId);
             if (message != null && message.isDirect()) {
@@ -208,6 +206,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
           } finally {
             // This is deleting the data underneath the message object.
             flutterJNI.cleanupMessageData(messageData);
+            Trace.endSection();
           }
         };
     @NonNull
