@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_DIFF_CONTEXT_H_
 #define FLUTTER_FLOW_DIFF_CONTEXT_H_
 
+#include <functional>
 #include <map>
 #include <optional>
 #include <vector>
