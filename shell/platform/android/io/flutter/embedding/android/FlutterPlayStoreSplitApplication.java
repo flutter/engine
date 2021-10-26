@@ -9,8 +9,8 @@ import com.google.android.play.core.splitcompat.SplitCompatApplication;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager;
 
-// TODO(garyq): Add a note about deferred components automatically adding this to manifest via manifest
-// variable injection once it is implemented.
+// TODO(garyq): Add a note about deferred components automatically adding this to manifest via
+// manifest variable injection once it is implemented.
 /**
  * Flutter's extension of {@link SplitCompatApplication} that injects a {@link
  * PlayStoreDeferredComponentManager} with {@link FlutterInjector} to enable Split AOT Flutter apps.
@@ -30,9 +30,9 @@ import io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponent
  * }</pre>
  *
  * This class is meant to be used with the Google Play store. Custom non-play store applications do
- * not need to extend {@link com.google.android.play.core.splitcompat.SplitCompatApplication} and 
- * should inject a custom {@link io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager}
- * implementation like so:
+ * not need to extend {@link com.google.android.play.core.splitcompat.SplitCompatApplication} and
+ * should inject a custom {@link
+ * io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager} implementation like so:
  *
  * <pre>{@code
  * FlutterInjector.setInstance(
