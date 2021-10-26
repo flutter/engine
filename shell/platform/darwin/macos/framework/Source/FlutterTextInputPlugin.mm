@@ -534,8 +534,11 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
     size_t base = std::clamp(location, 0L, textLength);
     size_t extent = std::clamp(location + signedLength, 0L, textLength);
+
     _activeModel->SetSelection(flutter::TextRange(base, extent));
   }
+
+  flutter::TextRange oldSelection = _activeModel->selection();
 
   NSString* textBeforeChange = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
   _activeModel->AddText([string UTF8String]);
@@ -544,10 +547,12 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     _activeModel->EndComposing();
   }
   if (_enableDeltaModel) {
-    NSString* text = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
+    NSRange replacedRange = range.location == NSNotFound
+                                ? NSMakeRange(oldSelection.base(), oldSelection.length())
+                                : range;
     [self updateEditStateWithDelta:[FlutterTextEditingDelta textEditingDelta:textBeforeChange
-                                                               replacedRange:range
-                                                                 updatedText:text]];
+                                                               replacedRange:replacedRange
+                                                                 updatedText:string]];
   } else {
     [self updateEditState];
   }
