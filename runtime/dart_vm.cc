@@ -215,11 +215,21 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
   // the VM enables the same by default. In either case, we have some profiling
   // flags.
   if (enable_profiling) {
-    return {// This is the default. But just be explicit.
-            "--profiler",
-            // This instructs the profiler to walk C++ frames, and to include
-            // them in the profile.
-            "--profile-vm"};
+    return {
+      // This is the default. But just be explicit.
+      "--profiler",
+          // This instructs the profiler to walk C++ frames, and to include
+          // them in the profile.
+          "--profile-vm",
+#if OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+          // Set the profiler interrupt period to 500Hz instead of the
+          // default 1000Hz on 32-bit iOS devices to reduce average and worst
+          // case frame build times.
+          //
+          // See https://github.com/flutter/flutter/issues/92421.
+          "--profile_period=2000",
+#endif  // OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+    };
   } else {
     return {"--no-profiler"};
   }
