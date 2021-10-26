@@ -277,6 +277,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                object:nil];
 
   [center addObserver:self
+             selector:@selector(applicationWillTerminate:)
+                 name:UIApplicationWillTerminateNotification
+               object:nil];
+
+  [center addObserver:self
              selector:@selector(applicationDidEnterBackground:)
                  name:UIApplicationDidEnterBackgroundNotification
                object:nil];
@@ -788,6 +793,11 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
+}
+
+- (void)applicationWillTerminate:(NSNotification*)notification {
+  [self goToApplicationLifecycle:@"AppLifecycleState.detached"];
+  [self.engine destroyContext];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
