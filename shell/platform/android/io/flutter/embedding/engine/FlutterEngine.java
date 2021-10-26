@@ -9,6 +9,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -77,7 +78,7 @@ import java.util.Set;
 public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
-  @NonNull private final FlutterJNI flutterJNI;
+  @NonNull @VisibleForTesting /*package*/ final FlutterJNI flutterJNI;
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final DartExecutor dartExecutor;
   @NonNull private final FlutterEngineConnectionRegistry pluginRegistry;
@@ -288,7 +289,7 @@ public class FlutterEngine {
     FlutterInjector injector = FlutterInjector.instance();
 
     if (flutterJNI == null) {
-      flutterJNI = injector.getFlutterJNIFactory().provideFlutterJNI();
+      flutterJNI = injector.flutterLoader().getFlutterJNI();
     }
     this.flutterJNI = flutterJNI;
 

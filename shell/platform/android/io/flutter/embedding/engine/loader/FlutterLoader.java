@@ -108,6 +108,12 @@ public class FlutterLoader {
 
   @Nullable Future<InitResult> initResultFuture;
 
+  /** Returns the {@link io.flutter.embedding.engine.FlutterJNI} */
+  @NonNull
+  public FlutterJNI getFlutterJNI() {
+    return flutterJNI;
+  }
+
   /**
    * Starts initialization of the native system.
    *

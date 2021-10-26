@@ -303,4 +303,21 @@ public class FlutterEngineTest {
 
     assertTrue(engineUnderTest.getDartExecutor().isExecutingDart());
   }
+
+  @Test
+  public void itShouldUsesFlutterJNIInFlutterInjectorByDefault() throws NameNotFoundException {
+    Context context = mock(Context.class);
+    Context packageContext = mock(Context.class);
+    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+
+    FlutterInjector injector = FlutterInjector.instance();
+    FlutterEngine engineUnderTest =
+        new FlutterEngine(
+            context,
+            /*flutterLoader=*/ null,
+            /*flutterJNI=*/ null,
+            /*dartVmArgs=*/ new String[] {},
+            /*automaticallyRegisterPlugins=*/ false);
+    assertEquals(engineUnderTest.flutterJNI, injector.flutterLoader().getFlutterJNI());
+  }
 }
