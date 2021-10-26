@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_PAINTING_FRAGMENT_SHADER_BUILDER_H_
-#define FLUTTER_LIB_UI_PAINTING_FRAGMENT_SHADER_BUILDER_H_
+#ifndef FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_
+#define FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_
 
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/fragment_shader.h"
@@ -20,27 +20,26 @@ class DartLibraryNatives;
 
 namespace flutter {
 
-class FragmentShaderBuilder
-    : public RefCountedDartWrappable<FragmentShaderBuilder> {
+class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_MAKE_REF_COUNTED(FragmentShaderBuilder);
+  FML_FRIEND_MAKE_REF_COUNTED(FragmentProgram);
 
  public:
-  ~FragmentShaderBuilder() override;
-  static fml::RefPtr<FragmentShaderBuilder> Create();
+  ~FragmentProgram() override;
+  static fml::RefPtr<FragmentProgram> Create();
 
   void init(std::string sksl, bool debugPrintSksl);
 
-  fml::RefPtr<FragmentShader> build(Dart_Handle shader,
-                                    const tonic::Float32List& uniforms);
+  fml::RefPtr<FragmentShader> shader(Dart_Handle shader,
+                                     const tonic::Float32List& uniforms);
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  FragmentShaderBuilder();
+  FragmentProgram();
   sk_sp<SkRuntimeEffect> runtime_effect_;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_LIB_UI_PAINTING_FRAGMENT_SHADER_BUILDER_H_
+#endif  // FLUTTER_LIB_UI_PAINTING_FRAGMENT_PROGRAM_H_

@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "flutter/lib/ui/painting/fragment_shader_builder.h"
+#include "flutter/lib/ui/painting/fragment_program.h"
 
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -19,26 +19,25 @@ using tonic::ToDart;
 
 namespace flutter {
 
-static void FragmentShaderBuilder_constructor(Dart_NativeArguments args) {
-  DartCallConstructor(&FragmentShaderBuilder::Create, args);
+static void FragmentProgram_constructor(Dart_NativeArguments args) {
+  DartCallConstructor(&FragmentProgram::Create, args);
 }
 
-IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentShaderBuilder);
+IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentProgram);
 
-#define FOR_EACH_BINDING(V)      \
-  V(FragmentShaderBuilder, init) \
-  V(FragmentShaderBuilder, build)
+#define FOR_EACH_BINDING(V) \
+  V(FragmentProgram, init)  \
+  V(FragmentProgram, shader)
 
 FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
 
-void FragmentShaderBuilder::RegisterNatives(
-    tonic::DartLibraryNatives* natives) {
-  natives->Register({{"FragmentShaderBuilder_constructor",
-                      FragmentShaderBuilder_constructor, 1, true},
-                     FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
+void FragmentProgram::RegisterNatives(tonic::DartLibraryNatives* natives) {
+  natives->Register(
+      {{"FragmentProgram_constructor", FragmentProgram_constructor, 1, true},
+       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }
 
-void FragmentShaderBuilder::init(std::string sksl, bool debugPrintSksl) {
+void FragmentProgram::init(std::string sksl, bool debugPrintSksl) {
   SkRuntimeEffect::Result result =
       SkRuntimeEffect::MakeForShader(SkString(sksl));
   runtime_effect_ = result.effect;
@@ -54,7 +53,7 @@ void FragmentShaderBuilder::init(std::string sksl, bool debugPrintSksl) {
   }
 }
 
-fml::RefPtr<FragmentShader> FragmentShaderBuilder::build(
+fml::RefPtr<FragmentShader> FragmentProgram::shader(
     Dart_Handle shader,
     const tonic::Float32List& uniforms) {
   auto sk_shader = runtime_effect_->makeShader(
@@ -64,12 +63,12 @@ fml::RefPtr<FragmentShader> FragmentShaderBuilder::build(
   return FragmentShader::Create(shader, std::move(sk_shader));
 }
 
-fml::RefPtr<FragmentShaderBuilder> FragmentShaderBuilder::Create() {
-  return fml::MakeRefCounted<FragmentShaderBuilder>();
+fml::RefPtr<FragmentProgram> FragmentProgram::Create() {
+  return fml::MakeRefCounted<FragmentProgram>();
 }
 
-FragmentShaderBuilder::FragmentShaderBuilder() = default;
+FragmentProgram::FragmentProgram() = default;
 
-FragmentShaderBuilder::~FragmentShaderBuilder() = default;
+FragmentProgram::~FragmentProgram() = default;
 
 }  // namespace flutter

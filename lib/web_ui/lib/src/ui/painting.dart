@@ -789,16 +789,16 @@ class ImageDescriptor {
   }
 }
 
-class FragmentShaderBuilder {
-  FragmentShaderBuilder({
+class FragmentProgram {
+  FragmentProgram({
     required ByteBuffer spirv, // ignore: avoid_unused_constructor_parameters
     bool debugPrint = false, // ignore: avoid_unused_constructor_parameters
   }) {
-    throw UnsupportedError('FragmentShaderBuilder is not supported for the CanvasKit or HTML renderers.');
+    throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
 
-  Shader build({
+  Shader shader({
     required Float32List floatUniforms,
-  }) => throw UnsupportedError('FragmentShaderBuilder is not supported for the CanvasKit or HTML renderers.');
+  }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
 }
 

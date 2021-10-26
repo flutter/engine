@@ -3786,12 +3786,12 @@ class ImageShader extends Shader {
 /// [build] must be called again with new uniform values, to obtain a new
 /// [Shader] object.
 ///
-class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
+class FragmentProgram extends NativeFieldWrapperClass1 {
 
-  /// Creates a fragment shader builder from SPIR-V byte data as an input.
+  /// Creates a fragment program from SPIR-V byte data as an input.
   ///
   /// One instance should be created per SPIR-V input. The constructed object
-  /// should then be reused via the [build] method to create [Shader] objects
+  /// should then be reused via the [shader] method to create [Shader] objects
   /// that can be used by [Shader.paint].
   ///
   /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
@@ -3799,10 +3799,10 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   ///
   /// Performance of shader-compilation is platform dependent and is not
   /// well-specified.  Because of this, it is reccommended to construct
-  /// `FragmentShaderBuilder` asynchronously, outside of a widget's `build`
+  /// `FragmentProgram` asynchronously, outside of a widget's `build`
   /// method; this will minimize the chance of UI jank.
   @pragma('vm:entry-point')
-  FragmentShaderBuilder({
+  FragmentProgram({
     required ByteBuffer spirv,
     bool debugPrint = false,
   }) {
@@ -3817,8 +3817,8 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
 
   late final int _uniformFloatCount;
 
-  void _constructor() native 'FragmentShaderBuilder_constructor';
-  void _init(String sksl, bool debugPrint) native 'FragmentShaderBuilder_init';
+  void _constructor() native 'FragmentProgram_constructor';
+  void _init(String sksl, bool debugPrint) native 'FragmentProgram_init';
 
   // TODO(chriscraws): Add `List<ImageShader>? children` as a parameter to [build].
   // https://github.com/flutter/flutter/issues/85240
@@ -3830,14 +3830,14 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
   /// uniforms. If they are not set they will each default to 0.
   ///
   /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShaderBuilder] docs for details.
+  /// be thrown. See [FragmentProgram] docs for details.
   ///
   /// This method is suitable to be called synchronously within a widget's
   /// `build` method or from [CustomPainter.paint].
   ///
-  /// This method will aquire additional fields as [FragmentShaderBuilder] is
+  /// This method will aquire additional fields as [FragmentProgram] is
   /// implemented further.
-  Shader build({
+  Shader shader({
     Float32List? floatUniforms,
   }) {
     if (floatUniforms == null) {
@@ -3848,11 +3848,11 @@ class FragmentShaderBuilder extends NativeFieldWrapperClass1 {
         'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
     final _FragmentShader shader = _FragmentShader(this, Float32List.fromList(floatUniforms));
-    _build(shader, floatUniforms);
+    _shader(shader, floatUniforms);
     return shader;
   }
 
-  void _build(_FragmentShader shader, Float32List floatUniforms) native 'FragmentShaderBuilder_build';
+  void _shader(_FragmentShader shader, Float32List floatUniforms) native 'FragmentProgram_shader';
 }
 
 @pragma('vm:entry-point')
@@ -3860,10 +3860,10 @@ class _FragmentShader extends Shader {
   /// This class is created by the engine and should not be instantiated
   /// or extended directly.
   ///
-  /// To create a [_FragmentShader], use a [FragmentShaderBuilder].
+  /// To create a [_FragmentShader], use a [FragmentProgram].
   _FragmentShader(this._builder, this._floatUniforms) : super._();
 
-  final FragmentShaderBuilder _builder;
+  final FragmentProgram _builder;
   final Float32List _floatUniforms;
 
   @override

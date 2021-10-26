@@ -16,15 +16,15 @@ import 'shader_test_file_utils.dart';
 void main() {
   test('throws exception for invalid shader', () {
     final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
-    expect(() => FragmentShaderBuilder(spirv: invalidBytes), throws);
+    expect(() => FragmentProgram(spirv: invalidBytes), throws);
   });
 
   test('simple shader renders correctly', () async {
     final Uint8List shaderBytes = await spvFile('general_shaders', 'functions.spv').readAsBytes();
-    final FragmentShaderBuilder builder = FragmentShaderBuilder(
+    final FragmentProgram program = FragmentProgram(
       spirv: shaderBytes.buffer,
     );
-    final Shader shader = builder.build(
+    final Shader shader = program.shader(
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
@@ -32,10 +32,10 @@ void main() {
 
   test('shader with functions renders green', () {
     final ByteBuffer spirv = spvFile('general_shaders', 'functions.spv').readAsBytesSync().buffer;
-    final FragmentShaderBuilder builder = FragmentShaderBuilder(
+    final FragmentProgram program = FragmentProgram(
       spirv: spirv,
     );
-    final Shader shader = builder.build(
+    final Shader shader = program.shader(
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
@@ -43,9 +43,9 @@ void main() {
 
   test('shader with uniforms renders correctly', () async {
     final Uint8List shaderBytes = await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
-    final FragmentShaderBuilder builder = FragmentShaderBuilder(spirv: shaderBytes.buffer);
+    final FragmentProgram program = FragmentProgram(spirv: shaderBytes.buffer);
 
-    final Shader shader = builder.build(
+    final Shader shader = program.shader(
         floatUniforms: Float32List.fromList(<double>[
       0.0, // iFloatUniform
       0.25, // iVec2Uniform.x
@@ -87,10 +87,10 @@ void main() {
 void _expectShadersRenderGreen(Map<String, ByteBuffer> shaders) {
   for (final String key in shaders.keys) {
     test('$key renders green', () {
-      final FragmentShaderBuilder builder = FragmentShaderBuilder(
+      final FragmentProgram program = FragmentProgram(
         spirv: shaders[key]!,
       );
-      final Shader shader = builder.build(
+      final Shader shader = program.shader(
         floatUniforms: Float32List.fromList(<double>[1]),
       );
       _expectShaderRendersGreen(shader);
