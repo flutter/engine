@@ -226,8 +226,12 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
           // default 1000Hz on 32-bit iOS devices to reduce average and worst
           // case frame build times.
           //
-          // See https://github.com/flutter/flutter/issues/92421.
+          // Note: profile_period is time in microseconds between sampling
+          // events, not frequency. Frequency is calculated 1/period (or
+          // 1,000,000 / 2,000 -> 500Hz in this case).
           "--profile_period=2000",
+#else
+          "--profile_period=1000",
 #endif  // OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
     };
   } else {
