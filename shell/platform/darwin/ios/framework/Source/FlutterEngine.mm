@@ -312,6 +312,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+  _textInputPlugin.get().viewController = viewController;
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -345,6 +346,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
+  _textInputPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else {
@@ -879,7 +881,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }
 }
 
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
   if (_shell && _shell->IsSetup()) {
     std::string channel = _connections->CleanupConnection(connection);
     if (!channel.empty()) {
