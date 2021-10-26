@@ -14,6 +14,7 @@ import io.flutter.embedding.engine.dart.DartMessenger.DartMessengerTaskQueue;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import java.nio.ByteBuffer;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -23,7 +24,7 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class DartMessengerTest {
-  SynchronousTaskQueue synchronousTaskQueue = new SynchronousTaskQueue();
+  SynchronousTaskQueue synchronousTaskQueue = null;
 
   private static class ReportingUncaughtExceptionHandler
       implements Thread.UncaughtExceptionHandler {
@@ -36,9 +37,21 @@ public class DartMessengerTest {
   }
 
   private static class SynchronousTaskQueue implements DartMessengerTaskQueue {
+    private boolean didRun = false;
+
     public void dispatch(Runnable runnable) {
+      didRun = true;
       runnable.run();
     }
+
+    public boolean getDidRun() {
+      return didRun;
+    }
+  }
+
+  @Before
+  public void setUp() {
+    synchronousTaskQueue = new SynchronousTaskQueue();
   }
 
   @Test
@@ -59,7 +72,8 @@ public class DartMessengerTest {
         .when(throwingHandler)
         .onMessage(any(ByteBuffer.class), any(DartMessenger.Reply.class));
     BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    messenger.setMessageHandler("test", throwingHandler, taskQueue);
+    messenger.setMessageHandler("test", throwingHandler);
+    messenger.setTaskQueue("test", taskQueue);
     messenger.handleMessageFromDart("test", ByteBuffer.allocate(0), 0, 0);
     assertNotNull(reportingHandler.latestException);
     assertTrue(reportingHandler.latestException instanceof AssertionError);
@@ -78,7 +92,8 @@ public class DartMessengerTest {
           wasDirect[0] = message.isDirect();
         };
     BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, handler);
+    messenger.setTaskQueue(channel, taskQueue);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     message.rewind();
     message.putChar('a');
@@ -87,6 +102,31 @@ public class DartMessengerTest {
     message.putChar('d');
     messenger.handleMessageFromDart(channel, message, /*replyId=*/ 123, 0);
     assertTrue(wasDirect[0]);
+    assertTrue(synchronousTaskQueue.didRun);
+  }
+
+  @Test
+  public void setTaskQueueFirst() {
+    // The same test as givesDirectByteBuffer, but calls setTaskQueue before setMessageHandler.
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final String channel = "foobar";
+    final boolean[] wasDirect = {false};
+    final BinaryMessenger.BinaryMessageHandler handler =
+        (message, reply) -> {
+          wasDirect[0] = message.isDirect();
+        };
+    BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
+    messenger.setTaskQueue(channel, taskQueue);
+    messenger.setMessageHandler(channel, handler);
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    message.rewind();
+    message.putChar('a');
+    message.putChar('b');
+    message.putChar('c');
+    message.putChar('d');
+    messenger.handleMessageFromDart(channel, message, /*replyId=*/ 123, 0);
+    assertTrue(synchronousTaskQueue.didRun);
   }
 
   @Test
@@ -103,7 +143,8 @@ public class DartMessengerTest {
           assertEquals(bufferSize, byteBuffers[0].limit());
         };
     BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, handler);
+    messenger.setTaskQueue(channel, taskQueue);
     final ByteBuffer message = ByteBuffer.allocateDirect(bufferSize);
     message.rewind();
     message.putChar('a');
@@ -161,7 +202,8 @@ public class DartMessengerTest {
         (ByteBuffer message, BinaryMessenger.BinaryReply reply) -> {
           reply.reply(null);
         };
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, handler);
+    messenger.setTaskQueue(channel, taskQueue);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     int replyId = 1;
     long messageData = 1234;
@@ -179,7 +221,8 @@ public class DartMessengerTest {
         (ByteBuffer message, BinaryMessenger.BinaryReply reply) -> {
           throw new RuntimeException("hello");
         };
-    messenger.setMessageHandler(channel, handler, taskQueue);
+    messenger.setMessageHandler(channel, handler);
+    messenger.setTaskQueue(channel, taskQueue);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     int replyId = 1;
     long messageData = 1234;

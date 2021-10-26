@@ -80,14 +80,24 @@ public interface BinaryMessenger {
    *
    * @param channel the name {@link String} of the channel.
    * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
+   */
+  @UiThread
+  void setMessageHandler(@NonNull String channel, @Nullable BinaryMessageHandler handler);
+
+  /**
+   * Registers a TaskQueue for a specified channel which controls the threading model to follow when
+   * invoking the message handler.
+   *
+   * <p>A null value for taskQueue means to execute the handler on the platform thread.
+   *
+   * <p>See also: {@link BinaryMessenger#makeBackgroundTaskQueue()}
+   *
+   * @param channel the name {@link String} of the channel.
    * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
    *     the handler. Specifying null means execute on the platform thread.
    */
   @UiThread
-  void setMessageHandler(
-      @NonNull String channel,
-      @Nullable BinaryMessageHandler handler,
-      @Nullable TaskQueue taskQueue);
+  void setTaskQueue(@NonNull String channel, @Nullable TaskQueue taskQueue);
 
   /** Handler for incoming binary messages from Flutter. */
   interface BinaryMessageHandler {

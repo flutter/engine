@@ -106,7 +106,8 @@ public final class EventChannel {
   @UiThread
   public void setStreamHandler(final StreamHandler handler) {
     messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingStreamRequestHandler(handler), taskQueue);
+        name, handler == null ? null : new IncomingStreamRequestHandler(handler));
+    messenger.setTaskQueue(name, handler == null ? null : taskQueue);
   }
 
   /**

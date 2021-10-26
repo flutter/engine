@@ -59,7 +59,7 @@ public class DartExecutor implements BinaryMessenger {
     this.flutterJNI = flutterJNI;
     this.assetManager = assetManager;
     this.dartMessenger = new DartMessenger(flutterJNI);
-    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler, null);
+    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
     this.binaryMessenger = new DefaultBinaryMessenger(dartMessenger);
     // The JNI might already be attached if coming from a spawned engine. If so, correctly report
     // that this DartExecutor is already running.
@@ -200,10 +200,16 @@ public class DartExecutor implements BinaryMessenger {
   @Override
   @UiThread
   public void setMessageHandler(
-      @NonNull String channel,
-      @Nullable BinaryMessenger.BinaryMessageHandler handler,
-      @Nullable TaskQueue taskQueue) {
-    binaryMessenger.setMessageHandler(channel, handler, taskQueue);
+      @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+    binaryMessenger.setMessageHandler(channel, handler);
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  @UiThread
+  public void setTaskQueue(@NonNull String channel, @Nullable TaskQueue taskQueue) {
+    binaryMessenger.setTaskQueue(channel, taskQueue);
   }
   // ------ END BinaryMessenger -----
 
@@ -427,10 +433,14 @@ public class DartExecutor implements BinaryMessenger {
     @Override
     @UiThread
     public void setMessageHandler(
-        @NonNull String channel,
-        @Nullable BinaryMessenger.BinaryMessageHandler handler,
-        @Nullable TaskQueue taskQueue) {
-      messenger.setMessageHandler(channel, handler, taskQueue);
+        @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+      messenger.setMessageHandler(channel, handler);
+    }
+
+    @Override
+    @UiThread
+    public void setTaskQueue(@NonNull String channel, @Nullable TaskQueue taskQueue) {
+      messenger.setTaskQueue(channel, taskQueue);
     }
   }
 }
