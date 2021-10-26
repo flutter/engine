@@ -116,6 +116,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIPointerInteraction> _pointerInteraction API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
+  fml::scoped_nsobject<UIViewPropertyAnimator> _animator API_AVAILABLE(ios(10.0));
+  ;
   MouseState _mouseState;
 }
 
@@ -547,6 +549,10 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (UIView*)keyboardAnimationView {
   return _keyboardAnimationView.get();
+}
+
+- (UIViewPropertyAnimator*)animator API_AVAILABLE(ios(10.0)) {
+  return _animator.get();
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1152,6 +1158,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            insetBottomEndValue:(CGFloat)insetBottomEndValue
                       duration:(NSTimeInterval)duration
                          curve:(UIViewAnimationCurve)curve {
+  // If insetBottomBeginValue == insetBottomEndValue,do nothing
+  if (insetBottomBeginValue == insetBottomEndValue) {
+    return;
+  }
+
   // When call this method first time,
   // initialize the keyboardAnimationView to get animation interpolation during animation
   if ([self keyboardAnimationView] == nil) {
@@ -1159,16 +1170,48 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     [self.view addSubview:[self keyboardAnimationView]];
   }
 
-  // Stop animation when start another animation
-  [[self keyboardAnimationView].layer removeAllAnimations];
-
   if (self.keyboardAnimationLink == nil) {
     [self startKeyboardAnimationLink];
   }
 
-  // Set begin value
+  // Set animation begin value
   [self keyboardAnimationView].frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
-  [UIView setAnimationCurve:curve];
+
+  if (@available(iOS 10.0, *)) {
+    // Stop animation when start another animation
+    if ([self animator] != nil) {
+      [[self animator] stopAnimation:YES];
+    }
+
+    UIViewPropertyAnimator* animator = [[UIViewPropertyAnimator alloc]
+        initWithDuration:duration
+                   curve:curve
+              animations:^{
+                // Set animation end value
+                [self keyboardAnimationView].frame = CGRectMake(0, insetBottomEndValue, 0, 0);
+              }];
+
+    [animator addCompletion:^(UIViewAnimatingPosition finalPosition) {
+      if (finalPosition == UIViewAnimatingPositionEnd) {
+        [self.keyboardAnimationLink invalidate];
+        self.keyboardAnimationLink = nil;
+
+        // Set the end value to avoid that little error because presentationLayer will not reach
+        // end value normally
+        _viewportMetrics.physical_view_inset_bottom = insetBottomEndValue;
+        [self updateViewportMetrics];
+      }
+    }];
+    _animator.reset(animator);
+    [[self animator] startAnimation];
+    return;
+  }
+
+  // System version below iOS 10.0
+
+  // Stop animation when start another animation
+  [[self keyboardAnimationView].layer removeAllAnimations];
+
   [UIView animateWithDuration:duration
       animations:^{
         // Set end value
