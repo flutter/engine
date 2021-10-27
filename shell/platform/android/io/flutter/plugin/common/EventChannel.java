@@ -105,6 +105,9 @@ public final class EventChannel {
    */
   @UiThread
   public void setStreamHandler(final StreamHandler handler) {
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
     if (taskQueue != null) {
       messenger.setMessageHandler(
           name, handler == null ? null : new IncomingStreamRequestHandler(handler), taskQueue);

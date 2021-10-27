@@ -137,6 +137,9 @@ public class MethodChannel {
    */
   @UiThread
   public void setMethodCallHandler(final @Nullable MethodCallHandler handler) {
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
     if (taskQueue != null) {
       messenger.setMessageHandler(
           name, handler == null ? null : new IncomingMethodCallHandler(handler), taskQueue);
