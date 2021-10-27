@@ -3820,7 +3820,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// When compiled to SPIR-V and provided to the constructor, `floatUniforms`
   /// must have a length of 10. One per float-component of each uniform.
   ///
-  /// `builder.build(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
+  /// `program.shader(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
   ///
   /// The uniforms will be set as follows:
   ///
