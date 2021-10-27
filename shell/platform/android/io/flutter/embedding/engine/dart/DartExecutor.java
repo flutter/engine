@@ -59,7 +59,7 @@ public class DartExecutor implements BinaryMessenger {
     this.flutterJNI = flutterJNI;
     this.assetManager = assetManager;
     this.dartMessenger = new DartMessenger(flutterJNI);
-    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler, null);
+    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
     this.binaryMessenger = new DefaultBinaryMessenger(dartMessenger);
     // The JNI might already be attached if coming from a spawned engine. If so, correctly report
     // that this DartExecutor is already running.
@@ -193,6 +193,15 @@ public class DartExecutor implements BinaryMessenger {
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
     binaryMessenger.send(channel, message, callback);
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  @UiThread
+  public void setMessageHandler(
+      @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+    binaryMessenger.setMessageHandler(channel, handler);
   }
 
   /** @deprecated Use {@link #getBinaryMessenger()} instead. */
@@ -424,6 +433,13 @@ public class DartExecutor implements BinaryMessenger {
      * @param channel the name of the channel.
      * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
      */
+    @Override
+    @UiThread
+    public void setMessageHandler(
+        @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+      messenger.setMessageHandler(channel, handler);
+    }
+
     @Override
     @UiThread
     public void setMessageHandler(

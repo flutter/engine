@@ -112,6 +112,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   @Override
   public void setMessageHandler(
+      @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+    setMessageHandler(channel, handler, null);
+  }
+
+  @Override
+  public void setMessageHandler(
       @NonNull String channel,
       @Nullable BinaryMessenger.BinaryMessageHandler handler,
       @Nullable TaskQueue taskQueue) {
