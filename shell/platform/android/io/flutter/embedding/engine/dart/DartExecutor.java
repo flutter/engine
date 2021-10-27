@@ -208,8 +208,11 @@ public class DartExecutor implements BinaryMessenger {
   @Deprecated
   @Override
   @UiThread
-  public void setTaskQueue(@NonNull String channel, @Nullable TaskQueue taskQueue) {
-    binaryMessenger.setTaskQueue(channel, taskQueue);
+  public void setMessageHandler(
+      @NonNull String channel,
+      @Nullable BinaryMessenger.BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
+    binaryMessenger.setMessageHandler(channel, handler, taskQueue);
   }
   // ------ END BinaryMessenger -----
 
@@ -439,8 +442,11 @@ public class DartExecutor implements BinaryMessenger {
 
     @Override
     @UiThread
-    public void setTaskQueue(@NonNull String channel, @Nullable TaskQueue taskQueue) {
-      messenger.setTaskQueue(channel, taskQueue);
+    public void setMessageHandler(
+        @NonNull String channel,
+        @Nullable BinaryMessenger.BinaryMessageHandler handler,
+        @Nullable TaskQueue taskQueue) {
+      messenger.setMessageHandler(channel, handler, taskQueue);
     }
   }
 }

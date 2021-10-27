@@ -137,9 +137,13 @@ public class MethodChannel {
    */
   @UiThread
   public void setMethodCallHandler(final @Nullable MethodCallHandler handler) {
-    messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingMethodCallHandler(handler));
-    messenger.setTaskQueue(name, handler == null ? null : taskQueue);
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMethodCallHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMethodCallHandler(handler));
+    }
   }
 
   /**

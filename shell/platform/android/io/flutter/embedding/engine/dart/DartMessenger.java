@@ -34,8 +34,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   @NonNull private final ConcurrentHashMap<String, HandlerInfo> messageHandlers;
 
-  @NonNull private final HashMap<String, DartMessengerTaskQueue> taskQueues;
-
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
   private int nextReplyId = 1;
 
@@ -51,7 +49,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     this.pendingReplies = new HashMap<>();
     this.createdTaskQueues = new WeakHashMap<TaskQueue, DartMessengerTaskQueue>();
     this.taskQueueFactory = taskQueueFactory;
-    this.taskQueues = new HashMap<>();
   }
 
   DartMessenger(@NonNull FlutterJNI flutterJNI) {
@@ -116,33 +113,28 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   @Override
   public void setMessageHandler(
       @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+    setMessageHandler(channel, handler, null);
+  }
+
+  @Override
+  public void setMessageHandler(
+      @NonNull String channel,
+      @Nullable BinaryMessenger.BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
     if (handler == null) {
       Log.v(TAG, "Removing handler for channel '" + channel + "'");
       messageHandlers.remove(channel);
     } else {
-      DartMessengerTaskQueue dartMessengerTaskQueue = taskQueues.get(channel);
+      DartMessengerTaskQueue dartMessengerTaskQueue = null;
+      if (taskQueue != null) {
+        dartMessengerTaskQueue = createdTaskQueues.get(taskQueue);
+        if (dartMessengerTaskQueue == null) {
+          throw new IllegalArgumentException(
+              "Unrecognized TaskQueue, use BinaryMessenger to create your TaskQueue (ex makeBackgroundTaskQueue).");
+        }
+      }
       Log.v(TAG, "Setting handler for channel '" + channel + "'");
       messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
-    }
-  }
-
-  @Override
-  public void setTaskQueue(@NonNull String channel, @Nullable BinaryMessenger.TaskQueue taskQueue) {
-    DartMessengerTaskQueue dartMessengerTaskQueue = null;
-    if (taskQueue == null) {
-      taskQueues.remove(channel);
-    } else {
-      dartMessengerTaskQueue = createdTaskQueues.get(taskQueue);
-      if (dartMessengerTaskQueue == null) {
-        throw new IllegalArgumentException(
-            "Unrecognized TaskQueue, use BinaryMessenger to create your TaskQueue (ex makeBackgroundTaskQueue).");
-      }
-      taskQueues.put(channel, dartMessengerTaskQueue);
-    }
-    HandlerInfo existingHandlerInfo = messageHandlers.get(channel);
-    if (existingHandlerInfo != null) {
-      messageHandlers.put(
-          channel, new HandlerInfo(existingHandlerInfo.handler, dartMessengerTaskQueue));
     }
   }
 

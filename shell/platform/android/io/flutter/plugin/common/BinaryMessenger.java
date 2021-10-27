@@ -42,7 +42,10 @@ public interface BinaryMessenger {
    * serial.
    */
   @UiThread
-  TaskQueue makeBackgroundTaskQueue();
+  default TaskQueue makeBackgroundTaskQueue() {
+    // TODO(aaclarke): Remove default implementation when it is safe for Google Flutter users.
+    throw new UnsupportedOperationException("makeBackgroundTaskQueue not implemented.");
+  }
 
   /**
    * Sends a binary message to the Flutter application.
@@ -85,19 +88,32 @@ public interface BinaryMessenger {
   void setMessageHandler(@NonNull String channel, @Nullable BinaryMessageHandler handler);
 
   /**
-   * Registers a TaskQueue for a specified channel which controls the threading model to follow when
-   * invoking the message handler.
+   * Registers a handler to be invoked when the Flutter application sends a message to its host
+   * platform.
    *
-   * <p>A null value for taskQueue means to execute the handler on the platform thread.
+   * <p>Registration overwrites any previous registration for the same channel name. Use a null
+   * handler to deregister.
    *
-   * <p>See also: {@link BinaryMessenger#makeBackgroundTaskQueue()}
+   * <p>If no handler has been registered for a particular channel, any incoming message on that
+   * channel will be handled silently by sending a null reply.
    *
    * @param channel the name {@link String} of the channel.
+   * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
    * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
    *     the handler. Specifying null means execute on the platform thread.
    */
   @UiThread
-  void setTaskQueue(@NonNull String channel, @Nullable TaskQueue taskQueue);
+  default void setMessageHandler(
+      @NonNull String channel,
+      @Nullable BinaryMessageHandler handler,
+      @Nullable TaskQueue taskQueue) {
+    // TODO(aaclarke): Remove default implementation when it is safe for Google Flutter users.
+    if (taskQueue != null) {
+      throw new UnsupportedOperationException(
+          "setMessageHandler called with nonnull taskQueue is not supported.");
+    }
+    setMessageHandler(channel, handler);
+  }
 
   /** Handler for incoming binary messages from Flutter. */
   interface BinaryMessageHandler {
