@@ -853,7 +853,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
   event->callback(false, event->user_data);
 }
 
-TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItselfsUp) {
+TEST(KeyboardKeyEmbedderHandlerTest,
+     SynthesizeForDesyncToggledStateByItselfsUp) {
   TestKeystate key_state;
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
@@ -912,7 +913,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItselfsUp)
   EXPECT_EQ(last_handled, true);
 }
 
-TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItselfsDown) {
+TEST(KeyboardKeyEmbedderHandlerTest,
+     SynthesizeForDesyncToggledStateByItselfsDown) {
   TestKeystate key_state;
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
