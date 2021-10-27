@@ -38,8 +38,6 @@
   _deltaText = newTxt;
   _deltaStart = newStart;
   _deltaEnd = newEnd;
-  //_deltaStart = MAX(0, MIN(oldText.length, newStart));
-  //_deltaEnd = MAX(0, MIN(oldText.length, newEnd));
 }
 
 + (instancetype)textEditingDelta:(NSString*)textBeforeChange

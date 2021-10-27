@@ -4,11 +4,13 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h"
 
+#import <Foundation/Foundation.h>
 #import <objc/message.h>
 
 #include <algorithm>
 #include <memory>
 
+#include "flutter/fml/platform/darwin/string_range_sanitization.h"
 #include "flutter/shell/platform/common/text_input_model.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
@@ -428,6 +430,30 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
                                                             : kTextAffinityDownstream;
 }
 
+- (NSRange)clampSelection:(NSRange*)range forText:(NSString*)text {
+  int start = MIN(MAX(range->location, 0), text.length);
+  int length = MIN(range->length, text.length - start);
+  return NSMakeRange(start, length);
+}
+
+// Change the range of selected text, without notifying the framework.
+- (void)setSelectedTextRangeLocal:(NSRange*)selectedTextRange {
+  flutter::TextRange selection = _activeModel->selection();
+  NSRange oldSelectedRange = NSMakeRange(selection.base(), selection.length());
+
+  if (selectedTextRange != &oldSelectedRange) {
+    if (_activeModel->GetText().length() > 0) {
+      NSString* text = @(_activeModel->GetText().c_str());
+      NSRange nextSelectedRange = fml::RangeForCharactersInRange(text, *selectedTextRange);
+      _activeModel->SetSelection(flutter::TextRange(
+          nextSelectedRange.location, nextSelectedRange.location + nextSelectedRange.length));
+    } else {
+      _activeModel->SetSelection(flutter::TextRange(
+          selectedTextRange->location, selectedTextRange->location + selectedTextRange->length));
+    }
+  }
+}
+
 #pragma mark -
 #pragma mark FlutterKeySecondaryResponder
 
@@ -684,6 +710,58 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   // TODO: Implement.
   // Note: This function can't easily be implemented under the system-message architecture.
   return 0;
+}
+
+#pragma mark -
+#pragma mark NSStandardKeyBindingResponding
+
+- (void)replaceRange:(NSRange*)range withText:(NSString*)text {
+  flutter::TextRange selection = _activeModel->selection();
+  NSRange selectedRange = NSMakeRange(selection.base(), selection.length());
+
+  // Adjust the text selection:
+  // * reduce the length by the intersection length
+  // * adjust the location by newLength - oldLength + intersectionLength
+  NSRange intersectionRange = NSIntersectionRange(*range, selectedRange);
+  if (range->location <= selectedRange.location)
+    selectedRange.location += text.length - range->length;
+  if (intersectionRange.location != NSNotFound) {
+    selectedRange.location += intersectionRange.length;
+    selectedRange.length -= intersectionRange.length;
+  }
+
+  NSString* oldText = @(_activeModel->GetText().c_str());
+  NSString* nextText = [oldText stringByReplacingCharactersInRange:[self clampSelection:range
+                                                                                forText:oldText]
+                                                        withString:text];
+  NSRange nextSelection = [self clampSelection:&selectedRange forText:nextText];
+
+  _activeModel->SetText([nextText UTF8String]);
+  [self setSelectedTextRangeLocal:&nextSelection];
+
+  if (_enableDeltaModel) {
+    [self updateEditStateWithDelta:[FlutterTextEditingDelta textEditingDelta:oldText
+                                                               replacedRange:*range
+                                                                 updatedText:text]];
+  } else {
+    [self updateEditState];
+  }
+}
+
+- (void)deleteBackward:(id)sender {
+  flutter::TextRange selection = _activeModel->selection();
+  NSAssert(selection.base() >= 0 && selection.base() != NSNotFound, @"Selection is invalid.");
+  NSAssert(selection.length() >= 0, @"Selection is invalid.");
+  NSRange selectedRange;
+  if (selection.length() == 0) {
+    if (selection.base() == 0) {
+      return;
+    }
+    selectedRange = NSMakeRange(selection.base() - 1, 1);
+  } else {
+    selectedRange = NSMakeRange(selection.base(), selection.length());
+  }
+  [self replaceRange:&selectedRange withText:@""];
 }
 
 @end
