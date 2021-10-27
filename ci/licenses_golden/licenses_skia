@@ -1,4 +1,4 @@
-Signature: 5087f44e493fa9b38451e6a2e1a29340
+Signature: cffaceee171680fc90b8aad31fa923fc
 
 UNUSED LICENSES:
 
@@ -2342,6 +2342,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/CommandBuffer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Context.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ContextPriv.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ContextPriv.h
+FILE: ../../../third_party/skia/experimental/graphite/src/ContextUtils.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ContextUtils.h
 FILE: ../../../third_party/skia/experimental/graphite/src/CopyTask.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/CopyTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
@@ -5447,6 +5449,7 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/CullTest.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/Tessellation.h
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
 FILE: ../../../third_party/skia/src/sksl/lex/TransitionTable.cpp
@@ -5946,6 +5949,7 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/PathXform.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeFixedCountTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeFixedCountTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeTessellator.h
+FILE: ../../../third_party/skia/src/gpu/tessellate/Tessellation.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrTessellationShader.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.h
