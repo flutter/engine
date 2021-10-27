@@ -54,7 +54,7 @@ FLUTTER_DARWIN_EXPORT
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 
 /**
- * Invoked by the engine when the engine is restarted.
+ * Invoked by the engine right before the engine is restarted.
  *
  * This should reset states to as if the application has just started.  It
  * usually indicates a hot restart (Shift-R in Flutter CLI.)

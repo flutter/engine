@@ -76,7 +76,7 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
 
 /**
- * Invoked when the engine is restarted.
+ * Invoked right before the engine is restarted.
  *
  * This should reset states to as if the application has just started.  It
  * usually indicates a hot restart (Shift-R in Flutter CLI.)
