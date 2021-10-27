@@ -316,12 +316,12 @@ targets:
       environment: Staging
     scheduler: luci
 
-  - name:  Mac mac_ios_engine_profile
+  - name:  Mac mac_ios_engine_release
     recipe: engine_v2/engine_v2
     bringup: true
     timeout: 60
     properties:
-      config_name: mac_ios_engine_profile
+      config_name: mac_ios_engine_release
       environment: Staging
     scheduler: luci
 
