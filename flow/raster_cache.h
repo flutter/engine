@@ -44,6 +44,53 @@ class RasterCacheResult {
 
 struct PrerollContext;
 
+struct RasterCacheMetrics {
+  /**
+   * The number of cache entries with images evicted in this frame.
+   */
+  int eviction_count = 0;
+
+  /**
+   * The size of all of the images evicted in this frame.
+   */
+  size_t eviction_bytes = 0;
+
+  /**
+   * The number of cache entries with images used in this frame.
+   */
+  int in_use_count = 0;
+
+  /**
+   * The size of all of the images used in this frame.
+   */
+  size_t in_use_bytes = 0;
+
+  /**
+   * The total cache entries that had images during this frame whether
+   * they were used in the frame or held memory during the frame and then
+   * were evicted after it ended.
+   */
+  int total_count() const { return in_use_count + eviction_count; }
+
+  /**
+   * The size of all of the cached images during this frame whether
+   * they were used in the frame or held memory during the frame and then
+   * were evicted after it ended.
+   */
+  size_t total_bytes() const { return in_use_bytes + eviction_bytes; }
+
+  /**
+   * Reset the cache statistics at the beginning of a frame. This method
+   * is called automatically from |RasterCache::PrepareNewFrame()|.
+   */
+  void clear() {
+    eviction_count = 0;
+    eviction_bytes = 0;
+    in_use_count = 0;
+    in_use_bytes = 0;
+  }
+};
+
 class RasterCache {
  public:
   // The default max number of picture and display list raster caches to be
@@ -178,16 +225,30 @@ class RasterCache {
             SkCanvas& canvas,
             SkPaint* paint = nullptr) const;
 
-  void SweepAfterFrame();
+  void PrepareNewFrame();
+  void SweepIfNeeded();
+  void CleanupAfterFrame();
 
   void Clear();
 
   void SetCheckboardCacheImages(bool checkerboard);
 
+  const RasterCacheMetrics& picture_metrics() const;
+  const RasterCacheMetrics& layer_metrics() const;
+
   size_t GetCachedEntriesCount() const;
 
+  /**
+   * Return the number of map entries in the layer cache regardless of whether
+   * the entries have been populated with an image.
+   */
   size_t GetLayerCachedEntriesCount() const;
 
+  /**
+   * Return the number of map entries in the picture caches (SkPicture and
+   * DisplayList) regardless of whether the entries have been populated with
+   * an image.
+   */
   size_t GetPictureCachedEntriesCount() const;
 
   /**
@@ -212,13 +273,12 @@ class RasterCache {
   size_t EstimateLayerCacheByteSize() const;
 
   /**
-   * @brief Return the count of cache sweeps that have occured.
+   * @brief Return the count of the frame currently being managed.
    *
-   * The sweep count will help to determine if a sweep of the cache may have
-   * removed expired entries since the last time the method was called.
-   * The count will increment even if the sweep performs no evictions.
+   * The frame count can help to determine if the cache is still working
+   * on the same frame between usages.
    */
-  int sweep_count() const { return sweep_count_; }
+  int frame_count() const { return frame_count_; }
 
   /**
    * @brief Return the number of frames that a picture must be prepared
@@ -238,18 +298,26 @@ class RasterCache {
   };
 
   template <class Cache>
-  static void SweepOneCacheAfterFrame(Cache& cache) {
+  static void SweepOneCacheAfterFrame(Cache& cache,
+                                      RasterCacheMetrics& metrics) {
     std::vector<typename Cache::iterator> dead;
 
     for (auto it = cache.begin(); it != cache.end(); ++it) {
       Entry& entry = it->second;
       if (!entry.used_this_frame) {
         dead.push_back(it);
+      } else if (entry.image) {
+        metrics.in_use_count++;
+        metrics.in_use_bytes += entry.image->image_bytes();
       }
       entry.used_this_frame = false;
     }
 
     for (auto it : dead) {
+      if (it->second.image) {
+        metrics.eviction_count++;
+        metrics.eviction_bytes += it->second.image->image_bytes();
+      }
       cache.erase(it);
     }
   }
@@ -265,7 +333,10 @@ class RasterCache {
   const size_t picture_and_display_list_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;
   size_t display_list_cached_this_frame_ = 0;
-  int sweep_count_ = 0;
+  int frame_count_ = 0;
+  bool frame_is_swept_ = true;
+  RasterCacheMetrics layer_metrics_;
+  RasterCacheMetrics picture_metrics_;
   mutable PictureRasterCacheKey::Map<Entry> picture_cache_;
   mutable DisplayListRasterCacheKey::Map<Entry> display_list_cache_;
   mutable LayerRasterCacheKey::Map<Entry> layer_cache_;

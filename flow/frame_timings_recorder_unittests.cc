@@ -91,7 +91,7 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   using namespace std::chrono_literals;
 
   MockRasterCache cache(1, 10);
-  cache.SweepAfterFrame();
+  cache.PrepareNewFrame();
 
   const auto raster_start = fml::TimePoint::Now();
   recorder->RecordRasterStart(raster_start, &cache);
@@ -102,6 +102,8 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   cache.AddMockPicture(100, 100);
   size_t picture_bytes = cache.EstimatePictureCacheByteSize();
   EXPECT_GT(picture_bytes, 0u);
+
+  cache.SweepIfNeeded();
 
   const auto before_raster_end_wall_time = fml::TimePoint::CurrentWallTime();
   std::this_thread::sleep_for(1ms);
@@ -138,15 +140,15 @@ TEST(FrameTimingsRecorderTest, ThrowAfterUnexpectedCacheSweep) {
   using namespace std::chrono_literals;
 
   MockRasterCache cache;
+  cache.PrepareNewFrame();
 
   const auto raster_start = fml::TimePoint::Now();
   recorder->RecordRasterStart(raster_start, &cache);
   std::this_thread::sleep_for(1ms);
-  cache.SweepAfterFrame();
+
   EXPECT_EXIT(recorder->RecordRasterEnd(&cache),
               ::testing::KilledBySignal(SIGABRT),
-              "Check failed: sweep_count_at_raster_start_ == \\(cache \\? "
-              "cache->sweep_count\\(\\) : -1\\).");
+              "Check failed: frame_is_swept_.");
 }
 
 TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync) {
@@ -276,7 +278,7 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEnd) {
 TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
   MockRasterCache cache(1, 10);
-  cache.SweepAfterFrame();
+  cache.PrepareNewFrame();
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));
@@ -291,6 +293,7 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
   size_t picture_bytes = cache.EstimatePictureCacheByteSize();
   EXPECT_GT(picture_bytes, 0u);
 
+  cache.SweepIfNeeded();
   recorder->RecordRasterEnd(&cache);
 
   auto cloned = recorder->CloneUntil(FrameTimingsRecorder::State::kRasterEnd);
