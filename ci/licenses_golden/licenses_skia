@@ -1,4 +1,4 @@
-Signature: f839562f4b85f2abfc1acf9d133ea0ad
+Signature: b5ad761060659cf8b6d8da27278924c9
 
 UNUSED LICENSES:
 
@@ -686,8 +686,7 @@ FILE: ../../../third_party/skia/animations/paths#1.xml
 FILE: ../../../third_party/skia/animations/redcross#1.jpg
 FILE: ../../../third_party/skia/animations/text#1.xml
 FILE: ../../../third_party/skia/bazel/BUILD.bazel
-FILE: ../../../third_party/skia/bazel/common_config_settings/BUILD.bazel
-FILE: ../../../third_party/skia/bazel/supported_combinations/BUILD.bazel
+FILE: ../../../third_party/skia/bazel/libpng.bazel
 FILE: ../../../third_party/skia/bench/microbench.json
 FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/build/fuchsia/skqp/skqp.cmx
@@ -798,8 +797,6 @@ FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
-FILE: ../../../third_party/skia/include/config/BUILD.bazel
-FILE: ../../../third_party/skia/include/core/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_windows/VERSION
@@ -1169,7 +1166,6 @@ FILE: ../../../third_party/skia/specs/web-img-decode/current/index.html
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/impl/impl.js
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
-FILE: ../../../third_party/skia/src/ports/BUILD.bazel
 FILE: ../../../third_party/skia/src/ports/SkTLS_pthread.cpp
 FILE: ../../../third_party/skia/src/ports/SkTLS_win.cpp
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
@@ -2349,7 +2345,6 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.h
-FILE: ../../../third_party/skia/experimental/graphite/src/DrawOrder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
@@ -2382,9 +2377,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Texture.h
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureInfo.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.h
-FILE: ../../../third_party/skia/experimental/graphite/src/Uniform.h
-FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.h
+FILE: ../../../third_party/skia/experimental/graphite/src/UniformDataManager.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/UniformDataManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/BoundsManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/IntersectionTree.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/IntersectionTree.h
@@ -6712,7 +6706,6 @@ FILE: ../../../third_party/skia/src/core/SkRasterClip.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.h
 FILE: ../../../third_party/skia/src/core/SkTBlockList.h
-FILE: ../../../third_party/skia/src/gpu/BufferWriter.h
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.h
 FILE: ../../../third_party/skia/src/gpu/GrClip.h
@@ -6723,6 +6716,7 @@ FILE: ../../../third_party/skia/src/gpu/GrGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRectanizer.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizerPow2.cpp
 FILE: ../../../third_party/skia/src/gpu/SkGr.cpp
+FILE: ../../../third_party/skia/src/gpu/VertexWriter.h
 FILE: ../../../third_party/skia/src/gpu/geometry/GrRect.h
 FILE: ../../../third_party/skia/src/gpu/v1/Device_v1.h
 FILE: ../../../third_party/skia/src/ports/SkDebug_win.cpp
