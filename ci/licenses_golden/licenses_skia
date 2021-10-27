@@ -1,4 +1,4 @@
-Signature: 5087f44e493fa9b38451e6a2e1a29340
+Signature: ce6c59c82f85948a274e60166e44d914
 
 UNUSED LICENSES:
 
@@ -686,8 +686,7 @@ FILE: ../../../third_party/skia/animations/paths#1.xml
 FILE: ../../../third_party/skia/animations/redcross#1.jpg
 FILE: ../../../third_party/skia/animations/text#1.xml
 FILE: ../../../third_party/skia/bazel/BUILD.bazel
-FILE: ../../../third_party/skia/bazel/common_config_settings/BUILD.bazel
-FILE: ../../../third_party/skia/bazel/supported_combinations/BUILD.bazel
+FILE: ../../../third_party/skia/bazel/libpng.bazel
 FILE: ../../../third_party/skia/bench/microbench.json
 FILE: ../../../third_party/skia/bench/skpbench.json
 FILE: ../../../third_party/skia/build/fuchsia/skqp/skqp.cmx
@@ -758,6 +757,8 @@ FILE: ../../../third_party/skia/experimental/sktext/include/Interface.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Text.h
 FILE: ../../../third_party/skia/experimental/sktext/include/Types.h
 FILE: ../../../third_party/skia/experimental/sktext/samples/Text.cpp
+FILE: ../../../third_party/skia/experimental/sktext/src/HarfbuzzFontResolver.cpp
+FILE: ../../../third_party/skia/experimental/sktext/src/IcuFontResolver.cpp
 FILE: ../../../third_party/skia/experimental/sktext/src/Line.cpp
 FILE: ../../../third_party/skia/experimental/sktext/src/Line.h
 FILE: ../../../third_party/skia/experimental/sktext/src/LogicalRun.cpp
@@ -798,8 +799,6 @@ FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
-FILE: ../../../third_party/skia/include/config/BUILD.bazel
-FILE: ../../../third_party/skia/include/core/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_darwin/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_windows/VERSION
@@ -1169,7 +1168,6 @@ FILE: ../../../third_party/skia/specs/web-img-decode/current/index.html
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/impl/impl.js
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
-FILE: ../../../third_party/skia/src/ports/BUILD.bazel
 FILE: ../../../third_party/skia/src/ports/SkTLS_pthread.cpp
 FILE: ../../../third_party/skia/src/ports/SkTLS_win.cpp
 FILE: ../../../third_party/skia/src/sksl/generated/sksl_frag.dehydrated.sksl
@@ -2342,14 +2340,11 @@ FILE: ../../../third_party/skia/experimental/graphite/src/CommandBuffer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Context.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ContextPriv.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ContextPriv.h
-FILE: ../../../third_party/skia/experimental/graphite/src/CopyTask.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/CopyTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.h
-FILE: ../../../third_party/skia/experimental/graphite/src/DrawOrder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
@@ -2367,7 +2362,6 @@ FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipeline.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipeline.h
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipelineDesc.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPipelineDesc.h
-FILE: ../../../third_party/skia/experimental/graphite/src/Renderer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceProvider.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceProvider.h
 FILE: ../../../third_party/skia/experimental/graphite/src/SkStuff.cpp
@@ -2382,9 +2376,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Texture.h
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureInfo.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.h
-FILE: ../../../third_party/skia/experimental/graphite/src/Uniform.h
-FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.h
+FILE: ../../../third_party/skia/experimental/graphite/src/UniformDataManager.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/UniformDataManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/BoundsManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/IntersectionTree.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/IntersectionTree.h
@@ -2407,7 +2400,6 @@ FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlTexture.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlTexture.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlTypesPriv.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlUtils.h
-FILE: ../../../third_party/skia/experimental/graphite/src/render/StencilAndFillPathRenderer.cpp
 FILE: ../../../third_party/skia/experimental/lowp-basic/QMath.h
 FILE: ../../../third_party/skia/experimental/lowp-basic/bilerp-study.cpp
 FILE: ../../../third_party/skia/experimental/lowp-basic/lerp-study.cpp
@@ -6712,7 +6704,6 @@ FILE: ../../../third_party/skia/src/core/SkRasterClip.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.h
 FILE: ../../../third_party/skia/src/core/SkStrikeCache.h
 FILE: ../../../third_party/skia/src/core/SkTBlockList.h
-FILE: ../../../third_party/skia/src/gpu/BufferWriter.h
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.cpp
 FILE: ../../../third_party/skia/src/gpu/GrBufferAllocPool.h
 FILE: ../../../third_party/skia/src/gpu/GrClip.h
@@ -6722,6 +6713,7 @@ FILE: ../../../third_party/skia/src/gpu/GrGlyph.h
 FILE: ../../../third_party/skia/src/gpu/GrGpu.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRectanizer.h
 FILE: ../../../third_party/skia/src/gpu/GrRectanizerPow2.cpp
+FILE: ../../../third_party/skia/src/gpu/GrVertexWriter.h
 FILE: ../../../third_party/skia/src/gpu/SkGr.cpp
 FILE: ../../../third_party/skia/src/gpu/geometry/GrRect.h
 FILE: ../../../third_party/skia/src/gpu/v1/Device_v1.h
