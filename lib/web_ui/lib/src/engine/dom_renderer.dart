@@ -11,6 +11,7 @@ import 'package:ui/ui.dart' as ui;
 import '../engine.dart' show buildMode, registerHotRestartListener;
 import 'browser_detection.dart';
 import 'canvaskit/initialization.dart';
+import 'configuration.dart';
 import 'host_node.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
@@ -109,11 +110,13 @@ class DomRenderer {
   /// See for more details:
   /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
   bool get windowHasFocus =>
+      // ignore: implicit_dynamic_function
       js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) as bool;
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
     _staleHotRestartState =
+        // ignore: implicit_dynamic_function
         js_util.getProperty(html.window, _staleHotRestartStore) as List<html.Element?>?;
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <html.Element?>[];
@@ -232,6 +235,7 @@ class DomRenderer {
 
   static void setElementTransform(html.Element element, String transformValue) {
     js_util.setProperty(
+      // ignore: implicit_dynamic_function
       js_util.getProperty(element, 'style') as Object,
       'transform',
       transformValue,
@@ -291,7 +295,7 @@ class DomRenderer {
     setElementAttribute(
       bodyElement,
       'flt-renderer',
-      '${useCanvasKit ? 'canvaskit' : 'html'} (${flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
+      '${useCanvasKit ? 'canvaskit' : 'html'} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
     setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
 
@@ -398,7 +402,7 @@ class DomRenderer {
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is visible.
-    if (debugShowSemanticsNodes) {
+    if (configuration.debugShowSemanticsNodes) {
       _sceneHostElement!.style.opacity = '0.3';
     }
 
@@ -453,6 +457,7 @@ class DomRenderer {
 
   // Creates a [HostNode] into a `root` [html.Element].
   HostNode _createHostNode(html.Element root) {
+    // ignore: implicit_dynamic_function
     if (js_util.getProperty(root, 'attachShadow') != null) {
       return ShadowDomHostNode(root);
     } else {
@@ -523,6 +528,7 @@ class DomRenderer {
       double startAngle,
       double endAngle,
       bool antiClockwise) {
+    // ignore: implicit_dynamic_function
     _ellipseFeatureDetected ??= js_util.getProperty(context, 'ellipse') != null;
     if (_ellipseFeatureDetected!) {
       context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
@@ -649,6 +655,7 @@ class DomRenderer {
   void vibrate(int durationMs) {
     final html.Navigator navigator = html.window.navigator;
     if (js_util.hasProperty(navigator, 'vibrate')) {
+      // ignore: implicit_dynamic_function
       js_util.callMethod(navigator, 'vibrate', <num>[durationMs]);
     }
   }

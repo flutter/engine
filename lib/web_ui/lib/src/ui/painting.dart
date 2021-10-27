@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// For documentation see https://github.com/flutter/engine/blob/master/lib/ui/painting.dart
+// For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
 // ignore_for_file: public_member_api_docs
 part of ui;
 
@@ -585,15 +585,17 @@ void decodeImageFromPixels(
   bool allowUpscaling = true,
 }) {
   if (engine.useCanvasKit) {
-    engine.skiaInstantiateImageCodec(
+    engine.skiaDecodeImageFromPixels(
       pixels,
       width,
       height,
-      format.index,
-      rowBytes,
-    ).getNextFrame().then((FrameInfo info) {
-      callback(info.image);
-    });
+      format,
+      callback,
+      rowBytes: rowBytes,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      allowUpscaling: allowUpscaling,
+    );
     return;
   }
 

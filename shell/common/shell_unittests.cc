@@ -3068,8 +3068,7 @@ TEST_F(ShellTest, UserTagSetOnStartup) {
 TEST_F(ShellTest, PrefetchDefaultFontManager) {
   auto settings = CreateSettingsForFixture();
   settings.prefetched_default_font_manager = true;
-
-  auto shell = CreateShell(std::move(settings));
+  std::unique_ptr<Shell> shell;
 
   auto get_font_manager_count = [&] {
     fml::AutoResetWaitableEvent latch;
@@ -3084,8 +3083,17 @@ TEST_F(ShellTest, PrefetchDefaultFontManager) {
     latch.Wait();
     return font_manager_count;
   };
+  size_t initial_font_manager_count = 0;
+  settings.root_isolate_create_callback = [&](const auto& isolate) {
+    ASSERT_GT(initial_font_manager_count, 0ul);
+    // Should not have fetched the default font manager yet, since the root
+    // isolate was only just created.
+    ASSERT_EQ(get_font_manager_count(), initial_font_manager_count);
+  };
 
-  size_t initial_font_manager_count = get_font_manager_count();
+  shell = CreateShell(std::move(settings));
+
+  initial_font_manager_count = get_font_manager_count();
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("emptyMain");
@@ -3094,6 +3102,66 @@ TEST_F(ShellTest, PrefetchDefaultFontManager) {
   // If the prefetched_default_font_manager flag is set, then the default font
   // manager will not be added until the engine starts running.
   ASSERT_EQ(get_font_manager_count(), initial_font_manager_count + 1);
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnPlatformViewCreatedWhenUIThreadIsBusy) {
+  // This test will deadlock if the threading logic in
+  // Shell::OnCreatePlatformView is wrong.
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(std::move(settings));
+
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
+                                    [&latch]() { latch.Wait(); });
+
+  ShellTest::PlatformViewNotifyCreated(shell.get());
+  latch.Signal();
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UIWorkAfterOnPlatformViewDestroyed) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(std::move(settings));
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("drawFrames");
+
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent notify_native_latch;
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      notify_native_latch.Signal();
+                      latch.Wait();
+                    }));
+
+  RunEngine(shell.get(), std::move(configuration));
+  // Wait to make sure we get called back from Dart and thus have latched
+  // the UI thread before we create/destroy the platform view.
+  notify_native_latch.Wait();
+
+  ShellTest::PlatformViewNotifyCreated(shell.get());
+
+  fml::AutoResetWaitableEvent destroy_latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &destroy_latch]() {
+        shell->GetPlatformView()->NotifyDestroyed();
+        destroy_latch.Signal();
+      });
+
+  destroy_latch.Wait();
+
+  // Unlatch the UI thread and let it send us a scene to render.
+  latch.Signal();
+
+  // Flush the UI task runner to make sure we process the render/scheduleFrame
+  // request.
+  fml::AutoResetWaitableEvent ui_flush_latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(),
+      [&ui_flush_latch]() { ui_flush_latch.Signal(); });
+  ui_flush_latch.Wait();
 
   DestroyShell(std::move(shell));
 }

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "component.h"
+#include "component_v1.h"
 
 #include <dlfcn.h>
 #include <fuchsia/mem/cpp/fidl.h>
@@ -59,7 +59,7 @@ std::string DebugLabelForUrl(const std::string& url) {
 
 }  // namespace
 
-void Component::ParseProgramMetadata(
+void ComponentV1::ParseProgramMetadata(
     const fidl::VectorPtr<fuchsia::sys::ProgramMetadata>& program_metadata,
     std::string* data_path,
     std::string* assets_path) {
@@ -80,21 +80,21 @@ void Component::ParseProgramMetadata(
   }
 }
 
-ActiveComponent Component::Create(
+ActiveComponentV1 ComponentV1::Create(
     TerminationCallback termination_callback,
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
   auto thread = std::make_unique<fml::Thread>();
-  std::unique_ptr<Component> component;
+  std::unique_ptr<ComponentV1> component;
 
   fml::AutoResetWaitableEvent latch;
   thread->GetTaskRunner()->PostTask([&]() mutable {
-    component.reset(new Component(std::move(termination_callback),
-                                  std::move(package), std::move(startup_info),
-                                  runner_incoming_services,
-                                  std::move(controller)));
+    component.reset(new ComponentV1(std::move(termination_callback),
+                                    std::move(package), std::move(startup_info),
+                                    runner_incoming_services,
+                                    std::move(controller)));
     latch.Signal();
   });
 
@@ -103,7 +103,7 @@ ActiveComponent Component::Create(
           .component = std::move(component)};
 }
 
-Component::Component(
+ComponentV1::ComponentV1(
     TerminationCallback termination_callback,
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
@@ -194,7 +194,7 @@ Component::Component(
 
   directory_request_ = directory_ptr_.NewRequest();
 
-  fidl::InterfaceHandle<fuchsia::io::Directory> flutter_public_dir;
+  fuchsia::io::DirectoryHandle flutter_public_dir;
   // TODO(anmittal): when fixing enumeration using new c++ vfs, make sure that
   // flutter_public_dir is only accessed once we receive OnOpen Event.
   // That will prevent FL-175 for public directory
@@ -215,15 +215,15 @@ Component::Component(
       [this](zx_status_t status, std::unique_ptr<fuchsia::io::NodeInfo> info) {
         cloned_directory_ptr_.Unbind();
         if (status != ZX_OK) {
-          FML_LOG(ERROR) << "could not bind out directory for flutter app("
-                         << debug_label_
-                         << "): " << zx_status_get_string(status);
+          FML_LOG(ERROR)
+              << "could not bind out directory for flutter component("
+              << debug_label_ << "): " << zx_status_get_string(status);
           return;
         }
         const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
-          fidl::InterfaceHandle<fuchsia::io::Directory> dir;
+          fuchsia::io::DirectoryHandle dir;
           auto request = dir.NewRequest().TakeChannel();
           auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
                                                 dir_str, request.release());
@@ -433,7 +433,7 @@ Component::Component(
       // happening on the UI thread. If the Component dtor and thread
       // termination happen (on the platform thread) between the previous
       // line and the next line, a crash will occur since we'll be posting
-      // to a dead thread. See Runner::OnComponentTerminate() in
+      // to a dead thread. See Runner::OnComponentV1Terminate() in
       // runner.cc.
       platform_task_runner->PostTask([weak, runner_incoming_services,
                                       component_url, error, stack_trace]() {
@@ -458,13 +458,13 @@ Component::Component(
   };
 }
 
-Component::~Component() = default;
+ComponentV1::~ComponentV1() = default;
 
-const std::string& Component::GetDebugLabel() const {
+const std::string& ComponentV1::GetDebugLabel() const {
   return debug_label_;
 }
 
-void Component::Kill() {
+void ComponentV1::Kill() {
   component_controller_.events().OnTerminated(
       last_return_code_.second, fuchsia::sys::TerminationReason::EXITED);
 
@@ -473,11 +473,11 @@ void Component::Kill() {
   // collected.
 }
 
-void Component::Detach() {
+void ComponentV1::Detach() {
   component_controller_.set_error_handler(nullptr);
 }
 
-void Component::OnEngineTerminate(const Engine* shell_holder) {
+void ComponentV1::OnEngineTerminate(const Engine* shell_holder) {
   auto found = std::find_if(shell_holders_.begin(), shell_holders_.end(),
                             [shell_holder](const auto& holder) {
                               return holder.get() == shell_holder;
@@ -504,7 +504,7 @@ void Component::OnEngineTerminate(const Engine* shell_holder) {
   }
 }
 
-void Component::CreateView(
+void ComponentV1::CreateView(
     zx::eventpair token,
     fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> /*incoming_services*/,
     fidl::InterfaceHandle<
@@ -514,7 +514,7 @@ void Component::CreateView(
                         std::move(view_ref_pair.view_ref));
 }
 
-void Component::CreateViewWithViewRef(
+void ComponentV1::CreateViewWithViewRef(
     zx::eventpair view_token,
     fuchsia::ui::views::ViewRefControl control_ref,
     fuchsia::ui::views::ViewRef view_ref) {
@@ -542,7 +542,7 @@ void Component::CreateViewWithViewRef(
       ));
 }
 
-void Component::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
+void ComponentV1::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
   if (!svc_) {
     FML_DLOG(ERROR)
         << "Component incoming services was invalid when attempting to "
@@ -566,7 +566,7 @@ void Component::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
 }
 
 #if !defined(DART_PRODUCT)
-void Component::WriteProfileToTrace() const {
+void ComponentV1::WriteProfileToTrace() const {
   for (const auto& engine : shell_holders_) {
     engine->WriteProfileToTrace();
   }
