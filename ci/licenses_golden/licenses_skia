@@ -1,4 +1,4 @@
-Signature: 8df9c319fd6dcb36b41329b4e38bf537
+Signature: 06ea8b533b5bd2c19b4ac3ad89735a45
 
 UNUSED LICENSES:
 
@@ -5447,7 +5447,6 @@ FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlRenderCommandEncoder.h
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/AtlasRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/CullTest.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/Tessellation.h
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.cpp
 FILE: ../../../third_party/skia/src/shaders/SkTransformShader.h
 FILE: ../../../third_party/skia/src/sksl/lex/TransitionTable.cpp
@@ -5947,7 +5946,6 @@ FILE: ../../../third_party/skia/src/gpu/tessellate/PathXform.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeFixedCountTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeFixedCountTessellator.h
 FILE: ../../../third_party/skia/src/gpu/tessellate/StrokeTessellator.h
-FILE: ../../../third_party/skia/src/gpu/tessellate/Tessellation.cpp
 FILE: ../../../third_party/skia/src/gpu/tessellate/shaders/GrTessellationShader.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.cpp
 FILE: ../../../third_party/skia/src/sksl/SkSLDSLParser.h
