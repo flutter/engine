@@ -35,9 +35,9 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 
 #pragma mark -
 
-// Records an active client of the messenger (FlutterEngine) that listens to
+// Records an active handler of the messenger (FlutterEngine) that listens to
 // platform messages on a given channel.
-@interface FlutterMessenterClientInfo : NSObject
+@interface FlutterEngineHandlerInfo : NSObject
 
 - (instancetype)initWithConnection:(NSNumber*)connection
                            handler:(FlutterBinaryMessageHandler)handler;
@@ -47,7 +47,7 @@ static FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
 
 @end
 
-@implementation FlutterMessenterClientInfo
+@implementation FlutterEngineHandlerInfo
 - (instancetype)initWithConnection:(NSNumber*)connection
                            handler:(FlutterBinaryMessageHandler)handler {
   self = [super init];
@@ -167,10 +167,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterDartProject* _project;
 
   // A mapping of channel names to the registered information for those channels.
-  NSMutableDictionary<NSString*, FlutterMessenterClientInfo*>* _messengerClients;
+  NSMutableDictionary<NSString*, FlutterEngineHandlerInfo*>* _messengerHandlers;
 
-  // An self-incremental integer to identify newly assigned channels.
-  FlutterBinaryMessengerConnection _currentMessageConnection;
+  // A self-incremental integer to assign to newly assigned channels as
+  // identification.
+  FlutterBinaryMessengerConnection _currentMessengerConnection;
 
   // Whether the engine can continue running after the view controller is removed.
   BOOL _allowHeadlessExecution;
@@ -198,8 +199,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   NSAssert(self, @"Super init cannot be nil");
 
   _project = project ?: [[FlutterDartProject alloc] init];
-  _messengerClients = [[NSMutableDictionary alloc] init];
-  _currentMessageConnection = 1;
+  _messengerHandlers = [[NSMutableDictionary alloc] init];
+  _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
 
@@ -588,9 +589,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     }
   };
 
-  FlutterMessenterClientInfo* client = _messengerClients[channel];
-  if (client) {
-    client.handler(messageData, binaryResponseHandler);
+  FlutterEngineHandlerInfo* handlerInfo = _messengerHandlers[channel];
+  if (handlerInfo) {
+    handlerInfo.handler(messageData, binaryResponseHandler);
   } else {
     binaryResponseHandler(nil);
   }
@@ -690,26 +691,26 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(nonnull NSString*)channel
                                           binaryMessageHandler:
                                               (nullable FlutterBinaryMessageHandler)handler {
-  _currentMessageConnection += 1;
-  _messengerClients[channel] =
-      [[FlutterMessenterClientInfo alloc] initWithConnection:@(_currentMessageConnection)
-                                                     handler:[handler copy]];
-  return _currentMessageConnection;
+  _currentMessengerConnection += 1;
+  _messengerHandlers[channel] =
+      [[FlutterEngineHandlerInfo alloc] initWithConnection:@(_currentMessengerConnection)
+                                                   handler:[handler copy]];
+  return _currentMessengerConnection;
 }
 
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
-  // Find the _messengerClients that has the required connection, and record its
+  // Find the _messengerHandlers that has the required connection, and record its
   // channel.
   NSString* foundChannel = nil;
-  for (NSString* key in [_messengerClients allKeys]) {
-    FlutterMessenterClientInfo* record = [_messengerClients objectForKey:key];
-    if ([record.connection isEqual:@(connection)]) {
+  for (NSString* key in [_messengerHandlers allKeys]) {
+    FlutterEngineHandlerInfo* handlerInfo = [_messengerHandlers objectForKey:key];
+    if ([handlerInfo.connection isEqual:@(connection)]) {
       foundChannel = key;
       break;
     }
   }
   if (foundChannel) {
-    [_messengerClients removeObjectForKey:foundChannel];
+    [_messengerHandlers removeObjectForKey:foundChannel];
   }
 }
 
