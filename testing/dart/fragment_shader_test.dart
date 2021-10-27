@@ -79,6 +79,42 @@ void main() {
   expect(supportedOpShaders.isNotEmpty, true);
   _expectShadersRenderGreen(supportedOpShaders);
   _expectShadersHaveOp(supportedOpShaders, false /* glsl ops */);
+
+  test('equality depends on floatUniforms', () {
+    final ByteBuffer spirv = spvFile('general_shaders', 'simple.spv')
+        .readAsBytesSync().buffer;
+    final FragmentProgram program = FragmentProgram(spirv: spirv);
+    final Float32List ones = Float32List.fromList(<double>[1]);
+    final Float32List zeroes = Float32List.fromList(<double>[0]);
+
+    {
+      final a = program.shader(floatUniforms: ones);
+      final b = program.shader(floatUniforms: ones);
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+    }
+
+    {
+      final a = program.shader(floatUniforms: ones);
+      final b = program.shader(floatUniforms: zeroes);
+      expect(a, notEquals(b));
+      expect(a.hashCode, notEquals(b.hashCode));
+    }
+  });
+
+  test('equality depends on spirv', () {
+    final ByteBuffer spirvA = spvFile('general_shaders', 'simple.spv')
+        .readAsBytesSync().buffer;
+    final ByteBuffer spirvB = spvFile('general_shaders', 'uniforms.spv')
+        .readAsBytesSync().buffer;
+    final FragmentProgram programA = FragmentProgram(spirv: spirvA);
+    final FragmentProgram programB = FragmentProgram(spirv: spirvB);
+    final a = programA.shader();
+    final b = programB.shader();
+
+    expect(a, notEquals(b));
+    expect(a.hashCode, notEquals(b.hashCode));
+  });
 }
 
 // Expect that all of the spirv shaders in this folder render green.

@@ -3751,40 +3751,12 @@ class ImageShader extends Shader {
   void _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4) native 'ImageShader_initWithImage';
 }
 
-/// Constructs a shader (as used by [Paint.shader]) that runs provided SPIR-V code.
+/// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
 ///
 /// This API is in beta and does not yet work on web.
 /// See https://github.com/flutter/flutter/projects/207 for roadmap.
 ///
 /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/main/lib/spirv/README.md)
-///
-/// When initializing `floatUniforms`, the length of float uniforms must match
-/// the total number of floats defined as uniforms in the shader.
-///
-/// Consider the following snippit of GLSL code.
-///
-/// ```
-/// layout (location = 0) uniform float a;
-/// layout (location = 1) uniform vec2 b;
-/// layout (location = 2) uniform vec3 c;
-/// layout (location = 3) uniform mat2x2 d;
-/// ```
-///
-/// When compiled to SPIR-V and provided to the constructor, `floatUniforms`
-/// must have a length of 10. One per float-component of each uniform.
-///
-/// `builder.build(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
-///
-/// The uniforms will be set as follows:
-///
-/// a: 1
-/// b: [2, 3]
-/// c: [4, 5, 6]
-/// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
-///
-/// Once a [Shader] is built, uniform values cannot be changed. Instead,
-/// [build] must be called again with new uniform values, to obtain a new
-/// [Shader] object.
 ///
 class FragmentProgram extends NativeFieldWrapperClass1 {
 
@@ -3826,17 +3798,39 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// Constructs a [Shader] object suitable for use by [Paint.shader] with
   /// the given uniforms.
   ///
-  /// `floatUniforms` can be passed optionally to initialize the shader's
-  /// uniforms. If they are not set they will each default to 0.
-  ///
-  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentProgram] docs for details.
-  ///
   /// This method is suitable to be called synchronously within a widget's
   /// `build` method or from [CustomPainter.paint].
   ///
-  /// This method will aquire additional fields as [FragmentProgram] is
-  /// implemented further.
+  /// `floatUniforms` can be passed optionally to initialize the shader's
+  /// uniforms. If they are not set they will each default to 0.
+  ///
+  /// When initializing `floatUniforms`, the length of float uniforms must match
+  /// the total number of floats defined as uniforms in the shader, or an
+  /// [ArgumentError] will be thrown. Details are below.
+  ///
+  /// Consider the following snippit of GLSL code.
+  ///
+  /// ```
+  /// layout (location = 0) uniform float a;
+  /// layout (location = 1) uniform vec2 b;
+  /// layout (location = 2) uniform vec3 c;
+  /// layout (location = 3) uniform mat2x2 d;
+  /// ```
+  ///
+  /// When compiled to SPIR-V and provided to the constructor, `floatUniforms`
+  /// must have a length of 10. One per float-component of each uniform.
+  ///
+  /// `builder.build(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
+  ///
+  /// The uniforms will be set as follows:
+  ///
+  /// a: 1
+  /// b: [2, 3]
+  /// c: [4, 5, 6]
+  /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
+  ///
+  /// Once a [Shader] is built, uniform values cannot be changed. Instead,
+  /// [shader] must be called again with new uniform values.
   Shader shader({
     Float32List? floatUniforms,
   }) {
@@ -3874,11 +3868,11 @@ class _FragmentShader extends Shader {
       return false;
     return other is _FragmentShader
         && other._builder == _builder
-        && other._floatUniforms == _floatUniforms;
+        && _listEquals<double>(other._floatUniforms, _floatUniforms);
   }
 
   @override
-  int get hashCode => hashValues(_builder, _floatUniforms);
+  int get hashCode => hashValues(_builder, hashList(_floatUniforms));
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
