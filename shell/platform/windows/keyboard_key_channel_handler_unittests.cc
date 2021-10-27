@@ -113,7 +113,7 @@ TEST(KeyboardKeyChannelHandlerTest, DeadKeysDoNotCrash) {
   bool received = false;
   TestBinaryMessenger messenger(
       [&received](const std::string& channel, const uint8_t* message,
-         size_t message_size, BinaryReply reply) {
+                  size_t message_size, BinaryReply reply) {
         if (channel == "flutter/keyevent") {
           auto message_doc = JsonMessageCodec::GetInstance().DecodeMessage(
               message, message_size);
@@ -140,7 +140,8 @@ TEST(KeyboardKeyChannelHandlerTest, EmptyResponsesDoNotCrash) {
                   size_t message_size, BinaryReply reply) {
         if (channel == "flutter/keyevent") {
           std::string empty_message = "";
-          std::vector<uint8_t> empty_response(empty_message.begin(), empty_message.end());
+          std::vector<uint8_t> empty_response(empty_message.begin(),
+                                              empty_message.end());
           reply(empty_response.data(), empty_response.size());
           received = true;
         }
@@ -148,9 +149,8 @@ TEST(KeyboardKeyChannelHandlerTest, EmptyResponsesDoNotCrash) {
       });
 
   KeyboardKeyChannelHandler handler(&messenger);
-  handler.KeyboardHook(
-      64, kUnhandledScanCode, WM_KEYDOWN, L'b', false, false,
-      [](bool handled) {});
+  handler.KeyboardHook(64, kUnhandledScanCode, WM_KEYDOWN, L'b', false, false,
+                       [](bool handled) {});
 
   // Passes if it does not crash.
   EXPECT_TRUE(received);
