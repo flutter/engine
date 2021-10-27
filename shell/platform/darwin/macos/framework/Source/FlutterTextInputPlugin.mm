@@ -284,6 +284,14 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     // engine's version of the state.
     if (!_enableDeltaModel) {
       [self updateEditState];
+    } else {
+      // Send an "empty" delta. The client can compare the oldText with their
+      // current text and update with that if the race condition described above
+      // occurs.
+      [self updateEditStateWithDelta:[FlutterTextEditingDelta
+                                         textEditingDelta:@(_activeModel->GetText().c_str())
+                                            replacedRange:NSMakeRange(0, 0)
+                                              updatedText:@""]];
     }
   } else if ([method isEqualToString:kSetEditableSizeAndTransform]) {
     NSDictionary* state = call.arguments;
