@@ -647,7 +647,7 @@ public class FlutterJNI {
    *
    * <p>The {@code buffer} and {@code strings} form a communication protocol that is implemented
    * here:
-   * https://github.com/flutter/engine/blob/master/shell/platform/android/platform_view_android.cc#L207
+   * https://github.com/flutter/engine/blob/main/shell/platform/android/platform_view_android.cc#L207
    */
   @SuppressWarnings("unused")
   @UiThread
@@ -668,7 +668,7 @@ public class FlutterJNI {
    *
    * <p>The {@code buffer} and {@code strings} form a communication protocol that is implemented
    * here:
-   * https://github.com/flutter/engine/blob/master/shell/platform/android/platform_view_android.cc#L207
+   * https://github.com/flutter/engine/blob/main/shell/platform/android/platform_view_android.cc#L207
    *
    * <p>// TODO(cbracken): expand these docs to include more actionable information.
    */
