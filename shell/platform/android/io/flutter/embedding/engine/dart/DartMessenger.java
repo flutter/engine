@@ -7,7 +7,6 @@ package io.flutter.embedding.engine.dart;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import com.google.common.util.concurrent.SettableFuture;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -18,6 +17,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -40,7 +40,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   @NonNull private final ConcurrentHashMap<String, HandlerInfo> messageHandlers;
 
   /** Maps a channel name to a future that resolves when the channel is defined. */
-  @NonNull private final ConcurrentHashMap<String, SettableFuture<Void>> definedChannels;
+  @NonNull private final ConcurrentHashMap<String, FutureTask<Void>> definedChannels;
 
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
   private int nextReplyId = 1;
@@ -144,11 +144,13 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       }
     }
     Log.v(TAG, "Setting handler for channel '" + channel + "'");
-    if (!definedChannels.has(channel)) {
-      definedChannels.put(channel, SettableFuture.create());
+    synchronized (this) {
+      if (!definedChannels.has(channel)) {
+        definedChannels.put(channel, SettableFuture.create());
+      }
+      definedChannels.get(channel).set(Void.TYPE);
+      messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
     }
-    definedChannels.get(channel).set(Void.TYPE);
-    messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
   }
 
   @Override
@@ -202,36 +204,38 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       long messageData) {
     // Called from the ui thread.
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
-
-    if (!messageHandlers.has(channel)) {
-      // The channel is not defined when the Dart VM sends a message before the channels are
-      // registered.
-      //
-      // This is possible if the Dart VM starts before channel registration, and if the thread that
-      // registers the channels is busy or slow at registering the channel handlers.
-      //
-      // In such cases, wait for a limited time, and exit with error if the time is exceeded.
-      // This is effectively acting as a lock, so the current thread (Dart UI thread) is blocked
-      // until the lock is released.
-      if (!definedChannels.has(channel)) {
-        definedChannels.put(channel, SettableFuture.create());
-      }
-      final SettableFuture<Boolean> future = definedChannels.get(channel);
-      try {
-        future.get(10, TimeUnit.SECONDS);
-      } catch (ExecutionException | InterruptedException ex) {
-        Log.e(TAG, "Undefined channel " + channel + ".", ex);
-        return;
-      } catch (TimeoutException ex) {
-        Log.e(
-            TAG,
-            "Channel "
-                + channel
-                + " was not defined in time. "
-                + "This likely means that the handler was never defined, or that the thread "
-                + "that defines the handler has been busy for an extended period of time.",
-            ex);
-        return;
+    synchronized (this) {
+      if (!messageHandlers.has(channel)) {
+        // The channel is not defined when the Dart VM sends a message before the channels are
+        // registered.
+        //
+        // This is possible if the Dart VM starts before channel registration, and if the thread
+        // that
+        // registers the channels is busy or slow at registering the channel handlers.
+        //
+        // In such cases, wait for a limited time, and exit with error if the time is exceeded.
+        // This is effectively acting as a lock, so the current thread (Dart UI thread) is blocked
+        // until the lock is released.
+        if (!definedChannels.has(channel)) {
+          definedChannels.put(channel, SettableFuture.create());
+        }
+        final SettableFuture<Boolean> future = definedChannels.get(channel);
+        try {
+          future.get(10, TimeUnit.SECONDS);
+        } catch (ExecutionException | InterruptedException ex) {
+          Log.e(TAG, "Undefined channel " + channel + ".", ex);
+          return;
+        } catch (TimeoutException ex) {
+          Log.e(
+              TAG,
+              "Channel "
+                  + channel
+                  + " was not defined in time. "
+                  + "This likely means that the handler was never defined, or that the thread "
+                  + "that defines the handler has been busy for an extended period of time.",
+              ex);
+          return;
+        }
       }
     }
     @Nullable final HandlerInfo handlerInfo = messageHandlers.get(channel);
