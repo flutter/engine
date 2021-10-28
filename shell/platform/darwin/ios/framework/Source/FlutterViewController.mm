@@ -731,6 +731,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
+    [self invalidateDisplayLinkIfNeeded];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
@@ -780,6 +781,13 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
                                                       object:self
                                                     userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)invalidateDisplayLinkIfNeeded {
+  if (self.keyboardAnimationLink) {
+    [self.keyboardAnimationLink invalidate];
+    self.keyboardAnimationLink = nil;
+  }
 }
 
 - (void)dealloc {
@@ -1176,39 +1184,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Set animation begin value
   [self keyboardAnimationView].frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
 
-  if (@available(iOS 10.0, *)) {
-    // Stop animation when start another animation
-    if ([self animator] != nil) {
-      [[self animator] stopAnimation:YES];
-    }
-
-    UIViewPropertyAnimator* animator = [[UIViewPropertyAnimator alloc]
-        initWithDuration:duration
-                   curve:curve
-              animations:^{
-                // Set animation end value
-                [self keyboardAnimationView].frame = CGRectMake(0, insetBottomEndValue, 0, 0);
-              }];
-
-    [animator addCompletion:^(UIViewAnimatingPosition finalPosition) {
-      if (finalPosition == UIViewAnimatingPositionEnd) {
-        [self.keyboardAnimationLink invalidate];
-        self.keyboardAnimationLink = nil;
-
-        // Set the end value to avoid that little error because presentationLayer will not reach
-        // end value normally
-        _viewportMetrics.physical_view_inset_bottom = insetBottomEndValue;
-        [self updateViewportMetrics];
-      }
-    }];
-    _animator.reset(animator);
-    [[self animator] startAnimation];
-    return;
-  }
-
-  // System version below iOS 10.0
-
-  // Stop animation when start another animation
+  // Stop animation when start another animation,and after call this line,the `completion` in UIView
+  // animation will be called. If it is animating,the `finished` will be false,and the
+  // `keyboardAnimationLink` will not invalidate.When animation finishes.The `finished` will be true
+  // and `keyboardAnimationLink` will invalidate
   [[self keyboardAnimationView].layer removeAllAnimations];
 
   [UIView animateWithDuration:duration
@@ -1217,9 +1196,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self keyboardAnimationView].frame = CGRectMake(0, insetBottomEndValue, 0, 0);
       }
       completion:^(BOOL finished) {
+        // Only when animation finished ,we invalidate the `keyboardAnimationLink` and
+        //  set end value to _viewportMetrics
         if (finished) {
-          [self.keyboardAnimationLink invalidate];
-          self.keyboardAnimationLink = nil;
+          [self invalidateDisplayLinkIfNeeded];
 
           // Set the end value to avoid that little error because presentationLayer will not reach
           // end value normally
