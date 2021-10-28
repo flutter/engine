@@ -116,7 +116,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIPointerInteraction> _pointerInteraction API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
-  fml::scoped_nsobject<UIViewPropertyAnimator> _animator API_AVAILABLE(ios(10.0));
   MouseState _mouseState;
 }
 
@@ -548,10 +547,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (UIView*)keyboardAnimationView {
   return _keyboardAnimationView.get();
-}
-
-- (UIViewPropertyAnimator*)animator API_AVAILABLE(ios(10.0)) {
-  return _animator.get();
 }
 
 - (BOOL)loadDefaultSplashScreenView {
