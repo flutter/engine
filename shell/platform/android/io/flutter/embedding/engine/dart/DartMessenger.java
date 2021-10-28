@@ -204,13 +204,13 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
 
     if (!messageHandlers.has(channel)) {
-      // Handle race condition situation.
       // The channel is not defined when the Dart VM sends a message before the channels are
       // registered.
+      //
       // This is possible if the Dart VM starts before channel registration, and if the thread that
       // registers the channels is busy or slow at registering the channel handlers.
-      // In such cases, wait for a limited time, and exit with error if the time is exceeded.
       //
+      // In such cases, wait for a limited time, and exit with error if the time is exceeded.
       // This is effectively acting as a lock, so the current thread (Dart UI thread) is blocked
       // until the lock is released.
       if (!definedChannels.has(channel)) {
