@@ -128,7 +128,7 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.CleanupAfterFrame();
-  ASSERT_EQ(cache.picture_metrics().total_count(), 0);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
   cache.PrepareNewFrame();
 
@@ -139,7 +139,7 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   ASSERT_FALSE(cache.Draw(*picture, dummy_canvas));
 
   cache.CleanupAfterFrame();
-  ASSERT_EQ(cache.picture_metrics().total_count(), 0);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 0u);
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 0u);
   cache.PrepareNewFrame();
 
@@ -149,7 +149,7 @@ TEST(RasterCache, MetricsOmitUnpopulatedEntries) {
   ASSERT_TRUE(cache.Draw(*picture, dummy_canvas));
 
   cache.CleanupAfterFrame();
-  ASSERT_EQ(cache.picture_metrics().total_count(), 1);
+  ASSERT_EQ(cache.picture_metrics().total_count(), 1u);
   // 150w * 100h * 4bpp
   ASSERT_EQ(cache.picture_metrics().total_bytes(), 60000u);
 }

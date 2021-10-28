@@ -48,7 +48,7 @@ struct RasterCacheMetrics {
   /**
    * The number of cache entries with images evicted in this frame.
    */
-  int eviction_count = 0;
+  size_t eviction_count = 0;
 
   /**
    * The size of all of the images evicted in this frame.
@@ -58,7 +58,7 @@ struct RasterCacheMetrics {
   /**
    * The number of cache entries with images used in this frame.
    */
-  int in_use_count = 0;
+  size_t in_use_count = 0;
 
   /**
    * The size of all of the images used in this frame.
@@ -70,7 +70,7 @@ struct RasterCacheMetrics {
    * they were used in the frame or held memory during the frame and then
    * were evicted after it ended.
    */
-  int total_count() const { return in_use_count + eviction_count; }
+  size_t total_count() const { return in_use_count + eviction_count; }
 
   /**
    * The size of all of the cached images during this frame whether
@@ -78,17 +78,6 @@ struct RasterCacheMetrics {
    * were evicted after it ended.
    */
   size_t total_bytes() const { return in_use_bytes + eviction_bytes; }
-
-  /**
-   * Reset the cache statistics at the beginning of a frame. This method
-   * is called automatically from |RasterCache::PrepareNewFrame()|.
-   */
-  void clear() {
-    eviction_count = 0;
-    eviction_bytes = 0;
-    in_use_count = 0;
-    in_use_bytes = 0;
-  }
 };
 
 class RasterCache {

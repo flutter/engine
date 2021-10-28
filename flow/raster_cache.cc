@@ -386,8 +386,8 @@ void RasterCache::PrepareNewFrame() {
 }
 
 void RasterCache::CleanupAfterFrame() {
-  picture_metrics_.clear();
-  layer_metrics_.clear();
+  picture_metrics_ = {};
+  layer_metrics_ = {};
   SweepOneCacheAfterFrame(picture_cache_, picture_metrics_);
   SweepOneCacheAfterFrame(display_list_cache_, picture_metrics_);
   SweepOneCacheAfterFrame(layer_cache_, layer_metrics_);
@@ -398,8 +398,8 @@ void RasterCache::Clear() {
   picture_cache_.clear();
   display_list_cache_.clear();
   layer_cache_.clear();
-  picture_metrics_.clear();
-  layer_metrics_.clear();
+  picture_metrics_ = {};
+  layer_metrics_ = {};
 }
 
 size_t RasterCache::GetCachedEntriesCount() const {
