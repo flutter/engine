@@ -381,28 +381,17 @@ bool RasterCache::Draw(const Layer* layer,
 }
 
 void RasterCache::PrepareNewFrame() {
-  frame_count_++;
-  frame_is_swept_ = false;
   picture_cached_this_frame_ = 0;
   display_list_cached_this_frame_ = 0;
-  picture_metrics_.clear();
-  layer_metrics_.clear();
-}
-
-void RasterCache::SweepIfNeeded() {
-  if (!frame_is_swept_) {
-    SweepOneCacheAfterFrame(picture_cache_, picture_metrics_);
-    SweepOneCacheAfterFrame(display_list_cache_, picture_metrics_);
-    SweepOneCacheAfterFrame(layer_cache_, layer_metrics_);
-    frame_is_swept_ = true;
-  }
 }
 
 void RasterCache::CleanupAfterFrame() {
-  SweepIfNeeded();
+  picture_metrics_.clear();
+  layer_metrics_.clear();
+  SweepOneCacheAfterFrame(picture_cache_, picture_metrics_);
+  SweepOneCacheAfterFrame(display_list_cache_, picture_metrics_);
+  SweepOneCacheAfterFrame(layer_cache_, layer_metrics_);
   TraceStatsToTimeline();
-  picture_cached_this_frame_ = 0;
-  display_list_cached_this_frame_ = 0;
 }
 
 void RasterCache::Clear() {
@@ -411,16 +400,6 @@ void RasterCache::Clear() {
   layer_cache_.clear();
   picture_metrics_.clear();
   layer_metrics_.clear();
-}
-
-const RasterCacheMetrics& RasterCache::picture_metrics() const {
-  FML_DCHECK(frame_is_swept_);
-  return picture_metrics_;
-}
-
-const RasterCacheMetrics& RasterCache::layer_metrics() const {
-  FML_DCHECK(frame_is_swept_);
-  return layer_metrics_;
 }
 
 size_t RasterCache::GetCachedEntriesCount() const {
@@ -449,7 +428,6 @@ void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
 }
 
 void RasterCache::TraceStatsToTimeline() const {
-  FML_DCHECK(frame_is_swept_);
 #if !FLUTTER_RELEASE
   FML_TRACE_COUNTER(
       "flutter",                                                           //

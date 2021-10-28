@@ -130,20 +130,16 @@ void FrameTimingsRecorder::RecordBuildEnd(fml::TimePoint build_end) {
   build_end_ = build_end;
 }
 
-void FrameTimingsRecorder::RecordRasterStart(fml::TimePoint raster_start,
-                                             const RasterCache* cache) {
+void FrameTimingsRecorder::RecordRasterStart(fml::TimePoint raster_start) {
   std::scoped_lock state_lock(state_mutex_);
   FML_DCHECK(state_ == State::kBuildEnd);
   state_ = State::kRasterStart;
   raster_start_ = raster_start;
-  sweep_count_at_raster_start_ = cache ? cache->frame_count() : -1;
 }
 
 FrameTiming FrameTimingsRecorder::RecordRasterEnd(const RasterCache* cache) {
   std::scoped_lock state_lock(state_mutex_);
   FML_DCHECK(state_ == State::kRasterStart);
-  FML_DCHECK(sweep_count_at_raster_start_ ==
-             (cache ? cache->frame_count() : -1));
   state_ = State::kRasterEnd;
   raster_end_ = fml::TimePoint::Now();
   raster_end_wall_time_ = fml::TimePoint::CurrentWallTime();
@@ -199,7 +195,6 @@ std::unique_ptr<FrameTimingsRecorder> FrameTimingsRecorder::CloneUntil(
 
   if (state >= State::kRasterStart) {
     recorder->raster_start_ = raster_start_;
-    recorder->sweep_count_at_raster_start_ = sweep_count_at_raster_start_;
   }
 
   if (state >= State::kRasterEnd) {

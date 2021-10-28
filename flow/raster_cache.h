@@ -226,15 +226,14 @@ class RasterCache {
             SkPaint* paint = nullptr) const;
 
   void PrepareNewFrame();
-  void SweepIfNeeded();
   void CleanupAfterFrame();
 
   void Clear();
 
   void SetCheckboardCacheImages(bool checkerboard);
 
-  const RasterCacheMetrics& picture_metrics() const;
-  const RasterCacheMetrics& layer_metrics() const;
+  const RasterCacheMetrics& picture_metrics() const { return picture_metrics_; }
+  const RasterCacheMetrics& layer_metrics() const { return layer_metrics_; }
 
   size_t GetCachedEntriesCount() const;
 
@@ -271,14 +270,6 @@ class RasterCache {
    * estimate the SkImage memory usage.
    */
   size_t EstimateLayerCacheByteSize() const;
-
-  /**
-   * @brief Return the count of the frame currently being managed.
-   *
-   * The frame count can help to determine if the cache is still working
-   * on the same frame between usages.
-   */
-  int frame_count() const { return frame_count_; }
 
   /**
    * @brief Return the number of frames that a picture must be prepared
@@ -333,8 +324,6 @@ class RasterCache {
   const size_t picture_and_display_list_cache_limit_per_frame_;
   size_t picture_cached_this_frame_ = 0;
   size_t display_list_cached_this_frame_ = 0;
-  int frame_count_ = 0;
-  bool frame_is_swept_ = true;
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;
   mutable PictureRasterCacheKey::Map<Entry> picture_cache_;

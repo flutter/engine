@@ -16,7 +16,6 @@ CompositorContext::~CompositorContext() = default;
 
 void CompositorContext::BeginFrame(ScopedFrame& frame,
                                    bool enable_instrumentation) {
-  raster_cache_.PrepareNewFrame();
   if (enable_instrumentation) {
     frame_count_.Increment();
     raster_time_.Start();
@@ -25,7 +24,6 @@ void CompositorContext::BeginFrame(ScopedFrame& frame,
 
 void CompositorContext::EndFrame(ScopedFrame& frame,
                                  bool enable_instrumentation) {
-  raster_cache_.CleanupAfterFrame();
   if (enable_instrumentation) {
     raster_time_.Stop();
   }
