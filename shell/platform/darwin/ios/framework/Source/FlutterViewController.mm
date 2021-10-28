@@ -69,6 +69,10 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
+/**
+ * Keyboard animation properties
+ */
+@property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, strong) CADisplayLink* keyboardAnimationLink;
 
 /**
@@ -726,7 +730,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
-    [self invalidateDisplayLinkIfNeeded];
+    [self stopKeyboardAnimation];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
@@ -776,13 +780,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
                                                       object:self
                                                     userInfo:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-- (void)invalidateDisplayLinkIfNeeded {
-  if (self.keyboardAnimationLink) {
-    [self.keyboardAnimationLink invalidate];
-    self.keyboardAnimationLink = nil;
-  }
 }
 
 - (void)dealloc {
@@ -1139,16 +1136,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // The keyboard is treated as an inset since we want to effectively reduce the window size by
     // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
     // bottom padding.
-    [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom
-             insetBottomEndValue:bottom * scale
-                        duration:duration
-                           curve:curve];
+    self.targetViewInsetBottom = bottom * scale;
   } else {
-    [self startKeyBoardAnimation:_viewportMetrics.physical_view_inset_bottom
-             insetBottomEndValue:0.0
-                        duration:duration
-                           curve:curve];
+    self.targetViewInsetBottom = 0;
   }
+  [self startKeyBoardAnimation:duration curve:curve];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
@@ -1156,12 +1148,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // metrics. So do not call [self updateViewportMetrics] here again
 }
 
-- (void)startKeyBoardAnimation:(CGFloat)insetBottomBeginValue
-           insetBottomEndValue:(CGFloat)insetBottomEndValue
-                      duration:(NSTimeInterval)duration
-                         curve:(UIViewAnimationCurve)curve {
-  // If insetBottomBeginValue == insetBottomEndValue,do nothing
-  if (insetBottomBeginValue == insetBottomEndValue) {
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration curve:(UIViewAnimationCurve)curve {
+  // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing
+  if (_viewportMetrics.physical_view_inset_bottom == self.targetViewInsetBottom) {
     return;
   }
 
@@ -1176,32 +1165,40 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     [self startKeyboardAnimationLink];
   }
 
-  // Set animation begin value
-  [self keyboardAnimationView].frame = CGRectMake(0, insetBottomBeginValue, 0, 0);
-
-  // Stop animation when start another animation,and after call this line,the `completion` in UIView
-  // animation will be called. If it is animating,the `finished` will be false,and the
+  // Remove running animation when start another animation,and after call this line,the `completion`
+  // in UIView animation will be called. If it is animating,the `finished` will be false,and the
   // `keyboardAnimationLink` will not invalidate.When animation finishes.The `finished` will be true
   // and `keyboardAnimationLink` will invalidate
   [[self keyboardAnimationView].layer removeAllAnimations];
 
+  // Set animation begin value
+  [self keyboardAnimationView].frame =
+      CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
+
   [UIView animateWithDuration:duration
       animations:^{
         // Set end value
-        [self keyboardAnimationView].frame = CGRectMake(0, insetBottomEndValue, 0, 0);
+        [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
         // Only when animation finished ,we invalidate the `keyboardAnimationLink` and
         //  set end value to _viewportMetrics
         if (finished) {
-          [self invalidateDisplayLinkIfNeeded];
-
-          // Set the end value to avoid that little error because presentationLayer will not reach
-          // end value normally
-          _viewportMetrics.physical_view_inset_bottom = insetBottomEndValue;
-          [self updateViewportMetrics];
+          [self stopKeyboardAnimation];
         }
       }];
+}
+
+- (void)stopKeyboardAnimation {
+  if (self.keyboardAnimationLink) {
+    [self.keyboardAnimationLink invalidate];
+    self.keyboardAnimationLink = nil;
+  }
+  if (_viewportMetrics.physical_view_inset_bottom != self.targetViewInsetBottom) {
+    // Set to end value if the animation is not complete
+    _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
+    [self updateViewportMetrics];
+  }
 }
 
 - (void)startKeyboardAnimationLink {
