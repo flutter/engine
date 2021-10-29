@@ -1,4 +1,4 @@
-Signature: e15d7da916e70a34dde6209b97511392
+Signature: 7af5fba4555c3b263dde6aaa602fe965
 
 UNUSED LICENSES:
 
@@ -890,6 +890,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Chromebook_GLES_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_NoGpu.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-iOS.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Release-Graphite.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-x86_64-Debug-ASAN.json
@@ -2350,6 +2351,7 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Device.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Device.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawContext.h
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawOrder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
@@ -2359,6 +2361,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.h
 FILE: ../../../third_party/skia/experimental/graphite/src/GpuWorkSubmission.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.h
+FILE: ../../../third_party/skia/experimental/graphite/src/ProgramCache.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ProgramCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Recorder.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Recorder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Recording.cpp
@@ -2385,6 +2389,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/TextureInfo.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Uniform.h
+FILE: ../../../third_party/skia/experimental/graphite/src/UniformCache.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/UniformCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/BoundsManager.h
