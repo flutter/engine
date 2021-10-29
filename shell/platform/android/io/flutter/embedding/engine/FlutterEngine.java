@@ -352,7 +352,6 @@ public class FlutterEngine {
     // loaded AndroidManifest config turn this feature on.
     if (automaticallyRegisterPlugins && flutterLoader.automaticallyRegisterPlugins()) {
       GeneratedPluginRegister.registerGeneratedPlugins(this);
-      dartExecutor.notifyPluginRegistration();
     }
   }
 

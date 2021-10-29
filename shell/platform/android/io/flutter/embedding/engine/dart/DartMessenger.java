@@ -38,32 +38,38 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   /**
    * Maps a channel name to an object that contains the task queue and the handler associated with
    * the channel.
+   *
+   * <p>Reads and writes to this map must lock {@code handlersLock}.
    */
-  @NonNull private final ConcurrentHashMap<String, HandlerInfo> messageHandlers;
+  @NonNull
+  private final ConcurrentHashMap<String, HandlerInfo> messageHandlers = new ConcurrentHashMap<>();
 
   /**
    * Maps a channel name to queue of task dispatchers. This queue is processed when the channel
    * handler is registered.
+   *
+   * <p>Reads and writes to this map must lock {@code handlersLock}.
    */
-  @NonNull private final ConcurrentHashMap<String, List<Runnable>> delayedTaskDispatcher;
+  @NonNull
+  private final ConcurrentHashMap<String, List<Runnable>> delayedTaskDispatcher =
+      new ConcurrentHashMap<>();
 
-  private boolean canDelayTasks = true;
+  @NonNull private final Object handlersLock = new Object();
+  private boolean canDelayTasks = false;
 
-  @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
+  @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies = new HashMap<>();
   private int nextReplyId = 1;
 
   @NonNull private final DartMessengerTaskQueue platformTaskQueue = new PlatformTaskQueue();
 
-  @NonNull private WeakHashMap<TaskQueue, DartMessengerTaskQueue> createdTaskQueues;
+  @NonNull
+  private WeakHashMap<TaskQueue, DartMessengerTaskQueue> createdTaskQueues =
+      new WeakHashMap<TaskQueue, DartMessengerTaskQueue>();
 
   @NonNull private TaskQueueFactory taskQueueFactory;
 
   DartMessenger(@NonNull FlutterJNI flutterJNI, @NonNull TaskQueueFactory taskQueueFactory) {
     this.flutterJNI = flutterJNI;
-    this.messageHandlers = new ConcurrentHashMap<>();
-    this.delayedTaskDispatcher = new ConcurrentHashMap<>();
-    this.pendingReplies = new HashMap<>();
-    this.createdTaskQueues = new WeakHashMap<TaskQueue, DartMessengerTaskQueue>();
     this.taskQueueFactory = taskQueueFactory;
   }
 
@@ -139,7 +145,9 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @Nullable TaskQueue taskQueue) {
     if (handler == null) {
       Log.v(TAG, "Removing handler for channel '" + channel + "'");
-      messageHandlers.remove(channel);
+      synchronized (handlersLock) {
+        messageHandlers.remove(channel);
+      }
       return;
     }
     DartMessengerTaskQueue dartMessengerTaskQueue = null;
@@ -151,7 +159,9 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       }
     }
     Log.v(TAG, "Setting handler for channel '" + channel + "'");
-    messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
+    synchronized (handlersLock) {
+      messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
+    }
     runDelayedTasksForChannel(channel);
   }
 
@@ -163,13 +173,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    *
    * @param channel The channel name.
    */
-  public synchronized void runDelayedTasksForChannel(@NonNull String channel) {
-    if (!delayedTaskDispatcher.has(channel)) {
-      return;
+  public void runDelayedTasksForChannel(@NonNull String channel) {
+    List<Runnable> list;
+    synchronized (handlersLock) {
+      if (!delayedTaskDispatcher.contains(channel)) {
+        return;
+      }
+      list = delayedTaskDispatcher.get(channel);
+      delayedTaskDispatcher.remove(channel);
     }
-    final LinkedList<Runnable> list = delayedTaskDispatcher.get(channel);
-    delayedTaskDispatcher.remove(channel);
-
     while (!list.isEmpty()) {
       final Runnable task = list.poll();
       try {
@@ -180,25 +192,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
-  /** Runs all the tasks that handle messages received from Dart for the provided channel name. */
-  public synchronized void runDelayedTasks() {
-    for (String channel : delayedTaskDispatcher.keySet()) {
-      runDelayedTasksForChannel(channel);
-    }
-  }
-
   /**
-   * Stops the ability to queue tasks when messages are received from Dart.
+   * Enables the ability to queue tasks when messages are received from Dart.
    *
-   * <p>This should be called if there's no pending channel handler registration. For example,
-   * channels are typically registered during plugin registration, so it makes sense to stop the
-   * delayed task queue right at that point.
-   *
-   * <p>Once this is called, any future message from Dart that doesn't have an associated handler
-   * results in an error.
+   * <p>This is useful when there are pending channel handler registrations. For example, Dart may
+   * be initialized concurrently, and prior to the registration of the channel handlers. This
+   * implies that Dart may start sending messages while plugins are being registered.
    */
-  public synchronized void stopDelayedTaskQueue() {
-    canDelayTasks = false;
+  public void enableDelayedTaskQueue() {
+    canDelayTasks = true;
   }
 
   @Override
@@ -260,7 +262,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
     final Runnable taskDispatcher =
         () -> {
-          final HandlerInfo handlerInfo = messageHandlers.get(channel);
+          HandlerInfo handlerInfo;
+          synchronized (handlersLock) {
+            handlerInfo = messageHandlers.get(channel);
+          }
           final DartMessengerTaskQueue taskQueue =
               (handlerInfo != null) ? handlerInfo.taskQueue : null;
           Runnable myRunnable =
@@ -285,10 +290,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
           nonnullTaskQueue.dispatch(myRunnable);
         };
 
-    synchronized (this) {
-      if (!canDelayTasks || messageHandlers.has(channel)) {
-        taskDispatcher.run();
-      } else {
+    boolean runNow = true;
+    synchronized (handlersLock) {
+      if (canDelayTasks && !messageHandlers.contains(channel)) {
+        runNow = false;
         // The channel is not defined when the Dart VM sends a message before the channels are
         // registered.
         //
@@ -297,12 +302,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         //
         // In such cases, the task dispatchers are queued, and processed when the channel is
         // defined.
-        if (!delayedTaskDispatcher.has(channel)) {
+        if (!delayedTaskDispatcher.contains(channel)) {
           delayedTaskDispatcher.put(channel, new LinkedList<>());
         }
         List<Runnable> delayedTaskQueue = delayedTaskDispatcher.get(channel);
         delayedTaskQueue.add(taskDispatcher);
       }
+    }
+    if (runNow) {
+      taskDispatcher.run();
     }
   }
 

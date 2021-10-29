@@ -287,16 +287,6 @@ public class DartExecutor implements BinaryMessenger {
   }
 
   /**
-   * Notifies that the plugins have been registered.
-   *
-   * <p>This informs the Dart messenger that all expected channel handlers have been registered.
-   */
-  public void notifyPluginRegistration() {
-    dartMessenger.runDelayedTasks();
-    dartMessenger.stopDelayedTaskQueue();
-  }
-
-  /**
    * Configuration options that specify which Dart entrypoint function is executed and where to find
    * that entrypoint and other assets required for Dart execution.
    */
