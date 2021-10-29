@@ -85,7 +85,8 @@ class ImageGeneratorRegistry {
   using FactorySet = std::set<PrioritizedFactory, Compare>;
   FactorySet image_generator_factories_;
   size_t nonce_;
-  fml::WeakPtrFactory<ImageGeneratorRegistry> weak_factory_;
+  fml::WeakPtrFactory<ImageGeneratorRegistry>
+      weak_factory_;  // Must be the last member.
 };
 
 }  // namespace flutter

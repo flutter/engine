@@ -931,7 +931,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ImageDecoder image_decoder_;
   ImageGeneratorRegistry image_generator_registry_;
   TaskRunners task_runners_;
-  fml::WeakPtrFactory<Engine> weak_factory_;
 
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
@@ -980,7 +979,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 
   friend class testing::ShellTest;
-
+  fml::WeakPtrFactory<Engine> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };
 

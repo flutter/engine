@@ -462,8 +462,8 @@ class Rasterizer final : public SnapshotDelegate {
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
+
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,
@@ -499,6 +499,9 @@ class Rasterizer final : public SnapshotDelegate {
   void FireNextFrameCallbackIfPresent();
 
   static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
+
+  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer>
+      weak_factory_;  // Must be the last member.
 
   FML_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
 };

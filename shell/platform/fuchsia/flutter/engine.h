@@ -170,7 +170,7 @@ class Engine final : public fuchsia::memorypressure::Watcher {
 
   bool intercept_all_input_ = false;
 
-  fml::WeakPtrFactory<Engine> weak_factory_;
+  fml::WeakPtrFactory<Engine> weak_factory_;  // Must be the last member.
 
   friend class testing::EngineTest;
 

@@ -69,11 +69,13 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
   // Keep track of the last time we produced a surface.  This is used to
   // determine whether it is safe to shrink |surface_pool_| or not.
   zx::time last_produce_time_ = async::Now(async_get_default_dispatcher());
-  fml::WeakPtrFactory<VulkanSurfaceProducer> weak_factory_{this};
 
   // Disallow copy and assignment.
   VulkanSurfaceProducer(const VulkanSurfaceProducer&) = delete;
   VulkanSurfaceProducer& operator=(const VulkanSurfaceProducer&) = delete;
+
+  fml::WeakPtrFactory<VulkanSurfaceProducer> weak_factory_{
+      this};  // Must be the last member.
 };
 
 }  // namespace flutter_runner

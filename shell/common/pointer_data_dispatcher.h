@@ -155,11 +155,12 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
 
   bool is_pointer_data_in_progress_ = false;
 
-  fml::WeakPtrFactory<SmoothPointerDataDispatcher> weak_factory_;
-
   void DispatchPendingPacket();
 
   void ScheduleSecondaryVsyncCallback();
+
+  fml::WeakPtrFactory<SmoothPointerDataDispatcher>
+      weak_factory_;  // Must be the last member.
 
   FML_DISALLOW_COPY_AND_ASSIGN(SmoothPointerDataDispatcher);
 };

@@ -816,10 +816,11 @@ class PlatformView {
 
   PointerDataPacketConverter pointer_data_packet_converter_;
   SkISize size_;
-  fml::WeakPtrFactory<PlatformView> weak_factory_;
 
   // This is the only method called on the raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
+
+  fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);

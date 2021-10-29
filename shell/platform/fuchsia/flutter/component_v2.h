@@ -108,7 +108,6 @@ class ComponentV2 final
   fml::RefPtr<flutter::DartSnapshot> isolate_snapshot_;
   std::set<std::unique_ptr<Engine>> shell_holders_;
   std::pair<bool, uint32_t> last_return_code_;
-  fml::WeakPtrFactory<ComponentV2> weak_factory_;
 
   ComponentV2(
       TerminationCallback termination_callback,
@@ -149,6 +148,7 @@ class ComponentV2 final
   // |flutter::Engine::Delegate|
   void OnEngineTerminate(const Engine* holder) override;
 
+  fml::WeakPtrFactory<ComponentV2> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(ComponentV2);
 };
 

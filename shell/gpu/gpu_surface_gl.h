@@ -66,7 +66,6 @@ class GPUSurfaceGL : public Surface {
   // external view embedder is present.
   const bool render_to_surface_ = true;
   bool valid_ = false;
-  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL> weak_factory_;
 
   bool CreateOrUpdateSurfaces(const SkISize& size);
 
@@ -75,6 +74,9 @@ class GPUSurfaceGL : public Surface {
       const SkMatrix& root_surface_transformation);
 
   bool PresentSurface(SkCanvas* canvas);
+
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL>
+      weak_factory_;  // Must be the last member.
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };

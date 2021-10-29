@@ -239,8 +239,6 @@ class FlutterPlatformViewsController {
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
       gesture_recognizers_blocking_policies;
 
-  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
-
   bool catransaction_added_ = false;
 
   void OnCreate(FlutterMethodCall* call, FlutterResult& result);
@@ -302,6 +300,8 @@ class FlutterPlatformViewsController {
   // Resets the state of the frame.
   void ResetFrameState();
 
+  std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>>
+      weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
