@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import 'canvaskit/image.dart' show skiaDecodeImageFromPixels;
 import 'dom_renderer.dart';
 
 /// Provides mouse cursor bindings, such as the `flutter/mousecursor` channel.
@@ -79,15 +81,18 @@ class MouseCursor {
 
   Future<int> createImageCursor(List<int> data, int width, int height, int offsetX, int offsetY) async {
     final Uint8List byteArray = Uint8List.fromList(data);
-    final ui.ImageDescriptor image = ui.ImageDescriptor.raw(
-      await ui.ImmutableBuffer.fromUint8List(byteArray),
-      width: width,
-      height: height,
-      pixelFormat: ui.PixelFormat.rgba8888,
+    final Completer<ui.Image> completeImage = Completer<ui.Image>();
+    skiaDecodeImageFromPixels(
+      byteArray,
+      width,
+      height,
+      ui.PixelFormat.rgba8888,
+      (ui.Image result) {
+        completeImage.complete(result);
+      },
     );
-    final ui.Codec codec = await image.instantiateCodec();
-    final ui.FrameInfo frame = await codec.getNextFrame();
-    final ByteData pngData = (await frame.image.toByteData(format: ui.ImageByteFormat.png))!;
+    final ui.Image image = await completeImage.future;
+    final ByteData pngData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
     final Uint8List pngBytes = Uint8List.sublistView(pngData);
     final String cursorString = 'data:image/png;base64,${base64.encode(pngBytes)}';
     _lastImageCursorId += 1;
