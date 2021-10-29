@@ -204,8 +204,32 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       long messageData) {
     // Called from the ui thread.
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
+    final Runnable dispatch = () -> {
+      final HandlerInfo handlerInfo = messageHandlers.get(channel);
+      final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
+      Runnable myRunnable =
+          () -> {
+            try {
+              invokeHandler(handlerInfo, message, replyId);
+              if (message != null && message.isDirect()) {
+                // This ensures that if a user retains an instance to the ByteBuffer and it happens to
+                // be direct they will get a deterministic error.
+                message.limit(0);
+              }
+            } finally {
+              // This is deleting the data underneath the message object.
+              flutterJNI.cleanupMessageData(messageData);
+            }
+          };
+      final DartMessengerTaskQueue nonnullTaskQueue =
+          taskQueue == null ? platformTaskQueue : taskQueue;
+      nonnullTaskQueue.dispatch(myRunnable);
+    };
+
     synchronized (this) {
-      if (!messageHandlers.has(channel)) {
+      if (messageHandlers.has(channel)) {
+        dispatch.run();
+      } else {
         // The channel is not defined when the Dart VM sends a message before the channels are
         // registered.
         //
@@ -217,48 +241,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         // This is effectively acting as a lock, so the current thread (Dart UI thread) is blocked
         // until the lock is released.
         if (!definedChannels.has(channel)) {
-          definedChannels.put(channel, SettableFuture.create());
-        }
-        final SettableFuture<Boolean> future = definedChannels.get(channel);
-        try {
-          future.get(10, TimeUnit.SECONDS);
-        } catch (ExecutionException | InterruptedException ex) {
-          Log.e(TAG, "Undefined channel " + channel + ".", ex);
-          return;
-        } catch (TimeoutException ex) {
-          Log.e(
-              TAG,
-              "Channel "
-                  + channel
-                  + " was not defined in time. "
-                  + "This likely means that the handler was never defined, or that the thread "
-                  + "that defines the handler has been busy for an extended period of time.",
-              ex);
-          return;
+          definedChannels.put(channel, new FutureTask<Void>(() -> {
+
+          }));
         }
       }
     }
-    @Nullable final HandlerInfo handlerInfo = messageHandlers.get(channel);
-    @Nullable
-    final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
-    Runnable myRunnable =
-        () -> {
-          try {
-            invokeHandler(handlerInfo, message, replyId);
-            if (message != null && message.isDirect()) {
-              // This ensures that if a user retains an instance to the ByteBuffer and it happens to
-              // be direct they will get a deterministic error.
-              message.limit(0);
-            }
-          } finally {
-            // This is deleting the data underneath the message object.
-            flutterJNI.cleanupMessageData(messageData);
-          }
-        };
-    @NonNull
-    final DartMessengerTaskQueue nonnullTaskQueue =
-        taskQueue == null ? platformTaskQueue : taskQueue;
-    nonnullTaskQueue.dispatch(myRunnable);
   }
 
   @Override
