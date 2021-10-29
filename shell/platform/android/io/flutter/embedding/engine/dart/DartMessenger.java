@@ -261,8 +261,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
             invokeHandler(handlerInfo, message, replyId);
             if (message != null && message.isDirect()) {
               // This ensures that if a user retains an instance to the ByteBuffer and it
-              // happens to
-              // be direct they will get a deterministic error.
+              // happens to be direct they will get a deterministic error.
               message.limit(0);
             }
           } finally {
