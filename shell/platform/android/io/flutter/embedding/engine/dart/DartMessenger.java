@@ -51,7 +51,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    * <p>Reads and writes to this map must lock {@code handlersLock}.
    */
   @NonNull
-  private final ConcurrentHashMap<String, List<Runnable>> delayedTaskDispatcher =
+  private final ConcurrentHashMap<String, List<DelayedMessageInfo>> delayedTaskDispatcher =
       new ConcurrentHashMap<>();
 
   @NonNull private final Object handlersLock = new Object();
@@ -93,6 +93,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
+  /**
+   * Holds information about a platform handler, such as the task queue that processes messages from
+   * Dart.
+   */
   private static class HandlerInfo {
     @NonNull public final BinaryMessenger.BinaryMessageHandler handler;
     @Nullable public final DartMessengerTaskQueue taskQueue;
@@ -102,6 +106,22 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         @Nullable DartMessengerTaskQueue taskQueue) {
       this.handler = handler;
       this.taskQueue = taskQueue;
+    }
+  }
+
+  /**
+   * Holds information that allows to dispatch a Dart message to a platform handler when it becomes
+   * available.
+   */
+  private static class DelayedMessageInfo {
+    @NonNull public final ByteBuffer message;
+    int replyId;
+    long messageData;
+
+    DelayedMessageInfo(@NonNull ByteBuffer message, int replyId, long messageData) {
+      this.message = message;
+      this.replyId = replyId;
+      this.messageData = messageData;
     }
   }
 
@@ -174,7 +194,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    * @param channel The channel name.
    */
   public void runDelayedTasksForChannel(@NonNull String channel) {
-    LinkedList<Runnable> list;
+    LinkedList<DelayedMessageInfo> list;
     synchronized (handlersLock) {
       if (!delayedTaskDispatcher.contains(channel)) {
         return;
@@ -183,12 +203,9 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       delayedTaskDispatcher.remove(channel);
     }
     while (!list.isEmpty()) {
-      final Runnable task = list.poll();
-      try {
-        task.run();
-      } catch (Exception ex) {
-        Log.e(TAG, "Exception thrown while running delayed task for channel '" + channel + "'", ex);
-      }
+      final DelayedMessageInfo info = list.poll();
+      dispatchMessageToQueue(
+          channel, messageHandlers.get(channel), info.message, info.replyId, info.messageData);
     }
   }
 
@@ -303,10 +320,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
           delayedTaskDispatcher.put(channel, new LinkedList<>());
         }
         List<Runnable> delayedTaskQueue = delayedTaskDispatcher.get(channel);
-        delayedTaskQueue.add(
-            () -> {
-              dispatchMessageToQueue(messageHandlers.get(channel), message, replyId, messageData);
-            });
+        delayedTaskQueue.add(new DelayedMessageInfo(message, replyId, messageData));
       }
     }
     if (handlerInfo != null) {
