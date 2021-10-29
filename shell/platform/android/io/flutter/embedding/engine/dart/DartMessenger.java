@@ -252,7 +252,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
-  private void dispatchMessageToQueue(HandlerInfo handlerInfo) {
+  private void dispatchMessageToQueue(
+      @NonNull String channel,
+      @Nullable HandlerInfo handlerInfo,
+      @Nullable ByteBuffer message,
+      int replyId,
+      long messageData) {
     final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
     Runnable myRunnable =
         () -> {
@@ -277,10 +282,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   @Override
   public void handleMessageFromDart(
-      @NonNull final String channel,
-      @Nullable ByteBuffer message,
-      final int replyId,
-      long messageData) {
+      @NonNull String channel, @Nullable ByteBuffer message, int replyId, long messageData) {
     // Called from the ui thread.
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
 
@@ -303,12 +305,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         List<Runnable> delayedTaskQueue = delayedTaskDispatcher.get(channel);
         delayedTaskQueue.add(
             () -> {
-              dispatchMessageToQueue(messageHandlers.get(channel));
+              dispatchMessageToQueue(messageHandlers.get(channel), message, replyId, messageData);
             });
       }
     }
     if (handlerInfo != null) {
-      dispatchMessageToQueue(handlerInfo);
+      dispatchMessageToQueue(handlerInfo, message, replyId, messageData);
     }
   }
 
