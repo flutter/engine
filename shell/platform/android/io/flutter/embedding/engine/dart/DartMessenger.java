@@ -174,12 +174,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    * @param channel The channel name.
    */
   public void runDelayedTasksForChannel(@NonNull String channel) {
-    List<Runnable> list;
+    LinkedList<Runnable> list;
     synchronized (handlersLock) {
       if (!delayedTaskDispatcher.contains(channel)) {
         return;
       }
-      list = delayedTaskDispatcher.get(channel);
+      list = (LinkedList) delayedTaskDispatcher.get(channel);
       delayedTaskDispatcher.remove(channel);
     }
     while (!list.isEmpty()) {
