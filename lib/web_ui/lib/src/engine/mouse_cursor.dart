@@ -2,6 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
 import 'dom_renderer.dart';
 
 /// Provides mouse cursor bindings, such as the `flutter/mousecursor` channel.
@@ -71,4 +76,33 @@ class MouseCursor {
       _mapKindToCssValue(kind),
     );
   }
+
+  Future<int> createImageCursor(List<int> data, int width, int height, int offsetX, int offsetY) async {
+    final Uint8List byteArray = Uint8List.fromList(data);
+    final ui.ImageDescriptor image = ui.ImageDescriptor.raw(
+      await ui.ImmutableBuffer.fromUint8List(byteArray),
+      width: width,
+      height: height,
+      pixelFormat: ui.PixelFormat.rgba8888,
+    );
+    final ui.Codec codec = await image.instantiateCodec();
+    final ui.FrameInfo frame = await codec.getNextFrame();
+    final ByteData pngData = (await frame.image.toByteData(format: ui.ImageByteFormat.png))!;
+    final Uint8List pngBytes = Uint8List.sublistView(pngData);
+    final String cursorString = 'url(data:image/png;base64,${base64.encode(pngBytes)})';
+    _lastImageCursorId += 1;
+    _imageMouseCursors[_lastImageCursorId] = cursorString;
+    return _lastImageCursorId;
+  }
+
+  void activateImageCursor(int cursorId) {
+    DomRenderer.setElementStyle(
+      domRenderer.glassPaneElement!,
+      'cursor',
+      _imageMouseCursors[cursorId]!,
+    );
+  }
+
+  int _lastImageCursorId = 1;
+  final Map<int, String> _imageMouseCursors = <int, String>{};
 }

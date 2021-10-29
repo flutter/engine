@@ -468,6 +468,23 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         switch (decoded.method) {
           case 'activateSystemCursor':
             MouseCursor.instance!.activateSystemCursor(arguments.tryString('kind'));
+            break;
+          case 'createImageCursor':
+            final Future<int> getCursorId = MouseCursor.instance!.createImageCursor(
+              arguments.castList<int>('data'),
+              arguments.readInt('width'),
+              arguments.readInt('height'),
+              arguments.readInt('offsetX'),
+              arguments.readInt('offsetY'),
+            );
+            getCursorId.then((int cursorId) {
+              replyToPlatformMessage(
+                callback, codec.encodeSuccessEnvelope(cursorId));
+            });
+            break;
+          case 'activateImageCursor':
+            MouseCursor.instance!.activateImageCursor(arguments.readInt('cursorId'));
+            break;
         }
         return;
 
