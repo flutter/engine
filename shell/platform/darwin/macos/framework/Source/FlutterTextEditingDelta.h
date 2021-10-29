@@ -5,7 +5,8 @@
 #ifndef SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_
 #define SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_
 
-#import <Cocoa/Cocoa.h>
+//#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
 
 @interface FlutterTextEditingDelta : NSObject
 

@@ -215,16 +215,17 @@
                     result:^(id){
                     }];
 
+  // The setEditingState call is ACKed back to the framework.
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        never(), [binaryMessengerMock
-                     sendOnChannel:@"flutter/textinput"
-                           message:[OCMArg checkWithBlock:^BOOL(NSData* callData) {
-                             FlutterMethodCall* call = [[FlutterJSONMethodCodec sharedInstance]
-                                 decodeMethodCall:callData];
-                             return [[call method]
-                                 isEqualToString:@"TextInputClient.updateEditingStateWithDeltas"];
-                           }]]);
+        [binaryMessengerMock
+            sendOnChannel:@"flutter/textinput"
+                  message:[OCMArg checkWithBlock:^BOOL(NSData* callData) {
+                    FlutterMethodCall* call =
+                        [[FlutterJSONMethodCodec sharedInstance] decodeMethodCall:callData];
+                    return [[call method]
+                        isEqualToString:@"TextInputClient.updateEditingStateWithDeltas"];
+                  }]]);
   } @catch (...) {
     return false;
   }

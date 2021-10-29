@@ -5,7 +5,7 @@
 #ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTEDITINGDELTA_H_
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
 @interface FlutterTextEditingDelta : NSObject
 
