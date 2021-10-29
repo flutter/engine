@@ -175,7 +175,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       try {
         task.run();
       } catch (Exception ex) {
-        Log.e(TAG, "Exception thrown while running delayed task for channel '" + channel + "'.");
+        Log.e(TAG, "Exception thrown while running delayed task for channel '" + channel + "'", ex);
       }
     }
   }
