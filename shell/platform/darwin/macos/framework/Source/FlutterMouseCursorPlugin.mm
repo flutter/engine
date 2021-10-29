@@ -187,9 +187,9 @@ uint32_t latestImageId;
                       hasAlpha:YES
                       isPlanar:NO
                 colorSpaceName:NSDeviceRGBColorSpace
-                  bitmapFormat:NSBitmapFormatAlphaNonpremultiplied // RGBA, no-premultiplied
-                   bytesPerRow:0  // Auto decide
-                  bitsPerPixel:0  // Auto decide
+                  bitmapFormat:NSBitmapFormatAlphaNonpremultiplied  // RGBA, no-premultiplied
+                   bytesPerRow:0                                    // Auto decide
+                  bitsPerPixel:0                                    // Auto decide
   ];
   // Every pixel is 4 bytes.
   const uint32_t* sourcePixel = reinterpret_cast<const uint32_t*>(data.bytes);

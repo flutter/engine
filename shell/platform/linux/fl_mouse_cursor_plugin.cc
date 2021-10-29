@@ -37,7 +37,7 @@ struct _FlMouseCursorPlugin {
 
   GHashTable* system_cursor_table;
 
-  GUINT last_image_cursor_id;
+  guint last_image_cursor_id;
 
   GHashTable* image_mouse_cursors;
 };
@@ -135,7 +135,7 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
 }
 
 FlMethodResponse* create_image_cursor(FlMouseCursorPlugin* self,
-                                         FlValue* args) {
+                                      FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Argument is missing or not a map", nullptr));
@@ -161,37 +161,23 @@ FlMethodResponse* create_image_cursor(FlMouseCursorPlugin* self,
   const int offset_x = fl_value_get_int(offset_x_value);
   const int offset_y = fl_value_get_int(offset_y_value);
 
-  gdk_cursor_new_from_pixbuf();
-
   GdkWindow* window =
       gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
   g_autoptr(GdkPixbuf) pixbuf = gdk_pixbuf_new_from_data(
-    data,
-    GDK_COLORSPACE_RGB,
-    TRUE,
-    8,
-    width,
-    height,
-    width * 4,
-    NULL,
-    NULL);
-  GdkCursor* cursor =
-      gdk_cursor_new_from_pixbuf(
-        gdk_window_get_display(window),
-        pixbuf,
-        offset_x,
-        offset_y);
+      data, GDK_COLORSPACE_RGB, TRUE, 8, width, height, width * 4, NULL, NULL);
+  GdkCursor* cursor = gdk_cursor_new_from_pixbuf(gdk_window_get_display(window),
+                                                 pixbuf, offset_x, offset_y);
   self->last_image_cursor_id += 1;
-  g_hash_table_insert(
-      self->image_mouse_cursors, GUINT_TO_POINTER(self->last_image_cursor_id),
-      cursor);
+  g_hash_table_insert(self->image_mouse_cursors,
+                      GUINT_TO_POINTER(self->last_image_cursor_id), cursor);
 
-  return FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_int(self->last_image_cursor_id)));
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(
+      fl_value_new_int(self->last_image_cursor_id)));
 }
 
 // Sets the mouse cursor as an image cursor.
 FlMethodResponse* activate_image_cursor(FlMouseCursorPlugin* self,
-                                         FlValue* args) {
+                                        FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Argument map missing or malformed", nullptr));
@@ -202,10 +188,10 @@ FlMethodResponse* activate_image_cursor(FlMouseCursorPlugin* self,
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
         kBadArgumentsError, "Argument is malformed.", nullptr));
   }
-  const GUINT cursor_id = (GUINT)fl_value_get_int(cursor_id_value);
+  const guint cursor_id = (guint)fl_value_get_int(cursor_id_value);
 
-  GdkCursor* cursor = reinterpret_cast<GdkCursor*>(
-      g_hash_table_lookup(self->image_mouse_cursors, GUINT_TO_POINTER(cursor_id)));
+  GdkCursor* cursor = reinterpret_cast<GdkCursor*>(g_hash_table_lookup(
+      self->image_mouse_cursors, GUINT_TO_POINTER(cursor_id)));
 
   GdkWindow* window =
       gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
@@ -278,7 +264,8 @@ FlMouseCursorPlugin* fl_mouse_cursor_plugin_new(FlBinaryMessenger* messenger,
                               reinterpret_cast<gpointer*>(&(self->view)));
   }
 
-  self->image_mouse_cursors = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->image_mouse_cursors = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, nullptr, g_object_unref);
   self->last_image_cursor_id = 1;
 
   return self;
