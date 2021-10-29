@@ -252,6 +252,30 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
+  private void dispatchMessageToQueue(HandlerInfo handlerInfo) {
+    final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
+    Runnable myRunnable =
+        () -> {
+          Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
+          try {
+            invokeHandler(handlerInfo, message, replyId);
+            if (message != null && message.isDirect()) {
+              // This ensures that if a user retains an instance to the ByteBuffer and it
+              // happens to
+              // be direct they will get a deterministic error.
+              message.limit(0);
+            }
+          } finally {
+            Trace.endSection();
+            // This is deleting the data underneath the message object.
+            flutterJNI.cleanupMessageData(messageData);
+          }
+        };
+    final DartMessengerTaskQueue nonnullTaskQueue =
+        taskQueue == null ? platformTaskQueue : taskQueue;
+    nonnullTaskQueue.dispatch(myRunnable);
+  }
+
   @Override
   public void handleMessageFromDart(
       @NonNull final String channel,
@@ -260,40 +284,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       long messageData) {
     // Called from the ui thread.
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
-    final Runnable taskDispatcher =
-        () -> {
-          HandlerInfo handlerInfo;
-          synchronized (handlersLock) {
-            handlerInfo = messageHandlers.get(channel);
-          }
-          final DartMessengerTaskQueue taskQueue =
-              (handlerInfo != null) ? handlerInfo.taskQueue : null;
-          Runnable myRunnable =
-              () -> {
-                Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
-                try {
-                  invokeHandler(handlerInfo, message, replyId);
-                  if (message != null && message.isDirect()) {
-                    // This ensures that if a user retains an instance to the ByteBuffer and it
-                    // happens to
-                    // be direct they will get a deterministic error.
-                    message.limit(0);
-                  }
-                } finally {
-                  Trace.endSection();
-                  // This is deleting the data underneath the message object.
-                  flutterJNI.cleanupMessageData(messageData);
-                }
-              };
-          final DartMessengerTaskQueue nonnullTaskQueue =
-              taskQueue == null ? platformTaskQueue : taskQueue;
-          nonnullTaskQueue.dispatch(myRunnable);
-        };
 
-    boolean runNow = true;
+    HandlerInfo handlerInfo;
     synchronized (handlersLock) {
-      if (canDelayTasks && !messageHandlers.contains(channel)) {
-        runNow = false;
+      if (messageHandlers.contains(channel)) {
+        handlerInfo = messageHandlers.get(channel);
+      } else if (canDelayTasks) {
         // The channel is not defined when the Dart VM sends a message before the channels are
         // registered.
         //
@@ -306,11 +302,14 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
           delayedTaskDispatcher.put(channel, new LinkedList<>());
         }
         List<Runnable> delayedTaskQueue = delayedTaskDispatcher.get(channel);
-        delayedTaskQueue.add(taskDispatcher);
+        delayedTaskQueue.add(
+            () -> {
+              dispatchMessageToQueue(messageHandlers.get(channel));
+            });
       }
     }
-    if (runNow) {
-      taskDispatcher.run();
+    if (handlerInfo != null) {
+      dispatchMessageToQueue(handlerInfo);
     }
   }
 
