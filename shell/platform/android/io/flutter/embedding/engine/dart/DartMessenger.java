@@ -12,12 +12,13 @@ import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,8 +40,13 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    */
   @NonNull private final ConcurrentHashMap<String, HandlerInfo> messageHandlers;
 
-  /** Maps a channel name to a future that resolves when the channel is defined. */
-  @NonNull private final ConcurrentHashMap<String, FutureTask<Void>> definedChannels;
+  /**
+   * Maps a channel name to queue of task dispatchers. This queue is processed when the channel
+   * handler is registered.
+   */
+  @NonNull private final ConcurrentHashMap<String, List<Runnable>> delayedTaskDispatcher;
+
+  private boolean canDelayTasks = true;
 
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies;
   private int nextReplyId = 1;
@@ -54,7 +60,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   DartMessenger(@NonNull FlutterJNI flutterJNI, @NonNull TaskQueueFactory taskQueueFactory) {
     this.flutterJNI = flutterJNI;
     this.messageHandlers = new ConcurrentHashMap<>();
-    this.definedChannels = new ConcurrentHashMap<>();
+    this.delayedTaskDispatcher = new ConcurrentHashMap<>();
     this.pendingReplies = new HashMap<>();
     this.createdTaskQueues = new WeakHashMap<TaskQueue, DartMessengerTaskQueue>();
     this.taskQueueFactory = taskQueueFactory;
@@ -144,13 +150,54 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       }
     }
     Log.v(TAG, "Setting handler for channel '" + channel + "'");
-    synchronized (this) {
-      if (!definedChannels.has(channel)) {
-        definedChannels.put(channel, SettableFuture.create());
-      }
-      definedChannels.get(channel).set(Void.TYPE);
-      messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
+    messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
+    runDelayedTasksForChannel(channel);
+  }
+
+  /**
+   * Runs the tasks that handle messages received from Dart for the provided channel name.
+   *
+   * <p>The channel may not have associated tasks if it was registered prior to reciving the first
+   * message from Dart.
+   *
+   * @param channel The channel name.
+   */
+  public synchronized void runDelayedTasksForChannel(@NonNull String channel) {
+    if (!delayedTaskDispatcher.has(channel)) {
+      return;
     }
+    final LinkedList<Runnable> list = delayedTaskDispatcher.get(channel);
+    delayedTaskDispatcher.remove(channel);
+
+    while (!list.isEmpty()) {
+      final Runnable task = list.poll();
+      try {
+        task.run();
+      } catch (Exception ex) {
+        Log.e(TAG, "Exception thrown while running delayed task for channel '" + channel + "'.");
+      }
+    }
+  }
+
+  /** Runs all the tasks that handle messages received from Dart for the provided channel name. */
+  public synchronized void runDelayedTasks() {
+    for (String channel : delayedTaskDispatcher.keySet()) {
+      runDelayedTasksForChannel(channel);
+    }
+  }
+
+  /**
+   * Stops the ability to queue tasks when messages are received from Dart.
+   *
+   * <p>This should be called if there's no pending channel handler registration. For example,
+   * channels are typically registered during plugin registration, so it makes sense to stop the
+   * delayed task queue right at that point.
+   *
+   * <p>Once this is called, any future message from Dart that doesn't have an associated handler
+   * results in an error.
+   */
+  public synchronized void stopDelayedTaskQueue() {
+    canDelayTasks = false;
   }
 
   @Override
@@ -204,47 +251,48 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       long messageData) {
     // Called from the ui thread.
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
-    final Runnable dispatch = () -> {
-      final HandlerInfo handlerInfo = messageHandlers.get(channel);
-      final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
-      Runnable myRunnable =
-          () -> {
-            try {
-              invokeHandler(handlerInfo, message, replyId);
-              if (message != null && message.isDirect()) {
-                // This ensures that if a user retains an instance to the ByteBuffer and it happens to
-                // be direct they will get a deterministic error.
-                message.limit(0);
-              }
-            } finally {
-              // This is deleting the data underneath the message object.
-              flutterJNI.cleanupMessageData(messageData);
-            }
-          };
-      final DartMessengerTaskQueue nonnullTaskQueue =
-          taskQueue == null ? platformTaskQueue : taskQueue;
-      nonnullTaskQueue.dispatch(myRunnable);
-    };
+    final Runnable taskDispatcher =
+        () -> {
+          final HandlerInfo handlerInfo = messageHandlers.get(channel);
+          final DartMessengerTaskQueue taskQueue =
+              (handlerInfo != null) ? handlerInfo.taskQueue : null;
+          Runnable myRunnable =
+              () -> {
+                try {
+                  invokeHandler(handlerInfo, message, replyId);
+                  if (message != null && message.isDirect()) {
+                    // This ensures that if a user retains an instance to the ByteBuffer and it
+                    // happens to
+                    // be direct they will get a deterministic error.
+                    message.limit(0);
+                  }
+                } finally {
+                  // This is deleting the data underneath the message object.
+                  flutterJNI.cleanupMessageData(messageData);
+                }
+              };
+          final DartMessengerTaskQueue nonnullTaskQueue =
+              taskQueue == null ? platformTaskQueue : taskQueue;
+          nonnullTaskQueue.dispatch(myRunnable);
+        };
 
     synchronized (this) {
-      if (messageHandlers.has(channel)) {
-        dispatch.run();
+      if (!canDelayTasks || messageHandlers.has(channel)) {
+        taskDispatcher.run();
       } else {
         // The channel is not defined when the Dart VM sends a message before the channels are
         // registered.
         //
         // This is possible if the Dart VM starts before channel registration, and if the thread
-        // that
-        // registers the channels is busy or slow at registering the channel handlers.
+        // that registers the channels is busy or slow at registering the channel handlers.
         //
-        // In such cases, wait for a limited time, and exit with error if the time is exceeded.
-        // This is effectively acting as a lock, so the current thread (Dart UI thread) is blocked
-        // until the lock is released.
-        if (!definedChannels.has(channel)) {
-          definedChannels.put(channel, new FutureTask<Void>(() -> {
-
-          }));
+        // In such cases, the task dispatchers are queued, and processed when the channel is
+        // defined.
+        if (!delayedTaskDispatcher.has(channel)) {
+          delayedTaskDispatcher.put(channel, new LinkedList<>());
         }
+        List<Runnable> delayedTaskQueue = delayedTaskDispatcher.get(channel);
+        delayedTaskQueue.add(taskDispatcher);
       }
     }
   }
