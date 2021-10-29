@@ -12,8 +12,19 @@
 
 static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kBadArgumentsError[] = "Bad Arguments";
+
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
+
+static constexpr char kCreateImageCursorMethod[] = "createImageCursor";
+static constexpr char kDataKey[] = "data";
+static constexpr char kWidthKey[] = "width";
+static constexpr char kHeightKey[] = "height";
+static constexpr char kOffsetXKey[] = "offsetX";
+static constexpr char kOffsetYKey[] = "offsetY";
+
+static constexpr char kActivateImageCursorMethod[] = "activateImageCursor";
+static constexpr char kCursorIdKey[] = "cursorId";
 
 static constexpr char kFallbackCursor[] = "default";
 
@@ -25,6 +36,10 @@ struct _FlMouseCursorPlugin {
   FlView* view;
 
   GHashTable* system_cursor_table;
+
+  GUINT last_image_cursor_id;
+
+  GHashTable* image_mouse_cursors;
 };
 
 G_DEFINE_TYPE(FlMouseCursorPlugin, fl_mouse_cursor_plugin, G_TYPE_OBJECT)
@@ -84,7 +99,7 @@ static void populate_system_cursor_table(GHashTable* table) {
   define_system_cursor(table, "zoomOut", "zoom-out");
 }
 
-// Sets the mouse cursor.
+// Sets the mouse cursor as a system cursor.
 FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
                                          FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
@@ -93,10 +108,11 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
   }
 
   FlValue* kind_value = fl_value_lookup_string(args, kKindKey);
-  const gchar* kind = nullptr;
-  if (fl_value_get_type(kind_value) == FL_VALUE_TYPE_STRING) {
-    kind = fl_value_get_string(kind_value);
+  if (fl_value_get_type(kind_value) != FL_VALUE_TYPE_STRING) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument is malformed.", nullptr));
   }
+  const gchar* kind = fl_value_get_string(kind_value);
 
   if (self->system_cursor_table == nullptr) {
     self->system_cursor_table = g_hash_table_new(g_str_hash, g_str_equal);
@@ -118,6 +134,86 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
 
+FlMethodResponse* create_image_cursor(FlMouseCursorPlugin* self,
+                                         FlValue* args) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument is missing or not a map", nullptr));
+  }
+
+  FlValue* data_value = fl_value_lookup_string(args, kDataKey);
+  FlValue* width_value = fl_value_lookup_string(args, kWidthKey);
+  FlValue* height_value = fl_value_lookup_string(args, kHeightKey);
+  FlValue* offset_x_value = fl_value_lookup_string(args, kOffsetXKey);
+  FlValue* offset_y_value = fl_value_lookup_string(args, kOffsetYKey);
+  if (fl_value_get_type(data_value) != FL_VALUE_TYPE_UINT8_LIST ||
+      fl_value_get_type(width_value) != FL_VALUE_TYPE_INT ||
+      fl_value_get_type(height_value) != FL_VALUE_TYPE_INT ||
+      fl_value_get_type(offset_x_value) != FL_VALUE_TYPE_INT ||
+      fl_value_get_type(offset_y_value) != FL_VALUE_TYPE_INT) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument is malformed.", nullptr));
+  }
+
+  const uint8_t* data = fl_value_get_uint8_list(data_value);
+  const int width = fl_value_get_int(width_value);
+  const int height = fl_value_get_int(height_value);
+  const int offset_x = fl_value_get_int(offset_x_value);
+  const int offset_y = fl_value_get_int(offset_y_value);
+
+  gdk_cursor_new_from_pixbuf();
+
+  GdkWindow* window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
+  g_autoptr(GdkPixbuf) pixbuf = gdk_pixbuf_new_from_data(
+    data,
+    GDK_COLORSPACE_RGB,
+    TRUE,
+    8,
+    width,
+    height,
+    width * 4,
+    NULL,
+    NULL);
+  GdkCursor* cursor =
+      gdk_cursor_new_from_pixbuf(
+        gdk_window_get_display(window),
+        pixbuf,
+        offset_x,
+        offset_y);
+  self->last_image_cursor_id += 1;
+  g_hash_table_insert(
+      self->image_mouse_cursors, GUINT_TO_POINTER(self->last_image_cursor_id),
+      cursor);
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_int(self->last_image_cursor_id)));
+}
+
+// Sets the mouse cursor as an image cursor.
+FlMethodResponse* activate_image_cursor(FlMouseCursorPlugin* self,
+                                         FlValue* args) {
+  if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument map missing or malformed", nullptr));
+  }
+
+  FlValue* cursor_id_value = fl_value_lookup_string(args, kCursorIdKey);
+  if (fl_value_get_type(cursor_id_value) != FL_VALUE_TYPE_INT) {
+    return FL_METHOD_RESPONSE(fl_method_error_response_new(
+        kBadArgumentsError, "Argument is malformed.", nullptr));
+  }
+  const GUINT cursor_id = (GUINT)fl_value_get_int(cursor_id_value);
+
+  GdkCursor* cursor = reinterpret_cast<GdkCursor*>(
+      g_hash_table_lookup(self->image_mouse_cursors, GUINT_TO_POINTER(cursor_id)));
+
+  GdkWindow* window =
+      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
+  gdk_window_set_cursor(window, cursor);
+
+  return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+}
+
 // Called when a method call is received from Flutter.
 static void method_call_cb(FlMethodChannel* channel,
                            FlMethodCall* method_call,
@@ -130,6 +226,10 @@ static void method_call_cb(FlMethodChannel* channel,
   g_autoptr(FlMethodResponse) response = nullptr;
   if (strcmp(method, kActivateSystemCursorMethod) == 0) {
     response = activate_system_cursor(self, args);
+  } else if (strcmp(method, kCreateImageCursorMethod) == 0) {
+    response = create_image_cursor(self, args);
+  } else if (strcmp(method, kActivateImageCursorMethod) == 0) {
+    response = activate_image_cursor(self, args);
   } else {
     response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
   }
@@ -177,6 +277,9 @@ FlMouseCursorPlugin* fl_mouse_cursor_plugin_new(FlBinaryMessenger* messenger,
     g_object_add_weak_pointer(G_OBJECT(view),
                               reinterpret_cast<gpointer*>(&(self->view)));
   }
+
+  self->image_mouse_cursors = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->last_image_cursor_id = 1;
 
   return self;
 }
