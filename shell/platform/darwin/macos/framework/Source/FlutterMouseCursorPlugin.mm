@@ -187,7 +187,7 @@ uint32_t latestImageId;
                       hasAlpha:YES
                       isPlanar:NO
                 colorSpaceName:NSDeviceRGBColorSpace
-                  bitmapFormat:0  // RGBA, premultiplied
+                  bitmapFormat:NSBitmapFormatAlphaNonpremultiplied // RGBA, no-premultiplied
                    bytesPerRow:0  // Auto decide
                   bitsPerPixel:0  // Auto decide
   ];

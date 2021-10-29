@@ -89,7 +89,7 @@ class MouseCursor {
     final ui.FrameInfo frame = await codec.getNextFrame();
     final ByteData pngData = (await frame.image.toByteData(format: ui.ImageByteFormat.png))!;
     final Uint8List pngBytes = Uint8List.sublistView(pngData);
-    final String cursorString = 'url(data:image/png;base64,${base64.encode(pngBytes)})';
+    final String cursorString = 'data:image/png;base64,${base64.encode(pngBytes)}';
     _lastImageCursorId += 1;
     _imageMouseCursors[_lastImageCursorId] = cursorString;
     return _lastImageCursorId;
@@ -99,7 +99,7 @@ class MouseCursor {
     DomRenderer.setElementStyle(
       domRenderer.glassPaneElement!,
       'cursor',
-      _imageMouseCursors[cursorId]!,
+      'url(${_imageMouseCursors[cursorId]!}),pointer',
     );
   }
 

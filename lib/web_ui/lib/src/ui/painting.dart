@@ -540,6 +540,7 @@ Future<Codec> _createBmp(
   // important colors
   bmpData.setUint32(0x32, 0x00, Endian.little);
 
+  const int dibStart = 0x36;
 
   int pixelDestinationIndex = 0;
   late bool swapRedBlue;
@@ -558,10 +559,10 @@ Future<Codec> _createBmp(
     final int a = pixels[pixelSourceIndex + 3];
 
     // Set the pixel past the header data.
-    bmpData.setUint8(pixelDestinationIndex + 0x36, r);
-    bmpData.setUint8(pixelDestinationIndex + 0x37, g);
-    bmpData.setUint8(pixelDestinationIndex + 0x38, b);
-    bmpData.setUint8(pixelDestinationIndex + 0x39, a);
+    bmpData.setUint8(pixelDestinationIndex + dibStart + 0, b);
+    bmpData.setUint8(pixelDestinationIndex + dibStart + 1, g);
+    bmpData.setUint8(pixelDestinationIndex + dibStart + 2, r);
+    bmpData.setUint8(pixelDestinationIndex + dibStart + 3, a);
     pixelDestinationIndex += 4;
     if (rowBytes != width && pixelSourceIndex % width == 0) {
       pixelSourceIndex += rowBytes - width;
@@ -801,4 +802,3 @@ class FragmentProgram {
     required Float32List floatUniforms,
   }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
 }
-
