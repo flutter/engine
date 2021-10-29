@@ -39,11 +39,12 @@ copy("publish_headers") {
 
 source_set("common_cpp_input") {
   public = [
+    "text_editing_delta.h",
     "text_input_model.h",
     "text_range.h",
   ]
 
-  sources = [ "text_input_model.cc" ]
+  sources = [ "text_editing_delta.cc", "text_input_model.cc" ]
 
   configs += [ ":desktop_library_implementation" ]
 
