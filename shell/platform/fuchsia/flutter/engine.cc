@@ -221,6 +221,7 @@ void Engine::Initialize(
                                          weak = weak_factory_.GetWeakPtr()]() {
     task_runner->PostTask([weak]() {
       if (weak) {
+        FML_LOG(ERROR) << "Terminating from session_error_callback";
         weak->Terminate();
       }
     });
@@ -339,6 +340,8 @@ void Engine::Initialize(
        weak = weak_factory_.GetWeakPtr()]() {
         task_runner->PostTask([weak]() {
           if (weak) {
+            FML_LOG(ERROR) << "Terminating from "
+                              "on_session_listener_error_callback";
             weak->Terminate();
           }
         });
@@ -615,6 +618,7 @@ void Engine::Initialize(
     // The engine could have been killed by the caller right after the
     // constructor was called but before it could run on the UI thread.
     if (weak) {
+      FML_LOG(ERROR) << "Terminating from on_run_failure";
       weak->Terminate();
     }
   };
