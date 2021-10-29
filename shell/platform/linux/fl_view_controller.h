@@ -14,7 +14,11 @@
 
 G_BEGIN_DECLS
 
-G_DECLARE_FINAL_TYPE(FlViewController, fl_view_controller, FL, VIEW_CONTROLLER, GObject)
+G_DECLARE_FINAL_TYPE(FlViewController,
+                     fl_view_controller,
+                     FL,
+                     VIEW_CONTROLLER,
+                     GObject)
 
 FlViewController* fl_view_controller_new(FlDartProject* project);
 

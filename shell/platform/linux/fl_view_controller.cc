@@ -71,9 +71,10 @@ G_DEFINE_TYPE_WITH_CODE(
     G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
                           fl_view_controller_plugin_registry_iface_init))
 
-static void fl_view_controller_update_semantics_node_cb(FlEngine* engine,
-                                             const FlutterSemanticsNode* node,
-                                             gpointer user_data) {
+static void fl_view_controller_update_semantics_node_cb(
+    FlEngine* engine,
+    const FlutterSemanticsNode* node,
+    gpointer user_data) {
   FlViewController* self = FL_VIEW(user_data);
 
   fl_accessibility_plugin_handle_update_semantics_node(
@@ -100,7 +101,7 @@ static void fl_view_controller_init_keyboard(FlViewController* self) {
 // which usually indicates the user has requested a hot restart (Shift-R in the
 // Flutter CLI.)
 static void fl_view_controller_on_pre_engine_restart_cb(FlEngine* engine,
-                                             gpointer user_data) {
+                                                        gpointer user_data) {
   FlViewController* self = FL_VIEW(user_data);
 
   g_clear_object(&self->keyboard_manager);
@@ -108,8 +109,9 @@ static void fl_view_controller_on_pre_engine_restart_cb(FlEngine* engine,
 }
 
 // Converts a GDK button event into a Flutter event and sends it to the engine.
-static gboolean fl_view_controller_send_pointer_button_event(FlViewController* self,
-                                                  GdkEventButton* event) {
+static gboolean fl_view_controller_send_pointer_button_event(
+    FlViewController* self,
+    GdkEventButton* event) {
   int64_t button;
   switch (event->button) {
     case 1:
@@ -237,9 +239,9 @@ static void fl_view_controller_constructed(GObject* object) {
 }
 
 static void fl_view_controller_set_property(GObject* object,
-                                 guint prop_id,
-                                 const GValue* value,
-                                 GParamSpec* pspec) {
+                                            guint prop_id,
+                                            const GValue* value,
+                                            GParamSpec* pspec) {
   FlViewController* self = FL_VIEW(object);
 
   switch (prop_id) {
@@ -254,9 +256,9 @@ static void fl_view_controller_set_property(GObject* object,
 }
 
 static void fl_view_controller_get_property(GObject* object,
-                                 guint prop_id,
-                                 GValue* value,
-                                 GParamSpec* pspec) {
+                                            guint prop_id,
+                                            GValue* value,
+                                            GParamSpec* pspec) {
   FlViewController* self = FL_VIEW(object);
 
   switch (prop_id) {
@@ -445,7 +447,8 @@ static gboolean event_box_leave_notify_event(GtkWidget* widget,
 }
 
 // Implements GtkWidget::key_press_event.
-static gboolean fl_view_controller_key_press_event(GtkWidget* widget, GdkEventKey* event) {
+static gboolean fl_view_controller_key_press_event(GtkWidget* widget,
+                                                   GdkEventKey* event) {
   FlViewController* self = FL_VIEW(widget);
 
   return fl_keyboard_manager_handle_event(
@@ -455,7 +458,7 @@ static gboolean fl_view_controller_key_press_event(GtkWidget* widget, GdkEventKe
 
 // Implements GtkWidget::key_release_event.
 static gboolean fl_view_controller_key_release_event(GtkWidget* widget,
-                                          GdkEventKey* event) {
+                                                     GdkEventKey* event) {
   FlViewController* self = FL_VIEW(widget);
   return fl_keyboard_manager_handle_event(
       self->keyboard_manager, fl_key_event_new_from_gdk_event(gdk_event_copy(
@@ -484,12 +487,14 @@ static void fl_view_controller_class_init(FlViewClass* klass) {
                                    G_PARAM_STATIC_STRINGS)));
 }
 
-G_MODULE_EXPORT FlViewController* fl_view_controller_new(FlDartProject* project) {
-  return static_cast<FlViewController*>(
-      g_object_new(fl_view_controller_get_type(), "flutter-project", project, nullptr));
+G_MODULE_EXPORT FlViewController* fl_view_controller_new(
+    FlDartProject* project) {
+  return static_cast<FlViewController*>(g_object_new(
+      fl_view_controller_get_type(), "flutter-project", project, nullptr));
 }
 
-G_MODULE_EXPORT FlEngine* fl_view_controller_get_engine(FlViewController* view) {
+G_MODULE_EXPORT FlEngine* fl_view_controller_get_engine(
+    FlViewController* view) {
   g_return_val_if_fail(FL_IS_VIEW(view), nullptr);
   return view->engine;
 }
