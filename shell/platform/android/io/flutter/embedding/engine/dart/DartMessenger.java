@@ -17,7 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -41,21 +40,17 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    *
    * <p>Reads and writes to this map must lock {@code handlersLock}.
    */
-  @NonNull
-  private final ConcurrentHashMap<String, HandlerInfo> messageHandlers = new ConcurrentHashMap<>();
+  @NonNull private final Map<String, HandlerInfo> messageHandlers = new HashMap<>();
 
   /**
-   * Maps a channel name to queue of task dispatchers. This queue is processed when the channel
-   * handler is registered.
+   * Maps a channel name to an object that holds information about the incoming Dart message.
    *
    * <p>Reads and writes to this map must lock {@code handlersLock}.
    */
-  @NonNull
-  private final ConcurrentHashMap<String, List<DelayedMessageInfo>> delayedTaskDispatcher =
-      new ConcurrentHashMap<>();
+  @NonNull private final Map<String, List<BufferedMessageInfo>> bufferedMessages = new HashMap<>();
 
   @NonNull private final Object handlersLock = new Object();
-  private boolean canDelayTasks = false;
+  private boolean enableBufferingIncomingMessages = false;
 
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies = new HashMap<>();
   private int nextReplyId = 1;
@@ -113,12 +108,12 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    * Holds information that allows to dispatch a Dart message to a platform handler when it becomes
    * available.
    */
-  private static class DelayedMessageInfo {
+  private static class BufferedMessageInfo {
     @NonNull public final ByteBuffer message;
     int replyId;
     long messageData;
 
-    DelayedMessageInfo(@NonNull ByteBuffer message, int replyId, long messageData) {
+    BufferedMessageInfo(@NonNull ByteBuffer message, int replyId, long messageData) {
       this.message = message;
       this.replyId = replyId;
       this.messageData = messageData;
@@ -179,31 +174,17 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       }
     }
     Log.v(TAG, "Setting handler for channel '" + channel + "'");
+
+    LinkedList<BufferedMessageInfo> list;
     synchronized (handlersLock) {
       messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
-    }
-    runDelayedTasksForChannel(channel);
-  }
-
-  /**
-   * Runs the tasks that handle messages received from Dart for the provided channel name.
-   *
-   * <p>The channel may not have associated tasks if it was registered prior to reciving the first
-   * message from Dart.
-   *
-   * @param channel The channel name.
-   */
-  public void runDelayedTasksForChannel(@NonNull String channel) {
-    LinkedList<DelayedMessageInfo> list;
-    synchronized (handlersLock) {
-      if (!delayedTaskDispatcher.contains(channel)) {
+      if (!bufferedMessages.containsKey(channel)) {
         return;
       }
-      list = (LinkedList) delayedTaskDispatcher.get(channel);
-      delayedTaskDispatcher.remove(channel);
+      list = (LinkedList) bufferedMessages.get(channel);
+      bufferedMessages.remove(channel);
     }
-    while (!list.isEmpty()) {
-      final DelayedMessageInfo info = list.poll();
+    for (BufferedMessageInfo info : list) {
       dispatchMessageToQueue(
           channel, messageHandlers.get(channel), info.message, info.replyId, info.messageData);
     }
@@ -216,8 +197,8 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    * be initialized concurrently, and prior to the registration of the channel handlers. This
    * implies that Dart may start sending messages while plugins are being registered.
    */
-  public void enableDelayedTaskQueue() {
-    canDelayTasks = true;
+  public void enableBufferingIncomingMessages() {
+    enableBufferingIncomingMessages = true;
   }
 
   @Override
@@ -287,9 +268,9 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
               message.limit(0);
             }
           } finally {
-            Trace.endSection();
             // This is deleting the data underneath the message object.
             flutterJNI.cleanupMessageData(messageData);
+            Trace.endSection();
           }
         };
     final DartMessengerTaskQueue nonnullTaskQueue =
@@ -304,10 +285,11 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     Log.v(TAG, "Received message from Dart over channel '" + channel + "'");
 
     HandlerInfo handlerInfo;
+    boolean messageDeferred;
     synchronized (handlersLock) {
-      if (messageHandlers.contains(channel)) {
-        handlerInfo = messageHandlers.get(channel);
-      } else if (canDelayTasks) {
+      handlerInfo = messageHandlers.get(channel);
+      messageDeferred = (enableBufferingIncomingMessages && handlerInfo == null);
+      if (messageDeferred) {
         // The channel is not defined when the Dart VM sends a message before the channels are
         // registered.
         //
@@ -316,15 +298,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
         //
         // In such cases, the task dispatchers are queued, and processed when the channel is
         // defined.
-        if (!delayedTaskDispatcher.contains(channel)) {
-          delayedTaskDispatcher.put(channel, new LinkedList<>());
+        if (!bufferedMessages.containsKey(channel)) {
+          bufferedMessages.put(channel, new LinkedList<>());
         }
-        List<Runnable> delayedTaskQueue = delayedTaskDispatcher.get(channel);
-        delayedTaskQueue.add(new DelayedMessageInfo(message, replyId, messageData));
+        List<BufferedMessageInfo> buffer = bufferedMessages.get(channel);
+        buffer.add(new BufferedMessageInfo(message, replyId, messageData));
       }
     }
-    if (handlerInfo != null) {
-      dispatchMessageToQueue(handlerInfo, message, replyId, messageData);
+    if (!messageDeferred) {
+      dispatchMessageToQueue(channel, handlerInfo, message, replyId, messageData);
     }
   }
 
