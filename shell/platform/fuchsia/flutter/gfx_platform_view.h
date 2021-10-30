@@ -84,7 +84,6 @@ class GfxPlatformView final : public flutter_runner::PlatformView,
 
   fml::WeakPtrFactory<GfxPlatformView>
       weak_factory_;  // Must be the last member.
-
   FML_DISALLOW_COPY_AND_ASSIGN(GfxPlatformView);
 };
 

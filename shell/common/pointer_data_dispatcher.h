@@ -161,7 +161,6 @@ class SmoothPointerDataDispatcher : public DefaultPointerDataDispatcher {
 
   fml::WeakPtrFactory<SmoothPointerDataDispatcher>
       weak_factory_;  // Must be the last member.
-
   FML_DISALLOW_COPY_AND_ASSIGN(SmoothPointerDataDispatcher);
 };
 

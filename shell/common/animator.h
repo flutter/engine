@@ -122,7 +122,6 @@ class Animator final {
   friend class testing::ShellTest;
 
   fml::WeakPtrFactory<Animator> weak_factory_;  // Must be the last member.
-
   FML_DISALLOW_COPY_AND_ASSIGN(Animator);
 };
 

@@ -77,7 +77,6 @@ class GPUSurfaceGL : public Surface {
 
   fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL>
       weak_factory_;  // Must be the last member.
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
 

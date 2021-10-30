@@ -56,7 +56,6 @@ class GPUSurfaceVulkan : public Surface {
 
   fml::WeakPtrFactory<GPUSurfaceVulkan>
       weak_factory_;  // Must be the last member.
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
 };
 

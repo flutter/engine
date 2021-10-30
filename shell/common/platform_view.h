@@ -821,7 +821,6 @@ class PlatformView {
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
 
   fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
-
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };
