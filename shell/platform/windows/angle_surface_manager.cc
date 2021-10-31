@@ -127,7 +127,6 @@ bool AngleSurfaceManager::Initialize() {
   const EGLint d3d9_display_attributes[] = {
       EGL_PLATFORM_ANGLE_TYPE_ANGLE,
       EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE,
-      EGL_TRUE,
       EGL_NONE,
   };
 
