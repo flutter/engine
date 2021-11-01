@@ -1877,7 +1877,9 @@ class _Image extends NativeFieldWrapperClass1 {
     _dispose();
   }
 
-  @FfiNative<Void Function(Pointer<Void>)>('Image::dispose', isLeaf: false)
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Image::dispose')
   external void _dispose();
 
   Set<Image> _handles = <Image>{};
@@ -2024,7 +2026,10 @@ class Codec extends NativeFieldWrapperClass1 {
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  @FfiNative<Void Function(Pointer<Void>)>('Codec::dispose', isLeaf: false)
+  ///
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Codec::dispose')
   external void dispose();
 }
 
@@ -2274,8 +2279,10 @@ class EngineLayer extends NativeFieldWrapperClass1 {
   /// Once this EngineLayer is disposed, it is no longer eligible for use as a
   /// retained layer, and must not be passed as an `oldLayer` to any of the
   /// [SceneBuilder] methods which accept that parameter.
-  @FfiNative<Void Function(Pointer<Void>)>('EngineLayer::dispose',
-      isLeaf: false)
+  ///
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('EngineLayer::dispose')
   external void dispose();
 }
 
@@ -2604,7 +2611,7 @@ class Path extends NativeFieldWrapperClass1 {
 
   @FfiNative<
       Void Function(Pointer<Void>, Pointer<Void>, Double, Double,
-          Handle)>('Path::addPathWithMatrix')
+          Handle)>('Path::addPathWithMatrixHandle')
   external void _addPathWithMatrix(
       Path path, double dx, double dy, Float64List matrix);
 
@@ -2631,7 +2638,7 @@ class Path extends NativeFieldWrapperClass1 {
 
   @FfiNative<
       Void Function(Pointer<Void>, Pointer<Void>, Double, Double,
-          Handle)>('Path::extendWithPathAndMatrix')
+          Handle)>('Path::extendWithPathAndMatrixHandle')
   external void _extendWithPathAndMatrix(
       Path path, double dx, double dy, Float64List matrix);
 
@@ -2684,7 +2691,7 @@ class Path extends NativeFieldWrapperClass1 {
     return path;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transform')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transformHandle')
   external void _transform(Path outPath, Float64List matrix4);
 
   /// Computes the bounding rectangle for this path.
@@ -5370,7 +5377,10 @@ class Picture extends NativeFieldWrapperClass1 {
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  @FfiNative<Void Function(Pointer<Void>)>('Picture::dispose', isLeaf: false)
+  ///
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('Picture::dispose')
   external void dispose();
 
   /// Returns the approximate number of bytes allocated for this object.
@@ -5680,8 +5690,9 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     _dispose();
   }
 
-  @FfiNative<Void Function(Pointer<Void>)>('ImmutableBuffer::dispose',
-      isLeaf: false)
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('ImmutableBuffer::dispose')
   external void _dispose();
 }
 
@@ -5769,8 +5780,10 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  @FfiNative<Void Function(Pointer<Void>)>('ImageDescriptor::dispose',
-      isLeaf: false)
+  ///
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('ImageDescriptor::dispose')
   external void dispose();
 
   /// Creates a [Codec] object which is suitable for decoding the data in the

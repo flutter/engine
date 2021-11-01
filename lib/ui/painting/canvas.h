@@ -51,7 +51,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
   void saveLayerWithoutBoundsHandle(Dart_Handle paint_objects,
                                     Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     saveLayerWithoutBounds(paint, place_holder);
   }
 
@@ -68,7 +67,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                        Dart_Handle paint_objects,
                        Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     saveLayer(left, top, right, bottom, paint, place_holder);
   }
 
@@ -105,14 +103,12 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                       Dart_Handle paint_objects,
                       Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawLine(x1, y1, x2, y2, paint, place_holder);
   }
 
   void drawPaint(const Paint& paint, const PaintData& paint_data);
   void drawPaintHandle(Dart_Handle paint_objects, Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawPaint(paint, place_holder);
   }
 
@@ -129,7 +125,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                       Dart_Handle paint_objects,
                       Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawRect(left, top, right, bottom, paint, place_holder);
   }
 
@@ -140,7 +135,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                        Dart_Handle paint_objects,
                        Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawRRect(rrect, paint, place_holder);
   }
 
@@ -153,7 +147,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                         Dart_Handle paint_objects,
                         Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawDRRect(outer, inner, paint, place_holder);
   }
 
@@ -170,7 +163,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                       Dart_Handle paint_objects,
                       Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawOval(left, top, right, bottom, paint, place_holder);
   }
 
@@ -210,7 +202,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                      Dart_Handle paint_objects,
                      Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawArc(left, top, right, bottom, startAngle, sweepAngle, useCenter, paint,
             place_holder);
   }
@@ -222,7 +213,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                       Dart_Handle paint_objects,
                       Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawPath(path, paint, place_holder);
   }
 
@@ -239,7 +229,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                        Dart_Handle paint_data,
                        int filterQualityIndex) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawImage(image, x, y, paint, place_holder, filterQualityIndex);
   }
 
@@ -268,7 +257,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                            Dart_Handle paint_data,
                            int filterQualityIndex) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawImageRect(image, src_left, src_top, src_right, src_bottom, dst_left,
                   dst_top, dst_right, dst_bottom, paint, place_holder,
                   filterQualityIndex);
@@ -299,7 +287,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                            Dart_Handle paint_data,
                            int bitmapSamplingIndex) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawImageNine(image, center_left, center_top, center_right, center_bottom,
                   dst_left, dst_top, dst_right, dst_bottom, paint, place_holder,
                   bitmapSamplingIndex);
@@ -321,7 +308,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                         SkCanvas::PointMode point_mode,
                         const tonic::Float32List& points) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawPoints(paint, place_holder, point_mode, points);
   }
 
@@ -334,7 +320,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                           Dart_Handle paint_objects,
                           Dart_Handle paint_data) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawVertices(vertices, blend_mode, paint, place_holder);
   }
 
@@ -357,7 +342,6 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                        SkBlendMode blend_mode,
                        const tonic::Float32List& cull_rect) {
     Paint paint(paint_objects, paint_data);
-    PaintData place_holder;
     drawAtlas(paint, place_holder, filterQualityIndex, atlas, transforms, rects,
               colors, blend_mode, cull_rect);
   }

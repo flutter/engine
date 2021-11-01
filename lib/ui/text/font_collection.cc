@@ -162,7 +162,7 @@ void FontCollection::LoadFontFromList(const uint8_t* font_data,
 }
 
 void FontCollection::LoadFontFromListEntry(
-    const tonic::Uint8List& font_data,  // NOLINT
+    tonic::Uint8List& font_data,  // NOLINT
     Dart_Handle callback,
     std::string family_name) {
   FontCollection& font_collection = UIDartState::Current()
@@ -171,12 +171,12 @@ void FontCollection::LoadFontFromListEntry(
                                         ->GetFontCollection();
   font_collection.LoadFontFromList(font_data.data(), font_data.num_elements(),
                                    family_name);
-  // font_data.Release();  // TODO(cskau): Can we do this?
+  font_data.Release();
   tonic::DartInvoke(callback, {tonic::ToDart(0)});
 }
 
 void FontCollection::LoadFontFromListOrThrow(
-    const tonic::Uint8List& font_data,  // NOLINT
+    tonic::Uint8List& font_data,  // NOLINT
     Dart_Handle callback,
     std::string family_name) {
   UIDartState::ThrowIfUIOperationsProhibited();

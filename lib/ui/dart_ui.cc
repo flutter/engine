@@ -115,7 +115,7 @@ typedef CanvasPath Path;
   V(NativeStringAttribute::initLocaleStringAttribute, 4)   \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3) \
   V(Vertices::init, 6)                                     \
-  V(FontCollection::LoadFontFromListOrThrow, 3)
+  V(FontCollection::LoadFontFromListOrThrowHandle, 3)
 
 // Instance methods.
 #define FFI_METHOD_LIST(V)                             \
@@ -209,7 +209,7 @@ typedef CanvasPath Path;
   V(Path, addArc, 7)                                   \
   V(Path, addOval, 5)                                  \
   V(Path, addPath, 4)                                  \
-  V(Path, addPathWithMatrix, 5)                        \
+  V(Path, addPathWithMatrixHandle, 5)                  \
   V(Path, addPolygon, 3)                               \
   V(Path, addRRect, 2)                                 \
   V(Path, addRect, 5)                                  \
@@ -221,7 +221,7 @@ typedef CanvasPath Path;
   V(Path, contains, 3)                                 \
   V(Path, cubicTo, 7)                                  \
   V(Path, extendWithPath, 4)                           \
-  V(Path, extendWithPathAndMatrix, 5)                  \
+  V(Path, extendWithPathAndMatrixHandle, 5)            \
   V(Path, getBounds, 1)                                \
   V(Path, getFillType, 1)                              \
   V(Path, lineTo, 3)                                   \
@@ -237,7 +237,7 @@ typedef CanvasPath Path;
   V(Path, reset, 1)                                    \
   V(Path, setFillType, 2)                              \
   V(Path, shift, 4)                                    \
-  V(Path, transform, 3)                                \
+  V(Path, transformHandle, 3)                          \
   V(PictureRecorder, endRecording, 2)                  \
   V(Picture, GetAllocationSize, 1)                     \
   V(Picture, dispose, 1)                               \
@@ -259,7 +259,7 @@ typedef CanvasPath Path;
   V(SceneBuilder, pushOpacity, 6)                      \
   V(SceneBuilder, pushPhysicalShape, 8)                \
   V(SceneBuilder, pushShaderMask, 10)                  \
-  V(SceneBuilder, pushTransform, 4)                    \
+  V(SceneBuilder, pushTransformHandle, 4)              \
   V(SceneBuilder, setCheckerboardOffscreenLayers, 2)   \
   V(SceneBuilder, setCheckerboardRasterCacheImages, 2) \
   V(SceneBuilder, setRasterizerTracingThreshold, 2)    \

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 // @dart = 2.14
 part of dart.ui;
 
@@ -48,7 +47,8 @@ class Scene extends NativeFieldWrapperClass1 {
   /// Releases the resources used by this scene.
   ///
   /// After calling this function, the scene is cannot be used further.
-  /// Note: This can't be a leaf call because it calls Dart API
+  ///
+  /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
   @FfiNative<Void Function(Pointer<Void>)>('Scene::dispose')
   external void dispose();
@@ -313,7 +313,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>(
-      'SceneBuilder::pushTransform')
+      'SceneBuilder::pushTransformHandle')
   external void _pushTransform(
       EngineLayer layer, Float64List matrix4, EngineLayer? oldLayer);
 

@@ -23,7 +23,7 @@ namespace tonic {
 
 template <>
 struct DartConverter<flutter::RRect> {
-  using FfiType = Dart_Handle;  // Float32List
+  using FfiType = Dart_Handle;
   static constexpr const char* kFfiSig = "Handle";
   static constexpr const char* kDartSig = "Object";
   static constexpr bool kAllowedInLeaf = false;

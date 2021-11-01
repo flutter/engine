@@ -100,20 +100,44 @@ class CanvasPath : public RefCountedDartWrappable<CanvasPath> {
   void addPolygon(const tonic::Float32List& points, bool close);
   void addRRect(const RRect& rrect);
   void addPath(CanvasPath* path, double dx, double dy);
+
+  void addPathWithMatrixHandle(CanvasPath* path,
+                               double dx,
+                               double dy,
+                               Dart_Handle matrix4_handle) {
+    tonic::Float64List matrix4(matrix4_handle);
+    addPathWithMatrix(path, dx, dy, matrix4);
+  }
   void addPathWithMatrix(CanvasPath* path,
                          double dx,
                          double dy,
-                         const tonic::Float64List& matrix4);
+                         tonic::Float64List& matrix4);
+
   void extendWithPath(CanvasPath* path, double dx, double dy);
+
+  void extendWithPathAndMatrixHandle(CanvasPath* path,
+                                     double dx,
+                                     double dy,
+                                     Dart_Handle matrix4_handle) {
+    tonic::Float64List matrix4(matrix4_handle);
+    extendWithPathAndMatrix(path, dx, dy, matrix4);
+  }
   void extendWithPathAndMatrix(CanvasPath* path,
                                double dx,
                                double dy,
-                               const tonic::Float64List& matrix4);
+                               tonic::Float64List& matrix4);
+
   void close();
   void reset();
   bool contains(double x, double y);
   void shift(Dart_Handle path_handle, double dx, double dy);
-  void transform(Dart_Handle path_handle, const tonic::Float64List& matrix4);
+
+  void transformHandle(Dart_Handle path_handle, Dart_Handle matrix4_handle) {
+    tonic::Float64List matrix4(matrix4_handle);
+    transform(path_handle, matrix4);
+  }
+  void transform(Dart_Handle path_handle, tonic::Float64List& matrix4);
+
   tonic::Float32List getBounds();
   bool op(CanvasPath* path1, CanvasPath* path2, int operation);
   void clone(Dart_Handle path_handle);

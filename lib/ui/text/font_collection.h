@@ -40,11 +40,17 @@ class FontCollection {
                         int length,
                         std::string family_name);
 
-  static void LoadFontFromListEntry(const tonic::Uint8List& font_data,
+  static void LoadFontFromListEntry(tonic::Uint8List& font_data,
                                     Dart_Handle callback,
                                     std::string family_name);
 
-  static void LoadFontFromListOrThrow(const tonic::Uint8List& font_data,
+  static void LoadFontFromListOrThrowHandle(Dart_Handle font_data_handle,
+                                            Dart_Handle callback,
+                                            std::string family_name) {
+    tonic::Uint8List font_data(font_data_handle);
+    LoadFontFromListOrThrow(font_data, callback, family_name);
+  }
+  static void LoadFontFromListOrThrow(tonic::Uint8List& font_data,
                                       Dart_Handle callback,
                                       std::string family_name);
 

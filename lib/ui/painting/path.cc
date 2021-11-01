@@ -257,7 +257,7 @@ void CanvasPath::addPath(CanvasPath* path, double dx, double dy) {
 void CanvasPath::addPathWithMatrix(CanvasPath* path,
                                    double dx,
                                    double dy,
-                                   const tonic::Float64List& matrix4) {
+                                   tonic::Float64List& matrix4) {
   if (!path) {
     Dart_ThrowException(
         ToDart("Path.addPathWithMatrix called with non-genuine Path."));
@@ -268,7 +268,7 @@ void CanvasPath::addPathWithMatrix(CanvasPath* path,
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
   mutable_path().addPath(path->path(), matrix, SkPath::kAppend_AddPathMode);
-  // matrix4.Release();  // TODO(cskau): Do we need this?
+  matrix4.Release();
   resetVolatility();
 }
 
@@ -285,7 +285,7 @@ void CanvasPath::extendWithPath(CanvasPath* path, double dx, double dy) {
 void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
                                          double dx,
                                          double dy,
-                                         const tonic::Float64List& matrix4) {
+                                         tonic::Float64List& matrix4) {
   if (!path) {
     Dart_ThrowException(
         ToDart("Path.addPathWithMatrix called with non-genuine Path."));
@@ -296,7 +296,7 @@ void CanvasPath::extendWithPathAndMatrix(CanvasPath* path,
   matrix.setTranslateX(matrix.getTranslateX() + dx);
   matrix.setTranslateY(matrix.getTranslateY() + dy);
   mutable_path().addPath(path->path(), matrix, SkPath::kExtend_AddPathMode);
-  // matrix4.Release();  // TODO(cskau): Do we need this?
+  matrix4.Release();
   resetVolatility();
 }
 
@@ -322,11 +322,11 @@ void CanvasPath::shift(Dart_Handle path_handle, double dx, double dy) {
 }
 
 void CanvasPath::transform(Dart_Handle path_handle,
-                           const tonic::Float64List& matrix4) {
+                           tonic::Float64List& matrix4) {
   fml::RefPtr<CanvasPath> path = CanvasPath::Create(path_handle);
   auto& other_mutable_path = path->mutable_path();
   mutable_path().transform(ToSkMatrix(matrix4), &other_mutable_path);
-  // matrix4.Release();  // TODO(cskau): Do we need this?
+  matrix4.Release();
 }
 
 tonic::Float32List CanvasPath::getBounds() {

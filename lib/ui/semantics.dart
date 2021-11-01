@@ -1052,7 +1052,9 @@ class SemanticsUpdate extends NativeFieldWrapperClass1 {
   ///
   /// After calling this function, the semantics update is cannot be used
   /// further.
-  @FfiNative<Void Function(Pointer<Void>)>('SemanticsUpdate::dispose',
-      isLeaf: false)
+  ///
+  /// This can't be a leaf call because the native function calls Dart API
+  /// (Dart_SetNativeInstanceField).
+  @FfiNative<Void Function(Pointer<Void>)>('SemanticsUpdate::dispose')
   external void dispose();
 }

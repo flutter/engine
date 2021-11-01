@@ -41,8 +41,14 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
 
   ~SceneBuilder() override;
 
+  void pushTransformHandle(Dart_Handle layer_handle,
+                           Dart_Handle matrix4_handle,
+                           fml::RefPtr<EngineLayer> oldLayer) {
+    tonic::Float64List matrix4(matrix4_handle);
+    pushTransform(layer_handle, matrix4, oldLayer);
+  }
   void pushTransform(Dart_Handle layer_handle,
-                     const tonic::Float64List& matrix4,
+                     tonic::Float64List& matrix4,
                      fml::RefPtr<EngineLayer> oldLayer);
   void pushOffset(Dart_Handle layer_handle,
                   double dx,

@@ -4,9 +4,6 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
-// #include <iostream>
-// #include <iomanip>
-
 #include "flutter/lib/ui/painting/matrix.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/tonic/converter/dart_converter.h"
