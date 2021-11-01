@@ -1,4 +1,4 @@
-Signature: 786622216247c45ab35bd4e632e459dc
+Signature: 315502d72400c3f5145c4fdc562ac87f
 
 UNUSED LICENSES:
 
@@ -5431,6 +5431,7 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/DirectionalBlur.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/SkSLEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/SphereEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ThresholdEffect.cpp
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_icu.h
