@@ -733,7 +733,9 @@ void ParagraphTxt::Layout(double width) {
     size_t line_end_index =
         (paragraph_style_.effective_align() == TextAlign::right ||
          paragraph_style_.effective_align() == TextAlign::center ||
-         paragraph_style_.effective_align() == TextAlign::justify)
+         paragraph_style_.effective_align() == TextAlign::justify ||
+         (paragraph_style_.effective_align() == TextAlign::left &&
+          paragraph_style_.text_direction == TextDirection::rtl))
             ? line_metrics.end_excluding_whitespace
             : line_metrics.end_index;
 
