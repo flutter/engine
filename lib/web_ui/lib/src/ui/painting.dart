@@ -508,7 +508,8 @@ Future<Codec> _createBmp(
   PixelFormat format,
 ) {
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
-  final int bufferSize = 0x36 + (width * height * 4);
+  const int dibSize = 0x36;
+  final int bufferSize = dibSize + (width * height * 4);
   final ByteData bmpData = ByteData(bufferSize);
   // 'BM' header
   bmpData.setUint8(0x00, 0x42);
@@ -521,8 +522,8 @@ Future<Codec> _createBmp(
   bmpData.setUint32(0x0E, 0x28, Endian.little);
   // width
   bmpData.setUint32(0x12, width, Endian.little);
-  // height
-  bmpData.setUint32(0x16, height, Endian.little);
+  // height: Negative height is interpreted as "top-down" bitmap.
+  bmpData.setUint32(0x16, -height, Endian.little);
   // Color panes
   bmpData.setUint16(0x1A, 0x01, Endian.little);
   // 32 bpp
@@ -540,7 +541,6 @@ Future<Codec> _createBmp(
   // important colors
   bmpData.setUint32(0x32, 0x00, Endian.little);
 
-
   int pixelDestinationIndex = 0;
   late bool swapRedBlue;
   switch (format) {
@@ -555,13 +555,12 @@ Future<Codec> _createBmp(
     final int r = swapRedBlue ? pixels[pixelSourceIndex + 2] : pixels[pixelSourceIndex];
     final int b = swapRedBlue ? pixels[pixelSourceIndex]     : pixels[pixelSourceIndex + 2];
     final int g = pixels[pixelSourceIndex + 1];
-    final int a = pixels[pixelSourceIndex + 3];
+    // Alpha channel is not supported by BMP. Discarded.
 
     // Set the pixel past the header data.
-    bmpData.setUint8(pixelDestinationIndex + 0x36, r);
-    bmpData.setUint8(pixelDestinationIndex + 0x37, g);
-    bmpData.setUint8(pixelDestinationIndex + 0x38, b);
-    bmpData.setUint8(pixelDestinationIndex + 0x39, a);
+    bmpData.setUint8(pixelDestinationIndex + dibSize + 0, b);
+    bmpData.setUint8(pixelDestinationIndex + dibSize + 1, g);
+    bmpData.setUint8(pixelDestinationIndex + dibSize + 2, r);
     pixelDestinationIndex += 4;
     if (rowBytes != width && pixelSourceIndex % width == 0) {
       pixelSourceIndex += rowBytes - width;
@@ -801,4 +800,3 @@ class FragmentProgram {
     required Float32List floatUniforms,
   }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
 }
-
