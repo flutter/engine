@@ -795,11 +795,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [_textInputDelegate handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                            withEvent:event]
-                                nextAction:^() {
-                                  [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
-                                }];
+      [_textInputDelegate
+          handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                             withEvent:event] autorelease]
+                nextAction:^() {
+                  [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
+                }];
     }
   } else {
     [super pressesBegan:presses withEvent:event];
@@ -811,7 +812,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
       [_textInputDelegate
-          handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+          handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                             withEvent:event] autorelease]
                 nextAction:^() {
                   [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
                 }];
@@ -825,11 +827,12 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [_textInputDelegate handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                            withEvent:event]
-                                nextAction:^() {
-                                  [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
-                                }];
+      [_textInputDelegate
+          handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                             withEvent:event] autorelease]
+                nextAction:^() {
+                  [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
+                }];
     }
   } else {
     [super pressesEnded:presses withEvent:event];
@@ -841,7 +844,8 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
       [_textInputDelegate
-          handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+          handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                             withEvent:event] autorelease]
                 nextAction:^() {
                   [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
                 }];
@@ -896,6 +900,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return _textInputClient != 0;
 }
 
+- (BOOL)canPerformAction:(SEL)action withSender:(nullable id)sender {
+  if (action == @selector(paste:)) {
+    // Forbid pasting images, memojis, or other non-string content.
+    return [UIPasteboard generalPasteboard].string != nil;
+  }
+
+  return [super canPerformAction:action withSender:sender];
+}
+
 #pragma mark - UIResponderStandardEditActions Overrides
 
 - (void)cut:(id)sender {
@@ -908,7 +921,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)paste:(id)sender {
-  [self insertText:[UIPasteboard generalPasteboard].string];
+  NSString* pasteboardString = [UIPasteboard generalPasteboard].string;
+  if (pasteboardString != nil) {
+    [self insertText:pasteboardString];
+  }
 }
 
 - (void)delete:(id)sender {
@@ -1870,12 +1886,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 // The UIView to add FlutterTextInputViews to.
-- (UIView*)keyWindow {
-  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
-  NSAssert(keyWindow != nullptr,
-           @"The application must have a key window since the keyboard client "
+- (UIView*)hostView {
+  NSAssert(self.viewController.view != nullptr,
+           @"The application must have a HostView since the keyboard client "
            @"must be part of the responder chain to function");
-  return keyWindow;
+  return self.viewController.view;
 }
 
 // The UIView to add FlutterTextInputViews to.
@@ -1948,7 +1963,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (![inputView isDescendantOfView:_inputHider]) {
     [_inputHider addSubview:inputView];
   }
-  UIView* parentView = self.keyWindow;
+  UIView* parentView = self.hostView;
   if (_inputHider.superview != parentView) {
     [parentView addSubview:_inputHider];
   }

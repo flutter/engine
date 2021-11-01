@@ -126,6 +126,12 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
+  public TaskQueue makeBackgroundTaskQueue() {
+    return dartExecutor.getBinaryMessenger().makeBackgroundTaskQueue();
+  }
+
+  @Override
+  @UiThread
   public void send(String channel, ByteBuffer message) {
     dartExecutor.getBinaryMessenger().send(channel, message);
   }
@@ -147,6 +153,12 @@ public class FlutterNativeView implements BinaryMessenger {
     dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler);
   }
 
+  @Override
+  @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
+    dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler, taskQueue);
+  }
+
   /*package*/ FlutterJNI getFlutterJNI() {
     return mFlutterJNI;
   }
@@ -157,7 +169,7 @@ public class FlutterNativeView implements BinaryMessenger {
   }
 
   private final class EngineLifecycleListenerImpl implements EngineLifecycleListener {
-    // Called by native to notify when the engine is restarted (cold reload).
+    // Called by native to notify right before the engine is restarted (cold reload).
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
       if (mFlutterView != null) {
