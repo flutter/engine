@@ -39,4 +39,66 @@ void testMain() {
     expect(transformKindOf(rotation2d), TransformKind.transform2d);
     expect(isIdentityFloat32ListTransform(rotation2d), isFalse);
   });
+
+  test('canonicalizes font families correctly on iOS', () {
+    debugOperatingSystemOverride = OperatingSystem.iOs;
+
+    expect(
+      canonicalizeFontFamily('sans-serif'),
+      'sans-serif',
+    );
+    expect(
+      canonicalizeFontFamily('foo'),
+      '"foo", -apple-system, BlinkMacSystemFont, sans-serif',
+    );
+    expect(
+      canonicalizeFontFamily('.SF Pro Text'),
+      '-apple-system, BlinkMacSystemFont',
+    );
+
+    debugOperatingSystemOverride = null;
+  });
+
+  test('does not use -apple-system on iOS 15', () {
+    debugOperatingSystemOverride = OperatingSystem.iOs;
+    debugIsIOS15 = true;
+
+    expect(
+      canonicalizeFontFamily('sans-serif'),
+      'sans-serif',
+    );
+    expect(
+      canonicalizeFontFamily('foo'),
+      '"foo", BlinkMacSystemFont, sans-serif',
+    );
+    expect(
+      canonicalizeFontFamily('.SF Pro Text'),
+      'BlinkMacSystemFont',
+    );
+
+    debugOperatingSystemOverride = null;
+    debugIsIOS15 = null;
+  });
+
+  test('parseFloat basic tests', () {
+    // Simple integers and doubles.
+    expect(parseFloat('108'), 108.0);
+    expect(parseFloat('.34'), 0.34);
+    expect(parseFloat('108.34'), 108.34);
+
+    // Number followed by text.
+    expect(parseFloat('108.34px'), 108.34);
+    expect(parseFloat('108.34px29'), 108.34);
+    expect(parseFloat('108.34px 29'), 108.34);
+
+    // Number followed by space and text.
+    expect(parseFloat('108.34 px29'), 108.34);
+    expect(parseFloat('108.34 px 29'), 108.34);
+
+    // Invalid numbers.
+    expect(parseFloat('text'), isNull);
+    expect(parseFloat('text108'), isNull);
+    expect(parseFloat('text 108'), isNull);
+    expect(parseFloat('another text 108'), isNull);
+  });
 }

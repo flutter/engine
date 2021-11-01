@@ -306,53 +306,50 @@ struct SkewOp final : DLOp {
 };
 // 4 byte header + 24 byte payload uses 28 bytes but is rounded up to 32 bytes
 // (4 bytes unused)
-struct Transform2x3Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform2x3;
+struct Transform2DAffineOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransform2DAffine;
 
-  Transform2x3Op(SkScalar mxx,
-                 SkScalar mxy,
-                 SkScalar mxt,
-                 SkScalar myx,
-                 SkScalar myy,
-                 SkScalar myt)
+  // clang-format off
+  Transform2DAffineOp(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                      SkScalar myx, SkScalar myy, SkScalar myt)
       : mxx(mxx), mxy(mxy), mxt(mxt), myx(myx), myy(myy), myt(myt) {}
+  // clang-format on
 
   const SkScalar mxx, mxy, mxt;
   const SkScalar myx, myy, myt;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform2x3(mxx, mxy, mxt, myx, myy, myt);
+    dispatcher.transform2DAffine(mxx, mxy, mxt,  //
+                                 myx, myy, myt);
   }
 };
-// 4 byte header + 36 byte payload packs evenly into 40 bytes
-struct Transform3x3Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform3x3;
+// 4 byte header + 64 byte payload uses 68 bytes which is rounded up to 72 bytes
+// (4 bytes unused)
+struct TransformFullPerspectiveOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransformFullPerspective;
 
-  Transform3x3Op(SkScalar mxx,
-                 SkScalar mxy,
-                 SkScalar mxt,
-                 SkScalar myx,
-                 SkScalar myy,
-                 SkScalar myt,
-                 SkScalar px,
-                 SkScalar py,
-                 SkScalar pt)
-      : mxx(mxx),
-        mxy(mxy),
-        mxt(mxt),
-        myx(myx),
-        myy(myy),
-        myt(myt),
-        px(px),
-        py(py),
-        pt(pt) {}
+  // clang-format off
+  TransformFullPerspectiveOp(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt)
+      : mxx(mxx), mxy(mxy), mxz(mxz), mxt(mxt),
+        myx(myx), myy(myy), myz(myz), myt(myt),
+        mzx(mzx), mzy(mzy), mzz(mzz), mzt(mzt),
+        mwx(mwx), mwy(mwy), mwz(mwz), mwt(mwt) {}
+  // clang-format on
 
-  const SkScalar mxx, mxy, mxt;
-  const SkScalar myx, myy, myt;
-  const SkScalar px, py, pt;
+  const SkScalar mxx, mxy, mxz, mxt;
+  const SkScalar myx, myy, myz, myt;
+  const SkScalar mzx, mzy, mzz, mzt;
+  const SkScalar mwx, mwy, mwz, mwt;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform3x3(mxx, mxy, mxt, myx, myy, myt, px, py, pt);
+    dispatcher.transformFullPerspective(mxx, mxy, mxz, mxt,  //
+                                        myx, myy, myz, myt,  //
+                                        mzx, mzy, mzz, mzt,  //
+                                        mwx, mwy, mwz, mwt);
   }
 };
 
@@ -990,7 +987,7 @@ void DisplayList::RenderTo(SkCanvas* canvas) const {
 }
 
 bool DisplayList::Equals(const DisplayList& other) const {
-  if (used_ != other.used_ || op_count_ != other.op_count_) {
+  if (byte_count_ != other.byte_count_ || op_count_ != other.op_count_) {
     return false;
   }
   uint8_t* ptr = storage_.get();
@@ -998,18 +995,22 @@ bool DisplayList::Equals(const DisplayList& other) const {
   if (ptr == o_ptr) {
     return true;
   }
-  return CompareOps(ptr, ptr + used_, o_ptr, o_ptr + other.used_);
+  return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other.byte_count_);
 }
 
 DisplayList::DisplayList(uint8_t* ptr,
-                         size_t used,
+                         size_t byte_count,
                          int op_count,
-                         const SkRect& cull)
+                         size_t nested_byte_count,
+                         int nested_op_count,
+                         const SkRect& cull_rect)
     : storage_(ptr),
-      used_(used),
+      byte_count_(byte_count),
       op_count_(op_count),
+      nested_byte_count_(nested_byte_count),
+      nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
-      bounds_cull_(cull) {
+      bounds_cull_(cull_rect) {
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -1018,7 +1019,7 @@ DisplayList::DisplayList(uint8_t* ptr,
 
 DisplayList::~DisplayList() {
   uint8_t* ptr = storage_.get();
-  DisposeOps(ptr, ptr + used_);
+  DisposeOps(ptr, ptr + byte_count_);
 }
 
 #define DL_BUILDER_PAGE 4096
@@ -1062,15 +1063,20 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (save_level_ > 0) {
     restore();
   }
-  size_t used = used_;
+  size_t bytes = used_;
   int count = op_count_;
+  size_t nested_bytes = nested_bytes_;
+  int nested_count = nested_op_count_;
   used_ = allocated_ = op_count_ = 0;
-  storage_.realloc(used);
-  return sk_sp<DisplayList>(
-      new DisplayList(storage_.release(), used, count, cull_));
+  nested_bytes_ = nested_op_count_ = 0;
+  storage_.realloc(bytes);
+  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
+                                            nested_bytes, nested_count,
+                                            cull_rect_));
 }
 
-DisplayListBuilder::DisplayListBuilder(const SkRect& cull) : cull_(cull) {}
+DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
+    : cull_rect_(cull_rect) {}
 
 DisplayListBuilder::~DisplayListBuilder() {
   uint8_t* ptr = storage_.get();
@@ -1183,25 +1189,42 @@ void DisplayListBuilder::rotate(SkScalar degrees) {
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
   Push<SkewOp>(0, 1, sx, sy);
 }
-void DisplayListBuilder::transform2x3(SkScalar mxx,
-                                      SkScalar mxy,
-                                      SkScalar mxt,
-                                      SkScalar myx,
-                                      SkScalar myy,
-                                      SkScalar myt) {
-  Push<Transform2x3Op>(0, 1, mxx, mxy, mxt, myx, myy, myt);
+
+// clang-format off
+
+// 2x3 2D affine subset of a 4x4 transform in row major order
+void DisplayListBuilder::transform2DAffine(
+    SkScalar mxx, SkScalar mxy, SkScalar mxt,
+    SkScalar myx, SkScalar myy, SkScalar myt) {
+  if (!(mxx == 1 && mxy == 0 && mxt == 0 &&
+        myx == 0 && myy == 1 && myt == 0)) {
+    Push<Transform2DAffineOp>(0, 1,
+                              mxx, mxy, mxt,
+                              myx, myy, myt);
+  }
 }
-void DisplayListBuilder::transform3x3(SkScalar mxx,
-                                      SkScalar mxy,
-                                      SkScalar mxt,
-                                      SkScalar myx,
-                                      SkScalar myy,
-                                      SkScalar myt,
-                                      SkScalar px,
-                                      SkScalar py,
-                                      SkScalar pt) {
-  Push<Transform3x3Op>(0, 1, mxx, mxy, mxt, myx, myy, myt, px, py, pt);
+// full 4x4 transform in row major order
+void DisplayListBuilder::transformFullPerspective(
+    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+  if (                        mxz == 0 &&
+                              myz == 0 &&
+      mzx == 0 && mzy == 0 && mzz == 1 && mzt == 0 &&
+      mwx == 0 && mwy == 0 && mwz == 0 && mwt == 1) {
+    transform2DAffine(mxx, mxy, mxt,
+                      myx, myy, myt);
+  } else {
+    Push<TransformFullPerspectiveOp>(0, 1,
+                                     mxx, mxy, mxz, mxt,
+                                     myx, myy, myz, myt,
+                                     mzx, mzy, mzz, mzt,
+                                     mwx, mwy, mwz, mwt);
+  }
 }
+
+// clang-format on
 
 void DisplayListBuilder::clipRect(const SkRect& rect,
                                   SkClipOp clip_op,
@@ -1404,10 +1427,26 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
       ? Push<DrawSkPictureMatrixOp>(0, 1, std::move(picture), *matrix,
                                     render_with_attributes)
       : Push<DrawSkPictureOp>(0, 1, std::move(picture), render_with_attributes);
+  // The non-nested op count accumulated in the |Push| method will include
+  // this call to |drawPicture| for non-nested op count metrics.
+  // But, for nested op count metrics we want the |drawPicture| call itself
+  // to be transparent. So we subtract 1 from our accumulated nested count to
+  // balance out against the 1 that was accumulated into the regular count.
+  // This behavior is identical to the way SkPicture computes nested op counts.
+  nested_op_count_ += picture->approximateOpCount(true) - 1;
+  nested_bytes_ += picture->approximateBytesUsed();
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
   Push<DrawDisplayListOp>(0, 1, std::move(display_list));
+  // The non-nested op count accumulated in the |Push| method will include
+  // this call to |drawDisplayList| for non-nested op count metrics.
+  // But, for nested op count metrics we want the |drawDisplayList| call itself
+  // to be transparent. So we subtract 1 from our accumulated nested count to
+  // balance out against the 1 that was accumulated into the regular count.
+  // This behavior is identical to the way SkPicture computes nested op counts.
+  nested_op_count_ += display_list->op_count(true) - 1;
+  nested_bytes_ += display_list->bytes(true);
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,

@@ -117,8 +117,8 @@ def can_use_prebuilt_dart(args):
 
 def to_gn_args(args):
     if args.simulator:
-        if args.target_os == 'android':
-            raise Exception('--simulator is not supported on Android')
+        if args.target_os != 'ios':
+            raise Exception('--simulator is only supported for iOS')
 
     runtime_mode = args.runtime_mode
 
@@ -131,6 +131,8 @@ def to_gn_args(args):
         gn_args['bitcode_marker'] = True
 
     gn_args['enable_bitcode'] = args.bitcode
+    if args.enable_unittests:
+        gn_args['enable_unittests'] = args.enable_unittests
 
     # Skia GN args.
     gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
@@ -187,6 +189,9 @@ def to_gn_args(args):
     elif args.target_os == 'ios':
         gn_args['target_os'] = 'ios'
         gn_args['use_ios_simulator'] = args.simulator
+    elif args.target_os == 'mac':
+        gn_args['target_os'] = 'mac'
+        gn_args['use_ios_simulator'] = False
     elif args.target_os == 'fuchsia':
         gn_args['target_os'] = 'fuchsia'
     elif args.target_os == 'winuwp':
@@ -391,6 +396,8 @@ def parse_args(args):
   parser = argparse.ArgumentParser(description='A script run` gn gen`.')
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
+
+  parser.add_argument('--enable-unittests', action='store_true', default=False)
 
   parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release', 'jit_release'], default='debug')
   parser.add_argument('--interpreter', default=False, action='store_true')

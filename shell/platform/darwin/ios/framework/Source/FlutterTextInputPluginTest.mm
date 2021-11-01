@@ -9,8 +9,13 @@
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
 FLUTTER_ASSERT_ARC
+
+@interface FlutterEngine ()
+- (nonnull FlutterTextInputPlugin*)textInputPlugin;
+@end
 
 @interface FlutterTextInputView ()
 @property(nonatomic, copy) NSString* autofillId;
@@ -58,6 +63,8 @@ FLUTTER_ASSERT_ARC
                    clearText:(BOOL)clearText
                 delayRemoval:(BOOL)delayRemoval;
 - (NSArray<UIView*>*)textInputViews;
+- (UIView*)hostView;
+- (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -68,6 +75,7 @@ FLUTTER_ASSERT_ARC
   NSDictionary* _passwordTemplate;
   id engine;
   FlutterTextInputPlugin* textInputPlugin;
+  FlutterViewController* viewController;
 }
 
 - (void)setUp {
@@ -76,6 +84,11 @@ FLUTTER_ASSERT_ARC
   engine = OCMClassMock([FlutterEngine class]);
   textInputPlugin = [[FlutterTextInputPlugin alloc] init];
   textInputPlugin.textInputDelegate = engine;
+  viewController = [FlutterViewController new];
+  textInputPlugin.viewController = viewController;
+
+  // Clear pasteboard between tests.
+  UIPasteboard.generalPasteboard.items = @[];
 }
 
 - (void)tearDown {
@@ -87,6 +100,7 @@ FLUTTER_ASSERT_ARC
   [textInputPlugin cleanUpViewHierarchy:YES clearText:YES delayRemoval:NO];
   [[[[textInputPlugin textInputView] superview] subviews]
       makeObjectsPerformSelector:@selector(removeFromSuperview)];
+  viewController = nil;
   [super tearDown];
 }
 
@@ -245,6 +259,45 @@ FLUTTER_ASSERT_ARC
   range = [FlutterTextRange rangeWithNSRange:NSMakeRange(10, 20)];
   substring = [inputView textInRange:range];
   XCTAssertEqual(substring.length, 0ul);
+}
+
+- (void)testStandardEditActions {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"aaaa"];
+  [inputView selectAll:nil];
+  [inputView cut:nil];
+  [inputView insertText:@"bbbb"];
+  XCTAssertTrue([inputView canPerformAction:@selector(paste:) withSender:nil]);
+  [inputView paste:nil];
+  [inputView selectAll:nil];
+  [inputView copy:nil];
+  [inputView paste:nil];
+  [inputView selectAll:nil];
+  [inputView delete:nil];
+  [inputView paste:nil];
+  [inputView paste:nil];
+
+  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 30)];
+  NSString* substring = [inputView textInRange:range];
+  XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
+}
+
+- (void)testPastingNonTextDisallowed {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  UIPasteboard.generalPasteboard.color = UIColor.redColor;
+  XCTAssertNil(UIPasteboard.generalPasteboard.string);
+  XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:nil]);
+  [inputView paste:nil];
+
+  XCTAssertEqualObjects(inputView.text, @"");
 }
 
 - (void)testNoZombies {
@@ -825,6 +878,16 @@ FLUTTER_ASSERT_ARC
   }
 }
 
+- (void)testFloatingCursorDoesNotThrow {
+  // The keyboard implementation may send unbalanced calls to the input view.
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  [inputView endFloatingCursor];
+  [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
+  [inputView endFloatingCursor];
+}
+
 - (void)testBoundsForFloatingCursor {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
 
@@ -1311,8 +1374,11 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
+  FlutterViewController* flutterViewController = [FlutterViewController new];
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
   myInputPlugin.textInputDelegate = engine;
+  myInputPlugin.viewController = flutterViewController;
+
   __weak UIView* activeView;
   @autoreleasepool {
     FlutterMethodCall* setClientCall = [FlutterMethodCall
@@ -1333,6 +1399,21 @@ FLUTTER_ASSERT_ARC
   }
   // This assert proves the myInputPlugin.textInputView is not deallocated.
   XCTAssertNotNil(activeView);
+}
+
+- (void)testFlutterTextInputPluginHostViewNilCrash {
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  myInputPlugin.viewController = nil;
+  XCTAssertThrows([myInputPlugin hostView], @"Throws exception if host view is nil");
+}
+
+- (void)testFlutterTextInputPluginHostViewNotNil {
+  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
+  [flutterEngine runWithEntrypoint:nil];
+  flutterEngine.viewController = flutterViewController;
+  XCTAssertNotNil(flutterEngine.textInputPlugin.viewController);
+  XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
 }
 
 @end

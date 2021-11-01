@@ -312,6 +312,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
+  _textInputPlugin.get().viewController = viewController;
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -345,6 +346,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
+  _textInputPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else {
@@ -879,7 +881,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }
 }
 
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
   if (_shell && _shell->IsSetup()) {
     std::string channel = _connections->CleanupConnection(connection);
     if (!channel.empty()) {
@@ -998,7 +1000,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (FlutterEngine*)spawnWithEntrypoint:(/*nullable*/ NSString*)entrypoint
-                           libraryURI:(/*nullable*/ NSString*)libraryURI {
+                           libraryURI:(/*nullable*/ NSString*)libraryURI
+                         initialRoute:(/*nullable*/ NSString*)initialRoute {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
                                                       project:_dartProject.get()
@@ -1027,8 +1030,13 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
-  std::unique_ptr<flutter::Shell> shell =
-      _shell->Spawn(std::move(configuration), on_create_platform_view, on_create_rasterizer);
+  std::string cppInitialRoute;
+  if (initialRoute) {
+    cppInitialRoute = [initialRoute UTF8String];
+  }
+
+  std::unique_ptr<flutter::Shell> shell = _shell->Spawn(
+      std::move(configuration), cppInitialRoute, on_create_platform_view, on_create_rasterizer);
 
   result->_threadHost = _threadHost;
   result->_profiler = _profiler;

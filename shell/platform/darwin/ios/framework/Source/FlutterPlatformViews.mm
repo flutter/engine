@@ -422,7 +422,6 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
-
   // Do nothing if the view doesn't need to be composited.
   if (views_to_recomposite_.count(view_id) == 0) {
     return picture_recorders_[view_id]->getRecordingCanvas();
@@ -612,7 +611,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
 
   UIView* overlay_view = layer->overlay_view.get();
   // Set the size of the overlay view.
-  // This size is equal to the the device screen size.
+  // This size is equal to the device screen size.
   overlay_view.frame = flutter_view_.get().bounds;
 
   std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);

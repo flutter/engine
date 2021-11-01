@@ -131,6 +131,9 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
+  // Informs the engine that the platform brightness has changed.
+  void ReloadPlatformBrightness();
+
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -140,6 +143,17 @@ class FlutterWindowsEngine {
   // Notifies the engine about a new frame being available for the
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
+  // Dispatches a semantics action to the specified semantics node.
+  bool DispatchSemanticsAction(uint64_t id,
+                               FlutterSemanticsAction action,
+                               const std::vector<uint8_t>& data);
+
+  // Informs the engine that the semantics enabled state has changed.
+  void UpdateSemanticsEnabled(bool enabled);
+
+  // Returns true if the semantics tree is enabled.
+  bool semantics_enabled() const { return semantics_enabled_; }
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -197,6 +211,8 @@ class FlutterWindowsEngine {
   // is being destroyed.
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_ = nullptr;
+
+  bool semantics_enabled_ = false;
 
 #ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.

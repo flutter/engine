@@ -8,9 +8,9 @@
 #include <functional>
 #include <memory>
 
-#include "flow/embedded_views.h"
 #include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
@@ -22,14 +22,13 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
-
-class Shell;
 
 //------------------------------------------------------------------------------
 /// @brief      Platform views are created by the shell on the platform task
@@ -391,7 +390,7 @@ class PlatformView {
   ///             may use the `DispatchPlatformMessage` method. This method is
   ///             for messages that go the other way.
   ///
-  /// @see        DisplatchPlatformMessage()
+  /// @see        DispatchPlatformMessage()
   ///
   /// @param[in]  message  The message
   ///
@@ -811,6 +810,17 @@ class PlatformView {
   ///
   virtual std::unique_ptr<SnapshotSurfaceProducer>
   CreateSnapshotSurfaceProducer();
+
+  //--------------------------------------------------------------------------
+  /// @brief Specifies a delegate that will receive PlatformMessages from
+  /// Flutter to the host platform.
+  ///
+  /// @details If this returns `null` that means PlatformMessages should be sent
+  /// to the PlatformView.  That is to protect legacy behavior, any embedder
+  /// that wants to support executing Platform Channel handlers on background
+  /// threads should be returing a thread-safe PlatformMessageHandler instead.
+  virtual std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const;
 
  protected:
   PlatformView::Delegate& delegate_;

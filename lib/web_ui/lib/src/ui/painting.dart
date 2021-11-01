@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// For documentation see https://github.com/flutter/engine/blob/master/lib/ui/painting.dart
+// For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
 // ignore_for_file: public_member_api_docs
 part of ui;
 
@@ -585,15 +585,17 @@ void decodeImageFromPixels(
   bool allowUpscaling = true,
 }) {
   if (engine.useCanvasKit) {
-    engine.skiaInstantiateImageCodec(
+    engine.skiaDecodeImageFromPixels(
       pixels,
       width,
       height,
-      format.index,
-      rowBytes,
-    ).getNextFrame().then((FrameInfo info) {
-      callback(info.image);
-    });
+      format,
+      callback,
+      rowBytes: rowBytes,
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+      allowUpscaling: allowUpscaling,
+    );
     return;
   }
 
@@ -787,16 +789,16 @@ class ImageDescriptor {
   }
 }
 
-class FragmentShader extends Shader {
-  FragmentShader({
+class FragmentProgram {
+  FragmentProgram({
     required ByteBuffer spirv, // ignore: avoid_unused_constructor_parameters
-    Float32List? floatUniforms, // ignore: avoid_unused_constructor_parameters
     bool debugPrint = false, // ignore: avoid_unused_constructor_parameters
-  }) : super._() {
-    throw UnsupportedError('FragmentShader is not supported for the CanvasKit or HTML renderers.');
+  }) {
+    throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
 
-  void update({Float32List? floatUniforms}) =>
-    throw UnsupportedError('FragmentShader is not supported for the CanvasKit or HTML renderers.');
+  Shader shader({
+    required Float32List floatUniforms,
+  }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
 }
 
