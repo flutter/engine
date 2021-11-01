@@ -151,13 +151,16 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 @implementation FlutterScrollableSemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
+  std::unique_ptr<fml::WeakPtrFactory<FlutterScrollableSemanticsObject>> _weakFactory;
 }
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid {
   self = [super initWithBridge:bridge uid:uid];
   if (self) {
-    _scrollView = [[FlutterSemanticsScrollView alloc] initWithSemanticsObject:self];
+    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterScrollableSemanticsObject>>(self);
+    _scrollView =
+        [[FlutterSemanticsScrollView alloc] initWithSemanticsObject:_weakFactory->GetWeakPtr()];
     [_scrollView setShowsHorizontalScrollIndicator:NO];
     [_scrollView setShowsVerticalScrollIndicator:NO];
     [self.bridge->view() addSubview:_scrollView];
