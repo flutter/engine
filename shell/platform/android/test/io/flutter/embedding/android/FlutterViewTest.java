@@ -684,8 +684,7 @@ public class FlutterViewTest {
     when(displayFeature.getOcclusionType()).thenReturn(FoldingFeature.OcclusionType.FULL);
     when(displayFeature.getState()).thenReturn(FoldingFeature.State.FLAT);
 
-    WindowLayoutInfo testWindowLayout =
-        new WindowLayoutInfo(Arrays.asList(displayFeature));
+    WindowLayoutInfo testWindowLayout = new WindowLayoutInfo(Arrays.asList(displayFeature));
 
     // When FlutterView is attached to the engine and window, and a hinge display feature exists
     flutterView.attachToFlutterEngine(flutterEngine);
