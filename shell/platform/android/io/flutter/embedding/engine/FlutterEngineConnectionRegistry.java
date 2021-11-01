@@ -14,7 +14,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
-import androidx.tracing.Trace;
 import io.flutter.Log;
 import io.flutter.embedding.android.ExclusiveAppComponent;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -123,76 +122,70 @@ import java.util.Set;
 
   @Override
   public void add(@NonNull FlutterPlugin plugin) {
-    Trace.beginSection("FlutterEngineConnectionRegistry#add " + plugin.getClass().getSimpleName());
+    if (has(plugin.getClass())) {
+      Log.w(
+          TAG,
+          "Attempted to register plugin ("
+              + plugin
+              + ") but it was "
+              + "already registered with this FlutterEngine ("
+              + flutterEngine
+              + ").");
+      return;
+    }
 
-    try {
-      if (has(plugin.getClass())) {
-        Log.w(
-            TAG,
-            "Attempted to register plugin ("
-                + plugin
-                + ") but it was "
-                + "already registered with this FlutterEngine ("
-                + flutterEngine
-                + ").");
-        return;
+    Log.v(TAG, "Adding plugin: " + plugin);
+    // Add the plugin to our generic set of plugins and notify the plugin
+    // that is has been attached to an engine.
+    plugins.put(plugin.getClass(), plugin);
+    plugin.onAttachedToEngine(pluginBinding);
+
+    // For ActivityAware plugins, add the plugin to our set of ActivityAware
+    // plugins, and if this engine is currently attached to an Activity,
+    // notify the ActivityAware plugin that it is now attached to an Activity.
+    if (plugin instanceof ActivityAware) {
+      ActivityAware activityAware = (ActivityAware) plugin;
+      activityAwarePlugins.put(plugin.getClass(), activityAware);
+
+      if (isAttachedToActivity()) {
+        activityAware.onAttachedToActivity(activityPluginBinding);
       }
+    }
 
-      Log.v(TAG, "Adding plugin: " + plugin);
-      // Add the plugin to our generic set of plugins and notify the plugin
-      // that is has been attached to an engine.
-      plugins.put(plugin.getClass(), plugin);
-      plugin.onAttachedToEngine(pluginBinding);
+    // For ServiceAware plugins, add the plugin to our set of ServiceAware
+    // plugins, and if this engine is currently attached to a Service,
+    // notify the ServiceAware plugin that it is now attached to a Service.
+    if (plugin instanceof ServiceAware) {
+      ServiceAware serviceAware = (ServiceAware) plugin;
+      serviceAwarePlugins.put(plugin.getClass(), serviceAware);
 
-      // For ActivityAware plugins, add the plugin to our set of ActivityAware
-      // plugins, and if this engine is currently attached to an Activity,
-      // notify the ActivityAware plugin that it is now attached to an Activity.
-      if (plugin instanceof ActivityAware) {
-        ActivityAware activityAware = (ActivityAware) plugin;
-        activityAwarePlugins.put(plugin.getClass(), activityAware);
-
-        if (isAttachedToActivity()) {
-          activityAware.onAttachedToActivity(activityPluginBinding);
-        }
+      if (isAttachedToService()) {
+        serviceAware.onAttachedToService(servicePluginBinding);
       }
+    }
 
-      // For ServiceAware plugins, add the plugin to our set of ServiceAware
-      // plugins, and if this engine is currently attached to a Service,
-      // notify the ServiceAware plugin that it is now attached to a Service.
-      if (plugin instanceof ServiceAware) {
-        ServiceAware serviceAware = (ServiceAware) plugin;
-        serviceAwarePlugins.put(plugin.getClass(), serviceAware);
+    // For BroadcastReceiverAware plugins, add the plugin to our set of BroadcastReceiverAware
+    // plugins, and if this engine is currently attached to a BroadcastReceiver,
+    // notify the BroadcastReceiverAware plugin that it is now attached to a BroadcastReceiver.
+    if (plugin instanceof BroadcastReceiverAware) {
+      BroadcastReceiverAware broadcastReceiverAware = (BroadcastReceiverAware) plugin;
+      broadcastReceiverAwarePlugins.put(plugin.getClass(), broadcastReceiverAware);
 
-        if (isAttachedToService()) {
-          serviceAware.onAttachedToService(servicePluginBinding);
-        }
+      if (isAttachedToBroadcastReceiver()) {
+        broadcastReceiverAware.onAttachedToBroadcastReceiver(broadcastReceiverPluginBinding);
       }
+    }
 
-      // For BroadcastReceiverAware plugins, add the plugin to our set of BroadcastReceiverAware
-      // plugins, and if this engine is currently attached to a BroadcastReceiver,
-      // notify the BroadcastReceiverAware plugin that it is now attached to a BroadcastReceiver.
-      if (plugin instanceof BroadcastReceiverAware) {
-        BroadcastReceiverAware broadcastReceiverAware = (BroadcastReceiverAware) plugin;
-        broadcastReceiverAwarePlugins.put(plugin.getClass(), broadcastReceiverAware);
+    // For ContentProviderAware plugins, add the plugin to our set of ContentProviderAware
+    // plugins, and if this engine is currently attached to a ContentProvider,
+    // notify the ContentProviderAware plugin that it is now attached to a ContentProvider.
+    if (plugin instanceof ContentProviderAware) {
+      ContentProviderAware contentProviderAware = (ContentProviderAware) plugin;
+      contentProviderAwarePlugins.put(plugin.getClass(), contentProviderAware);
 
-        if (isAttachedToBroadcastReceiver()) {
-          broadcastReceiverAware.onAttachedToBroadcastReceiver(broadcastReceiverPluginBinding);
-        }
+      if (isAttachedToContentProvider()) {
+        contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
       }
-
-      // For ContentProviderAware plugins, add the plugin to our set of ContentProviderAware
-      // plugins, and if this engine is currently attached to a ContentProvider,
-      // notify the ContentProviderAware plugin that it is now attached to a ContentProvider.
-      if (plugin instanceof ContentProviderAware) {
-        ContentProviderAware contentProviderAware = (ContentProviderAware) plugin;
-        contentProviderAwarePlugins.put(plugin.getClass(), contentProviderAware);
-
-        if (isAttachedToContentProvider()) {
-          contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
-        }
-      }
-    } finally {
-      Trace.endSection();
     }
   }
 
@@ -216,13 +209,7 @@ import java.util.Set;
   @Override
   public void remove(@NonNull Class<? extends FlutterPlugin> pluginClass) {
     FlutterPlugin plugin = plugins.get(pluginClass);
-    if (plugin == null) {
-      return;
-    }
-
-    Trace.beginSection("FlutterEngineConnectionRegistry#remove " + pluginClass.getSimpleName());
-
-    try {
+    if (plugin != null) {
       Log.v(TAG, "Removing plugin: " + plugin);
       // For ActivityAware plugins, notify the plugin that it is detached from
       // an Activity if an Activity is currently attached to this engine. Then
@@ -272,8 +259,6 @@ import java.util.Set;
       // it from our set of generic plugins.
       plugin.onDetachedFromEngine(pluginBinding);
       plugins.remove(pluginClass);
-    } finally {
-      Trace.endSection();
     }
   }
 
@@ -316,26 +301,20 @@ import java.util.Set;
   @Override
   public void attachToActivity(
       @NonNull ExclusiveAppComponent<Activity> exclusiveActivity, @NonNull Lifecycle lifecycle) {
-    Trace.beginSection("FlutterEngineConnectionRegistry#attachToActivity");
-
-    try {
-      Log.v(
-          TAG,
-          "Attaching to an exclusive Activity: "
-              + exclusiveActivity.getAppComponent()
-              + (isAttachedToActivity() ? " evicting previous activity " + attachedActivity() : "")
-              + "."
-              + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
-      if (this.exclusiveActivity != null) {
-        this.exclusiveActivity.detachFromFlutterEngine();
-      }
-      // If we were already attached to an app component, detach from it.
-      detachFromAppComponent();
-      this.exclusiveActivity = exclusiveActivity;
-      attachToActivityInternal(exclusiveActivity.getAppComponent(), lifecycle);
-    } finally {
-      Trace.endSection();
+    Log.v(
+        TAG,
+        "Attaching to an exclusive Activity: "
+            + exclusiveActivity.getAppComponent()
+            + (isAttachedToActivity() ? " evicting previous activity " + attachedActivity() : "")
+            + "."
+            + (isWaitingForActivityReattachment ? " This is after a config change." : ""));
+    if (this.exclusiveActivity != null) {
+      this.exclusiveActivity.detachFromFlutterEngine();
     }
+    // If we were already attached to an app component, detach from it.
+    detachFromAppComponent();
+    this.exclusiveActivity = exclusiveActivity;
+    attachToActivityInternal(exclusiveActivity.getAppComponent(), lifecycle);
   }
 
   private void attachToActivityInternal(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
@@ -362,20 +341,14 @@ import java.util.Set;
   @Override
   public void detachFromActivityForConfigChanges() {
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromActivityForConfigChanges");
       Log.v(TAG, "Detaching from an Activity for config changes: " + attachedActivity());
+      isWaitingForActivityReattachment = true;
 
-      try {
-        isWaitingForActivityReattachment = true;
-
-        for (ActivityAware activityAware : activityAwarePlugins.values()) {
-          activityAware.onDetachedFromActivityForConfigChanges();
-        }
-
-        detachFromActivityInternal();
-      } finally {
-        Trace.endSection();
+      for (ActivityAware activityAware : activityAwarePlugins.values()) {
+        activityAware.onDetachedFromActivityForConfigChanges();
       }
+
+      detachFromActivityInternal();
     } else {
       Log.e(TAG, "Attempted to detach plugins from an Activity when no Activity was attached.");
     }
@@ -384,18 +357,12 @@ import java.util.Set;
   @Override
   public void detachFromActivity() {
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromActivity");
-
-      try {
-        Log.v(TAG, "Detaching from an Activity: " + attachedActivity());
-        for (ActivityAware activityAware : activityAwarePlugins.values()) {
-          activityAware.onDetachedFromActivity();
-        }
-
-        detachFromActivityInternal();
-      } finally {
-        Trace.endSection();
+      Log.v(TAG, "Detaching from an Activity: " + attachedActivity());
+      for (ActivityAware activityAware : activityAwarePlugins.values()) {
+        activityAware.onDetachedFromActivity();
       }
+
+      detachFromActivityInternal();
     } else {
       Log.e(TAG, "Attempted to detach plugins from an Activity when no Activity was attached.");
     }
@@ -414,19 +381,12 @@ import java.util.Set;
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResult) {
     Log.v(TAG, "Forwarding onRequestPermissionsResult() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onRequestPermissionsResult");
-
-      try {
-        return activityPluginBinding.onRequestPermissionsResult(
-            requestCode, permissions, grantResult);
-      } finally {
-        Trace.endSection();
-      }
+      return activityPluginBinding.onRequestPermissionsResult(
+          requestCode, permissions, grantResult);
     } else {
       Log.e(
           TAG,
-          "Attempted to notify ActivityAware plugins of onRequestPermissionsResult, but no Activity"
-              + " was attached.");
+          "Attempted to notify ActivityAware plugins of onRequestPermissionsResult, but no Activity was attached.");
       return false;
     }
   }
@@ -435,18 +395,11 @@ import java.util.Set;
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
     Log.v(TAG, "Forwarding onActivityResult() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onActivityResult");
-
-      try {
-        return activityPluginBinding.onActivityResult(requestCode, resultCode, data);
-      } finally {
-        Trace.endSection();
-      }
+      return activityPluginBinding.onActivityResult(requestCode, resultCode, data);
     } else {
       Log.e(
           TAG,
-          "Attempted to notify ActivityAware plugins of onActivityResult, but no Activity was"
-              + " attached.");
+          "Attempted to notify ActivityAware plugins of onActivityResult, but no Activity was attached.");
       return false;
     }
   }
@@ -455,18 +408,11 @@ import java.util.Set;
   public void onNewIntent(@NonNull Intent intent) {
     Log.v(TAG, "Forwarding onNewIntent() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onNewIntent");
-
-      try {
-        activityPluginBinding.onNewIntent(intent);
-      } finally {
-        Trace.endSection();
-      }
+      activityPluginBinding.onNewIntent(intent);
     } else {
       Log.e(
           TAG,
-          "Attempted to notify ActivityAware plugins of onNewIntent, but no Activity was"
-              + " attached.");
+          "Attempted to notify ActivityAware plugins of onNewIntent, but no Activity was attached.");
     }
   }
 
@@ -474,18 +420,11 @@ import java.util.Set;
   public void onUserLeaveHint() {
     Log.v(TAG, "Forwarding onUserLeaveHint() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onUserLeaveHint");
-
-      try {
-        activityPluginBinding.onUserLeaveHint();
-      } finally {
-        Trace.endSection();
-      }
+      activityPluginBinding.onUserLeaveHint();
     } else {
       Log.e(
           TAG,
-          "Attempted to notify ActivityAware plugins of onUserLeaveHint, but no Activity was"
-              + " attached.");
+          "Attempted to notify ActivityAware plugins of onUserLeaveHint, but no Activity was attached.");
     }
   }
 
@@ -493,18 +432,11 @@ import java.util.Set;
   public void onSaveInstanceState(@NonNull Bundle bundle) {
     Log.v(TAG, "Forwarding onSaveInstanceState() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onSaveInstanceState");
-
-      try {
-        activityPluginBinding.onSaveInstanceState(bundle);
-      } finally {
-        Trace.endSection();
-      }
+      activityPluginBinding.onSaveInstanceState(bundle);
     } else {
       Log.e(
           TAG,
-          "Attempted to notify ActivityAware plugins of onSaveInstanceState, but no Activity was"
-              + " attached.");
+          "Attempted to notify ActivityAware plugins of onSaveInstanceState, but no Activity was attached.");
     }
   }
 
@@ -512,18 +444,11 @@ import java.util.Set;
   public void onRestoreInstanceState(@Nullable Bundle bundle) {
     Log.v(TAG, "Forwarding onRestoreInstanceState() to plugins.");
     if (isAttachedToActivity()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onRestoreInstanceState");
-
-      try {
-        activityPluginBinding.onRestoreInstanceState(bundle);
-      } finally {
-        Trace.endSection();
-      }
+      activityPluginBinding.onRestoreInstanceState(bundle);
     } else {
       Log.e(
           TAG,
-          "Attempted to notify ActivityAware plugins of onRestoreInstanceState, but no Activity was"
-              + " attached.");
+          "Attempted to notify ActivityAware plugins of onRestoreInstanceState, but no Activity was attached.");
     }
   }
   // ------- End ActivityControlSurface -----
@@ -536,42 +461,30 @@ import java.util.Set;
   @Override
   public void attachToService(
       @NonNull Service service, @Nullable Lifecycle lifecycle, boolean isForeground) {
-    Trace.beginSection("FlutterEngineConnectionRegistry#attachToService");
     Log.v(TAG, "Attaching to a Service: " + service);
+    // If we were already attached to an Android component, detach from it.
+    detachFromAppComponent();
 
-    try {
-      // If we were already attached to an Android component, detach from it.
-      detachFromAppComponent();
+    this.service = service;
+    this.servicePluginBinding = new FlutterEngineServicePluginBinding(service, lifecycle);
 
-      this.service = service;
-      this.servicePluginBinding = new FlutterEngineServicePluginBinding(service, lifecycle);
-
-      // Notify all ServiceAware plugins that they are now attached to a new Service.
-      for (ServiceAware serviceAware : serviceAwarePlugins.values()) {
-        serviceAware.onAttachedToService(servicePluginBinding);
-      }
-    } finally {
-      Trace.endSection();
+    // Notify all ServiceAware plugins that they are now attached to a new Service.
+    for (ServiceAware serviceAware : serviceAwarePlugins.values()) {
+      serviceAware.onAttachedToService(servicePluginBinding);
     }
   }
 
   @Override
   public void detachFromService() {
     if (isAttachedToService()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromService");
       Log.v(TAG, "Detaching from a Service: " + service);
-
-      try {
-        // Notify all ServiceAware plugins that they are no longer attached to a Service.
-        for (ServiceAware serviceAware : serviceAwarePlugins.values()) {
-          serviceAware.onDetachedFromService();
-        }
-
-        service = null;
-        servicePluginBinding = null;
-      } finally {
-        Trace.endSection();
+      // Notify all ServiceAware plugins that they are no longer attached to a Service.
+      for (ServiceAware serviceAware : serviceAwarePlugins.values()) {
+        serviceAware.onDetachedFromService();
       }
+
+      service = null;
+      servicePluginBinding = null;
     } else {
       Log.e(TAG, "Attempted to detach plugins from a Service when no Service was attached.");
     }
@@ -580,28 +493,16 @@ import java.util.Set;
   @Override
   public void onMoveToForeground() {
     if (isAttachedToService()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onMoveToForeground");
-
-      try {
-        Log.v(TAG, "Attached Service moved to foreground.");
-        servicePluginBinding.onMoveToForeground();
-      } finally {
-        Trace.endSection();
-      }
+      Log.v(TAG, "Attached Service moved to foreground.");
+      servicePluginBinding.onMoveToForeground();
     }
   }
 
   @Override
   public void onMoveToBackground() {
     if (isAttachedToService()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#onMoveToBackground");
       Log.v(TAG, "Attached Service moved to background.");
-
-      try {
-        servicePluginBinding.onMoveToBackground();
-      } finally {
-        Trace.endSection();
-      }
+      servicePluginBinding.onMoveToBackground();
     }
   }
   // ----- End ServiceControlSurface ---
@@ -614,50 +515,36 @@ import java.util.Set;
   @Override
   public void attachToBroadcastReceiver(
       @NonNull BroadcastReceiver broadcastReceiver, @NonNull Lifecycle lifecycle) {
-    Trace.beginSection("FlutterEngineConnectionRegistry#attachToBroadcastReceiver");
     Log.v(TAG, "Attaching to BroadcastReceiver: " + broadcastReceiver);
+    // If we were already attached to an Android component, detach from it.
+    detachFromAppComponent();
 
-    try {
-      // If we were already attached to an Android component, detach from it.
-      detachFromAppComponent();
+    this.broadcastReceiver = broadcastReceiver;
+    this.broadcastReceiverPluginBinding =
+        new FlutterEngineBroadcastReceiverPluginBinding(broadcastReceiver);
+    // TODO(mattcarroll): resolve possibility of different lifecycles between this and engine
+    // attachment
 
-      this.broadcastReceiver = broadcastReceiver;
-      this.broadcastReceiverPluginBinding =
-          new FlutterEngineBroadcastReceiverPluginBinding(broadcastReceiver);
-      // TODO(mattcarroll): resolve possibility of different lifecycles between this and engine
-      // attachment
-
-      // Notify all BroadcastReceiverAware plugins that they are now attached to a new
-      // BroadcastReceiver.
-      for (BroadcastReceiverAware broadcastReceiverAware : broadcastReceiverAwarePlugins.values()) {
-        broadcastReceiverAware.onAttachedToBroadcastReceiver(broadcastReceiverPluginBinding);
-      }
-    } finally {
-      Trace.endSection();
+    // Notify all BroadcastReceiverAware plugins that they are now attached to a new
+    // BroadcastReceiver.
+    for (BroadcastReceiverAware broadcastReceiverAware : broadcastReceiverAwarePlugins.values()) {
+      broadcastReceiverAware.onAttachedToBroadcastReceiver(broadcastReceiverPluginBinding);
     }
   }
 
   @Override
   public void detachFromBroadcastReceiver() {
     if (isAttachedToBroadcastReceiver()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromBroadcastReceiver");
       Log.v(TAG, "Detaching from BroadcastReceiver: " + broadcastReceiver);
-
-      try {
-        // Notify all BroadcastReceiverAware plugins that they are no longer attached to a
-        // BroadcastReceiver.
-        for (BroadcastReceiverAware broadcastReceiverAware :
-            broadcastReceiverAwarePlugins.values()) {
-          broadcastReceiverAware.onDetachedFromBroadcastReceiver();
-        }
-      } finally {
-        Trace.endSection();
+      // Notify all BroadcastReceiverAware plugins that they are no longer attached to a
+      // BroadcastReceiver.
+      for (BroadcastReceiverAware broadcastReceiverAware : broadcastReceiverAwarePlugins.values()) {
+        broadcastReceiverAware.onDetachedFromBroadcastReceiver();
       }
     } else {
       Log.e(
           TAG,
-          "Attempted to detach plugins from a BroadcastReceiver when no BroadcastReceiver was"
-              + " attached.");
+          "Attempted to detach plugins from a BroadcastReceiver when no BroadcastReceiver was attached.");
     }
   }
   // ----- End BroadcastReceiverControlSurface ----
@@ -670,49 +557,35 @@ import java.util.Set;
   @Override
   public void attachToContentProvider(
       @NonNull ContentProvider contentProvider, @NonNull Lifecycle lifecycle) {
-    Trace.beginSection("FlutterEngineConnectionRegistry#attachToContentProvider");
     Log.v(TAG, "Attaching to ContentProvider: " + contentProvider);
+    // If we were already attached to an Android component, detach from it.
+    detachFromAppComponent();
 
-    try {
-      // If we were already attached to an Android component, detach from it.
-      detachFromAppComponent();
+    this.contentProvider = contentProvider;
+    this.contentProviderPluginBinding =
+        new FlutterEngineContentProviderPluginBinding(contentProvider);
+    // TODO(mattcarroll): resolve possibility of different lifecycles between this and engine
+    // attachment
 
-      this.contentProvider = contentProvider;
-      this.contentProviderPluginBinding =
-          new FlutterEngineContentProviderPluginBinding(contentProvider);
-      // TODO(mattcarroll): resolve possibility of different lifecycles between this and engine
-      // attachment
-
-      // Notify all ContentProviderAware plugins that they are now attached to a new
-      // ContentProvider.
-      for (ContentProviderAware contentProviderAware : contentProviderAwarePlugins.values()) {
-        contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
-      }
-    } finally {
-      Trace.endSection();
+    // Notify all ContentProviderAware plugins that they are now attached to a new ContentProvider.
+    for (ContentProviderAware contentProviderAware : contentProviderAwarePlugins.values()) {
+      contentProviderAware.onAttachedToContentProvider(contentProviderPluginBinding);
     }
   }
 
   @Override
   public void detachFromContentProvider() {
     if (isAttachedToContentProvider()) {
-      Trace.beginSection("FlutterEngineConnectionRegistry#detachFromContentProvider");
       Log.v(TAG, "Detaching from ContentProvider: " + contentProvider);
-
-      try {
-        // Notify all ContentProviderAware plugins that they are no longer attached to a
-        // ContentProvider.
-        for (ContentProviderAware contentProviderAware : contentProviderAwarePlugins.values()) {
-          contentProviderAware.onDetachedFromContentProvider();
-        }
-      } finally {
-        Trace.endSection();
+      // Notify all ContentProviderAware plugins that they are no longer attached to a
+      // ContentProvider.
+      for (ContentProviderAware contentProviderAware : contentProviderAwarePlugins.values()) {
+        contentProviderAware.onDetachedFromContentProvider();
       }
     } else {
       Log.e(
           TAG,
-          "Attempted to detach plugins from a ContentProvider when no ContentProvider was"
-              + " attached.");
+          "Attempted to detach plugins from a ContentProvider when no ContentProvider was attached.");
     }
   }
   // ----- End ContentProviderControlSurface -----

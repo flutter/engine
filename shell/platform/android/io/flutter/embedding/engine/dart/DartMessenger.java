@@ -7,7 +7,6 @@ package io.flutter.embedding.engine.dart;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
-import androidx.tracing.Trace;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -151,21 +150,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
       @NonNull String channel,
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
-    Trace.beginSection("DartMessenger#send on " + channel);
     Log.v(TAG, "Sending message with callback over channel '" + channel + "'");
-
-    try {
-      int replyId = nextReplyId++;
-      if (callback != null) {
-        pendingReplies.put(replyId, callback);
-      }
-      if (message == null) {
-        flutterJNI.dispatchEmptyPlatformMessage(channel, replyId);
-      } else {
-        flutterJNI.dispatchPlatformMessage(channel, message, message.position(), replyId);
-      }
-    } finally {
-      Trace.endSection();
+    int replyId = nextReplyId++;
+    if (callback != null) {
+      pendingReplies.put(replyId, callback);
+    }
+    if (message == null) {
+      flutterJNI.dispatchEmptyPlatformMessage(channel, replyId);
+    } else {
+      flutterJNI.dispatchPlatformMessage(channel, message, message.position(), replyId);
     }
   }
 
@@ -201,7 +194,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     final DartMessengerTaskQueue taskQueue = (handlerInfo != null) ? handlerInfo.taskQueue : null;
     Runnable myRunnable =
         () -> {
-          Trace.beginSection("DartMessenger#handleMessageFromDart on " + channel);
           try {
             invokeHandler(handlerInfo, message, replyId);
             if (message != null && message.isDirect()) {
@@ -212,7 +204,6 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
           } finally {
             // This is deleting the data underneath the message object.
             flutterJNI.cleanupMessageData(messageData);
-            Trace.endSection();
           }
         };
     @NonNull
