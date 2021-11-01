@@ -900,6 +900,15 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   return _textInputClient != 0;
 }
 
+- (BOOL)canPerformAction:(SEL)action withSender:(nullable id)sender {
+  if (action == @selector(paste:)) {
+    // Forbid pasting images, memojis, or other non-string content.
+    return [UIPasteboard generalPasteboard].string != nil;
+  }
+
+  return [super canPerformAction:action withSender:sender];
+}
+
 #pragma mark - UIResponderStandardEditActions Overrides
 
 - (void)cut:(id)sender {
@@ -912,7 +921,10 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 - (void)paste:(id)sender {
-  [self insertText:[UIPasteboard generalPasteboard].string];
+  NSString* pasteboardString = [UIPasteboard generalPasteboard].string;
+  if (pasteboardString != nil) {
+    [self insertText:pasteboardString];
+  }
 }
 
 - (void)delete:(id)sender {
@@ -1874,12 +1886,11 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 // The UIView to add FlutterTextInputViews to.
-- (UIView*)keyWindow {
-  UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
-  NSAssert(keyWindow != nullptr,
-           @"The application must have a key window since the keyboard client "
+- (UIView*)hostView {
+  NSAssert(self.viewController.view != nullptr,
+           @"The application must have a HostView since the keyboard client "
            @"must be part of the responder chain to function");
-  return keyWindow;
+  return self.viewController.view;
 }
 
 // The UIView to add FlutterTextInputViews to.
@@ -1952,7 +1963,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
   if (![inputView isDescendantOfView:_inputHider]) {
     [_inputHider addSubview:inputView];
   }
-  UIView* parentView = self.keyWindow;
+  UIView* parentView = self.hostView;
   if (_inputHider.superview != parentView) {
     [parentView addSubview:_inputHider];
   }
