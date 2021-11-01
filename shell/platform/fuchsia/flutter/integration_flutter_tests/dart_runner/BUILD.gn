@@ -1,0 +1,66 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
+
+group("tests") {
+  testonly = true
+  deps = [ ":dart_runner_integration_tests" ]
+}
+
+executable("dart_runner_integration_tests_bin") {
+  testonly = true
+
+  output_name = "dart_runner_integration_tests"
+
+  sources = [ "dart_runner_integration_tests.cc" ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/pkg:async-loop-cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-default",
+    "$fuchsia_sdk_root/pkg:fit",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+    "$fuchsia_sdk_root/pkg:sys_cpp_testing",
+    "$fuchsia_sdk_root/pkg:zx",
+    "//flutter/fml",
+    "//third_party/googletest:gtest",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+fuchsia_component("dart_runner_integration_tests_component") {
+  testonly = true
+
+  manifest = "meta/dart_runner_integration_tests.cmx"
+
+  data_deps = [ ":dart_runner_integration_tests_bin" ]
+
+  resources = common_libs
+  resources += [
+    {
+      path = rebase_path("$root_out_dir/icudtl.dat")
+      dest = "data/icudtl.dat"
+    },
+  ]
+}
+
+fuchsia_package("dart_runner_integration_tests") {
+  testonly = true
+
+  package_name = "dart_runner_integration_tests"
+
+  deps = [
+    ":dart_runner_integration_tests_component",
+    "fixture",
+    "//flutter/shell/platform/fuchsia/dart_runner:dart_jit_runner_component",
+  ]
+}

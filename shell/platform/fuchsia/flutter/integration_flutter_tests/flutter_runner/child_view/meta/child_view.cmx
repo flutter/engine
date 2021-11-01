@@ -1,0 +1,10 @@
+{
+    "program": {
+        "data": "data/child_view"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.sys.Environment",
+        ]
+    }
+}

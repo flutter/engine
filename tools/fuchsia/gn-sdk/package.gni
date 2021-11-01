@@ -4,7 +4,6 @@
 
 import("config/config.gni")
 import("pm_tool.gni")
-import("symbol_index.gni")
 
 # Define a Fuchsia component package target.
 #
@@ -148,6 +147,12 @@ template("fuchsia_package") {
       "--json-file",
       rebase_path(_packaged_components_metadata_file),
     ]
+    if (fuchsia_sdk_readelf_exec != "") {
+      args += [
+        "--readelf-exec",
+        rebase_path(fuchsia_sdk_readelf_exec, root_build_dir),
+      ]
+    }
 
     if (defined(excluded_files)) {
       foreach(filename, excluded_files) {
@@ -180,19 +185,5 @@ template("fuchsia_package") {
     command = "archive"
     archive_manifest = _archive_manifest
     public_deps = [ ":$_metadata_target" ]
-    if (!defined(deps)) {
-      deps = []
-    }
-    if (defined(fuchsia_auto_index_symbols) && fuchsia_auto_index_symbols) {
-      deps += [ ":${target_name}_fuchsia_auto_index_symbols" ]
-    }
-  }
-
-  if (defined(fuchsia_auto_index_symbols) && fuchsia_auto_index_symbols) {
-    fuchsia_symbol_index_tool("${target_name}_fuchsia_auto_index_symbols") {
-      forward_variables_from(invoker, [ "testonly" ])
-      symbols = _build_ids_file
-      deps = [ ":$_metadata_target" ]
-    }
   }
 }

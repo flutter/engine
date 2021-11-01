@@ -72,7 +72,7 @@ def _is_binary(path):
     return file_tag == b'\x7fELF'
 
 
-def _write_build_ids_txt(binary_paths, ids_txt_path):
+def _write_build_ids_txt(readelf_exec, binary_paths, ids_txt_path):
     """Writes an index text file mapping build IDs to unstripped binaries."""
 
     READELF_FILE_PREFIX = 'File: '
@@ -91,7 +91,7 @@ def _write_build_ids_txt(binary_paths, ids_txt_path):
             unprocessed_binary_paths.discard(stripped_binary_path)
 
     with open(ids_txt_path, 'w') as ids_file:
-      # TODO(richkadel): This script (originally from the Fuchsia GN SDK) was
+      # TODO(dworsham): This script (originally from the Fuchsia GN SDK) was
       # changed, adding this `if unprocessed_binary_paths` check, because for
       # the Dart packages I tested (child-view and parent-view), this was
       # empty. Update the Fuchsia GN SDK? (Or figure out if the Dart packages
@@ -100,7 +100,7 @@ def _write_build_ids_txt(binary_paths, ids_txt_path):
         # Create a set to dedupe stripped binary paths in case both the stripped and
         # unstripped versions of a binary are specified.
         readelf_stdout = subprocess.check_output(
-            ['readelf', '-n'] + sorted(unprocessed_binary_paths)).decode('utf8')
+            [readelf_exec, '-n'] + sorted(unprocessed_binary_paths)).decode('utf8')
 
         if len(binary_paths) == 1:
             # Readelf won't report a binary's path if only one was provided to the
@@ -143,14 +143,15 @@ def _get_component_manifests(component_info):
     return [c for c in component_info if c.get('type') == 'manifest']
 
 
-# TODO(richkadel): Changed, from the Fuchsia GN SDK version to add this function
+# TODO(dworsham): Changed, from the Fuchsia GN SDK version to add this function
 # and related code, to include support for a file of resources that aren't known
 # until compile time.
 def _get_resource_items_from_json_items(component_info):
     nested_resources = []
     files = [c.get('source') for c in component_info if c.get('type') == 'json_of_resources']
     for json_file in files:
-        for resource in _parse_component(json_file):
+        component_info = _parse_component(json_file)
+        for resource in component_info:
             nested_resources.append(resource)
     return nested_resources
 
@@ -183,6 +184,7 @@ def _get_expanded_files(runtime_deps_file):
                         os.path.normpath(os.path.join(root, current_file)))
         else:
             expanded_files.add(os.path.normpath(next_path))
+
     return expanded_files
 
 
@@ -213,7 +215,7 @@ def _write_meta_package_manifest(
 
 
 def _write_component_manifest(
-        manifest_entries, component_info, archive_manifest_path, out_dir):
+        manifest_entries, component_info, manifest_path, out_dir):
     """Copy component manifest files and add to archive manifest.
 
     Raises an exception if a component uses a unknown manifest version.
@@ -226,20 +228,11 @@ def _write_component_manifest(
             raise Exception(
                 'Unknown manifest_version: {}'.format(manifest_version))
 
-        # TODO(richkadel): Changed, from the Fuchsia GN SDK version, to assume
-        # the given `output_name` already includes its extension. This change
-        # has not been fully validate, in particular, it has not been tested
-        # with CF v2 `.cm` (from `.cml`) files. Original implementation was:
-        #
-        # extension = MANIFEST_VERSION_EXTENSIONS.get(manifest_version)
-        # manifest_dest_file_path = os.path.join(
-        #     os.path.dirname(archive_manifest_path),
-        #     component_manifest.get('output_name') + extension)
+        extension = MANIFEST_VERSION_EXTENSIONS.get(manifest_version)
+
         manifest_dest_file_path = os.path.join(
-            os.path.dirname(archive_manifest_path),
-            component_manifest.get('output_name'))
-        # Add the 'meta/' subdir, for example, if `output_name` includes it
-        os.makedirs(os.path.dirname(manifest_dest_file_path), exist_ok=True)
+            os.path.dirname(manifest_path),
+            component_manifest.get('output_name') + extension)
         shutil.copy(component_manifest.get('source'), manifest_dest_file_path)
 
         manifest_entries[
@@ -250,14 +243,10 @@ def _write_component_manifest(
 
 
 def _write_package_manifest(
-        manifest_entries, expanded_files, out_dir, exclude_file, root_dir,
-        component_info):
+        manifest_entries, expanded_files, root_dir, out_dir, gen_dir, exclude_file, component_info):
     """Writes the package manifest for a Fuchsia package
 
-    Returns a list of binaries in the package.
-
     Raises an exception if excluded files are not found."""
-    gen_dir = os.path.normpath(os.path.join(out_dir, 'gen'))
     excluded_files_set = set(exclude_file)
     roots = [gen_dir, root_dir, out_dir]
 
@@ -270,6 +259,7 @@ def _write_package_manifest(
             if os.path.relpath(cf.get('source'), out_dir) in expanded_files
         ])
 
+    # TODO(dworsham)
     # Filter out json_of_resources since only their contents are written, and we
     # don't know the contained resources until late in the build cycle
     excluded_files_set.update(
@@ -280,33 +270,35 @@ def _write_package_manifest(
                 os.path.relpath(cf.get('source'), out_dir) in expanded_files
         ])
 
-    # Write out resource files with specific package paths, and exclude them from
-    # the list of expanded files so they are not listed twice in the manifest.
+    # Write out resource files with specific package paths.
+    # Remove any previously-adedd expanded files that match so they are not
+    # listed twice in the manifest.
     for resource in _get_resource_items(component_info):
         relative_src_file = os.path.relpath(resource.get('source'), out_dir)
         resource_path = make_package_path(relative_src_file, roots)
-        manifest_entries[resource.get('dest')] = relative_src_file
-        if resource.get('type') == 'resource':
-            excluded_files_set.add(resource_path)
+        resource_dest = resource.get('dest')
+        if (resource_path in manifest_entries):
+            del manifest_entries[resource_path]
+        manifest_entries[resource_dest] = relative_src_file
+        #print('  EXCLUDING PATH')
+        #excluded_files_set.add(resource_path)
 
-    for current_file in expanded_files:
-        current_file = _get_stripped_path(current_file)
-        # make_package_path() may relativize to either the source root or
-        # output directory.
-        in_package_path = make_package_path(current_file, roots)
+    # for current_file in expanded_files:
+    #     print('EXPANDED FILE %s' % current_file)
+    #     current_file = _get_stripped_path(current_file)
+    #     print('  STRIPPED %s' % current_file)
+    #     # make_package_path() may relativize to either the source root or
+    #     # output directory.
+    #     in_package_path = make_package_path(current_file, roots)
 
-        if in_package_path in excluded_files_set:
-            excluded_files_set.remove(in_package_path)
-        else:
-            manifest_entries[in_package_path] = current_file
+    #     if in_package_path in excluded_files_set:
+    #         print('  REMOVING EXCLUDED PATH %s <- %s' % (in_package_path, current_file))
+    #         excluded_files_set.remove(in_package_path)
 
     if excluded_files_set:
         raise Exception(
-            'Some files were excluded with --exclude-file but '
-            'not found in the deps list, or a resource (data) file '
-            'was added and not filtered out. Excluded files and resources: '
-            '%s' % ', '.join(excluded_files_set))
-
+            'Some files were excluded with --exclude-file, but '
+            'not found in the deps list: %s' % ', '.join(excluded_files_set))
 
 def _build_manifest(args):
     # Use a sorted list to make sure the manifest order is deterministic.
@@ -320,10 +312,18 @@ def _build_manifest(args):
     _write_meta_package_manifest(
         manifest_entries, args.manifest_path, args.app_name, args.out_dir,
         args.package_version)
+    gen_dir = os.path.normpath(os.path.join(args.out_dir, 'gen'))
+    for current_file in expanded_files:
+        current_file = _get_stripped_path(current_file)
+        # make_package_path() may relativize to either the source root or
+        # output directory.
+        in_package_path = make_package_path(current_file, [gen_dir, args.root_dir, args.out_dir])
+
+        manifest_entries[in_package_path] = current_file
+
     for component_item in component_info:
         _write_package_manifest(
-            manifest_entries, expanded_files, args.out_dir, args.exclude_file,
-            args.root_dir, component_item)
+            manifest_entries, expanded_files, args.root_dir, args.out_dir, gen_dir, args.exclude_file, component_item)
         component_manifests.append(
             _write_component_manifest(
                 manifest_entries, component_item, args.manifest_path,
@@ -334,7 +334,7 @@ def _build_manifest(args):
             manifest.write('%s=%s\n' % (key, manifest_entries[key]))
 
     binaries = [f for f in expanded_files if _is_binary(f)]
-    _write_build_ids_txt(sorted(binaries), args.build_ids_file)
+    _write_build_ids_txt(args.readelf_exec, sorted(binaries), args.build_ids_file)
 
     # Omit any excluded_files from the expanded_files written to the depfile.
     gen_dir = os.path.normpath(os.path.join(args.out_dir, 'gen'))
@@ -375,6 +375,8 @@ def main():
     parser.add_argument('--json-file', required=True)
     parser.add_argument(
         '--package-version', default='0', help='Version of the package')
+    parser.add_argument(
+        '--readelf-exec', default='readelf', help='readelf executable to use.')
 
     args = parser.parse_args()
 

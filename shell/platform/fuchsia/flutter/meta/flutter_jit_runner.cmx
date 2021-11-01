@@ -1,6 +1,6 @@
 {
     "program": {
-        "data": "data"
+        "binary": "flutter_jit_runner"
     },
     "sandbox": {
         "features": [

@@ -4,5 +4,9 @@
 
 group("integration_flutter_tests") {
   testonly = true
-  deps = [ "embedder:tests" ]
+
+  deps = [
+    "dart_runner:tests",
+    "flutter_runner:tests",
+  ]
 }

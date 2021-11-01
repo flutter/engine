@@ -1,6 +1,6 @@
 {
     "program": {
-        "data": "data"
+        "binary": "dart_jit_product_runner"
     },
     "sandbox": {
         "features": [

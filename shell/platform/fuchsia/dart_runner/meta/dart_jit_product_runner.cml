@@ -5,7 +5,7 @@
     include: [ "common.shard.cml" ],
     program: {
         runner: "elf",
-        binary: "bin/app",
+        binary: "dart_jit_product_runner",
         forward_stdout_to: "log",
         forward_stderr_to: "log",
         // Needed for JIT builds.

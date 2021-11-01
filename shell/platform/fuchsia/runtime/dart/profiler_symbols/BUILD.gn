@@ -45,13 +45,15 @@ generate_dart_profiler_symbols("dart_aot_runner") {
 }
 
 generate_dart_profiler_symbols("flutter_jit_runner") {
-  library_label = "//flutter/shell/platform/fuchsia/flutter:jit"
+  library_label =
+      "//flutter/shell/platform/fuchsia/flutter:flutter_jit_runner_bin"
   library_path = "${root_out_dir}/exe.unstripped/flutter_jit_runner"
   output = "${target_gen_dir}/flutter_jit_runner.dartprofilersymbols"
 }
 
 generate_dart_profiler_symbols("flutter_aot_runner") {
-  library_label = "//flutter/shell/platform/fuchsia/flutter:aot"
+  library_label =
+      "//flutter/shell/platform/fuchsia/flutter:flutter_aot_runner_bin"
   library_path = "${root_out_dir}/exe.unstripped/flutter_aot_runner"
   output = "${target_gen_dir}/flutter_aot_runner.dartprofilersymbols"
 }

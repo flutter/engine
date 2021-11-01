@@ -1,6 +1,6 @@
 {
   "program": {
-    "data": "data/dart_zircon_test"
+    "binary": "dart_zircon_test"
   },
   "sandbox": {
     "features": [

@@ -1,0 +1,13 @@
+{
+    "program": {
+        "data": "data/fixture"
+    },
+    "sandbox": {
+        "features": [
+            "shell-commands"
+        ],
+        "services": [
+            "fuchsia.sys.Environment"
+        ]
+    }
+}

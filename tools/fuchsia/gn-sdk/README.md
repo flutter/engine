@@ -14,7 +14,7 @@ It is not yet clear if Fuchsia will want to provide SDK resources that support
 GN build rules with Dart libraries and tests, but if that does happen, these
 files should be replaced by the Fuchsia-provided build rules.
 
-<!-- TODO(richkadel): Talk with Fuchsia SDK team about:
+<!-- TODO(dworsham): Talk with Fuchsia SDK team about:
   1. Splitting the GN rules into a separate CIPD download (so SDK Dart libaries
      and reusable GN rules can both be downloaded into flutter)
   2. Ensuring the config.gni path to the SDK will work if the GN rules are not
@@ -34,7 +34,7 @@ files should be replaced by the Fuchsia-provided build rules.
        of the compiled libraries that need to be added as resources. I had to
        add a separate JSON file of compile-time-generated list of additional
        resources to add to the package and its manifest.
-     * Other `TODO(richkadel)` items in `flutter/tools/fuchsia`, mostly those
+     * Other `TODO(dworsham)` items in `flutter/tools/fuchsia`, mostly those
        in the `gn-sdk` subdirectory, but others (derived from fuchsia.git may
        add context.
 -->
@@ -42,7 +42,7 @@ files should be replaced by the Fuchsia-provided build rules.
 
 ## Other GN SDK build rules to be considered
 
-<!-- TODO(richkadel): revisit the following build rules and consider replacing
+<!-- TODO(dworsham): revisit the following build rules and consider replacing
 them with existing GN SDK rules.
 -->
 

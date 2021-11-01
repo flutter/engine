@@ -1,0 +1,43 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
+
+flutter_embedder_tests_debug_build_cfg = {
+  runtime_meta = "../meta/jit_runtime"
+  platform_name = "flutter_runner"
+  is_aot = false
+  is_product = false
+  enable_asserts = true
+}
+
+dart_library("parent_view_library") {
+  package_name = "parent_view"
+
+  source_dir = "."
+  sources = [ "parent_view.dart" ]
+
+  deps = [
+    "//flutter/shell/platform/fuchsia/dart:args",
+    "//flutter/shell/platform/fuchsia/dart:vector_math",
+    "//flutter/tools/fuchsia/dart:fuchsia_services",
+    "//flutter/tools/fuchsia/dart:zircon",
+    "//flutter/tools/fuchsia/fidl:fuchsia.sys",
+    "//flutter/tools/fuchsia/fidl:fuchsia.ui.app",
+    "//flutter/tools/fuchsia/fidl:fuchsia.ui.views",
+  ]
+}
+
+flutter_component("parent_view") {
+  manifest = "meta/parent_view.cmx"
+
+  main_dart = "parent_view.dart"
+
+  build_cfg = flutter_embedder_tests_debug_build_cfg
+
+  deps = [ ":parent_view_library" ]
+}

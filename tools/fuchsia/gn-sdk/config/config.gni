@@ -2,15 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# TODO(richkadel): added this import and modified the fuchsia_sdk assignment.
+# TODO(dworsham): added this import and modified the fuchsia_sdk and
+# fuchsia_sdk_readelf_exec assignments.
 # See below.
 import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/clang.gni")
 declare_args() {
   # Path to the fuchsia SDK. This is intended for use in other templates & rules
   # to reference the contents of the fuchsia SDK.
   fuchsia_sdk = "$fuchsia_sdk_path"
 
-  # TODO(richkadel): Since flutter needs build rules from the GN SDK, but also
+  # TODO(dworsham): Since flutter needs build rules from the GN SDK, but also
   # requires the Fuchsia _Core_ SDK (for dart libraries, in the core SDK, but
   # excluded from the GN SDK), the Fuchsia SDK assumption that the build files
   # are in the same SDK directory path as the APIs does not hold true. (And
@@ -37,13 +39,15 @@ declare_args() {
   if (host_cpu == "x64" || host_cpu == "arm64") {
     fuchsia_tool_dir = "${fuchsia_sdk}/tools/${host_cpu}"
   }
+}
 
-  # fuchsia_auto_index_symbols when true adds the ids.txt file generated from a `fuchsia_package`
-  # to the Fuchsia symbol index used to symbolize logs and to find source when using zxdb.
-  # The default value is false, in order to be backwards compatibility with existing builds, and
-  # only makes sense to set to true when building as a developer that will need to symbolize logs
-  # or use the debugger with locally build code.
-  fuchsia_auto_index_symbols = false
+declare_args() {
+  # Specify a readelf_exec path to use, otherwise the default is the system installed readelf.
+  # Passed to populate_build_id_dir.py and prepare_package_inputs.py via the --readelf-exec flag.
+  # Use a GN path, do not use absolute paths, since this is adjusted with rebase_path().
+  if (!defined(fuchsia_sdk_readelf_exec)) {
+    fuchsia_sdk_readelf_exec = "${clang_base}/bin/llvm-readelf"
+  }
 }
 
 if (fuchsia_sdk_id == "") {

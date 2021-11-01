@@ -132,6 +132,8 @@ template("cmc_compile") {
       rebase_path("//", root_build_dir),
       "--includepath",
       rebase_path("$fuchsia_sdk/pkg/", root_build_dir),
+      "--includepath",
+      get_path_info(manifest, "dir"),
       "--depfile",
       rebase_path(depfile, root_build_dir),
     ]
@@ -223,7 +225,7 @@ template("cmc_merge") {
                              "visibility",
                            ])
     if (!defined(output_name)) {
-      # TODO(richkadel): THE GN SDK VERSION OF CMC.GNI IS INCONSISTENT WITH fuchsia.git!
+      # TODO(dworsham): THE GN SDK VERSION OF CMC.GNI IS INCONSISTENT WITH fuchsia.git!
       # The default name should be `target_name`, which should already include the
       # extension... Or change fuchsia.git to add the extension, and fix calls that
       # append .cmx to the target name, like flutter_dart_component.gni.

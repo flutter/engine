@@ -35,10 +35,9 @@ source_set("zircon") {
     "//flutter/third_party/tonic",
   ]
 }
-
-if (enable_unittests) {
-  source_set("test") {
-    testonly = true
-    deps = [ "test" ]
-  }
-}
+# if (enable_unittests) {
+#   source_set("test") {
+#     testonly = true
+#     deps = [ "test" ]
+#   }
+# }

@@ -1,6 +1,6 @@
 {
     "program": {
-        "data": "data"
+        "binary": "flutter_aot_product_runner"
     },
     "sandbox": {
         "features": [

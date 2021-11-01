@@ -1,0 +1,82 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+assert(is_fuchsia)
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
+
+group("tests") {
+  testonly = true
+
+  deps = [ ":flutter_runner_integration_tests" ]
+}
+
+executable("flutter_runner_integration_tests_bin") {
+  testonly = true
+
+  output_name = "flutter_runner_integration_tests"
+
+  sources = [
+    "flutter_runner_integration_tests.cc",
+    "flutter_runner_integration_tests.h",
+  ]
+
+  # This is needed for //third_party/googletest for linking zircon symbols.
+  libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+
+  include_dirs = [ "../fuchsia_testing" ]
+
+  public_deps = [ "//third_party/googletest:gtest" ]
+
+  deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.sys",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.lifecycle",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.policy",
+    "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
+    "$fuchsia_sdk_root/pkg:async-loop-cpp",
+    "$fuchsia_sdk_root/pkg:async-loop-default",
+    "$fuchsia_sdk_root/pkg:fit",
+    "$fuchsia_sdk_root/pkg:scenic_cpp",
+    "$fuchsia_sdk_root/pkg:sys_cpp",
+    "$fuchsia_sdk_root/pkg:sys_cpp_testing",
+    "$fuchsia_sdk_root/pkg:zx",
+    "../fuchsia_testing/src/lib/ui/base_view",
+    "../fuchsia_testing/src/ui/testing/views",
+    "//third_party/googletest:gtest_main",
+  ]
+}
+
+fuchsia_component("flutter_runner_integration_tests_component") {
+  testonly = true
+
+  manifest = "meta/flutter_runner_integration_tests.cmx"
+
+  data_deps = [ ":flutter_runner_integration_tests_bin" ]
+
+  resources = common_libs
+  resources += [
+    {
+      path = rebase_path("$root_out_dir/icudtl.dat")
+      dest = "data/icudtl.dat"
+    },
+  ]
+}
+
+fuchsia_package("flutter_runner_integration_tests") {
+  testonly = true
+
+  package_name = "flutter_runner_integration_tests"
+
+  deps = [
+    ":flutter_runner_integration_tests_component",
+    "child_view",
+    "parent_view",
+    "//flutter/shell/platform/fuchsia/flutter:flutter_jit_runner_component",
+  ]
+}

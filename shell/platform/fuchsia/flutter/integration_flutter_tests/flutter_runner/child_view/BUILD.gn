@@ -1,0 +1,33 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/fuchsia/sdk.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+import("//flutter/tools/fuchsia/flutter/flutter_component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
+
+flutter_embedder_tests_debug_build_cfg = {
+  runtime_meta = "../meta/jit_runtime"
+  platform_name = "flutter_runner"
+  is_aot = false
+  is_product = false
+  enable_asserts = true
+}
+
+dart_library("child_view_library") {
+  package_name = "child_view"
+
+  source_dir = "."
+  sources = [ "child_view.dart" ]
+}
+
+flutter_component("child_view") {
+  manifest = "meta/child_view.cmx"
+
+  main_dart = "child_view.dart"
+
+  build_cfg = flutter_embedder_tests_debug_build_cfg
+
+  deps = [ ":child_view_library" ]
+}

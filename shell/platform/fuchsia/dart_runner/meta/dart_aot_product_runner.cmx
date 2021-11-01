@@ -1,6 +1,6 @@
 {
     "program": {
-        "data": "data"
+        "binary": "dart_aot_product_runner"
     },
     "sandbox": {
         "features": [

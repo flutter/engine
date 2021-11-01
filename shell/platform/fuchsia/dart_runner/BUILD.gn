@@ -4,26 +4,27 @@
 
 assert(is_fuchsia)
 
-import("//build/fuchsia/sdk.gni")
-import("//flutter/common/fuchsia_config.gni")
+import("//flutter/common/config.gni")
 import("//flutter/tools/fuchsia/dart.gni")
-import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/component.gni")
+import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 
-template("runner") {
+template("dart_runner_binary") {
+  assert(defined(invoker.aot), "The parameter 'aot' must be defined")
   assert(defined(invoker.product), "The parameter 'product' must be defined")
-  assert(defined(invoker.output_name),
-         "The parameter 'output_name' must be defined")
+  _product_suffix = ""
+  if (invoker.product) {
+    _product_suffix = "_product"
+  }
 
-  invoker_output_name = invoker.output_name
-  extra_defines = invoker.extra_defines
-  extra_deps = invoker.extra_deps
-  if (is_debug) {
-    extra_defines += [ "DEBUG" ]  # Needed due to direct dart dependencies.
+  _exec_name = target_name
+  if (defined(invoker.output_name)) {
+    _exec_name = invoker.output_name
   }
 
   executable(target_name) {
-    output_name = invoker_output_name
+    output_name = _exec_name
 
     sources = [
       "builtin_libraries.cc",
@@ -40,236 +41,186 @@ template("runner") {
       "service_isolate.h",
     ]
 
-    defines = extra_defines
+    defines = []
+    if (is_debug) {
+      defines += [ "DEBUG" ]  # Needed due to direct dart dependencies.
+    }
+    if (invoker.aot) {
+      defines += [ "AOT_RUNTIME" ]
+    }
+    if (invoker.product) {
+      defines += [ "DART_PRODUCT" ]
+    }
+    if (flutter_runtime_mode == "profile") {
+      defines += [ "FLUTTER_PROFILE" ]
+    }
 
-    dart_deps = []
-    if (!invoker.product) {
+    dart_deps = [
+      "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils${_product_suffix}",
+      "//third_party/dart/runtime/bin:dart_io_api${_product_suffix}",
+    ]
+    if (invoker.aot) {
       dart_deps += [
-        "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils",
-        "//third_party/dart/runtime/bin:dart_io_api",
+        "embedder:dart_aot${_product_suffix}_snapshot_cc",
+        "//third_party/dart/runtime:libdart_precompiled_runtime",
+        "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
       ]
     } else {
       dart_deps += [
-        "//flutter/shell/platform/fuchsia/runtime/dart/utils:utils_product",
-        "//third_party/dart/runtime/bin:dart_io_api_product",
+        "//third_party/dart/runtime:libdart_jit",
+        "//third_party/dart/runtime/platform:libdart_platform_jit",
       ]
     }
 
     deps = [
-             "//flutter/common",
+             "//build/fuchsia/fidl:fuchsia.component.runner",
+             "//build/fuchsia/pkg:async",
+             "//build/fuchsia/pkg:async-cpp",
+             "//build/fuchsia/pkg:async-default",
+             "//build/fuchsia/pkg:async-loop",
+             "//build/fuchsia/pkg:async-loop-cpp",
+             "//build/fuchsia/pkg:async-loop-default",
+             "//build/fuchsia/pkg:fidl_cpp",
+             "//build/fuchsia/pkg:sys_inspect_cpp",
+             "//build/fuchsia/pkg:sys_cpp",
+             "//build/fuchsia/pkg:syslog",
+             "//build/fuchsia/pkg:trace",
+             "//build/fuchsia/pkg:trace-provider-so",
+             "//build/fuchsia/pkg:vfs_cpp",
              "//flutter/fml",
              "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
              "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
-             "$fuchsia_sdk_root/fidl:fuchsia.component.runner",
-             "$fuchsia_sdk_root/pkg:async",
-             "$fuchsia_sdk_root/pkg:async-cpp",
-             "$fuchsia_sdk_root/pkg:async-default",
-             "$fuchsia_sdk_root/pkg:async-loop",
-             "$fuchsia_sdk_root/pkg:async-loop-cpp",
-             "$fuchsia_sdk_root/pkg:async-loop-default",
-             "$fuchsia_sdk_root/pkg:fidl_cpp",
-             "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
-             "$fuchsia_sdk_root/pkg:sys_cpp",
-             "$fuchsia_sdk_root/pkg:syslog",
-             "$fuchsia_sdk_root/pkg:trace",
-             "$fuchsia_sdk_root/pkg:trace-provider-so",
-             "$fuchsia_sdk_root/pkg:vfs_cpp",
              "//flutter/third_party/tonic",
-           ] + dart_deps + extra_deps
+           ] + dart_deps
   }
 }
 
-runner("dart_jit_runner_bin") {
-  output_name = "dart_jit_runner"
-  product = false
-  extra_defines = []
-  if (flutter_runtime_mode == "profile") {
-    extra_defines += [ "FLUTTER_PROFILE" ]
-  }
-  extra_deps = [
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
-  ]
-}
-
-runner("dart_jit_product_runner_bin") {
-  output_name = "dart_jit_product_runner"
-  product = true
-  extra_defines = [ "DART_PRODUCT" ]
-  extra_deps = [
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
-  ]
-}
-
-runner("dart_aot_runner_bin") {
-  output_name = "dart_aot_runner"
-  product = false
-  extra_defines = [ "AOT_RUNTIME" ]
-  if (flutter_runtime_mode == "profile") {
-    extra_defines += [ "FLUTTER_PROFILE" ]
-  }
-  extra_deps = [
-    "embedder:dart_aot_snapshot_cc",
-    "//third_party/dart/runtime:libdart_precompiled_runtime",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
-  ]
-}
-
-runner("dart_aot_product_runner_bin") {
-  output_name = "dart_aot_product_runner"
-  product = true
-  extra_defines = [
-    "AOT_RUNTIME",
-    "DART_PRODUCT",
-  ]
-  extra_deps = [
-    "embedder:dart_aot_product_snapshot_cc",
-    "//third_party/dart/runtime:libdart_precompiled_runtime",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
-  ]
-}
-
-template("aot_runner_package") {
+template("dart_runner_package") {
+  assert(defined(invoker.aot), "The parameter 'aot' must be defined")
   assert(defined(invoker.product), "The parameter 'product' must be defined")
-  product_suffix = ""
-  if (invoker.product) {
-    product_suffix = "_product"
+  _exec_mode_suffix = "_jit"
+  if (invoker.aot) {
+    _exec_mode_suffix = "_aot"
   }
-  fuchsia_archive(target_name) {
-    deps = [ ":dart_aot${product_suffix}_runner_bin" ]
-    if (!invoker.product) {
-      deps += [
-        "vmservice:vmservice_snapshot",
-        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
+  _product_suffix = ""
+  if (invoker.product) {
+    _product_suffix = "_product"
+  }
 
-        # TODO(kaushikiska): Figure out how to get the profiler symbols for `libdart_precompiled_runtime`
-        # "//third_party/dart/runtime:libdart_precompiled_runtime",
+  _runner_basename = "dart${_exec_mode_suffix}"
+  _runner_name = "${_runner_basename}${_product_suffix}"
+
+  _binary_output_name = target_name
+  _binary_name = _binary_output_name + "_bin"
+  dart_runner_binary(_binary_name) {
+    output_name = _binary_output_name
+    aot = invoker.aot
+    product = invoker.product
+  }
+
+  fuchsia_component(target_name + "_component") {
+    manifest = rebase_path("meta/${_runner_name}_runner.cmx")
+
+    data_deps = [ ":${_binary_name}" ]
+    if (!invoker.aot) {
+      data_deps += [ "kernel:kernel_core_snapshot${_product_suffix}" ]
+    }
+    if (!invoker.product) {
+      data_deps += [
+        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:${_runner_basename}_runner",
         observatory_target,
       ]
+
+      if (invoker.aot) {
+        data_deps += [
+          "vmservice:vmservice_snapshot",
+          # TODO(kaushikiska): Figure out how to get the profiler symbols for `libdart_precompiled_runtime`
+          # "//third_party/dart/runtime:libdart_precompiled_runtime",
+        ]
+      }
     }
 
-    binary = "dart_aot${product_suffix}_runner"
-
-    cmx_file = rebase_path("meta/dart_aot${product_suffix}_runner.cmx")
-    cml_file = rebase_path("meta/dart_aot${product_suffix}_runner.cml")
-
-    libraries = common_libs
-
-    resources = []
-    if (!invoker.product) {
-      vmservice_snapshot = rebase_path(
-              get_label_info("vmservice:vmservice_snapshot", "target_gen_dir") +
-              "/vmservice_snapshot.so")
-      dart_profiler_symbols = rebase_path(
-              get_label_info(
-                  "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
-                  "target_gen_dir") + "/dart_aot_runner.dartprofilersymbols")
-
-      inputs = [
-        vmservice_snapshot,
-        observatory_archive_file,
-        dart_profiler_symbols,
-      ]
-
+    resources = common_libs
+    resources += [
+      {
+        path = rebase_path("$root_out_dir/icudtl.dat")
+        dest = "data/icudtl.dat"
+      },
+    ]
+    if (!invoker.aot) {
       resources += [
         {
-          path = vmservice_snapshot
-          dest = "vmservice_snapshot.so"
+          path = rebase_path(
+                  "$target_gen_dir/kernel/vm_data${_product_suffix}.bin")
+          dest = "data/vm_snapshot_data.bin"
         },
         {
-          path = rebase_path(observatory_archive_file)
-          dest = "observatory.tar"
+          path = rebase_path(
+                  "$target_gen_dir/kernel/vm_instructions${_product_suffix}.bin")
+          dest = "data/vm_snapshot_instructions.bin"
         },
         {
-          path = dart_profiler_symbols
-          dest = "dart_aot_runner.dartprofilersymbols"
+          path = rebase_path(
+                  "$target_gen_dir/kernel/isolate_data${_product_suffix}.bin")
+          dest = "data/isolate_core_snapshot_data.bin"
+        },
+        {
+          path = rebase_path(
+                  "$target_gen_dir/kernel/isolate_instructions${_product_suffix}.bin")
+          dest = "data/isolate_core_snapshot_instructions.bin"
         },
       ]
     }
-  }
-}
-
-template("jit_runner_package") {
-  assert(defined(invoker.product), "The parameter 'product' must be defined")
-  product_suffix = ""
-  if (invoker.product) {
-    product_suffix = "_product"
-  }
-
-  fuchsia_archive(target_name) {
-    deps = [
-      ":dart_jit${product_suffix}_runner_bin",
-      "kernel:kernel_core_snapshot${product_suffix}",
-    ]
-
-    if (!invoker.product) {
-      deps += [
-        "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_jit_runner",
-        observatory_target,
-      ]
-    }
-
-    binary = "dart_jit${product_suffix}_runner"
-
-    cmx_file = rebase_path("meta/dart_jit${product_suffix}_runner.cmx")
-    cml_file = rebase_path("meta/dart_jit${product_suffix}_runner.cml")
-
-    libraries = common_libs
-
-    resources = [
-      {
-        path =
-            rebase_path("$target_gen_dir/kernel/vm_data${product_suffix}.bin")
-        dest = "vm_snapshot_data.bin"
-      },
-      {
-        path = rebase_path(
-                "$target_gen_dir/kernel/vm_instructions${product_suffix}.bin")
-        dest = "vm_snapshot_instructions.bin"
-      },
-      {
-        path = rebase_path(
-                "$target_gen_dir/kernel/isolate_data${product_suffix}.bin")
-        dest = "isolate_core_snapshot_data.bin"
-      },
-      {
-        path = rebase_path(
-                "$target_gen_dir/kernel/isolate_instructions${product_suffix}.bin")
-        dest = "isolate_core_snapshot_instructions.bin"
-      },
-    ]
-
     if (!invoker.product) {
       resources += [
         {
           path = rebase_path(observatory_archive_file)
-          dest = "observatory.tar"
+          dest = "data/observatory.tar"
         },
         {
           path = rebase_path(
                   get_label_info(
-                      "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_jit_runner",
-                      "target_gen_dir") + "/dart_jit_runner.dartprofilersymbols")
-          dest = "dart_jit_runner.dartprofilersymbols"
+                      "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:${_runner_basename}_runner",
+                      "target_gen_dir") +
+                  "/${_runner_basename}_runner.dartprofilersymbols")
+          dest = "data/${_runner_basename}_runner.dartprofilersymbols"
         },
       ]
+
+      if (invoker.aot) {
+        resources += [
+          {
+            path = rebase_path(
+                    get_label_info("vmservice:vmservice_snapshot",
+                                   "target_gen_dir") + "/vmservice_snapshot.so")
+            dest = "data/vmservice_snapshot.so"
+          },
+        ]
+      }
     }
+  }
+
+  fuchsia_package(target_name) {
+    data_deps = [ ":" + target_name + "_component" ]
   }
 }
 
-aot_runner_package("dart_aot_runner") {
+dart_runner_package("dart_aot_runner") {
+  aot = true
   product = false
 }
 
-aot_runner_package("dart_aot_product_runner") {
+dart_runner_package("dart_aot_product_runner") {
+  aot = true
   product = true
 }
 
-jit_runner_package("dart_jit_runner") {
+dart_runner_package("dart_jit_runner") {
+  aot = false
   product = false
 }
 
-jit_runner_package("dart_jit_product_runner") {
+dart_runner_package("dart_jit_product_runner") {
+  aot = false
   product = true
 }

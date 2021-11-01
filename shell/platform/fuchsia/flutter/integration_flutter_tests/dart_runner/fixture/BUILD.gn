@@ -1,0 +1,29 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/tools/fuchsia/dart/dart_component.gni")
+import("//flutter/tools/fuchsia/dart/dart_library.gni")
+
+dart_runner_integration_tests_debug_build_cfg = {
+  runtime_meta = "../meta/jit_runtime"
+  platform_name = "dart_runner"
+  is_aot = false
+  is_product = false
+  enable_asserts = true
+}
+
+dart_library("fixture_library") {
+  package_name = "fixture"
+
+  source_dir = "."
+  sources = [ "main.dart" ]
+}
+
+dart_component("fixture") {
+  manifest = "meta/fixture.cmx"
+
+  build_cfg = dart_runner_integration_tests_debug_build_cfg
+
+  deps = [ ":fixture_library" ]
+}

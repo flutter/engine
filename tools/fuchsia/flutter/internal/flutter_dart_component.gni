@@ -43,11 +43,6 @@ import("//flutter/tools/fuchsia/gn-sdk/component.gni")
 #     File containing the main function of the component.
 #     Type: string
 #
-#   generate_asset_manifest (optional)
-#     If true, will generate an asset manifest for this component
-#     Type: boolean
-#     Default: false
-#
 #  deps
 #  testonly
 #  visibility
@@ -90,17 +85,14 @@ template("flutter_dart_component") {
                                "testonly",
                                "visibility",
                              ])
-      output_name = _merged_target_name
       sources = [
         invoker.manifest,
         rebase_path(build_cfg.runtime_meta, "."),
       ]
     }
 
-    _merged_outputs = []
-    _merged_outputs += get_target_outputs(":$_merged_target_name")
+    _merged_outputs = get_target_outputs(":$_merged_target_name")
     _manifest = _merged_outputs[0]
-    _manifest_output_name = "meta/" + _component_name + ".cmx"
 
     _component_deps += [ ":$_merged_target_name" ]
   } else {
@@ -108,7 +100,6 @@ template("flutter_dart_component") {
     # The v2 runners have not been implemented yet so we just leave the manifest
     # as is to avoid breaking the build.
     _manifest = invoker.manifest
-    _manifest_output_name = "meta/" + _component_name + ".cm"
   }
 
   _dart_package_config_target_name = "${target_name}_dart_package"
@@ -122,10 +113,9 @@ template("flutter_dart_component") {
     deps = _component_deps
   }
 
-  _package_config_output = []
-  _package_config_output =
+  _package_config_outputs =
       get_target_outputs(":$_dart_package_config_target_name")
-  _packages_path = _package_config_output[0]
+  _packages_path = _package_config_outputs[0]
 
   _kernel_target_name = _component_name + "_kernel"
   _kernel_target_dep_name = _kernel_target_name + "_gen_file"
@@ -144,6 +134,7 @@ template("flutter_dart_component") {
                              "visibility",
                              "main_dart",
                              "main_package",
+                             "null_safe",
                            ])
 
     deps = [ ":$_dart_package_config_target_name" ]
@@ -172,12 +163,6 @@ template("flutter_dart_component") {
     _stats_json_path =
         "$target_gen_dir/${_component_name}/stats/symbol_sizes.json"
 
-    if (build_cfg.is_product) {
-      _gen_snapshot_script_target = gen_snapshot_product
-    } else {
-      _gen_snapshot_script_target = gen_snapshot
-    }
-
     executable_action(_snapshot_target_name) {
       forward_variables_from(invoker,
                              [
@@ -192,31 +177,11 @@ template("flutter_dart_component") {
         _stats_json_path,
       ]
 
-      if (defined(invoker.toolchain)) {
-        toolchain = invoker.toolchain
+      if (build_cfg.is_product) {
+        _gen_snapshot_script_target = gen_snapshot_product
       } else {
-        toolchain = host_toolchain
+        _gen_snapshot_script_target = gen_snapshot
       }
-
-      # Construct the host toolchain version of the tool.
-      # host_tool = invoker.tool + "($toolchain)"
-      host_tool = _gen_snapshot_script_target + "($toolchain)"
-
-      # Get the path to the executable. Currently, this assumes that the tool
-      # does not specify output_name so that the target name is the name to use.
-      # If that's not the case, we'll need another argument to the script to
-      # specify this, since we can't know what the output name is (it might be in
-      # another file not processed yet).
-      host_executable =
-          get_label_info(host_tool, "root_out_dir") + "/" +
-          get_label_info(host_tool, "name") + host_executable_suffix
-
-      # Add the executable itself as an input.
-      inputs += [ host_executable ]
-
-      deps += [ host_tool ]
-
-      tool = host_executable
 
       args = [
         "--deterministic",
@@ -238,7 +203,7 @@ template("flutter_dart_component") {
     _component_deps += [ ":$_snapshot_target_name" ]
   }
 
-  fuchsia_component(_component_name) {
+  fuchsia_component(target_name) {
     forward_variables_from(invoker,
                            [
                              "testonly",
@@ -246,7 +211,7 @@ template("flutter_dart_component") {
                            ])
     deps = _component_deps
     manifest = _manifest
-    manifest_output_name = _manifest_output_name
+    manifest_output_name = _component_name
 
     if (build_cfg.is_aot) {
       _resources += [
@@ -256,17 +221,18 @@ template("flutter_dart_component") {
         },
       ]
     } else {
+      # TODO(dworsham): must include resources directly here using `resources_in_json_files`
       _convert_kernel_target_name =
           "${_kernel_target_name}_convert_kernel_manifest"
       _convert_kernel_manifest_file =
-          # TODO(richkadel): This is prefixed by "dartlang/", which is not found.
+          # TODO(dworsham): This is prefixed by "dartlang/", which is not found.
           # Is the current toolchain set incorrectly somewhere?
           string_replace(
               "${target_gen_dir}/${_convert_kernel_target_name}_kernel_manifest.json",
               "dartlang/",
               "")
 
-      # TODO(richkadel): Adds the json resource names in the manifest to the
+      # TODO(dworsham): Adds the json resource names in the manifest to the
       # collection of `json_of_resources` files, read by
       # `prepare_package_inputs.py`. These resources are computed (only known)
       # at some point during the build/compile phase.
@@ -274,14 +240,5 @@ template("flutter_dart_component") {
     }
 
     resources = _resources
-  }
-
-  group(target_name) {
-    forward_variables_from(invoker,
-                           [
-                             "testonly",
-                             "visibility",
-                           ])
-    deps = [ ":" + _component_name ]
   }
 }

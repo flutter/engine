@@ -7,14 +7,28 @@ assert(is_fuchsia)
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+import("//flutter/tools/fuchsia/clang.gni")
 import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_host_bundle.gni")
+import("//flutter/tools/fuchsia/gn-sdk/build_id_dir.gni")
 
 product_suffix = ""
 
 if (flutter_runtime_mode == "release") {
   product_suffix = "product_"
 }
+
+runner_packages = [
+  "dart_runner:dart_aot_${product_suffix}runner",
+  "dart_runner:dart_jit_${product_suffix}runner",
+  "flutter:flutter_aot_${product_suffix}runner",
+  "flutter:flutter_jit_${product_suffix}runner",
+]
+
+test_packages = [
+  "flutter:tests",
+  "flutter/integration_flutter_tests",
+]
 
 fuchsia_host_bundle("flutter_binaries") {
   name = "flutter_binaries"
@@ -74,18 +88,29 @@ fuchsia_host_bundle("dart_binaries") {
   ]
 }
 
+build_id_dir(".build-id") {
+  testonly = true
+
+  output_path = "${root_out_dir}/.build-id"
+
+  # Include symbols from clang as well
+  build_id_dirs = [ "${clang_base}/lib/debug/.build-id" ]
+
+  deps = runner_packages
+  if (enable_unittests) {
+    deps += test_packages
+  }
+}
+
 group("fuchsia") {
   testonly = true
 
   deps = [
-    ":dart_binaries",
-    ":flutter_binaries",
-    "dart_runner:dart_aot_${product_suffix}runner",
-    "dart_runner:dart_jit_${product_suffix}runner",
-    "flutter:flutter_aot_${product_suffix}runner",
-    "flutter:flutter_jit_${product_suffix}runner",
-  ]
+           ":.build-id",
+           ":dart_binaries",
+           ":flutter_binaries",
+         ] + runner_packages
   if (enable_unittests) {
-    deps += [ "flutter:tests" ]
+    deps += test_packages
   }
 }

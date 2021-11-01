@@ -1,0 +1,22 @@
+{
+    "facets": {
+        "fuchsia.test": {
+            "system-services": [
+                "fuchsia.tracing.provider.Registry"
+            ]
+        }
+    },
+    "program": {
+        "binary": "dart_runner_integration_tests"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.intl.PropertyProvider",
+            "fuchsia.logger.LogSink",
+            "fuchsia.sys.Environment",
+            "fuchsia.sys.Launcher",
+            "fuchsia.sys.Loader",
+            "fuchsia.tracing.provider.Registry"
+        ]
+    }
+}

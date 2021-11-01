@@ -32,6 +32,7 @@ _gen_kernel_path =
     get_label_info(_gen_kernel_label, "root_out_dir") + "/dart-tools/gen_kernel"
 
 flutter_platform_name = "flutter_runner"
+dart_platform_name = "dart_runner"
 
 # Converts the kernel manifest file from fini format to JSON format and
 # registers the metadata for the fuchsia_package to pick up.
@@ -157,15 +158,15 @@ template("dart_kernel") {
     _kernel_deps += invoker.deps
   }
 
-  # TODO(richkadel): The manifest (if not using AOT) is used by
+  # TODO(dworsham): The manifest (if not using AOT) is used by
   # flutter_dart_component, to populate the file it calls
   # `_convert_kernel_manifest_file`.
   _generate_manifest = false
   if (invoker.is_aot) {
     not_needed(invoker, [ "generate_manifest" ])
   } else {
-    if (defined(invoker.generate_manifest)) {
-      _generate_manifest = invoker.generate_manifest
+    if (defined(invoker.generate_manifest) && invoker.generate_manifest) {
+      _generate_manifest = true
     }
   }
 
@@ -211,6 +212,9 @@ template("dart_kernel") {
         "//flutter/shell/platform/fuchsia/flutter/kernel:kernel_platform_files",
       ]
       _platform_path = "$root_out_dir/flutter_runner_patched_sdk"
+    } else if (invoker.platform_name == dart_platform_name) {
+      _kernel_deps += [ "//flutter/shell/platform/fuchsia/dart_runner/kernel:kernel_platform_files" ]
+      _platform_path = "$root_out_dir/dart_runner_patched_sdk"
     } else {
       assert(false,
              "platform_name must be either dart_runner or flutter_runner")
@@ -252,9 +256,15 @@ template("dart_kernel") {
     if (defined(invoker.args)) {
       args += invoker.args
     }
+    args += [ "--verbosity=warning" ]
+
+    if (defined(invoker.null_safe) && invoker.null_safe) {
+      args += [ "--sound-null-safety" ]
+    } else {
+      args += [ "--no-sound-null-safety" ]
+    }
+
     args += [
-      "--verbosity=warning",
-      "--no-sound-null-safety",
       "--target",
       invoker.platform_name,
       "--platform",
@@ -274,7 +284,7 @@ template("dart_kernel") {
       rebase_path(_kernel_path, root_build_dir),
     ]
 
-    # TODO(richkadel): It should be possible to remove all of the build rules
+    # TODO(dworsham): It should be possible to remove all of the build rules
     # related to `generate_manifest`. Without the following two flags, the
     # `gen_kernel` step will produce one large `.dil` file, instead of multiple
     # `.dilp` files with a `.dilplist`. But the Fuchsia flutter runner

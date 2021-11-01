@@ -9,6 +9,9 @@ fuchsia_sdk_dist = "$fuchsia_sdk_base/dist"
 sysroot_lib = "$fuchsia_sdk_base/sysroot/lib"
 sysroot_dist_lib = "$fuchsia_sdk_base/sysroot/dist/lib"
 
+# Note, for clang libs we use the md5 hashes here because of gn limitations of
+# json parsing.
+# This is a hack, and we can migrate to a better way soon.
 ld_so_path = ""
 libcxx_so_2_path = "${clang_manifest_json.md5_19df03aecdc9eb27bc8b4038352f2b27}"
 libcxx_abi_so_1_path =
@@ -27,7 +30,7 @@ if (is_asan) {
       "${clang_manifest_json.md5_b76b69d6ab2c13408b7a3608f925b0c6}"
 }
 
-common_libs = [
+common_libs_legacy = [
   {
     name = "libasync-default.so"
     path = rebase_path("$fuchsia_sdk_dist")
@@ -60,48 +63,103 @@ common_libs = [
     name = "ld.so.1"
     path = rebase_path("$sysroot_dist_lib/$ld_so_path")
   },
-]
-
-# Note, for clang libs we use the md5 hashes here because of gn limitations of
-# json parsing.
-# This is a hack, and we can migrate to a better way soon.
-common_libs += [
   {
     name = "libc++.so.2"
-    path = rebase_path("$clang_base/$libcxx_so_2_path")
+    path = rebase_path("$clang_base/lib/$libcxx_so_2_path")
   },
   {
     name = "libc++abi.so.1"
-    path = rebase_path("$clang_base/$libcxx_abi_so_1_path")
+    path = rebase_path("$clang_base/lib/$libcxx_abi_so_1_path")
   },
   {
     name = "libunwind.so.1"
-    path = rebase_path("$clang_base/$libunwind_so_1_path")
+    path = rebase_path("$clang_base/lib/$libunwind_so_1_path")
+  },
+]
+if (is_asan) {
+  common_libs_legacy += [
+    {
+      name = "libclang_rt.asan.so"
+      path = rebase_path("$clang_base/lib/$libclang_rt_so_path")
+    },
+  ]
+}
+
+common_libs = [
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libasync-default.so")
+    dest = "lib/libasync-default.so"
+  },
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libtrace-engine.so")
+    dest = "lib/libtrace-engine.so"
+  },
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libfdio.so")
+    dest = "lib/libfdio.so"
+  },
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libmemfs.so")
+    dest = "lib/libmemfs.so"
+  },
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libsyslog.so")
+    dest = "lib/libsyslog.so"
+  },
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libvulkan.so")
+    dest = "lib/libvulkan.so"
+  },
+  {
+    path = rebase_path("$fuchsia_sdk_dist/libtrace-provider-so.so")
+    dest = "lib/libtrace-provider-so.so"
+  },
+  {
+    path = rebase_path("$sysroot_dist_lib/ld.so.1")
+    dest = "lib/ld.so.1"
+  },
+  {
+    path = rebase_path("$clang_base/lib/$libcxx_so_2_path/libc++.so.2")
+    dest = "lib/libc++.so.2"
+  },
+  {
+    path = rebase_path("$clang_base/lib/$libcxx_abi_so_1_path/libc++abi.so.1")
+    dest = "lib/libc++abi.so.1"
+  },
+  {
+    path = rebase_path("$clang_base/lib/$libunwind_so_1_path/libunwind.so.1")
+    dest = "lib/libunwind.so.1"
   },
 ]
 if (is_asan) {
   common_libs += [
     {
-      name = "libclang_rt.asan.so"
-      path = rebase_path("$clang_base/$libclang_rt_so_path")
+      path = rebase_path(
+              "$clang_base/lib/$libclang_rt_so_path/libclang_rt.asan.so")
+      dest = "lib/libclang_rt.asan.so"
     },
   ]
 }
 
 vulkan_dist = "$fuchsia_sdk_base/dist"
+vulkan_data_dir =
+    "//fuchsia/sdk/$host_os/pkg/vulkan_layers/data/vulkan/explicit_layer.d"
 
 # Note that the other validation libraries in the Fuchsia SDK seem to have a bug right
 # now causing crashes, so it is only recommended that we use
 # VkLayer_khronos_validation.so until we have a confirmation that they are fixed.
-vulkan_validation_libs = [
+vulkan_validation_libs_legacy = [
   {
     name = "VkLayer_khronos_validation.so"
     path = rebase_path("$vulkan_dist")
   },
 ]
-
-vulkan_data_dir =
-    "//fuchsia/sdk/$host_os/pkg/vulkan_layers/data/vulkan/explicit_layer.d"
+vulkan_validation_libs = [
+  {
+    path = rebase_path("$vulkan_dist/VkLayer_khronos_validation.so")
+    dest = "lib/VkLayer_khronos_validation.so"
+  },
+]
 
 vulkan_icds = [
   {

@@ -1,0 +1,11 @@
+{
+    "program": {
+        "data": "data/parent_view"
+    },
+    "sandbox": {
+        "services": [
+            "fuchsia.sys.Environment",
+            "fuchsia.sys.Launcher",
+        ]
+    }
+}

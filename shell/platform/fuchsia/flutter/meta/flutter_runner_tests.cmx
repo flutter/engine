@@ -1,6 +1,6 @@
 {
   "program": {
-    "binary": "bin/app",
+    "binary": "flutter_runner_unittests",
     "env_vars": [
       "ICU_TIMEZONE_FILES_DIR=/pkg/data/tzdata"
     ]

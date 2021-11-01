@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//flutter/tools/fuchsia/dart/dart.gni")
-import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/flutter/config.gni")
 import("//flutter/tools/fuchsia/flutter/internal/flutter_dart_component.gni")
 
@@ -101,16 +100,12 @@ template("flutter_component") {
     _build_cfg = flutter_default_build_cfg
   }
 
-  if (defined(invoker.component_name)) {
-    _component_name = invoker.component_name
-  } else {
-    _component_name = target_name
-  }
-
   if (defined(invoker.main_package)) {
     _main_package = invoker.main_package
+  } else if (defined(invoker.component_name)) {
+    _main_package = string_replace(invoker.component_name, "-", "_")
   } else {
-    _main_package = string_replace(_component_name, "-", "_")
+    _main_package = string_replace(target_name, "-", "_")
   }
 
   if (defined(invoker.main_dart)) {
@@ -118,12 +113,6 @@ template("flutter_component") {
   } else {
     _main_dart = "main.dart"
   }
-
-  # We need to specify the runner as a dependency (at least when running a
-  # flutter/engine-built package using a flutter/engine-built runner). Add it
-  # to `deps` so the runner will also be built, and available to serve to
-  # fuchsia, alongside the flutter_component's package.
-  _component_deps += [ _build_cfg.runner_dep ]
 
   flutter_dart_component(target_name) {
     forward_variables_from(invoker,
@@ -135,12 +124,12 @@ template("flutter_component") {
                              "main_package",
                              "component_name",
                              "resources",
+                             "null_safe",
                            ])
     deps = _component_deps
 
     main_dart = _main_dart
     main_package = _main_package
-    component_name = _component_name
 
     build_cfg = _build_cfg
   }
