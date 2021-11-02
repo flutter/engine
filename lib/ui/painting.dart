@@ -2390,7 +2390,7 @@ class Path extends NativeFieldWrapperClass1 {
       double x1, double y1, double x2, double y2, double x3, double y3);
 
   /// Adds a cubic bezier segment that curves from the current point
-/// to the point at the offset (x3,y3) from the current point, using
+  /// to the point at the offset (x3,y3) from the current point, using
   /// the control points at the offsets (x1,y1) and (x2,y2) from the
   /// current point.
 @FfiNative<
@@ -3339,6 +3339,7 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
 
   @FfiNative<Void Function(Pointer<Void>, Handle)>('ColorFilter::initMatrix')
   external void _initMatrix(Float32List matrix);
+
   @FfiNative<Void Function(Pointer<Void>)>('ColorFilter::initLinearToSrgbGamma',
       isLeaf: true)
   external void _initLinearToSrgbGamma();
