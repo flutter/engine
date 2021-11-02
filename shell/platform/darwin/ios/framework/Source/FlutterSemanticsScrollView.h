@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FlutterSemanticsScrollView : UIScrollView
 
-@property(nonatomic, assign) SemanticsObject* _Nullable semanticsObject;
+@property(nonatomic, assign, nullable) SemanticsObject* semanticsObject;
 
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
