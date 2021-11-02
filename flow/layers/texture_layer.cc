@@ -28,6 +28,14 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
     // dirty
     context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
   }
+  // This adds a "fake" readback region. The region is empty, so it doesn't
+  // trigger any additional repaints (nothing intersects it), but it is enough
+  // to ensure that `ContainerLayer::DiffChildren` will diff texture layer
+  // even if placed inside a retained subtree. When diffing retained layer the
+  // assumption is that the retained subtree will render identically to previous
+  // frame. This does not hold true if there is TextureLayer in the hierarchy.
+  // See ContainerLayer::DiffChildren
+  context->AddReadbackRegion(SkIRect::MakeEmpty());
   context->AddLayerBounds(SkRect::MakeXYWH(offset_.x(), offset_.y(),
                                            size_.width(), size_.height()));
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
