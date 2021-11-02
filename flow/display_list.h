@@ -674,12 +674,6 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
 
   bool is_flood() const { return has_any(kFloodsSurface_); }
 
-  // bool may_stroke_geometry() {
-  //   return has_any(kIsDrawnGeometry_ | kIsStrokedGeometry_);
-  // }
-  // /// Only valid after calling |WithStyle| with the current |Style|
-  // bool does_stroke_geometry() { return has_any(kIsStrokedGeometry_); }
-
  private:
   DisplayListAttributeFlags(int flags)
       : DisplayListFlagsBase(flags),
