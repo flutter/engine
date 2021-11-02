@@ -1323,5 +1323,54 @@ TEST(DisplayList, DisplayListPathEffectRefHandling) {
   ASSERT_TRUE(tester.ref_is_unique());
 }
 
+TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
+  // SkM44 constructor takes row-major order
+  SkM44 sk_matrix = SkM44(
+      // clang-format off
+       1,  2,  3,  4,
+       5,  6,  7,  8,
+       9, 10, 11, 12,
+      13, 14, 15, 16
+      // clang-format on
+  );
+
+  {  // First test ==
+    DisplayListBuilder builder;
+    // builder.transformFullPerspective takes row-major order
+    builder.transformFullPerspective(
+        // clang-format off
+         1,  2,  3,  4,
+         5,  6,  7,  8,
+         9, 10, 11, 12,
+        13, 14, 15, 16
+        // clang-format on
+    );
+    sk_sp<DisplayList> display_list = builder.Build();
+    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    SkCanvas* canvas = surface->getCanvas();
+    display_list->RenderTo(canvas);
+    SkM44 dl_matrix = canvas->getLocalToDevice();
+    ASSERT_EQ(sk_matrix, dl_matrix);
+  }
+  {  // Next test !=
+    DisplayListBuilder builder;
+    // builder.transformFullPerspective takes row-major order
+    builder.transformFullPerspective(
+        // clang-format off
+         1,  5,  9, 13,
+         2,  6,  7, 11,
+         3,  7, 11, 15,
+         4,  8, 12, 16
+        // clang-format on
+    );
+    sk_sp<DisplayList> display_list = builder.Build();
+    sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
+    SkCanvas* canvas = surface->getCanvas();
+    display_list->RenderTo(canvas);
+    SkM44 dl_matrix = canvas->getLocalToDevice();
+    ASSERT_NE(sk_matrix, dl_matrix);
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter
