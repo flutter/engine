@@ -125,7 +125,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)keyboardWillChangeFrame:(NSNotification*)notification;
-- (void)startKeyboardAnimationLink;
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration curve:(UIViewAnimationCurve)curve;
+- (void)ensureViewportMetricsIsCorrect;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -174,8 +175,20 @@ typedef enum UIAccessibilityContrast : NSInteger {
                   }];
   id viewControllerMock = OCMPartialMock(viewController);
   [viewControllerMock keyboardWillChangeFrame:notification];
-  OCMVerify([viewControllerMock startKeyboardAnimationLink]);
+  OCMVerify([viewControllerMock startKeyBoardAnimation:0.25 curve:(UIViewAnimationCurve)7]);
 }
+
+- (void)testEnsureViewportMetricsWillInvokeInViewDidDisappear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  [viewControllerMock viewDidDisappear:YES];
+  OCMVerify([viewControllerMock ensureViewportMetricsIsCorrect]);
+}
+
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];

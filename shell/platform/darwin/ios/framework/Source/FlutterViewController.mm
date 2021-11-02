@@ -73,7 +73,6 @@ typedef struct MouseState {
  * Keyboard animation properties
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
-@property(nonatomic, strong) CADisplayLink* keyboardAnimationLink;
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -730,7 +729,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
-    [self stopKeyboardAnimation];
+    [self ensureViewportMetricsIsCorrect];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
@@ -1157,23 +1156,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // When call this method first time,
   // initialize the keyboardAnimationView to get animation interpolation during animation
   if ([self keyboardAnimationView] == nil) {
-    _keyboardAnimationView.reset([[UIView alloc] init]);
+    UIView* keyboardAnimationView = [[UIView alloc] init];
+    [keyboardAnimationView setUserInteractionEnabled:NO];
+    _keyboardAnimationView.reset(keyboardAnimationView);
+  }
+
+  if ([self keyboardAnimationView].superview == nil) {
     [self.view addSubview:[self keyboardAnimationView]];
   }
 
-  if (self.keyboardAnimationLink == nil) {
-    [self startKeyboardAnimationLink];
-  }
-
-  // Remove running animation when start another animation,and after call this line,the `completion`
-  // in UIView animation will be called. If it is animating,the `finished` will be false,and the
-  // `keyboardAnimationLink` will not invalidate.When animation finishes.The `finished` will be true
-  // and `keyboardAnimationLink` will invalidate
+  // Remove running animation when start another animation,After calling this line
+  //,the old display link will invalidate
   [[self keyboardAnimationView].layer removeAllAnimations];
 
   // Set animation begin value
   [self keyboardAnimationView].frame =
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
+
+  __block CADisplayLink* displayLink =
+      [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
+  [displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
 
   [UIView animateWithDuration:duration
       animations:^{
@@ -1181,33 +1183,34 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
-        // Only when animation finished ,we invalidate the `keyboardAnimationLink` and
-        //  set end value to _viewportMetrics
+        [displayLink invalidate];
+        displayLink = nil;
         if (finished) {
-          [self stopKeyboardAnimation];
+          [self removeKeyboardAnimationView];
+          [self ensureViewportMetricsIsCorrect];
         }
       }];
 }
 
-- (void)stopKeyboardAnimation {
-  if (self.keyboardAnimationLink) {
-    [self.keyboardAnimationLink invalidate];
-    self.keyboardAnimationLink = nil;
+- (void)removeKeyboardAnimationView {
+  if ([self keyboardAnimationView].superview != nil) {
+    [[self keyboardAnimationView] removeFromSuperview];
   }
+}
+
+- (void)ensureViewportMetricsIsCorrect {
   if (_viewportMetrics.physical_view_inset_bottom != self.targetViewInsetBottom) {
-    // Set to end value if the animation is not complete
+    // Make sure the `physical_view_inset_bottom` is the target value
     _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
     [self updateViewportMetrics];
   }
 }
 
-- (void)startKeyboardAnimationLink {
-  self.keyboardAnimationLink = [CADisplayLink displayLinkWithTarget:self
-                                                           selector:@selector(onDisplayLink)];
-  [self.keyboardAnimationLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
-}
-
 - (void)onDisplayLink {
+  if ([self keyboardAnimationView].superview == nil) {
+    // Ensure the keyboardAnimationView is in view hierarchy when animation running
+    [self.view addSubview:[self keyboardAnimationView]];
+  }
   if ([self keyboardAnimationView].layer.presentationLayer) {
     CGFloat value = [self keyboardAnimationView].layer.presentationLayer.frame.origin.y;
     _viewportMetrics.physical_view_inset_bottom = value;
