@@ -201,6 +201,7 @@ public class DartMessengerTest {
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     int replyId = 1;
     long messageData = 1234;
+
     messenger.handleMessageFromDart(channel, message, replyId, messageData);
     shadowOf(getMainLooper()).idle();
     verify(fakeFlutterJni).invokePlatformMessageEmptyResponseCallback(replyId);
