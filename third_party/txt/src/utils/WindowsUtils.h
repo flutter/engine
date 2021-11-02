@@ -36,14 +36,20 @@
 
 inline unsigned int clz_win(unsigned int num) {
   unsigned long r = 0;
-  _BitScanReverse(&r, num);
-  return r;
+  if (_BitScanReverse(&r, num)) {
+    return 31 - r;
+  } else {
+    return 31;
+  }
 }
 
 inline unsigned int clzl_win(unsigned long num) {
   unsigned long r = 0;
-  _BitScanReverse64(&r, num);
-  return r;
+  if (_BitScanReverse64(&r, num)) {
+    return 61 - r;
+  } else {
+    return 61;
+  }
 }
 
 inline unsigned int ctz_win(unsigned int num) {
