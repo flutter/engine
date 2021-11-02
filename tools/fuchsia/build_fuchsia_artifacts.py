@@ -51,6 +51,10 @@ def GetPMBinPath():
   return os.path.join(GetFuchsiaSDKPath(), 'tools', 'pm')
 
 
+def GetSymbolIndexBinPath():
+  return os.path.join(GetFuchsiaSDKPath(), 'tools', 'symbol-index')
+
+
 def RunExecutable(command):
   subprocess.check_call(command, cwd=_src_root_dir)
 
@@ -70,6 +74,14 @@ def BuildNinjaTargets(variant_dir, targets):
 
   RunExecutable(['autoninja', '-C',
                  os.path.join(_out_dir, variant_dir)] + targets)
+
+
+def AddDebugSymbols(variant_dir):
+  out_dir = os.path.join(_out_dir, variant_dir)
+  assert os.path.exists(out_dir)
+
+  RunExecutable([GetSymbolIndexBinPath(), 'add',
+                 os.path.join(out_dir, '.build-id'), out_dir])
 
 
 def RemoveDirectoryIfExists(path):
@@ -286,6 +298,7 @@ def BuildTarget(runtime_mode, arch, optimized, enable_lto, enable_legacy,
 
   RunGN(out_dir, flags)
   BuildNinjaTargets(out_dir, [ 'flutter' ] + additional_targets)
+  AddDebugSymbols(out_dir)
 
   return
 
