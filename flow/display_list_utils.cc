@@ -312,7 +312,7 @@ void DisplayListBoundsCalculator::restore() {
       // modifications based on the attributes that were in place
       // when it was instantiated. Modifying it further base on the
       // current attributes would mix attribute states.
-      AccumulateRect(layer_bounds, DisplayListAttributeFlags::kSaveLayerFlags);
+      AccumulateRect(layer_bounds, kSaveLayerFlags);
     }
     if (layer_unbounded) {
       AccumulateUnbounded();
@@ -330,35 +330,34 @@ void DisplayListBoundsCalculator::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
   SkRect bounds = SkRect::MakeLTRB(p0.fX, p0.fY, p1.fX, p1.fY).makeSorted();
   DisplayListAttributeFlags flags =
-      (bounds.width() > 0.0f && bounds.height() > 0.0f)
-          ? DisplayListAttributeFlags::kDrawLineFlags
-          : DisplayListAttributeFlags::kDrawHVLineFlags;
+      (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
+                                                        : kDrawHVLineFlags;
   AccumulateRect(bounds, flags);
 }
 void DisplayListBoundsCalculator::drawRect(const SkRect& rect) {
-  AccumulateRect(rect, DisplayListAttributeFlags::kDrawRectFlags);
+  AccumulateRect(rect, kDrawRectFlags);
 }
 void DisplayListBoundsCalculator::drawOval(const SkRect& bounds) {
-  AccumulateRect(bounds, DisplayListAttributeFlags::kDrawOvalFlags);
+  AccumulateRect(bounds, kDrawOvalFlags);
 }
 void DisplayListBoundsCalculator::drawCircle(const SkPoint& center,
                                              SkScalar radius) {
   AccumulateRect(SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
                                   center.fX + radius, center.fY + radius),
-                 DisplayListAttributeFlags::kDrawCircleFlags);
+                 kDrawCircleFlags);
 }
 void DisplayListBoundsCalculator::drawRRect(const SkRRect& rrect) {
-  AccumulateRect(rrect.getBounds(), DisplayListAttributeFlags::kDrawRRectFlags);
+  AccumulateRect(rrect.getBounds(), kDrawRRectFlags);
 }
 void DisplayListBoundsCalculator::drawDRRect(const SkRRect& outer,
                                              const SkRRect& inner) {
-  AccumulateRect(outer.getBounds(), DisplayListAttributeFlags::kDrawDRRectFlags);
+  AccumulateRect(outer.getBounds(), kDrawDRRectFlags);
 }
 void DisplayListBoundsCalculator::drawPath(const SkPath& path) {
   if (path.isInverseFillType()) {
     AccumulateUnbounded();
   } else {
-    AccumulateRect(path.getBounds(), DisplayListAttributeFlags::kDrawPathFlags);
+    AccumulateRect(path.getBounds(), kDrawPathFlags);
   }
 }
 void DisplayListBoundsCalculator::drawArc(const SkRect& bounds,
@@ -368,7 +367,10 @@ void DisplayListBoundsCalculator::drawArc(const SkRect& bounds,
   // This could be tighter if we compute where the start and end
   // angles are and then also consider the quadrants swept and
   // the center if specified.
-  AccumulateRect(bounds, DisplayListAttributeFlags::kDrawArcFlags);
+  AccumulateRect(bounds,
+                 useCenter  //
+                     ? kDrawArcWithCenterFlags
+                     : kDrawArcNoCenterFlags);
 }
 void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
                                              uint32_t count,
@@ -381,20 +383,20 @@ void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
     SkRect point_bounds = ptBounds.bounds();
     switch (mode) {
       case SkCanvas::kPoints_PointMode:
-        AccumulateRect(point_bounds, DisplayListAttributeFlags::kDrawPointsAsPointsFlags);
+        AccumulateRect(point_bounds, kDrawPointsAsPointsFlags);
         break;
       case SkCanvas::kLines_PointMode:
-        AccumulateRect(point_bounds, DisplayListAttributeFlags::kDrawPointsAsLinesFlags);
+        AccumulateRect(point_bounds, kDrawPointsAsLinesFlags);
         break;
       case SkCanvas::kPolygon_PointMode:
-        AccumulateRect(point_bounds, DisplayListAttributeFlags::kDrawPointsAsPolygonFlags);
+        AccumulateRect(point_bounds, kDrawPointsAsPolygonFlags);
         break;
     }
   }
 }
 void DisplayListBoundsCalculator::drawVertices(const sk_sp<SkVertices> vertices,
                                                SkBlendMode mode) {
-  AccumulateRect(vertices->bounds(), DisplayListAttributeFlags::kDrawVerticesFlags);
+  AccumulateRect(vertices->bounds(), kDrawVerticesFlags);
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
                                             const SkPoint point,
@@ -402,9 +404,9 @@ void DisplayListBoundsCalculator::drawImage(const sk_sp<SkImage> image,
                                             bool render_with_attributes) {
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
                                    image->width(), image->height());
-  DisplayListAttributeFlags flags = render_with_attributes
-      ? DisplayListAttributeFlags::kDrawImageWithPaintFlags
-      : DisplayListAttributeFlags::kDrawImageFlags;
+  DisplayListAttributeFlags flags = render_with_attributes  //
+                                        ? kDrawImageWithPaintFlags
+                                        : kDrawImageFlags;
   AccumulateRect(bounds, flags);
 }
 void DisplayListBoundsCalculator::drawImageRect(
@@ -415,8 +417,8 @@ void DisplayListBoundsCalculator::drawImageRect(
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   DisplayListAttributeFlags flags = render_with_attributes
-      ? DisplayListAttributeFlags::kDrawImageRectWithPaintFlags
-      : DisplayListAttributeFlags::kDrawImageRectFlags;
+                                        ? kDrawImageRectWithPaintFlags
+                                        : kDrawImageRectFlags;
   AccumulateRect(dst, flags);
 }
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,
@@ -425,8 +427,8 @@ void DisplayListBoundsCalculator::drawImageNine(const sk_sp<SkImage> image,
                                                 SkFilterMode filter,
                                                 bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
-      ? DisplayListAttributeFlags::kDrawImageNineWithPaintFlags
-      : DisplayListAttributeFlags::kDrawImageNineFlags;
+                                        ? kDrawImageNineWithPaintFlags
+                                        : kDrawImageNineFlags;
   AccumulateRect(dst, flags);
 }
 void DisplayListBoundsCalculator::drawImageLattice(
@@ -436,8 +438,8 @@ void DisplayListBoundsCalculator::drawImageLattice(
     SkFilterMode filter,
     bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
-      ? DisplayListAttributeFlags::kDrawImageLatticeWithPaintFlags
-      : DisplayListAttributeFlags::kDrawImageLatticeFlags;
+                                        ? kDrawImageLatticeWithPaintFlags
+                                        : kDrawImageLatticeFlags;
   AccumulateRect(dst, flags);
 }
 void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
@@ -459,9 +461,9 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<SkImage> atlas,
     }
   }
   if (atlasBounds.is_not_empty()) {
-    DisplayListAttributeFlags flags = render_with_attributes
-        ? DisplayListAttributeFlags::kDrawAtlasWithPaintFlags
-        : DisplayListAttributeFlags::kDrawAtlasFlags;
+    DisplayListAttributeFlags flags = render_with_attributes  //
+                                          ? kDrawAtlasWithPaintFlags
+                                          : kDrawAtlasFlags;
     AccumulateRect(atlasBounds.bounds(), flags);
   }
 }
@@ -475,19 +477,19 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
   if (pic_matrix) {
     pic_matrix->mapRect(&bounds);
   }
-  DisplayListAttributeFlags flags = render_with_attributes
-      ? DisplayListAttributeFlags::kDrawPictureWithPaintFlags
-      : DisplayListAttributeFlags::kDrawPictureFlags;
+  DisplayListAttributeFlags flags = render_with_attributes  //
+                                        ? kDrawPictureWithPaintFlags
+                                        : kDrawPictureFlags;
   AccumulateRect(bounds, flags);
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  AccumulateRect(display_list->bounds(), DisplayListAttributeFlags::kDrawDisplayListFlags);
+  AccumulateRect(display_list->bounds(), kDrawDisplayListFlags);
 }
 void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,
                                                SkScalar y) {
-  AccumulateRect(blob->bounds().makeOffset(x, y), DisplayListAttributeFlags::kDrawTextBlobFlags);
+  AccumulateRect(blob->bounds().makeOffset(x, y), kDrawTextBlobFlags);
 }
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const SkColor color,
@@ -496,7 +498,7 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              SkScalar dpr) {
   SkRect shadow_bounds =
       PhysicalShapeLayer::ComputeShadowBounds(path, elevation, dpr, matrix());
-  AccumulateRect(shadow_bounds, DisplayListAttributeFlags::kDrawShadowFlags);
+  AccumulateRect(shadow_bounds, kDrawShadowFlags);
 }
 
 bool DisplayListBoundsCalculator::ComputeFilteredBounds(SkRect& bounds,
@@ -510,15 +512,17 @@ bool DisplayListBoundsCalculator::ComputeFilteredBounds(SkRect& bounds,
   return true;
 }
 
-bool DisplayListBoundsCalculator::AdjustBoundsForPaint(SkRect& bounds,
-                                                       DisplayListAttributeFlags flags) {
+bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
+    SkRect& bounds,
+    DisplayListAttributeFlags flags) {
   if (flags.ignores_paint()) {
     return true;
   }
 
   if (flags.is_geometric()) {
     // Path effect occurs before stroking...
-    DisplayListSpecialGeometryFlags special_flags = flags.WithPathEffect(path_effect_);
+    DisplayListSpecialGeometryFlags special_flags =
+        flags.WithPathEffect(path_effect_);
     if (path_effect_) {
       SkPaint p;
       p.setPathEffect(path_effect_);
@@ -570,7 +574,9 @@ void DisplayListBoundsCalculator::AccumulateUnbounded() {
     layer_infos_.back()->set_unbounded();
   }
 }
-void DisplayListBoundsCalculator::AccumulateRect(SkRect& rect, DisplayListAttributeFlags flags) {
+void DisplayListBoundsCalculator::AccumulateRect(
+    SkRect& rect,
+    DisplayListAttributeFlags flags) {
   if (AdjustBoundsForPaint(rect, flags)) {
     matrix().mapRect(&rect);
     if (!has_clip() || rect.intersect(clip_bounds())) {
