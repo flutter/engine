@@ -169,8 +169,8 @@ public class DartMessengerTest {
         };
     messenger.setMessageHandler(channel, handler, taskQueue);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
-    int replyId = 1;
-    long messageData = 1234;
+    final int replyId = 1;
+    final long messageData = 1234;
     messenger.handleMessageFromDart(channel, message, replyId, messageData);
     verify(fakeFlutterJni).cleanupMessageData(eq(messageData));
   }
@@ -187,8 +187,9 @@ public class DartMessengerTest {
         };
     messenger.setMessageHandler(channel, handler, taskQueue);
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
-    int replyId = 1;
-    long messageData = 1234;
+    final int replyId = 1;
+    final long messageData = 1234;
+
     messenger.handleMessageFromDart(channel, message, replyId, messageData);
     verify(fakeFlutterJni).cleanupMessageData(eq(messageData));
   }
@@ -199,8 +200,8 @@ public class DartMessengerTest {
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
     final String channel = "foobar";
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
-    int replyId = 1;
-    long messageData = 1234;
+    final int replyId = 1;
+    final long messageData = 1234;
 
     messenger.handleMessageFromDart(channel, message, replyId, messageData);
     shadowOf(getMainLooper()).idle();
@@ -214,8 +215,8 @@ public class DartMessengerTest {
     final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
     final String channel = "foobar";
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
-    int replyId = 1;
-    long messageData = 1234;
+    final int replyId = 1;
+    final long messageData = 1234;
 
     messenger.enableBufferingIncomingMessages();
     messenger.handleMessageFromDart(channel, message, replyId, messageData);
