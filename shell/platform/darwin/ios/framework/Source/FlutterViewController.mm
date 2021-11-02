@@ -1113,7 +1113,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   }
 
-  // Ignore keyboard notifications if engine’s viewController is not current viewController
+  // Ignore keyboard notifications if engine’s viewController is not current viewController.
   if ([_engine.get() viewController] != self) {
     return;
   }
@@ -1121,7 +1121,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
 
-  // Get the animation duration and curve
+  // Get the animation duration and curve.
   NSTimeInterval duration =
       [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
   UIViewAnimationCurve curve =
@@ -1143,18 +1143,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  // When keyboard hide,the keyboardWillChangeFrame function will be called to update viewport
-  // metrics. So do not call [self updateViewportMetrics] here again
+  // When keyboard hide, the keyboardWillChangeFrame function will be called to update viewport
+  // metrics. So do not call [self updateViewportMetrics] here again.
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration curve:(UIViewAnimationCurve)curve {
-  // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing
+  // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing.
   if (_viewportMetrics.physical_view_inset_bottom == self.targetViewInsetBottom) {
     return;
   }
 
   // When call this method first time,
-  // initialize the keyboardAnimationView to get animation interpolation during animation
+  // initialize the keyboardAnimationView to get animation interpolation during animation.
   if ([self keyboardAnimationView] == nil) {
     UIView* keyboardAnimationView = [[UIView alloc] init];
     [keyboardAnimationView setUserInteractionEnabled:NO];
@@ -1165,11 +1165,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     [self.view addSubview:[self keyboardAnimationView]];
   }
 
-  // Remove running animation when start another animation,After calling this line
-  //,the old display link will invalidate
+  // Remove running animation when start another animation.
+  // After calling this line,the old display link will invalidate.
   [[self keyboardAnimationView].layer removeAllAnimations];
 
-  // Set animation begin value
+  // Set animation begin value.
   [self keyboardAnimationView].frame =
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
 
@@ -1179,7 +1179,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   [UIView animateWithDuration:duration
       animations:^{
-        // Set end value
+        // Set end value.
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
@@ -1200,7 +1200,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)ensureViewportMetricsIsCorrect {
   if (_viewportMetrics.physical_view_inset_bottom != self.targetViewInsetBottom) {
-    // Make sure the `physical_view_inset_bottom` is the target value
+    // Make sure the `physical_view_inset_bottom` is the target value.
     _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
     [self updateViewportMetrics];
   }
@@ -1208,7 +1208,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)onDisplayLink {
   if ([self keyboardAnimationView].superview == nil) {
-    // Ensure the keyboardAnimationView is in view hierarchy when animation running
+    // Ensure the keyboardAnimationView is in view hierarchy when animation running.
     [self.view addSubview:[self keyboardAnimationView]];
   }
   if ([self keyboardAnimationView].layer.presentationLayer) {
