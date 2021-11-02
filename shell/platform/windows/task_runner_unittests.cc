@@ -67,15 +67,16 @@ TEST(TaskRunnerTest, MaybeExecuteTaskOnlyExpired) {
         executed_task.insert(expired_task->task);
       });
 
+  const uint64_t time_delta = 1000000000;  // 1 second in nanoseconds.
   uint64_t time_now = MockGetCurrentTime();
 
   uint64_t task_expired_before_now = 1;
-  uint64_t time_before_now = time_now - 10000;
+  uint64_t time_before_now = time_now - time_delta;
   runner.PostFlutterTask(FlutterTask{nullptr, task_expired_before_now},
                          time_before_now);
 
   uint64_t task_expired_after_now = 2;
-  uint64_t time_after_now = time_now + 10000;
+  uint64_t time_after_now = time_now + time_delta;
   runner.PostFlutterTask(FlutterTask{nullptr, task_expired_after_now},
                          time_after_now);
 
