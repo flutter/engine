@@ -258,7 +258,8 @@ public class PlatformPlugin {
         // support will allow users to restore the system ui and dismiss the overlays.
         // Not compatible with top/bottom overlays enabled.
         if (Build.VERSION.SDK_INT >= 30) {
-          windowInsetsControllerCompat.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
+          windowInsetsControllerCompat
+            .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
           window.setDecorFitsSystemWindows(false);
           windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
           windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
@@ -283,7 +284,8 @@ public class PlatformPlugin {
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
       if (Build.VERSION.SDK_INT >= 30) {
-        windowInsetsControllerCompat.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
+        windowInsetsControllerCompat
+          .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
         window.setDecorFitsSystemWindows(false);
         windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
         windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
@@ -308,7 +310,8 @@ public class PlatformPlugin {
       // allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
       if (Build.VERSION.SDK_INT >= 30) {
-        windowInsetsControllerCompat.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        windowInsetsControllerCompat
+          .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         window.setDecorFitsSystemWindows(false);
         windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
         windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
@@ -371,7 +374,7 @@ public class PlatformPlugin {
       windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
       window.setDecorFitsSystemWindows(false);
       windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
-    } //todo move this
+    }
 
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
     // apply it
