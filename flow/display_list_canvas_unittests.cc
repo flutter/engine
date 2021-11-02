@@ -323,8 +323,6 @@ class RenderEnvironment {
   const SkPixmap* ref_pixmap_ = nullptr;
 };
 
-class CaseParameters;
-
 class TestParameters {
  public:
   TestParameters(const CvRenderer& cv_renderer,
@@ -398,7 +396,7 @@ class TestParameters {
           SkPathEffect::kDash_DashType) {
         return false;
       }
-      if (!ignores_dashes_) {
+      if (!ignores_dashes()) {
         return false;
       }
     }
@@ -447,15 +445,15 @@ class TestParameters {
   const BoundsTolerance adjust(const BoundsTolerance& tolerance,
                                const SkPaint& paint,
                                const SkMatrix& matrix) const {
-    if (is_draw_text_blob_ && tolerance.discrete_offset() > 0) {
+    if (is_draw_text_blob() && tolerance.discrete_offset() > 0) {
       // drawTextBlob needs just a little more leeway when using a
       // discrete path effect.
       return tolerance.addBoundsPadding(2, 2);
     }
-    if (is_draw_line_) {
+    if (is_draw_line()) {
       return lineAdjust(tolerance, paint, matrix);
     }
-    if (is_draw_arc_center_) {
+    if (is_draw_arc_center()) {
       if (paint.getStyle() != SkPaint::kFill_Style &&
           paint.getStrokeJoin() == SkPaint::kMiter_Join) {
         // the miter join at the center of an arc does not really affect
@@ -467,11 +465,6 @@ class TestParameters {
         return tolerance.addBoundsPadding(miter_pad, miter_pad);
       }
     }
-    // Shadow primitives could use just a little more horizontal bounds
-    // tolerance when drawn with a perspective transform.
-    // if (is_draw_shadows_ && matrix.hasPerspective()) {
-    //   return tolerance.mulScale(1.04, 1.0);
-    // }
     return tolerance;
   }
 
@@ -502,11 +495,11 @@ class TestParameters {
     }
     SkScalar hTolerance;
     SkScalar vTolerance;
-    if (is_horizontal_line_) {
-      FML_DCHECK(!is_vertical_line_);
+    if (is_horizontal_line()) {
+      FML_DCHECK(!is_vertical_line());
       hTolerance = adjust;
       vTolerance = 0;
-    } else if (is_vertical_line_) {
+    } else if (is_vertical_line()) {
       hTolerance = 0;
       vTolerance = adjust;
     } else {
@@ -551,8 +544,10 @@ class TestParameters {
   bool is_draw_text_blob() const { return is_draw_text_blob_; }
   bool is_draw_display_list() const { return is_draw_display_list_; }
   bool is_draw_line() const { return is_draw_line_; }
+  bool is_draw_arc_center() const { return is_draw_arc_center_; }
   bool is_horizontal_line() const { return is_horizontal_line_; }
   bool is_vertical_line() const { return is_vertical_line_; }
+  bool ignores_dashes() const { return ignores_dashes_; }
 
   TestParameters& set_draw_shadows() {
     is_draw_shadows_ = true;
@@ -594,10 +589,6 @@ class TestParameters {
     is_vertical_line_ = true;
     return *this;
   }
-  TestParameters& set_max_miter_limit(SkScalar limit) {
-    max_miter_limit_ = limit;
-    return *this;
-  }
 
  private:
   const CvRenderer& cv_renderer_;
@@ -614,8 +605,6 @@ class TestParameters {
   bool ignores_dashes_ = false;
   bool is_horizontal_line_ = false;
   bool is_vertical_line_ = false;
-
-  SkScalar max_miter_limit_ = 1E9;
 };
 
 class CaseParameters {
@@ -729,15 +718,13 @@ class CanvasCompareTester {
     SkColor alpha_layer_color = SkColorSetARGB(0x7f, 0x00, 0xff, 0xff);
     SkColor default_color = SkPaint().getColor();
     CvRenderer cv_restore = [=](SkCanvas* cv, const SkPaint& p) {
-      // Draw more than one primitive to disable peephole optimizations
+      // Draw another primitive to disable peephole optimizations
       cv->drawRect(RenderBounds.makeOffset(500, 500), p);
-      // params.cv_renderer()(cv, p);
       cv->restore();
     };
     DlRenderer dl_restore = [=](DisplayListBuilder& b) {
-      // Draw more than one primitive to disable peephole optimizations
+      // Draw another primitive to disable peephole optimizations
       b.drawRect(RenderBounds.makeOffset(500, 500));
-      // params.dl_renderer()(b);
       b.restore();
     };
     SkRect layer_bounds = RenderBounds.makeInset(15, 15);
@@ -2116,8 +2103,7 @@ TEST_F(DisplayListCanvas, DrawRect) {
           [=](DisplayListBuilder& builder) {  //
             builder.drawRect(RenderBounds.makeOffset(0.5, 0.5));
           },
-          kDrawRectFlags)
-          .set_max_miter_limit(1.4));
+          kDrawRectFlags));
 }
 
 TEST_F(DisplayListCanvas, DrawOval) {
