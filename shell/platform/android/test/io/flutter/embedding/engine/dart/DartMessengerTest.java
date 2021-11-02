@@ -1,13 +1,18 @@
 package io.flutter.embedding.engine.dart;
 
+import static android.os.Looper.getMainLooper;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.robolectric.Shadows.shadowOf;
 
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartMessenger.DartMessengerTaskQueue;
@@ -16,6 +21,7 @@ import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import java.nio.ByteBuffer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -155,8 +161,8 @@ public class DartMessengerTest {
   public void cleansUpMessageData() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
-    BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    String channel = "foobar";
+    final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
+    final String channel = "foobar";
     BinaryMessenger.BinaryMessageHandler handler =
         (ByteBuffer message, BinaryMessenger.BinaryReply reply) -> {
           reply.reply(null);
@@ -173,8 +179,8 @@ public class DartMessengerTest {
   public void cleansUpMessageDataOnError() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
-    BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
-    String channel = "foobar";
+    final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
+    final String channel = "foobar";
     BinaryMessenger.BinaryMessageHandler handler =
         (ByteBuffer message, BinaryMessenger.BinaryReply reply) -> {
           throw new RuntimeException("hello");
@@ -185,5 +191,49 @@ public class DartMessengerTest {
     long messageData = 1234;
     messenger.handleMessageFromDart(channel, message, replyId, messageData);
     verify(fakeFlutterJni).cleanupMessageData(eq(messageData));
+  }
+
+  @Test
+  public void emptyResponseWhenHandlerIsNotSet() throws InterruptedException {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final String channel = "foobar";
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    int replyId = 1;
+    long messageData = 1234;
+    messenger.handleMessageFromDart(channel, message, replyId, messageData);
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni).invokePlatformMessageEmptyResponseCallback(replyId);
+  }
+
+  @Test
+  public void buffersResponseWhenHandlerIsNotSet() throws InterruptedException {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
+    final String channel = "foobar";
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    int replyId = 1;
+    long messageData = 1234;
+
+    messenger.enableBufferingIncomingMessages();
+    messenger.handleMessageFromDart(channel, message, replyId, messageData);
+
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(eq(replyId));
+
+    final BinaryMessenger.BinaryMessageHandler handler =
+        (ByteBuffer msg, BinaryMessenger.BinaryReply reply) -> {
+          reply.reply(ByteBuffer.wrap("done".getBytes()));
+        };
+    messenger.setMessageHandler(channel, handler, taskQueue);
+
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(eq(replyId));
+
+    final ArgumentCaptor<ByteBuffer> response = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(fakeFlutterJni)
+        .invokePlatformMessageResponseCallback(anyInt(), response.capture(), anyInt());
+    assertArrayEquals("done".getBytes(), response.getValue().array());
   }
 }
