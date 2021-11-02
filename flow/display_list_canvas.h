@@ -120,7 +120,8 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
 // Receives all methods on SkCanvas and sends them to a DisplayListBuilder
 class DisplayListCanvasRecorder
     : public SkCanvasVirtualEnforcer<SkNoDrawCanvas>,
-      public SkRefCnt {
+      public SkRefCnt,
+      DisplayListOpFlags {
  public:
   DisplayListCanvasRecorder(const SkRect& bounds);
 

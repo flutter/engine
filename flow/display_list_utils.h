@@ -267,7 +267,8 @@ class DisplayListBoundsCalculator final
     : public virtual Dispatcher,
       public virtual IgnoreAttributeDispatchHelper,
       public virtual SkMatrixDispatchHelper,
-      public virtual ClipBoundsDispatchHelper {
+      public virtual ClipBoundsDispatchHelper,
+      DisplayListOpFlags {
  public:
   // Construct a Calculator to determine the bounds of a list of
   // DisplayList dispatcher method calls. Since 2 of the method calls

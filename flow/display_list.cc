@@ -1175,8 +1175,9 @@ void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style,
   }
 }
 
-void DisplayListBuilder::setAttributesFromPaint(const SkPaint& paint,
-                                                const DisplayListAttributeFlags flags) {
+void DisplayListBuilder::setAttributesFromPaint(
+    const SkPaint& paint,
+    const DisplayListAttributeFlags flags) {
   if (flags.applies_anti_alias()) {
     setAntiAlias(paint.isAntiAlias());
   }
@@ -1545,6 +1546,7 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
       : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
 }
 
+// clang-format off
 // Flags common to all primitives that apply colors
 #define PAINT_FLAGS (kUsesDither_ |      \
                      kUsesColor_ |       \
@@ -1573,137 +1575,131 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
                           kUsesBlend_ |       \
                           kUsesColorFilter_ | \
                           kUsesImageFilter_)
+// clang-format on
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kSaveLayerFlags =
-        DisplayListAttributeFlags(kIgnoresPaint_);
+const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kSaveLayerWithPaintFlags =
-        DisplayListAttributeFlags(kIsNonGeometric_ |   //
-                                  kUsesAlpha_ |        //
-                                  kUsesBlend_ |        //
-                                  kUsesColorFilter_ |  //
-                                  kUsesImageFilter_);
+const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerWithPaintFlags =
+    DisplayListAttributeFlags(kIsNonGeometric_ |   //
+                              kUsesAlpha_ |        //
+                              kUsesBlend_ |        //
+                              kUsesColorFilter_ |  //
+                              kUsesImageFilter_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawColorFlags =
-        DisplayListAttributeFlags(kFloodsSurface_ | kIgnoresPaint_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawColorFlags =
+    DisplayListAttributeFlags(kFloodsSurface_ | kIgnoresPaint_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawPaintFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | kFloodsSurface_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPaintFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | kFloodsSurface_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawHVLineFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawHVLineFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS | kMayHaveCaps_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawLineFlags =
-        kDrawHVLineFlags.with(kMayHaveDiagonalCaps_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawLineFlags =
+    kDrawHVLineFlags.with(kMayHaveDiagonalCaps_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawRectFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawRectFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveJoins_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawOvalFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawOvalFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawCircleFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawCircleFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawRRectFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawRRectFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawDRRectFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawDRRectFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawPathFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS | kMayHaveDiagonalCaps_ | kMayHaveAcuteJoins_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPathFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_ |
+                              kMayHaveJoins_ | kMayHaveAcuteJoins_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawArcFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS | kMayHaveDiagonalCaps_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawArcNoCenterFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawPointsAsPointsFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawArcWithCenterFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveJoins_ | kMayHaveAcuteJoins_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawPointsAsLinesFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS | kMayHaveDiagonalCaps_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsPointsFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
+                              kMayHaveCaps_ | kButtCapIsSquare_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsLinesFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
 
 // Polygon mode just draws (count-1) separate lines, no joins
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawPointsAsPolygonFlags =
-        DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS | kMayHaveDiagonalCaps_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsPolygonFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawVerticesFlags =
-        DisplayListAttributeFlags(kIsNonGeometric_ |  //
-                                  kUsesDither_ |
-                                  kUsesAlpha_ |
-                                  kUsesShader_ |      //
-                                  kUsesBlend_ |
-                                  kUsesColorFilter_ |
-                                  kUsesImageFilter_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawVerticesFlags =
+    DisplayListAttributeFlags(kIsNonGeometric_ |   //
+                              kUsesDither_ |       //
+                              kUsesAlpha_ |        //
+                              kUsesShader_ |       //
+                              kUsesBlend_ |        //
+                              kUsesColorFilter_ |  //
+                              kUsesImageFilter_);
 
-const DisplayListAttributeFlags  //
-    DisplayListAttributeFlags::kDrawImageFlags =
-        DisplayListAttributeFlags(kIgnoresPaint_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
-const DisplayListAttributeFlags                            //
-    DisplayListAttributeFlags::kDrawImageWithPaintFlags =  //
-        DisplayListAttributeFlags(IMAGE_FLAGS_BASE | kUsesAntiAlias_ | kUsesMaskFilter_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageWithPaintFlags =
+    DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
+                              kUsesAntiAlias_ | kUsesMaskFilter_);
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawImageRectFlags =
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageRectFlags =
     DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags
-    DisplayListAttributeFlags::kDrawImageRectWithPaintFlags =
-        DisplayListAttributeFlags(IMAGE_FLAGS_BASE | kUsesAntiAlias_ | kUsesMaskFilter_);
+    DisplayListOpFlags::kDrawImageRectWithPaintFlags =
+        DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
+                                  kUsesAntiAlias_ | kUsesMaskFilter_);
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawImageNineFlags =
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageNineFlags =
     DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags
-    DisplayListAttributeFlags::kDrawImageNineWithPaintFlags =
+    DisplayListOpFlags::kDrawImageNineWithPaintFlags =
         DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
 
-const DisplayListAttributeFlags
-    DisplayListAttributeFlags::kDrawImageLatticeFlags =
-        DisplayListAttributeFlags(kIgnoresPaint_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageLatticeFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags
-    DisplayListAttributeFlags::kDrawImageLatticeWithPaintFlags =
+    DisplayListOpFlags::kDrawImageLatticeWithPaintFlags =
         DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawAtlasFlags =
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasFlags =
     DisplayListAttributeFlags(kIgnoresPaint_);
 
-const DisplayListAttributeFlags
-    DisplayListAttributeFlags::kDrawAtlasWithPaintFlags =
-        DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasWithPaintFlags =
+    DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawPictureFlags =
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureFlags =
     DisplayListAttributeFlags(kIgnoresPaint_);
 
-const DisplayListAttributeFlags
-    DisplayListAttributeFlags::kDrawPictureWithPaintFlags =
-        kSaveLayerWithPaintFlags;
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureWithPaintFlags =
+    kSaveLayerWithPaintFlags;
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawDisplayListFlags =
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawDisplayListFlags =
     DisplayListAttributeFlags(kIgnoresPaint_);
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawTextBlobFlags =
-    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS).without(kUsesAntiAlias_);
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawTextBlobFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveJoins_)
+        .without(kUsesAntiAlias_);
 
-const DisplayListAttributeFlags DisplayListAttributeFlags::kDrawShadowFlags =
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawShadowFlags =
     DisplayListAttributeFlags(kIgnoresPaint_);
 
 #undef PAINT_FLAGS

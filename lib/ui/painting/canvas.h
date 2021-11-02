@@ -23,7 +23,7 @@ class DartLibraryNatives;
 namespace flutter {
 class CanvasImage;
 
-class Canvas : public RefCountedDartWrappable<Canvas> {
+class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(Canvas);
 

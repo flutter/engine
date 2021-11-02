@@ -477,16 +477,8 @@ class Dispatcher {
 /// This class contains only protected definitions and helper methods
 /// for the public classes |DisplayListAttributeFlags| and
 /// |DisplayListSpecialGeometryFlags|.
-class DisplayListFlagsBase {
+class DisplayListFlags {
  protected:
-  DisplayListFlagsBase(int flags) : flags_(flags) {}
-
-  const int flags_;
-
-  bool has_any(int qFlags) const { return (flags_ & qFlags) != 0; }
-  bool has_all(int qFlags) const { return (flags_ & qFlags) == qFlags; }
-  bool has_none(int qFlags) const { return (flags_ & qFlags) == 0; }
-
   // A drawing operation that is not geometric in nature (but which
   // may still apply a MaskFilter - see |kApplyMaskFilter| below).
   static constexpr int kIsNonGeometric_ = 0;
@@ -515,6 +507,10 @@ class DisplayListFlagsBase {
   // natural bounds, such as |drawColor| or |drawPaint|.
   static constexpr int kFloodsSurface_ = 1 << 3;
 
+  static constexpr int kMayHaveCaps_ = 1 << 4;
+  static constexpr int kMayHaveJoins_ = 1 << 5;
+  static constexpr int kButtCapIsSquare_ = 1 << 6;
+
   // A geometric operation which has a path that might have
   // end caps that are not rectilinear which means that square
   // end caps might project further than half the stroke width
@@ -523,7 +519,7 @@ class DisplayListFlagsBase {
   // diagonal end caps. |drawLine| might have diagonal end
   // caps depending on the angle of the line, and more likely
   // |drawPath| will often have such end caps.
-  static constexpr int kMayHaveDiagonalCaps_ = 1 << 4;
+  static constexpr int kMayHaveDiagonalCaps_ = 1 << 7;
 
   // A geometric operation which has joined vertices that are
   // not guaranteed to be smooth (angles of incoming and outgoing)
@@ -534,9 +530,10 @@ class DisplayListFlagsBase {
   // |drawRect|, |drawOval| and |drawRRect| all have well
   // behaved joins, but |drawPath| might have joins that cause
   // mitered extensions outside the pre-transformed bounding box.
-  static constexpr int kMayHaveAcuteJoins_ = 1 << 5;
+  static constexpr int kMayHaveAcuteJoins_ = 1 << 8;
 
-  static constexpr int kAnySpecialGeometryMask_ =  //
+  static constexpr int kAnySpecialGeometryMask_ =           //
+      kMayHaveCaps_ | kMayHaveJoins_ | kButtCapIsSquare_ |  //
       kMayHaveDiagonalCaps_ | kMayHaveAcuteJoins_;
 
   // clang-format off
@@ -550,13 +547,25 @@ class DisplayListFlagsBase {
   static constexpr int kUsesPathEffect_      = 1 << 17;
   static constexpr int kUsesMaskFilter_      = 1 << 18;
   static constexpr int kUsesImageFilter_     = 1 << 19;
-  static constexpr int kIgnoresPaint_        = 1 << 20;
+
+  static constexpr int kIgnoresPaint_        = 1 << 30;
   // clang-format on
-  
+
   static constexpr int kAnyAttributeMask_ =  //
-      kUsesAntiAlias_ | kUsesDither_ | kUsesColor_ | kUsesAlpha_ | kUsesBlend_ |
+      kUsesAntiAlias_ | kUsesDither_ | kUsesAlpha_ | kUsesColor_ | kUsesBlend_ |
       kUsesShader_ | kUsesColorFilter_ | kUsesPathEffect_ | kUsesMaskFilter_ |
       kUsesImageFilter_;
+};
+
+class DisplayListFlagsBase : protected DisplayListFlags {
+ protected:
+  DisplayListFlagsBase(int flags) : flags_(flags) {}
+
+  const int flags_;
+
+  bool has_any(int qFlags) const { return (flags_ & qFlags) != 0; }
+  bool has_all(int qFlags) const { return (flags_ & qFlags) == qFlags; }
+  bool has_none(int qFlags) const { return (flags_ & qFlags) == 0; }
 };
 
 /// An attribute class for advertising specific properties of
@@ -564,20 +573,28 @@ class DisplayListFlagsBase {
 /// the bounds of the primitive.
 class DisplayListSpecialGeometryFlags : DisplayListFlagsBase {
  public:
+  /// The geometry may have segments that end without closing the path.
+  bool may_have_end_caps() const { return has_any(kMayHaveCaps_); }
+
+  /// The geometry may have segments connect non-continuously.
+  bool may_have_joins() const { return has_any(kMayHaveJoins_); }
+
+  /// Mainly for drawPoints(PointMode) where Butt caps are rendered as squares.
+  bool butt_cap_becomes_square() const { return has_any(kButtCapIsSquare_); }
+
   /// The geometry may have segments that end on a diagonal
   /// such that their end caps extend further than the default
   /// |strokeWidth * 0.5| margin around the geometry.
-  bool may_have_diagonal_caps() { return has_any(kMayHaveDiagonalCaps_); }
+  bool may_have_diagonal_caps() const { return has_any(kMayHaveDiagonalCaps_); }
 
   /// The geometry may have segments that meet at vertices at
   /// an acute angle such that the miter joins will extend
   /// further than the default |strokeWidth * 0.5| margin around
   /// the geometry.
-  bool may_have_acute_joins() { return has_any(kMayHaveAcuteJoins_); }
+  bool may_have_acute_joins() const { return has_any(kMayHaveAcuteJoins_); }
 
  private:
-  DisplayListSpecialGeometryFlags(int flags)
-      : DisplayListFlagsBase(flags) {
+  DisplayListSpecialGeometryFlags(int flags) : DisplayListFlagsBase(flags) {
     FML_DCHECK((flags & kAnySpecialGeometryMask_) == flags);
   }
 
@@ -590,40 +607,6 @@ class DisplayListSpecialGeometryFlags : DisplayListFlagsBase {
 
 class DisplayListAttributeFlags : DisplayListFlagsBase {
  public:
-  static const DisplayListAttributeFlags kSaveLayerFlags;
-  static const DisplayListAttributeFlags kSaveLayerWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawColorFlags;
-  static const DisplayListAttributeFlags kDrawPaintFlags;
-  static const DisplayListAttributeFlags kDrawLineFlags;
-  // Special case flags for horizonal and vertical lines
-  static const DisplayListAttributeFlags kDrawHVLineFlags;
-  static const DisplayListAttributeFlags kDrawRectFlags;
-  static const DisplayListAttributeFlags kDrawOvalFlags;
-  static const DisplayListAttributeFlags kDrawCircleFlags;
-  static const DisplayListAttributeFlags kDrawRRectFlags;
-  static const DisplayListAttributeFlags kDrawDRRectFlags;
-  static const DisplayListAttributeFlags kDrawPathFlags;
-  static const DisplayListAttributeFlags kDrawArcFlags;
-  static const DisplayListAttributeFlags kDrawPointsAsPointsFlags;
-  static const DisplayListAttributeFlags kDrawPointsAsLinesFlags;
-  static const DisplayListAttributeFlags kDrawPointsAsPolygonFlags;
-  static const DisplayListAttributeFlags kDrawVerticesFlags;
-  static const DisplayListAttributeFlags kDrawImageFlags;
-  static const DisplayListAttributeFlags kDrawImageWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawImageRectFlags;
-  static const DisplayListAttributeFlags kDrawImageRectWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawImageNineFlags;
-  static const DisplayListAttributeFlags kDrawImageNineWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawImageLatticeFlags;
-  static const DisplayListAttributeFlags kDrawImageLatticeWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawAtlasFlags;
-  static const DisplayListAttributeFlags kDrawAtlasWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawPictureFlags;
-  static const DisplayListAttributeFlags kDrawPictureWithPaintFlags;
-  static const DisplayListAttributeFlags kDrawDisplayListFlags;
-  static const DisplayListAttributeFlags kDrawTextBlobFlags;
-  static const DisplayListAttributeFlags kDrawShadowFlags;
-
   const DisplayListSpecialGeometryFlags WithPathEffect(
       sk_sp<SkPathEffect> effect) const {
     if (is_geometric() && effect) {
@@ -635,12 +618,12 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
         // end caps to areas that might not have had them before so all
         // we need to do is to indicate the potential for diagonal
         // end caps and move on.
-        return special_flags_.with(kMayHaveDiagonalCaps_);
+        return special_flags_.with(kMayHaveCaps_ | kMayHaveDiagonalCaps_);
       } else {
         // An arbitrary path effect can introduce joins at an arbitrary
         // angle and may change the geometry of the end caps
-        return special_flags_.with(kMayHaveDiagonalCaps_ |  //
-                                   kMayHaveAcuteJoins_);
+        return special_flags_.with(kMayHaveCaps_ | kMayHaveDiagonalCaps_ |
+                                   kMayHaveJoins_ | kMayHaveAcuteJoins_);
       }
     }
     return special_flags_;
@@ -652,7 +635,9 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   bool applies_dither() const { return has_any(kUsesDither_); }
   bool applies_color() const { return has_any(kUsesColor_); }
   bool applies_alpha() const { return has_any(kUsesAlpha_); }
-  bool applies_alpha_or_color() const { return has_any(kUsesAlpha_ | kUsesColor_); }
+  bool applies_alpha_or_color() const {
+    return has_any(kUsesAlpha_ | kUsesColor_);
+  }
 
   /// The primitive dynamically determines whether it is a stroke or fill
   /// operation (or both) based on the setting of the |Style| attribute.
@@ -665,7 +650,7 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   /// is known then a more accurate answer can be returned from
   /// the |is_stroked| method by supplying the actual setting of
   /// the style.
-  bool applies_stroke_attributes() const { return is_stroked(); }
+  // bool applies_stroke_attributes() const { return is_stroked(); }
 
   bool applies_shader() const { return has_any(kUsesShader_); }
   /// The primitive honors the current SkColorFilter, including
@@ -680,20 +665,20 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   bool applies_image_filter() const { return has_any(kUsesImageFilter_); }
 
   bool is_geometric() const { return has_any(kIsAnyGeometryMask_); }
+  bool always_stroked() const { return has_any(kIsStrokedGeometry_); }
   bool is_stroked(SkPaint::Style style = SkPaint::Style::kStroke_Style) const {
     return (
         has_any(kIsStrokedGeometry_) ||
         (style != SkPaint::Style::kFill_Style && has_any(kIsDrawnGeometry_)));
   }
-  bool is_flood() const {
-    return has_any(kFloodsSurface_);
-  }
 
-  bool may_stroke_geometry() {
-    return has_any(kIsDrawnGeometry_ | kIsStrokedGeometry_);
-  }
-  /// Only valid after calling |WithStyle| with the current |Style|
-  bool does_stroke_geometry() { return has_any(kIsStrokedGeometry_); }
+  bool is_flood() const { return has_any(kFloodsSurface_); }
+
+  // bool may_stroke_geometry() {
+  //   return has_any(kIsDrawnGeometry_ | kIsStrokedGeometry_);
+  // }
+  // /// Only valid after calling |WithStyle| with the current |Style|
+  // bool does_stroke_geometry() { return has_any(kIsStrokedGeometry_); }
 
  private:
   DisplayListAttributeFlags(int flags)
@@ -718,12 +703,47 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
     return (flags_ & ~remove);
   }
 
-  const DisplayListAttributeFlags with(
-      const DisplayListAttributeFlags& extra) const {
-    return with(extra.flags_);
-  }
-
   const DisplayListSpecialGeometryFlags special_flags_;
+
+  friend class DisplayListOpFlags;
+};
+
+class DisplayListOpFlags : DisplayListFlags {
+ public:
+  static const DisplayListAttributeFlags kSaveLayerFlags;
+  static const DisplayListAttributeFlags kSaveLayerWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawColorFlags;
+  static const DisplayListAttributeFlags kDrawPaintFlags;
+  static const DisplayListAttributeFlags kDrawLineFlags;
+  // Special case flags for horizonal and vertical lines
+  static const DisplayListAttributeFlags kDrawHVLineFlags;
+  static const DisplayListAttributeFlags kDrawRectFlags;
+  static const DisplayListAttributeFlags kDrawOvalFlags;
+  static const DisplayListAttributeFlags kDrawCircleFlags;
+  static const DisplayListAttributeFlags kDrawRRectFlags;
+  static const DisplayListAttributeFlags kDrawDRRectFlags;
+  static const DisplayListAttributeFlags kDrawPathFlags;
+  static const DisplayListAttributeFlags kDrawArcNoCenterFlags;
+  static const DisplayListAttributeFlags kDrawArcWithCenterFlags;
+  static const DisplayListAttributeFlags kDrawPointsAsPointsFlags;
+  static const DisplayListAttributeFlags kDrawPointsAsLinesFlags;
+  static const DisplayListAttributeFlags kDrawPointsAsPolygonFlags;
+  static const DisplayListAttributeFlags kDrawVerticesFlags;
+  static const DisplayListAttributeFlags kDrawImageFlags;
+  static const DisplayListAttributeFlags kDrawImageWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawImageRectFlags;
+  static const DisplayListAttributeFlags kDrawImageRectWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawImageNineFlags;
+  static const DisplayListAttributeFlags kDrawImageNineWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawImageLatticeFlags;
+  static const DisplayListAttributeFlags kDrawImageLatticeWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawAtlasFlags;
+  static const DisplayListAttributeFlags kDrawAtlasWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawPictureFlags;
+  static const DisplayListAttributeFlags kDrawPictureWithPaintFlags;
+  static const DisplayListAttributeFlags kDrawDisplayListFlags;
+  static const DisplayListAttributeFlags kDrawTextBlobFlags;
+  static const DisplayListAttributeFlags kDrawShadowFlags;
 };
 
 // The primary class used to build a display list. The list of methods
@@ -825,6 +845,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
       onSetMaskBlurFilter(style, sigma);
     }
   }
+
   bool isAntiAlias() const { return current_anti_alias_; }
   bool isDither() const { return current_dither_; }
   SkPaint::Style getStyle() const { return current_style_; }
@@ -844,9 +865,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
     return current_blend_mode_;
   }
   sk_sp<SkBlender> getBlender() const {
-    return current_blender_
-        ? current_blender_
-        : SkBlender::Mode(current_blend_mode_);
+    return current_blender_ ? current_blender_
+                            : SkBlender::Mode(current_blend_mode_);
   }
   sk_sp<SkPathEffect> getPathEffect() const { return current_path_effect_; }
   sk_sp<SkMaskFilter> getMaskFilter() const { return current_mask_filter_; }
