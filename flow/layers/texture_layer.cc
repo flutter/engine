@@ -35,6 +35,7 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   // assumption is that the retained subtree will render identically to previous
   // frame. This does not hold true if there is TextureLayer in the hierarchy.
   // See ContainerLayer::DiffChildren
+  // https://github.com/flutter/flutter/issues/92925
   context->AddReadbackRegion(SkIRect::MakeEmpty());
   context->AddLayerBounds(SkRect::MakeXYWH(offset_.x(), offset_.y(),
                                            size_.width(), size_.height()));
