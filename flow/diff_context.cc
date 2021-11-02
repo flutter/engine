@@ -40,7 +40,8 @@ DiffContext::State::State()
     : dirty(false),
       cull_rect(kGiantRect),
       rect_index_(0),
-      has_filter_bounds_adjustment(false) {}
+      has_filter_bounds_adjustment(false),
+      has_texture(false) {}
 
 void DiffContext::PushTransform(const SkMatrix& transform) {
   state_.transform.preConcat(transform);
@@ -140,6 +141,16 @@ void DiffContext::AddLayerBounds(const SkRect& rect) {
   }
 }
 
+void DiffContext::MarkSubtreeHasTextureLayer() {
+  // Set the has_texture flag on current state and all parent states. That
+  // way we'll know that we can't skip diff for retained layers because
+  // they contain a TextureLayer.
+  for (auto& state : state_stack_) {
+    state.has_texture = true;
+  }
+  state_.has_texture = true;
+}
+
 void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
   // Adding paint region for retained layer implies that current subtree is not
   // dirty, so we know, for example, that the inherited transforms must match
@@ -162,7 +173,8 @@ PaintRegion DiffContext::CurrentSubtreeRegion() const {
   bool has_readback = std::any_of(
       readbacks_.begin(), readbacks_.end(),
       [&](const Readback& r) { return r.position >= state_.rect_index_; });
-  return PaintRegion(rects_, state_.rect_index_, rects_->size(), has_readback);
+  return PaintRegion(rects_, state_.rect_index_, rects_->size(), has_readback,
+                     state_.has_texture);
 }
 
 void DiffContext::AddDamage(const PaintRegion& damage) {
