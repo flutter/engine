@@ -71,8 +71,8 @@ class ShellIOManager final : public IOManager {
 
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
-  fml::WeakPtrFactory<ShellIOManager>
-      weak_factory_;  // Must be the last member.
+  fml::WeakPtrFactory<ShellIOManager> weak_factory_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ShellIOManager);
 };
 

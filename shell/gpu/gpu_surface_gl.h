@@ -54,6 +54,14 @@ class GPUSurfaceGL : public Surface {
   bool AllowsDrawingWhenGpuDisabled() const override;
 
  private:
+  bool CreateOrUpdateSurfaces(const SkISize& size);
+
+  sk_sp<SkSurface> AcquireRenderSurface(
+      const SkISize& untransformed_size,
+      const SkMatrix& root_surface_transformation);
+
+  bool PresentSurface(SkCanvas* canvas);
+
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
   sk_sp<SkSurface> onscreen_surface_;
@@ -67,16 +75,8 @@ class GPUSurfaceGL : public Surface {
   const bool render_to_surface_ = true;
   bool valid_ = false;
 
-  bool CreateOrUpdateSurfaces(const SkISize& size);
-
-  sk_sp<SkSurface> AcquireRenderSurface(
-      const SkISize& untransformed_size,
-      const SkMatrix& root_surface_transformation);
-
-  bool PresentSurface(SkCanvas* canvas);
-
-  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL>
-      weak_factory_;  // Must be the last member.
+  // WeakPtrFactory must be the last member.
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGL> weak_factory_;
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGL);
 };
 

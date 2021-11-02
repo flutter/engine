@@ -48,7 +48,8 @@ class VsyncWaiter final : public flutter::VsyncWaiter {
 
   fml::WeakPtr<VsyncWaiter> weak_ui_;
   std::unique_ptr<fml::WeakPtrFactory<VsyncWaiter>> weak_factory_ui_;
-  fml::WeakPtrFactory<VsyncWaiter> weak_factory_;  // Must be the last member.
+  fml::WeakPtrFactory<VsyncWaiter> weak_factory_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiter);
 };
 

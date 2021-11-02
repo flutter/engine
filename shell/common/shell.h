@@ -685,9 +685,8 @@ class Shell final : public PlatformView::Delegate,
   // rasterizer callbacks.
   std::unique_ptr<fml::TaskRunnerAffineWeakPtrFactory<Shell>> weak_factory_gpu_;
 
+  fml::WeakPtrFactory<Shell> weak_factory_;
   friend class testing::ShellTest;
-
-  fml::WeakPtrFactory<Shell> weak_factory_;  // Must be the last member.
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);
 };

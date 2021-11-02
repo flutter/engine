@@ -38,9 +38,7 @@ class GPUSurfaceSoftware : public Surface {
   // hack to make avoid allocating resources for the root surface when an
   // external view embedder is present.
   const bool render_to_surface_;
-
-  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceSoftware>
-      weak_factory_;  // Must be the last member.
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceSoftware> weak_factory_;
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceSoftware);
 };
 

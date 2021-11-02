@@ -224,6 +224,7 @@ class PlatformView : public flutter::PlatformView,
       await_vsync_for_secondary_callback_callback_;
 
   fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
 };
 

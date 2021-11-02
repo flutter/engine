@@ -119,9 +119,10 @@ class Animator final {
   std::deque<uint64_t> trace_flow_ids_;
   bool has_rendered_ = false;
 
+  fml::WeakPtrFactory<Animator> weak_factory_;
+
   friend class testing::ShellTest;
 
-  fml::WeakPtrFactory<Animator> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(Animator);
 };
 
