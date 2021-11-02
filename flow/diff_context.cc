@@ -21,6 +21,7 @@ void DiffContext::BeginSubtree() {
   state_stack_.push_back(state_);
   state_.rect_index_ = rects_->size();
   state_.has_filter_bounds_adjustment = false;
+  state_.has_texture = false;
   if (state_.transform_override) {
     state_.transform = *state_.transform_override;
     state_.transform_override = std::nullopt;
