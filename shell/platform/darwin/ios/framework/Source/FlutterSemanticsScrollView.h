@@ -7,8 +7,6 @@
 
 #import <UIKit/UIKit.h>
 
-#import "flutter/fml/memory/weak_ptr.h"
-
 NS_ASSUME_NONNULL_BEGIN
 @class SemanticsObject;
 
@@ -22,10 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface FlutterSemanticsScrollView : UIScrollView
 
+@property(nonatomic, assign) SemanticsObject* _Nullable semanticsObject;
+
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)coder NS_UNAVAILABLE;
-- (instancetype)initWithSemanticsObject:(fml::WeakPtr<SemanticsObject>)semanticsObject;
+- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject;
 
 @end
 NS_ASSUME_NONNULL_END
