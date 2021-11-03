@@ -273,7 +273,7 @@ template("application_snapshot") {
   #
   # (Instead of ensuring every user of the "application_snapshot" passes it's
   # own)
-  snapshot_vm_args += ["-Dsdk_hash=$sdk_hash"]
+  snapshot_vm_args += [ "-Dsdk_hash=$sdk_hash" ]
 
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {
