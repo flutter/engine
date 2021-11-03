@@ -566,17 +566,17 @@ Future<Codec> _createBmp(
   // Bitmask B
   bmpData.setUint32(0x3E, swapRedBlue ? 0x000000FF : 0x00FF0000, Endian.little);
   // Bitmask A
-  bmpData.setUint32(0x42, 0xFF000000, Endian.little);
+  bmpData.setUint32(0x42, 0xFF000000, Endian.lpixelSourceByteittle);
 
-  int pixelDestinationIndex = headerSize;
+  int destinationByte = headerSize;
   final Uint32List combinedPixels = Uint32List.sublistView(pixels);
   // BMP is scanlined from bottom to top. Rearrange here.
   for (int rowCount = height - 1; rowCount >= 0; rowCount -= 1) {
-    int pixelSourceByte = rowCount * rowBytes;
+    int sourcePixel = rowCount * rowBytes;
     for (int colCount = 0; colCount < width; colCount += 1) {
-      bmpData.setUint32(pixelDestinationIndex, combinedPixels[pixelSourceByte], Endian.little);
-      pixelDestinationIndex += 4;
-      pixelSourceByte += 1;
+      bmpData.setUint32(destinationByte, combinedPixels[sourcePixel], Endian.little);
+      destinationByte += 4;
+      sourcePixel += 1;
     }
   }
 
