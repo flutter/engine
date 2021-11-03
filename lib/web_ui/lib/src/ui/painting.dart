@@ -513,6 +513,16 @@ Future<Codec> _createBmp(
   int rowBytes,
   PixelFormat format,
 ) {
+  late bool swapRedBlue;
+  switch (format) {
+    case PixelFormat.bgra8888:
+      swapRedBlue = true;
+      break;
+    case PixelFormat.rgba8888:
+      swapRedBlue = false;
+      break;
+  }
+
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
   // The header is in the 108-byte BITMAPV4HEADER format, or as called by
   // Chromium, WindowsV4. Do not use the 56-byte or 52-byte Adobe formats, since
@@ -550,40 +560,23 @@ Future<Codec> _createBmp(
   // Important colors
   bmpData.setUint32(0x32, 0x00, Endian.little);
   // Bitmask R
-  bmpData.setUint32(0x36, 0x00FF0000, Endian.little);
+  bmpData.setUint32(0x36, swapRedBlue ? 0x00FF0000 : 0x000000FF, Endian.little);
   // Bitmask G
   bmpData.setUint32(0x3A, 0x0000FF00, Endian.little);
   // Bitmask B
-  bmpData.setUint32(0x3E, 0x000000FF, Endian.little);
+  bmpData.setUint32(0x3E, swapRedBlue ? 0x000000FF : 0x00FF0000, Endian.little);
   // Bitmask A
   bmpData.setUint32(0x42, 0xFF000000, Endian.little);
 
-  int pixelDestinationIndex = 0;
-  late bool swapRedBlue;
-  switch (format) {
-    case PixelFormat.bgra8888:
-      swapRedBlue = true;
-      break;
-    case PixelFormat.rgba8888:
-      swapRedBlue = false;
-      break;
-  }
+  int pixelDestinationIndex = headerSize;
+  final Uint32List combinedPixels = Uint32List.sublistView(pixels);
   // BMP is scanlined from bottom to top. Rearrange here.
   for (int rowCount = height - 1; rowCount >= 0; rowCount -= 1) {
-    int pixelSourceByte = rowCount * rowBytes * 4;
+    int pixelSourceByte = rowCount * rowBytes;
     for (int colCount = 0; colCount < width; colCount += 1) {
-      final int r = swapRedBlue ? pixels[pixelSourceByte + 2] : pixels[pixelSourceByte];
-      final int b = swapRedBlue ? pixels[pixelSourceByte]     : pixels[pixelSourceByte + 2];
-      final int g = pixels[pixelSourceByte + 1];
-      final int a = pixels[pixelSourceByte + 3];
-
-      // Set the pixel past the header data.
-      bmpData.setUint8(pixelDestinationIndex + headerSize + 0, b);
-      bmpData.setUint8(pixelDestinationIndex + headerSize + 1, g);
-      bmpData.setUint8(pixelDestinationIndex + headerSize + 2, r);
-      bmpData.setUint8(pixelDestinationIndex + headerSize + 3, a);
+      bmpData.setUint32(pixelDestinationIndex, combinedPixels[pixelSourceByte], Endian.little);
       pixelDestinationIndex += 4;
-      pixelSourceByte += 4;
+      pixelSourceByte += 1;
     }
   }
 
