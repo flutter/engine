@@ -9,8 +9,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
-import './testimage.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -28,20 +26,68 @@ _ListPredicate<T> deepEqualList<T>(List<T> a) {
   };
 }
 
+Matcher listEqual<T>(List<T> source) {
+  return predicate(
+    (List<T> target) {
+      if (source.length != target.length)
+        return false;
+      for (int i = 0; i < source.length; i += 1) {
+        if (source[i] != target[i])
+          return false;
+      }
+      return true;
+    },
+    source.toString(),
+  );
+}
+
 Future<void> testMain() async {
-  test('Draws image with dstATop color filter', () async {
-    const List<int> testImage = <int>[0xFA000000, 0x00FA0030, 0x0000FA60, 0x000000FF];
-    final Uint8List sourcePixels = Uint8List.sublistView(Uint32List.fromList(testImage));
-    final ImageDescriptor encoded = ImageDescriptor.raw(
-      await ImmutableBuffer.fromUint8List(sourcePixels),
+  test('Correctly encodes an opaque image', () async {
+    // A 2x2 testing image without transparency.
+    // Pixel order: Left to right, then top to bottom.
+    // Byte order: 0xAABBGGRR (because uint8 is placed in little endian.)
+    final Uint8List sourceImage = Uint8List.sublistView(Uint32List.fromList(
+      <int>[0xFF0201FF, 0xFF05FE04, 0xFFFD0807, 0x000C0B0A],
+    ));
+    final ImageDescriptor descriptor = ImageDescriptor.raw(
+      await ImmutableBuffer.fromUint8List(sourceImage),
       width: 2,
       height: 2,
       pixelFormat: PixelFormat.rgba8888,
     );
-    final Image decoded = (await (await encoded.instantiateCodec()).getNextFrame()).image;
+    final Image encoded = (await (await descriptor.instantiateCodec()).getNextFrame()).image;
     final Uint8List actualPixels  = Uint8List.sublistView(
-        (await decoded.toByteData(format: ImageByteFormat.rawStraightRgba))!);
-    expect(actualPixels, hasLength(sourcePixels.length));
-    expect(actualPixels, predicate(deepEqualList(sourcePixels), sourcePixels.toString()));
+        (await encoded.toByteData(format: ImageByteFormat.rawStraightRgba))!);
+    final Uint8List targetImage = Uint8List.sublistView(Uint32List.fromList(
+      <int>[0xFF0201FF, 0xFF05FE04, 0xFFFD0807, 0x00000000],
+    ));
+    expect(actualPixels, listEqual(targetImage));
+  });
+
+  test('Correctly encodes a transparent image', () async {
+    // A 2x2 testing image with transparency.
+    // Pixel order: Left to right, then top to bottom.
+    // Byte order: 0xAABBGGRR (because uint8 is placed in little endian.)
+    final Uint8List sourceImage = Uint8List.sublistView(Uint32List.fromList(
+      <int>[0x030201FF, 0x0605FE04, 0x09FD0807, 0xFC0C0B0A],
+    ));
+    final ImageDescriptor descriptor = ImageDescriptor.raw(
+      await ImmutableBuffer.fromUint8List(sourceImage),
+      width: 2,
+      height: 2,
+      pixelFormat: PixelFormat.rgba8888,
+    );
+    final Image encoded = (await (await descriptor.instantiateCodec()).getNextFrame()).image;
+    final Uint8List actualPixels  = Uint8List.sublistView(
+        (await encoded.toByteData(format: ImageByteFormat.rawStraightRgba))!);
+    // TODO(dkwingsmt): Known bug: The `targetImage` is slight differnt from
+    // `sourceImage` due to unknown reasons (possibly because how
+    // canvas.drawImage blends transparent pixels). In an ideal world we should
+    // use `sourceImage` here.
+    // https://github.com/flutter/flutter/issues/92958
+    final Uint8List targetImage = Uint8List.sublistView(Uint32List.fromList(
+      <int>[0x030000FF, 0x0600FF00, 0x09FF0000, 0xFC0C0B0A],
+    ));
+    expect(actualPixels, listEqual(targetImage));
   });
 }
