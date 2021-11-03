@@ -143,8 +143,7 @@ public final class FlutterActivityDelegate
       window.setStatusBarColor(0x40000000);
       if (Build.VERSION.SDK_INT >= 30) {
         window.setDecorFitsSystemWindows(false);
-      }
-      else {
+      } else {
         window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
       }
     }
