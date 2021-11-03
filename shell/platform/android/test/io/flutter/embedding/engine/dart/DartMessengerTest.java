@@ -238,4 +238,42 @@ public class DartMessengerTest {
         .invokePlatformMessageResponseCallback(anyInt(), response.capture(), anyInt());
     assertArrayEquals("done".getBytes(), response.getValue().array());
   }
+
+  @Test
+  public void emptyResponseWhenHandlerIsUnregistered() throws InterruptedException {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
+    final String channel = "foobar";
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    final int replyId = 1;
+    final long messageData = 1234;
+
+    messenger.enableBufferingIncomingMessages();
+    messenger.handleMessageFromDart(channel, message, replyId, messageData);
+
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(eq(replyId));
+
+    final BinaryMessenger.BinaryMessageHandler handler =
+        (ByteBuffer msg, BinaryMessenger.BinaryReply reply) -> {
+          reply.reply(ByteBuffer.wrap("done".getBytes()));
+        };
+    messenger.setMessageHandler(channel, handler, taskQueue);
+
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(eq(replyId));
+
+    final ArgumentCaptor<ByteBuffer> response = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(fakeFlutterJni)
+        .invokePlatformMessageResponseCallback(anyInt(), response.capture(), anyInt());
+    assertArrayEquals("done".getBytes(), response.getValue().array());
+
+    messenger.disableBufferingIncomingMessages();
+    messenger.setMessageHandler(channel, null, null); // Unregister handler.
+
+    messenger.handleMessageFromDart(channel, message, replyId, messageData);
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni).invokePlatformMessageEmptyResponseCallback(replyId);
+  }
 }

@@ -191,7 +191,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   /**
-   * Enables the ability to queue tasks when messages are received from Dart.
+   * Enables the ability to queue messages received from Dart.
    *
    * <p>This is useful when there are pending channel handler registrations. For example, Dart may
    * be initialized concurrently, and prior to the registration of the channel handlers. This
@@ -199,6 +199,15 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    */
   public void enableBufferingIncomingMessages() {
     enableBufferingIncomingMessages = true;
+  }
+
+  /**
+   * Disables the ability to queue messages received from Dart.
+   *
+   * <p>This can be used after all pending channel handlers have been registered.
+   */
+  public void disableBufferingIncomingMessages() {
+    enableBufferingIncomingMessages = false;
   }
 
   @Override
