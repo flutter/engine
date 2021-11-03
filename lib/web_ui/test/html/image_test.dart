@@ -27,13 +27,13 @@ _ListPredicate<T> deepEqualList<T>(List<T> a) {
   };
 }
 
-Matcher listEqual<T>(List<T> source) {
+Matcher listEqual<int>(List<int> source, {int tolerance = 0}) {
   return predicate(
-    (List<T> target) {
+    (List<int> target) {
       if (source.length != target.length)
         return false;
       for (int i = 0; i < source.length; i += 1) {
-        if (source[i] != target[i])
+        if ((source[i] - target[i]).abs() > tolerance)
           return false;
       }
       return true;
@@ -121,6 +121,6 @@ Future<void> testMain() async {
     final Uint8List benchmarkPixels = _pixelsToBytes(
       <int>[0x0603F9FF, 0x80407FFF, 0xC0603FFF, 0xFF8000FF],
     );
-    expect(actualPixels, listEqual(benchmarkPixels));
+    expect(actualPixels, listEqual(benchmarkPixels, tolerance: 1));
   });
 }
