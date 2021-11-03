@@ -501,12 +501,7 @@ Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback call
   callback(frameInfo.image);
 }
 
-// Encodes the input pixels into a BMP file.
-//
-// This BMP file supports transparency. However, due to a known bug, if the
-// image has any partially-opaque pixels (one with alpha between 1 and 254), the
-// resulting colors (including alpha) might deviate by a small amount. See
-// https://github.com/flutter/flutter/issues/92958.
+// Encodes the input pixels into a BMP file that supports transparency.
 //
 // The `pixels` should be the scanlined raw pixels, 4 bytes per pixel, from left
 // to right, then from top to down. The order of the 4 bytes of pixels is
