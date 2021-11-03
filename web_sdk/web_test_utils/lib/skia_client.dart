@@ -350,10 +350,12 @@ class SkiaGoldClient {
     if (!_webEngineRoot.existsSync()) {
       throw Exception('Web Engine root could not be found: $_webEngineRoot\n');
     } else {
+      print('>> ENGINE_PATH: ${_webEngineRoot.path}');
       final io.ProcessResult revParse = await process.run(
         <String>['git', 'rev-parse', 'HEAD'],
         workingDirectory: _webEngineRoot.path,
       );
+      print('>>> rev parse:\n${revParse.stdout}\n<<<');
       if (revParse.exitCode != 0) {
         throw Exception('Current commit of Web Engine can not be found.');
       }
