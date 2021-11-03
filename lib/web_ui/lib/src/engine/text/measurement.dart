@@ -4,8 +4,11 @@
 
 import 'dart:html' as html;
 
+import 'package:ui/ui.dart' as ui;
+
 import '../../engine.dart' show registerHotRestartListener;
 import '../dom_renderer.dart';
+import 'paragraph.dart';
 
 // TODO(yjbanov): this is a hack we use to compute ideographic baseline; this
 //                number is the ratio ideographic/alphabetic for font Ahem,
@@ -73,15 +76,19 @@ double measureSubstring(
   html.CanvasRenderingContext2D _canvasContext,
   String text,
   int start,
-  int end, {
-  double? letterSpacing,
-}) {
+  int end,
+  EngineTextStyle style,
+) {
   assert(0 <= start);
   assert(start <= end);
   assert(end <= text.length);
 
   if (start == end) {
     return 0;
+  }
+
+  if (ui.debugEmulateFlutterTesterEnvironment) {
+    return _predictableMeasureSubstring(start, end, style);
   }
 
   final String cssFont = _canvasContext.font;
@@ -109,7 +116,7 @@ double measureSubstring(
   _lastWidth = width;
 
   // Now add letter spacing to the width.
-  letterSpacing ??= 0.0;
+  final double letterSpacing = style.letterSpacing ?? 0.0;
   if (letterSpacing != 0.0) {
     width += letterSpacing * (end - start);
   }
@@ -119,6 +126,19 @@ double measureSubstring(
   // The reason we are doing this is because we noticed that canvas API has a
   // ±0.001 error margin.
   return _roundWidth(width);
+}
+
+double _predictableMeasureSubstring(
+  int start,
+  int end,
+  EngineTextStyle style,
+) {
+  final double letterSpacing = style.letterSpacing ?? 0.0;
+  final double fontSize = style.fontSize ?? DomRenderer.defaultFontSize;
+  final double charWidth = fontSize + letterSpacing;
+
+  final int textLength = end - start;
+  return charWidth * textLength;
 }
 
 double _roundWidth(double width) {

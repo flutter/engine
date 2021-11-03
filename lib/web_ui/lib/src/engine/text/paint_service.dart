@@ -113,7 +113,7 @@ class TextPaintService {
             final String char = text[i];
             canvas.fillText(char, charX.roundToDouble(), y,
                 shadows: span.style.shadows);
-            charX += letterSpacing + canvas.measureText(char).width!;
+            charX += letterSpacing + canvas.measureText(char, box.span.style);
           }
         }
       }

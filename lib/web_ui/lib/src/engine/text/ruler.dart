@@ -304,8 +304,26 @@ class TextDimensions {
 ///
 /// 1. [alphabeticBaseline].
 /// 2. [height].
-class TextHeightRuler {
-  TextHeightRuler(this.textHeightStyle, this.rulerHost);
+abstract class TextHeightRuler {
+  factory TextHeightRuler(TextHeightStyle textHeightStyle, RulerHost rulerHost) {
+    if (ui.debugEmulateFlutterTesterEnvironment) {
+      return _TestTextHeightRuler(textHeightStyle);
+    }
+    return _RealTextHeightRuler(textHeightStyle, rulerHost);
+  }
+
+  /// The alphabetic baseline for this ruler's [textHeightStyle].
+  double get alphabeticBaseline;
+
+  /// The height for this ruler's [textHeightStyle].
+  double get height;
+
+  /// Disposes of this ruler and detaches it from the DOM tree.
+  void dispose();
+}
+
+class _RealTextHeightRuler implements TextHeightRuler {
+  _RealTextHeightRuler(this.textHeightStyle, this.rulerHost);
 
   final TextHeightStyle textHeightStyle;
   final RulerHost rulerHost;
@@ -316,12 +334,15 @@ class TextHeightRuler {
   final TextDimensions _dimensions = TextDimensions(html.ParagraphElement());
 
   /// The alphabetic baseline for this ruler's [textHeightStyle].
+  @override
   late final double alphabeticBaseline = _probe.getBoundingClientRect().bottom.toDouble();
 
   /// The height for this ruler's [textHeightStyle].
+  @override
   late final double height = _dimensions.height;
 
   /// Disposes of this ruler and detaches it from the DOM tree.
+  @override
   void dispose() {
     _host.remove();
   }
@@ -362,4 +383,29 @@ class TextHeightRuler {
     _host.append(probe);
     return probe;
   }
+}
+
+class _TestTextHeightRuler implements TextHeightRuler {
+  _TestTextHeightRuler(this.textHeightStyle);
+
+  final TextHeightStyle textHeightStyle;
+
+  @override
+  double get alphabeticBaseline {
+    return height * 0.8;
+  }
+
+  @override
+  double get height {
+    final double? styleHeight = textHeightStyle.height;
+    final double fontSize = textHeightStyle.fontSize;
+
+    if (styleHeight != null) {
+      return styleHeight * fontSize;
+    }
+    return fontSize;
+  }
+
+  @override
+  void dispose() {}
 }

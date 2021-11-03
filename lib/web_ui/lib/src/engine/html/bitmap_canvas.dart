@@ -18,6 +18,7 @@ import '../engine_canvas.dart';
 import '../frame_reference.dart';
 import '../html_image_codec.dart';
 import '../platform_dispatcher.dart';
+import '../text/measurement.dart';
 import '../text/paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -908,8 +909,8 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// The text is measured using the font set by the most recent call to
   /// [setCssFont].
-  html.TextMetrics measureText(String text) {
-    return _canvasPool.context.measureText(text);
+  double measureText(String text, EngineTextStyle style) {
+    return measureSubstring(_canvasPool.context, text, 0, text.length, style);
   }
 
   /// Draws text to the canvas starting at coordinate ([x], [y]).

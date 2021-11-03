@@ -1483,8 +1483,6 @@ class Spanometer {
 
   String _cssFontString = '';
 
-  double? get letterSpacing => currentSpan.style.letterSpacing;
-
   TextHeightRuler? _currentRuler;
   FlatTextSpan? _currentSpan;
 
@@ -1546,7 +1544,7 @@ class Spanometer {
   }
 
   double measureText(String text) {
-    return measureSubstring(context, text, 0, text.length);
+    return measureSubstring(context, text, 0, text.length, currentSpan.style);
   }
 
   /// In a continuous, unbreakable block of text from [start] to [end], finds
@@ -1613,7 +1611,7 @@ class Spanometer {
       text,
       start,
       end,
-      letterSpacing: letterSpacing,
+      currentSpan.style,
     );
   }
 }
