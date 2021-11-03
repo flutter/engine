@@ -797,12 +797,7 @@ class FragmentProgram {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
 
-  FragmentProgram._({
-    required ByteBuffer spirv, // ignore: avoid_unused_constructor_parameters
-    bool debugPrint = false, // ignore: avoid_unused_constructor_parameters
-  }) {
-    throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
-  }
+  FragmentProgram._();
 
   Shader shader({
     required Float32List floatUniforms,
