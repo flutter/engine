@@ -50,7 +50,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   @NonNull private final Map<String, List<BufferedMessageInfo>> bufferedMessages = new HashMap<>();
 
   @NonNull private final Object handlersLock = new Object();
-  private AtomicBoolean enableBufferingIncomingMessages = new AtomicBoolean(false);
+  @NonNull private final AtomicBoolean enableBufferingIncomingMessages = new AtomicBoolean(false);
 
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies = new HashMap<>();
   private int nextReplyId = 1;
