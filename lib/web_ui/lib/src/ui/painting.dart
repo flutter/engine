@@ -790,7 +790,14 @@ class ImageDescriptor {
 }
 
 class FragmentProgram {
-  FragmentProgram({
+  static Future<FragmentProgram> compile({
+    required ByteBuffer spirv,
+    bool debugPrint = false,
+  }) async {
+    throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
+  }
+
+  FragmentProgram._({
     required ByteBuffer spirv, // ignore: avoid_unused_constructor_parameters
     bool debugPrint = false, // ignore: avoid_unused_constructor_parameters
   }) {

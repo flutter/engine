@@ -3773,8 +3773,15 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// well-specified.  Because of this, it is reccommended to construct
   /// `FragmentProgram` asynchronously, outside of a widget's `build`
   /// method; this will minimize the chance of UI jank.
+  static Future<FragmentProgram> compile({
+    required ByteBuffer spirv,
+    bool debugPrint = false,
+  }) async {
+    return FragmentProgram._(spirv: spirv, debugPrint: debugPrint);
+  }
+
   @pragma('vm:entry-point')
-  FragmentProgram({
+  FragmentProgram._({
     required ByteBuffer spirv,
     bool debugPrint = false,
   }) {
