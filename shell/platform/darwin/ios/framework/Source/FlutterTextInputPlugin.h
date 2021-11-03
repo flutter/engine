@@ -7,9 +7,9 @@
 
 #import <UIKit/UIKit.h>
 
+#include "flutter/shell/platform/common/text_editing_delta.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextEditingDelta.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 
 @interface FlutterTextInputPlugin : NSObject <FlutterKeySecondaryResponder>

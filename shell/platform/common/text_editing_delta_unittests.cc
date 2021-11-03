@@ -8,8 +8,6 @@
 
 namespace flutter {
 
-// TODO(justinmc): Are there any additional tests to import from the iOS
-// FlutterTextEditingDelta tests?
 TEST(TextEditingDeltaTest, TestTextEditingDeltaConstructor) {
   // Here we are simulating inserting an "o" at the end of "hell".
   std::string oldText = "hell";
