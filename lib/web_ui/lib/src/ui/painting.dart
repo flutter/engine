@@ -562,8 +562,6 @@ Future<Codec> _createBmp(
   bmpData.setUint32(0x3E, 0x000000FF, Endian.little);
   // Bitmask A
   bmpData.setUint32(0x42, 0xFF000000, Endian.little);
-  // Color space
-  bmpData.setUint32(0x46, 0x206E6957, Endian.little);
 
   int pixelDestinationIndex = 0;
   late bool swapRedBlue;

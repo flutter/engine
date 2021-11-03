@@ -6,7 +6,6 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
 
 void main() {
@@ -58,6 +57,8 @@ Future<void> testMain() async {
     final Image encoded = (await (await descriptor.instantiateCodec()).getNextFrame()).image;
     final Uint8List actualPixels  = Uint8List.sublistView(
         (await encoded.toByteData(format: ImageByteFormat.rawStraightRgba))!);
+    // The `targetImage` is identical to `sourceImage` except for the fully
+    // transparent last pixel, whose channels are turned 0.
     final Uint8List targetImage = Uint8List.sublistView(Uint32List.fromList(
       <int>[0xFF0201FF, 0xFF05FE04, 0xFFFD0807, 0x00000000],
     ));
@@ -80,7 +81,7 @@ Future<void> testMain() async {
     final Image encoded = (await (await descriptor.instantiateCodec()).getNextFrame()).image;
     final Uint8List actualPixels  = Uint8List.sublistView(
         (await encoded.toByteData(format: ImageByteFormat.rawStraightRgba))!);
-    // TODO(dkwingsmt): Known bug: The `targetImage` is slight differnt from
+    // TODO(dkwingsmt): Known bug: The `targetImage` is slightly differnt from
     // `sourceImage` due to unknown reasons (possibly because how
     // canvas.drawImage blends transparent pixels). In an ideal world we should
     // use `sourceImage` here.
