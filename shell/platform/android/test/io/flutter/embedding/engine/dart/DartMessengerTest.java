@@ -245,6 +245,26 @@ public class DartMessengerTest {
   }
 
   @Test
+  public void disableBufferingTriggersEmptyResponseForPendingMessages()
+      throws InterruptedException {
+    final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
+    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final String channel = "foobar";
+    final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
+    final int replyId = 1;
+    final long messageData = 1234;
+
+    messenger.enableBufferingIncomingMessages();
+    messenger.handleMessageFromDart(channel, message, replyId, messageData);
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni, never()).invokePlatformMessageEmptyResponseCallback(replyId);
+
+    messenger.disableBufferingIncomingMessages();
+    shadowOf(getMainLooper()).idle();
+    verify(fakeFlutterJni).invokePlatformMessageEmptyResponseCallback(replyId);
+  }
+
+  @Test
   public void emptyResponseWhenHandlerIsUnregistered() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);

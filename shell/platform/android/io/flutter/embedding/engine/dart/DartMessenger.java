@@ -50,7 +50,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   @NonNull private final Map<String, List<BufferedMessageInfo>> bufferedMessages = new HashMap<>();
 
   @NonNull private final Object handlersLock = new Object();
-  private boolean enableBufferingIncomingMessages = false;
+  private AtomicBoolean enableBufferingIncomingMessages = new AtomicBoolean(false);
 
   @NonNull private final Map<Integer, BinaryMessenger.BinaryReply> pendingReplies = new HashMap<>();
   private int nextReplyId = 1;
@@ -204,14 +204,13 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
     Log.v(TAG, "Setting handler for channel '" + channel + "'");
 
-    LinkedList<BufferedMessageInfo> list;
+    List<BufferedMessageInfo> list;
     synchronized (handlersLock) {
       messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
       if (!bufferedMessages.containsKey(channel)) {
         return;
       }
-      list = (LinkedList) bufferedMessages.get(channel);
-      bufferedMessages.remove(channel);
+      list = bufferedMessages.remove(channel);
     }
     for (BufferedMessageInfo info : list) {
       dispatchMessageToQueue(
@@ -219,24 +218,26 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
-  /**
-   * Enables the ability to queue messages received from Dart.
-   *
-   * <p>This is useful when there are pending channel handler registrations. For example, Dart may
-   * be initialized concurrently, and prior to the registration of the channel handlers. This
-   * implies that Dart may start sending messages while plugins are being registered.
-   */
+  @Override
   public void enableBufferingIncomingMessages() {
-    enableBufferingIncomingMessages = true;
+    enableBufferingIncomingMessages.set(true);
   }
 
-  /**
-   * Disables the ability to queue messages received from Dart.
-   *
-   * <p>This can be used after all pending channel handlers have been registered.
-   */
+  @Override
   public void disableBufferingIncomingMessages() {
-    enableBufferingIncomingMessages = false;
+    if (!enableBufferingIncomingMessages.getAndSet(false)) {
+      return;
+    }
+    Map<String, List<BufferedMessageInfo>> pendingMessagesCopy = new HashMap<>();
+    synchronized (handlersLock) {
+      pendingMessagesCopy = new HashMap(bufferedMessages);
+      bufferedMessages.clear();
+    }
+    for (String channel : pendingMessagesCopy.keySet()) {
+      for (BufferedMessageInfo info : pendingMessagesCopy.get(channel)) {
+        dispatchMessageToQueue(channel, null, info.message, info.replyId, info.messageData);
+      }
+    }
   }
 
   @Override
@@ -326,7 +327,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     boolean messageDeferred;
     synchronized (handlersLock) {
       handlerInfo = messageHandlers.get(channel);
-      messageDeferred = (enableBufferingIncomingMessages && handlerInfo == null);
+      messageDeferred = (enableBufferingIncomingMessages.get() && handlerInfo == null);
       if (messageDeferred) {
         // The channel is not defined when the Dart VM sends a message before the channels are
         // registered.
