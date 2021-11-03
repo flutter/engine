@@ -12,6 +12,8 @@ import 'package:path/path.dart' as path;
 import 'package:platform/platform.dart';
 import 'package:process/process.dart';
 
+import 'environment.dart';
+
 const String _kWebEngineRootKey = 'ENGINE_PATH';
 const String _kGoldctlKey = 'GOLDCTL';
 const String _kTestBrowserKey = 'FLUTTER_TEST_BROWSER';
@@ -347,13 +349,14 @@ class SkiaGoldClient {
 
   /// Returns the current commit hash of the Flutter repository.
   Future<String> _getCurrentCommit() async {
-    if (!_webEngineRoot.existsSync()) {
-      throw Exception('Web Engine root could not be found: $_webEngineRoot\n');
+    final io.Directory webUiRoot = environment.webUiRootDir;
+    if (!webUiRoot.existsSync()) {
+      throw Exception('Web Engine root could not be found: $webUiRoot\n');
     } else {
-      print('>> ENGINE_PATH: ${_webEngineRoot.path}');
+      print('>> Web Engine Path: ${webUiRoot.path}');
       final io.ProcessResult revParse = await process.run(
         <String>['git', 'rev-parse', 'HEAD'],
-        workingDirectory: _webEngineRoot.path,
+        workingDirectory: webUiRoot.path,
       );
       print('>>> rev parse:\n${revParse.stdout}\n<<<');
       if (revParse.exitCode != 0) {
