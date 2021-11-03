@@ -1,4 +1,4 @@
-Signature: 7af5fba4555c3b263dde6aaa602fe965
+Signature: 0900acd107a9e1961fa16f4fc8d0dc20
 
 UNUSED LICENSES:
 
@@ -2432,6 +2432,7 @@ FILE: ../../../third_party/skia/gm/crbug_1177833.cpp
 FILE: ../../../third_party/skia/gm/crbug_1257515.cpp
 FILE: ../../../third_party/skia/gm/crop_imagefilter.cpp
 FILE: ../../../third_party/skia/gm/fillrect_gradient.cpp
+FILE: ../../../third_party/skia/gm/graphitestart.cpp
 FILE: ../../../third_party/skia/gm/hardstop_gradients_many.cpp
 FILE: ../../../third_party/skia/gm/lazytiling.cpp
 FILE: ../../../third_party/skia/gm/particles.cpp
@@ -5430,6 +5431,7 @@ FILE: ../../../third_party/skia/modules/androidkit/src/Utils.cpp
 FILE: ../../../third_party/skia/modules/androidkit/src/Utils.h
 FILE: ../../../third_party/skia/modules/skottie/src/effects/DirectionalBlur.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/FractalNoiseEffect.cpp
+FILE: ../../../third_party/skia/modules/skottie/src/effects/SkSLEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/SphereEffect.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/effects/ThresholdEffect.cpp
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_icu.h

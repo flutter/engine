@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.tracing.Trace;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -17,9 +18,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -83,8 +83,14 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
   }
 
   private static class DefaultTaskQueueFactory implements TaskQueueFactory {
+    ExecutorService executorService;
+
+    DefaultTaskQueueFactory() {
+      executorService = FlutterInjector.instance().executorService();
+    }
+
     public DartMessengerTaskQueue makeBackgroundTaskQueue() {
-      return new DefaultTaskQueue();
+      return new DefaultTaskQueue(executorService);
     }
   }
 
@@ -120,22 +126,45 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
   }
 
-  private static class DefaultTaskQueue implements DartMessengerTaskQueue {
+  static class DefaultTaskQueue implements DartMessengerTaskQueue {
     @NonNull private final ExecutorService executor;
+    @NonNull private final ConcurrentLinkedQueue<Runnable> queue;
+    @NonNull private final AtomicBoolean isRunning;
 
-    DefaultTaskQueue() {
-      // TODO(gaaclarke): Use a shared thread pool with serial queues instead of
-      // making a thread for each TaskQueue.
-      ThreadFactory threadFactory =
-          (Runnable runnable) -> {
-            return new Thread(runnable, "DartMessenger.DefaultTaskQueue");
-          };
-      this.executor = Executors.newSingleThreadExecutor(threadFactory);
+    DefaultTaskQueue(ExecutorService executor) {
+      this.executor = executor;
+      queue = new ConcurrentLinkedQueue<>();
+      isRunning = new AtomicBoolean(false);
     }
 
     @Override
     public void dispatch(@NonNull Runnable runnable) {
-      executor.execute(runnable);
+      queue.add(runnable);
+      executor.execute(
+          () -> {
+            flush();
+          });
+    }
+
+    private void flush() {
+      // Don't execute if we are already executing (enforce serial execution).
+      if (isRunning.compareAndSet(false, true)) {
+        try {
+          @Nullable Runnable runnable = queue.poll();
+          if (runnable != null) {
+            runnable.run();
+          }
+        } finally {
+          isRunning.set(false);
+          if (!queue.isEmpty()) {
+            // Schedule the next event.
+            executor.execute(
+                () -> {
+                  flush();
+                });
+          }
+        }
+      }
     }
   }
 
