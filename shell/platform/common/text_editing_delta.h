@@ -9,20 +9,21 @@
 
 #include "flutter/shell/platform/common/text_range.h"
 
-//#include <Foundation/Foundation.h>
-
 namespace flutter {
 
 class TextEditingDelta {
  public:
-   TextEditingDelta(std::string textBeforeChange, TextRange range, std::string text);
+  TextEditingDelta(std::string textBeforeChange,
+                   TextRange range,
+                   std::string text);
+  virtual ~TextEditingDelta();
 
-   std::string oldText() const { return oldText_; }
-   std::string deltaText() const { return deltaText_; }
-   int deltaStart() const { return deltaStart_; }
-   int deltaEnd() const { return deltaEnd_; }
+  std::string oldText() const { return oldText_; }
+  std::string deltaText() const { return deltaText_; }
+  int deltaStart() const { return deltaStart_; }
+  int deltaEnd() const { return deltaEnd_; }
 
-   TextEditingDelta(std::string text);
+  TextEditingDelta(std::string text);
 
  private:
   std::string oldText_;
@@ -30,7 +31,10 @@ class TextEditingDelta {
   int deltaStart_;
   int deltaEnd_;
 
-  void setDeltas(std::string oldText, std::string newTxt, int newStart, int newEnd) {
+  void setDeltas(std::string oldText,
+                 std::string newTxt,
+                 int newStart,
+                 int newEnd) {
     oldText_ = oldText;
     deltaText_ = newTxt;
     deltaStart_ = newStart;

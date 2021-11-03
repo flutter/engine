@@ -11,10 +11,10 @@
 #include <memory>
 
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
+#include "flutter/shell/platform/common/text_editing_delta.h"
 #include "flutter/shell/platform/common/text_input_model.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextEditingDelta.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 
@@ -159,7 +159,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
  * Informs the Flutter framework of changes to the text input model's state by
  * sending only the difference.
  */
-- (void)updateEditStateWithDelta:(FlutterTextEditingDelta*)delta;
+- (void)updateEditStateWithDelta:(const flutter::TextEditingDelta)delta;
 
 /**
  * Updates the stringValue and selectedRange that stored in the NSTextView interface
@@ -288,10 +288,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
       // Send an "empty" delta. The client can compare the oldText with their
       // current text and update with that if the race condition described above
       // occurs.
-      [self updateEditStateWithDelta:[FlutterTextEditingDelta
-                                         textEditingDelta:@(_activeModel->GetText().c_str())
-                                            replacedRange:NSMakeRange(0, 0)
-                                              updatedText:@""]];
+      [self updateEditStateWithDelta:flutter::TextEditingDelta(_activeModel->GetText().c_str(),
+                                                               flutter::TextRange(0, 0), "")];
     }
   } else if ([method isEqualToString:kSetEditableSizeAndTransform]) {
     NSDictionary* state = call.arguments;
@@ -386,7 +384,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   [self updateTextAndSelection];
 }
 
-- (void)updateEditStateWithDelta:(FlutterTextEditingDelta*)delta {
+- (void)updateEditStateWithDelta:(const flutter::TextEditingDelta)delta {
   NSUInteger selectionBase = _activeModel->selection().base();
   NSUInteger selectionExtent = _activeModel->selection().extent();
   int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
@@ -395,10 +393,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   NSString* const textAffinity = [self textAffinityString];
 
   NSDictionary* deltaToFramework = @{
-    @"oldText" : delta.oldText,
-    @"deltaText" : delta.deltaText,
-    @"deltaStart" : @(delta.deltaStart),
-    @"deltaEnd" : @(delta.deltaEnd),
+    @"oldText" : @(delta.oldText().c_str()),
+    @"deltaText" : @(delta.deltaText().c_str()),
+    @"deltaStart" : @(delta.deltaStart()),
+    @"deltaEnd" : @(delta.deltaEnd()),
     @"selectionBase" : @(selectionBase),
     @"selectionExtent" : @(selectionExtent),
     @"selectionAffinity" : textAffinity,
@@ -574,19 +572,20 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 
   flutter::TextRange oldSelection = _activeModel->selection();
 
-  NSString* textBeforeChange = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
-  _activeModel->AddText([string UTF8String]);
+  std::string textBeforeChange = _activeModel->GetText().c_str();
+  std::string utf8String = [string UTF8String];
+  _activeModel->AddText(utf8String);
   if (_activeModel->composing()) {
     _activeModel->CommitComposing();
     _activeModel->EndComposing();
   }
   if (_enableDeltaModel) {
-    NSRange replacedRange = range.location == NSNotFound
-                                ? NSMakeRange(oldSelection.base(), oldSelection.length())
-                                : range;
-    [self updateEditStateWithDelta:[FlutterTextEditingDelta textEditingDelta:textBeforeChange
-                                                               replacedRange:replacedRange
-                                                                 updatedText:string]];
+    flutter::TextRange replacedRange =
+        range.location == NSNotFound
+            ? flutter::TextRange(oldSelection.base(), oldSelection.extent())
+            : flutter::TextRange(range.location, range.location + range.length);
+    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, replacedRange,
+                                                             utf8String)];
   } else {
     [self updateEditState];
   }
@@ -623,25 +622,19 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   if (_activeModel == nullptr) {
     return;
   }
-  NSString* textBeforeChange = [NSString stringWithUTF8String:_activeModel->GetText().c_str()];
+  std::string textBeforeChange = _activeModel->GetText().c_str();
   if (!_activeModel->composing()) {
     _activeModel->BeginComposing();
   }
 
   // Input string may be NSString or NSAttributedString.
-  BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
-  NSString* marked_text = isAttributedString ? [string string] : string;
-  _activeModel->UpdateComposingText([marked_text UTF8String]);
+  std::string marked_text = [string UTF8String];
+  _activeModel->UpdateComposingText(marked_text);
 
   if (_enableDeltaModel) {
     flutter::TextRange composing = _activeModel->composing_range();
-    NSInteger composingLocation = MIN(composing.base(), composing.end());
-    NSInteger composingLength = ABS(composing.end() - composing.base());
-    [self updateEditStateWithDelta:[FlutterTextEditingDelta
-                                       textEditingDelta:textBeforeChange
-                                          replacedRange:NSMakeRange(composingLocation,
-                                                                    composingLength)
-                                            updatedText:marked_text]];
+    [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange, composing,
+                                                             marked_text)];
   } else {
     [self updateEditState];
   }
@@ -654,11 +647,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   _activeModel->CommitComposing();
   _activeModel->EndComposing();
   if (_enableDeltaModel) {
-    [self updateEditStateWithDelta:[FlutterTextEditingDelta
-                                       deltaWithNonText:[NSString
-                                                            stringWithUTF8String:_activeModel
-                                                                                     ->GetText()
-                                                                                     .c_str()]]];
+    [self updateEditStateWithDelta:flutter::TextEditingDelta(_activeModel->GetText().c_str())];
   } else {
     [self updateEditState];
   }
