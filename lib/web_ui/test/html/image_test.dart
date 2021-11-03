@@ -27,7 +27,7 @@ _ListPredicate<T> deepEqualList<T>(List<T> a) {
   };
 }
 
-Matcher listEqual<int>(List<int> source, {int tolerance = 0}) {
+Matcher listEqual(List<int> source, {int tolerance = 0}) {
   return predicate(
     (List<int> target) {
       if (source.length != target.length)
