@@ -11,6 +11,7 @@ dependencies:
 
 dev_dependencies:
   archive: 3.1.2
+  file: 6.1.2
   html: 0.15.0
   http: 0.13.0
   image: 3.0.1
