@@ -180,11 +180,11 @@ if (enable_unittests) {
         "test_metal_surface_impl.mm",
       ]
 
+      # Skia's Vulkan support is enabled for all platforms, and so parts of
+      # Skia's graphics context reference Vulkan symbols.
       deps = [
         ":skia",
         "//flutter/fml",
-        # Skia's Vulkan support is enabled for all platforms, and so parts of
-        # Skia's graphics context reference Vulkan symbols.
         "//flutter/vulkan",
       ]
     }
