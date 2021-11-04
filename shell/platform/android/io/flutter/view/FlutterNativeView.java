@@ -149,6 +149,12 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler);
+  }
+
+  @Override
+  @UiThread
   public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
     dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler, taskQueue);
   }
@@ -163,7 +169,7 @@ public class FlutterNativeView implements BinaryMessenger {
   }
 
   private final class EngineLifecycleListenerImpl implements EngineLifecycleListener {
-    // Called by native to notify when the engine is restarted (cold reload).
+    // Called by native to notify right before the engine is restarted (cold reload).
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
       if (mFlutterView != null) {

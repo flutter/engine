@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_DIFF_CONTEXT_H_
 #define FLUTTER_FLOW_DIFF_CONTEXT_H_
 
+#include <functional>
 #include <map>
 #include <optional>
 #include <vector>
@@ -15,8 +16,6 @@
 #include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 class Layer;
 
@@ -75,6 +74,14 @@ class DiffContext {
   // Pushes cull rect for current subtree
   bool PushCullRect(const SkRect& clip);
 
+  // Function that adjusts layer bounds (in device coordinates) depending
+  // on filter.
+  using FilterBoundsAdjustment = std::function<SkRect(SkRect)>;
+
+  // Pushes filter bounds adjustment to current subtree. Every layer in this
+  // subtree will have bounds adjusted by this function.
+  void PushFilterBoundsAdjustment(FilterBoundsAdjustment filter);
+
   // Returns transform matrix for current subtree
   const SkMatrix& GetTransform() const { return state_.transform; }
 
@@ -93,8 +100,13 @@ class DiffContext {
   // added to damage.
   void MarkSubtreeDirty(
       const PaintRegion& previous_paint_region = PaintRegion());
+  void MarkSubtreeDirty(const SkRect& previous_paint_region);
 
   bool IsSubtreeDirty() const { return state_.dirty; }
+
+  // Marks that current subtree contains a TextureLayer. This is needed to
+  // ensure that we'll Diff the TextureLayer even if inside retained layer.
+  void MarkSubtreeHasTextureLayer();
 
   // Add layer bounds to current paint region; rect is in "local" (layer)
   // coordinates.
@@ -191,6 +203,13 @@ class DiffContext {
     SkMatrix transform;
     std::optional<SkMatrix> transform_override;
     size_t rect_index_;
+
+    // Whether this subtree has filter bounds adjustment function. If so,
+    // it will need to be removed from stack when subtree is closed.
+    bool has_filter_bounds_adjustment;
+
+    // Whether there is a texture layer in this subtree.
+    bool has_texture;
   };
 
   std::shared_ptr<std::vector<SkRect>> rects_;
@@ -198,6 +217,11 @@ class DiffContext {
   SkISize frame_size_;
   double frame_device_pixel_ratio_;
   std::vector<State> state_stack_;
+  std::vector<FilterBoundsAdjustment> filter_bounds_adjustment_stack_;
+
+  // Applies the filter bounds adjustment stack on provided rect.
+  // Rect must be in device coordinates.
+  SkRect ApplyFilterBoundsAdjustment(SkRect rect) const;
 
   SkRect damage_ = SkRect::MakeEmpty();
 
@@ -218,8 +242,6 @@ class DiffContext {
   std::vector<Readback> readbacks_;
   Statistics statistics_;
 };
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace flutter
 

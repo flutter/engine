@@ -745,7 +745,10 @@ public class FlutterView extends SurfaceView
             mMetrics.systemGestureInsetRight,
             mMetrics.systemGestureInsetBottom,
             mMetrics.systemGestureInsetLeft,
-            mMetrics.physicalTouchSlop);
+            mMetrics.physicalTouchSlop,
+            new int[0],
+            new int[0],
+            new int[0]);
   }
 
   // Called by FlutterNativeView to notify first Flutter frame rendered.
@@ -842,6 +845,12 @@ public class FlutterView extends SurfaceView
       return;
     }
     mNativeView.send(channel, message, callback);
+  }
+
+  @Override
+  @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    mNativeView.setMessageHandler(channel, handler);
   }
 
   @Override
