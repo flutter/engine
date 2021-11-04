@@ -125,7 +125,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)keyboardWillChangeFrame:(NSNotification*)notification;
-- (void)startKeyBoardAnimation:(NSTimeInterval)duration curve:(UIViewAnimationCurve)curve;
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateDisplayLinkIfNeeded;
 @end
@@ -171,12 +171,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                   userInfo:@{
                     @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
                     @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
-                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal],
-                    @"UIKeyboardAnimationCurveUserInfoKey" : [NSNumber numberWithInteger:7]
+                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal]
                   }];
   id viewControllerMock = OCMPartialMock(viewController);
   [viewControllerMock keyboardWillChangeFrame:notification];
-  OCMVerify([viewControllerMock startKeyBoardAnimation:0.25 curve:(UIViewAnimationCurve)7]);
+  OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
 }
 
 - (void)testEnsureViewportMetricsWillInvokeAndDisplayLinkWillInvalidateInViewDidDisappear {

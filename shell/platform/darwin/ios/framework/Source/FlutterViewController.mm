@@ -1123,11 +1123,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
 
-  // Get the animation duration and curve.
+  // Get the animation duration
   NSTimeInterval duration =
       [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
-  UIViewAnimationCurve curve =
-      (UIViewAnimationCurve)[[info objectForKey:UIKeyboardAnimationCurveUserInfoKey] integerValue];
 
   // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
   // in the screen to see if the keyboard is visible.
@@ -1141,7 +1139,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     self.targetViewInsetBottom = 0;
   }
-  [self startKeyBoardAnimation:duration curve:curve];
+  [self startKeyBoardAnimation:duration];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
@@ -1149,7 +1147,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // metrics. So do not call [self updateViewportMetrics] here again.
 }
 
-- (void)startKeyBoardAnimation:(NSTimeInterval)duration curve:(UIViewAnimationCurve)curve {
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration {
   // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing.
   if (_viewportMetrics.physical_view_inset_bottom == self.targetViewInsetBottom) {
     return;
