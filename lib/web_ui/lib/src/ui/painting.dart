@@ -566,7 +566,7 @@ Future<Codec> _createBmp(
   // Bitmask B
   bmpData.setUint32(0x3E, swapRedBlue ? 0x000000FF : 0x00FF0000, Endian.little);
   // Bitmask A
-  bmpData.setUint32(0x42, 0xFF000000, Endian.lpixelSourceByteittle);
+  bmpData.setUint32(0x42, 0xFF000000, Endian.little);
 
   int destinationByte = headerSize;
   final Uint32List combinedPixels = Uint32List.sublistView(pixels);
