@@ -162,7 +162,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
-                platformViewId:(int32_t)platformViewId;
+                platformViewId:(int32_t)platformViewId NS_DESIGNATED_INITIALIZER;
 
 @end
 
