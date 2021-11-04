@@ -39,6 +39,10 @@ namespace testing {
 
 using EmbedderTest = testing::EmbedderTest;
 
+TEST_F(EmbedderTest, CanInitializeTestVulkanContext) {
+  TestVulkanContext ctx;
+}
+
 TEST_F(EmbedderTest, CanCreateOpenGLRenderingEngine) {
   EmbedderConfigBuilder builder(
       GetEmbedderContext(EmbedderTestContextType::kOpenGLContext));

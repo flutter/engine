@@ -133,8 +133,9 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   VulkanHandle<VkDevice> device_;
 
   VulkanProcTable();
+  VulkanProcTable(const char* path);
   ~VulkanProcTable();
-  bool OpenLibraryHandle();
+  bool OpenLibraryHandle(const char* path);
   bool SetupLoaderProcAddresses();
   bool CloseLibraryHandle();
   PFN_vkVoidFunction AcquireProc(

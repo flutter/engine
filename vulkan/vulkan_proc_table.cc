@@ -16,10 +16,12 @@
 
 namespace vulkan {
 
-VulkanProcTable::VulkanProcTable()
+VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
+
+VulkanProcTable::VulkanProcTable(const char* path)
     : handle_(nullptr), acquired_mandatory_proc_addresses_(false) {
   acquired_mandatory_proc_addresses_ =
-      OpenLibraryHandle() && SetupLoaderProcAddresses();
+      OpenLibraryHandle(path) && SetupLoaderProcAddresses();
 }
 
 VulkanProcTable::~VulkanProcTable() {
@@ -149,14 +151,14 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   return true;
 }
 
-bool VulkanProcTable::OpenLibraryHandle() {
+bool VulkanProcTable::OpenLibraryHandle(const char* path) {
 #if VULKAN_LINK_STATICALLY
   static char kDummyLibraryHandle = '\0';
   handle_ = reinterpret_cast<decltype(handle_)>(&kDummyLibraryHandle);
   return true;
 #else   // VULKAN_LINK_STATICALLY
   dlerror();  // clear existing errors on thread.
-  handle_ = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+  handle_ = dlopen(path, RTLD_NOW | RTLD_LOCAL);
   if (handle_ == nullptr) {
     FML_DLOG(WARNING) << "Could not open the vulkan library: " << dlerror();
     return false;

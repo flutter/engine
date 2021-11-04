@@ -128,6 +128,7 @@ if (enable_unittests) {
     deps = [
       ":skia",
       "//flutter/fml",
+      "//flutter/vulkan",
     ]
 
     # SwiftShader only supports x86/x86_64
@@ -177,6 +178,7 @@ if (enable_unittests) {
       deps = [
         ":skia",
         "//flutter/fml",
+        "//flutter/vulkan",
       ]
     }
 
@@ -199,6 +201,7 @@ if (enable_unittests) {
       ":testing",
       ":testing_fixtures",
       "//flutter/runtime:libdart",
+      "//flutter/vulkan",
     ]
 
     if (shell_enable_metal) {

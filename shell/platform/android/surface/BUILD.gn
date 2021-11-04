@@ -50,6 +50,7 @@ source_set("surface_mock") {
   deps = [
     ":surface",
     "//flutter/shell/gpu:gpu_surface_gl",
+    "//flutter/vulkan",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
     "//third_party/skia",
