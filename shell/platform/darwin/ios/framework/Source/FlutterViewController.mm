@@ -1178,7 +1178,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
   [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
-  __block CADisplayLink* thisDisplayLink = self.displayLink;
+  __block CADisplayLink* currentDisplayLink = self.displayLink;
 
   [UIView animateWithDuration:duration
       animations:^{
@@ -1186,7 +1186,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
-        if (self.displayLink == thisDisplayLink) {
+        if (self.displayLink == currentDisplayLink) {
           [self.displayLink invalidate];
           self.displayLink = nil;
         }
