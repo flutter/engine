@@ -10,9 +10,9 @@ import("//third_party/dart/sdk_args.gni")
 is_aot_test =
     flutter_runtime_mode == "profile" || flutter_runtime_mode == "release"
 
-# Unit tests targets are only enabled for host machines and Fuchsia right now
+# Unit tests targets are only enabled for host machines right now.
 declare_args() {
-  enable_unittests = current_toolchain == host_toolchain || is_fuchsia
+  enable_unittests = current_toolchain == host_toolchain
 }
 
 # Creates a translation unit that defines the flutter::testing::GetFixturesPath

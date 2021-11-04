@@ -68,7 +68,7 @@ group("flutter") {
     "//flutter/sky",
   ]
 
-  # If enbaled, compile the SDK / snapshot.
+  # If enabled, compile the SDK / snapshot.
   if (!is_fuchsia) {
     public_deps += [ "//flutter/lib/snapshot:generate_snapshot_bins" ]
 
@@ -150,10 +150,6 @@ group("flutter") {
           [ "//flutter/third_party/accessibility:accessibility_unittests" ]
     }
 
-    if (is_fuchsia) {
-      public_deps += [ "//flutter/shell/platform/fuchsia:tests" ]
-    }
-
     if (is_mac) {
       public_deps +=
           [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
@@ -172,18 +168,10 @@ group("flutter") {
     if (enable_desktop_embeddings) {
       public_deps += [
         "//flutter/shell/platform/common:common_cpp_core_unittests",
+        "//flutter/shell/platform/common:common_cpp_unittests",
         "//flutter/shell/platform/common/client_wrapper:client_wrapper_unittests",
+        "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests",
       ]
-
-      if (!is_fuchsia) {
-        # These tests require the embedder and thus cannot run on fuchsia.
-        # TODO(): Enable when embedder works on fuchsia.
-        public_deps +=
-            [ "//flutter/shell/platform/common:common_cpp_unittests" ]
-
-        # These tests require GLFW and thus cannot run on fuchsia.
-        public_deps += [ "//flutter/shell/platform/glfw/client_wrapper:client_wrapper_glfw_unittests" ]
-      }
 
       if (is_linux) {
         public_deps +=
@@ -219,12 +207,4 @@ group("dist") {
   testonly = true
 
   deps = [ "//flutter/sky/dist" ]
-}
-
-if (is_fuchsia && enable_unittests) {
-  group("fuchsia_tests") {
-    testonly = true
-
-    deps = [ "//flutter/shell/platform/fuchsia:tests" ]
-  }
 }

@@ -75,6 +75,8 @@ fuchsia_host_bundle("dart_binaries") {
 }
 
 group("fuchsia") {
+  testonly = true
+
   deps = [
     ":dart_binaries",
     ":flutter_binaries",
@@ -83,12 +85,7 @@ group("fuchsia") {
     "flutter:flutter_aot_${product_suffix}runner",
     "flutter:flutter_jit_${product_suffix}runner",
   ]
-}
-
-if (enable_unittests) {
-  group("tests") {
-    testonly = true
-
-    deps = [ "flutter:tests" ]
+  if (enable_unittests) {
+    deps += [ "flutter:tests" ]
   }
 }

@@ -6,6 +6,8 @@ import("//build/fuchsia/sdk.gni")
 import("//flutter/shell/platform/config.gni")
 
 group("platform") {
+  testonly = true
+
   if (is_mac || is_ios) {
     deps = [ "darwin" ]
   } else if (is_android) {
