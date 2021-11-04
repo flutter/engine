@@ -3771,8 +3771,8 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   static Future<FragmentProgram> compile({
     required ByteBuffer spirv,
     bool debugPrint = false,
-  }) async {
-    return FragmentProgram._(spirv: spirv, debugPrint: debugPrint);
+  }) {
+    return Future<FragmentProgram>(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
   }
 
   @pragma('vm:entry-point')

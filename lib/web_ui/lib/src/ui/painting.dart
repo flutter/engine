@@ -793,7 +793,7 @@ class FragmentProgram {
   static Future<FragmentProgram> compile({
     required ByteBuffer spirv,
     bool debugPrint = false,
-  }) async {
+  }) {
     throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
   }
 
