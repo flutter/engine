@@ -157,8 +157,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 @interface FlutterPlatformViewSemanticsContainer : SemanticsObject
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
-                           uid:(int32_t)uid
-    __attribute__((unavailable("Use initWithBridge:uid:platformViewId instead")));
+                           uid:(int32_t)uid NS_UNAVAILABLE;
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
