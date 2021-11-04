@@ -1537,15 +1537,8 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 
-  // The Vulkan and GL backends set different default values for the resource
-  // cache size.
-#ifdef SHELL_ENABLE_VULKAN
-  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
-            vulkan::kGrCacheMaxByteSize);
-#else
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(24 * (1 << 20)));
-#endif
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
