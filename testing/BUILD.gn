@@ -125,6 +125,11 @@ if (enable_unittests) {
   source_set("vulkan") {
     testonly = true
 
+    sources = [
+      "test_vulkan_context.cc",
+      "test_vulkan_context.h",
+    ]
+
     deps = [
       ":skia",
       "//flutter/fml",
@@ -178,6 +183,8 @@ if (enable_unittests) {
       deps = [
         ":skia",
         "//flutter/fml",
+        # Skia's Vulkan support is enabled for all platforms, and so parts of
+        # Skia's graphics context reference Vulkan symbols.
         "//flutter/vulkan",
       ]
     }
