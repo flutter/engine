@@ -690,7 +690,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   XCTAssertTrue(bridge->observations[0].action == flutter::SemanticsAction::kShowOnScreen);
 }
 
-- (void)testSemanticsObjectAndPlatformViewSemanticsContainerDontHaveRetainCycle {
+- (void)testPlatformViewSemanticsContainer {
   fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();

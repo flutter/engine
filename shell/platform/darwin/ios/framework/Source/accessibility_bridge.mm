@@ -260,12 +260,10 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[FlutterScrollableSemanticsObject alloc] initWithBridge:weak_ptr
                                                                  uid:node.id] autorelease];
   } else if (node.IsPlatformViewNode()) {
-    FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer =
-        [[[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:weak_ptr
-                                                                   uid:node.id
-                                                        platformViewId:node.platformViewId]
-            autorelease];
-    return platformViewSemanticsContainer;
+    return [[[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:weak_ptr
+                                                                      uid:node.id
+                                                           platformViewId:node.platformViewId]
+        autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];
   }

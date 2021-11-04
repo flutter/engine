@@ -757,9 +757,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // Method declared as unavailable in the interface
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid {
-  [self release];
-  [super doesNotRecognizeSelector:_cmd];
-  return nil;
+  return [super init];
 }
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
