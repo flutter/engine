@@ -139,7 +139,6 @@ def to_gn_args(args):
         gn_args['enable_unittests'] = args.enable_unittests
 
     # Skia GN args.
-    gn_args['skia_use_vulkan'] = True
     gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
     gn_args['skia_use_dng_sdk'] = False    # RAW image handling.
     gn_args['skia_use_sfntly'] = False     # PDF handling dependency.
@@ -312,6 +311,13 @@ def to_gn_args(args):
       gn_args['allow_deprecated_api_calls'] = True
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
+
+    # Enable Vulkan on everything except iOS. We currently have to exclude iOS
+    # because Skia uses VMA and we target iOS 9. VMA uses C++17 standard
+    # library features only available in iOS 10+.
+    if args.target_os != 'ios':
+      gn_args['skia_use_vulkan'] = True
+      gn_args['shell_enable_vulkan'] = True
 
     if sys.platform.startswith(('cygwin', 'win')):
       # The buildroot currently isn't set up to support Vulkan in the

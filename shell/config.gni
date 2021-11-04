@@ -4,9 +4,11 @@
 
 declare_args() {
   shell_enable_gl = !is_fuchsia
-  shell_enable_metal = false
 
-  shell_enable_vulkan = true
+  # The logic for enabling Vulkan and Metal is in tools/gn.
+  shell_enable_metal = false
+  shell_enable_vulkan = false
+
   shell_enable_software = true
 }
 
