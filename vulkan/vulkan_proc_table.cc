@@ -4,8 +4,6 @@
 
 #include "vulkan_proc_table.h"
 
-#include <dlfcn.h>
-
 #include "flutter/fml/logging.h"
 
 #define ACQUIRE_PROC(name, context)                          \
@@ -45,7 +43,7 @@ bool VulkanProcTable::AreDeviceProcsSetup() const {
 }
 
 bool VulkanProcTable::SetupLoaderProcAddresses() {
-  if (handle_ == nullptr) {
+  if (!handle_) {
     return true;
   }
 
@@ -53,8 +51,8 @@ bool VulkanProcTable::SetupLoaderProcAddresses() {
 #if VULKAN_LINK_STATICALLY
       GetInstanceProcAddr = &vkGetInstanceProcAddr;
 #else   // VULKAN_LINK_STATICALLY
-      reinterpret_cast<PFN_vkGetInstanceProcAddr>(
-          dlsym(handle_, "vkGetInstanceProcAddr"));
+      reinterpret_cast<PFN_vkGetInstanceProcAddr>(const_cast<uint8_t*>(
+          handle_->ResolveSymbol("vkGetInstanceProcAddr")));
 #endif  // VULKAN_LINK_STATICALLY
 
   if (!GetInstanceProcAddr) {
@@ -153,36 +151,16 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
 
 bool VulkanProcTable::OpenLibraryHandle(const char* path) {
 #if VULKAN_LINK_STATICALLY
-  static char kDummyLibraryHandle = '\0';
-  handle_ = reinterpret_cast<decltype(handle_)>(&kDummyLibraryHandle);
-  return true;
+  handle_ = fml::NativeLibrary::CreateForCurrentProcess();
 #else   // VULKAN_LINK_STATICALLY
-  dlerror();  // clear existing errors on thread.
-  handle_ = dlopen(path, RTLD_NOW | RTLD_LOCAL);
-  if (handle_ == nullptr) {
-    FML_DLOG(WARNING) << "Could not open the vulkan library: " << dlerror();
-    return false;
-  }
-  return true;
+  handle_ = fml::NativeLibrary::Create(path);
 #endif  // VULKAN_LINK_STATICALLY
+  return !!handle_;
 }
 
 bool VulkanProcTable::CloseLibraryHandle() {
-#if VULKAN_LINK_STATICALLY
   handle_ = nullptr;
   return true;
-#else
-  if (handle_ != nullptr) {
-    dlerror();  // clear existing errors on thread.
-    if (dlclose(handle_) != 0) {
-      FML_DLOG(ERROR) << "Could not close the vulkan library handle. This "
-                         "indicates a leak.";
-      FML_DLOG(ERROR) << dlerror();
-    }
-    handle_ = nullptr;
-  }
-  return handle_ == nullptr;
-#endif
 }
 
 PFN_vkVoidFunction VulkanProcTable::AcquireProc(
