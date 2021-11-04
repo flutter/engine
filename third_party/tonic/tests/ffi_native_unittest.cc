@@ -68,6 +68,9 @@ TEST_F(FfiNativeTest, FfiBindingCallNop) {
 }
 
 Dart_Handle Echo(Dart_Handle str) {
+  const char* c_str = nullptr;
+  Dart_StringToCString(str, &c_str);
+  EXPECT_STREQ(c_str, "Hello World!");
   return str;
 }
 
@@ -120,7 +123,7 @@ TEST_F(FfiNativeTest, SerialiseFunction) {
   }
 }
 
-class MyTestClass {
+class MyTestClass : public tonic::DartWrappable {
  public:
   static bool MyTestFunction(tonic::DartWrappable* ptr,
                              double x,

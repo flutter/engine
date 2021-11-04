@@ -113,19 +113,20 @@ struct DartConverterInteger {
     Dart_GetNativeIntegerArgument(args, index, &result);
     return static_cast<T>(result);
   }
-
-  static const char* ToIntStr() {
-    if (sizeof(T) == 2) {
-      return "Int16";
-    } else if (sizeof(T) == 4) {
-      return "Int32";
-    } else if (sizeof(T) == 8) {
-      return "Int64";
+  static T FromFfi(FfiType val) { return val; }
+  static FfiType ToFfi(T val) { return val; }
+  static const char* GetDartRepresentation() { return kDartRepresentation; }
+  static const char* GetFfiRepresentation() {
+    if (std::is_signed<T>()) {
+      if (sizeof(T) == 2) {
+        return "Int16";
+      } else if (sizeof(T) == 4) {
+        return "Int32";
+      } else if (sizeof(T) == 8) {
+        return "Int64";
+      }
+      return "Int";
     }
-    return "Int";
-  }
-
-  static const char* ToUintStr() {
     if (sizeof(T) == 2) {
       return "Uint16";
     } else if (sizeof(T) == 4) {
@@ -135,38 +136,24 @@ struct DartConverterInteger {
     }
     return "Uint";
   }
-
-  static T FromFfi(FfiType val) { return val; }
-  static FfiType ToFfi(T val) { return val; }
-  static const char* GetDartRepresentation() { return kDartRepresentation; }
   static bool AllowedInLeafCall() { return kAllowedInLeafCall; }
 };
 
 template <>
-struct DartConverter<int> : public DartConverterInteger<int> {
-  static const char* GetFfiRepresentation() { return ToIntStr(); }
-};
+struct DartConverter<int> : public DartConverterInteger<int> {};
 
 template <>
-struct DartConverter<long int> : public DartConverterInteger<long int> {
-  static const char* GetFfiRepresentation() { return ToIntStr(); }
-};
+struct DartConverter<long int> : public DartConverterInteger<long int> {};
 
 template <>
-struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {
-  static const char* GetFfiRepresentation() { return ToUintStr(); }
-};
+struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {};
 
 template <>
-struct DartConverter<long long> : public DartConverterInteger<long long> {
-  static const char* GetFfiRepresentation() { return ToIntStr(); }
-};
+struct DartConverter<long long> : public DartConverterInteger<long long> {};
 
 template <>
 struct DartConverter<unsigned long>
-    : public DartConverterInteger<unsigned long> {
-  static const char* GetFfiRepresentation() { return ToUintStr(); }
-};
+    : public DartConverterInteger<unsigned long> {};
 
 template <>
 struct DartConverter<unsigned long long> {
@@ -490,11 +477,6 @@ struct DartListFactory {
 
 template <typename T>
 struct DartConverter<std::vector<T>> {
-  using FfiType = Dart_Handle;
-  static constexpr const char* kFfiRepresentation = "Handle";
-  static constexpr const char* kDartRepresentation = "String";
-  static constexpr bool kAllowedInLeafCall = false;
-
   using ValueType = typename DartConverterTypes<T>::ValueType;
   using ConverterType = typename DartConverterTypes<T>::ConverterType;
 
@@ -548,12 +530,6 @@ struct DartConverter<std::vector<T>> {
                                               Dart_Handle& exception) {
     return FromDart(Dart_GetNativeArgument(args, index));
   }
-
-  static std::vector<ValueType> FromFfi(FfiType val) { return FromDart(val); }
-  static FfiType ToFfi(std::vector<ValueType> val) { return ToDart(val); }
-  static const char* GetFfiRepresentation() { return kFfiRepresentation; }
-  static const char* GetDartRepresentation() { return kDartRepresentation; }
-  static bool AllowedInLeafCall() { return kAllowedInLeafCall; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
