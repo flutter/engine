@@ -73,6 +73,7 @@ typedef struct MouseState {
  * Keyboard animation properties
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
+@property(nonatomic, strong) CADisplayLink* displayLink;
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -729,6 +730,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
+    [self invalidateDisplayLinkIfNeeded];
     [self ensureViewportMetricsIsCorrect];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
@@ -1157,7 +1159,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // initialize the keyboardAnimationView to get animation interpolation during animation.
   if ([self keyboardAnimationView] == nil) {
     UIView* keyboardAnimationView = [[UIView alloc] init];
-    [keyboardAnimationView setUserInteractionEnabled:NO];
+    [keyboardAnimationView setHidden:YES];
     _keyboardAnimationView.reset(keyboardAnimationView);
   }
 
@@ -1173,9 +1175,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self keyboardAnimationView].frame =
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
 
-  __block CADisplayLink* displayLink =
-      [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
-  [displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+  // Invalidate old display link if the old animation is not complete
+  [self invalidateDisplayLinkIfNeeded];
+
+  self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
+  [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+  __block CADisplayLink* thisDisplayLink = self.displayLink;
 
   [UIView animateWithDuration:duration
       animations:^{
@@ -1183,13 +1188,21 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
       }
       completion:^(BOOL finished) {
-        [displayLink invalidate];
-        displayLink = nil;
+        if (self.displayLink == thisDisplayLink) {
+          [self.displayLink invalidate];
+          self.displayLink = nil;
+        }
         if (finished) {
           [self removeKeyboardAnimationView];
           [self ensureViewportMetricsIsCorrect];
         }
       }];
+}
+
+- (void)invalidateDisplayLinkIfNeeded {
+  if (self.displayLink != nil) {
+    [self.displayLink invalidate];
+  }
 }
 
 - (void)removeKeyboardAnimationView {
