@@ -491,9 +491,9 @@ struct DartListFactory {
 template <typename T>
 struct DartConverter<std::vector<T>> {
   using FfiType = Dart_Handle;
-  static constexpr const char* kFfiSig = "Handle";  // TODO(cskau)
-  static constexpr const char* kDartSig = "String";
-  static constexpr bool kAllowedInLeaf = true;
+  static constexpr const char* kFfiSig = "Handle";
+  static constexpr const char* kDartSig = "List";
+  static constexpr bool kAllowedInLeaf = false;
 
   using ValueType = typename DartConverterTypes<T>::ValueType;
   using ConverterType = typename DartConverterTypes<T>::ConverterType;
