@@ -362,6 +362,8 @@ FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
 FILE: ../../../flutter/lib/ui/painting/engine_layer.h
+FILE: ../../../flutter/lib/ui/painting/fragment_program.cc
+FILE: ../../../flutter/lib/ui/painting/fragment_program.h
 FILE: ../../../flutter/lib/ui/painting/fragment_shader.cc
 FILE: ../../../flutter/lib/ui/painting/fragment_shader.h
 FILE: ../../../flutter/lib/ui/painting/gradient.cc
@@ -821,6 +823,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterImageView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSplashView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
@@ -1620,6 +1623,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registry.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.h
@@ -1793,6 +1797,7 @@ FILE: ../../../flutter/shell/profiling/sampling_profiler.h
 FILE: ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
+FILE: ../../../flutter/shell/vmservice/empty.dart
 FILE: ../../../flutter/sky/tools/roll/patches/chromium/android_build.patch
 FILE: ../../../flutter/third_party/accessibility/base/color_utils.h
 FILE: ../../../flutter/third_party/accessibility/base/compiler_specific.h

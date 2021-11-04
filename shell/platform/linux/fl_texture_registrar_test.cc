@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_pixel_buffer_texture.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_texture_gl.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
+#include "flutter/shell/platform/linux/testing/mock_texture_registrar.h"
 #include "gtest/gtest.h"
 
 #include <epoxy/gl.h>
@@ -64,6 +65,27 @@ static FlTestRegistrarTexture* fl_test_registrar_texture_new() {
       g_object_new(fl_test_registrar_texture_get_type(), nullptr));
 }
 
+// Checks can make a mock registrar.
+TEST(FlTextureRegistrarTest, MockRegistrar) {
+  g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_registrar_texture_new());
+  g_autoptr(FlMockTextureRegistrar) registrar = fl_mock_texture_registrar_new();
+  EXPECT_TRUE(FL_IS_MOCK_TEXTURE_REGISTRAR(registrar));
+
+  EXPECT_TRUE(fl_texture_registrar_register_texture(
+      FL_TEXTURE_REGISTRAR(registrar), texture));
+  EXPECT_EQ(fl_mock_texture_registrar_get_texture(registrar), texture);
+  EXPECT_EQ(
+      fl_texture_registrar_lookup_texture(FL_TEXTURE_REGISTRAR(registrar),
+                                          fl_texture_get_texture_id(texture)),
+      texture);
+  EXPECT_TRUE(fl_texture_registrar_mark_texture_frame_available(
+      FL_TEXTURE_REGISTRAR(registrar), texture));
+  EXPECT_TRUE(fl_mock_texture_registrar_get_frame_available(registrar));
+  EXPECT_TRUE(fl_texture_registrar_unregister_texture(
+      FL_TEXTURE_REGISTRAR(registrar), texture));
+  EXPECT_EQ(fl_mock_texture_registrar_get_texture(registrar), nullptr);
+}
+
 // Test that registering a texture works.
 TEST(FlTextureRegistrarTest, RegisterTexture) {
   g_autoptr(FlEngine) engine = make_mock_engine();
@@ -86,20 +108,4 @@ TEST(FlTextureRegistrarTest, MarkTextureFrameAvailable) {
   EXPECT_TRUE(fl_texture_registrar_register_texture(registrar, texture));
   EXPECT_TRUE(
       fl_texture_registrar_mark_texture_frame_available(registrar, texture));
-}
-
-// Test that populating an OpenGL texture works.
-TEST(FlTextureRegistrarTest, PopulateTexture) {
-  g_autoptr(FlEngine) engine = make_mock_engine();
-  g_autoptr(FlTextureRegistrar) registrar = fl_texture_registrar_new(engine);
-  g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_registrar_texture_new());
-  EXPECT_TRUE(fl_texture_registrar_register_texture(registrar, texture));
-  FlutterOpenGLTexture opengl_texture;
-  g_autoptr(GError) error = nullptr;
-  EXPECT_TRUE(fl_texture_registrar_populate_gl_external_texture(
-      registrar, fl_texture_get_texture_id(texture), BUFFER_WIDTH,
-      BUFFER_HEIGHT, &opengl_texture, &error));
-  EXPECT_EQ(error, nullptr);
-  EXPECT_EQ(opengl_texture.width, REAL_BUFFER_WIDTH);
-  EXPECT_EQ(opengl_texture.height, REAL_BUFFER_HEIGHT);
 }

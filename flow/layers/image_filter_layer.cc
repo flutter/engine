@@ -11,8 +11,6 @@ ImageFilterLayer::ImageFilterLayer(sk_sp<SkImageFilter> filter)
       transformed_filter_(nullptr),
       render_count_(1) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const ImageFilterLayer*>(old_layer);
@@ -23,24 +21,20 @@ void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
     }
   }
 
-  DiffChildren(context, prev);
-
-  SkMatrix inverse;
-  if (context->GetTransform().invert(&inverse)) {
-    auto screen_bounds = context->CurrentSubtreeRegion().ComputeBounds();
-
+  if (filter_) {
     auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
-
-    auto filter_bounds =
-        filter->filterBounds(screen_bounds.roundOut(), SkMatrix::I(),
-                             SkImageFilter::kForward_MapDirection);
-    context->AddLayerBounds(inverse.mapRect(SkRect::Make(filter_bounds)));
+    if (filter) {
+      // This transform will be applied to every child rect in the subtree
+      context->PushFilterBoundsAdjustment([filter](SkRect rect) {
+        return SkRect::Make(
+            filter->filterBounds(rect.roundOut(), SkMatrix::I(),
+                                 SkImageFilter::kForward_MapDirection));
+      });
+    }
   }
-
+  DiffChildren(context, prev);
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void ImageFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {

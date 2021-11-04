@@ -31,9 +31,7 @@
         },
         {
             protocol: [
-                "fuchsia.accessibility.SettingsManager",
                 "fuchsia.accessibility.semantics.SemanticsManager",
-                "fuchsia.deprecatedtimezone.Timezone",
                 "fuchsia.device.NameProvider",
                 "fuchsia.feedback.CrashReporter",
                 "fuchsia.fonts.Provider",

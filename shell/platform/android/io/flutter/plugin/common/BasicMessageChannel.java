@@ -122,8 +122,16 @@ public final class BasicMessageChannel<T> {
    */
   @UiThread
   public void setMessageHandler(@Nullable final MessageHandler<T> handler) {
-    messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler));
+    }
   }
 
   /**

@@ -8,6 +8,7 @@ import android.content.res.AssetManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+import androidx.tracing.Trace;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
@@ -59,7 +60,7 @@ public class DartExecutor implements BinaryMessenger {
     this.flutterJNI = flutterJNI;
     this.assetManager = assetManager;
     this.dartMessenger = new DartMessenger(flutterJNI);
-    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler, null);
+    dartMessenger.setMessageHandler("flutter/isolate", isolateChannelMessageHandler);
     this.binaryMessenger = new DefaultBinaryMessenger(dartMessenger);
     // The JNI might already be attached if coming from a spawned engine. If so, correctly report
     // that this DartExecutor is already running.
@@ -83,7 +84,8 @@ public class DartExecutor implements BinaryMessenger {
   public void onAttachedToJNI() {
     Log.v(
         TAG,
-        "Attached to JNI. Registering the platform message handler for this Dart execution context.");
+        "Attached to JNI. Registering the platform message handler for this Dart execution"
+            + " context.");
     flutterJNI.setPlatformMessageHandler(dartMessenger);
   }
 
@@ -97,7 +99,8 @@ public class DartExecutor implements BinaryMessenger {
   public void onDetachedFromJNI() {
     Log.v(
         TAG,
-        "Detached from JNI. De-registering the platform message handler for this Dart execution context.");
+        "Detached from JNI. De-registering the platform message handler for this Dart execution"
+            + " context.");
     flutterJNI.setPlatformMessageHandler(null);
   }
 
@@ -123,15 +126,20 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
+    Trace.beginSection("DartExecutor#executeDartEntrypoint");
     Log.v(TAG, "Executing Dart entrypoint: " + dartEntrypoint);
 
-    flutterJNI.runBundleAndSnapshotFromLibrary(
-        dartEntrypoint.pathToBundle,
-        dartEntrypoint.dartEntrypointFunctionName,
-        dartEntrypoint.dartEntrypointLibrary,
-        assetManager);
+    try {
+      flutterJNI.runBundleAndSnapshotFromLibrary(
+          dartEntrypoint.pathToBundle,
+          dartEntrypoint.dartEntrypointFunctionName,
+          dartEntrypoint.dartEntrypointLibrary,
+          assetManager);
 
-    isApplicationRunning = true;
+      isApplicationRunning = true;
+    } finally {
+      Trace.endSection();
+    }
   }
 
   /**
@@ -147,15 +155,20 @@ public class DartExecutor implements BinaryMessenger {
       return;
     }
 
+    Trace.beginSection("DartExecutor#executeDartCallback");
     Log.v(TAG, "Executing Dart callback: " + dartCallback);
 
-    flutterJNI.runBundleAndSnapshotFromLibrary(
-        dartCallback.pathToBundle,
-        dartCallback.callbackHandle.callbackName,
-        dartCallback.callbackHandle.callbackLibraryPath,
-        dartCallback.androidAssetManager);
+    try {
+      flutterJNI.runBundleAndSnapshotFromLibrary(
+          dartCallback.pathToBundle,
+          dartCallback.callbackHandle.callbackName,
+          dartCallback.callbackHandle.callbackLibraryPath,
+          dartCallback.androidAssetManager);
 
-    isApplicationRunning = true;
+      isApplicationRunning = true;
+    } finally {
+      Trace.endSection();
+    }
   }
 
   /**
@@ -193,6 +206,15 @@ public class DartExecutor implements BinaryMessenger {
       @Nullable ByteBuffer message,
       @Nullable BinaryMessenger.BinaryReply callback) {
     binaryMessenger.send(channel, message, callback);
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  @UiThread
+  public void setMessageHandler(
+      @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+    binaryMessenger.setMessageHandler(channel, handler);
   }
 
   /** @deprecated Use {@link #getBinaryMessenger()} instead. */
@@ -424,6 +446,13 @@ public class DartExecutor implements BinaryMessenger {
      * @param channel the name of the channel.
      * @param handler a {@link BinaryMessageHandler} to be invoked on incoming messages, or null.
      */
+    @Override
+    @UiThread
+    public void setMessageHandler(
+        @NonNull String channel, @Nullable BinaryMessenger.BinaryMessageHandler handler) {
+      messenger.setMessageHandler(channel, handler);
+    }
+
     @Override
     @UiThread
     public void setMessageHandler(

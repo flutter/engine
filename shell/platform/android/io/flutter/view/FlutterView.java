@@ -846,6 +846,12 @@ public class FlutterView extends SurfaceView
 
   @Override
   @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    mNativeView.setMessageHandler(channel, handler);
+  }
+
+  @Override
+  @UiThread
   public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
     mNativeView.setMessageHandler(channel, handler, taskQueue);
   }
