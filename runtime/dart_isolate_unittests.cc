@@ -126,7 +126,7 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
       /*dart_entrypoint=*/"main",
       /*dart_entrypoint_library=*/std::nullopt,
       /*dart_entrypoint_args=*/{},
-      /*isolate_configration=*/std::move(spawn_configuration));
+      /*isolate_configuration=*/std::move(spawn_configuration));
   auto spawn = weak_spawn.lock();
   ASSERT_TRUE(spawn);
   ASSERT_EQ(spawn->GetPhase(), DartIsolate::Phase::Running);

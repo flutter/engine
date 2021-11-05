@@ -94,7 +94,7 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     const std::vector<std::string>& dart_entrypoint_args,
-    std::unique_ptr<IsolateConfiguration> isolate_configration) const {
+    std::unique_ptr<IsolateConfiguration> isolate_configuration) const {
   return CreateRunningRootIsolate(
       settings,                                          //
       GetIsolateGroupData().GetIsolateSnapshot(),        //
@@ -106,7 +106,7 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
       dart_entrypoint,                                   //
       dart_entrypoint_library,                           //
       dart_entrypoint_args,                              //
-      std::move(isolate_configration),                   //
+      std::move(isolate_configuration),                  //
       UIDartState::Context{GetTaskRunners(),             //
                            snapshot_delegate,            //
                            GetIOManager(),               //
@@ -131,7 +131,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     const std::vector<std::string>& dart_entrypoint_args,
-    std::unique_ptr<IsolateConfiguration> isolate_configration,
+    std::unique_ptr<IsolateConfiguration> isolate_configuration,
     const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
   if (!isolate_snapshot) {
@@ -139,13 +139,13 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     return {};
   }
 
-  if (!isolate_configration) {
+  if (!isolate_configuration) {
     FML_LOG(ERROR) << "Invalid isolate configuration.";
     return {};
   }
 
   isolate_flags.SetNullSafetyEnabled(
-      isolate_configration->IsNullSafetyEnabled(*isolate_snapshot));
+      isolate_configuration->IsNullSafetyEnabled(*isolate_snapshot));
   isolate_flags.SetIsDontNeedSafe(isolate_snapshot->IsDontNeedSafe());
 
   auto isolate = CreateRootIsolate(settings,                           //
@@ -176,7 +176,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     return {};
   }
 
-  if (!isolate_configration->PrepareIsolate(*isolate.get())) {
+  if (!isolate_configuration->PrepareIsolate(*isolate.get())) {
     FML_LOG(ERROR) << "Could not prepare isolate.";
     return {};
   }
