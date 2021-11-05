@@ -702,7 +702,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
         [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
                                                                   uid:1
                                                          platformView:platformView];
-    XCTAssertEqualObjects(container.accessibilityElements.firstObject, platformView);
+    XCTAssertEqualObjects(container.accessibilityElements, @[ platformView ]);
     weakPlatformView = platformView;
     XCTAssertNotNil(weakPlatformView);
   }
