@@ -86,6 +86,9 @@ FLUTTER_ASSERT_ARC
   textInputPlugin.textInputDelegate = engine;
   viewController = [FlutterViewController new];
   textInputPlugin.viewController = viewController;
+
+  // Clear pasteboard between tests.
+  UIPasteboard.generalPasteboard.items = @[];
 }
 
 - (void)tearDown {
@@ -323,6 +326,7 @@ FLUTTER_ASSERT_ARC
   [inputView selectAll:nil];
   [inputView cut:nil];
   [inputView insertText:@"bbbb"];
+  XCTAssertTrue([inputView canPerformAction:@selector(paste:) withSender:nil]);
   [inputView paste:nil];
   [inputView selectAll:nil];
   [inputView copy:nil];
@@ -335,6 +339,20 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 30)];
   NSString* substring = [inputView textInRange:range];
   XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
+}
+
+- (void)testPastingNonTextDisallowed {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  UIPasteboard.generalPasteboard.color = UIColor.redColor;
+  XCTAssertNil(UIPasteboard.generalPasteboard.string);
+  XCTAssertFalse([inputView canPerformAction:@selector(paste:) withSender:nil]);
+  [inputView paste:nil];
+
+  XCTAssertEqualObjects(inputView.text, @"");
 }
 
 - (void)testNoZombies {
@@ -392,6 +410,21 @@ FLUTTER_ASSERT_ARC
   for (FlutterTextInputView* inputView in self.installedInputViews) {
     XCTAssertEqual(inputView.canBecomeFirstResponder, inputView == textInputPlugin.activeView);
   }
+}
+
+- (void)testPropagatePressEventsToNextResponder {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+
+  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  UIView* mockCurrentView = OCMPartialMock(currentView);
+
+  [mockCurrentView pressesBegan:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
+                      withEvent:OCMClassMock([UIPressesEvent class])];
+
+  // The event should be propagated to the next responder instead
+  // of the engine.
+  OCMVerify([mockCurrentView nextResponder]);
 }
 
 #pragma mark - TextEditingDelta tests

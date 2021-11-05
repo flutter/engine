@@ -70,6 +70,7 @@ class DartIsolate : public UIDartState {
     ~Flags();
 
     void SetNullSafetyEnabled(bool enabled);
+    void SetIsDontNeedSafe(bool value);
 
     Dart_IsolateFlags Get() const;
 
@@ -214,7 +215,7 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::unique_ptr<IsolateConfiguration> isolate_configration,
+      std::unique_ptr<IsolateConfiguration> isolate_configuration,
       const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
@@ -244,7 +245,7 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::unique_ptr<IsolateConfiguration> isolate_configration) const;
+      std::unique_ptr<IsolateConfiguration> isolate_configuration) const;
 
   // |UIDartState|
   ~DartIsolate() override;

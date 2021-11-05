@@ -222,6 +222,7 @@ void Engine::Initialize(
                                          weak = weak_factory_.GetWeakPtr()]() {
     task_runner->PostTask([weak]() {
       if (weak) {
+        FML_LOG(ERROR) << "Terminating from session_error_callback";
         weak->Terminate();
       }
     });
@@ -257,10 +258,10 @@ void Engine::Initialize(
               .view_ref_control = std::move(view_ref_pair.control_ref)};
           flatland_view_embedder_ =
               std::make_shared<FlatlandExternalViewEmbedder>(
-                  thread_label_, std::move(view_creation_token),
-                  std::move(view_identity), std::move(flatland_view_protocols),
-                  std::move(request), *flatland_connection_.get(),
-                  surface_producer_.value(), intercept_all_input_);
+                  std::move(view_creation_token), std::move(view_identity),
+                  std::move(flatland_view_protocols), std::move(request),
+                  *flatland_connection_.get(), surface_producer_.value(),
+                  intercept_all_input_);
         } else {
           session_connection_ = std::make_shared<GfxSessionConnection>(
               thread_label_, std::move(session_inspect_node),
@@ -340,6 +341,8 @@ void Engine::Initialize(
        weak = weak_factory_.GetWeakPtr()]() {
         task_runner->PostTask([weak]() {
           if (weak) {
+            FML_LOG(ERROR) << "Terminating from "
+                              "on_session_listener_error_callback";
             weak->Terminate();
           }
         });
@@ -619,6 +622,7 @@ void Engine::Initialize(
     // The engine could have been killed by the caller right after the
     // constructor was called but before it could run on the UI thread.
     if (weak) {
+      FML_LOG(ERROR) << "Terminating from on_run_failure";
       weak->Terminate();
     }
   };

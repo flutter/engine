@@ -939,88 +939,6 @@ static BOOL isScribbleAvailable() {
 - (void)touchesEstimatedPropertiesUpdated:(NSSet*)touches {
   [self.viewResponder touchesEstimatedPropertiesUpdated:touches];
 }
-// The documentation for presses* handlers (implemented below) is entirely
-// unclear about how to handle the case where some, but not all, of the presses
-// are handled here. I've elected to call super separately for each of the
-// presses that aren't handled, but it's not clear if this is correct. It may be
-// that iOS intends for us to either handle all or none of the presses, and pass
-// the original set to super. I have not yet seen multiple presses in the set in
-// the wild, however, so I suspect that the API is built for a tvOS remote or
-// something, and perhaps only one ever appears in the set on iOS from a
-// keyboard.
-
-// If you substantially change these presses overrides, consider also changing
-// the similar ones in FlutterViewController. They need to be overridden in both
-// places to capture keys both inside and outside of a text field, but have
-// slightly different implmentations.
-
-- (void)pressesBegan:(NSSet<UIPress*>*)presses
-           withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
-  if (@available(iOS 13.4, *)) {
-    for (UIPress* press in presses) {
-      [_textInputDelegate
-          flutterTextInputView:self
-              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                 withEvent:event] autorelease]
-                    nextAction:^() {
-                      [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
-                    }];
-    }
-  } else {
-    [super pressesBegan:presses withEvent:event];
-  }
-}
-
-- (void)pressesChanged:(NSSet<UIPress*>*)presses
-             withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
-  if (@available(iOS 13.4, *)) {
-    for (UIPress* press in presses) {
-      [_textInputDelegate
-          flutterTextInputView:self
-              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                 withEvent:event] autorelease]
-                    nextAction:^() {
-                      [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
-                    }];
-    }
-  } else {
-    [super pressesChanged:presses withEvent:event];
-  }
-}
-
-- (void)pressesEnded:(NSSet<UIPress*>*)presses
-           withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
-  if (@available(iOS 13.4, *)) {
-    for (UIPress* press in presses) {
-      [_textInputDelegate
-          flutterTextInputView:self
-              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                 withEvent:event] autorelease]
-                    nextAction:^() {
-                      [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
-                    }];
-    }
-  } else {
-    [super pressesEnded:presses withEvent:event];
-  }
-}
-
-- (void)pressesCancelled:(NSSet<UIPress*>*)presses
-               withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
-  if (@available(iOS 13.4, *)) {
-    for (UIPress* press in presses) {
-      [_textInputDelegate
-          flutterTextInputView:self
-              handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
-                                                                 withEvent:event] autorelease]
-                    nextAction:^() {
-                      [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
-                    }];
-    }
-  } else {
-    [super pressesCancelled:presses withEvent:event];
-  }
-}
 
 // Extracts the selection information from the editing state dictionary.
 //
@@ -1099,6 +1017,11 @@ static BOOL isScribbleAvailable() {
   if (isScribbleAvailable()) {
     return NO;
   }
+  if (action == @selector(paste:)) {
+    // Forbid pasting images, memojis, or other non-string content.
+    return [UIPasteboard generalPasteboard].string != nil;
+  }
+
   return [super canPerformAction:action withSender:sender];
 }
 
@@ -1114,7 +1037,10 @@ static BOOL isScribbleAvailable() {
 }
 
 - (void)paste:(id)sender {
-  [self insertText:[UIPasteboard generalPasteboard].string];
+  NSString* pasteboardString = [UIPasteboard generalPasteboard].string;
+  if (pasteboardString != nil) {
+    [self insertText:pasteboardString];
+  }
 }
 
 - (void)delete:(id)sender {

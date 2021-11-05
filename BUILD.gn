@@ -21,12 +21,6 @@ config("config") {
       cflags = [ "/WX" ]  # Treat warnings as errors.
     }
   }
-
-  defines = []
-
-  if (is_debug) {
-    defines += [ "FLUTTER_ENABLE_DIFF_CONTEXT" ]
-  }
 }
 
 config("export_dynamic_symbols") {
@@ -227,7 +221,7 @@ group("dist") {
   deps = [ "//flutter/sky/dist" ]
 }
 
-if (is_fuchsia) {
+if (is_fuchsia && enable_unittests) {
   group("fuchsia_tests") {
     testonly = true
 
