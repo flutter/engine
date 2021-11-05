@@ -18,7 +18,7 @@ const file.FileSystem fs = LocalFileSystem();
 
 /// Whether this code is running on LUCI.
 bool _isLuci = Platform.environment.containsKey('SWARMING_TASK_ID') && Platform.environment.containsKey('GOLDCTL');
-bool _isPreSubmit = _isLuci && Platform.environment.containsKey('GOLD_TRYJOB');
+bool _isPreSubmit = false;//_isLuci && Platform.environment.containsKey('GOLD_TRYJOB');
 bool _isPostSubmit = _isLuci && !_isPreSubmit;
 
 
