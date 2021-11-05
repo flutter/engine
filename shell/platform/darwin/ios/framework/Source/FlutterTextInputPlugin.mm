@@ -398,7 +398,7 @@ static FlutterAutofillType autofillTypeOf(NSDictionary* configuration) {
 }
 
 static BOOL isApproximatelyEqual(float x, float y, float delta) {
-  return x >= y - delta && x <= y + delta;
+  return fabsf(x - y) <= delta;
 }
 
 // Checks whether point should be considered closer to selectionRect compared to
@@ -448,8 +448,7 @@ static BOOL isSelectionRectCloserToPoint(CGPoint point,
 // 14 or higher.
 static BOOL isScribbleAvailable() {
   if (@available(iOS 14.0, *)) {
-    NSString* deviceModel = (NSString*)[UIDevice currentDevice].model;
-    if ([[deviceModel substringWithRange:NSMakeRange(0, 4)] isEqualToString:@"iPad"]) {
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
       return YES;
     }
   }
@@ -753,7 +752,7 @@ static BOOL isScribbleAvailable() {
       _smartQuotesType = UITextSmartQuotesTypeYes;
       _smartDashesType = UITextSmartDashesTypeYes;
     }
-    _selectionRects = @[];
+    _selectionRects = [[NSArray alloc] init];
 
     if (@available(iOS 14.0, *)) {
       UIScribbleInteraction* interaction =
@@ -1097,14 +1096,7 @@ static BOOL isScribbleAvailable() {
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
   // When scribble is available, the FlutterTextInputView will display the native toolbar unless
   // these text editing actions are disabled.
-  if (isScribbleAvailable() &&
-      (action == @selector(paste:) || action == @selector(cut:) || action == @selector(copy:) ||
-       action == @selector(select:) || action == @selector(selectAll:) ||
-       action == @selector(delete:) || action == @selector(makeTextWritingDirectionLeftToRight:) ||
-       action == @selector(makeTextWritingDirectionRightToLeft:) ||
-       action == @selector(toggleBoldface:) || action == @selector(toggleItalics:) ||
-       action == @selector(toggleUnderline:) || action == NSSelectorFromString(@"_define:") ||
-       action == NSSelectorFromString(@"_lookup:") || action == NSSelectorFromString(@"_share:"))) {
+  if (isScribbleAvailable()) {
     return NO;
   }
   return [super canPerformAction:action withSender:sender];
@@ -1865,7 +1857,8 @@ static BOOL isScribbleAvailable() {
 
   _scribbleFocusStatus = FlutterScribbleFocusStatusUnfocused;
   [self resetScribbleInteractionStatusIfEnding];
-  _selectionRects = copiedRects;
+  self.selectionRects = copiedRects;
+  [copiedRects release];
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
 }
