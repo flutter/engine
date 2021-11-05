@@ -2404,10 +2404,9 @@ static BOOL isScribbleAvailable() {
     if (@available(iOS 14.0, *)) {
       UIView* parentView = viewResponder.view;
       if (parentView != nil) {
-        UIIndirectScribbleInteraction* _scribbleInteraction =
-            [[[UIIndirectScribbleInteraction alloc]
-                initWithDelegate:(id<UIIndirectScribbleInteractionDelegate>)self] autorelease];
-        [parentView addInteraction:_scribbleInteraction];
+        UIIndirectScribbleInteraction* scribbleInteraction = [[[UIIndirectScribbleInteraction alloc]
+            initWithDelegate:(id<UIIndirectScribbleInteractionDelegate>)self] autorelease];
+        [parentView addInteraction:scribbleInteraction];
       }
     }
   }
