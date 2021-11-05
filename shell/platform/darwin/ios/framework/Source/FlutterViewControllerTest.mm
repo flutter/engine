@@ -127,7 +127,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)keyboardWillChangeFrame:(NSNotification*)notification;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)ensureViewportMetricsIsCorrect;
-- (void)invalidateDisplayLinkIfNeeded;
+- (void)invalidateDisplayLink;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -187,7 +187,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   id viewControllerMock = OCMPartialMock(viewController);
   [viewControllerMock viewDidDisappear:YES];
   OCMVerify([viewControllerMock ensureViewportMetricsIsCorrect]);
-  OCMVerify([viewControllerMock invalidateDisplayLinkIfNeeded]);
+  OCMVerify([viewControllerMock invalidateDisplayLink]);
 }
 
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {

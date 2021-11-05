@@ -730,7 +730,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
-    [self invalidateDisplayLinkIfNeeded];
+    [self invalidateDisplayLink];
     [self ensureViewportMetricsIsCorrect];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
@@ -1174,7 +1174,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
 
   // Invalidate old display link if the old animation is not complete
-  [self invalidateDisplayLinkIfNeeded];
+  [self invalidateDisplayLink];
 
   self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
   [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
@@ -1197,10 +1197,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }];
 }
 
-- (void)invalidateDisplayLinkIfNeeded {
-  if (self.displayLink != nil) {
+- (void)invalidateDisplayLink {
     [self.displayLink invalidate];
-  }
 }
 
 - (void)removeKeyboardAnimationView {
