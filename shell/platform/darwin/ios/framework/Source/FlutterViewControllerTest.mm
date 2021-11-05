@@ -757,7 +757,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                          bundle:nil];
   XCTAssertFalse(realVC.view.accessibilityElementsHidden, @"");
   [realVC applicationWillResignActive:nil];
-  XCTAssertTrue(realVC.view.accessibilityElementsHidden, @"");
+  XCTAssertTrue(realVC.view.accessibilityElementsHidden);
   [realVC applicationBecameActive:nil];
   XCTAssertFalse(realVC.view.accessibilityElementsHidden, @"");
   engine.viewController = nil;
