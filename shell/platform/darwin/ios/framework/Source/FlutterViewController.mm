@@ -1198,7 +1198,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)invalidateDisplayLink {
-    [self.displayLink invalidate];
+  [self.displayLink invalidate];
 }
 
 - (void)removeKeyboardAnimationView {
