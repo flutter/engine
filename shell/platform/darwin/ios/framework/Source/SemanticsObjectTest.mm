@@ -694,16 +694,20 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
-  UIView* platformView = [[[UIView alloc] init] autorelease];
+  __weak UIView* weakPlatformView;
+  @autoreleasepool {
+    UIView* platformView = [[UIView alloc] init];
 
-  FlutterPlatformViewSemanticsContainer* container
-      [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:weak_ptr
-                                                                uid:1
-                                                       platformView:platformView];
-  XCTAssertEqualObjects(container.accessibilityElements, @[ platformView ]);
-
-  __weak platformView* weakPlatformView = platformView;
-  container = nil;
+    FlutterPlatformViewSemanticsContainer* container =
+        [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
+                                                                  uid:1
+                                                         platformView:platformView];
+    XCTAssertEqualObjects(container.accessibilityElements.firstObject, platformView);
+    weakPlatformView = platformView;
+    XCTAssertNotNil(weakPlatformView);
+  }
+  // Check if there's no more strong references to `platformView` after container and platformView
+  // are released.
   XCTAssertNil(weakPlatformView);
 }
 
