@@ -447,24 +447,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   return NSMakeRange(start, length);
 }
 
-// Change the range of selected text, without notifying the framework.
-- (void)setSelectedTextRangeLocal:(NSRange*)selectedTextRange {
-  flutter::TextRange selection = _activeModel->selection();
-  NSRange oldSelectedRange = NSMakeRange(selection.base(), selection.length());
-
-  if (selectedTextRange != &oldSelectedRange) {
-    if (_activeModel->GetText().length() > 0) {
-      NSString* text = @(_activeModel->GetText().c_str());
-      NSRange nextSelectedRange = fml::RangeForCharactersInRange(text, *selectedTextRange);
-      _activeModel->SetSelection(flutter::TextRange(
-          nextSelectedRange.location, nextSelectedRange.location + nextSelectedRange.length));
-    } else {
-      _activeModel->SetSelection(flutter::TextRange(
-          selectedTextRange->location, selectedTextRange->location + selectedTextRange->length));
-    }
-  }
-}
-
 #pragma mark -
 #pragma mark FlutterKeySecondaryResponder
 
@@ -633,7 +615,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
 
   // Input string may be NSString or NSAttributedString.
-  std::string marked_text = [string UTF8String];
+  BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
+  std::string marked_text = isAttributedString ? [[string string] UTF8String] : [string UTF8String];
   _activeModel->UpdateComposingText(marked_text);
 
   if (_enableDeltaModel) {

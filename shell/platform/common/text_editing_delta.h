@@ -11,7 +11,7 @@
 
 namespace flutter {
 
-class TextEditingDelta {
+struct TextEditingDelta {
  public:
   TextEditingDelta(std::string textBeforeChange,
                    TextRange range,
