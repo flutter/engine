@@ -14,7 +14,6 @@ import 'package:process/process.dart';
 
 import 'environment.dart';
 
-const String _kWebEngineRootKey = 'ENGINE_PATH';
 const String _kGoldctlKey = 'GOLDCTL';
 const String _kTestBrowserKey = 'FLUTTER_TEST_BROWSER';
 
@@ -35,6 +34,10 @@ class SkiaGoldClient {
     this.platform = const LocalPlatform(),
     io.HttpClient? httpClient,
   }) : httpClient = httpClient ?? io.HttpClient();
+
+  /// Whether the Skia Gold client is available and can be used in this
+  /// environment.
+  static bool get isAvailable => io.Platform.environment.containsKey(_kGoldctlKey);
 
   /// The file system to use for storing the local clone of the repository.
   ///
@@ -69,11 +72,6 @@ class SkiaGoldClient {
   /// Whether the `goldctl` tool has been initialized.
   bool get isInitialized => _isInitialized;
   bool _isInitialized = false;
-
-  /// The local [Directory] where the Flutter repository is hosted.
-  ///
-  /// Uses the [fs] file system.
-  Directory get _webEngineRoot => fs.directory(platform.environment[_kWebEngineRootKey]);
 
   /// The path to the local [Directory] where the goldctl tool is hosted.
   ///

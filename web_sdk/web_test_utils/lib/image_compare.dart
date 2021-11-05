@@ -36,11 +36,11 @@ Future<String> compareImage(
   String filename,
   PixelComparison pixelComparison,
   double maxDiffRateFailure,
-  SkiaGoldClient skiaClient, {
+  SkiaGoldClient? skiaClient, {
   String goldensDirectory = '',
   bool write = false,
 }) async {
-  if (_isLuci) {
+  if (_isLuci && skiaClient != null) {
     // This is temporary to get started by uploading existing screenshots to
     // Skia Gold. The next step would be to actually use Skia Gold for
     // comparison.

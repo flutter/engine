@@ -52,7 +52,7 @@ class BrowserPlatform extends PlatformPlugin {
   static Future<BrowserPlatform> start({
     required BrowserEnvironment browserEnvironment,
     required bool doUpdateScreenshotGoldens,
-    required SkiaGoldClient skiaClient,
+    required SkiaGoldClient? skiaClient,
   }) async {
     final shelf_io.IOServer server = shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
@@ -105,7 +105,7 @@ class BrowserPlatform extends PlatformPlugin {
 
   /// A client for communicating with the Skia Gold backend to fetch, compare
   /// and update images.
-  final SkiaGoldClient skiaClient;
+  final SkiaGoldClient? skiaClient;
 
   BrowserPlatform._({
     required this.browserEnvironment,

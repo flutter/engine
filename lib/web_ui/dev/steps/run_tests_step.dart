@@ -74,7 +74,7 @@ class RunTestsStep implements PipelineStep {
     await _prepareTestResultsDirectory();
     await browserEnvironment.prepareEnvironment();
 
-    final SkiaGoldClient skiaClient = await _setupSkiaGoldClient();
+    final SkiaGoldClient? skiaClient = await _createSkiaGoldClient();
 
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
@@ -206,29 +206,34 @@ void _copyTestFontsIntoWebUi() {
   }
 }
 
-Future<SkiaGoldClient> _setupSkiaGoldClient() async {
-  print('_setupSkiaGoldClient:::GOLDCTL ${io.Platform.environment['GOLDCTL']}');
-  print('_setupSkiaGoldClient:::SWARMING_TASK_ID ${io.Platform.environment['SWARMING_TASK_ID']}');
-  print('_setupSkiaGoldClient:::LUCI_CONTEXT ${io.Platform.environment['LUCI_CONTEXT']}');
-  print('_setupSkiaGoldClient:::ENGINE_PATH ${io.Platform.environment['ENGINE_PATH']}');
+Future<SkiaGoldClient?> _createSkiaGoldClient() async {
+  SkiaGoldClient? skiaClient;
 
-  const FileSystem fs = LocalFileSystem();
-  final Directory goldensRoot =
-      fs.directory(environment.webUiSkiaGoldDirectory.path);
-  final SkiaGoldClient skiaClient = SkiaGoldClient(goldensRoot);
+  if (SkiaGoldClient.isAvailable) {
+    const FileSystem fs = LocalFileSystem();
+    final Directory goldensRoot =
+        fs.directory(environment.webUiSkiaGoldDirectory.path);
+    skiaClient = SkiaGoldClient(goldensRoot);
 
-  if (isLuci) {
-    await skiaClient.auth();
-  } else {
-    try {
-      // Check if we can reach Gold.
-      await skiaClient.getExpectationForTest('');
-    } on io.OSError catch (_) {
-      // TODO(mdebbar): What else should we do here? Maybe fail if we are in pre-submit?
-      print('OSError occurred, could not reach Gold.');
-    } on io.SocketException catch (_) {
-      print('SocketException occurred, could not reach Gold.');
+    if (isLuci) {
+      await skiaClient.auth();
+    } else {
+      try {
+        // Check if we can reach Gold.
+        await skiaClient.getExpectationForTest('');
+      } on io.OSError catch (_) {
+        // TODO(mdebbar): What else should we do here? Maybe fail if we are in pre-submit?
+        print('OSError occurred, could not reach Gold.');
+        skiaClient = null;
+      } on io.SocketException catch (_) {
+        print('SocketException occurred, could not reach Gold.');
+        skiaClient = null;
+      }
     }
+  }
+
+  if (skiaClient == null) {
+    print('WARNING: Unable to use Skia Client in this environment.');
   }
 
   return skiaClient;
@@ -245,7 +250,7 @@ Future<void> _runTestBatch({
   required bool doUpdateScreenshotGoldens,
   required int concurrency,
   required bool expectFailure,
-  required SkiaGoldClient skiaClient,
+  required SkiaGoldClient? skiaClient,
 }) async {
   final String configurationFilePath = pathlib.join(
     environment.webUiRootDir.path,
