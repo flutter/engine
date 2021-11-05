@@ -124,6 +124,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
+- (void)applicationWillResignActive:(NSNotification*)notification;
+- (void)applicationBecameActive:(NSNotification*)notification;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -743,6 +745,21 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator
                                                       object:nil];
   XCTAssertTrue(realVC.prefersHomeIndicatorAutoHidden, @"");
+  engine.viewController = nil;
+}
+
+- (void)testHideA11yElements {
+  FlutterDartProject* project = [[FlutterDartProject alloc] init];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden, @"");
+  [realVC applicationWillResignActive:nil];
+  XCTAssertTrue(realVC.view.accessibilityElementsHidden, @"");
+  [realVC applicationBecameActive:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden, @"");
   engine.viewController = nil;
 }
 
