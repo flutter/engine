@@ -9,7 +9,6 @@ A top level harness to run all unit-tests in a specific engine build.
 """
 
 import argparse
-from genericpath import exists
 import glob
 import os
 import re
