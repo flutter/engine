@@ -47,7 +47,7 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
    *
    * <p>Reads and writes to this map must lock {@code handlersLock}.
    */
-  @NonNull private final Map<String, List<BufferedMessageInfo>> bufferedMessages = new HashMap<>();
+  @NonNull private Map<String, List<BufferedMessageInfo>> bufferedMessages = new HashMap<>();
 
   @NonNull private final Object handlersLock = new Object();
   @NonNull private final AtomicBoolean enableBufferingIncomingMessages = new AtomicBoolean(false);
@@ -207,10 +207,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     List<BufferedMessageInfo> list;
     synchronized (handlersLock) {
       messageHandlers.put(channel, new HandlerInfo(handler, dartMessengerTaskQueue));
-      if (!bufferedMessages.containsKey(channel)) {
+      list = bufferedMessages.remove(channel);
+      if (list == null) {
         return;
       }
-      list = bufferedMessages.remove(channel);
     }
     for (BufferedMessageInfo info : list) {
       dispatchMessageToQueue(
@@ -225,17 +225,16 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
 
   @Override
   public void disableBufferingIncomingMessages() {
-    if (!enableBufferingIncomingMessages.getAndSet(false)) {
-      return;
-    }
-    Map<String, List<BufferedMessageInfo>> pendingMessagesCopy = new HashMap<>();
+    Map<String, List<BufferedMessageInfo>> pendingMessages;
     synchronized (handlersLock) {
-      pendingMessagesCopy = new HashMap(bufferedMessages);
-      bufferedMessages.clear();
+      enableBufferingIncomingMessages.set(false);
+      pendingMessages = bufferedMessages;
+      bufferedMessages = new HashMap<>();
     }
-    for (String channel : pendingMessagesCopy.keySet()) {
-      for (BufferedMessageInfo info : pendingMessagesCopy.get(channel)) {
-        dispatchMessageToQueue(channel, null, info.message, info.replyId, info.messageData);
+    for (Map.Entry<String, List<BufferedMessageInfo>> channel : pendingMessages.entrySet()) {
+      for (BufferedMessageInfo info : channel.getValue()) {
+        dispatchMessageToQueue(
+            channel.getKey(), null, info.message, info.replyId, info.messageData);
       }
     }
   }
