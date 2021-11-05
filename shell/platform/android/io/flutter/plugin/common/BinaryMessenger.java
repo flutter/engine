@@ -55,8 +55,9 @@ public interface BinaryMessenger {
       return type;
     }
 
-    public void setType(TaskQueueType type) {
+    public TaskQueueOptions setType(TaskQueueType type) {
       this.type = type;
+      return this;
     }
   }
 
