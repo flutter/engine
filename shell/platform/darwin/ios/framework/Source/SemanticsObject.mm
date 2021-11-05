@@ -754,21 +754,11 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 @implementation FlutterPlatformViewSemanticsContainer
 
-// Method declared as unavailable in the interface
-- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
-                           uid:(int32_t)uid {
-  return [super init];
-}
-
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
-                platformViewId:(int32_t)platformViewId {
+                  platformView:(nonnull UIView*)platformView {
   if (self = [super initWithBridge:bridge uid:uid]) {
-    auto controller = bridge->GetPlatformViewsController();
-    FML_DCHECK(controller);
-    if (controller) {
-      _platformView = [controller->GetPlatformViewByID(platformViewId) retain];
-    }
+    _platformView = [platformView retain];
   }
   return self;
 }

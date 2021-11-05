@@ -46,9 +46,6 @@ class MockAccessibilityBridge : public AccessibilityBridgeIos {
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
-    return nil;
-  }
   std::vector<SemanticsActionObservation> observations;
   bool isVoiceOverRunningValue;
 
@@ -77,9 +74,6 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   }
   void AccessibilityObjectDidBecomeFocused(int32_t id) override {}
   void AccessibilityObjectDidLoseFocus(int32_t id) override {}
-  std::shared_ptr<FlutterPlatformViewsController> GetPlatformViewsController() const override {
-    return nil;
-  }
   std::vector<SemanticsActionObservation> observations;
   bool isVoiceOverRunningValue;
 
@@ -690,16 +684,21 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   XCTAssertTrue(bridge->observations[0].action == flutter::SemanticsAction::kShowOnScreen);
 }
 
-- (void)testPlatformViewSemanticsContainer {
+- (void)testFlutterPlatformViewSemanticsContainer {
   fml::WeakPtrFactory<flutter::MockAccessibilityBridge> factory(
       new flutter::MockAccessibilityBridge());
   fml::WeakPtr<flutter::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
-  SemanticsObject* object = [[SemanticsObject alloc] initWithBridge:bridge uid:1];
-  object.platformViewSemanticsContainer =
-      [[FlutterPlatformViewSemanticsContainer alloc] initWithSemanticsObject:object];
-  __weak SemanticsObject* weakObject = object;
-  object = nil;
-  XCTAssertNil(weakObject);
+  UIView* platformView = [[[UIView alloc] init] autorelease];
+
+  FlutterPlatformViewSemanticsContainer* container
+      [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:weak_ptr
+                                                                uid:1
+                                                       platformView:platformView];
+  XCTAssertEqualObjects(container.accessibilityElements, @[ platformView ]);
+
+  __weak platformView* weakPlatformView = platformView;
+  container = nil;
+  XCTAssertNil(weakPlatformView);
 }
 
 - (void)testFlutterSwitchSemanticsObjectMatchesUISwitch {
