@@ -548,8 +548,8 @@ TEST(FlKeyEmbedderResponderTest, ReleaseShiftKeyBetweenDigitKeyEvents) {
   // Press shift left
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(101, kPress, GDK_KEY_Shift_L, kKeyCodeShiftLeft, state,
-                               kIsModifier),
+      fl_key_event_new_by_mock(101, kPress, GDK_KEY_Shift_L, kKeyCodeShiftLeft,
+                               state, kIsModifier),
       verify_response_handled, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -586,8 +586,8 @@ TEST(FlKeyEmbedderResponderTest, ReleaseShiftKeyBetweenDigitKeyEvents) {
   // Release shift
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(103, kRelease, GDK_KEY_Shift_L, kKeyCodeShiftLeft,
-                               state, kIsModifier),
+      fl_key_event_new_by_mock(103, kRelease, GDK_KEY_Shift_L,
+                               kKeyCodeShiftLeft, state, kIsModifier),
       verify_response_handled, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
@@ -606,15 +606,15 @@ TEST(FlKeyEmbedderResponderTest, ReleaseShiftKeyBetweenDigitKeyEvents) {
   // Release digit 1, which is "1" because shift has been released.
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(104, kRelease, GDK_KEY_1, kKeyCodeDigit1,
-                               state, kIsNotModifier),
+      fl_key_event_new_by_mock(104, kRelease, GDK_KEY_1, kKeyCodeDigit1, state,
+                               kIsNotModifier),
       verify_response_handled, &user_data);
 
   EXPECT_EQ(g_call_records->len, 1u);
   record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(record->event->physical, kPhysicalDigit1);
-  EXPECT_EQ(record->event->logical, kLogicalExclamation); // Important
+  EXPECT_EQ(record->event->logical, kLogicalExclamation);  // Important
   EXPECT_STREQ(record->event->character, nullptr);
   EXPECT_EQ(record->event->synthesized, false);
 
