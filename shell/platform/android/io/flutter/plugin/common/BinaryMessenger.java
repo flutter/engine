@@ -36,27 +36,22 @@ public interface BinaryMessenger {
    */
   public interface TaskQueue {}
 
-  /**
-   * The policy for handling tasks in a TaskQueue.
-   *
-   * <p>Values: - SERIAL - Tasks will be handled serially. - CONCURRENT - Tasks can be handled in
-   * parallel.
-   */
-  public enum TaskQueueType {
-    SERIAL,
-    CONCURRENT,
-  }
-
   /** Options that control how a TaskQueue should operate and be created. */
   public static class TaskQueueOptions {
-    private TaskQueueType type = TaskQueueType.SERIAL;
+    private boolean isSerial = true;
 
-    public TaskQueueType getType() {
-      return type;
+    public boolean getIsSerial() {
+      return isSerial;
     }
 
-    public TaskQueueOptions setType(TaskQueueType type) {
-      this.type = type;
+    /**
+     * Setter for `isSerial` property.
+     *
+     * <p>When this is true all tasks performed by the TaskQueue will be forced to happen serially
+     * (one completes before the other begins).
+     */
+    public TaskQueueOptions setIsSerial(boolean isSerial) {
+      this.isSerial = isSerial;
       return this;
     }
   }

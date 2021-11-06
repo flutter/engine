@@ -90,13 +90,10 @@ class DartMessenger implements BinaryMessenger, PlatformMessageHandler {
     }
 
     public DartMessengerTaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
-      switch (options.getType()) {
-        case SERIAL:
-          return new SerialTaskQueue(executorService);
-        case CONCURRENT:
-          return new ConcurrentTaskQueue(executorService);
-        default:
-          throw new RuntimeException("Unexpected TaskQueue type: " + options.getType());
+      if (options.getIsSerial()) {
+        return new SerialTaskQueue(executorService);
+      } else {
+        return new ConcurrentTaskQueue(executorService);
       }
     }
   }
