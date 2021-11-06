@@ -174,6 +174,52 @@ public class InputConnectionAdaptorTest {
   }
 
   @Test
+  public void testCommitContent() throws JSONException {
+    View testView = new View(RuntimeEnvironment.application);
+    int client = 0;
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    ListenableEditingState editable = sampleEditable(0, 0);
+    InputConnectionAdaptor adaptor =
+            new InputConnectionAdaptor(
+                    testView,
+                    client,
+                    textInputChannel,
+                    mockKeyProcessor,
+                    editable,
+                    null,
+                    mockFlutterJNI);
+    adaptor.commitContent(
+            new InputContentInfo(
+                    Uri.parse("content://mock/uri/test/commitContent"),
+                    new ClipDescription("commitContent test", new String[] { "image/png" })
+            ),
+            0,
+            null
+    );
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1))
+            .send(
+                    channelCaptor.capture(),
+                    bufferCaptor.capture(),
+                    any(BinaryMessenger.BinaryReply.class));
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+            bufferCaptor.getValue(),
+            "TextInputClient.performAction",
+            new String[] {
+                    "0",
+                    "TextInputAction.commitContent",
+                    "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
+            }
+    );
+  }
+
+  @Test
   public void testPerformPrivateCommand_dataIsNull() throws JSONException {
     View testView = new View(RuntimeEnvironment.application);
     int client = 0;

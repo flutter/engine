@@ -486,59 +486,43 @@ class InputConnectionAdaptor extends BaseInputConnection
 
   @Override
   public boolean commitContent(InputContentInfo inputContentInfo, int flags, Bundle opts) {
-      Log.d("HackFlutterEngine", "Content Commit Invoked");
-
-      // Ensure permission is granted
-      if (BuildCompat.isAtLeastNMR1() && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
-        try {
-            inputContentInfo.requestPermission();
-            Log.d("HackFlutterEngine", "Content Commit request permissions: PASS");
-        } catch (Exception e) {
-            Log.d("HackFlutterEngine", "Content Commit reqest permissions: FAIL");
-            return false;
-        }
-      }
-
-      if (inputContentInfo.getDescription().getMimeTypeCount() > 0) {
+    // Ensure permission is granted
+    if (BuildCompat.isAtLeastNMR1() && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
+      try {
         inputContentInfo.requestPermission();
-
-        final Uri uri = inputContentInfo.getContentUri();
-        final String mimeType = inputContentInfo.getDescription().getMimeType(0);
-        Log.d("HackFlutterEngine", "Content Commit received URI: " + uri + " (MIME: " + mimeType + ")");
-        Context context = mFlutterView.getContext();
-        Boolean retval = false;
-
-        try {
-          final InputStream is = context.getContentResolver().openInputStream(uri);
-          final byte[] data = this.readStreamFully(is, 64 * 1024);
-          Log.d("HackFlutterEngine", "Content Commit data length: " + data.length);
-
-          final Map<String, Object> obj = new HashMap<>();
-          obj.put("mimeType", mimeType);
-          obj.put("data", data);
-          obj.put("uri", uri != null ? uri.toString() : null);
-
-          // Commit the content to the text input channel
-          textInputChannel.commitContent(mClient, obj);
-          retval = true;
-        } catch (FileNotFoundException ex) {
-          Log.d("HackFlutterEngine", "Content Commit load file: FAIL (Not Found)");
-        } catch (Exception ex) {
-          Log.d("HackFlutterEngine", "Content Commit load data: FAIL");
-        } finally {
-          inputContentInfo.releasePermission();
-        }
-
-        if (retval) {
-          Log.d("HackFlutterEngine", "Content Commit Result: PASS");
-        }
-
-        return retval;
+      } catch (Exception e) {
+        return false;
       }
+    }
 
-      // If it gets to this point, it failed
-      Log.d("HackFlutterEngine", "Content Commit Result: FAIL");
-      return false;
+    if (inputContentInfo.getDescription().getMimeTypeCount() > 0) {
+      inputContentInfo.requestPermission();
+
+      final Uri uri = inputContentInfo.getContentUri();
+      final String mimeType = inputContentInfo.getDescription().getMimeType(0);
+      Context context = mFlutterView.getContext();
+      Boolean retval = false;
+
+      try {
+        final InputStream is = context.getContentResolver().openInputStream(uri);
+        final byte[] data = this.readStreamFully(is, 64 * 1024);
+
+        final Map<String, Object> obj = new HashMap<>();
+        obj.put("mimeType", mimeType);
+        obj.put("data", data);
+        obj.put("uri", uri != null ? uri.toString() : null);
+
+        // Commit the content to the text input channel
+        textInputChannel.commitContent(mClient, obj);
+        retval = true;
+      } catch (FileNotFoundException ex) {
+      } catch (Exception ex) {
+      } finally {
+        inputContentInfo.releasePermission();
+      }
+      return retval;
+    }
+    return false;
   }
 
   public byte[] readStreamFully(InputStream is, int blocksize) {
