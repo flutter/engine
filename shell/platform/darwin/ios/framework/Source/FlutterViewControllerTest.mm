@@ -124,8 +124,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
-- (void)applicationWillResignActive:(NSNotification*)notification;
-- (void)applicationBecameActive:(NSNotification*)notification;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -755,11 +753,15 @@ typedef enum UIAccessibilityContrast : NSInteger {
   FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
                                                                         nibName:nil
                                                                          bundle:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden, @"");
-  [realVC applicationWillResignActive:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationWillResignActiveNotification
+                    object:nil];
   XCTAssertTrue(realVC.view.accessibilityElementsHidden);
-  [realVC applicationBecameActive:nil];
-  XCTAssertFalse(realVC.view.accessibilityElementsHidden, @"");
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationDidBecomeActiveNotification
+                    object:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   engine.viewController = nil;
 }
 
