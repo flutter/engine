@@ -207,7 +207,7 @@ ComponentV2::ComponentV2(
 
   directory_request_ = directory_ptr_.NewRequest();
 
-  fidl::InterfaceHandle<fuchsia::io::Directory> flutter_public_dir;
+  fuchsia::io::DirectoryHandle flutter_public_dir;
   // TODO(anmittal): when fixing enumeration using new c++ vfs, make sure that
   // flutter_public_dir is only accessed once we receive OnOpen Event.
   // That will prevent FL-175 for public directory
@@ -236,7 +236,7 @@ ComponentV2::ComponentV2(
         const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
-          fidl::InterfaceHandle<fuchsia::io::Directory> dir;
+          fuchsia::io::DirectoryHandle dir;
           auto request = dir.NewRequest().TakeChannel();
           auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
                                                 dir_str, request.release());
@@ -310,27 +310,28 @@ ComponentV2::ComponentV2(
       }
       auto hold_snapshot = [snapshot](const uint8_t* _, size_t __) {};
       settings_.vm_snapshot_data = [hold_snapshot, vm_data]() {
-        return std::make_unique<fml::NonOwnedMapping>(vm_data, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(vm_data, 0, hold_snapshot,
+                                                      true /* dontneed_safe */);
       };
       settings_.vm_snapshot_instr = [hold_snapshot, vm_instructions]() {
-        return std::make_unique<fml::NonOwnedMapping>(vm_instructions, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            vm_instructions, 0, hold_snapshot, true /* dontneed_safe */);
       };
       settings_.isolate_snapshot_data = [hold_snapshot, isolate_data]() {
-        return std::make_unique<fml::NonOwnedMapping>(isolate_data, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            isolate_data, 0, hold_snapshot, true /* dontneed_safe */);
       };
       settings_.isolate_snapshot_instr = [hold_snapshot,
                                           isolate_instructions]() {
-        return std::make_unique<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            isolate_instructions, 0, hold_snapshot, true /* dontneed_safe */);
       };
       isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0,
-                                                 hold_snapshot),
+          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0, hold_snapshot,
+                                                 true /* dontneed_safe */),
           std::make_shared<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                                 hold_snapshot));
+                                                 hold_snapshot,
+                                                 true /* dontneed_safe */));
     } else {
       const int namespace_fd = component_data_directory_.get();
       settings_.vm_snapshot_data = [namespace_fd]() {
@@ -483,20 +484,28 @@ const std::string& ComponentV2::GetDebugLabel() const {
 }
 
 void ComponentV2::Kill() {
-  FML_VLOG(-1) << "ComponentController: received Kill";
+  FML_VLOG(-1) << "received Kill event";
 
   // From the documentation for ComponentController, ZX_OK should be sent when
-  // the ComponentController receives a termination request.
+  // the ComponentController receives a termination request. However, if the
+  // component exited with a non-zero return code, we indicate this by sending
+  // an INTERNAL epitaph instead.
   //
-  // TODO(fxb/50694): How should we communicate the return code of the process
-  // with the epitaph? Should we avoid sending ZX_OK if the return code is not
-  // 0?
-  //
-  // CF v1 logic for reference (the OnTerminated event no longer exists):
-  //   component_controller_.events().OnTerminated(
-  //       last_return_code_.second, fuchsia::sys::TerminationReason::EXITED);
+  // TODO(fxb/86666): Communicate return code from the ComponentController once
+  // v2 has support.
+  auto [got_return_code, return_code] = last_return_code_;
+  if (got_return_code && return_code == 0) {
+    KillWithEpitaph(ZX_OK);
+  } else {
+    if (got_return_code) {
+      FML_LOG(ERROR) << "Component exited with non-zero return code: "
+                     << return_code;
+    } else {
+      FML_LOG(ERROR) << "Failed to get return code for component";
+    }
 
-  KillWithEpitaph(ZX_OK);
+    KillWithEpitaph(zx_status_t(fuchsia::component::Error::INTERNAL));
+  }
 
   // WARNING: Don't do anything past this point as this instance may have been
   // collected.
@@ -512,7 +521,7 @@ void ComponentV2::KillWithEpitaph(zx_status_t epitaph_status) {
 }
 
 void ComponentV2::Stop() {
-  FML_VLOG(-1) << "ComponentController v2: received Stop";
+  FML_VLOG(-1) << "received Stop event";
 
   // TODO(fxb/50694): Any other cleanup logic we should do that's appropriate
   // for Stop but not for Kill?
@@ -526,20 +535,29 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
                             });
 
   if (found == shell_holders_.end()) {
+    // This indicates a deeper issue with memory management and should never
+    // happen.
+    FML_LOG(ERROR) << "Tried to terminate an unregistered shell holder.";
+    FML_DCHECK(false);
+
     return;
   }
 
-  // We may launch multiple shell in this component. However, we will
+  // We may launch multiple shells in this component. However, we will
   // terminate when the last shell goes away. The error code returned to the
   // component controller will be the last isolate that had an error.
   auto return_code = shell_holder->GetEngineReturnCode();
   if (return_code.has_value()) {
     last_return_code_ = {true, return_code.value()};
+  } else {
+    FML_LOG(ERROR) << "Failed to get return code from terminated shell holder.";
   }
 
   shell_holders_.erase(found);
 
   if (shell_holders_.size() == 0) {
+    FML_VLOG(-1) << "Killing component because all shell holders have been "
+                    "terminated.";
     Kill();
     // WARNING: Don't do anything past this point because the delegate may have
     // collected this instance via the termination callback.

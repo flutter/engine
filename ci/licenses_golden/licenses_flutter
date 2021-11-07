@@ -110,9 +110,6 @@ FILE: ../../../flutter/flow/layers/texture_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/transform_layer.cc
 FILE: ../../../flutter/flow/layers/transform_layer.h
 FILE: ../../../flutter/flow/layers/transform_layer_unittests.cc
-FILE: ../../../flutter/flow/matrix_decomposition.cc
-FILE: ../../../flutter/flow/matrix_decomposition.h
-FILE: ../../../flutter/flow/matrix_decomposition_unittests.cc
 FILE: ../../../flutter/flow/mutators_stack_unittests.cc
 FILE: ../../../flutter/flow/paint_region.cc
 FILE: ../../../flutter/flow/paint_region.h
@@ -362,6 +359,8 @@ FILE: ../../../flutter/lib/ui/painting/color_filter.cc
 FILE: ../../../flutter/lib/ui/painting/color_filter.h
 FILE: ../../../flutter/lib/ui/painting/engine_layer.cc
 FILE: ../../../flutter/lib/ui/painting/engine_layer.h
+FILE: ../../../flutter/lib/ui/painting/fragment_program.cc
+FILE: ../../../flutter/lib/ui/painting/fragment_program.h
 FILE: ../../../flutter/lib/ui/painting/fragment_shader.cc
 FILE: ../../../flutter/lib/ui/painting/fragment_shader.h
 FILE: ../../../flutter/lib/ui/painting/gradient.cc
@@ -708,6 +707,7 @@ FILE: ../../../flutter/shell/common/persistent_cache_unittests.cc
 FILE: ../../../flutter/shell/common/pipeline.cc
 FILE: ../../../flutter/shell/common/pipeline.h
 FILE: ../../../flutter/shell/common/pipeline_unittests.cc
+FILE: ../../../flutter/shell/common/platform_message_handler.h
 FILE: ../../../flutter/shell/common/platform_view.cc
 FILE: ../../../flutter/shell/common/platform_view.h
 FILE: ../../../flutter/shell/common/pointer_data_dispatcher.cc
@@ -820,6 +820,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/Flutt
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragmentActivity.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterImageView.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSplashView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterSurfaceView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java
@@ -841,6 +842,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/Flutte
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformTaskQueue.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/deferredcomponents/DeferredComponentManager.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManager.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/embedding/engine/loader/ApplicationInfoLoader.java
@@ -938,6 +940,8 @@ FILE: ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.h
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
+FILE: ../../../flutter/shell/platform/android/platform_message_handler_android.cc
+FILE: ../../../flutter/shell/platform/android/platform_message_handler_android.h
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.h
 FILE: ../../../flutter/shell/platform/android/platform_view_android.cc
@@ -1498,6 +1502,7 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/task_runner_adapter.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/unique_fdio_ns.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/vsync_waiter_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/vulkan_surface_pool.cc
@@ -1615,6 +1620,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h
+FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registry.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.cc
 FILE: ../../../flutter/shell/platform/linux/fl_renderer.h
@@ -1753,7 +1759,9 @@ FILE: ../../../flutter/shell/platform/windows/system_utils.h
 FILE: ../../../flutter/shell/platform/windows/system_utils_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/system_utils_win32.cc
 FILE: ../../../flutter/shell/platform/windows/system_utils_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/task_runner.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner.h
+FILE: ../../../flutter/shell/platform/windows/task_runner_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner_win32.cc
 FILE: ../../../flutter/shell/platform/windows/task_runner_win32.h
 FILE: ../../../flutter/shell/platform/windows/task_runner_win32_window.cc
@@ -1786,6 +1794,7 @@ FILE: ../../../flutter/shell/profiling/sampling_profiler.h
 FILE: ../../../flutter/shell/profiling/sampling_profiler_unittest.cc
 FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
+FILE: ../../../flutter/shell/vmservice/empty.dart
 FILE: ../../../flutter/sky/tools/roll/patches/chromium/android_build.patch
 FILE: ../../../flutter/third_party/accessibility/base/color_utils.h
 FILE: ../../../flutter/third_party/accessibility/base/compiler_specific.h

@@ -780,6 +780,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  self.view.accessibilityElementsHidden = NO;
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
@@ -787,6 +788,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
+  self.view.accessibilityElementsHidden = YES;
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
@@ -1156,7 +1158,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1170,7 +1173,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
              withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1184,7 +1188,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1198,7 +1203,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1500,8 +1506,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                               binaryMessageHandler:handler];
 }
 
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
-  [_engine.get().binaryMessenger cleanupConnection:connection];
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
+  [_engine.get().binaryMessenger cleanUpConnection:connection];
 }
 
 #pragma mark - FlutterTextureRegistry

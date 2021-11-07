@@ -74,6 +74,10 @@ void DartIsolate::Flags::SetNullSafetyEnabled(bool enabled) {
   flags_.null_safety = enabled;
 }
 
+void DartIsolate::Flags::SetIsDontNeedSafe(bool value) {
+  flags_.snapshot_is_dontneed_safe = value;
+}
+
 Dart_IsolateFlags DartIsolate::Flags::Get() const {
   return flags_;
 }
@@ -89,17 +93,18 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
-    std::unique_ptr<IsolateConfiguration> isolate_configration) const {
+    std::unique_ptr<IsolateConfiguration> isolate_configuration) const {
   return CreateRunningRootIsolate(
       settings,                                          //
       GetIsolateGroupData().GetIsolateSnapshot(),        //
       std::move(platform_configuration),                 //
       flags,                                             //
+      nullptr,                                           //
       isolate_create_callback,                           //
       isolate_shutdown_callback,                         //
       dart_entrypoint,                                   //
       dart_entrypoint_library,                           //
-      std::move(isolate_configration),                   //
+      std::move(isolate_configuration),                  //
       UIDartState::Context{GetTaskRunners(),             //
                            snapshot_delegate,            //
                            GetIOManager(),               //
@@ -118,11 +123,12 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     std::unique_ptr<PlatformConfiguration> platform_configuration,
     Flags isolate_flags,
+    fml::closure root_isolate_create_callback,
     const fml::closure& isolate_create_callback,
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
-    std::unique_ptr<IsolateConfiguration> isolate_configration,
+    std::unique_ptr<IsolateConfiguration> isolate_configuration,
     const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
   if (!isolate_snapshot) {
@@ -130,13 +136,14 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     return {};
   }
 
-  if (!isolate_configration) {
+  if (!isolate_configuration) {
     FML_LOG(ERROR) << "Invalid isolate configuration.";
     return {};
   }
 
   isolate_flags.SetNullSafetyEnabled(
-      isolate_configration->IsNullSafetyEnabled(*isolate_snapshot));
+      isolate_configuration->IsNullSafetyEnabled(*isolate_snapshot));
+  isolate_flags.SetIsDontNeedSafe(isolate_snapshot->IsDontNeedSafe());
 
   auto isolate = CreateRootIsolate(settings,                           //
                                    isolate_snapshot,                   //
@@ -166,7 +173,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     return {};
   }
 
-  if (!isolate_configration->PrepareIsolate(*isolate.get())) {
+  if (!isolate_configuration->PrepareIsolate(*isolate.get())) {
     FML_LOG(ERROR) << "Could not prepare isolate.";
     return {};
   }
@@ -182,6 +189,10 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     // had a chance to run.
     tonic::DartState::Scope scope(isolate.get());
     settings.root_isolate_create_callback(*isolate.get());
+  }
+
+  if (root_isolate_create_callback) {
+    root_isolate_create_callback();
   }
 
   if (!isolate->RunFromLibrary(dart_entrypoint_library,       //
@@ -832,8 +843,7 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   // TODO(68663): The service isolate in debug mode is always launched without
   // sound null safety. Fix after the isolate snapshot data is created with the
   // right flags.
-  flags->null_safety =
-      vm_data->GetIsolateSnapshot()->IsNullSafetyEnabled(nullptr);
+  flags->null_safety = vm_data->GetServiceIsolateSnapshotNullSafety();
 #endif
 
   UIDartState::Context context(
@@ -842,13 +852,13 @@ Dart_Isolate DartIsolate::DartCreateAndStartServiceIsolate(
   context.advisory_script_uri = DART_VM_SERVICE_ISOLATE_NAME;
   context.advisory_script_entrypoint = DART_VM_SERVICE_ISOLATE_NAME;
   std::weak_ptr<DartIsolate> weak_service_isolate =
-      DartIsolate::CreateRootIsolate(vm_data->GetSettings(),         //
-                                     vm_data->GetIsolateSnapshot(),  //
-                                     nullptr,                        //
-                                     DartIsolate::Flags{flags},      //
-                                     nullptr,                        //
-                                     nullptr,                        //
-                                     context);                       //
+      DartIsolate::CreateRootIsolate(vm_data->GetSettings(),                //
+                                     vm_data->GetServiceIsolateSnapshot(),  //
+                                     nullptr,                               //
+                                     DartIsolate::Flags{flags},             //
+                                     nullptr,                               //
+                                     nullptr,                               //
+                                     context);                              //
 
   std::shared_ptr<DartIsolate> service_isolate = weak_service_isolate.lock();
   if (!service_isolate) {

@@ -120,6 +120,12 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             Launch an isolate in that runtime controller instead.
   ///
   /// @param[in]  settings                 The per engine instance settings.
+  /// @param[in]  root_isolate_create_callback  A callback invoked before the
+  ///                                      root isolate has launched the Dart
+  ///                                      program, but after it has been
+  ///                                      created. This is called without
+  ///                                      isolate scope, and after any root
+  ///                                      isolate callback in the settings.
   /// @param[in]  dart_entrypoint          The dart entrypoint. If
   ///                                      `std::nullopt` or empty, `main` will
   ///                                      be attempted.
@@ -133,12 +139,13 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   [[nodiscard]] bool LaunchRootIsolate(
       const Settings& settings,
+      fml::closure root_isolate_create_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       std::unique_ptr<IsolateConfiguration> isolate_configuration);
 
   //----------------------------------------------------------------------------
-  /// @brief      Clone the the runtime controller. Launching an isolate with a
+  /// @brief      Clone the runtime controller. Launching an isolate with a
   ///             cloned runtime controller will use the same snapshots and
   ///             copies all window data to the new instance. This is usually
   ///             only used in the debug runtime mode to support the
@@ -304,7 +311,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///   the VM. There is a “small” pause that occurs when the concurrent mark is
   ///   initiated and another pause when the mark concludes and a sweep is
   ///   initiated.
-  /// * If the total allocations exceeds the the hard threshold, a “big”
+  /// * If the total allocations exceeds the hard threshold, a “big”
   ///   stop-the-world pause is initiated.
   /// * If after either the sweep after the concurrent mark, or, the
   ///   stop-the-world pause, the consumption returns to be below the soft
@@ -327,7 +334,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///   the concurrent mark initiated by either reaching the soft threshold or
   ///   an explicit NotifyIdle.
   /// * If you are running out of memory, its because too many large objects
-  ///   were allocation and remained reachable such that the the old space kept
+  ///   were allocation and remained reachable such that the old space kept
   ///   growing till it could grow no more.
   /// * At the edges of allocation thresholds, failures can occur gracefully if
   ///   the instigating allocation was made in the Dart VM or rather gracelessly

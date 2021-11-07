@@ -625,6 +625,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   }
 
   platform_view_ = std::move(platform_view);
+  platform_message_handler_ = platform_view_->GetPlatformMessageHandler();
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
   io_manager_ = std::move(io_manager);
@@ -733,16 +734,11 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
-  // Note:
-  // This is a synchronous operation because certain platforms depend on
-  // setup/suspension of all activities that may be interacting with the GPU in
-  // a synchronous fashion.
   fml::AutoResetWaitableEvent latch;
   auto raster_task =
       fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
                          rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface),            //
-                         &latch]() mutable {
+                         surface = std::move(surface)]() mutable {
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
@@ -751,28 +747,14 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         }
 
         waiting_for_first_frame.store(true);
-
-        // Step 3: All done. Signal the latch that the platform thread is
-        // waiting on.
-        latch.Signal();
       });
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),                            //
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),  //
-                  raster_task, should_post_raster_task,
-                  &latch  //
-  ] {
+  // TODO(91717): This probably isn't necessary. The engine should be able to
+  // handle things here via normal lifecycle messages.
+  // https://github.com/flutter/flutter/issues/91717
+  auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
       engine->OnOutputSurfaceCreated();
-    }
-    // Step 2: Next, tell the raster thread that it should create a surface for
-    // its rasterizer.
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
     }
   };
 
@@ -786,7 +768,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
 
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
-                  shared_resource_context = shared_resource_context_] {
+                  shared_resource_context = shared_resource_context_,
+                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
+                  raster_task, should_post_raster_task, &latch] {
     if (io_manager && !io_manager->GetResourceContext()) {
       sk_sp<GrDirectContext> resource_context;
       if (shared_resource_context) {
@@ -796,9 +780,16 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
       }
       io_manager->NotifyResourceContextAvailable(resource_context);
     }
-    // Step 1: Next, post a task on the UI thread to tell the engine that it has
+    // Step 1: Post a task on the UI thread to tell the engine that it has
     // an output surface.
     fml::TaskRunner::RunNowOrPostTask(ui_task_runner, ui_task);
+
+    // Step 2: Tell the raster thread that it should create a surface for
+    // its rasterizer.
+    if (should_post_raster_task) {
+      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
+    }
+    latch.Signal();
   };
 
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetIOTaskRunner(), io_task);
@@ -826,26 +817,15 @@ void Shell::OnPlatformViewDestroyed() {
   // configuration is changed by a task, and the assumption is no longer true.
   //
   // This incorrect assumption can lead to deadlock.
-  // See `should_post_raster_task` for more.
   rasterizer_->DisableThreadMergerIfNeeded();
-
-  // The normal flow executed by this method is that the platform thread is
-  // starting the sequence and waiting on the latch. Later the UI thread posts
-  // raster_task to the raster thread triggers signaling the latch(on the IO
-  // thread). If the raster and the platform threads are the same this results
-  // in a deadlock as the raster_task will never be posted to platform/raster
-  // thread that is blocked on a latch. To avoid the described deadlock, if the
-  // raster and the platform threads are the same, should_post_raster_task will
-  // be false, and then instead of posting a task to the raster thread, the ui
-  // thread just signals the latch and the platform/raster thread follows with
-  // executing raster_task.
-  const bool should_post_raster_task =
-      !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
   // a synchronous fashion.
+  // The UI thread does not need to be serialized here - there is sufficient
+  // guardrailing in the rasterizer to allow the UI thread to post work to it
+  // even after the surface has been torn down.
 
   fml::AutoResetWaitableEvent latch;
 
@@ -855,7 +835,7 @@ void Shell::OnPlatformViewDestroyed() {
     io_manager->GetIsGpuDisabledSyncSwitch()->Execute(
         fml::SyncSwitch::Handlers().SetIfFalse(
             [&] { io_manager->GetSkiaUnrefQueue()->Drain(); }));
-    // Step 3: All done. Signal the latch that the platform thread is waiting
+    // Step 4: All done. Signal the latch that the platform thread is waiting
     // on.
     latch.Signal();
   };
@@ -870,37 +850,28 @@ void Shell::OnPlatformViewDestroyed() {
       rasterizer->EnableThreadMergerIfNeeded();
       rasterizer->Teardown();
     }
-    // Step 2: Next, tell the IO thread to complete its remaining work.
+    // Step 3: Tell the IO thread to complete its remaining work.
     fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
 
-  auto ui_task = [engine = engine_->GetWeakPtr(),
-                  raster_task_runner = task_runners_.GetRasterTaskRunner(),
-                  raster_task, should_post_raster_task, &latch]() {
+  // TODO(91717): This probably isn't necessary. The engine should be able to
+  // handle things here via normal lifecycle messages.
+  // https://github.com/flutter/flutter/issues/91717
+  auto ui_task = [engine = engine_->GetWeakPtr()]() {
     if (engine) {
       engine->OnOutputSurfaceDestroyed();
     }
-    if (should_post_raster_task) {
-      fml::TaskRunner::RunNowOrPostTask(raster_task_runner, raster_task);
-    } else {
-      // See comment on should_post_raster_task, in this case we just unblock
-      // the platform thread.
-      latch.Signal();
-    }
   };
 
-  // Step 0: Post a task onto the UI thread to tell the engine that its output
+  // Step 1: Post a task onto the UI thread to tell the engine that its output
   // surface is about to go away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
 
+  // Step 2: Post a task to the Raster thread (possibly this thread) to tell the
+  // rasterizer the output surface is going away.
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                    raster_task);
   latch.Wait();
-  if (!should_post_raster_task) {
-    // See comment on should_post_raster_task, in this case the raster_task
-    // wasn't executed, and we just run it here as the platform thread
-    // is the raster thread.
-    raster_task();
-    latch.Wait();
-  }
 }
 
 // |PlatformView::Delegate|
@@ -1222,13 +1193,17 @@ void Shell::OnEngineHandlePlatformMessage(
     return;
   }
 
-  task_runners_.GetPlatformTaskRunner()->PostTask(
-      fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
-                         message = std::move(message)]() mutable {
-        if (view) {
-          view->HandlePlatformMessage(std::move(message));
-        }
-      }));
+  if (platform_message_handler_) {
+    platform_message_handler_->HandlePlatformMessage(std::move(message));
+  } else {
+    task_runners_.GetPlatformTaskRunner()->PostTask(
+        fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
+                           message = std::move(message)]() mutable {
+          if (view) {
+            view->HandlePlatformMessage(std::move(message));
+          }
+        }));
+  }
 }
 
 void Shell::HandleEngineSkiaMessage(std::unique_ptr<PlatformMessage> message) {
@@ -1895,6 +1870,11 @@ void Shell::OnDisplayUpdates(DisplayUpdateType update_type,
 
 fml::TimePoint Shell::GetCurrentTimePoint() {
   return fml::TimePoint::Now();
+}
+
+const std::shared_ptr<PlatformMessageHandler>&
+Shell::GetPlatformMessageHandler() const {
+  return platform_message_handler_;
 }
 
 }  // namespace flutter
