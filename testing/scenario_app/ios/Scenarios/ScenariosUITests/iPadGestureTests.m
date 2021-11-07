@@ -28,6 +28,13 @@ static BOOL performBoolSelector(id target, SEL selector) {
   return returnValue;
 }
 
+static int assertOneMessageAndGetSequenceNo(NSMutableDictionary* messages, NSString* message) {
+  NSMutableArray* matchingMessages = [messages objectForKey:message];
+  XCTAssertNotNil(matchingMessages, @"Did not receive \"%@\" message", message);
+  XCTAssertEqual([matchingMessages count], 1, @"More than one \"%@\" message", message);
+  return [[matchingMessages firstObject] intValue];
+}
+
 // TODO(85810): Remove reflection in this test when Xcode version is upgraded to 13.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
@@ -76,20 +83,58 @@ static BOOL performBoolSelector(id target, SEL selector) {
   XCTAssertTrue([flutterView respondsToSelector:rightClick],
                 @"If supportsPointerInteraction is true, this should be true too.");
   [flutterView performSelector:rightClick];
-  // Right-clicking will trigger the hover pointer as well
+  // On simulated right click, a hover also occurs, so the hover pointer is added
   XCTAssertTrue(
       [app.textFields[@"3,PointerChange.add,device=1,buttons=0"] waitForExistenceWithTimeout:1],
-      @"PointerChange.add event did not occur for a right-click");
-  XCTAssertTrue(
-      [app.textFields[@"4,PointerChange.add,device=2,buttons=0"] waitForExistenceWithTimeout:1],
-      @"PointerChange.add event did not occur for a right-click");
+      @"PointerChange.add event did not occur for a right-click's hover pointer");
+  [NSThread sleepForTimeInterval:5.0];  // The hover pointer is removed after ~3.5 seconds, this
+                                        // ensures all events have been received
+  // The hover events are interspersed with the right-click events in a varying order
+  // Ensure the individual orderings are respected without hardcoding the absolute sequence
+  NSMutableDictionary* messages = [NSMutableDictionary dictionary];
+  for (XCUIElement* element in [app.textFields allElementsBoundByIndex]) {
+    NSString* rawMessage = element.value;
+    NSUInteger commaIndex = [rawMessage rangeOfString:@","].location;
+    NSInteger messageSequenceNo =
+        [[rawMessage substringWithRange:NSMakeRange(0, commaIndex)] integerValue];
+    NSString* message = [rawMessage
+        substringWithRange:NSMakeRange(commaIndex + 1, [rawMessage length] - (commaIndex + 1))];
+    NSMutableArray* messageSequenceNoList = [messages objectForKey:message];
+    if (messageSequenceNoList == nil) {
+      messageSequenceNoList = [[NSMutableArray alloc] init];
+      [messages setObject:messageSequenceNoList forKey:message];
+    }
+    [messageSequenceNoList addObject:[NSNumber numberWithInteger:messageSequenceNo]];
+  }
+  // The number of hover events is not consistent
+  NSMutableArray* hoverSeqNos = [messages objectForKey:@"PointerChange.hover,device=1,buttons=0"];
+  int hoverRemovedSeqNo =
+      assertOneMessageAndGetSequenceNo(messages, @"PointerChange.remove,device=1,buttons=0");
   // Right click should have buttons = 2
-  XCTAssertTrue(
-      [app.textFields[@"5,PointerChange.down,device=2,buttons=2"] waitForExistenceWithTimeout:1],
-      @"PointerChange.down event did not occur for a right-click");
-  XCTAssertTrue(
-      [app.textFields[@"6,PointerChange.up,device=2,buttons=2"] waitForExistenceWithTimeout:1],
-      @"PointerChange.up event did not occur for a right-click");
+  int rightClickAddedSeqNo, rightClickDownSeqNo, rightClickUpSeqNo;
+  if ([messages objectForKey:@"PointerChange.add,device=2,buttons=0"] == nil) {
+    // Sometimes the tap pointer has the same device as the right-click (the UITouch is reused)
+    rightClickAddedSeqNo = 0;
+    rightClickDownSeqNo =
+        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.down,device=0,buttons=2");
+    rightClickUpSeqNo =
+        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.up,device=0,buttons=2");
+  } else {
+    rightClickAddedSeqNo =
+        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.add,device=2,buttons=0");
+    rightClickDownSeqNo =
+        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.down,device=2,buttons=2");
+    rightClickUpSeqNo =
+        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.up,device=2,buttons=2");
+  }
+  XCTAssertGreaterThan(rightClickDownSeqNo, rightClickAddedSeqNo,
+                       @"Right-click pointer was down before add");
+  XCTAssertGreaterThan(rightClickUpSeqNo, rightClickDownSeqNo,
+                       @"Right-click pointer was up before down");
+  XCTAssertGreaterThan([[hoverSeqNos firstObject] intValue], 3,
+                       @"Right-click pointer caused hover before hover pointer add");
+  XCTAssertGreaterThan(hoverRemovedSeqNo, [[hoverSeqNos lastObject] intValue],
+                       @"Right-click pointer's hover pointer had hover event after it was removed");
 }
 
 - (void)testPointerHover {
@@ -124,14 +169,23 @@ static BOOL performBoolSelector(id target, SEL selector) {
   XCTAssertTrue([flutterView respondsToSelector:hover],
                 @"If supportsPointerInteraction is true, this should be true too.");
   [flutterView performSelector:hover];
-  [NSThread sleepForTimeInterval:1.0];
   XCTAssertTrue(
       [app.textFields[@"0,PointerChange.add,device=0,buttons=0"] waitForExistenceWithTimeout:1],
       @"PointerChange.add event did not occur for a hover");
-  // TODO: The Xcode 13 simulator is currently broken for hover events
-  // It's not known whether the simulator iPad will act as if it has a keyboard or not
-  // So once the simulator is fixed, this test should be updated to ensure it
-  // tests the behavior of the hover pointer properly.
+  XCTAssertTrue(
+      [app.textFields[@"1,PointerChange.hover,device=0,buttons=0"] waitForExistenceWithTimeout:1],
+      @"PointerChange.hover event did not occur for a hover");
+  // The number of hover events fired is not always the same
+  int i = 2;
+  while (
+      [app.textFields[[NSString stringWithFormat:@"%d,PointerChange.hover,device=0,buttons=0", i]]
+          waitForExistenceWithTimeout:1]) {
+    i++;
+  }
+  NSString* removeMessage =
+      [NSString stringWithFormat:@"%d,PointerChange.remove,device=0,buttons=0", i];
+  XCTAssertTrue([app.textFields[removeMessage] waitForExistenceWithTimeout:1],
+                @"PointerChange.remove event did not occur for a hover");
 }
 #pragma clang diagnostic pop
 

@@ -39,29 +39,13 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
-// Struct holding the mouse state. The engine doesn't keep track of which
-// mouse buttons have been pressed, so it's the embedding's responsibility.
+// Struct holding the mouse state.
 typedef struct MouseState {
-  // True if at least one mouse event has been received.
-  bool is_valid;
-
-  // True if the last event sent to Flutter had at least one mouse button.
-  // pressed.
-  bool flutter_state_is_down = false;
-
-  // True if kAdd has been sent to Flutter. Used to determine whether
-  // to send a kAdd event before sending an incoming mouse event, since
-  // Flutter expects pointers to be added before events are sent for them.
-  bool flutter_state_is_added = false;
-
   // Current coordinate of the mouse cursor in physical device pixels.
   CGPoint location = CGPointZero;
 
   // Last reported translation for an in-flight pan gesture in physical device pixels.
   CGPoint last_translation = CGPointZero;
-
-  // The currently pressed buttons, as represented in FlutterPointerEvent.
-  uint64_t buttons = 0;
 } MouseState;
 
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
@@ -120,11 +104,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
-  fml::scoped_nsobject<UIPointerInteraction> _pointerInteraction API_AVAILABLE(ios(13.4));
+  fml::scoped_nsobject<UIHoverGestureRecognizer> _hoverGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
-  fml::scoped_nsobject<NSTimer> _mousePollTimer API_AVAILABLE(ios(13.4));
 }
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
@@ -256,15 +239,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
-  if (@available(iOS 13.4, *)) {
-    auto weakSelf = [self getWeakPtr];
-    _mousePollTimer.reset([[NSTimer scheduledTimerWithTimeInterval:0.5
-                                                           repeats:YES
-                                                             block:^(NSTimer* _Nonnull timer) {
-                                                               [weakSelf.get()
-                                                                   handleDetachingMouse];
-                                                             }] retain]);
-  }
 }
 
 - (FlutterEngine*)engine {
@@ -671,11 +645,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }
 
   if (@available(iOS 13.4, *)) {
-    _pointerInteraction.reset([[UIPointerInteraction alloc] initWithDelegate:self]);
-    [self.view addInteraction:_pointerInteraction];
+    _hoverGestureRecognizer.reset(
+        [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)]);
+    _hoverGestureRecognizer.get().delegate = self;
+    [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer.get()];
 
     _panGestureRecognizer.reset(
         [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)]);
+    _panGestureRecognizer.get().delegate = self;
     _panGestureRecognizer.get().allowedScrollTypesMask = UIScrollTypeMaskAll;
     _panGestureRecognizer.get().allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
     [_flutterView.get() addGestureRecognizer:_panGestureRecognizer.get()];
@@ -793,31 +770,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }
 }
 
-- (void)handleDetachingMouse API_AVAILABLE(ios(13.4)) {
-  if (!_mouseState.is_valid) {
-    return;
-  }
-  if (_mouseState.flutter_state_is_added &&
-      [UIFocusSystem focusSystemForEnvironment:self.view] == nil) {
-    // There is no focus environment, therefore the mouse is no longer attached
-    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-    flutter::PointerData pointer_data = [self generatePointerDataForMouse];
-    pointer_data.change = flutter::PointerData::Change::kRemove;
-    packet->SetPointerData(0, pointer_data);
-    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-    _mouseState.flutter_state_is_added = false;
-  } else if (!_mouseState.flutter_state_is_added &&
-             [UIFocusSystem focusSystemForEnvironment:self.view] != nil) {
-    // There is now a focus environment, therefore the mouse should be re-added
-    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-    flutter::PointerData pointer_data = [self generatePointerDataForMouse];
-    pointer_data.change = flutter::PointerData::Change::kAdd;
-    packet->SetPointerData(0, pointer_data);
-    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-    _mouseState.flutter_state_is_added = true;
-  }
-}
-
 - (void)deregisterNotifications {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerWillDealloc
                                                       object:self
@@ -834,9 +786,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [_displayLink release];
-  if (@available(iOS 13.4, *)) {
-    [_mousePollTimer.get() invalidate];
-  }
   [super dealloc];
 }
 
@@ -1721,10 +1670,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   pointer_data.Clear();
 
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
-  pointer_data.change = _mouseState.flutter_state_is_added ? flutter::PointerData::Change::kHover
-                                                           : flutter::PointerData::Change::kAdd;
+  switch (_hoverGestureRecognizer.get().state) {
+    case UIGestureRecognizerStateBegan:
+      pointer_data.change = flutter::PointerData::Change::kAdd;
+      break;
+    case UIGestureRecognizerStateChanged:
+      pointer_data.change = flutter::PointerData::Change::kHover;
+      break;
+    case UIGestureRecognizerStateEnded:
+    case UIGestureRecognizerStateCancelled:
+      pointer_data.change = flutter::PointerData::Change::kRemove;
+      break;
+    default:
+      FML_LOG(ERROR) << "Unhandled hover phase: " << _hoverGestureRecognizer.get().state;
+      // Sending kHover is the least harmful thing to do here
+      // But this state is not expected to ever be reached.
+      pointer_data.change = flutter::PointerData::Change::kHover;
+      break;
+  }
   pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
-  pointer_data.device = reinterpret_cast<int64_t>(_pointerInteraction.get());
+  pointer_data.device = reinterpret_cast<int64_t>(_hoverGestureRecognizer.get());
 
   pointer_data.physical_x = _mouseState.location.x;
   pointer_data.physical_y = _mouseState.location.y;
@@ -1732,25 +1697,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return pointer_data;
 }
 
-- (UIPointerRegion*)pointerInteraction:(UIPointerInteraction*)interaction
-                      regionForRequest:(UIPointerRegionRequest*)request
-                         defaultRegion:(UIPointerRegion*)defaultRegion API_AVAILABLE(ios(13.4)) {
-  if (request != nil) {
-    auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-    const CGFloat scale = [UIScreen mainScreen].scale;
-    _mouseState.location = {request.location.x * scale, request.location.y * scale};
+- (BOOL)gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer
+    shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer*)otherGestureRecognizer
+    API_AVAILABLE(ios(13.4)) {
+  return YES;
+}
 
-    flutter::PointerData pointer_data = [self generatePointerDataForMouse];
+- (void)hoverEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  CGPoint location = [recognizer locationInView:self.view];
+  CGFloat scale = [UIScreen mainScreen].scale;
+  _mouseState.location = {location.x * scale, location.y * scale};
 
-    pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
-    packet->SetPointerData(/*index=*/0, pointer_data);
+  flutter::PointerData pointer_data = [self generatePointerDataForMouse];
 
-    [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kNone;
+  packet->SetPointerData(/*index=*/0, pointer_data);
 
-    _mouseState.flutter_state_is_added = true;
-    _mouseState.is_valid = true;
-  }
-  return nil;
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
@@ -1780,8 +1744,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-
-  _mouseState.flutter_state_is_added = true;
 }
 
 #pragma mark - State Restoration
