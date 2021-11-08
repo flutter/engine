@@ -130,9 +130,7 @@ if (enable_unittests) {
       "test_vulkan_context.h",
     ]
 
-    defines = [
-      "TEST_VULKAN_PROCS",
-    ]
+    defines = [ "TEST_VULKAN_PROCS" ]
 
     deps = [
       ":skia",
