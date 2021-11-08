@@ -207,7 +207,8 @@ public class DartMessengerTest {
   @Test
   public void emptyResponseWhenHandlerIsNotSet() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final DartMessenger messenger =
+        new DartMessenger(fakeFlutterJni, (options) -> synchronousTaskQueue);
     final String channel = "foobar";
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     final int replyId = 1;
@@ -221,7 +222,8 @@ public class DartMessengerTest {
   @Test
   public void buffersResponseWhenHandlerIsNotSet() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final DartMessenger messenger =
+        new DartMessenger(fakeFlutterJni, (options) -> synchronousTaskQueue);
     final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
     final String channel = "foobar";
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
@@ -253,7 +255,8 @@ public class DartMessengerTest {
   public void disableBufferingTriggersEmptyResponseForPendingMessages()
       throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final DartMessenger messenger =
+        new DartMessenger(fakeFlutterJni, (options) -> synchronousTaskQueue);
     final String channel = "foobar";
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
     final int replyId = 1;
@@ -272,7 +275,8 @@ public class DartMessengerTest {
   @Test
   public void emptyResponseWhenHandlerIsUnregistered() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
-    final DartMessenger messenger = new DartMessenger(fakeFlutterJni, () -> synchronousTaskQueue);
+    final DartMessenger messenger =
+        new DartMessenger(fakeFlutterJni, (options) -> synchronousTaskQueue);
     final BinaryMessenger.TaskQueue taskQueue = messenger.makeBackgroundTaskQueue();
     final String channel = "foobar";
     final ByteBuffer message = ByteBuffer.allocateDirect(4 * 2);
