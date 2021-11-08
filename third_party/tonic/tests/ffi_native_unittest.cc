@@ -11,6 +11,33 @@
 namespace flutter {
 namespace testing {
 
+class MyNativeClass : public RefCountedDartWrappable<MyNativeClass> {
+  DEFINE_WRAPPERTYPEINFO();
+  FML_FRIEND_MAKE_REF_COUNTED(MyNativeClass);
+
+  MyNativeClass(intptr_t value) : _value(value){};
+
+ public:
+  intptr_t _value = 0;
+
+  static void Create(Dart_Handle path_handle, intptr_t value) {
+    auto path = fml::MakeRefCounted<MyNativeClass>(value);
+    path->AssociateWithDartWrapper(path_handle);
+  }
+
+  // Dummy test functions:
+
+  static int32_t MyTestFunction(MyNativeClass* ptr,
+                                int32_t x,
+                                Dart_Handle handle) {
+    return ptr->_value + x;
+  }
+
+  Dart_Handle MyTestMethod(int64_t x) { return Dart_NewInteger(_value + x); }
+};
+
+IMPLEMENT_WRAPPERTYPEINFO("Lib", MyNativeClass)
+
 class FfiNativeTest : public FixtureTest {
  public:
   FfiNativeTest()
@@ -40,6 +67,61 @@ class FfiNativeTest : public FixtureTest {
     return true;
   }
 
+  template <typename C, typename Signature, Signature function>
+  void DoCallThroughTest(const char* testName, const char* testEntry) {
+    auto weak_persistent_value = tonic::DartWeakPersistentValue();
+
+    fml::AutoResetWaitableEvent event;
+
+    AddFfiNativeCallback(
+        testName, reinterpret_cast<void*>(
+                      tonic::FfiDispatcher<C, Signature, function>::Call));
+
+    AddFfiNativeCallback(
+        "CreateNative",
+        reinterpret_cast<void*>(
+            tonic::FfiDispatcher<void, decltype(&MyNativeClass::Create),
+                                 &MyNativeClass::Create>::Call));
+
+    AddNativeCallback("SignalDone",
+                      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                        // Clear on initiative of Dart.
+                        weak_persistent_value.Clear();
+
+                        event.Signal();
+                      }));
+
+    ASSERT_TRUE(RunWithEntrypoint(testEntry));
+    event.Wait();
+
+    running_isolate_->Shutdown();
+  }
+
+  template <typename C, typename Signature, Signature function>
+  void DoSerialiseTest(bool leaf,
+                       const char* returnFfi,
+                       const char* returnDart,
+                       const char* argsFfi,
+                       const char* argsDart) {
+    auto dispatcher = tonic::FfiDispatcher<C, Signature, function>();
+
+    EXPECT_EQ(dispatcher.AllowedAsLeafCalls(), leaf);
+    EXPECT_STREQ(dispatcher.GetReturnFfiRepresentation(), returnFfi);
+    EXPECT_STREQ(dispatcher.GetReturnDartRepresentation(), returnDart);
+
+    {
+      std::ostringstream stream_;
+      dispatcher.WriteFfiArguments(&stream_);
+      EXPECT_STREQ(stream_.str().c_str(), argsFfi);
+    }
+
+    {
+      std::ostringstream stream_;
+      dispatcher.WriteDartArguments(&stream_);
+      EXPECT_STREQ(stream_.str().c_str(), argsDart);
+    }
+  }
+
  protected:
   Settings settings_;
   DartVMRef vm_;
@@ -49,142 +131,235 @@ class FfiNativeTest : public FixtureTest {
   FML_DISALLOW_COPY_AND_ASSIGN(FfiNativeTest);
 };
 
-fml::AutoResetWaitableEvent event;
+//
+// Call bindings.
+//
 
-void Nop() {
-  event.Signal();
-}
+// Call and serialise a simple function through the Tonic FFI bindings.
 
-// Make a simple call through the Tonic FFI bindings.
+void Nop() {}
+
 TEST_F(FfiNativeTest, FfiBindingCallNop) {
-  AddFfiNativeCallback(
-      "Nop", reinterpret_cast<void*>(
-                 tonic::FfiDispatcher<void, decltype(&Nop), &Nop>::Call));
-
-  ASSERT_TRUE(RunWithEntrypoint("nop"));
-  event.Wait();
-
-  running_isolate_->Shutdown();
+  DoCallThroughTest<void, decltype(&Nop), &Nop>("Nop", "callNop");
 }
 
-Dart_Handle Echo(Dart_Handle str) {
+TEST_F(FfiNativeTest, SerialiseNop) {
+  DoSerialiseTest<void, decltype(&Nop), &Nop>(
+      /*leaf=*/true, "Void", "void", "", "");
+}
+
+// Call and serialise function with bool.
+
+bool EchoBool(bool arg) {
+  EXPECT_TRUE(arg);
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoBool) {
+  DoCallThroughTest<void, decltype(&EchoBool), &EchoBool>("EchoBool",
+                                                          "callEchoBool");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoBool) {
+  DoSerialiseTest<void, decltype(&EchoBool), &EchoBool>(
+      /*leaf=*/true, "Bool", "bool", "Bool", "bool");
+}
+
+// Call and serialise function with intptr_t.
+
+intptr_t EchoIntPtr(intptr_t arg) {
+  EXPECT_EQ(arg, 23);
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoIntPtr) {
+  DoCallThroughTest<void, decltype(&EchoIntPtr), &EchoIntPtr>("EchoIntPtr",
+                                                              "callEchoIntPtr");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoIntPtr) {
+  if (sizeof(intptr_t) == 8) {
+    DoSerialiseTest<void, decltype(&EchoIntPtr), &EchoIntPtr>(
+        /*leaf=*/true, "Int64", "int", "Int64", "int");
+  } else {
+    EXPECT_EQ(sizeof(intptr_t), 4ul);
+    DoSerialiseTest<void, decltype(&EchoIntPtr), &EchoIntPtr>(
+        /*leaf=*/true, "Int32", "int", "Int32", "int");
+  }
+}
+
+// Call and serialise function with float.
+
+float EchoFloat(float arg) {
+  EXPECT_EQ(arg, 23.0);
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoFloat) {
+  DoCallThroughTest<void, decltype(&EchoFloat), &EchoFloat>("EchoFloat",
+                                                            "callEchoFloat");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoFloat) {
+  DoSerialiseTest<void, decltype(&EchoFloat), &EchoFloat>(
+      /*leaf=*/true, "Float", "double", "Float", "double");
+}
+
+// Call and serialise function with double.
+
+double EchoDouble(double arg) {
+  EXPECT_EQ(arg, 23.0);
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoDouble) {
+  DoCallThroughTest<void, decltype(&EchoDouble), &EchoDouble>("EchoDouble",
+                                                              "callEchoDouble");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoDouble) {
+  DoSerialiseTest<void, decltype(&EchoDouble), &EchoDouble>(
+      /*leaf=*/true, "Double", "double", "Double", "double");
+}
+
+// Call and serialise function with Dart_Handle.
+
+Dart_Handle EchoHandle(Dart_Handle str) {
   const char* c_str = nullptr;
   Dart_StringToCString(str, &c_str);
-  EXPECT_STREQ(c_str, "Hello World!");
+  EXPECT_STREQ(c_str, "Hello EchoHandle");
   return str;
 }
 
-// Make call with handles through the Tonic FFI bindings.
-TEST_F(FfiNativeTest, FfiBindingCallEcho) {
-  AddFfiNativeCallback(
-      "Echo", reinterpret_cast<void*>(
-                  tonic::FfiDispatcher<void, decltype(&Echo), &Echo>::Call));
-
-  AddNativeCallback(
-      "SignalDone",
-      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { event.Signal(); }));
-
-  ASSERT_TRUE(RunWithEntrypoint("callEcho"));
-  event.Wait();
-
-  running_isolate_->Shutdown();
+TEST_F(FfiNativeTest, FfiBindingCallEchoHandle) {
+  DoCallThroughTest<void, decltype(&EchoHandle), &EchoHandle>("EchoHandle",
+                                                              "callEchoHandle");
 }
 
-void MyTestFunction(intptr_t a, float b) {}
+TEST_F(FfiNativeTest, SerialiseEchoHandle) {
+  DoSerialiseTest<void, decltype(&EchoHandle), &EchoHandle>(
+      /*leaf=*/false, "Handle", "Object", "Handle", "Object");
+}
 
-// Serialise a static function without handles.
-TEST_F(FfiNativeTest, SerialiseFunction) {
-  auto my_test_function_dispatcher =
-      tonic::FfiDispatcher<void, decltype(&MyTestFunction), &MyTestFunction>();
+//  Call and serialise function with std::string.
 
-  EXPECT_TRUE(my_test_function_dispatcher.AllowedAsLeafCalls());
+std::string EchoString(std::string arg) {
+  EXPECT_STREQ(arg.c_str(), "Hello EchoString");
+  return arg;
+}
 
-  EXPECT_STREQ(my_test_function_dispatcher.GetReturnFfiRepresentation(),
-               "Void");
+TEST_F(FfiNativeTest, FfiBindingCallEchoString) {
+  DoCallThroughTest<void, decltype(&EchoString), &EchoString>("EchoString",
+                                                              "callEchoString");
+}
 
-  EXPECT_STREQ(my_test_function_dispatcher.GetReturnDartRepresentation(),
-               "void");
+TEST_F(FfiNativeTest, SerialiseEchoString) {
+  DoSerialiseTest<void, decltype(&EchoString), &EchoString>(
+      /*leaf=*/false, "Handle", "String", "Handle", "String");
+}
 
-  {
-    std::ostringstream stream_;
-    my_test_function_dispatcher.WriteFfiArguments(&stream_);
-    if (sizeof(intptr_t) == 8) {
-      EXPECT_STREQ(stream_.str().c_str(), "Int64, Float");
-    } else {
-      ASSERT_TRUE(sizeof(intptr_t) == 4);
-      EXPECT_STREQ(stream_.str().c_str(), "Int32, Float");
-    }
-  }
+// Call and serialise function with std::u16string.
 
-  {
-    std::ostringstream stream_;
-    my_test_function_dispatcher.WriteDartArguments(&stream_);
-    EXPECT_STREQ(stream_.str().c_str(), "int, double");
+std::u16string EchoU16String(std::u16string arg) {
+  EXPECT_EQ(arg, u"Hello EchoU16String");
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoU16String) {
+  DoCallThroughTest<void, decltype(&EchoU16String), &EchoU16String>(
+      "EchoU16String", "callEchoU16String");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoU16String) {
+  DoSerialiseTest<void, decltype(&EchoU16String), &EchoU16String>(
+      /*leaf=*/false, "Handle", "String", "Handle", "String");
+}
+
+//  Call and serialise function with std::vector.
+
+std::vector<std::string> EchoVector(const std::vector<std::string>& arg) {
+  EXPECT_STREQ(arg[0].c_str(), "Hello EchoVector");
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoVector) {
+  DoCallThroughTest<void, decltype(&EchoVector), &EchoVector>("EchoVector",
+                                                              "callEchoVector");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoVector) {
+  DoSerialiseTest<void, decltype(&EchoVector), &EchoVector>(
+      /*leaf=*/false, "Handle", "List", "Handle", "List");
+}
+
+//  Call and serialise function with  DartWrappable.
+
+intptr_t EchoWrappable(MyNativeClass* arg) {
+  EXPECT_EQ(arg->_value, 0x1234);
+  return arg->_value;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoWrappable) {
+  DoCallThroughTest<void, decltype(&EchoWrappable), &EchoWrappable>(
+      "EchoWrappable", "callEchoWrappable");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoWrappable) {
+  if (sizeof(intptr_t) == 8) {
+    DoSerialiseTest<void, decltype(&EchoWrappable), &EchoWrappable>(
+        /*leaf=*/true, "Int64", "int", "Pointer", "Pointer");
+  } else {
+    EXPECT_EQ(sizeof(intptr_t), 4ul);
+    DoSerialiseTest<void, decltype(&EchoWrappable), &EchoWrappable>(
+        /*leaf=*/true, "Int32", "int", "Pointer", "Pointer");
   }
 }
 
-class MyTestClass : public tonic::DartWrappable {
- public:
-  static bool MyTestFunction(tonic::DartWrappable* ptr,
-                             double x,
-                             Dart_Handle handle) {
-    return false;
-  }
-  Dart_Handle MyTestMethod(bool a) { return nullptr; }
-};
+// Call and serialise function with TypedList<..>.
 
-// Serialise a static class member function that uses Handles.
+tonic::Float32List EchoTypedList(tonic::Float32List arg) {
+  EXPECT_NEAR(arg[1], 3.14, 0.01);
+  return arg;
+}
+
+TEST_F(FfiNativeTest, FfiBindingCallEchoTypedList) {
+  DoCallThroughTest<void, decltype(&EchoTypedList), &EchoTypedList>(
+      "EchoTypedList", "callEchoTypedList");
+}
+
+TEST_F(FfiNativeTest, SerialiseEchoTypedList) {
+  DoSerialiseTest<void, decltype(&EchoTypedList), &EchoTypedList>(
+      /*leaf=*/false, "Handle", "Object", "Handle", "Object");
+}
+
+// Call and serialise a static class member function.
+
+TEST_F(FfiNativeTest, FfiBindingCallClassMemberFunction) {
+  DoCallThroughTest<void, decltype(&MyNativeClass::MyTestFunction),
+                    &MyNativeClass::MyTestFunction>(
+      "MyNativeClass::MyTestFunction", "callMyTestFunction");
+}
+
 TEST_F(FfiNativeTest, SerialiseClassMemberFunction) {
-  auto my_test_function_dispatcher =
-      tonic::FfiDispatcher<void, decltype(&MyTestClass::MyTestFunction),
-                           &MyTestClass::MyTestFunction>();
-
-  EXPECT_FALSE(my_test_function_dispatcher.AllowedAsLeafCalls());
-
-  EXPECT_STREQ(my_test_function_dispatcher.GetReturnFfiRepresentation(),
-               "Bool");
-
-  EXPECT_STREQ(my_test_function_dispatcher.GetReturnDartRepresentation(),
-               "bool");
-
-  {
-    std::ostringstream stream_;
-    my_test_function_dispatcher.WriteFfiArguments(&stream_);
-    EXPECT_STREQ(stream_.str().c_str(), "Pointer, Double, Handle");
-  }
-
-  {
-    std::ostringstream stream_;
-    my_test_function_dispatcher.WriteDartArguments(&stream_);
-    EXPECT_STREQ(stream_.str().c_str(), "Pointer, double, Object");
-  }
+  DoSerialiseTest<void, decltype(&MyNativeClass::MyTestFunction),
+                  &MyNativeClass::MyTestFunction>(
+      /*leaf=*/false, "Int32", "int", "Pointer, Int32, Handle",
+      "Pointer, int, Object");
 }
 
-// Serialise an instance method.
+// Call and serialise an instance method.
+
+TEST_F(FfiNativeTest, FfiBindingCallClassMemberMethod) {
+  DoCallThroughTest<MyNativeClass, decltype(&MyNativeClass::MyTestMethod),
+                    &MyNativeClass::MyTestMethod>("MyNativeClass::MyTestMethod",
+                                                  "callMyTestMethod");
+}
+
 TEST_F(FfiNativeTest, SerialiseClassMemberMethod) {
-  auto my_test_method_dispatcher =
-      tonic::FfiDispatcher<MyTestClass, decltype(&MyTestClass::MyTestMethod),
-                           &MyTestClass::MyTestMethod>();
-
-  EXPECT_FALSE(my_test_method_dispatcher.AllowedAsLeafCalls());
-
-  EXPECT_STREQ(my_test_method_dispatcher.GetReturnFfiRepresentation(),
-               "Handle");
-
-  EXPECT_STREQ(my_test_method_dispatcher.GetReturnDartRepresentation(),
-               "Object");
-
-  {
-    std::ostringstream stream_;
-    my_test_method_dispatcher.WriteFfiArguments(&stream_);
-    EXPECT_STREQ(stream_.str().c_str(), "Pointer, Bool");
-  }
-
-  {
-    std::ostringstream stream_;
-    my_test_method_dispatcher.WriteDartArguments(&stream_);
-    EXPECT_STREQ(stream_.str().c_str(), "Pointer, bool");
-  }
+  DoSerialiseTest<MyNativeClass, decltype(&MyNativeClass::MyTestMethod),
+                  &MyNativeClass::MyTestMethod>(
+      /*leaf=*/false, "Handle", "Object", "Pointer, Int64", "Pointer, int");
 }
+
 }  // namespace testing
 }  // namespace flutter
