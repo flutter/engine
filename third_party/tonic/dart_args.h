@@ -315,7 +315,7 @@ struct FfiDispatcher<void, Return (*)(Args...), function> {
             Args>::type>::type>::FromFfi(args)...));
   }
 
-  static bool AllowedAsLeafCalls() {
+  static bool AllowedAsLeafCall() {
     if constexpr (sizeof...(Args) > 0) {
       return AllowedInLeafCall<Return>() && AllowedInLeafCall<Args...>();
     }
@@ -363,7 +363,7 @@ struct FfiDispatcher<C, Return (C::*)(Args...), method> {
             Args>::type>::type>::FromFfi(args)...));
   }
 
-  static bool AllowedAsLeafCalls() {
+  static bool AllowedAsLeafCall() {
     if constexpr (sizeof...(Args) > 0) {
       return AllowedInLeafCall<Return>() && AllowedInLeafCall<Args...>();
     }
@@ -415,7 +415,7 @@ struct FfiDispatcher<C, Return (C::*)(Args...) const, method> {
             Args>::type>::type>::FromFfi(args)...));
   }
 
-  static bool AllowedAsLeafCalls() {
+  static bool AllowedAsLeafCall() {
     if constexpr (sizeof...(Args) > 0) {
       return AllowedInLeafCall<Return>() && AllowedInLeafCall<Args...>();
     }
@@ -463,7 +463,7 @@ struct FfiDispatcher<void, void (*)(Args...), function> {
             Args>::type>::type>::FromFfi(args)...);
   }
 
-  static bool AllowedAsLeafCalls() {
+  static bool AllowedAsLeafCall() {
     if constexpr (sizeof...(Args) > 0) {
       return AllowedInLeafCall<Args...>();
     }
@@ -508,7 +508,7 @@ struct FfiDispatcher<C, void (C::*)(Args...), method> {
             Args>::type>::type>::FromFfi(args)...);
   }
 
-  static bool AllowedAsLeafCalls() {
+  static bool AllowedAsLeafCall() {
     if constexpr (sizeof...(Args) > 0) {
       return AllowedInLeafCall<Args...>();
     }

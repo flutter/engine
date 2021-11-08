@@ -105,7 +105,7 @@ class FfiNativeTest : public FixtureTest {
                        const char* argsDart) {
     auto dispatcher = tonic::FfiDispatcher<C, Signature, function>();
 
-    EXPECT_EQ(dispatcher.AllowedAsLeafCalls(), leaf);
+    EXPECT_EQ(dispatcher.AllowedAsLeafCall(), leaf);
     EXPECT_STREQ(dispatcher.GetReturnFfiRepresentation(), returnFfi);
     EXPECT_STREQ(dispatcher.GetReturnDartRepresentation(), returnDart);
 

@@ -197,6 +197,7 @@ struct DartConverter<unsigned long long> {
     TONIC_DCHECK(val <= 0x7fffffffffffffffLL);
     return val;
   }
+  // FFI does a bitwise conversion from uint64_t in C to int64 in Dart.
   static FfiType ToFfi(FfiType val) {
     TONIC_DCHECK(val <= 0x7fffffffffffffffLL);
     return val;
