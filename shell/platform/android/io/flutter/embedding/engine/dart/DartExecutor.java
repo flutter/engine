@@ -185,8 +185,8 @@ public class DartExecutor implements BinaryMessenger {
   @Deprecated
   @UiThread
   @Override
-  public TaskQueue makeBackgroundTaskQueue() {
-    return binaryMessenger.makeBackgroundTaskQueue();
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return binaryMessenger.makeBackgroundTaskQueue(options);
   }
 
   /** @deprecated Use {@link #getBinaryMessenger()} instead. */
@@ -285,6 +285,12 @@ public class DartExecutor implements BinaryMessenger {
       flutterJNI.notifyLowMemoryWarning();
     }
   }
+
+  @Override
+  public void enableBufferingIncomingMessages() {}
+
+  @Override
+  public void disableBufferingIncomingMessages() {}
 
   /**
    * Configuration options that specify which Dart entrypoint function is executed and where to find
@@ -403,8 +409,8 @@ public class DartExecutor implements BinaryMessenger {
       this.messenger = messenger;
     }
 
-    public TaskQueue makeBackgroundTaskQueue() {
-      return messenger.makeBackgroundTaskQueue();
+    public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+      return messenger.makeBackgroundTaskQueue(options);
     }
 
     /**
@@ -461,5 +467,11 @@ public class DartExecutor implements BinaryMessenger {
         @Nullable TaskQueue taskQueue) {
       messenger.setMessageHandler(channel, handler, taskQueue);
     }
+
+    @Override
+    public void enableBufferingIncomingMessages() {}
+
+    @Override
+    public void disableBufferingIncomingMessages() {}
   }
 }
