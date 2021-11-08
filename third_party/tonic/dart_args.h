@@ -256,11 +256,15 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
 // call the given method with the remaining arguments.
 // Arguments will automatically get converted to and from their FFI
 // representations with the DartConverter templates.
+//
+// @tparam C The type of the receiver. Or `void` if there is no receiver.
+// @tparam Signature The signature of the function being dispatched to.
+// @tparam function The function pointer being dispatched to.
 template <typename C, typename Signature, Signature function>
 struct FfiDispatcher;
 
-// Add the FFI representation of each argument to the stream, serialising them
-// into a comma separated list.
+// Concatenate the FFI representation of each argument to the stream,
+// serialising them into a comma separated list.
 template <typename Arg, typename... Args>
 void WriteFfiArguments(std::ostringstream* stream) {
   *stream << tonic::DartConverter<typename std::remove_const<
@@ -271,8 +275,8 @@ void WriteFfiArguments(std::ostringstream* stream) {
   }
 }
 
-// Add the Dart representation of each argument to the stream, serialising them
-// into a comma separated list.
+// Concatenate the Dart representation of each argument to the stream,
+// serialising them into a comma separated list.
 template <typename Arg, typename... Args>
 void WriteDartArguments(std::ostringstream* stream) {
   *stream << tonic::DartConverter<
