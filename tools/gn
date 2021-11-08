@@ -312,12 +312,11 @@ def to_gn_args(args):
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
 
-    # Enable Vulkan on everything except iOS. We currently have to exclude iOS
-    # because Skia uses VMA and we target iOS 9. VMA uses C++17 standard
-    # library features only available in iOS 10+.
-    if args.target_os != 'ios':
-      gn_args['skia_use_vulkan'] = True
-      gn_args['shell_enable_vulkan'] = True
+    # Enable Vulkan on all platforms.
+    gn_args['skia_use_vulkan'] = True
+    gn_args['shell_enable_vulkan'] = True
+    if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
+      gn_args['skia_enable_vma_shared_mutex'] = False
 
     if sys.platform.startswith(('cygwin', 'win')):
       # The buildroot currently isn't set up to support Vulkan in the
