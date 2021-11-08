@@ -37,16 +37,18 @@ const int _testConcurrency = int.fromEnvironment('FELT_TEST_CONCURRENCY', defaul
 /// them from another bot.
 class RunTestsStep implements PipelineStep {
   RunTestsStep({
-    required this.browserEnvironment,
+    required this.browserName,
     required this.isDebug,
     required this.doUpdateScreenshotGoldens,
     this.testFiles,
-  });
+  }) : _browserEnvironment = getBrowserEnvironment(browserName);
 
-  final BrowserEnvironment browserEnvironment;
+  final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
   final bool doUpdateScreenshotGoldens;
+
+  final BrowserEnvironment _browserEnvironment;
 
   /// Global list of shards that failed.
   ///
@@ -72,9 +74,9 @@ class RunTestsStep implements PipelineStep {
   Future<void> run() async {
     _copyTestFontsIntoWebUi();
     await _prepareTestResultsDirectory();
-    await browserEnvironment.prepareEnvironment();
+    await _browserEnvironment.prepareEnvironment();
 
-    final SkiaGoldClient? skiaClient = await _createSkiaGoldClient();
+    final SkiaGoldClient? skiaClient = await _createSkiaClient();
 
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
@@ -115,7 +117,7 @@ class RunTestsStep implements PipelineStep {
     if (testFiles.contains(failureSmokeTestPath)) {
       await _runTestBatch(
         testFiles: <FilePath>[failureSmokeTestPath],
-        browserEnvironment: browserEnvironment,
+        browserEnvironment: _browserEnvironment,
         concurrency: 1,
         expectFailure: true,
         isDebug: isDebug,
@@ -128,7 +130,7 @@ class RunTestsStep implements PipelineStep {
     if (unitTestFiles.isNotEmpty) {
       await _runTestBatch(
         testFiles: unitTestFiles,
-        browserEnvironment: browserEnvironment,
+        browserEnvironment: _browserEnvironment,
         concurrency: _testConcurrency,
         expectFailure: false,
         isDebug: isDebug,
@@ -143,7 +145,7 @@ class RunTestsStep implements PipelineStep {
     if (screenshotTestFiles.isNotEmpty) {
       await _runTestBatch(
         testFiles: screenshotTestFiles,
-        browserEnvironment: browserEnvironment,
+        browserEnvironment: _browserEnvironment,
         concurrency: 1,
         expectFailure: false,
         isDebug: isDebug,
@@ -172,6 +174,54 @@ class RunTestsStep implements PipelineStep {
       message.writeln(' - $failedShard');
     }
     return message.toString();
+  }
+
+  Future<SkiaGoldClient?> _createSkiaClient() async {
+    const FileSystem fs = LocalFileSystem();
+    final Directory goldensRoot =
+        fs.directory(environment.webUiSkiaGoldDirectory.path);
+    final SkiaGoldClient skiaClient =
+        SkiaGoldClient(goldensRoot, browserName: browserName);
+
+    if (await _checkSkiaClient(skiaClient)) {
+      print('WARNING: Unable to use Skia Client in this environment.');
+      return null;
+    }
+
+    return skiaClient;
+  }
+
+  /// Checks whether the Skia Client is usable in this environment.
+  Future<bool> _checkSkiaClient(SkiaGoldClient skiaClient) async {
+    const FileSystem fs = LocalFileSystem();
+    final Directory goldensRoot =
+        fs.directory(environment.webUiSkiaGoldDirectory.path);
+    final SkiaGoldClient skiaClient =
+        SkiaGoldClient(goldensRoot, browserName: browserName);
+
+    // Now let's check whether Skia Gold is reachable or not.
+    if (isLuci) {
+      if (SkiaGoldClient.isAvailable) {
+        try {
+          await skiaClient.auth();
+          return true;
+        } catch (e) {
+          print(e);
+        }
+      }
+    } else {
+      try {
+        // Check if we can reach Gold.
+        await skiaClient.getExpectationForTest('');
+        return true;
+      } on io.OSError catch (_) {
+        print('OSError occurred, could not reach Gold.');
+      } on io.SocketException catch (_) {
+        print('SocketException occurred, could not reach Gold.');
+      }
+    }
+
+    return false;
   }
 }
 
@@ -204,39 +254,6 @@ void _copyTestFontsIntoWebUi() {
         pathlib.join(environment.webUiRootDir.path, 'lib', 'assets', fontFile);
     sourceTtf.copySync(destinationTtfPath);
   }
-}
-
-Future<SkiaGoldClient?> _createSkiaGoldClient() async {
-  SkiaGoldClient? skiaClient;
-
-  if (SkiaGoldClient.isAvailable) {
-    const FileSystem fs = LocalFileSystem();
-    final Directory goldensRoot =
-        fs.directory(environment.webUiSkiaGoldDirectory.path);
-    skiaClient = SkiaGoldClient(goldensRoot);
-
-    if (isLuci) {
-      await skiaClient.auth();
-    } else {
-      try {
-        // Check if we can reach Gold.
-        await skiaClient.getExpectationForTest('');
-      } on io.OSError catch (_) {
-        // TODO(mdebbar): What else should we do here? Maybe fail if we are in pre-submit?
-        print('OSError occurred, could not reach Gold.');
-        skiaClient = null;
-      } on io.SocketException catch (_) {
-        print('SocketException occurred, could not reach Gold.');
-        skiaClient = null;
-      }
-    }
-  }
-
-  if (skiaClient == null) {
-    print('WARNING: Unable to use Skia Client in this environment.');
-  }
-
-  return skiaClient;
 }
 
 /// Runs a batch of tests.

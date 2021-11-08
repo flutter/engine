@@ -15,7 +15,6 @@ import 'package:process/process.dart';
 import 'environment.dart';
 
 const String _kGoldctlKey = 'GOLDCTL';
-const String _kTestBrowserKey = 'FLUTTER_TEST_BROWSER';
 
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
@@ -29,6 +28,7 @@ class SkiaGoldClient {
   /// override the defaults for [fs], [process], [platform], and [httpClient].
   SkiaGoldClient(
     this.workDirectory, {
+    required this.browserName,
     this.fs = const LocalFileSystem(),
     this.process = const LocalProcessManager(),
     this.platform = const LocalPlatform(),
@@ -38,6 +38,9 @@ class SkiaGoldClient {
   /// Whether the Skia Gold client is available and can be used in this
   /// environment.
   static bool get isAvailable => io.Platform.environment.containsKey(_kGoldctlKey);
+
+  /// The name of the browser running the tests.
+  final String browserName;
 
   /// The file system to use for storing the local clone of the repository.
   ///
@@ -364,22 +367,22 @@ class SkiaGoldClient {
     }
   }
 
-  /// Returns a JSON String with keys value pairs used to uniquely identify the
+  /// Returns a Map of key value pairs used to uniquely identify the
   /// configuration that generated the given golden file.
   ///
-  /// Currently, the only key value pairs being tracked is the platform the
-  /// image was rendered on, and for web tests, the browser the image was
-  /// rendered on.
-  String _getKeysJSON() {
-    final Map<String, dynamic> keys = <String, dynamic>{
-      'Platform' : platform.operatingSystem,
-      'CI' : 'luci',
+  /// Currently, the only key value pairs being tracked are the platform and
+  /// browser the image was rendered on.
+  Map<String, dynamic> _getKeys() {
+    return <String, dynamic>{
+      'CI': 'luci',
+      'Platform': platform.operatingSystem,
+      'Browser': browserName,
     };
-    if (platform.environment[_kTestBrowserKey] != null) {
-      keys['Browser'] = platform.environment[_kTestBrowserKey];
-      keys['Platform'] = '${keys['Platform']}-browser';
-    }
-    return json.encode(keys);
+  }
+
+  /// Same as [_getKeys] but encodes it in a JSON string.
+  String _getKeysJSON() {
+    return json.encode(_getKeys());
   }
 
   /// Removes the file extension from the [fileName] to represent the test name
@@ -423,11 +426,9 @@ class SkiaGoldClient {
   /// the image keys.
   String getTraceID(String testName) {
     final Map<String, dynamic> keys = <String, dynamic>{
-      if (platform.environment[_kTestBrowserKey] != null) 'Browser' : platform.environment[_kTestBrowserKey],
-      'CI' : 'luci',
-      'Platform' : platform.operatingSystem,
-      'name' : testName,
-      'source_type' : 'flutter',
+      ..._getKeys(),
+      'name': testName,
+      'source_type': _instance,
     };
     final String jsonTrace = json.encode(keys);
     final String md5Sum = md5.convert(utf8.encode(jsonTrace)).toString();
