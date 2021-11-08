@@ -129,6 +129,7 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(ResetCommandBuffer, handle);
   ACQUIRE_PROC(ResetFences, handle);
   ACQUIRE_PROC(WaitForFences, handle);
+#ifndef TEST_VULKAN_PROCS
 #if OS_ANDROID
   ACQUIRE_PROC(AcquireNextImageKHR, handle);
   ACQUIRE_PROC(CreateSwapchainKHR, handle);
@@ -145,6 +146,7 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
   ACQUIRE_PROC(SetBufferCollectionConstraintsFUCHSIAX, handle);
   ACQUIRE_PROC(GetBufferCollectionPropertiesFUCHSIAX, handle);
 #endif  // OS_FUCHSIA
+#endif  // TEST_VULKAN_PROCS
   device_ = {handle, nullptr};
   return true;
 }
