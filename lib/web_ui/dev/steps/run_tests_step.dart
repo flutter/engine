@@ -183,7 +183,7 @@ class RunTestsStep implements PipelineStep {
     final SkiaGoldClient skiaClient =
         SkiaGoldClient(goldensRoot, browserName: browserName);
 
-    if (await _checkSkiaClient(skiaClient)) {
+    if (!await _checkSkiaClient(skiaClient)) {
       print('WARNING: Unable to use Skia Client in this environment.');
       return null;
     }
