@@ -23,9 +23,11 @@ void main() {
     );
 
     final Completer<void> completer = Completer<void>();
-    window.onBeginFrame = (Duration timeStamp) {
+    window.onBeginFrame = (Duration timeStamp) async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder);
+      canvas.drawColor(const Color(0xff0000ff), BlendMode.srcOut);
+      canvas.drawPaint(Paint()..imageFilter = ImageFilter.blur(sigmaX: 2, sigmaY: 3));
       canvas.saveLayer(null, Paint());
       canvas.saveLayer(const Rect.fromLTWH(0, 0, 100, 100), Paint());
       canvas.drawRect(const Rect.fromLTRB(10, 10, 20, 20), Paint());
@@ -37,7 +39,7 @@ void main() {
       builder.addPicture(Offset.zero, picture);
       final Scene scene = builder.build();
 
-      window.render(scene);
+      await scene.toImage(100, 100);
       scene.dispose();
       completer.complete();
     };
@@ -60,7 +62,7 @@ void main() {
         }
       }
     }
-    expect(saveLayerRecordCount, 2);
-    expect(saveLayerCount, 2);
+    expect(saveLayerRecordCount, 3);
+    expect(saveLayerCount, 3);
   });
 }

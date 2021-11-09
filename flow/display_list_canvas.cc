@@ -77,7 +77,14 @@ void DisplayListCanvasDispatcher::clipPath(const SkPath& path,
 }
 
 void DisplayListCanvasDispatcher::drawPaint() {
-  canvas_->drawPaint(paint());
+  const SkPaint& sk_paint = paint();
+  SkImageFilter* filter = sk_paint.getImageFilter();
+  if (filter && !filter->asColorFilter(nullptr)) {
+    // drawPaint does an implicit saveLayer if an SkImageFilter is
+    // present that cannot be replaced by an SkColorFilter.
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  }
+  canvas_->drawPaint(sk_paint);
 }
 void DisplayListCanvasDispatcher::drawColor(SkColor color, SkBlendMode mode) {
   canvas_->drawColor(color, mode);
