@@ -671,21 +671,27 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)addInternalPlugins {
-  [self.keyboardManager release];
-  self.keyboardManager = [[FlutterKeyboardManager alloc] init];
+  FlutterKeyboardManager* keyboardManager = [[FlutterKeyboardManager alloc] init];
+  self.keyboardManager = keyboardManager;
+  [keyboardManager release];
+  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
-        [_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
       };
   [self.keyboardManager
       addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc] initWithSendEvent:sendEvent]];
-  [self.keyboardManager addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
-                                                initWithChannel:self.engine.keyEventChannel]];
-  [self.keyboardManager addSecondaryResponder:self.engine.textInputPlugin];
+  FlutterChannelKeyResponder* responder =
+      [[FlutterChannelKeyResponder alloc] initWithChannel:self.engine.keyEventChannel];
+  [self.keyboardManager addPrimaryResponder:responder];
+  [responder release];
+  FlutterTextInputPlugin* textInputPlugin = self.engine.textInputPlugin;
+  if (textInputPlugin != nil) {
+    [self.keyboardManager addSecondaryResponder:self.engine.textInputPlugin];
+  }
 }
 
 - (void)removeInternalPlugins {
-  [self.keyboardManager release];
   self.keyboardManager = nil;
 }
 
@@ -1729,6 +1735,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
   [coder encodeDataObject:restorationData];
+  [super encodeRestorableStateWithCoder:coder];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {

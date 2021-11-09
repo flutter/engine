@@ -433,7 +433,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
       }
     }
   }
-  return attributedString;
+  return [attributedString autorelease];
 }
 
 #pragma mark - UIAccessibility overrides

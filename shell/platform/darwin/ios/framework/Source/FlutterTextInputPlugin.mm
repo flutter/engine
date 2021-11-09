@@ -872,6 +872,8 @@ static BOOL isScribbleAvailable() {
   [_autofillId release];
   [_inputViewController release];
   [_selectionRects release];
+  [_markedTextStyle release];
+  [_textContentType release];
   [super dealloc];
 }
 
@@ -957,8 +959,8 @@ static BOOL isScribbleAvailable() {
 }
 
 - (NSRange)clampSelection:(NSRange)range forText:(NSString*)text {
-  int start = MIN(MAX(range.location, 0), text.length);
-  int length = MIN(range.length, text.length - start);
+  NSUInteger start = MIN(MAX(range.location, 0), text.length);
+  NSUInteger length = MIN(range.length, text.length - start);
   return NSMakeRange(start, length);
 }
 
@@ -1118,8 +1120,8 @@ static BOOL isScribbleAvailable() {
   NSRange textRange = ((FlutterTextRange*)range).range;
   NSAssert(textRange.location != NSNotFound, @"Expected a valid text range.");
   // Sanitize the range to prevent going out of bounds.
-  int location = MIN(textRange.location, self.text.length);
-  int length = MIN(self.text.length - location, textRange.length);
+  NSUInteger location = MIN(textRange.location, self.text.length);
+  NSUInteger length = MIN(self.text.length - location, textRange.length);
   NSRange safeRange = NSMakeRange(location, length);
   return [self.text substringWithRange:safeRange];
 }

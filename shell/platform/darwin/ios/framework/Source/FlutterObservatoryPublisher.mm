@@ -212,6 +212,7 @@ static void DNSSD_API registrationCallback(DNSServiceRef sdRef,
               if (weak.get().enableObservatoryPublication) {
                 [[weak.get() delegate] publishServiceProtocolPort:url];
               }
+              [url release];
             }
           });
         }
