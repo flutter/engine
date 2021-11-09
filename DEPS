@@ -99,16 +99,13 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'b0c315b5e6964fd85dd87b8d0195ddb5c3b60a34',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'bfa04ad85fed176aa909f880ef5c8009c945ba03',
 
    # Fuchsia compatibility
    #
    # The dependencies in this section should match the layout in the Fuchsia gn
    # build. Eventually, we'll manage these dependencies together with Fuchsia
    # and not have to specific specific hashes.
-
-  'src/third_party/benchmark':
-   Var('fuchsia_git') + '/third_party/benchmark' + '@' + 'a779ffce872b4c811beef482e18bd0b63626aa42',
 
   'src/third_party/rapidjson':
    Var('fuchsia_git') + '/third_party/rapidjson' + '@' + 'ef3564c5c8824989393b87df25355baf35ff544b',
@@ -154,6 +151,9 @@ deps = {
 
   'src/third_party/khronos':
    Var('chromium_git') + '/chromium/src/third_party/khronos.git' + '@' + '7122230e90547962e0f0c627f62eeed3c701f275',
+
+  'src/third_party/benchmark':
+   Var('github_git') + '/google/benchmark' + '@' + '431abd149fd76a072f821913c0340137cc755f36',
 
   'src/third_party/googletest':
    Var('github_git') + '/google/googletest' + '@' + 'f5e592d8ee5ffb1d9af5be7f715ce3576b8bf9c4',
