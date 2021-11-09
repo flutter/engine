@@ -195,7 +195,8 @@ void WindowWin32::OnImeComposition(UINT const message,
     if (text) {
       OnComposeChange(text.value(), pos);
     }
-  } else if (lparam & GCS_RESULTSTR) {
+  }
+  if (lparam & GCS_RESULTSTR) {
     // Commit but don't end composing.
     // Read the committed composing string.
     long pos = text_input_manager_.GetComposingCursorPosition();
