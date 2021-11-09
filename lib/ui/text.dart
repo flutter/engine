@@ -3583,7 +3583,8 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
     // Default the baselineOffset to height if null. This will place the placeholder
     // fully above the baseline, similar to [PlaceholderAlignment.aboveBaseline].
     baselineOffset = baselineOffset ?? height;
-    _addPlaceholder(width * scale, height * scale, alignment.index, baselineOffset * scale, baseline?.index);
+    _addPlaceholder(width * scale, height * scale, alignment.index,
+        baselineOffset * scale, baseline?.index ?? 0);
     _placeholderCount++;
     _placeholderScales.add(scale);
   }
@@ -3592,7 +3593,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
       Handle Function(Pointer<Void>, Double, Double, Uint32, Double,
           Uint32)>('ParagraphBuilder::addPlaceholder')
   external String? _addPlaceholder(double width, double height, int alignment,
-      double baselineOffset, int? baseline);
+      double baselineOffset, int baseline);
 
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
