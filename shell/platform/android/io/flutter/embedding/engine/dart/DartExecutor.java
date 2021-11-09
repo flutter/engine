@@ -227,6 +227,20 @@ public class DartExecutor implements BinaryMessenger {
       @Nullable TaskQueue taskQueue) {
     binaryMessenger.setMessageHandler(channel, handler, taskQueue);
   }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  public void enableBufferingIncomingMessages() {
+    dartMessenger.enableBufferingIncomingMessages();
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  public void disableBufferingIncomingMessages() {
+    dartMessenger.disableBufferingIncomingMessages();
+  }
   // ------ END BinaryMessenger -----
 
   /**
@@ -284,16 +298,6 @@ public class DartExecutor implements BinaryMessenger {
     if (flutterJNI.isAttached()) {
       flutterJNI.notifyLowMemoryWarning();
     }
-  }
-
-  @Override
-  public void enableBufferingIncomingMessages() {
-    dartMessenger.enableBufferingIncomingMessages();
-  }
-
-  @Override
-  public void disableBufferingIncomingMessages() {
-    dartMessenger.enableBufferingIncomingMessages();
   }
 
   /**
