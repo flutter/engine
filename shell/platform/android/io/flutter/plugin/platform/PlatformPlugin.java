@@ -262,8 +262,8 @@ public class PlatformPlugin {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
         WindowCompat.setDecorFitsSystemWindows(window, false);
-        windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
-        windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
+        windowInsetsControllerCompat.hide(
+            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
 
         return;
       } else {
@@ -287,8 +287,8 @@ public class PlatformPlugin {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
         WindowCompat.setDecorFitsSystemWindows(window, false);
-        windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
-        windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
+        windowInsetsControllerCompat.hide(
+            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
 
         return;
       } else {
@@ -312,8 +312,8 @@ public class PlatformPlugin {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         WindowCompat.setDecorFitsSystemWindows(window, false);
-        windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
-        windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
+        windowInsetsControllerCompat.hide(
+            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
         return;
       } else {
         enabledOverlays =
@@ -345,8 +345,8 @@ public class PlatformPlugin {
     }
 
     if (Build.VERSION.SDK_INT >= 30) {
-      windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
-      windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
+      windowInsetsControllerCompat.hide(
+          WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
       WindowCompat.setDecorFitsSystemWindows(window, false);
     } else {
       mEnabledOverlays = enabledOverlays;
@@ -369,9 +369,9 @@ public class PlatformPlugin {
         new WindowInsetsControllerCompat(window, view);
 
     if (Build.VERSION.SDK_INT >= 30) {
-      windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
+      windowInsetsControllerCompat.hide(
+          WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
       WindowCompat.setDecorFitsSystemWindows(window, false);
-      windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
     }
 
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
