@@ -1179,6 +1179,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self invalidateDisplayLink];
 
   self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
+  if (@available(iOS 15.0, *)) {
+    [self.displayLink setPreferredFrameRateRange:CAFrameRateRangeMake(80, 120, 120)];
+  }
   [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
   __block CADisplayLink* currentDisplayLink = self.displayLink;
 
