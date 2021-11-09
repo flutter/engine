@@ -261,8 +261,8 @@ public class PlatformPlugin {
       if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
-        window.setDecorFitsSystemWindows(false);
-        windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
         windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
 
         return;
@@ -286,7 +286,7 @@ public class PlatformPlugin {
       if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
-        window.setDecorFitsSystemWindows(false);
+        WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
         windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
 
@@ -311,7 +311,7 @@ public class PlatformPlugin {
       if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        window.setDecorFitsSystemWindows(false);
+        WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
         windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
         return;
@@ -334,7 +334,7 @@ public class PlatformPlugin {
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
       if (Build.VERSION.SDK_INT >= 30) {
-        window.setDecorFitsSystemWindows(false);
+        WindowCompat.setDecorFitsSystemWindows(window, false);
         return;
       } else {
         enabledOverlays =
@@ -347,7 +347,7 @@ public class PlatformPlugin {
     if (Build.VERSION.SDK_INT >= 30) {
       windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
       windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
-      window.setDecorFitsSystemWindows(false);
+      WindowCompat.setDecorFitsSystemWindows(window, false);
     } else {
       mEnabledOverlays = enabledOverlays;
       updateSystemUiOverlays();
@@ -370,7 +370,7 @@ public class PlatformPlugin {
 
     if (Build.VERSION.SDK_INT >= 30) {
       windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
-      window.setDecorFitsSystemWindows(false);
+      WindowCompat.setDecorFitsSystemWindows(window, false);
       windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
     }
 
