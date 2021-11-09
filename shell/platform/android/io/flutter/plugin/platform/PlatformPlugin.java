@@ -261,8 +261,8 @@ public class PlatformPlugin {
       if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
-            WindowCompat.setDecorFitsSystemWindows(window, false);
-            windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        windowInsetsControllerCompat.hide(WindowInsets.Type.statusBars());
         windowInsetsControllerCompat.hide(WindowInsets.Type.navigationBars());
 
         return;
