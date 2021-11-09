@@ -79,7 +79,13 @@ class SkiaGoldClient {
   /// The path to the local [Directory] where the goldctl tool is hosted.
   ///
   /// Uses the [platform] environment in this implementation.
-  String get _goldctl => platform.environment[_kGoldctlKey]!;
+  String get _goldctl {
+    assert(
+      isAvailable,
+      'Trying to use goldctl in an environment where it is not available',
+    );
+    return platform.environment[_kGoldctlKey]!;
+  }
 
   /// Prepares the local work space for golden file testing and calls the
   /// goldctl `auth` command.
