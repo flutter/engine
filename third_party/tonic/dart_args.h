@@ -201,21 +201,6 @@ struct DartDispatcher<IndicesHolder<indices...>, ResultType (C::*)(ArgTypes...)>
   }
 };
 
-// Format a string like `@FfiNative<FT>("name")` for a given function signature.
-intptr_t FormatFfiNativeAnnotation(char* buf,
-                                   intptr_t buf_size,
-                                   const char* ret_type,
-                                   const char* name,
-                                   bool has_self,
-                                   size_t n_args,
-                                   va_list args);
-
-std::unique_ptr<char[]> FormatFfiNativeAnnotation(const char* ret_type,
-                                                  const char* name,
-                                                  bool has_self,
-                                                  size_t n_args,
-                                                  ...);
-
 // external static DT FUNCTION(Pointer, ...);
 intptr_t FormatFfiNativeFunction(char* buf,
                                  intptr_t buf_size,
@@ -270,8 +255,6 @@ bool AllowedInLeaf() {
   return result;
 }
 
-// TODO(cskau): Can we remove const from functions without specialisation?
-
 // Match `Return Function(...)`.
 template <typename Return, typename... Args, Return (*Function)(Args...)>
 struct FfiDispatcher<void, Return (*)(Args...), Function> {
@@ -309,22 +292,6 @@ struct FfiDispatcher<void, Return (*)(Args...), Function> {
     if constexpr (sizeof...(Args) > 0) {
       print_dart_args<Args...>(stream);
     }
-  }
-
-  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
-    return FormatFfiNativeAnnotation(
-        tonic::DartConverter<Return>::ToFfiSig(), name, /*has_self=*/false,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
-  }
-
-  static std::unique_ptr<char[]> ToDartSig(const char* name) {
-    return FormatFfiNativeFunction(
-        tonic::DartConverter<Return>::ToDartSig(), name, /*has_self=*/false,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
   }
 };
 
@@ -373,22 +340,6 @@ struct FfiDispatcher<Object, Return (Object::*)(Args...), Method> {
       print_dart_args<Args...>(stream);
     }
   }
-
-  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
-    return FormatFfiNativeAnnotation(
-        tonic::DartConverter<Return>::ToFfiSig(), name, /*has_self=*/true,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
-  }
-
-  static std::unique_ptr<char[]> ToDartSig(const char* name) {
-    return FormatFfiNativeFunction(
-        tonic::DartConverter<Return>::ToDartSig(), name, /*has_self=*/true,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
-  }
 };
 
 // Match `Return Object::Method(...) const`.
@@ -436,22 +387,6 @@ struct FfiDispatcher<Object, Return (Object::*)(Args...) const, Method> {
       print_dart_args<Args...>(stream);
     }
   }
-
-  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
-    return FormatFfiNativeAnnotation(
-        tonic::DartConverter<Return>::ToFfiSig(), name, /*has_self=*/true,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
-  }
-
-  static std::unique_ptr<char[]> ToDartSig(const char* name) {
-    return FormatFfiNativeFunction(
-        tonic::DartConverter<Return>::ToDartSig(), name, /*has_self=*/true,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
-  }
 };
 
 // `void` specialisation since we can't declare `ToFfi` to take void rvalues.
@@ -491,22 +426,6 @@ struct FfiDispatcher<void, void (*)(Args...), Function> {
     if constexpr (sizeof...(Args) > 0) {
       print_dart_args<Args...>(stream);
     }
-  }
-
-  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
-    return FormatFfiNativeAnnotation(
-        tonic::DartConverter<void>::ToFfiSig(), name, /*has_self=*/false,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
-  }
-
-  static std::unique_ptr<char[]> ToDartSig(const char* name) {
-    return FormatFfiNativeFunction(
-        tonic::DartConverter<void>::ToDartSig(), name, /*has_self=*/false,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
   }
 };
 
@@ -551,21 +470,6 @@ struct FfiDispatcher<Object, void (Object::*)(Args...), Method> {
       *stream << ", ";
       print_dart_args<Args...>(stream);
     }
-  }
-
-  static std::unique_ptr<char[]> ToFfiSig(const char* name) {
-    return FormatFfiNativeAnnotation(
-        tonic::DartConverter<void>::ToFfiSig(), name, /*has_self=*/true, n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToFfiSig()...);
-  }
-
-  static std::unique_ptr<char[]> ToDartSig(const char* name) {
-    return FormatFfiNativeFunction(
-        tonic::DartConverter<void>::ToDartSig(), name, /*has_self=*/true,
-        n_args,
-        tonic::DartConverter<typename std::remove_const<
-            typename std::remove_reference<Args>::type>::type>::ToDartSig()...);
   }
 };
 
