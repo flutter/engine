@@ -105,7 +105,7 @@ void Canvas::saveLayerWithoutBounds(const Paint& paint,
   if (!canvas_) {
     return;
   }
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
   canvas_->saveLayer(nullptr, paint.paint());
 }
 
@@ -118,7 +118,7 @@ void Canvas::saveLayer(double left,
   if (!canvas_) {
     return;
   }
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  TRACE_EVENT0("flutter", "ui.Canvas::saveLayer (Recorded)");
   SkRect bounds = SkRect::MakeLTRB(left, top, right, bottom);
   canvas_->saveLayer(&bounds, paint.paint());
 }

@@ -19,6 +19,7 @@ void DisplayListCanvasDispatcher::restore() {
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
                                             bool restore_with_paint) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_->saveLayer(bounds, restore_with_paint ? &paint() : nullptr);
 }
 
@@ -170,8 +171,13 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<SkImage> atlas,
 void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* matrix,
                                               bool render_with_attributes) {
-  canvas_->drawPicture(picture, matrix,
-                       render_with_attributes ? &paint() : nullptr);
+  if (render_with_attributes) {
+    // drawPicture does an implicit saveLayer if an SkPaint is supplied.
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
+    canvas_->drawPicture(picture, matrix, &paint());
+  } else {
+    canvas_->drawPicture(picture, matrix, nullptr);
+  }
 }
 void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list) {

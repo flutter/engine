@@ -47,13 +47,20 @@ void main() {
     final vms.Timeline timeline = await vmService.getVMTimeline();
     await vmService.dispose();
 
+    int saveLayerRecordCount = 0;
     int saveLayerCount = 0;
     for (final vms.TimelineEvent event in timeline.traceEvents!) {
       final Map<String, dynamic> json = event.json!;
-      if (json['name'] == 'Canvas::saveLayer' && json['ph'] == 'B') {
-        saveLayerCount += 1;
+      if (json['ph'] == 'B') {
+        if (json['name'] == 'ui.Canvas::saveLayer (Recorded)') {
+          saveLayerRecordCount += 1;
+        }
+        if (json['name'] == 'Canvas::saveLayer') {
+          saveLayerCount += 1;
+        }
       }
     }
+    expect(saveLayerRecordCount, 2);
     expect(saveLayerCount, 2);
   });
 }
