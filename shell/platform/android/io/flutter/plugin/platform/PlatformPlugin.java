@@ -399,7 +399,6 @@ public class PlatformPlugin {
           break;
         case BOTTOM_OVERLAYS:
           if (Build.VERSION.SDK_INT >= 30) {
-            window.setDecorFitsSystemWindows(true);
             windowInsetsControllerCompat.show(WindowInsets.Type.navigationBars());
           } else {
             enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
