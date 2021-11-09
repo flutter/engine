@@ -473,9 +473,13 @@ public class DartExecutor implements BinaryMessenger {
     }
 
     @Override
-    public void enableBufferingIncomingMessages() {}
+    public void enableBufferingIncomingMessages() {
+      messenger.enableBufferingIncomingMessages();
+    }
 
     @Override
-    public void disableBufferingIncomingMessages() {}
+    public void disableBufferingIncomingMessages() {
+      messenger.disableBufferingIncomingMessages();
+    }
   }
 }
