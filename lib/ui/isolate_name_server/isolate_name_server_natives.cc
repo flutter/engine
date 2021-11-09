@@ -26,31 +26,26 @@ Dart_Handle IsolateNameServerNatives::LookupPortByName(
   return Dart_NewSendPort(port);
 }
 
-Dart_Handle IsolateNameServerNatives::RegisterPortWithName(
-    Dart_Handle port_handle,
-    const std::string& name) {
+bool IsolateNameServerNatives::RegisterPortWithName(Dart_Handle port_handle,
+                                                    const std::string& name) {
   auto name_server = UIDartState::Current()->GetIsolateNameServer();
   if (!name_server) {
-    return Dart_False();
+    return false;
   }
   Dart_Port port = ILLEGAL_PORT;
   Dart_SendPortGetId(port_handle, &port);
   if (!name_server->RegisterIsolatePortWithName(port, name)) {
-    return Dart_False();
+    return false;
   }
-  return Dart_True();
+  return true;
 }
 
-Dart_Handle IsolateNameServerNatives::RemovePortNameMapping(
-    const std::string& name) {
+bool IsolateNameServerNatives::RemovePortNameMapping(const std::string& name) {
   auto name_server = UIDartState::Current()->GetIsolateNameServer();
-  if (!name_server) {
-    return Dart_False();
+  if (!name_server || !name_server->RemoveIsolateNameMapping(name)) {
+    return false;
   }
-  if (!name_server->RemoveIsolateNameMapping(name)) {
-    return Dart_False();
-  }
-  return Dart_True();
+  return true;
 }
 
 #define FOR_EACH_BINDING(V)                         \
