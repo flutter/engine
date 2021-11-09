@@ -37,7 +37,9 @@ Future<String> compareImage(
   PixelComparison pixelComparison,
   double maxDiffRateFailure,
   SkiaGoldClient? skiaClient, {
+  // TODO(mdebbar): Remove these args with goldens repo.
   String goldensDirectory = '',
+  String filenameSuffix = '',
   bool write = false,
 }) async {
   if (_isLuci && skiaClient != null) {
@@ -48,6 +50,8 @@ Future<String> compareImage(
     // TODO(mdebbar): Use Skia Gold for comparison, not only for uploading.
     await _uploadToSkiaGold(skiaClient, screenshot, filename);
   }
+
+  filename = filename.replaceAll('.png', '$filenameSuffix.png');
 
   final Environment environment = Environment();
   if (goldensDirectory.isEmpty) {

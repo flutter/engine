@@ -282,9 +282,6 @@ class BrowserPlatform extends PlatformPlugin {
       write = true;
     }
 
-    filename =
-        filename.replaceAll('.png', '${_screenshotManager!.filenameSuffix}.png');
-
     String goldensDirectory;
     if (filename.startsWith('__local__')) {
       filename = filename.substring('__local__/'.length);
@@ -319,6 +316,7 @@ class BrowserPlatform extends PlatformPlugin {
       maxDiffRateFailure,
       skiaClient,
       goldensDirectory: goldensDirectory,
+      filenameSuffix: _screenshotManager!.filenameSuffix,
       write: write,
     );
   }
