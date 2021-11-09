@@ -44,7 +44,7 @@ class ClangTidy {
   /// `errSink` when provided is the destination for error messages, which
   /// will otherwise go to stderr.
   ClangTidy({
-    required io.File buildCommandsPath,
+    required List<io.File> buildCommandsPaths,
     required io.Directory repoPath,
     String checksArg = '',
     bool lintAll = false,
@@ -52,7 +52,7 @@ class ClangTidy {
     StringSink? errSink,
   }) :
     options = Options(
-      buildCommandsPath: buildCommandsPath,
+      buildCommandsPaths: buildCommandsPaths,
       repoPath: repoPath,
       checksArg: checksArg,
       lintAll: lintAll,
@@ -102,14 +102,16 @@ class ClangTidy {
         _outSink.writeln('Checking all $changedFilesCount files the repo dir.');
       } else {
         _outSink.writeln(
-          'Dectected $changedFilesCount files that have changed',
+          'Detected $changedFilesCount files that have changed',
         );
       }
+      final List<String> buildCommandsPaths = options.buildCommandsPaths.map((io.File file) => file.path).toList();
+      _outSink.writeln('Checking ${buildCommandsPaths.join(', ')} for changed files.');
     }
 
-    final List<dynamic> buildCommandsData = jsonDecode(
-      options.buildCommandsPath.readAsStringSync(),
-    ) as List<dynamic>;
+    final List<List<Object?>> buildCommandsData = options.buildCommandsPaths.map((io.File file) =>
+      jsonDecode(file.readAsStringSync()) as List<Object?>
+    ).toList();
     final List<Command> changedFileBuildCommands = getLintCommandsForChangedFiles(
       buildCommandsData,
       changedFiles,
@@ -162,17 +164,19 @@ class ClangTidy {
     return GitRepo(options.repoPath).changedFiles;
   }
 
-  /// Given a build commands json file, and the files with local changes,
+  /// Given build commands json files, and the files with local changes,
   /// compute the lint commands to run.
   @visibleForTesting
   List<Command> getLintCommandsForChangedFiles(
-    List<dynamic> buildCommandsData,
+    List<List<Object?>> buildCommandsData,
     List<io.File> changedFiles,
   ) {
-    final List<Command> buildCommands = <Command>[
-      for (final dynamic c in buildCommandsData)
-        Command.fromMap(c as Map<String, dynamic>),
-    ];
+    final Set<UniquedFilePathBuildCommand> buildCommands = <UniquedFilePathBuildCommand>{
+      for (final List<Object?> buildCommandData in buildCommandsData)
+        for (final dynamic c in buildCommandData)
+          // Only add the file once, even if included in multiple build commands json files.
+          UniquedFilePathBuildCommand.fromMap(c as Map<String, dynamic>),
+    };
 
     return <Command>[
       for (final Command c in buildCommands)

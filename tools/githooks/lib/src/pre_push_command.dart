@@ -37,14 +37,14 @@ class PrePushCommand extends Command<bool> {
     final Stopwatch sw = Stopwatch()..start();
     // First ensure that out/host_debug/compile_commands.json exists by running
     // //flutter/tools/gn.
-    final io.File compileCommands = io.File(path.join(
+    final io.File hostCompileCommands = io.File(path.join(
       flutterRoot,
       '..',
       'out',
       'host_debug',
       'compile_commands.json',
     ));
-    if (!compileCommands.existsSync()) {
+    if (!hostCompileCommands.existsSync()) {
       final bool gnResult = await _runCheck(
         flutterRoot,
         path.join(flutterRoot, 'tools', 'gn'),
@@ -59,7 +59,7 @@ class PrePushCommand extends Command<bool> {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: compileCommands,
+      buildCommandsPaths: <io.File>[hostCompileCommands],
       repoPath: io.Directory(flutterRoot),
       outSink: outBuffer,
       errSink: errBuffer,

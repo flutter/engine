@@ -15,7 +15,10 @@ Future<int> main(List<String> args) async {
     );
     return 1;
   }
+
+  // Supports comma-delineated json list.
   final String buildCommands = args[0];
+  final List<io.File> buildCommandsFiles = buildCommands.split(',').map((String path) => io.File(path)).toList();
   final String repoRoot = args[1];
 
   test('--help gives help', () async {
@@ -126,7 +129,7 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPaths: buildCommandsFiles,
       repoPath: io.Directory(repoRoot),
       lintAll: true,
       outSink: outBuffer,
@@ -140,7 +143,7 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPaths: buildCommandsFiles,
       repoPath: io.Directory(repoRoot),
       outSink: outBuffer,
       errSink: errBuffer,
@@ -153,22 +156,22 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPaths: buildCommandsFiles,
       repoPath: io.Directory(repoRoot),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
     );
     const String filePath = '/path/to/a/source_file.cc';
-    final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
-      <String, dynamic>{
+    final List<Object> buildCommandsData = <Map<String, Object>>[
+      <String, Object>{
         'directory': '/unused',
         'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
         'file': filePath,
       },
     ];
     final List<Command> commands = clangTidy.getLintCommandsForChangedFiles(
-      buildCommandsData,
+      <List<Object>>[buildCommandsData],
       <io.File>[],
     );
 
@@ -179,22 +182,22 @@ Future<int> main(List<String> args) async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
-      buildCommandsPath: io.File(buildCommands),
+      buildCommandsPaths: buildCommandsFiles,
       repoPath: io.Directory(repoRoot),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
     );
     const String filePath = '/path/to/a/source_file.cc';
-    final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
-      <String, dynamic>{
+    final List<Object> buildCommandsData = <Map<String, Object>>[
+      <String, Object>{
         'directory': '/unused',
         'command': '../../buildtools/mac-x64/clang/bin/clang $filePath',
         'file': filePath,
       },
     ];
     final List<Command> commands = clangTidy.getLintCommandsForChangedFiles(
-      buildCommandsData,
+      <List<Object>>[buildCommandsData],
       <io.File>[io.File(filePath)],
     );
 

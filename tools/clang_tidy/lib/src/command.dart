@@ -30,6 +30,22 @@ enum LintAction {
 
 /// A compilation command and methods to generate the lint command and job for
 /// it.
+/// Equal to another [UniquedFilePathBuildCommand] if [filePath] is equal.
+class UniquedFilePathBuildCommand extends Command {
+  /// Generate a [UniquedBuildCommand] from a [Map].
+  UniquedFilePathBuildCommand.fromMap(Map<String, dynamic> map) : super.fromMap(map);
+
+  @override
+  bool operator ==(Object other) {
+    return other is Command && other.filePath == filePath;
+  }
+
+  @override
+  int get hashCode => filePath.hashCode;
+}
+
+/// A compilation command and methods to generate the lint command and job for
+/// it.
 class Command {
   /// Generate a [Command] from a [Map].
   Command.fromMap(Map<String, dynamic> map) :
@@ -45,7 +61,7 @@ class Command {
   final io.Directory directory;
 
   /// The compilation command.
-  final String command ;
+  final String command;
 
   /// The file on which the command operates.
   late final String filePath;

@@ -11,7 +11,7 @@ import 'package:args/args.dart';
 class Options {
   /// Builds an instance of [Options] from the arguments.
   Options({
-    required this.buildCommandsPath,
+    required this.buildCommandsPaths,
     required this.repoPath,
     this.help = false,
     this.verbose = false,
@@ -30,7 +30,7 @@ class Options {
   }) {
     return Options(
       errorMessage: message,
-      buildCommandsPath: io.File('none'),
+      buildCommandsPaths: <io.File>[],
       repoPath: io.Directory('none'),
       errSink: errSink,
     );
@@ -41,7 +41,7 @@ class Options {
   }) {
     return Options(
       help: true,
-      buildCommandsPath: io.File('none'),
+      buildCommandsPaths: <io.File>[],
       repoPath: io.Directory('none'),
       errSink: errSink,
     );
@@ -52,10 +52,11 @@ class Options {
     ArgResults options, {
     StringSink? errSink,
   }) {
+    final List<String> compileCommandsList = options['compile-commands'] as List<String>? ?? <String>[];
     return Options(
       help: options['help'] as bool,
       verbose: options['verbose'] as bool,
-      buildCommandsPath: io.File(options['compile-commands'] as String),
+      buildCommandsPaths: compileCommandsList.map((String path) => io.File(path)).toList(),
       repoPath: io.Directory(options['repo'] as String),
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
@@ -102,10 +103,12 @@ class Options {
       'repo',
       help: 'Use the given path as the repo path',
     )
-    ..addOption(
+    ..addMultiOption(
       'compile-commands',
-      help: 'Use the given path as the source of compile_commands.json. This '
-            'file is created by running tools/gn',
+      valueHelp: 'path/to/src/out/host_debug/compile_commands.json,path/to/src/out/ios_debug/compile_commands.json',
+      help: 'List of paths to compile_commands.json. This '
+            'file is created by running tools/gn. '
+            'Pass this option multiple times to pass multiple json files.',
     )
     ..addOption(
       'checks',
@@ -120,8 +123,8 @@ class Options {
   /// Whether to run with verbose output.
   final bool verbose;
 
-  /// The location of the compile_commands.json file.
-  final io.File buildCommandsPath;
+  /// Paths to the compile_commands.json files.
+  final List<io.File> buildCommandsPaths;
 
   /// The root of the flutter/engine repository.
   final io.Directory repoPath;
@@ -167,8 +170,9 @@ class Options {
       return 'ERROR: The --repo argument is required.';
     }
 
-    final io.File buildCommandsPath = io.File(argResults['compile-commands'] as String);
-    if (!buildCommandsPath.existsSync()) {
+    final List<String> compileCommandsList = argResults['compile-commands'] as List<String>? ?? <String>[];
+    for (final io.File buildCommandsPath in compileCommandsList.map((String path) => io.File(path))
+        .where((io.File file) => !file.existsSync())) {
       return "ERROR: Build commands path ${buildCommandsPath.absolute.path} doesn't exist.";
     }
 
