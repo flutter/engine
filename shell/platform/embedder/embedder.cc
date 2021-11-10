@@ -1611,6 +1611,40 @@ static inline flutter::KeyEventType MapKeyEventType(
   return flutter::KeyEventType::kUp;
 }
 
+static FlutterEngineResult InternalSendPlatformMessage(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const char* channel,
+    const uint8_t* data,
+    size_t size,
+    FlutterDataCallback data_callback,
+    void* user_data) {
+  FlutterEngineResult result;
+
+  FlutterPlatformMessageResponseHandle* response_handle;
+  result = FlutterPlatformMessageCreateResponseHandle(
+      engine, data_callback, user_data, &response_handle);
+  if (result != kSuccess) {
+    return result;
+  }
+
+  const FlutterPlatformMessage message = {
+      sizeof(FlutterPlatformMessage),  // struct_size
+      channel,                         // channel
+      data,                            // message
+      size,                            // message_size
+      response_handle,                 // response_handle
+  };
+
+  result = FlutterEngineSendPlatformMessage(engine, &message);
+  FlutterEngineResult result2 =
+      FlutterPlatformMessageReleaseResponseHandle(engine, response_handle);
+  if (result != kSuccess) {
+    return result;
+  }
+
+  return result2;
+}
+
 FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine,
                                               const FlutterKeyEvent* event,
@@ -1637,8 +1671,6 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
 
   auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
 
-  FlutterEngineResult result;
-
   struct MessageData {
     FlutterKeyEventCallback callback;
     void* user_data;
@@ -1647,9 +1679,11 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
   MessageData* message_data =
       new MessageData{.callback = callback, .user_data = user_data};
 
-  FlutterPlatformMessageResponseHandle* response_handle;
-  result = FlutterPlatformMessageCreateResponseHandle(
+  return InternalSendPlatformMessage(
       engine,
+      kFlutterKeyDataChannel,  // channel
+      packet->data().data(),   // message
+      packet->data().size(),   // message_size
       [](const uint8_t* data, size_t size, void* user_data) {
         auto message_data = std::unique_ptr<MessageData>(
             reinterpret_cast<MessageData*>(user_data));
@@ -1659,26 +1693,7 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
         }
         message_data->callback(handled, message_data->user_data);
       },
-      message_data, &response_handle);
-  if (result != kSuccess) {
-    return result;
-  }
-
-  const FlutterPlatformMessage message = {
-      sizeof(FlutterPlatformMessage),  // struct_size
-      kFlutterKeyDataChannel,          // channel
-      packet->data().data(),           // message
-      packet->data().size(),           // message_size
-      response_handle,                 // response_handle
-  };
-
-  result = FlutterEngineSendPlatformMessage(engine, &message);
-  FlutterEngineResult result2 =
-      FlutterPlatformMessageReleaseResponseHandle(engine, response_handle);
-  if (result != kSuccess)
-    return result;
-
-  return result2;
+      message_data);
 }
 
 FlutterEngineResult FlutterEngineSendPlatformMessage(
