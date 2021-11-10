@@ -349,10 +349,6 @@ class PlatformDispatcher {
     return PointerDataPacket(data: data);
   }
 
-  /// Called by [_dispatchKeyData].
-  void _respondToKeyData(int responseId, bool handled)
-      native 'PlatformConfiguration_respondToKeyData';
-
   /// A callback that is invoked when key data is available.
   ///
   /// The framework invokes this callback in the same zone in which the callback
@@ -364,19 +360,25 @@ class PlatformDispatcher {
   KeyDataCallback? _onKeyData;
   Zone _onKeyDataZone = Zone.root;
   set onKeyData(KeyDataCallback? callback) {
+    print('before Set');
     _onKeyData = callback;
     _onKeyDataZone = Zone.current;
+    channelBuffers.setListener('keydata', _keyDataListener);
+    print('after Set');
   }
 
-  // Called from the engine, via hooks.dart
-  void _dispatchKeyData(ByteData packet, int responseId) {
-    _invoke2<KeyData, _KeyDataResponseCallback>(
-      (KeyData data, _KeyDataResponseCallback callback) {
-        callback(responseId, onKeyData != null && onKeyData!(data));
+  void _keyDataListener(ByteData? packet, PlatformMessageResponseCallback callback) {
+    print('start of Listener');
+    _invoke1<KeyData>(
+      (KeyData keyData) {
+        final bool handled = _onKeyData != null && _onKeyData!(keyData);
+        final Uint8List response = Uint8List.fromList(<int>[
+          if (handled) 1 else 0,
+        ]);
+        callback(ByteData.sublistView(response));
       },
       _onKeyDataZone,
-      _unpackKeyData(packet),
-      _respondToKeyData,
+      _unpackKeyData(packet!),
     );
   }
 

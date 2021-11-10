@@ -221,6 +221,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   Zone? _onKeyDataZone;
   @override
   set onKeyData(ui.KeyDataCallback? callback) {
+    const String channel = 'keydata';
+    if (callback == null) {
+      ui.channelBuffers.clearListener(channel);
+    } else {
+      ui.channelBuffers.setListener(channel, (ByteData? data, ui.PlatformMessageResponseCallback callback) {
+      });
+    }
     _onKeyData = callback;
     _onKeyDataZone = Zone.current;
   }
