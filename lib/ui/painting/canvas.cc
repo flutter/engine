@@ -82,6 +82,15 @@ fml::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
         ToDart("Canvas constructor called with non-genuine PictureRecorder."));
     return nullptr;
   }
+
+  // This call will implicitly initialize the |canvas_| field with an SkCanvas
+  // whether or not we are using display_list. Now that all of the code here
+  // in canvas.cc will direct calls to the DisplayListBuilder we could almost
+  // stop initializing that field for the display list case. Unfortunately,
+  // the text code in paragraph.cc still needs to present its output to an
+  // SkCanvas* which means without significant work to the internals of the
+  // paragraph code, we are going to continue to need the canvas adapter and
+  // field and getter.
   fml::RefPtr<Canvas> canvas = fml::MakeRefCounted<Canvas>(
       recorder->BeginRecording(SkRect::MakeLTRB(left, top, right, bottom)));
   recorder->set_canvas(canvas);

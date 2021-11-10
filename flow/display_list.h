@@ -480,22 +480,22 @@ class Dispatcher {
 class DisplayListFlags {
  protected:
   // A drawing operation that is not geometric in nature (but which
-  // may still apply a MaskFilter - see |kApplyMaskFilter| below).
+  // may still apply a MaskFilter - see |kUsesMaskFilter_| below).
   static constexpr int kIsNonGeometric_ = 0;
 
   // A geometric operation that is defined as a fill operation
   // regardless of what the current paint Style is set to.
-  // This flag will automatically assume |kApplyMaskFilter|.
+  // This flag will automatically assume |kUsesMaskFilter_|.
   static constexpr int kIsFilledGeometry_ = 1 << 0;
 
   // A geometric operation that is defined as a stroke operation
   // regardless of what the current paint Style is set to.
-  // This flag will automatically assume |kApplyMaskFilter|.
+  // This flag will automatically assume |kUsesMaskFilter_|.
   static constexpr int kIsStrokedGeometry_ = 1 << 1;
 
   // A geometric operation that may be a stroke or fill operation
   // depending on the current state of the paint Style attribute.
-  // This flag will automatically assume |kApplyMaskFilter|.
+  // This flag will automatically assume |kUsesMaskFilter_|.
   static constexpr int kIsDrawnGeometry_ = 1 << 2;
 
   static constexpr int kIsAnyGeometryMask_ =  //
@@ -1010,12 +1010,13 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   bool current_dither_ = false;
   bool current_invert_colors_ = false;
   SkColor current_color_ = 0xFF000000;
-  SkBlendMode current_blend_mode_ = SkBlendMode::kSrcOver;
   SkPaint::Style current_style_ = SkPaint::Style::kFill_Style;
   SkScalar current_stroke_width_ = 0.0;
   SkScalar current_stroke_miter_ = 4.0;
   SkPaint::Cap current_stroke_cap_ = SkPaint::Cap::kButt_Cap;
   SkPaint::Join current_stroke_join_ = SkPaint::Join::kMiter_Join;
+  // If |current_blender_| is set then |current_blend_mode_| should be ignored
+  SkBlendMode current_blend_mode_ = SkBlendMode::kSrcOver;
   sk_sp<SkBlender> current_blender_;
   sk_sp<SkShader> current_shader_;
   sk_sp<SkColorFilter> current_color_filter_;
