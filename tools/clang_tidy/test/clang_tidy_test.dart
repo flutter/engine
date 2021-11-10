@@ -105,7 +105,7 @@ Future<int> main(List<String> args) async {
     final ClangTidy clangTidy = ClangTidy.fromCommandLine(
       <String>[
         '--compile-commands',
-        // This just has to exist.
+        // This file needs to exist, and be UTF8 line-parsable.
         io.Platform.script.path,
         '--repo',
         '/does/not/exist',
@@ -187,7 +187,7 @@ Future<int> main(List<String> args) async {
       errSink: errBuffer,
     );
 
-    // This just has to exist.
+    // This file needs to exist, and be UTF8 line-parsable.
     final String filePath = io.Platform.script.path;
     final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
       <String, dynamic>{
@@ -224,7 +224,7 @@ Future<int> main(List<String> args) async {
 
   test('Command getLintAction flags missing files', () async {
     final LintAction lintAction = await Command.getLintAction(
-      'does/not/exist',
+      '/does/not/exist',
     );
 
     expect(lintAction, equals(LintAction.skipMissing));
