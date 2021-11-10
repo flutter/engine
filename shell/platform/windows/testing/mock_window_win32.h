@@ -54,7 +54,9 @@ class MockWin32Window : public WindowWin32, public MockMessageQueue {
   MOCK_METHOD3(OnImeComposition, void(UINT const, WPARAM const, LPARAM const));
   MOCK_METHOD0(get_text_input_manager, TextInputManagerWin32*());
 
-  void CallOnImeComposition(UINT const message, WPARAM const wparam, LPARAM const lparam);
+  void CallOnImeComposition(UINT const message,
+                            WPARAM const wparam,
+                            LPARAM const lparam);
 
  protected:
   LRESULT Win32DefWindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);

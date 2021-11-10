@@ -144,30 +144,30 @@ class WindowWin32 {
   // Called when a window is activated in order to configure IME support for
   // multi-step text input.
   virtual void OnImeSetContext(UINT const message,
-                       WPARAM const wparam,
-                       LPARAM const lparam);
+                               WPARAM const wparam,
+                               LPARAM const lparam);
 
   // Called when multi-step text input begins when using an IME.
   virtual void OnImeStartComposition(UINT const message,
-                             WPARAM const wparam,
-                             LPARAM const lparam);
+                                     WPARAM const wparam,
+                                     LPARAM const lparam);
 
   // Called when edits/commit of multi-step text input occurs when using an IME.
   virtual void OnImeComposition(UINT const message,
-                        WPARAM const wparam,
-                        LPARAM const lparam);
+                                WPARAM const wparam,
+                                LPARAM const lparam);
 
   // Called when multi-step text input ends when using an IME.
   virtual void OnImeEndComposition(UINT const message,
-                           WPARAM const wparam,
-                           LPARAM const lparam);
+                                   WPARAM const wparam,
+                                   LPARAM const lparam);
 
   // Called when the user triggers an IME-specific request such as input
   // reconversion, where an existing input sequence is returned to composing
   // mode to select an alternative candidate conversion.
   virtual void OnImeRequest(UINT const message,
-                    WPARAM const wparam,
-                    LPARAM const lparam);
+                            WPARAM const wparam,
+                            LPARAM const lparam);
 
   // Called when the app ends IME composing, such as when the text input client
   // is cleared or changed.

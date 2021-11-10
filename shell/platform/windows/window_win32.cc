@@ -200,7 +200,8 @@ void WindowWin32::OnImeComposition(UINT const message,
     // Commit but don't end composing.
     // Read the committed composing string.
     long pos = get_text_input_manager()->GetComposingCursorPosition();
-    std::optional<std::u16string> text = get_text_input_manager()->GetResultString();
+    std::optional<std::u16string> text =
+        get_text_input_manager()->GetResultString();
     if (text) {
       OnComposeChange(text.value(), pos);
       OnComposeCommit();

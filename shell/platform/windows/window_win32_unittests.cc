@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/windows/testing/mock_window_win32.h"
 #include "flutter/shell/platform/windows/testing/mock_text_input_manager_win32.h"
+#include "flutter/shell/platform/windows/testing/mock_window_win32.h"
 #include "gtest/gtest.h"
 
 using testing::_;
+using testing::Invoke;
 using testing::Return;
 
 namespace flutter {
@@ -37,15 +38,22 @@ TEST(MockWin32Window, VerticalScroll) {
 TEST(MockWin32Window, OnImeCompositionCompose) {
   MockWin32Window window;
   MockTextInputManagerWin32 text_input_manager;
-  EXPECT_CALL(text_input_manager, GetComposingString()).WillRepeatedly(Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
-  EXPECT_CALL(text_input_manager, GetResultString()).WillRepeatedly(Return(std::optional<std::u16string>(std::u16string(u"你好"))));
-  EXPECT_CALL(text_input_manager, GetComposingCursorPosition()).WillRepeatedly(Return((int)0));
+  EXPECT_CALL(text_input_manager, GetComposingString())
+      .WillRepeatedly(
+          Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
+  EXPECT_CALL(text_input_manager, GetResultString())
+      .WillRepeatedly(
+          Return(std::optional<std::u16string>(std::u16string(u"`}"))));
+  EXPECT_CALL(text_input_manager, GetComposingCursorPosition())
+      .WillRepeatedly(Return((int)0));
 
-  EXPECT_CALL(window, get_text_input_manager()).WillRepeatedly(Return(&text_input_manager));
+  EXPECT_CALL(window, get_text_input_manager())
+      .WillRepeatedly(Return(&text_input_manager));
   EXPECT_CALL(window, OnComposeChange(std::u16string(u"nihao"), 0)).Times(1);
-  EXPECT_CALL(window, OnComposeChange(std::u16string(u"你好"), 0)).Times(0);
+  EXPECT_CALL(window, OnComposeChange(std::u16string(u"`}"), 0)).Times(0);
   EXPECT_CALL(window, OnComposeCommit()).Times(0);
-  ON_CALL(window, OnImeComposition).WillByDefault(::testing::Invoke(&window, &MockWin32Window::CallOnImeComposition));
+  ON_CALL(window, OnImeComposition)
+      .WillByDefault(Invoke(&window, &MockWin32Window::CallOnImeComposition));
   EXPECT_CALL(window, OnImeComposition(_, _, _)).Times(1);
 
   // Send an IME_COMPOSITION event that contains just the composition string.
@@ -55,15 +63,22 @@ TEST(MockWin32Window, OnImeCompositionCompose) {
 TEST(MockWin32Window, OnImeCompositionResult) {
   MockWin32Window window;
   MockTextInputManagerWin32 text_input_manager;
-  EXPECT_CALL(text_input_manager, GetComposingString()).WillRepeatedly(Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
-  EXPECT_CALL(text_input_manager, GetResultString()).WillRepeatedly(Return(std::optional<std::u16string>(std::u16string(u"你好"))));
-  EXPECT_CALL(text_input_manager, GetComposingCursorPosition()).WillRepeatedly(Return((int)0));
+  EXPECT_CALL(text_input_manager, GetComposingString())
+      .WillRepeatedly(
+          Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
+  EXPECT_CALL(text_input_manager, GetResultString())
+      .WillRepeatedly(
+          Return(std::optional<std::u16string>(std::u16string(u"`}"))));
+  EXPECT_CALL(text_input_manager, GetComposingCursorPosition())
+      .WillRepeatedly(Return((int)0));
 
-  EXPECT_CALL(window, get_text_input_manager()).WillRepeatedly(Return(&text_input_manager));
+  EXPECT_CALL(window, get_text_input_manager())
+      .WillRepeatedly(Return(&text_input_manager));
   EXPECT_CALL(window, OnComposeChange(std::u16string(u"nihao"), 0)).Times(0);
-  EXPECT_CALL(window, OnComposeChange(std::u16string(u"你好"), 0)).Times(1);
+  EXPECT_CALL(window, OnComposeChange(std::u16string(u"`}"), 0)).Times(1);
   EXPECT_CALL(window, OnComposeCommit()).Times(1);
-  ON_CALL(window, OnImeComposition).WillByDefault(::testing::Invoke(&window, &MockWin32Window::CallOnImeComposition));
+  ON_CALL(window, OnImeComposition)
+      .WillByDefault(Invoke(&window, &MockWin32Window::CallOnImeComposition));
   EXPECT_CALL(window, OnImeComposition(_, _, _)).Times(1);
 
   // Send an IME_COMPOSITION event that contains just the result string.
@@ -73,20 +88,34 @@ TEST(MockWin32Window, OnImeCompositionResult) {
 TEST(MockWin32Window, OnImeCompositionComposeAndResult) {
   MockWin32Window window;
   MockTextInputManagerWin32 text_input_manager;
-  EXPECT_CALL(text_input_manager, GetComposingString()).WillRepeatedly(Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
-  EXPECT_CALL(text_input_manager, GetResultString()).WillRepeatedly(Return(std::optional<std::u16string>(std::u16string(u"你好"))));
-  EXPECT_CALL(text_input_manager, GetComposingCursorPosition()).WillRepeatedly(Return((int)0));
+  EXPECT_CALL(text_input_manager, GetComposingString())
+      .WillRepeatedly(
+          Return(std::optional<std::u16string>(std::u16string(u"nihao"))));
+  EXPECT_CALL(text_input_manager, GetResultString())
+      .WillRepeatedly(
+          Return(std::optional<std::u16string>(std::u16string(u"`}"))));
+  EXPECT_CALL(text_input_manager, GetComposingCursorPosition())
+      .WillRepeatedly(Return((int)0));
 
-  EXPECT_CALL(window, get_text_input_manager()).WillRepeatedly(Return(&text_input_manager));
+  EXPECT_CALL(window, get_text_input_manager())
+      .WillRepeatedly(Return(&text_input_manager));
   EXPECT_CALL(window, OnComposeChange(std::u16string(u"nihao"), 0)).Times(1);
-  EXPECT_CALL(window, OnComposeChange(std::u16string(u"你好"), 0)).Times(1);
+  EXPECT_CALL(window, OnComposeChange(std::u16string(u"`}"), 0)).Times(1);
   EXPECT_CALL(window, OnComposeCommit()).Times(1);
-  ON_CALL(window, OnImeComposition).WillByDefault(::testing::Invoke(&window, &MockWin32Window::CallOnImeComposition));
+  ON_CALL(window, OnImeComposition)
+      .WillByDefault(Invoke(&window, &MockWin32Window::CallOnImeComposition));
   EXPECT_CALL(window, OnImeComposition(_, _, _)).Times(1);
 
   // send an IME_COMPOSITION event that contains both the result string and the
   // composition string.
-  window.InjectWindowMessage(WM_IME_COMPOSITION, 0, GCS_COMPSTR | GCS_RESULTSTR);
+  window.InjectWindowMessage(WM_IME_COMPOSITION, 0,
+                             GCS_COMPSTR | GCS_RESULTSTR);
+  EXPECT_CALL(window, OnImeComposition(_, _, _)).Times(1);
+
+  // send an IME_COMPOSITION event that contains both the result string and the
+  // composition string.
+  window.InjectWindowMessage(WM_IME_COMPOSITION, 0,
+                             GCS_COMPSTR | GCS_RESULTSTR);
 }
 
 TEST(MockWin32Window, HorizontalScroll) {
