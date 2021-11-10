@@ -195,7 +195,7 @@ public class InputConnectionAdaptorTest {
                     mockFlutterJNI);
     adaptor.commitContent(
             new InputContentInfo(
-                    new Uri.parse("content://mock/uri/test/commitContent"),
+                    Uri.parse("content://mock/uri/test/commitContent"),
                     new ClipDescription("commitContent test", new String[] { "image/png" })
             ),
             0,
