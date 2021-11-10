@@ -35,5 +35,9 @@ LRESULT MockWin32Window::Win32SendMessage(HWND hWnd,
   return HandleMessage(message, wparam, lparam);
 }
 
+void MockWin32Window::CallOnImeComposition(UINT const message, WPARAM const wparam, LPARAM const lparam) {
+  WindowWin32::OnImeComposition(message, wparam, lparam);
+}
+
 }  // namespace testing
 }  // namespace flutter

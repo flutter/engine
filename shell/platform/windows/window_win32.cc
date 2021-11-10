@@ -119,7 +119,7 @@ LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
 
     auto that = static_cast<WindowWin32*>(cs->lpCreateParams);
     that->window_handle_ = window;
-    that->text_input_manager_.SetWindowHandle(window);
+    that->get_text_input_manager()->SetWindowHandle(window);
     RegisterTouchWindow(window, 0);
   } else if (WindowWin32* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
@@ -170,14 +170,14 @@ void WindowWin32::OnImeSetContext(UINT const message,
                                   WPARAM const wparam,
                                   LPARAM const lparam) {
   if (wparam != 0) {
-    text_input_manager_.CreateImeWindow();
+    get_text_input_manager()->CreateImeWindow();
   }
 }
 
 void WindowWin32::OnImeStartComposition(UINT const message,
                                         WPARAM const wparam,
                                         LPARAM const lparam) {
-  text_input_manager_.CreateImeWindow();
+  get_text_input_manager()->CreateImeWindow();
   OnComposeBegin();
 }
 
@@ -185,13 +185,13 @@ void WindowWin32::OnImeComposition(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) {
   // Update the IME window position.
-  text_input_manager_.UpdateImeWindow();
+  get_text_input_manager()->UpdateImeWindow();
 
   if (lparam & GCS_COMPSTR) {
     // Read the in-progress composing string.
-    long pos = text_input_manager_.GetComposingCursorPosition();
+    long pos = get_text_input_manager()->GetComposingCursorPosition();
     std::optional<std::u16string> text =
-        text_input_manager_.GetComposingString();
+        get_text_input_manager()->GetComposingString();
     if (text) {
       OnComposeChange(text.value(), pos);
     }
@@ -199,8 +199,8 @@ void WindowWin32::OnImeComposition(UINT const message,
   if (lparam & GCS_RESULTSTR) {
     // Commit but don't end composing.
     // Read the committed composing string.
-    long pos = text_input_manager_.GetComposingCursorPosition();
-    std::optional<std::u16string> text = text_input_manager_.GetResultString();
+    long pos = get_text_input_manager()->GetComposingCursorPosition();
+    std::optional<std::u16string> text = get_text_input_manager()->GetResultString();
     if (text) {
       OnComposeChange(text.value(), pos);
       OnComposeCommit();
@@ -211,7 +211,7 @@ void WindowWin32::OnImeComposition(UINT const message,
 void WindowWin32::OnImeEndComposition(UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) {
-  text_input_manager_.DestroyImeWindow();
+  get_text_input_manager()->DestroyImeWindow();
   OnComposeEnd();
 }
 
@@ -224,11 +224,11 @@ void WindowWin32::OnImeRequest(UINT const message,
 }
 
 void WindowWin32::AbortImeComposing() {
-  text_input_manager_.AbortComposing();
+  get_text_input_manager()->AbortComposing();
 }
 
 void WindowWin32::UpdateCursorRect(const Rect& rect) {
-  text_input_manager_.UpdateCaretRect(rect);
+  get_text_input_manager()->UpdateCaretRect(rect);
 }
 
 static uint16_t ResolveKeyCode(uint16_t original,
@@ -589,7 +589,7 @@ HWND WindowWin32::GetWindowHandle() {
 
 void WindowWin32::Destroy() {
   if (window_handle_) {
-    text_input_manager_.SetWindowHandle(nullptr);
+    get_text_input_manager()->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }
@@ -636,5 +636,9 @@ BOOL WindowWin32::Win32PeekMessage(LPMSG lpMsg,
 uint32_t WindowWin32::Win32MapVkToChar(uint32_t virtual_key) {
   return MapVirtualKey(virtual_key, MAPVK_VK_TO_CHAR);
 }
+
+TextInputManagerWin32* WindowWin32::get_text_input_manager() {
+  return &text_input_manager_;
+};
 
 }  // namespace flutter
