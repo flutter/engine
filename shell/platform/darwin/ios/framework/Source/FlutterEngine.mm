@@ -310,9 +310,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     callback(handled, userData);
   };
 
-  [self sendOnChannel:FlutterKeyDataChannel
-              message:message
-          binaryReply:response];
+  [self sendOnChannel:FlutterKeyDataChannel message:message binaryReply:response];
 }
 
 - (void)ensureSemanticsEnabled {
