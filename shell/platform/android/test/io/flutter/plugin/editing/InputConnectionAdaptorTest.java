@@ -16,6 +16,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.view.inputmethod.InputContentInfo;
+import android.net.Uri;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -178,7 +181,6 @@ public class InputConnectionAdaptorTest {
     View testView = new View(RuntimeEnvironment.application);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     ListenableEditingState editable = sampleEditable(0, 0);
@@ -187,13 +189,13 @@ public class InputConnectionAdaptorTest {
                     testView,
                     client,
                     textInputChannel,
-                    mockKeyProcessor,
+                    mockKeyboardManager,
                     editable,
                     null,
                     mockFlutterJNI);
     adaptor.commitContent(
             new InputContentInfo(
-                    Uri.parse("content://mock/uri/test/commitContent"),
+                    new Uri.parse("content://mock/uri/test/commitContent"),
                     new ClipDescription("commitContent test", new String[] { "image/png" })
             ),
             0,
