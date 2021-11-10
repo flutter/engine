@@ -789,6 +789,8 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)dealloc {
   [self removeInternalPlugins];
   [self deregisterNotifications];
+
+  [_displayLink release];
   [super dealloc];
 }
 

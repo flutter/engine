@@ -874,6 +874,7 @@ static BOOL isScribbleAvailable() {
   [_selectionRects release];
   [_markedTextStyle release];
   [_textContentType release];
+  [_textInteraction release];
   [super dealloc];
 }
 
