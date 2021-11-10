@@ -71,15 +71,15 @@ const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
 // A message channel to send FlutterKeyData to the framework.
 //
+// This should be kept in sync with the following files:
+//
+// - lib/ui/platform_dispatcher.dart
+// - shell/platform/darwin/ios/framework/Source/FlutterEngine.mm
+//
 // Not to be confused with "flutter/keyevent", which is used to send raw
 // key event data in a platform-dependent format.
 //
-// This should be kept in sync with the following files:
-//
-// - shell/platform/darwin/ios/framework/Source/FlutterEngine.mm
-// - (TODO)
-//
-// ## About this channel:
+// ## Format
 //
 // Send: KeyDataPacket.data().
 //

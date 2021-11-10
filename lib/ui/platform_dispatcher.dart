@@ -28,9 +28,6 @@ typedef TimingsCallback = void Function(List<FrameTiming> timings);
 /// Signature for [PlatformDispatcher.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
-// Signature for the response to KeyDataCallback.
-typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
-
 /// Signature for [PlatformDispatcher.onKeyData].
 ///
 /// The callback should return true if the key event has been handled by the
@@ -58,6 +55,11 @@ typedef PlatformConfigurationChangedCallback = void Function(PlatformConfigurati
 
 // A gesture setting value that indicates it has not been set by the engine.
 const double _kUnsetGestureSetting = -1.0;
+
+// A message channel to receive KeyData from the platform.
+//
+// See embedder.cc::kFlutterKeyDataChannel for more information.
+const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 /// Platform event dispatcher singleton.
 ///
@@ -360,15 +362,12 @@ class PlatformDispatcher {
   KeyDataCallback? _onKeyData;
   Zone _onKeyDataZone = Zone.root;
   set onKeyData(KeyDataCallback? callback) {
-    print('before Set');
     _onKeyData = callback;
     _onKeyDataZone = Zone.current;
-    channelBuffers.setListener('keydata', _keyDataListener);
-    print('after Set');
+    channelBuffers.setListener(_kFlutterKeyDataChannel, _keyDataListener);
   }
 
   void _keyDataListener(ByteData? packet, PlatformMessageResponseCallback callback) {
-    print('start of Listener');
     _invoke1<KeyData>(
       (KeyData keyData) {
         final bool handled = _onKeyData != null && _onKeyData!(keyData);
