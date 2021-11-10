@@ -73,7 +73,7 @@ typedef struct MouseState {
  * Keyboard animation properties
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
-@property(nonatomic, strong) CADisplayLink* displayLink;
+@property(nonatomic, retain) CADisplayLink* displayLink;
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -671,9 +671,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)addInternalPlugins {
-  FlutterKeyboardManager* keyboardManager = [[FlutterKeyboardManager alloc] init];
-  self.keyboardManager = keyboardManager;
-  [keyboardManager release];
+  self.keyboardManager = [[[FlutterKeyboardManager alloc] init] autorelease];
   fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
@@ -681,13 +679,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
       };
   [self.keyboardManager
       addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc] initWithSendEvent:sendEvent]];
-  FlutterChannelKeyResponder* responder =
-      [[FlutterChannelKeyResponder alloc] initWithChannel:self.engine.keyEventChannel];
+  FlutterChannelKeyResponder* responder = [[[FlutterChannelKeyResponder alloc]
+      initWithChannel:self.engine.keyEventChannel] autorelease];
   [self.keyboardManager addPrimaryResponder:responder];
-  [responder release];
   FlutterTextInputPlugin* textInputPlugin = self.engine.textInputPlugin;
   if (textInputPlugin != nil) {
-    [self.keyboardManager addSecondaryResponder:self.engine.textInputPlugin];
+    [self.keyboardManager addSecondaryResponder:textInputPlugin];
   }
 }
 

@@ -7,8 +7,8 @@
 
 @interface FlutterEngineGroup ()
 @property(nonatomic, copy) NSString* name;
-@property(nonatomic, strong) NSMutableArray<NSValue*>* engines;
-@property(nonatomic, strong) FlutterDartProject* project;
+@property(nonatomic, retain) NSMutableArray<NSValue*>* engines;
+@property(nonatomic, retain) FlutterDartProject* project;
 @end
 
 @implementation FlutterEngineGroup {

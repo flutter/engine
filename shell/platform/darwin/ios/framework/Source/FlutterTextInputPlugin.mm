@@ -650,7 +650,7 @@ static BOOL isScribbleAvailable() {
 // currently only support UITextFields, and password saving only supports
 // UITextFields and UITextViews, as of iOS 13.5.
 @interface FlutterSecureTextInputView : FlutterTextInputView
-@property(nonatomic, strong, readonly) UITextField* textField;
+@property(nonatomic, retain, readonly) UITextField* textField;
 @end
 
 @implementation FlutterSecureTextInputView {
@@ -693,7 +693,7 @@ static BOOL isScribbleAvailable() {
 @property(nonatomic, assign) CGRect markedRect;
 @property(nonatomic) BOOL isVisibleToAutofill;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
-@property(nonatomic, strong) UITextInteraction* textInteraction API_AVAILABLE(ios(13.0));
+@property(nonatomic, retain) UITextInteraction* textInteraction API_AVAILABLE(ios(13.0));
 
 - (void)setEditableTransform:(NSArray*)matrix;
 @end
@@ -1920,8 +1920,8 @@ static BOOL isScribbleAvailable() {
 // The current password-autofillable input fields that have yet to be saved.
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
-@property(nonatomic, strong) FlutterTextInputView* activeView;
-@property(nonatomic, strong) FlutterTextInputViewAccessibilityHider* inputHider;
+@property(nonatomic, retain) FlutterTextInputView* activeView;
+@property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @property(nonatomic, readonly) id<FlutterViewResponder> viewResponder;
 @end
 
