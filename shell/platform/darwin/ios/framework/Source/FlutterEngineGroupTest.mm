@@ -11,7 +11,7 @@
 FLUTTER_ASSERT_ARC
 
 @interface FlutterEngineGroup ()
-- (FlutterEngine*)createEngine;
+- (FlutterEngine*)makeEngine;
 @end
 
 @interface FlutterEngineGroupTest : XCTestCase
@@ -50,7 +50,7 @@ FLUTTER_ASSERT_ARC
   FlutterEngineGroup* group = OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"foo"
                                                                               project:nil]);
   FlutterEngine* mockEngine = OCMClassMock([FlutterEngine class]);
-  OCMStub([group createEngine]).andReturn(mockEngine);
+  OCMStub([group makeEngine]).andReturn(mockEngine);
   OCMStub([mockEngine spawnWithEntrypoint:[OCMArg any]
                                libraryURI:[OCMArg any]
                              initialRoute:[OCMArg any]
@@ -77,7 +77,7 @@ FLUTTER_ASSERT_ARC
   FlutterEngineGroup* group = OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"foo"
                                                                               project:nil]);
   FlutterEngine* mockEngine = OCMClassMock([FlutterEngine class]);
-  OCMStub([group createEngine]).andReturn(mockEngine);
+  OCMStub([group makeEngine]).andReturn(mockEngine);
   OCMStub([mockEngine spawnWithEntrypoint:[OCMArg any]
                                libraryURI:[OCMArg any]
                              initialRoute:[OCMArg any]
@@ -100,7 +100,7 @@ FLUTTER_ASSERT_ARC
   FlutterEngineGroup* group = OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"foo"
                                                                               project:nil]);
   FlutterEngine* mockEngine = OCMClassMock([FlutterEngine class]);
-  OCMStub([group createEngine]).andReturn(mockEngine);
+  OCMStub([group makeEngine]).andReturn(mockEngine);
   OCMStub([mockEngine spawnWithEntrypoint:[OCMArg any]
                                libraryURI:[OCMArg any]
                              initialRoute:[OCMArg any]

@@ -53,7 +53,7 @@
                             entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs {
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
-    engine = [self createEngine];
+    engine = [self makeEngine];
     [engine runWithEntrypoint:entrypoint
                    libraryURI:libraryURI
                  initialRoute:initialRoute
@@ -76,7 +76,7 @@
   return engine;
 }
 
-- (FlutterEngine*)createEngine {
+- (FlutterEngine*)makeEngine {
   NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_enginesCreatedCount];
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:engineName project:self.project];
   return [result autorelease];
