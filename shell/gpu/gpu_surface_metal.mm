@@ -183,8 +183,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
     return nullptr;
   }
 
-  auto submit_callback = [texture = texture, delegate = delegate_](
-                             const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
+  auto submit_callback = [this, texture = texture, delegate = delegate_](
+                             const SurfaceFrame& surface_frame, SkCanvas* canvas) mutable {
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::PresentTexture");
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
@@ -193,11 +193,32 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
 
     canvas->flush();
 
+    uintptr_t texture_handle = reinterpret_cast<uintptr_t>(texture.texture);
+
+    for (auto& entry : damage_) {
+      if (entry.first != texture_handle) {
+        // Accumulate damage for other framebuffers
+        if (surface_frame.submit_info().frame_damage) {
+          entry.second.join(*surface_frame.submit_info().frame_damage);
+        }
+      }
+    }
+    // Reset accumulated damage for current framebuffer
+    damage_[texture_handle] = SkIRect::MakeEmpty();
+
     return delegate->PresentTexture(texture);
   };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
+
+  // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
+  // front buffer)
+  uintptr_t texture_handle = reinterpret_cast<uintptr_t>(texture.texture);
+  auto i = damage_.find(texture_handle);
+  if (i != damage_.end()) {
+    framebuffer_info.existing_damage = i->second;
+  }
 
   return std::make_unique<SurfaceFrame>(std::move(surface), std::move(framebuffer_info),
                                         submit_callback);

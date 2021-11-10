@@ -109,6 +109,15 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   std::optional<SkRect> clip_rect =
       frame_damage ? frame_damage->ComputeClipRect(layer_tree) : std::nullopt;
 
+  // if (clip_rect) {
+  //   FML_LOG(ERROR) << "rendering partial frame: w - " << clip_rect->width()
+  //                  << ", h - " << clip_rect->height();
+  // } else {
+  //   const auto& fs = layer_tree.frame_size();
+  //   FML_LOG(ERROR) << "rendering full frame. w - " << fs.width() << ", h - "
+  //                  << fs.height();
+  // }
+
   bool root_needs_readback = layer_tree.Preroll(
       *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);
   bool needs_save_layer = root_needs_readback && !surface_supports_readback();

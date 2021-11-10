@@ -544,9 +544,11 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     // involved - ExternalViewEmbedder unconditionally clears the entire
     // surface and also partial repaint with platform view present is something
     // that still need to be figured out.
-    bool disable_partial_repaint =
-        external_view_embedder_ &&
-        (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+    // bool disable_partial_repaint =
+    //     external_view_embedder_ &&
+    //     (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+
+    bool disable_partial_repaint = false;
 
     FrameDamage damage;
     if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
