@@ -173,9 +173,8 @@ class ClangTidy {
     for (final dynamic data in buildCommandsData) {
       final Command command = Command.fromMap(data as Map<String, dynamic>);
       final LintAction lintAction = await command.lintAction;
-      if (lintAction != LintAction.skipMissing &&
-          lintAction != LintAction.skipThirdParty &&
-          command.containsAny(changedFiles)) {
+      // Short-circuit the expensive containsAny call for the many third_party files.
+      if (lintAction != LintAction.skipThirdParty && command.containsAny(changedFiles)) {
         buildCommands.add(command);
       }
     }
