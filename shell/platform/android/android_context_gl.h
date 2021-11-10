@@ -5,6 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_H_
 
+#include <EGL/egl.h>
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/eglext.h>
+
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -49,7 +53,7 @@ class AndroidEGLSurface {
   ///
   /// @return     Whether the EGL surface color buffer was swapped.
   ///
-  bool SwapBuffers();
+  bool SwapBuffers(fml::TimePoint target_time);
 
   //----------------------------------------------------------------------------
   /// @return     The size of an `EGLSurface`.

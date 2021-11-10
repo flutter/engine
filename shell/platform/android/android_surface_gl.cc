@@ -120,10 +120,11 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
   return GLContextPtr()->ClearCurrent();
 }
 
-bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+bool AndroidSurfaceGL::GLContextPresent(fml::TimePoint target_time,
+                                        uint32_t fbo_id) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
-  return onscreen_surface_->SwapBuffers();
+  return onscreen_surface_->SwapBuffers(target_time);
 }
 
 intptr_t AndroidSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {

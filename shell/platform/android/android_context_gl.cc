@@ -128,8 +128,10 @@ bool AndroidEGLSurface::MakeCurrent() const {
   return true;
 }
 
-bool AndroidEGLSurface::SwapBuffers() {
+bool AndroidEGLSurface::SwapBuffers(fml::TimePoint target_time) {
   TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
+  eglPresentationTimeANDROID(display_, surface_,
+                             target_time.ToEpochDelta().ToNanoseconds());
   return eglSwapBuffers(display_, surface_);
 }
 
