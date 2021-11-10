@@ -1122,6 +1122,7 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
   if (p.asBlendMode()) {
     setBlendMode(p.asBlendMode().value());
   } else {
+    // |current_blender_| supersedes any value of |current_blend_mode_|
     (current_blender_ = blender)  //
         ? Push<SetBlenderOp>(0, 0, std::move(blender))
         : Push<ClearBlenderOp>(0, 0);

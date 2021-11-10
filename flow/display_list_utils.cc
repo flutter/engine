@@ -292,7 +292,6 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
   }
-  // ClipBoundsDispatchHelper::reset(bounds);
 }
 void DisplayListBoundsCalculator::restore() {
   if (layer_infos_.size() > 1) {
