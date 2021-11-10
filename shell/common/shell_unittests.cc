@@ -1537,8 +1537,18 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 
+  // The Vulkan and GL backends set different default values for the resource
+  // cache size. The default backend (specified by the default param of
+  // `CreateShell` in this test) will only resolve to Vulkan (in
+  // `ShellTestPlatformView::Create`) if GL is disabled. This situation arises
+  // when targeting the Fuchsia Emulator.
+#if defined(SHELL_ENABLE_VULKAN) && !defined(SHELL_ENABLE_GL)
+  EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
+            vulkan::kGrCacheMaxByteSize);
+#else
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             static_cast<size_t>(24 * (1 << 20)));
+#endif
 
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell]() {
