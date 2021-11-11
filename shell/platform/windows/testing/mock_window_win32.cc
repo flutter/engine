@@ -6,8 +6,10 @@
 
 namespace flutter {
 namespace testing {
-
 MockWin32Window::MockWin32Window() : WindowWin32(){};
+MockWin32Window::MockWin32Window(
+    std::unique_ptr<TextInputManagerWin32> text_input_manager)
+    : WindowWin32(std::move(text_input_manager)){};
 
 MockWin32Window::~MockWin32Window() = default;
 

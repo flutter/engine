@@ -25,6 +25,7 @@ namespace flutter {
 class WindowWin32 {
  public:
   WindowWin32();
+  WindowWin32(std::unique_ptr<TextInputManagerWin32> text_input_manager);
   virtual ~WindowWin32();
 
   // Initializes as a child window with size using |width| and |height| and
@@ -217,9 +218,6 @@ class WindowWin32 {
   // Used to process key messages. Exposed for dependency injection.
   virtual uint32_t Win32MapVkToChar(uint32_t virtual_key);
 
-  // Accessor so that it can be mocked in tests.
-  virtual TextInputManagerWin32* get_text_input_manager();
-
  private:
   // Release OS resources associated with window.
   void Destroy();
@@ -267,7 +265,7 @@ class WindowWin32 {
   std::map<uint16_t, std::u16string> text_for_scancode_on_redispatch_;
 
   // Manages IME state.
-  TextInputManagerWin32 text_input_manager_;
+  std::unique_ptr<TextInputManagerWin32> text_input_manager_;
 
   // Used for temporarily storing the WM_TOUCH-provided touch points.
   std::vector<TOUCHINPUT> touch_points_;

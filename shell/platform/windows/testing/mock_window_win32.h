@@ -18,6 +18,7 @@ namespace testing {
 class MockWin32Window : public WindowWin32, public MockMessageQueue {
  public:
   MockWin32Window();
+  MockWin32Window(std::unique_ptr<TextInputManagerWin32> text_input_manager);
   virtual ~MockWin32Window();
 
   // Prevent copying.
@@ -52,7 +53,6 @@ class MockWin32Window : public WindowWin32, public MockMessageQueue {
   MOCK_METHOD0(OnComposeEnd, void());
   MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
   MOCK_METHOD3(OnImeComposition, void(UINT const, WPARAM const, LPARAM const));
-  MOCK_METHOD0(get_text_input_manager, TextInputManagerWin32*());
 
   void CallOnImeComposition(UINT const message,
                             WPARAM const wparam,
