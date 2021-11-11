@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io show Directory, File, Platform, stderr;
+import 'dart:io' as io show File, Platform, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
@@ -10,14 +10,13 @@ import 'package:litetest/litetest.dart';
 import 'package:process_runner/process_runner.dart';
 
 Future<int> main(List<String> args) async {
-  if (args.length < 2) {
+  if (args.isEmpty) {
     io.stderr.writeln(
-      'Usage: clang_tidy_test.dart [path/to/compile_commands.json] [repo root]',
+      'Usage: clang_tidy_test.dart [path/to/compile_commands.json]',
     );
     return 1;
   }
   final String buildCommands = args[0];
-  final String repoRoot = args[1];
 
   test('--help gives help', () async {
     final StringBuffer outBuffer = StringBuffer();
@@ -42,8 +41,6 @@ Future<int> main(List<String> args) async {
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy.fromCommandLine(
       <String>[
-        '--repo',
-        '/unused',
         '--compile-commands',
         '/unused',
         '--target-variant',
@@ -67,8 +64,6 @@ Future<int> main(List<String> args) async {
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy.fromCommandLine(
       <String>[
-        '--repo',
-        '/unused',
         '--compile-commands',
         '/unused',
         '--src-dir',
@@ -87,27 +82,6 @@ Future<int> main(List<String> args) async {
     ));
   });
 
-  test('Error when --repo is missing', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
-      <String>[
-        '--compile-commands',
-        '/unused',
-      ],
-      outSink: outBuffer,
-      errSink: errBuffer,
-    );
-
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
-    expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
-      'ERROR: The --repo option is required.',
-    ));
-  });
-
   test('Error when --compile-commands path does not exist', () async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
@@ -115,8 +89,6 @@ Future<int> main(List<String> args) async {
       <String>[
         '--compile-commands',
         '/does/not/exist',
-        '--repo',
-        '/unused',
       ],
       outSink: outBuffer,
       errSink: errBuffer,
@@ -140,8 +112,6 @@ Future<int> main(List<String> args) async {
         '/does/not/exist',
         '--target-variant',
         'ios_debug_unopt',
-        '--repo',
-        '/unused',
       ],
       outSink: outBuffer,
       errSink: errBuffer,
@@ -156,36 +126,11 @@ Future<int> main(List<String> args) async {
     ));
   });
 
-  test('Error when --repo path does not exist', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
-      <String>[
-        '--compile-commands',
-        // This file needs to exist, and be UTF8 line-parsable.
-        io.Platform.script.path,
-        '--repo',
-        '/does/not/exist',
-      ],
-      outSink: outBuffer,
-      errSink: errBuffer,
-    );
-
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
-    expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
-      "ERROR: Repo path /does/not/exist doesn't exist.",
-    ));
-  });
-
   test('lintAll=true checks all files', () async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: io.File(buildCommands),
-      repoPath: io.Directory(repoRoot),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
@@ -199,7 +144,6 @@ Future<int> main(List<String> args) async {
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: io.File(buildCommands),
-      repoPath: io.Directory(repoRoot),
       outSink: outBuffer,
       errSink: errBuffer,
     );
@@ -212,7 +156,6 @@ Future<int> main(List<String> args) async {
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: io.File(buildCommands),
-      repoPath: io.Directory(repoRoot),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,
@@ -238,7 +181,6 @@ Future<int> main(List<String> args) async {
     final StringBuffer errBuffer = StringBuffer();
     final ClangTidy clangTidy = ClangTidy(
       buildCommandsPath: io.File(buildCommands),
-      repoPath: io.Directory(repoRoot),
       lintAll: true,
       outSink: outBuffer,
       errSink: errBuffer,

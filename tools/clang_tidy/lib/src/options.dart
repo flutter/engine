@@ -16,7 +16,6 @@ class Options {
   /// Builds an instance of [Options] from the arguments.
   Options({
     required this.buildCommandsPath,
-    required this.repoPath,
     this.help = false,
     this.verbose = false,
     this.checksArg = '',
@@ -34,7 +33,6 @@ class Options {
     return Options(
       errorMessage: message,
       buildCommandsPath: io.File('none'),
-      repoPath: io.Directory('none'),
       errSink: errSink,
     );
   }
@@ -45,7 +43,6 @@ class Options {
     return Options(
       help: true,
       buildCommandsPath: io.File('none'),
-      repoPath: io.Directory('none'),
       errSink: errSink,
     );
   }
@@ -60,7 +57,6 @@ class Options {
       help: options['help'] as bool,
       verbose: options['verbose'] as bool,
       buildCommandsPath: buildCommandsPath,
-      repoPath: io.Directory(options['repo'] as String),
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
                options['lint-all'] as bool,
@@ -122,10 +118,6 @@ class Options {
       defaultsTo: false,
     )
     ..addOption(
-      'repo',
-      help: 'Use the given path as the repo path',
-    )
-    ..addOption(
       'compile-commands',
       help: 'Use the given path as the source of compile_commands.json. This '
             'file is created by running "tools/gn". Cannot be used with --target-variant '
@@ -162,7 +154,7 @@ class Options {
   final io.File buildCommandsPath;
 
   /// The root of the flutter/engine repository.
-  final io.Directory repoPath;
+  final io.Directory repoPath = io.Directory(_engineRoot);
 
   /// Arguments to plumb through to clang-tidy formatted as a command line
   /// argument.
@@ -209,17 +201,8 @@ class Options {
       return 'ERROR: --compile-commands option cannot be used with --src-dir.';
     }
 
-    if (!argResults.wasParsed('repo')) {
-      return 'ERROR: The --repo option is required.';
-    }
-
     if (!buildCommandsPath.existsSync()) {
       return "ERROR: Build commands path ${buildCommandsPath.absolute.path} doesn't exist.";
-    }
-
-    final io.Directory repoPath = io.Directory(argResults['repo'] as String);
-    if (!repoPath.existsSync()) {
-      return "ERROR: Repo path ${repoPath.absolute.path} doesn't exist.";
     }
 
     return null;

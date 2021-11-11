@@ -9,7 +9,7 @@ To check files other than in `host_debug` use `--target-variant android_debug_un
 Alternatively, use `--compile-commands` to specify a path to a `compile_commands.json` file.
 
 ```
-$ bin/main.dart --target-variant <engine-variant> --repo <path-to-repo>
-$ bin/main.dart --compile-commands <compile_commands.json-path> --repo <path-to-repo>
+$ bin/main.dart --target-variant <engine-variant>
+$ bin/main.dart --compile-commands <compile_commands.json-path>
 $ bin/main.dart --help
 ```

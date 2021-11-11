@@ -45,7 +45,6 @@ class ClangTidy {
   /// will otherwise go to stderr.
   ClangTidy({
     required io.File buildCommandsPath,
-    required io.Directory repoPath,
     String checksArg = '',
     bool lintAll = false,
     bool fix = false,
@@ -54,7 +53,6 @@ class ClangTidy {
   }) :
     options = Options(
       buildCommandsPath: buildCommandsPath,
-      repoPath: repoPath,
       checksArg: checksArg,
       lintAll: lintAll,
       fix: fix,
