@@ -7,6 +7,7 @@ import 'dart:io' as io show Directory, File, Platform, stderr;
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
 import 'package:litetest/litetest.dart';
+import 'package:process_runner/process_runner.dart';
 
 Future<int> main(List<String> args) async {
   if (args.length < 2) {
@@ -104,8 +105,8 @@ Future<int> main(List<String> args) async {
     final ClangTidy clangTidy = ClangTidy.fromCommandLine(
       <String>[
         '--compile-commands',
-        // This just has to exist.
-        io.Platform.executable,
+        // This file needs to exist, and be UTF8 line-parsable.
+        io.Platform.script.path,
         '--repo',
         '/does/not/exist',
       ],
@@ -167,7 +168,7 @@ Future<int> main(List<String> args) async {
         'file': filePath,
       },
     ];
-    final List<Command> commands = clangTidy.getLintCommandsForChangedFiles(
+    final List<Command> commands = await clangTidy.getLintCommandsForChangedFiles(
       buildCommandsData,
       <io.File>[],
     );
@@ -185,7 +186,9 @@ Future<int> main(List<String> args) async {
       outSink: outBuffer,
       errSink: errBuffer,
     );
-    const String filePath = '/path/to/a/source_file.cc';
+
+    // This file needs to exist, and be UTF8 line-parsable.
+    final String filePath = io.Platform.script.path;
     final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
       <String, dynamic>{
         'directory': '/unused',
@@ -193,13 +196,32 @@ Future<int> main(List<String> args) async {
         'file': filePath,
       },
     ];
-    final List<Command> commands = clangTidy.getLintCommandsForChangedFiles(
+    final List<Command> commands = await clangTidy.getLintCommandsForChangedFiles(
       buildCommandsData,
       <io.File>[io.File(filePath)],
     );
 
     expect(commands, isNotEmpty);
-    expect(commands.first.tidyPath, contains('clang/bin/clang-tidy'));
+    final Command command = commands.first;
+    expect(command.tidyPath, contains('clang/bin/clang-tidy'));
+    final WorkerJob jobNoFix = command.createLintJob(null, false);
+    expect(jobNoFix.command, <String>[
+      '../../buildtools/mac-x64/clang/bin/clang-tidy',
+      filePath,
+      '--',
+      '',
+      filePath,
+    ]);
+
+    final WorkerJob jobWithFix = command.createLintJob(null, true);
+    expect(jobWithFix.command, <String>[
+      '../../buildtools/mac-x64/clang/bin/clang-tidy',
+      filePath,
+      '--fix',
+      '--',
+      '',
+      filePath,
+    ]);
   });
 
   test('Command getLintAction flags third_party files', () async {
@@ -208,6 +230,14 @@ Future<int> main(List<String> args) async {
     );
 
     expect(lintAction, equals(LintAction.skipThirdParty));
+  });
+
+  test('Command getLintAction flags missing files', () async {
+    final LintAction lintAction = await Command.getLintAction(
+      '/does/not/exist',
+    );
+
+    expect(lintAction, equals(LintAction.skipMissing));
   });
 
   test('Command getLintActionFromContents flags FLUTTER_NOLINT', () async {

@@ -17,12 +17,11 @@ class Options {
     this.verbose = false,
     this.checksArg = '',
     this.lintAll = false,
+    this.fix = false,
     this.errorMessage,
     StringSink? errSink,
-  }) {
-    checks = checksArg.isNotEmpty ? '--checks=$checksArg' : '--config=';
-    _errSink = errSink ?? io.stderr;
-  }
+  }) : checks = checksArg.isNotEmpty ? '--checks=$checksArg' : null,
+       _errSink = errSink ?? io.stderr;
 
   factory Options._error(
     String message, {
@@ -60,6 +59,7 @@ class Options {
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
                options['lint-all'] as bool,
+      fix: options['fix'] as bool,
       errSink: errSink,
     );
   }
@@ -91,6 +91,11 @@ class Options {
     ..addFlag(
       'lint-all',
       help: 'lint all of the sources, regardless of FLUTTER_NOLINT.',
+      defaultsTo: false,
+    )
+    ..addFlag(
+      'fix',
+      help: 'Apply suggested fixes.',
       defaultsTo: false,
     )
     ..addFlag(
@@ -131,16 +136,19 @@ class Options {
   final String checksArg;
 
   /// Check arguments to plumb through to clang-tidy.
-  late final String checks;
+  final String? checks;
 
   /// Whether all files should be linted.
   final bool lintAll;
+
+  /// Whether checks should apply available fix-ups to the working copy.
+  final bool fix;
 
   /// If there was a problem with the command line arguments, this string
   /// contains the error message.
   final String? errorMessage;
 
-  late final StringSink _errSink;
+  final StringSink _errSink;
 
   /// Print command usage with an additional message.
   void printUsage({String? message}) {
@@ -148,7 +156,7 @@ class Options {
       _errSink.writeln(message);
     }
     _errSink.writeln(
-      'Usage: bin/main.dart [--help] [--lint-all] [--verbose] [--diff-branch]',
+      'Usage: bin/main.dart [--help] [--lint-all] [--fix] [--verbose] [--diff-branch]',
     );
     _errSink.writeln(_argParser.usage);
   }
