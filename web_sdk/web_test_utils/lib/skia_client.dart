@@ -38,12 +38,8 @@ class SkiaGoldClient {
   /// A client for making Http requests to the Flutter Gold dashboard.
   final HttpClient httpClient = HttpClient();
 
-  /// The local [Directory] within the [comparisonRoot] for the current test
-  /// context. In this directory, the client will create image and JSON files
-  /// for the goldctl tool to use.
-  ///
-  /// This is informed by the [FlutterGoldenFileComparator] [basedir]. It cannot
-  /// be null.
+  /// The local [Directory] for the current test context. In this directory, the
+  /// client will create image and JSON files for the `goldctl` tool to use.
   final Directory workDirectory;
 
   String get _tempPath => path.join(workDirectory.path, 'temp');
@@ -54,23 +50,19 @@ class SkiaGoldClient {
   bool get isInitialized => _isInitialized;
   bool _isInitialized = false;
 
-  /// The path to the local [Directory] where the goldctl tool is hosted.
-  ///
-  /// Uses the [platform] environment in this implementation.
+  /// The path to the local [Directory] where the `goldctl` tool is hosted.
   String get _goldctl {
     assert(
       isAvailable,
-      'Trying to use goldctl in an environment where it is not available',
+      'Trying to use `goldctl` in an environment where it is not available',
     );
     return Platform.environment[_kGoldctlKey]!;
   }
 
   /// Prepares the local work space for golden file testing and calls the
-  /// goldctl `auth` command.
+  /// `goldctl auth` command.
   ///
-  /// This ensures that the goldctl tool is authorized and ready for testing.
-  /// Used by the [FlutterPostSubmitFileComparator] and the
-  /// [FlutterPreSubmitFileComparator].
+  /// This ensures that the `goldctl` tool is authorized and ready for testing.
   Future<void> auth() async {
     if (await clientIsAuthorized())
       return;
@@ -96,11 +88,10 @@ class SkiaGoldClient {
     }
   }
 
-  /// Executes the `imgtest init` command in the goldctl tool.
+  /// Executes the `imgtest init` command in the `goldctl` tool.
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
-  /// backend, the `init` argument initializes the current test. Used by the
-  /// [FlutterPostSubmitFileComparator].
+  /// backend, the `init` argument initializes the current test.
   Future<void> imgtestInit() async {
     final File keys = File(_keysPath);
     final File failures = File(_failuresPath);
@@ -145,7 +136,7 @@ class SkiaGoldClient {
     _isInitialized = true;
   }
 
-  /// Executes the `imgtest add` command in the goldctl tool.
+  /// Executes the `imgtest add` command in the `goldctl` tool.
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `add` argument uploads the current image test. A response is
@@ -153,7 +144,7 @@ class SkiaGoldClient {
   /// result.
   ///
   /// The [testName] and [goldenFile] parameters reference the current
-  /// comparison being evaluated by the [FlutterPostSubmitFileComparator].
+  /// comparison being evaluated.
   Future<bool> imgtestAdd(String testName, File goldenFile) async {
     final List<String> imgtestCommand = <String>[
       _goldctl,
@@ -176,11 +167,10 @@ class SkiaGoldClient {
     return true;
   }
 
-  /// Executes the `imgtest init` command in the goldctl tool for tryjobs.
+  /// Executes the `imgtest init` command in the `goldctl` tool for tryjobs.
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
-  /// backend, the `init` argument initializes the current tryjob. Used by the
-  /// [FlutterPreSubmitFileComparator].
+  /// backend, the `init` argument initializes the current tryjob.
   Future<void> tryjobInit() async {
     final File keys = File(_keysPath);
     final File failures = File(_failuresPath);
@@ -228,7 +218,7 @@ class SkiaGoldClient {
     _isInitialized = true;
   }
 
-  /// Executes the `imgtest add` command in the goldctl tool for tryjobs.
+  /// Executes the `imgtest add` command in the `goldctl` tool for tryjobs.
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `add` argument uploads the current image test. A response is
@@ -236,7 +226,7 @@ class SkiaGoldClient {
   /// result for the tryjob.
   ///
   /// The [testName] and [goldenFile] parameters reference the current
-  /// comparison being evaluated by the [FlutterPreSubmitFileComparator].
+  /// comparison being evaluated.
   Future<void> tryjobAdd(String testName, File goldenFile) async {
     final List<String> imgtestCommand = <String>[
       _goldctl,
@@ -264,8 +254,8 @@ class SkiaGoldClient {
     }
   }
 
-  /// Returns the latest positive digest for the given test known to Flutter
-  /// Gold at head.
+  /// Returns the latest positive digest for the given test known to Skia Gold
+  /// at head.
   Future<String?> getExpectationForTest(String testName) async {
     late String? expectation;
     final String traceID = getTraceID(testName);
@@ -298,7 +288,7 @@ class SkiaGoldClient {
   }
 
   /// Returns a list of bytes representing the golden image retrieved from the
-  /// Flutter Gold dashboard.
+  /// Skia Gold dashboard.
   ///
   /// The provided image hash represents an expectation from Skia Gold.
   Future<List<int>>getImageBytes(String imageHash) async {
@@ -322,7 +312,7 @@ class SkiaGoldClient {
     return imageBytes;
   }
 
-  /// Returns the current commit hash of the Flutter repository.
+  /// Returns the current commit hash of the engine repository.
   Future<String> _getCurrentCommit() async {
     final Directory webUiRoot = environment.webUiRootDir;
     if (!webUiRoot.existsSync()) {
@@ -391,7 +381,7 @@ class SkiaGoldClient {
   }
 
   /// Returns a trace id based on the current testing environment to lookup
-  /// the latest positive digest on Flutter Gold with a hex-encoded md5 hash of
+  /// the latest positive digest on Skia Gold with a hex-encoded md5 hash of
   /// the image keys.
   String getTraceID(String testName) {
     final Map<String, dynamic> keys = <String, dynamic>{
