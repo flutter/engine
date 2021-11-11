@@ -12,7 +12,7 @@ import 'package:process_runner/process_runner.dart';
 Future<int> main(List<String> args) async {
   if (args.length < 2) {
     io.stderr.writeln(
-      'Usage: clang_tidy_test.dart [build commands] [repo root]',
+      'Usage: clang_tidy_test.dart [path/to/compile_commands.json] [repo root]',
     );
     return 1;
   }
@@ -35,24 +35,6 @@ Future<int> main(List<String> args) async {
     expect(clangTidy.options.help, isTrue);
     expect(result, equals(0));
     expect(errBuffer.toString(), contains('Usage: '));
-  });
-
-  test('Error when --compile-commands is missing', () async {
-    final StringBuffer outBuffer = StringBuffer();
-    final StringBuffer errBuffer = StringBuffer();
-    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
-      <String>[],
-      outSink: outBuffer,
-      errSink: errBuffer,
-    );
-
-    final int result = await clangTidy.run();
-
-    expect(clangTidy.options.help, isFalse);
-    expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
-      'ERROR: The --compile-commands argument is required.',
-    ));
   });
 
   test('Error when --repo is missing', () async {
@@ -96,6 +78,31 @@ Future<int> main(List<String> args) async {
     expect(result, equals(1));
     expect(errBuffer.toString(), contains(
       "ERROR: Build commands path /does/not/exist doesn't exist.",
+    ));
+  });
+
+  test('Error when --src-dir path does not exist, uses target variant in path', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--src-dir',
+        '/does/not/exist',
+        '--target-variant',
+        'ios_debug_unopt',
+        '--repo',
+        '/unused',
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(clangTidy.options.help, isFalse);
+    expect(result, equals(1));
+    expect(errBuffer.toString(), contains(
+      "ERROR: Build commands path /does/not/exist/out/ios_debug_unopt/compile_commands.json doesn't exist.",
     ));
   });
 
