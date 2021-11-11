@@ -275,6 +275,7 @@ Future<int> main(List<String> args) async {
       '../../buildtools/mac-x64/clang/bin/clang-tidy',
       filePath,
       '--fix',
+      '--format-style=file',
       '--',
       '',
       filePath,
