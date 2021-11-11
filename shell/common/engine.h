@@ -584,6 +584,15 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
+  /// @brief      Record the frame duration of the last frame.
+  ///
+  /// @param[in]  frame_duration  The delta between raster end time and build
+  ///                             start time, in milliseconds. This value must
+  ///                             be positive
+  ///
+  void RecordFrameDuration(const int64_t frame_duration);
+
+  //----------------------------------------------------------------------------
   /// @brief      Gets the main port of the root isolate. Since the isolate is
   ///             created immediately in the constructor of the engine, it is
   ///             possible to get its main port immediately (even before a call

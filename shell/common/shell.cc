@@ -1361,6 +1361,12 @@ void Shell::OnFrameRasterized(const FrameTiming& timing) {
     settings_.frame_rasterized_callback(timing);
   }
 
+  int64_t frame_duration_ms = (timing.Get(FrameTiming::Phase::kRasterFinish) -
+                               timing.Get(FrameTiming::Phase::kBuildStart))
+                                  .ToMilliseconds();
+
+  engine_->RecordFrameDuration(frame_duration_ms);
+
   if (!needs_report_timings_) {
     return;
   }

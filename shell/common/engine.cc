@@ -246,6 +246,12 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
+void Engine::RecordFrameDuration(const int64_t frame_duration) {
+  TRACE_EVENT0("flutter", "Engine::RecordFrameDuration");
+  FML_DCHECK(frame_duration >= 0);
+  animator_->RecordFrameDuration(frame_duration);
+}
+
 void Engine::NotifyIdle(int64_t deadline) {
   auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",

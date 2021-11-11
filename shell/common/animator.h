@@ -83,6 +83,15 @@ class Animator final {
   // active rendering.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Record the frame duration of the last frame.
+  ///
+  /// @param[in]  frame_duration  The delta between raster end time and build
+  ///                             start time, in milliseconds. This value must
+  ///                             be positive
+  ///
+  void RecordFrameDuration(const int64_t frame_duration);
+
  private:
   using LayerTreePipeline = Pipeline<flutter::LayerTree>;
 
@@ -118,8 +127,9 @@ class Animator final {
   SkISize last_layer_tree_size_ = {0, 0};
   std::deque<uint64_t> trace_flow_ids_;
   bool has_rendered_ = false;
-
   fml::WeakPtrFactory<Animator> weak_factory_;
+  std::unique_ptr<DynamicFrameRateRangeProvider> dynamic_frr_provider_;
+  FrameRateRange current_frame_rate_range_;
 
   friend class testing::ShellTest;
 

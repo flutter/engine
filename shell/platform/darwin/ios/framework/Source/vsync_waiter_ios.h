@@ -34,6 +34,8 @@
 
 - (void)invalidate;
 
+- (void)updateFrameRateRangeWithMin:(int64_t)min max:(int64_t)max preferred:(int64_t)preferred;
+
 @end
 
 namespace flutter {
@@ -43,6 +45,8 @@ class VsyncWaiterIOS final : public VsyncWaiter {
   VsyncWaiterIOS(flutter::TaskRunners task_runners);
 
   ~VsyncWaiterIOS() override;
+
+  void UpdateFrameRateRange(const FrameRateRange& frame_rate_range) override;
 
  private:
   fml::scoped_nsobject<VSyncClient> client_;

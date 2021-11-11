@@ -14,6 +14,10 @@
 
 namespace flutter {
 
+static constexpr const int64_t kFrameRateMin = 0;
+static constexpr const int64_t kFrameRateMedium = 60;
+static constexpr const int64_t kFrameRateHigh = 120;
+
 static constexpr const char* kVsyncFlowName = "VsyncFlow";
 
 #if defined(OS_FUCHSIA)
@@ -168,6 +172,58 @@ void VsyncWaiter::PauseDartMicroTasks() {
 void VsyncWaiter::ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id) {
   auto task_queues = fml::MessageLoopTaskQueues::GetInstance();
   task_queues->ResumeSecondarySource(ui_task_queue_id);
+}
+
+// FrameRageRange
+
+FrameRateRange::FrameRateRange(const int64_t min,
+                               const int64_t preferred,
+                               const int64_t max)
+    : min_(min), preferred_(preferred), max_(max) {}
+
+FrameRateRange::FrameRateRange()
+    : min_(kFrameRateMin), preferred_(kFrameRateHigh), max_(kFrameRateHigh) {}
+
+int64_t FrameRateRange::GetMin() const {
+  return min_;
+}
+
+int64_t FrameRateRange::GetPreferred() const {
+  return preferred_;
+}
+
+int64_t FrameRateRange::GetMax() const {
+  return max_;
+}
+
+// DynamicFrameRateRangeProvider
+
+DynamicFrameRateRangeProvider::DynamicFrameRateRangeProvider(size_t size)
+    : size_(size) {}
+
+void DynamicFrameRateRangeProvider::Record(int64_t frame_duration) {
+  FML_DCHECK(frame_durations_.size() <= size_);
+  if (frame_durations_.size() == size_) {
+    frame_durations_.erase(frame_durations_.begin());
+  }
+  frame_durations_.push_back(frame_duration);
+}
+
+FrameRateRange DynamicFrameRateRangeProvider::Provide() {
+  int64_t min = 0;
+  int64_t preferred = kFrameRateHigh;
+  if (frame_durations_.size() == size_) {
+    int64_t sum = 0;
+    for (auto& duration : frame_durations_) {
+      // TODO(cyanglaz): int overflow.
+      sum += duration;
+    }
+    int64_t average = sum / size_;
+    if (average > 8) {
+      preferred = kFrameRateMedium;
+    }
+  }
+  return FrameRateRange(min, preferred, preferred);
 }
 
 }  // namespace flutter

@@ -16,6 +16,64 @@
 
 namespace flutter {
 
+// Represents a dynamic frame rate range.
+struct FrameRateRange {
+ public:
+  // Constructor with default values:
+  // min = kFrameRateMin,
+  // preferred = kFrameRateHigh,
+  // max = kFrameRateHigh
+  FrameRateRange();
+  // Constructor with custom values.
+  FrameRateRange(const int64_t min, const int64_t preferred, const int64_t max);
+
+  // Get the min frame rate.
+  int64_t GetMin() const;
+
+  // Get the preferred frame rate.
+  int64_t GetPreferred() const;
+
+  // Get the max frame rate.
+  int64_t GetMax() const;
+
+  friend bool operator==(const FrameRateRange& lhs, const FrameRateRange& rhs) {
+    return lhs.min_ == rhs.min_ && lhs.preferred_ == rhs.preferred_ &&
+           lhs.max_ == rhs.max_;
+  }
+
+  friend bool operator!=(const FrameRateRange& lhs, const FrameRateRange& rhs) {
+    return lhs.min_ != rhs.min_ || lhs.preferred_ != rhs.preferred_ ||
+           lhs.max_ != rhs.max_;
+  }
+
+ private:
+  int64_t min_;
+  int64_t preferred_;
+  int64_t max_;
+};
+
+static const size_t kDefaultFRRProviderSize = 10;
+
+// This object can provide the preferred |FrameRateRange| to use
+// based on the performance.
+class DynamicFrameRateRangeProvider {
+ public:
+  // Constuctor.
+  // The `size` is used to determine how many frame durations are stored.
+  DynamicFrameRateRangeProvider(size_t size = kDefaultFRRProviderSize);
+
+  // Record a frame_duration for the current frame.
+  // The `frame_duration` must be the current frame's duration.
+  void Record(int64_t frame_duration);
+
+  // Provides a |FrameRateRange| based on the recorded frame_durations.
+  FrameRateRange Provide();
+
+ private:
+  std::vector<int64_t> frame_durations_;
+  size_t size_;
+};
+
 /// Abstract Base Class that represents a platform specific mechanism for
 /// getting callbacks when a vsync event happens.
 class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
@@ -31,6 +89,9 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   /// See also |PointerDataDispatcher::ScheduleSecondaryVsyncCallback| and
   /// |Animator::ScheduleMaybeClearTraceFlowIds|.
   void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
+
+  // Tell vsync waiter to update the frame rate range.
+  virtual void UpdateFrameRateRange(const FrameRateRange& frame_rate_range){};
 
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C

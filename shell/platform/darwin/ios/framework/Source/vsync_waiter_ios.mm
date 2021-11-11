@@ -39,11 +39,18 @@ void VsyncWaiterIOS::AwaitVSync() {
   [client_.get() await];
 }
 
+void VsyncWaiterIOS::UpdateFrameRateRange(const FrameRateRange& frame_rate_range) {
+  [client_.get() updateFrameRateRangeWithMin:frame_rate_range.GetMin()
+                                         max:frame_rate_range.GetMax()
+                                   preferred:frame_rate_range.GetPreferred()];
+}
+
 }  // namespace flutter
 
 @implementation VSyncClient {
   flutter::VsyncWaiter::Callback callback_;
   fml::scoped_nsobject<CADisplayLink> display_link_;
+  double displayRefreshRate_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
@@ -56,6 +63,7 @@ void VsyncWaiterIOS::AwaitVSync() {
       [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
     };
     display_link_.get().paused = YES;
+    displayRefreshRate_ = [DisplayLinkManager displayRefreshRate];
 
     task_runner->PostTask([client = [self retain]]() {
       [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
@@ -95,6 +103,29 @@ void VsyncWaiterIOS::AwaitVSync() {
 
 - (void)invalidate {
   [display_link_.get() invalidate];
+}
+
+- (void)updateFrameRateRangeWithMin:(int64_t)min max:(int64_t)max preferred:(int64_t)preferred {
+  float minRate = (float)min;
+  float preferredRate = fminf(preferred, displayRefreshRate_);
+  float maxRate = fminf(max, displayRefreshRate_);
+  if (@available(iOS 15, *)) {
+    // preferredFrameRateRange is only available in iOS 15 and above.
+    display_link_.get().preferredFrameRateRange =
+        CAFrameRateRangeMake(minRate, maxRate, preferredRate);
+  } else if (@available(iOS 10, *)) {
+    // preferredFramesPerSecond is only available in iOS 10 and above, and deprecated at iOS 15.
+    display_link_.get().preferredFramesPerSecond = preferredRate;
+  }
+  // No-op as setting the dynamic frame rate is not possible in lower iOS versions.
+  // TODO(cyanglaz) remove logs
+  FML_DLOG(ERROR) << "====================================================";
+  FML_DLOG(ERROR) << ">>> engine preferred rate " << preferred;
+  FML_DLOG(ERROR) << ">>> engine max rate " << max;
+  FML_DLOG(ERROR) << ">>> system rate " << displayRefreshRate_;
+  FML_DLOG(ERROR) << ">>> min rate " << minRate;
+  FML_DLOG(ERROR) << ">>> final preferred rate " << preferredRate;
+  FML_DLOG(ERROR) << ">>> final max rate " << maxRate;
 }
 
 - (void)dealloc {

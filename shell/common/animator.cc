@@ -40,7 +40,11 @@ Animator::Animator(Delegate& delegate,
               : 2)),
 #endif  // SHELL_ENABLE_METAL
       pending_frame_semaphore_(1),
-      weak_factory_(this) {
+      weak_factory_(this),
+      dynamic_frr_provider_(std::make_unique<DynamicFrameRateRangeProvider>()),
+      current_frame_rate_range_(FrameRateRange()) {
+  // Set initial frame rate range.
+  waiter_->UpdateFrameRateRange(current_frame_rate_range_);
 }
 
 Animator::~Animator() = default;
@@ -76,6 +80,12 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
       });
 }
 
+void Animator::RecordFrameDuration(const int64_t frame_duration) {
+  TRACE_EVENT0("flutter", "Engine::RecordFrameDuration");
+  FML_DCHECK(frame_duration >= 0);
+  dynamic_frr_provider_->Record(frame_duration);
+}
+
 // This Parity is used by the timeline component to correctly align
 // GPU Workloads events with their respective Framework Workload.
 const char* Animator::FrameParity() {
@@ -94,6 +104,12 @@ static fml::TimePoint FxlToDartOrEarlier(fml::TimePoint time) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+  FrameRateRange new_frame_rate_range = dynamic_frr_provider_->Provide();
+  if (current_frame_rate_range_ != new_frame_rate_range) {
+    current_frame_rate_range_ = new_frame_rate_range;
+    waiter_->UpdateFrameRateRange(current_frame_rate_range_);
+  }
+
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
   frame_request_number_++;
