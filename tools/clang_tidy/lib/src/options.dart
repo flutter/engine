@@ -128,19 +128,20 @@ class Options {
     ..addOption(
       'compile-commands',
       help: 'Use the given path as the source of compile_commands.json. This '
-            'file is created by running tools/gn',
+            'file is created by running "tools/gn". Cannot be used with --target-variant '
+            'or --src-dir.',
     )
     ..addOption(
       'target-variant',
       aliases: <String>['variant'],
       help: 'The engine variant directory containing compile_commands.json '
-            'created by running tools/gn. Ignored if --compile-commands is also passed.',
+            'created by running "tools/gn". Cannot be used with --compile-commands.',
       valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
       defaultsTo: 'host_debug',
     )
     ..addOption(
       'src-dir',
-      help: 'Path to the engine src directory. Ignored if --compile-commands is also passed.',
+      help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
       valueHelp: 'path/to/engine/src',
       defaultsTo: path.dirname(_engineRoot),
     )
