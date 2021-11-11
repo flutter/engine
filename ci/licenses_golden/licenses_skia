@@ -1,4 +1,4 @@
-Signature: 01e40d1b4079ee01d027a987ef212440
+Signature: 8a0fae94cdd33504bd39e542d1ff2bc8
 
 UNUSED LICENSES:
 
@@ -2512,12 +2512,6 @@ FILE: ../../../third_party/skia/src/gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/glx/GrGLMakeNativeInterface_glx.cpp
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlTypesPriv.mm
 FILE: ../../../third_party/skia/src/gpu/ops/FillPathFlags.h
-FILE: ../../../third_party/skia/src/gpu/v2/Device.cpp
-FILE: ../../../third_party/skia/src/gpu/v2/Device_v2.h
-FILE: ../../../third_party/skia/src/gpu/v2/SurfaceDrawContext.cpp
-FILE: ../../../third_party/skia/src/gpu/v2/SurfaceDrawContext_v2.h
-FILE: ../../../third_party/skia/src/gpu/v2/SurfaceFillContext_v2.cpp
-FILE: ../../../third_party/skia/src/gpu/v2/SurfaceFillContext_v2.h
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkBuffer.h
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp
