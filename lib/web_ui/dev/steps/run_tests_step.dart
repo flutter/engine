@@ -4,8 +4,6 @@
 
 import 'dart:io' as io;
 
-import 'package:file/file.dart';
-import 'package:file/local.dart';
 import 'package:path/path.dart' as pathlib;
 // TODO(yjbanov): remove hacks when this is fixed:
 //                https://github.com/dart-lang/test/issues/1521
@@ -177,11 +175,10 @@ class RunTestsStep implements PipelineStep {
   }
 
   Future<SkiaGoldClient?> _createSkiaClient() async {
-    const FileSystem fs = LocalFileSystem();
-    final Directory goldensRoot =
-        fs.directory(environment.webUiSkiaGoldDirectory.path);
-    final SkiaGoldClient skiaClient =
-        SkiaGoldClient(goldensRoot, browserName: browserName);
+    final SkiaGoldClient skiaClient = SkiaGoldClient(
+      environment.webUiSkiaGoldDirectory,
+      browserName: browserName,
+    );
 
     if (!await _checkSkiaClient(skiaClient)) {
       print('WARNING: Unable to use Skia Client in this environment.');
@@ -193,12 +190,6 @@ class RunTestsStep implements PipelineStep {
 
   /// Checks whether the Skia Client is usable in this environment.
   Future<bool> _checkSkiaClient(SkiaGoldClient skiaClient) async {
-    const FileSystem fs = LocalFileSystem();
-    final Directory goldensRoot =
-        fs.directory(environment.webUiSkiaGoldDirectory.path);
-    final SkiaGoldClient skiaClient =
-        SkiaGoldClient(goldensRoot, browserName: browserName);
-
     // Now let's check whether Skia Gold is reachable or not.
     if (isLuci) {
       if (SkiaGoldClient.isAvailable) {

@@ -3,13 +3,10 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
-import 'dart:io' as io;
+import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:file/file.dart';
-import 'package:file/local.dart';
 import 'package:path/path.dart' as path;
-import 'package:platform/platform.dart';
 import 'package:process/process.dart';
 
 import 'environment.dart';
@@ -24,45 +21,22 @@ const String _instance = 'flutter-engine';
 class SkiaGoldClient {
   /// Creates a [SkiaGoldClient] with the given [workDirectory].
   ///
-  /// All other parameters are optional. They may be provided in tests to
-  /// override the defaults for [fs], [process], [platform], and [httpClient].
-  SkiaGoldClient(
-    this.workDirectory, {
-    required this.browserName,
-    this.fs = const LocalFileSystem(),
-    this.process = const LocalProcessManager(),
-    this.platform = const LocalPlatform(),
-    io.HttpClient? httpClient,
-  }) : httpClient = httpClient ?? io.HttpClient();
+  /// The [browserName] parameter is the name of the browser that generated the
+  /// screenshots.
+  SkiaGoldClient(this.workDirectory, { required this.browserName });
 
   /// Whether the Skia Gold client is available and can be used in this
   /// environment.
-  static bool get isAvailable => io.Platform.environment.containsKey(_kGoldctlKey);
+  static bool get isAvailable => Platform.environment.containsKey(_kGoldctlKey);
 
   /// The name of the browser running the tests.
   final String browserName;
 
-  /// The file system to use for storing the local clone of the repository.
-  ///
-  /// This is useful in tests, where a local file system (the default) can be
-  /// replaced by a memory file system.
-  final FileSystem fs;
-
-  /// A wrapper for the [dart:io.Platform] API.
-  ///
-  /// This is useful in tests, where the system platform (the default) can be
-  /// replaced by a mock platform instance.
-  final Platform platform;
-
   /// A controller for launching sub-processes.
-  ///
-  /// This is useful in tests, where the real process manager (the default) can
-  /// be replaced by a mock process manager that doesn't really create
-  /// sub-processes.
-  final ProcessManager process;
+  final ProcessManager process = const LocalProcessManager();
 
   /// A client for making Http requests to the Flutter Gold dashboard.
-  final io.HttpClient httpClient;
+  final HttpClient httpClient = HttpClient();
 
   /// The local [Directory] within the [comparisonRoot] for the current test
   /// context. In this directory, the client will create image and JSON files
@@ -71,6 +45,10 @@ class SkiaGoldClient {
   /// This is informed by the [FlutterGoldenFileComparator] [basedir]. It cannot
   /// be null.
   final Directory workDirectory;
+
+  String get _tempPath => path.join(workDirectory.path, 'temp');
+  String get _keysPath => path.join(workDirectory.path, 'keys.json');
+  String get _failuresPath => path.join(workDirectory.path, 'failures.json');
 
   /// Whether the `goldctl` tool has been initialized.
   bool get isInitialized => _isInitialized;
@@ -84,7 +62,7 @@ class SkiaGoldClient {
       isAvailable,
       'Trying to use goldctl in an environment where it is not available',
     );
-    return platform.environment[_kGoldctlKey]!;
+    return Platform.environment[_kGoldctlKey]!;
   }
 
   /// Prepares the local work space for golden file testing and calls the
@@ -99,13 +77,11 @@ class SkiaGoldClient {
     final List<String> authCommand = <String>[
       _goldctl,
       'auth',
-      '--work-dir', workDirectory
-        .childDirectory('temp')
-        .path,
+      '--work-dir', _tempPath,
       '--luci',
     ];
 
-    final io.ProcessResult result = await process.run(authCommand);
+    final ProcessResult result = await process.run(authCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
@@ -126,8 +102,8 @@ class SkiaGoldClient {
   /// backend, the `init` argument initializes the current test. Used by the
   /// [FlutterPostSubmitFileComparator].
   Future<void> imgtestInit() async {
-    final File keys = workDirectory.childFile('keys.json');
-    final File failures = workDirectory.childFile('failures.json');
+    final File keys = File(_keysPath);
+    final File failures = File(_failuresPath);
 
     await keys.writeAsString(_getKeysJSON());
     await failures.create();
@@ -137,9 +113,7 @@ class SkiaGoldClient {
       _goldctl,
       'imgtest', 'init',
       '--instance', _instance,
-      '--work-dir', workDirectory
-        .childDirectory('temp')
-        .path,
+      '--work-dir', _tempPath,
       '--commit', commitHash,
       '--keys-file', keys.path,
       '--failure-file', failures.path,
@@ -155,7 +129,7 @@ class SkiaGoldClient {
       throw Exception(buf.toString());
     }
 
-    final io.ProcessResult result = await process.run(imgtestInitCommand);
+    final ProcessResult result = await process.run(imgtestInitCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
@@ -184,14 +158,12 @@ class SkiaGoldClient {
     final List<String> imgtestCommand = <String>[
       _goldctl,
       'imgtest', 'add',
-      '--work-dir', workDirectory
-        .childDirectory('temp')
-        .path,
+      '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
     ];
 
-    final io.ProcessResult result = await process.run(imgtestCommand);
+    final ProcessResult result = await process.run(imgtestCommand);
 
     if (result.exitCode != 0) {
       // We do not want to throw for non-zero exit codes here, as an intentional
@@ -210,8 +182,8 @@ class SkiaGoldClient {
   /// backend, the `init` argument initializes the current tryjob. Used by the
   /// [FlutterPreSubmitFileComparator].
   Future<void> tryjobInit() async {
-    final File keys = workDirectory.childFile('keys.json');
-    final File failures = workDirectory.childFile('failures.json');
+    final File keys = File(_keysPath);
+    final File failures = File(_failuresPath);
 
     await keys.writeAsString(_getKeysJSON());
     await failures.create();
@@ -221,9 +193,7 @@ class SkiaGoldClient {
       _goldctl,
       'imgtest', 'init',
       '--instance', _instance,
-      '--work-dir', workDirectory
-        .childDirectory('temp')
-        .path,
+      '--work-dir', _tempPath,
       '--commit', commitHash,
       '--keys-file', keys.path,
       '--failure-file', failures.path,
@@ -242,7 +212,7 @@ class SkiaGoldClient {
       throw Exception(buf.toString());
     }
 
-    final io.ProcessResult result = await process.run(imgtestInitCommand);
+    final ProcessResult result = await process.run(imgtestInitCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
@@ -271,16 +241,14 @@ class SkiaGoldClient {
     final List<String> imgtestCommand = <String>[
       _goldctl,
       'imgtest', 'add',
-      '--work-dir', workDirectory
-        .childDirectory('temp')
-        .path,
+      '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
     ];
 
-    final io.ProcessResult result = await process.run(imgtestCommand);
+    final ProcessResult result = await process.run(imgtestCommand);
 
-    final String/*!*/ resultStdout = result.stdout.toString();
+    final String resultStdout = result.stdout.toString();
     if (result.exitCode != 0 &&
       !(resultStdout.contains('Untriaged') || resultStdout.contains('negative image'))) {
       final StringBuffer buf = StringBuffer()
@@ -301,14 +269,14 @@ class SkiaGoldClient {
   Future<String?> getExpectationForTest(String testName) async {
     late String? expectation;
     final String traceID = getTraceID(testName);
-    await io.HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
+    await HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
       final Uri requestForExpectations = Uri.parse(
         '$_skiaGoldHost/json/v2/latestpositivedigest/$traceID'
       );
       late String rawResponse;
       try {
-        final io.HttpClientRequest request = await httpClient.getUrl(requestForExpectations);
-        final io.HttpClientResponse response = await request.close();
+        final HttpClientRequest request = await httpClient.getUrl(requestForExpectations);
+        final HttpClientResponse response = await request.close();
         rawResponse = await utf8.decodeStream(response);
         final dynamic jsonResponse = json.decode(rawResponse);
         if (jsonResponse is! Map<String, dynamic>)
@@ -332,17 +300,17 @@ class SkiaGoldClient {
   /// Returns a list of bytes representing the golden image retrieved from the
   /// Flutter Gold dashboard.
   ///
-  /// The provided image hash represents an expectation from Flutter Gold.
+  /// The provided image hash represents an expectation from Skia Gold.
   Future<List<int>>getImageBytes(String imageHash) async {
     final List<int> imageBytes = <int>[];
-    await io.HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
+    await HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
       final Uri requestForImage = Uri.parse(
         '$_skiaGoldHost/img/images/$imageHash.png',
       );
 
       try {
-        final io.HttpClientRequest request = await httpClient.getUrl(requestForImage);
-        final io.HttpClientResponse response = await request.close();
+        final HttpClientRequest request = await httpClient.getUrl(requestForImage);
+        final HttpClientResponse response = await request.close();
         await response.forEach((List<int> bytes) => imageBytes.addAll(bytes));
 
       } catch(e) {
@@ -356,20 +324,18 @@ class SkiaGoldClient {
 
   /// Returns the current commit hash of the Flutter repository.
   Future<String> _getCurrentCommit() async {
-    final io.Directory webUiRoot = environment.webUiRootDir;
+    final Directory webUiRoot = environment.webUiRootDir;
     if (!webUiRoot.existsSync()) {
       throw Exception('Web Engine root could not be found: $webUiRoot\n');
     } else {
-      print('>> Web Engine Path: ${webUiRoot.path}');
-      final io.ProcessResult revParse = await process.run(
+      final ProcessResult revParse = await process.run(
         <String>['git', 'rev-parse', 'HEAD'],
         workingDirectory: webUiRoot.path,
       );
-      print('>>> rev parse:\n${revParse.stdout}\n<<<');
       if (revParse.exitCode != 0) {
         throw Exception('Current commit of Web Engine can not be found.');
       }
-      return (revParse.stdout as String/*!*/).trim();
+      return (revParse.stdout as String).trim();
     }
   }
 
@@ -381,7 +347,7 @@ class SkiaGoldClient {
   Map<String, dynamic> _getKeys() {
     return <String, dynamic>{
       'CI': 'luci',
-      'Platform': platform.operatingSystem,
+      'Platform': Platform.operatingSystem,
       'Browser': browserName,
     };
   }
@@ -400,15 +366,12 @@ class SkiaGoldClient {
   /// Returns a boolean value to prevent the client from re-authorizing itself
   /// for multiple tests.
   Future<bool> clientIsAuthorized() async {
-    final File authFile = workDirectory.childFile(fs.path.join(
-      'temp',
-      'auth_opt.json',
-    ))/*!*/;
+    final File authFile = File(path.join(_tempPath, 'auth_opt.json'));
 
-    if(await authFile.exists()) {
+    if(authFile.existsSync()) {
       final String contents = await authFile.readAsString();
       final Map<String, dynamic> decoded = json.decode(contents) as Map<String, dynamic>;
-      return !(decoded['GSUtil'] as bool/*!*/);
+      return !(decoded['GSUtil'] as bool);
     }
     return false;
   }
@@ -416,8 +379,8 @@ class SkiaGoldClient {
   /// Returns a list of arguments for initializing a tryjob based on the testing
   /// environment.
   List<String> getCIArguments() {
-    final String jobId = platform.environment['LOGDOG_STREAM_PREFIX']!.split('/').last;
-    final List<String> refs = platform.environment['GOLD_TRYJOB']!.split('/');
+    final String jobId = Platform.environment['LOGDOG_STREAM_PREFIX']!.split('/').last;
+    final List<String> refs = Platform.environment['GOLD_TRYJOB']!.split('/');
     final String pullRequest = refs[refs.length - 2];
 
     return <String>[
@@ -443,4 +406,4 @@ class SkiaGoldClient {
 }
 
 /// Used to make HttpRequests during testing.
-class SkiaGoldHttpOverrides extends io.HttpOverrides { }
+class SkiaGoldHttpOverrides extends HttpOverrides { }

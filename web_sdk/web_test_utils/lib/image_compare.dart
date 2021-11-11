@@ -4,17 +4,12 @@
 
 import 'dart:io';
 
-import 'package:file/file.dart' as file;
-import 'package:file/local.dart';
 import 'package:image/image.dart';
 import 'package:path/path.dart' as p;
 
 import 'environment.dart';
 import 'goldens.dart';
 import 'skia_client.dart';
-
-/// Representation of the local file system.
-const file.FileSystem fs = LocalFileSystem();
 
 /// Whether this code is running on LUCI.
 bool _isLuci = Platform.environment.containsKey('SWARMING_TASK_ID') && Platform.environment.containsKey('GOLDCTL');
@@ -174,7 +169,7 @@ Future<void> _uploadToSkiaGold(
 
   // Write the screenshot to the file system so it can be consumed by the
   // `goldctl` tool.
-  final file.File goldenFile = fs.file(filename);
+  final File goldenFile = File(p.join(environment.webUiSkiaGoldDirectory.path, filename));
   await goldenFile.writeAsBytes(encodePng(screenshot), flush: true);
 
   if (_isPreSubmit) {
@@ -187,7 +182,7 @@ Future<void> _uploadToSkiaGold(
 Future<void> _uploadInPreSubmit(
   SkiaGoldClient skiaClient,
   String filename,
-  file.File goldenFile,
+  File goldenFile,
 ) async {
   assert(_isPreSubmit);
 
@@ -200,7 +195,7 @@ Future<void> _uploadInPreSubmit(
 Future<void> _uploadInPostSubmit(
   SkiaGoldClient skiaClient,
   String filename,
-  file.File goldenFile,
+  File goldenFile,
 ) async {
   assert(_isPostSubmit);
 
