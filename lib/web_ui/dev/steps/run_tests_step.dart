@@ -38,6 +38,7 @@ class RunTestsStep implements PipelineStep {
     required this.browserName,
     required this.isDebug,
     required this.doUpdateScreenshotGoldens,
+    required this.requireSkiaGold,
     this.testFiles,
   }) : _browserEnvironment = getBrowserEnvironment(browserName);
 
@@ -45,6 +46,9 @@ class RunTestsStep implements PipelineStep {
   final List<FilePath>? testFiles;
   final bool isDebug;
   final bool doUpdateScreenshotGoldens;
+
+  /// Require Skia Gold to be available and reachable.
+  final bool requireSkiaGold;
 
   final BrowserEnvironment _browserEnvironment;
 
@@ -179,12 +183,13 @@ class RunTestsStep implements PipelineStep {
       browserName: browserName,
     );
 
-    if (!await _checkSkiaClient(skiaClient)) {
-      print('WARNING: Unable to use Skia Client in this environment.');
-      return null;
+    if (await _checkSkiaClient(skiaClient)) {
+      return skiaClient;
     }
 
-    return skiaClient;
+    if (requireSkiaGold) {
+      throw ToolExit('Skia Gold is required but is unavailable.');
+    }
   }
 
   /// Checks whether the Skia Client is usable in this environment.
