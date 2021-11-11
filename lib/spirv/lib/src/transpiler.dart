@@ -197,7 +197,7 @@ class _Transpiler {
       header.writeln();
       final List<int> locations = uniformDeclarations.keys.toList();
       locations.sort((int a, int b) => a - b);
-      for (final location in locations) {
+      for (final int location in locations) {
         header.writeln(uniformDeclarations[location]);
       }
     }
@@ -207,7 +207,7 @@ class _Transpiler {
       header.writeln();
       final List<int> locations = samplerSizeDeclarations.keys.toList();
       locations.sort((int a, int b) => a - b);
-      for (final location in locations) {
+      for (final int location in locations) {
         header.writeln(samplerSizeDeclarations[location]);
       }
     }

@@ -3785,7 +3785,6 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
       spirv,
       spv.TargetLanguage.sksl,
     );
-    if (debugPrint) print(result.src);
     _init(result.src, debugPrint);
     _uniformFloatCount = result.uniformFloatCount;
     _samplerCount = result.samplerCount;
