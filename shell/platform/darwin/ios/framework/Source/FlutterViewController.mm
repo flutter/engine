@@ -786,6 +786,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   [self deregisterNotifications];
 
   [_displayLink release];
+  _scrollView.get().delegate = nil;
+  _hoverGestureRecognizer.get().delegate = nil;
+  _panGestureRecognizer.get().delegate = nil;
   [super dealloc];
 }
 
@@ -1682,7 +1685,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       pointer_data.change = flutter::PointerData::Change::kRemove;
       break;
     default:
-      FML_LOG(ERROR) << "Unhandled hover phase: " << _hoverGestureRecognizer.get().state;
       // Sending kHover is the least harmful thing to do here
       // But this state is not expected to ever be reached.
       pointer_data.change = flutter::PointerData::Change::kHover;
