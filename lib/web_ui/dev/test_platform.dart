@@ -121,10 +121,6 @@ class BrowserPlatform extends PlatformPlugin {
         .add(_packageUrlHandler)
 
         // Serves files from the web_ui/build/ directory at the root (/) URL path.
-        //
-        // Includes:
-        //  * Precompiles .js files for tests
-        //  * Sourcemaps
         .add(buildDirectoryHandler)
 
         // Serves the initial HTML for the test.
