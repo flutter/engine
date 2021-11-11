@@ -199,8 +199,17 @@ class Options {
       return null;
     }
 
+    final bool compileCommandsParsed = argResults.wasParsed('compile-commands');
+    if (compileCommandsParsed && argResults.wasParsed('target-variant')) {
+      return 'ERROR: --compile-commands option cannot be used with --target-variant.';
+    }
+
+    if (compileCommandsParsed && argResults.wasParsed('src-dir')) {
+      return 'ERROR: --compile-commands option cannot be used with --src-dir.';
+    }
+
     if (!argResults.wasParsed('repo')) {
-      return 'ERROR: The --repo argument is required.';
+      return 'ERROR: The --repo option is required.';
     }
 
     if (!buildCommandsPath.existsSync()) {

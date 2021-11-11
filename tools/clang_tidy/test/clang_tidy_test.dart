@@ -37,6 +37,56 @@ Future<int> main(List<String> args) async {
     expect(errBuffer.toString(), contains('Usage: '));
   });
 
+  test('Error when --compile-commands and --target-variant are used together', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--repo',
+        '/unused',
+        '--compile-commands',
+        '/unused',
+        '--target-variant',
+        'unused'
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(clangTidy.options.help, isFalse);
+    expect(result, equals(1));
+    expect(errBuffer.toString(), contains(
+      'ERROR: --compile-commands option cannot be used with --target-variant.',
+    ));
+  });
+
+  test('Error when --compile-commands and --src-dir are used together', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--repo',
+        '/unused',
+        '--compile-commands',
+        '/unused',
+        '--src-dir',
+        '/unused',
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(clangTidy.options.help, isFalse);
+    expect(result, equals(1));
+    expect(errBuffer.toString(), contains(
+      'ERROR: --compile-commands option cannot be used with --src-dir.',
+    ));
+  });
+
   test('Error when --repo is missing', () async {
     final StringBuffer outBuffer = StringBuffer();
     final StringBuffer errBuffer = StringBuffer();
@@ -54,7 +104,7 @@ Future<int> main(List<String> args) async {
     expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
     expect(errBuffer.toString(), contains(
-      'ERROR: The --repo argument is required.',
+      'ERROR: The --repo option is required.',
     ));
   });
 
