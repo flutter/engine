@@ -156,7 +156,7 @@ static jobject SpawnJNI(JNIEnv* env,
                         jstring jEntrypoint,
                         jstring jLibraryUrl,
                         jstring jInitialRoute,
-                        jobjectArray jEntrypointArgs) {
+                        jobject jEntrypointArgs) {
   jobject jni = env->NewObject(g_flutter_jni_class->obj(), g_jni_constructor);
   if (jni == nullptr) {
     FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
@@ -170,7 +170,7 @@ static jobject SpawnJNI(JNIEnv* env,
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto initial_route = fml::jni::JavaStringToString(env, jInitialRoute);
-  auto entrypoint_args = fml::jni::StringArrayToVector(env, jEntrypointArgs);
+  auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
   auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(
       jni_facade, entrypoint, libraryUrl, initial_route, entrypoint_args);
@@ -240,7 +240,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jEntrypoint,
                                             jstring jLibraryUrl,
                                             jobject jAssetManager,
-                                            jobjectArray jEntrypointArgs) {
+                                            jobject jEntrypointArgs) {
   auto asset_manager = std::make_shared<flutter::AssetManager>();
 
   asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
@@ -251,7 +251,7 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
 
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
-  auto entrypoint_args = fml::jni::StringArrayToVector(env, jEntrypointArgs);
+  auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
   ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
                                entrypoint_args);
@@ -634,7 +634,7 @@ bool RegisterApi(JNIEnv* env) {
       {
           .name = "nativeSpawn",
           .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
-                       "String;[Ljava/lang/String;)Lio/flutter/"
+                       "String;Ljava/util/List;)Lio/flutter/"
                        "embedding/engine/FlutterJNI;",
           .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },
@@ -642,7 +642,7 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
           .signature = "(JLjava/lang/String;Ljava/lang/String;"
                        "Ljava/lang/String;Landroid/content/res/"
-                       "AssetManager;[Ljava/lang/String;)V",
+                       "AssetManager;Ljava/util/List;)V",
           .fnPtr = reinterpret_cast<void*>(&RunBundleAndSnapshotFromLibrary),
       },
       {

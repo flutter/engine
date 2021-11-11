@@ -349,14 +349,13 @@ public class FlutterJNI {
       @Nullable List<String> entrypointArgs) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    String[] args = entrypointArgs != null ? entrypointArgs.toArray(new String[0]) : new String[0];
     FlutterJNI spawnedJNI =
         nativeSpawn(
             nativeShellHolderId,
             entrypointFunctionName,
             pathToEntrypointFunction,
             initialRoute,
-            args);
+            entrypointArgs);
     Preconditions.checkState(
         spawnedJNI.nativeShellHolderId != null && spawnedJNI.nativeShellHolderId != 0,
         "Failed to spawn new JNI connected shell from existing shell.");
@@ -369,7 +368,7 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @Nullable String initialRoute,
-      @NonNull String[] entrypointArgs);
+      @NonNull List<String> entrypointArgs);
 
   /**
    * Detaches this {@code FlutterJNI} instance from Flutter's native engine, which precludes any
@@ -835,14 +834,13 @@ public class FlutterJNI {
       @Nullable List<String> entrypointArgs) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
-    String[] args = entrypointArgs != null ? entrypointArgs.toArray(new String[0]) : new String[0];
     nativeRunBundleAndSnapshotFromLibrary(
         nativeShellHolderId,
         bundlePath,
         entrypointFunctionName,
         pathToEntrypointFunction,
         assetManager,
-        args);
+        entrypointArgs);
   }
 
   private native void nativeRunBundleAndSnapshotFromLibrary(
@@ -851,7 +849,7 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @NonNull AssetManager manager,
-      @NonNull String[] entrypointArgs);
+      @NonNull List<String> entrypointArgs);
   // ------ End Dart Execution Support -------
 
   // --------- Start Platform Message Support ------
