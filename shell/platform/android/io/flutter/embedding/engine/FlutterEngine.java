@@ -396,7 +396,8 @@ public class FlutterEngine {
         flutterJNI.spawn(
             dartEntrypoint.dartEntrypointFunctionName,
             dartEntrypoint.dartEntrypointLibrary,
-            initialRoute);
+            initialRoute,
+            FlutterInjector.instance().getReducedShaderVariations());
     return new FlutterEngine(
         context, // Context.
         null, // FlutterLoader. A null value passed here causes the constructor to get it from the

@@ -175,7 +175,8 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     const std::string& entrypoint,
     const std::string& libraryUrl,
-    const std::string& initial_route) const {
+    const std::string& initial_route,
+    bool reduced_shader_variations) const {
   FML_DCHECK(shell_ && shell_->IsSetup())
       << "A new Shell can only be spawned "
          "if the current Shell is properly constructed";
@@ -200,13 +201,15 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
 
   // This is a synchronous call, so the captures don't have race checks.
   Shell::CreateCallback<PlatformView> on_create_platform_view =
-      [&jni_facade, android_context, &weak_platform_view](Shell& shell) {
+      [&jni_facade, android_context, &weak_platform_view,
+       reduced_shader_variations](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         platform_view_android = std::make_unique<PlatformViewAndroid>(
-            shell,                   // delegate
-            shell.GetTaskRunners(),  // task runners
-            jni_facade,              // JNI interop
-            android_context          // Android context
+            shell,                     // delegate
+            shell.GetTaskRunners(),    // task runners
+            jni_facade,                // JNI interop
+            android_context,           // Android context
+            reduced_shader_variations  // reduced shader variations flag
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
         auto display = Display(jni_facade->GetDisplayRefreshRate());

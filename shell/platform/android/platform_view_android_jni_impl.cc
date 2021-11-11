@@ -155,12 +155,15 @@ static jobject SpawnJNI(JNIEnv* env,
                         jlong shell_holder,
                         jstring jEntrypoint,
                         jstring jLibraryUrl,
-                        jstring jInitialRoute) {
+                        jstring jInitialRoute,
+                        jboolean jReducedShaderVariations) {
   jobject jni = env->NewObject(g_flutter_jni_class->obj(), g_jni_constructor);
   if (jni == nullptr) {
     FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
     return nullptr;
   }
+  bool reduced_shader_variations = (bool)jReducedShaderVariations;
+  FML_LOG(ERROR) << "REDUCED SHADER VAR:::: " << reduced_shader_variations;
 
   fml::jni::JavaObjectWeakGlobalRef java_jni(env, jni);
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade =
@@ -170,8 +173,9 @@ static jobject SpawnJNI(JNIEnv* env,
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto initial_route = fml::jni::JavaStringToString(env, jInitialRoute);
 
-  auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(
-      jni_facade, entrypoint, libraryUrl, initial_route);
+  auto spawned_shell_holder =
+      ANDROID_SHELL_HOLDER->Spawn(jni_facade, entrypoint, libraryUrl,
+                                  initial_route, reduced_shader_variations);
 
   if (spawned_shell_holder == nullptr || !spawned_shell_holder->IsValid()) {
     FML_LOG(ERROR) << "Could not spawn Shell";
@@ -629,7 +633,7 @@ bool RegisterApi(JNIEnv* env) {
       {
           .name = "nativeSpawn",
           .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
-                       "String;)Lio/flutter/"
+                       "String;Z)Lio/flutter/"
                        "embedding/engine/FlutterJNI;",
           .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },

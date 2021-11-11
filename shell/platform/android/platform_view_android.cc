@@ -27,8 +27,11 @@ namespace flutter {
 
 AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
     const std::shared_ptr<AndroidContext>& context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
-    : android_context_(context), jni_facade_(jni_facade) {}
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    bool reduced_shader_variations)
+    : android_context_(context),
+      jni_facade_(jni_facade),
+      reduced_shader_variations_(reduced_shader_variations) {}
 
 AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
 
@@ -38,7 +41,8 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
       return std::make_unique<AndroidSurfaceSoftware>(android_context_,
                                                       jni_facade_);
     case AndroidRenderingAPI::kOpenGLES:
-      return std::make_unique<AndroidSurfaceGL>(android_context_, jni_facade_);
+      return std::make_unique<AndroidSurfaceGL>(android_context_, jni_facade_,
+                                                reduced_shader_variations_);
     default:
       FML_DCHECK(false);
       return nullptr;
@@ -65,13 +69,15 @@ PlatformViewAndroid::PlatformViewAndroid(
           delegate,
           std::move(task_runners),
           std::move(jni_facade),
-          CreateAndroidContext(use_software_rendering, task_runners)) {}
+          CreateAndroidContext(use_software_rendering, task_runners),
+          false) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
     flutter::TaskRunners task_runners,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-    const std::shared_ptr<flutter::AndroidContext>& android_context)
+    const std::shared_ptr<flutter::AndroidContext>& android_context,
+    bool reduced_shader_variations)
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
       android_context_(std::move(android_context)),
@@ -83,7 +89,7 @@ PlatformViewAndroid::PlatformViewAndroid(
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";
     surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
-        android_context_, jni_facade_);
+        android_context_, jni_facade_, reduced_shader_variations);
     android_surface_ = surface_factory_->CreateSurface();
 
     FML_CHECK(android_surface_ && android_surface_->IsValid())

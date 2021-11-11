@@ -80,7 +80,8 @@ class AndroidShellHolder {
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       const std::string& entrypoint,
       const std::string& libraryUrl,
-      const std::string& initial_route) const;
+      const std::string& initial_route,
+      bool reduced_shader_variations) const;
 
   void Launch(std::shared_ptr<AssetManager> asset_manager,
               const std::string& entrypoint,

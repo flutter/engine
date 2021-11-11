@@ -27,7 +27,8 @@ namespace flutter {
 class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
  public:
   AndroidSurfaceFactoryImpl(const std::shared_ptr<AndroidContext>& context,
-                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                            bool reduced_shader_variations);
 
   ~AndroidSurfaceFactoryImpl() override;
 
@@ -36,6 +37,7 @@ class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
  private:
   const std::shared_ptr<AndroidContext>& android_context_;
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+  bool reduced_shader_variations_;
 };
 
 class PlatformViewAndroid final : public PlatformView {
@@ -56,7 +58,8 @@ class PlatformViewAndroid final : public PlatformView {
       PlatformView::Delegate& delegate,
       flutter::TaskRunners task_runners,
       const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
-      const std::shared_ptr<flutter::AndroidContext>& android_context);
+      const std::shared_ptr<flutter::AndroidContext>& android_context,
+      bool reduced_shader_variations);
 
   ~PlatformViewAndroid() override;
 

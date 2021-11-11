@@ -22,7 +22,8 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
                                public AndroidSurface {
  public:
   AndroidSurfaceGL(const std::shared_ptr<AndroidContext>& android_context,
-                   std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+                   std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+                   bool reduced_shader_variations);
 
   ~AndroidSurfaceGL() override;
 
@@ -66,10 +67,13 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
 
+  bool GetReducedShaderVariations() const override;
+
  private:
   fml::RefPtr<AndroidNativeWindow> native_window_;
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
+  bool reduced_shader_variations_;
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the super class AndroidSurface's AndroidContext and

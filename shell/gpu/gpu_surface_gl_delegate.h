@@ -54,6 +54,8 @@ class GPUSurfaceGLDelegate {
 
   virtual sk_sp<const GrGLInterface> GetGLInterface() const;
 
+  virtual bool GetReducedShaderVariations() const;
+
   // TODO(chinmaygarde): The presence of this method is to work around the fact
   // that not all platforms can accept a custom GL proc table. Migrate all
   // platforms to move GL proc resolution to the embedder and remove this

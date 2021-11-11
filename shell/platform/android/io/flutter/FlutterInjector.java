@@ -71,17 +71,20 @@ public final class FlutterInjector {
       @NonNull FlutterLoader flutterLoader,
       @Nullable DeferredComponentManager deferredComponentManager,
       @NonNull FlutterJNI.Factory flutterJniFactory,
-      @NonNull ExecutorService executorService) {
+      @NonNull ExecutorService executorService,
+      boolean reducedShaderVariations) {
     this.flutterLoader = flutterLoader;
     this.deferredComponentManager = deferredComponentManager;
     this.flutterJniFactory = flutterJniFactory;
     this.executorService = executorService;
+    this.reducedShaderVariations = reducedShaderVariations;
   }
 
   private FlutterLoader flutterLoader;
   private DeferredComponentManager deferredComponentManager;
   private FlutterJNI.Factory flutterJniFactory;
   private ExecutorService executorService;
+  private boolean reducedShaderVariations;
   /**
    * Returns the {@link io.flutter.embedding.engine.loader.FlutterLoader} instance to use for the
    * Flutter Android engine embedding.
@@ -109,6 +112,10 @@ public final class FlutterInjector {
     return flutterJniFactory;
   }
 
+  public boolean getReducedShaderVariations() {
+    return reducedShaderVariations;
+  }
+
   /**
    * Builder used to supply a custom FlutterInjector instance to {@link
    * FlutterInjector#setInstance(FlutterInjector)}.
@@ -130,6 +137,7 @@ public final class FlutterInjector {
     private DeferredComponentManager deferredComponentManager;
     private FlutterJNI.Factory flutterJniFactory;
     private ExecutorService executorService;
+    private boolean reducedShaderVariations;
     /**
      * Sets a {@link io.flutter.embedding.engine.loader.FlutterLoader} override.
      *
@@ -156,6 +164,11 @@ public final class FlutterInjector {
       return this;
     }
 
+    public Builder setReducedShaderVariations(boolean reducedShaderVariations) {
+      this.reducedShaderVariations = reducedShaderVariations;
+      return this;
+    }
+
     private void fillDefaults() {
       if (flutterJniFactory == null) {
         flutterJniFactory = new FlutterJNI.Factory();
@@ -179,7 +192,11 @@ public final class FlutterInjector {
       fillDefaults();
 
       return new FlutterInjector(
-          flutterLoader, deferredComponentManager, flutterJniFactory, executorService);
+          flutterLoader,
+          deferredComponentManager,
+          flutterJniFactory,
+          executorService,
+          reducedShaderVariations);
     }
   }
 }

@@ -44,8 +44,9 @@ sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
     return nullptr;
   }
 
-  const auto options =
+  auto options =
       MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kOpenGL);
+  options.fReducedShaderVariations = delegate->GetReducedShaderVariations();
 
   auto context = GrDirectContext::MakeGL(delegate->GetGLInterface(), options);
 

@@ -97,6 +97,10 @@ sk_sp<const GrGLInterface> GPUSurfaceGLDelegate::GetGLInterface() const {
   return CreateGLInterface(GetGLProcResolver());
 }
 
+bool GPUSurfaceGLDelegate::GetReducedShaderVariations() const {
+  return false;
+}
+
 sk_sp<const GrGLInterface>
 GPUSurfaceGLDelegate::GetDefaultPlatformGLInterface() {
   return CreateGLInterface(nullptr);

@@ -21,11 +21,13 @@ constexpr char kEmulatorRendererPrefix[] =
 
 AndroidSurfaceGL::AndroidSurfaceGL(
     const std::shared_ptr<AndroidContext>& android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade)
+    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    bool reduced_shader_variations)
     : AndroidSurface(android_context),
       native_window_(nullptr),
       onscreen_surface_(nullptr),
-      offscreen_surface_(nullptr) {
+      offscreen_surface_(nullptr),
+      reduced_shader_variations_(reduced_shader_variations) {
   // Acquire the offscreen surface.
   offscreen_surface_ = GLContextPtr()->CreateOffscreenSurface();
   if (!offscreen_surface_->IsValid()) {
@@ -52,6 +54,7 @@ std::unique_ptr<Surface> AndroidSurfaceGL::CreateGPUSurface(
   if (gr_context) {
     return std::make_unique<GPUSurfaceGL>(sk_ref_sp(gr_context), this, true);
   } else {
+    FML_LOG(ERROR) << "ANDROID SURFACE GL" << reduced_shader_variations_;
     sk_sp<GrDirectContext> main_skia_context =
         GLContextPtr()->GetMainSkiaContext();
     if (!main_skia_context) {
@@ -169,6 +172,10 @@ sk_sp<const GrGLInterface> AndroidSurfaceGL::GetGLInterface() const {
   }
 
   return GPUSurfaceGLDelegate::GetGLInterface();
+}
+
+bool AndroidSurfaceGL::GetReducedShaderVariations() const {
+  return reduced_shader_variations_;
 }
 
 AndroidContextGL* AndroidSurfaceGL::GLContextPtr() const {
