@@ -229,16 +229,8 @@ class ClangTidy {
       if (job.result.exitCode == 0) {
         continue;
       }
-      if (job.exception != null) {
-        _errSink.writeln(
-          '\n❗ A clang-tidy job failed to run, aborting:\n${job.exception}',
-        );
-        result = 1;
-        break;
-      } else {
-        _errSink.writeln('❌ Failures for ${job.name}:');
-        _errSink.writeln(job.result.stdout);
-      }
+      _errSink.writeln('❌ Failures for ${job.name}:');
+      _errSink.writeln(job.result.stdout);
       result = 1;
     }
     return result;
