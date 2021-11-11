@@ -27,6 +27,7 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
  public:
   ~FragmentProgram() override;
   static fml::RefPtr<FragmentProgram> Create();
+  static void CreateOrThrow(Dart_Handle wrapper);
 
   void init(std::string sksl, bool debugPrintSksl);
 

@@ -67,6 +67,11 @@ fml::RefPtr<FragmentProgram> FragmentProgram::Create() {
   return fml::MakeRefCounted<FragmentProgram>();
 }
 
+void FragmentProgram::CreateOrThrow(Dart_Handle wrapper) {
+  auto res = Create();
+  res->AssociateWithDartWrapper(wrapper);
+}
+
 FragmentProgram::FragmentProgram() = default;
 
 FragmentProgram::~FragmentProgram() = default;

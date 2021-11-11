@@ -3392,23 +3392,25 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
         encodedStrutStyle,
         style._fontFamily,
         strutFontFamilies,
-        style._fontSize,
-        style._height,
+        style._fontSize ?? 0,
+        style._height ?? 0,
         style._ellipsis,
         _encodeLocale(style._locale)
       );
   }
 
-  void _constructor(
-    Int32List encoded,
-    ByteData? strutData,
-    String? fontFamily,
-    List<dynamic>? strutFontFamily,
-    double? fontSize,
-    double? height,
-    String? ellipsis,
-    String locale
-  ) native 'ParagraphBuilder_constructor';
+  @FfiNative<
+      Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double,
+          Handle, Handle)>('ParagraphBuilder::CreateOrThrow')
+  external void _constructor(
+      Int32List encoded,
+      ByteData? strutData,
+      String? fontFamily,
+      List<dynamic>? strutFontFamily,
+      double fontSize,
+      double height,
+      String? ellipsis,
+      String locale);
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount => _placeholderCount;
@@ -3654,4 +3656,7 @@ FutureOr<void> _sendFontChangeMessage() async {
 /// default ascent will be used.
 /// {@endtemplate}
 
-void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';
+@FfiNative<Void Function(Handle, Handle, Handle)>(
+    'FontCollection::LoadFontFromListOrThrowHandle')
+external void _loadFontFromList(
+    Uint8List list, _Callback<void> callback, String? fontFamily);

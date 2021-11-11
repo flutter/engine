@@ -39,6 +39,10 @@ class ImmutableBuffer : public RefCountedDartWrappable<ImmutableBuffer> {
   /// when the copy has completed.
   static void init(Dart_NativeArguments args);
 
+  static void initHandle(Dart_Handle buffer_handle,
+                         Dart_Handle data,
+                         Dart_Handle callback_handle);
+
   /// The length of the data in bytes.
   size_t length() const {
     FML_DCHECK(data_);

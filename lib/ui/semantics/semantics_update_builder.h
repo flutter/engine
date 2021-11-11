@@ -25,12 +25,10 @@ class SemanticsUpdateBuilder
     return fml::MakeRefCounted<SemanticsUpdateBuilder>();
   }
 
-  static fml::RefPtr<SemanticsUpdateBuilder> CreateOrThrow(
-      Dart_Handle wrapper) {
+  static void CreateOrThrow(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
     auto res = Create();
     res->AssociateWithDartWrapper(wrapper);
-    return res;
   }
 
   ~SemanticsUpdateBuilder() override;

@@ -37,11 +37,10 @@ fml::RefPtr<ImageFilter> ImageFilter::Create() {
   return fml::MakeRefCounted<ImageFilter>();
 }
 
-fml::RefPtr<ImageFilter> ImageFilter::CreateOrThrow(Dart_Handle wrapper) {
+void ImageFilter::CreateOrThrow(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = Create();
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 static const std::array<SkSamplingOptions, 4> filter_qualities = {

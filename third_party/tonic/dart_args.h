@@ -270,29 +270,6 @@ struct FfiDispatcher<void, Return (*)(Args...), Function> {
         DartConverter<typename std::remove_const<typename std::remove_reference<
             Args>::type>::type>::FromFfi(args)...));
   }
-
-  static void PrintSig(std::ostringstream* stream, const char* name) {
-    // name
-    *stream << name << "\t";
-    // leaf, ffi_ret, ffi_args
-    if constexpr (sizeof...(Args) > 0) {
-      bool leaf = AllowedInLeaf<Return>() && AllowedInLeaf<Args...>();
-      *stream << (leaf ? "true" : "false") << "\t";
-      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
-      print_args<Args...>(stream);
-      *stream << "\t";
-    } else {
-      *stream << (AllowedInLeaf<Return>() ? "true" : "false") << "\t";
-      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
-      *stream << "\t";
-    }
-    // dart_ret
-    *stream << tonic::DartConverter<Return>::ToDartSig() << "\t";
-    // dart_args
-    if constexpr (sizeof...(Args) > 0) {
-      print_dart_args<Args...>(stream);
-    }
-  }
 };
 
 // Match `Return Object::Method(...)`.
@@ -313,32 +290,6 @@ struct FfiDispatcher<Object, Return (Object::*)(Args...), Method> {
     return DartConverter<Return>::ToFfi((obj->*Method)(
         DartConverter<typename std::remove_const<typename std::remove_reference<
             Args>::type>::type>::FromFfi(args)...));
-  }
-
-  static void PrintSig(std::ostringstream* stream, const char* name) {
-    // name
-    *stream << name << "\t";
-    // leaf, ffi_ret, ffi_args
-    if constexpr (sizeof...(Args) > 0) {
-      bool leaf = AllowedInLeaf<Return>() && AllowedInLeaf<Args...>();
-      *stream << (leaf ? "true" : "false") << "\t";
-      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
-      *stream << "Pointer<Void>, ";
-      print_args<Args...>(stream);
-      *stream << "\t";
-    } else {
-      *stream << (AllowedInLeaf<Return>() ? "true" : "false") << "\t";
-      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
-      *stream << "Pointer<Void>\t";
-    }
-    // dart_ret
-    *stream << tonic::DartConverter<Return>::ToDartSig() << "\t";
-    // dart_args
-    *stream << "Pointer<Void>";
-    if constexpr (sizeof...(Args) > 0) {
-      *stream << ", ";
-      print_dart_args<Args...>(stream);
-    }
   }
 };
 
@@ -361,32 +312,6 @@ struct FfiDispatcher<Object, Return (Object::*)(Args...) const, Method> {
         DartConverter<typename std::remove_const<typename std::remove_reference<
             Args>::type>::type>::FromFfi(args)...));
   }
-
-  static void PrintSig(std::ostringstream* stream, const char* name) {
-    // name
-    *stream << name << "\t";
-    // leaf, ffi_ret, ffi_args
-    if constexpr (sizeof...(Args) > 0) {
-      bool leaf = AllowedInLeaf<Return>() && AllowedInLeaf<Args...>();
-      *stream << (leaf ? "true" : "false") << "\t";
-      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
-      *stream << "Pointer<Void>, ";
-      print_args<Args...>(stream);
-      *stream << "\t";
-    } else {
-      *stream << (AllowedInLeaf<Return>() ? "true" : "false") << "\t";
-      *stream << tonic::DartConverter<Return>::ToFfiSig() << "\t";
-      *stream << "Pointer<Void>\t";
-    }
-    // dart_ret
-    *stream << tonic::DartConverter<Return>::ToDartSig() << "\t";
-    // dart_args
-    *stream << "Pointer<Void>";
-    if constexpr (sizeof...(Args) > 0) {
-      *stream << ", ";
-      print_dart_args<Args...>(stream);
-    }
-  }
 };
 
 // `void` specialisation since we can't declare `ToFfi` to take void rvalues.
@@ -403,29 +328,6 @@ struct FfiDispatcher<void, void (*)(Args...), Function> {
     Function(
         DartConverter<typename std::remove_const<typename std::remove_reference<
             Args>::type>::type>::FromFfi(args)...);
-  }
-
-  static void PrintSig(std::ostringstream* stream, const char* name) {
-    // name
-    *stream << name << "\t";
-    // leaf, ffi_ret, ffi_args
-    if constexpr (sizeof...(Args) > 0) {
-      bool leaf = AllowedInLeaf<Args...>();
-      *stream << (leaf ? "true" : "false") << "\t";
-      *stream << "Void\t";
-      print_args<Args...>(stream);
-      *stream << "\t";
-    } else {
-      *stream << "true\t";
-      *stream << "Void\t";
-      *stream << "\t";
-    }
-    // dart_ret
-    *stream << "void\t";
-    // dart_args
-    if constexpr (sizeof...(Args) > 0) {
-      print_dart_args<Args...>(stream);
-    }
   }
 };
 
@@ -444,32 +346,6 @@ struct FfiDispatcher<Object, void (Object::*)(Args...), Method> {
     (obj->*Method)(
         DartConverter<typename std::remove_const<typename std::remove_reference<
             Args>::type>::type>::FromFfi(args)...);
-  }
-
-  static void PrintSig(std::ostringstream* stream, const char* name) {
-    // name
-    *stream << name << "\t";
-    // leaf, ffi_ret, ffi_args
-    if constexpr (sizeof...(Args) > 0) {
-      bool leaf = AllowedInLeaf<Args...>();
-      *stream << (leaf ? "true" : "false") << "\t";
-      *stream << "Void\t";
-      *stream << "Pointer<Void>, ";
-      print_args<Args...>(stream);
-      *stream << "\t";
-    } else {
-      *stream << "true\t";
-      *stream << "Void\t";
-      *stream << "Pointer<Void>\t";
-    }
-    // dart_ret
-    *stream << "void\t";
-    // dart_args
-    *stream << "Pointer<Void>";
-    if constexpr (sizeof...(Args) > 0) {
-      *stream << ", ";
-      print_dart_args<Args...>(stream);
-    }
   }
 };
 

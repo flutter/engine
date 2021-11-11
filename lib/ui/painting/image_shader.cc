@@ -35,10 +35,9 @@ fml::RefPtr<ImageShader> ImageShader::Create() {
   return fml::MakeRefCounted<ImageShader>();
 }
 
-fml::RefPtr<ImageShader> ImageShader::CreateOrThrow(Dart_Handle wrapper) {
+void ImageShader::CreateOrThrow(Dart_Handle wrapper) {
   auto res = Create();
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 void ImageShader::initWithImage(CanvasImage* image,

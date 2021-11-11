@@ -57,14 +57,12 @@ fml::RefPtr<CanvasPathMeasure> CanvasPathMeasure::Create(const CanvasPath* path,
   return pathMeasure;
 }
 
-fml::RefPtr<CanvasPathMeasure> CanvasPathMeasure::CreateOrThrow(
-    Dart_Handle wrapper,
-    const CanvasPath* path,
-    bool forceClosed) {
+void CanvasPathMeasure::CreateOrThrow(Dart_Handle wrapper,
+                                      const CanvasPath* path,
+                                      bool forceClosed) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = Create(path, forceClosed);
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 CanvasPathMeasure::CanvasPathMeasure() {}

@@ -90,16 +90,15 @@ fml::RefPtr<Canvas> Canvas::Create(PictureRecorder* recorder,
   return canvas;
 }
 
-fml::RefPtr<Canvas> Canvas::CreateOrThrow(Dart_Handle wrapper,
-                                          PictureRecorder* recorder,
-                                          double left,
-                                          double top,
-                                          double right,
-                                          double bottom) {
+void Canvas::CreateOrThrow(Dart_Handle wrapper,
+                           PictureRecorder* recorder,
+                           double left,
+                           double top,
+                           double right,
+                           double bottom) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = Create(recorder, left, top, right, bottom);
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 Canvas::Canvas(SkCanvas* canvas) : canvas_(canvas) {}

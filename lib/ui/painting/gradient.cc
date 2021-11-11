@@ -38,11 +38,10 @@ fml::RefPtr<CanvasGradient> CanvasGradient::Create() {
   return fml::MakeRefCounted<CanvasGradient>();
 }
 
-fml::RefPtr<CanvasGradient> CanvasGradient::CreateOrThrow(Dart_Handle wrapper) {
+void CanvasGradient::CreateOrThrow(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = Create();
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 void CanvasGradient::initLinear(const tonic::Float32List& end_points,

@@ -37,12 +37,12 @@ class Canvas : public RefCountedDartWrappable<Canvas> {
                                     double right,
                                     double bottom);
 
-  static fml::RefPtr<Canvas> CreateOrThrow(Dart_Handle wrapper,
-                                           PictureRecorder* recorder,
-                                           double left,
-                                           double top,
-                                           double right,
-                                           double bottom);
+  static void CreateOrThrow(Dart_Handle wrapper,
+                            PictureRecorder* recorder,
+                            double left,
+                            double top,
+                            double right,
+                            double bottom);
 
   ~Canvas() override;
 

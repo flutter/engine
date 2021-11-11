@@ -98,6 +98,7 @@ typedef CanvasPath Path;
   /* Constructors */                                       \
   V(Canvas::CreateOrThrow, 6)                              \
   V(ColorFilter::CreateOrThrow, 1)                         \
+  V(FragmentProgram::CreateOrThrow, 1)                     \
   V(Gradient::CreateOrThrow, 1)                            \
   V(ImageFilter::CreateOrThrow, 1)                         \
   V(ImageShader::CreateOrThrow, 1)                         \
@@ -108,6 +109,8 @@ typedef CanvasPath Path;
   V(SceneBuilder::CreateOrThrow, 1)                        \
   V(SemanticsUpdateBuilder::CreateOrThrow, 1)              \
   /* Other */                                              \
+  V(ImageDescriptor::initEncodedHandle, 3)                 \
+  V(ImmutableBuffer::initHandle, 3)                        \
   V(ImageDescriptor::initRaw, 6)                           \
   V(IsolateNameServerNatives::LookupPortByName, 1)         \
   V(IsolateNameServerNatives::RegisterPortWithName, 2)     \
@@ -163,6 +166,8 @@ typedef CanvasPath Path;
   V(ColorFilter, initMode, 3)                          \
   V(ColorFilter, initSrgbToLinearGamma, 1)             \
   V(EngineLayer, dispose, 1)                           \
+  V(FragmentProgram, init, 3)                          \
+  V(FragmentProgram, shader, 3)                        \
   V(Gradient, initLinear, 6)                           \
   V(Gradient, initRadial, 8)                           \
   V(Gradient, initSweep, 9)                            \

@@ -40,10 +40,18 @@ void ImmutableBuffer::init(Dart_NativeArguments args) {
   }
 
   Dart_Handle buffer_handle = Dart_GetNativeArgument(args, 0);
-  tonic::Uint8List data = tonic::Uint8List(Dart_GetNativeArgument(args, 1));
+  Dart_Handle data = Dart_GetNativeArgument(args, 1);
 
-  auto sk_data = MakeSkDataWithCopy(data.data(), data.num_elements());
-  data.Release();
+  initHandle(buffer_handle, data, callback_handle);
+}
+
+void ImmutableBuffer::initHandle(Dart_Handle buffer_handle,
+                                 Dart_Handle data,
+                                 Dart_Handle callback_handle) {
+  tonic::Uint8List dataList = tonic::Uint8List(data);
+
+  auto sk_data = MakeSkDataWithCopy(dataList.data(), dataList.num_elements());
+  dataList.Release();
   auto buffer = fml::MakeRefCounted<ImmutableBuffer>(sk_data);
   buffer->AssociateWithDartWrapper(buffer_handle);
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});

@@ -23,7 +23,7 @@ class PictureRecorder : public RefCountedDartWrappable<PictureRecorder> {
 
  public:
   static fml::RefPtr<PictureRecorder> Create();
-  static fml::RefPtr<PictureRecorder> CreateOrThrow(Dart_Handle wrapper);
+  static void CreateOrThrow(Dart_Handle wrapper);
 
   ~PictureRecorder() override;
 

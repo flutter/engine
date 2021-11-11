@@ -2308,7 +2308,9 @@ class Path extends NativeFieldWrapperClass1 {
   /// Create a new empty [Path] object.
   @pragma('vm:entry-point')
   Path() { _constructor(); }
-  void _constructor() native 'Path_constructor';
+
+  @FfiNative<Void Function(Handle)>('Path::CreateOrThrow')
+  external void _constructor();
 
   /// Avoids creating a new native backing for the path for methods that will
   /// create it later, such as [Path.from], [shift] and [transform].
@@ -2956,7 +2958,10 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
   _PathMeasure(Path path, bool forceClosed) {
     _constructor(path, forceClosed);
   }
-  void _constructor(Path path, bool forceClosed) native 'PathMeasure_constructor';
+
+  @FfiNative<Void Function(Handle, Pointer<Void>, Bool)>(
+      'PathMeasure::CreateOrThrow')
+  external void _constructor(Path path, bool forceClosed);
 
   double length(int contourIndex) {
     assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
@@ -3330,7 +3335,8 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
   /// the values used for the filter.
   final ColorFilter creator;
 
-  void _constructor() native 'ColorFilter_constructor';
+  @FfiNative<Void Function(Handle)>('ColorFilter::CreateOrThrow')
+  external void _constructor();
 
   @FfiNative<Void Function(Pointer<Void>, Int32, Int32)>(
       'ColorFilter::initMode',
@@ -3507,7 +3513,8 @@ class _ComposeImageFilter implements ImageFilter {
 /// ImageFilter, because we want ImageFilter to be efficiently comparable, so that
 /// widgets can check for ImageFilter equality to avoid repainting.
 class _ImageFilter extends NativeFieldWrapperClass1 {
-  void _constructor() native 'ImageFilter_constructor';
+  @FfiNative<Void Function(Handle)>('ImageFilter::CreateOrThrow')
+  external void _constructor();
 
   /// Creates an image filter that applies a Gaussian blur.
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
@@ -3715,8 +3722,8 @@ Float32List _encodeTwoPoints(Offset pointA, Offset pointB) {
 ///  * [Gradient](https://api.flutter.dev/flutter/painting/Gradient-class.html), the class in the [painting] library.
 ///
 class Gradient extends Shader {
-
-  void _constructor() native 'Gradient_constructor';
+  @FfiNative<Void Function(Handle)>('Gradient::CreateOrThrow')
+  external void _constructor();
 
   /// Creates a linear gradient from `from` to `to`.
   ///
@@ -3962,7 +3969,8 @@ class ImageShader extends Shader {
     _initWithImage(image._image, tmx.index, tmy.index, filterQuality?.index ?? -1, matrix4);
   }
 
-  void _constructor() native 'ImageShader_constructor';
+  @FfiNative<Void Function(Handle)>('ImageShader::CreateOrThrow')
+  external void _constructor();
 
   @FfiNative<
       Void Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32,
@@ -4011,8 +4019,12 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 
   late final int _uniformFloatCount;
 
-  void _constructor() native 'FragmentProgram_constructor';
-  void _init(String sksl, bool debugPrint) native 'FragmentProgram_init';
+  @FfiNative<Void Function(Handle)>('FragmentProgram::CreateOrThrow')
+  external void _constructor();
+
+  @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>(
+      'FragmentProgram::init')
+  external void _init(String sksl, bool debugPrint);
 
   // TODO(chriscraws): Add `List<ImageShader>? children` as a parameter to [build].
   // https://github.com/flutter/flutter/issues/85240
@@ -4068,7 +4080,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     return shader;
   }
 
-  void _shader(_FragmentShader shader, Float32List floatUniforms) native 'FragmentProgram_shader';
+  @FfiNative<Handle Function(Pointer<Void>, Handle, Handle)>(
+      'FragmentProgram::shader')
+  external Handle _shader(_FragmentShader shader, Float32List floatUniforms);
 }
 
 @pragma('vm:entry-point')
@@ -4283,11 +4297,15 @@ class Canvas extends NativeFieldWrapperClass1 {
     cullRect ??= Rect.largest;
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
-  void _constructor(PictureRecorder recorder,
+
+  @FfiNative<
+      Void Function(Handle, Pointer<Void>, Double, Double, Double,
+          Double)>('Canvas::CreateOrThrow')
+  external void _constructor(PictureRecorder recorder,
                     double left,
                     double top,
                     double right,
-                    double bottom) native 'Canvas_constructor';
+                    double bottom);
 
   // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
   // The Canvas holds a reference to the PictureRecorder to prevent the recorder from being
@@ -4425,15 +4443,20 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  void _saveLayerWithoutBounds(List<dynamic>? paintObjects, ByteData paintData)
-      native 'Canvas_saveLayerWithoutBounds';
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>(
+      'Canvas::saveLayerWithoutBoundsHandle')
+  external void _saveLayerWithoutBounds(
+      List<dynamic>? paintObjects, ByteData paintData);
 
-  void _saveLayer(double left,
+  @FfiNative<
+      Void Function(Pointer<Void>, Double, Double, Double, Double, Handle,
+          Handle)>('Canvas::saveLayerHandle')
+  external void _saveLayer(double left,
                   double top,
                   double right,
                   double bottom,
                   List<dynamic>? paintObjects,
-                  ByteData paintData) native 'Canvas_saveLayer';
+                  ByteData paintData);
 
   /// Pops the current save stack, if there is anything to pop.
   /// Otherwise, does nothing.
@@ -5403,7 +5426,9 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
   /// [Canvas] constructor.
   @pragma('vm:entry-point')
   PictureRecorder() { _constructor(); }
-  void _constructor() native 'PictureRecorder_constructor';
+
+  @FfiNative<Void Function(Handle)>('PictureRecorder::CreateOrThrow')
+  external void _constructor();
 
   /// Whether this object is currently recording commands.
   ///
@@ -5654,7 +5679,10 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
       instance._init(list, callback);
     }).then((_) => instance);
   }
-  void _init(Uint8List list, _Callback<void> callback) native 'ImmutableBuffer_init';
+
+  @FfiNative<Void Function(Handle, Handle, Handle)>(
+      'ImmutableBuffer::initHandle')
+  external void _init(Uint8List list, _Callback<void> callback);
 
   /// The length, in bytes, of the underlying data.
   final int length;
@@ -5711,7 +5739,11 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
       return descriptor._initEncoded(buffer, callback);
     }).then((_) => descriptor);
   }
-  String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback) native 'ImageDescriptor_initEncoded';
+
+  @FfiNative<Handle Function(Handle, Pointer<Void>, Handle)>(
+      'ImageDescriptor::initEncodedHandle')
+  external String? _initEncoded(
+      ImmutableBuffer buffer, _Callback<void> callback);
 
   /// Creates an image descriptor from raw image pixels.
   ///

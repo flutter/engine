@@ -27,7 +27,7 @@ class CanvasGradient : public Shader {
  public:
   ~CanvasGradient() override;
   static fml::RefPtr<CanvasGradient> Create();
-  static fml::RefPtr<CanvasGradient> CreateOrThrow(Dart_Handle wrapper);
+  static void CreateOrThrow(Dart_Handle wrapper);
 
   void initLinear(const tonic::Float32List& end_points,
                   const tonic::Int32List& colors,

@@ -27,7 +27,7 @@ class ImageShader : public Shader {
  public:
   ~ImageShader() override;
   static fml::RefPtr<ImageShader> Create();
-  static fml::RefPtr<ImageShader> CreateOrThrow(Dart_Handle wrapper);
+  static void CreateOrThrow(Dart_Handle wrapper);
 
   void initWithImage(CanvasImage* image,
                      SkTileMode tmx,

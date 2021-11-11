@@ -101,6 +101,40 @@ void ImageDescriptor::initEncoded(Dart_NativeArguments args) {
   tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
 }
 
+Dart_Handle ImageDescriptor::initEncodedHandle(
+    Dart_Handle descriptor_handle,
+    ImmutableBuffer* immutable_buffer,
+    Dart_Handle callback_handle) {
+  // This has to be valid because this method is called from Dart.
+  auto dart_state = UIDartState::Current();
+  auto registry = dart_state->GetImageGeneratorRegistry();
+
+  if (!registry) {
+    return tonic::ToDart(
+        "Failed to access the internal image decoder "
+        "registry on this isolate. Please file a bug on "
+        "https://github.com/flutter/flutter/issues.");
+  }
+
+  auto generator =
+      registry->CreateCompatibleGenerator(immutable_buffer->data());
+
+  if (!generator) {
+    // No compatible image decoder was found.
+    return tonic::ToDart("Invalid image data");
+  }
+
+  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
+      immutable_buffer->data(), std::move(generator));
+
+  FML_DCHECK(descriptor);
+
+  descriptor->AssociateWithDartWrapper(descriptor_handle);
+  tonic::DartInvoke(callback_handle, {Dart_TypeVoid()});
+
+  return Dart_Null();
+}
+
 void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
                               fml::RefPtr<ImmutableBuffer> data,
                               int width,

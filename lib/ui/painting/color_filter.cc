@@ -39,11 +39,10 @@ fml::RefPtr<ColorFilter> ColorFilter::Create() {
   return fml::MakeRefCounted<ColorFilter>();
 }
 
-fml::RefPtr<ColorFilter> ColorFilter::CreateOrThrow(Dart_Handle wrapper) {
+void ColorFilter::CreateOrThrow(Dart_Handle wrapper) {
   UIDartState::ThrowIfUIOperationsProhibited();
   auto res = Create();
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 void ColorFilter::initMode(int color, int blend_mode) {

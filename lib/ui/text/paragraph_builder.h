@@ -36,16 +36,15 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
       const std::u16string& ellipsis,
       const std::string& locale);
 
-  static fml::RefPtr<ParagraphBuilder> CreateOrThrow(
-      Dart_Handle wrapper,
-      const tonic::Int32List& encoded,
-      Dart_Handle strutData,
-      const std::string& fontFamily,
-      const std::vector<std::string>& strutFontFamilies,
-      double fontSize,
-      double height,
-      const std::u16string& ellipsis,
-      const std::string& locale);
+  static void CreateOrThrow(Dart_Handle wrapper,
+                            const tonic::Int32List& encoded,
+                            Dart_Handle strutData,
+                            const std::string& fontFamily,
+                            const std::vector<std::string>& strutFontFamilies,
+                            double fontSize,
+                            double height,
+                            const std::u16string& ellipsis,
+                            const std::string& locale);
 
   ~ParagraphBuilder() override;
 

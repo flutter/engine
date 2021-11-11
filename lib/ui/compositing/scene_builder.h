@@ -32,11 +32,10 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
     return fml::MakeRefCounted<SceneBuilder>();
   }
 
-  static fml::RefPtr<SceneBuilder> CreateOrThrow(Dart_Handle wrapper) {
+  static void CreateOrThrow(Dart_Handle wrapper) {
     UIDartState::ThrowIfUIOperationsProhibited();
     auto res = Create();
     res->AssociateWithDartWrapper(wrapper);
-    return res;
   }
 
   ~SceneBuilder() override;

@@ -31,9 +31,9 @@ class CanvasPathMeasure : public RefCountedDartWrappable<CanvasPathMeasure> {
   static fml::RefPtr<CanvasPathMeasure> Create(const CanvasPath* path,
                                                bool forceClosed);
 
-  static fml::RefPtr<CanvasPathMeasure> CreateOrThrow(Dart_Handle wrapper,
-                                                      const CanvasPath* path,
-                                                      bool forceClosed);
+  static void CreateOrThrow(Dart_Handle wrapper,
+                            const CanvasPath* path,
+                            bool forceClosed);
 
   void setPath(const CanvasPath* path, bool isClosed);
   float getLength(int contour_index);

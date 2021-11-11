@@ -50,6 +50,7 @@ class FontCollection {
     tonic::Uint8List font_data(font_data_handle);
     LoadFontFromListOrThrow(font_data, callback, family_name);
   }
+
   static void LoadFontFromListOrThrow(tonic::Uint8List& font_data,
                                       Dart_Handle callback,
                                       std::string family_name);

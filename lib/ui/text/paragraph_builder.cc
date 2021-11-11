@@ -171,7 +171,7 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::Create(
                                                height, ellipsis, locale);
 }
 
-fml::RefPtr<ParagraphBuilder> ParagraphBuilder::CreateOrThrow(
+void ParagraphBuilder::CreateOrThrow(
     Dart_Handle wrapper,
     const tonic::Int32List& encoded,
     Dart_Handle strutData,
@@ -185,7 +185,6 @@ fml::RefPtr<ParagraphBuilder> ParagraphBuilder::CreateOrThrow(
   auto res = Create(encoded, strutData, fontFamily, strutFontFamilies, fontSize,
                     height, ellipsis, locale);
   res->AssociateWithDartWrapper(wrapper);
-  return res;
 }
 
 // returns true if there is a font family defined. Font family is the only
