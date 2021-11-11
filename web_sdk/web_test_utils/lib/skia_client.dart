@@ -298,14 +298,9 @@ class SkiaGoldClient {
         '$_skiaGoldHost/img/images/$imageHash.png',
       );
 
-      try {
-        final HttpClientRequest request = await httpClient.getUrl(requestForImage);
-        final HttpClientResponse response = await request.close();
-        await response.forEach((List<int> bytes) => imageBytes.addAll(bytes));
-
-      } catch(e) {
-        rethrow;
-      }
+      final HttpClientRequest request = await httpClient.getUrl(requestForImage);
+      final HttpClientResponse response = await request.close();
+      await response.forEach((List<int> bytes) => imageBytes.addAll(bytes));
     },
       SkiaGoldHttpOverrides(),
     );
