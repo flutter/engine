@@ -124,6 +124,20 @@ FLUTTER_ASSERT_ARC
                               libraryURI:nil
                             initialRoute:nil
                           entrypointArgs:secondEntrypointArgs]);
+  }
+
+- (void)testReleasesProjectOnDealloc {
+  __weak FlutterDartProject* weakProject;
+  @autoreleasepool {
+    FlutterDartProject* mockProject = OCMClassMock([FlutterDartProject class]);
+    FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo"
+                                                                 project:mockProject];
+    weakProject = mockProject;
+    XCTAssertNotNil(weakProject);
+    group = nil;
+    mockProject = nil;
+  }
+  XCTAssertNil(weakProject);
 }
 
 @end

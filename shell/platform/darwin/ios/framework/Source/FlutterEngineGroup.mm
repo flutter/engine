@@ -19,8 +19,8 @@
 
 @interface FlutterEngineGroup ()
 @property(nonatomic, copy) NSString* name;
-@property(nonatomic, strong) NSMutableArray<NSValue*>* engines;
-@property(nonatomic, strong) FlutterDartProject* project;
+@property(nonatomic, retain) NSMutableArray<NSValue*>* engines;
+@property(nonatomic, retain) FlutterDartProject* project;
 @end
 
 @implementation FlutterEngineGroup {
@@ -30,9 +30,9 @@
 - (instancetype)initWithName:(NSString*)name project:(nullable FlutterDartProject*)project {
   self = [super init];
   if (self) {
-    self.name = name;
-    self.engines = [[NSMutableArray<NSValue*> alloc] init];
-    self.project = project;
+    _name = [name copy];
+    _engines = [[NSMutableArray<NSValue*> alloc] init];
+    _project = [project retain];
   }
   return self;
 }
@@ -42,6 +42,7 @@
   [center removeObserver:self];
   [_name release];
   [_engines release];
+  [_project release];
   [super dealloc];
 }
 
