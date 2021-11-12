@@ -173,9 +173,10 @@ Future<void> _uploadToSkiaGold(
   await goldenFile.writeAsBytes(encodePng(screenshot), flush: true);
 
   if (_isPreSubmit) {
-    _uploadInPreSubmit(skiaClient, filename, goldenFile);
-  } else if (_isPostSubmit) {
-    _uploadInPostSubmit(skiaClient, filename, goldenFile);
+    return _uploadInPreSubmit(skiaClient, filename, goldenFile);
+  }
+  if (_isPostSubmit) {
+    return _uploadInPostSubmit(skiaClient, filename, goldenFile);
   }
 }
 
@@ -183,24 +184,16 @@ Future<void> _uploadInPreSubmit(
   SkiaGoldClient skiaClient,
   String filename,
   File goldenFile,
-) async {
+) {
   assert(_isPreSubmit);
-
-  if (!skiaClient.isInitialized) {
-    await skiaClient.tryjobInit();
-  }
-  await skiaClient.tryjobAdd(filename, goldenFile);
+  return skiaClient.tryjobAdd(filename, goldenFile);
 }
 
 Future<void> _uploadInPostSubmit(
   SkiaGoldClient skiaClient,
   String filename,
   File goldenFile,
-) async {
+) {
   assert(_isPostSubmit);
-
-  if (!skiaClient.isInitialized) {
-    await skiaClient.imgtestInit();
-  }
-  await skiaClient.imgtestAdd(filename, goldenFile);
+  return skiaClient.imgtestAdd(filename, goldenFile);
 }

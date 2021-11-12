@@ -46,9 +46,22 @@ class SkiaGoldClient {
   String get _keysPath => path.join(workDirectory.path, 'keys.json');
   String get _failuresPath => path.join(workDirectory.path, 'failures.json');
 
-  /// Whether the `goldctl` tool has been initialized.
-  bool get isInitialized => _isInitialized;
+  /// Indicates whether the `goldctl` tool has been initialized for the current
+  /// test context.
   bool _isInitialized = false;
+
+  /// Indicates whether the client has already been authorized to communicate
+  /// with the Skia Gold backend.
+  bool get _isAuthorized {
+    final File authFile = File(path.join(_tempPath, 'auth_opt.json'));
+
+    if(authFile.existsSync()) {
+      final String contents = authFile.readAsStringSync();
+      final Map<String, dynamic> decoded = json.decode(contents) as Map<String, dynamic>;
+      return !(decoded['GSUtil'] as bool);
+    }
+    return false;
+  }
 
   /// The path to the local [Directory] where the `goldctl` tool is hosted.
   String get _goldctl {
@@ -64,7 +77,7 @@ class SkiaGoldClient {
   ///
   /// This ensures that the `goldctl` tool is authorized and ready for testing.
   Future<void> auth() async {
-    if (await clientIsAuthorized())
+    if (_isAuthorized)
       return;
     final List<String> authCommand = <String>[
       _goldctl,
@@ -92,7 +105,11 @@ class SkiaGoldClient {
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `init` argument initializes the current test.
-  Future<void> imgtestInit() async {
+  Future<void> _imgtestInit() async {
+    if (_isInitialized) {
+      return;
+    }
+
     final File keys = File(_keysPath);
     final File failures = File(_failuresPath);
 
@@ -146,6 +163,8 @@ class SkiaGoldClient {
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
   Future<bool> imgtestAdd(String testName, File goldenFile) async {
+    await _imgtestInit();
+
     final List<String> imgtestCommand = <String>[
       _goldctl,
       'imgtest', 'add',
@@ -171,7 +190,11 @@ class SkiaGoldClient {
   ///
   /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `init` argument initializes the current tryjob.
-  Future<void> tryjobInit() async {
+  Future<void> _tryjobInit() async {
+    if (_isInitialized) {
+      return;
+    }
+
     final File keys = File(_keysPath);
     final File failures = File(_failuresPath);
 
@@ -228,6 +251,8 @@ class SkiaGoldClient {
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
   Future<void> tryjobAdd(String testName, File goldenFile) async {
+    await _tryjobInit();
+
     final List<String> imgtestCommand = <String>[
       _goldctl,
       'imgtest', 'add',
@@ -346,19 +371,6 @@ class SkiaGoldClient {
   /// properly.
   String cleanTestName(String fileName) {
     return fileName.split(path.extension(fileName))[0];
-  }
-
-  /// Returns a boolean value to prevent the client from re-authorizing itself
-  /// for multiple tests.
-  Future<bool> clientIsAuthorized() async {
-    final File authFile = File(path.join(_tempPath, 'auth_opt.json'));
-
-    if(authFile.existsSync()) {
-      final String contents = await authFile.readAsString();
-      final Map<String, dynamic> decoded = json.decode(contents) as Map<String, dynamic>;
-      return !(decoded['GSUtil'] as bool);
-    }
-    return false;
   }
 
   /// Returns a list of arguments for initializing a tryjob based on the testing
