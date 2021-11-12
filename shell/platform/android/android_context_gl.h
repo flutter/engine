@@ -51,6 +51,8 @@ class AndroidEGLSurface {
   /// @brief      This only applies to on-screen surfaces such as those created
   ///             by `AndroidContextGL::CreateOnscreenSurface`.
   ///
+  /// @param target_time  The vsync target time for the buffer.
+  ///
   /// @return     Whether the EGL surface color buffer was swapped.
   ///
   bool SwapBuffers(fml::TimePoint target_time);
