@@ -57,6 +57,7 @@ class Firefox extends Browser {
   factory Firefox(Uri url, {bool debug = false}) {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(() async {
+      print('>>> Using Firefox ${browserLock.firefoxLock.version}');
       final BrowserInstallation installation = await getOrInstallFirefox(
         browserLock.firefoxLock.version,
         infoLog: isCirrus ? stdout : DevNull(),

@@ -37,6 +37,7 @@ Future<BrowserInstallation> getOrInstallFirefox(
   infoLog ??= io.stdout;
 
   if (requestedVersion == 'system') {
+    print('>>> Using system-installed Firefox');
     return BrowserInstallation(
       version: 'system',
       executable: await _findSystemFirefoxExecutable(),
@@ -151,6 +152,7 @@ class FirefoxInstaller {
 
     versionDir.createSync(recursive: true);
     final String url = PlatformBinding.instance.getFirefoxDownloadUrl(version);
+    print('>>> Downloading $url');
     final StreamedResponse download = await client.send(Request(
       'GET',
       Uri.parse(url),
