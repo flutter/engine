@@ -78,7 +78,7 @@ import java.util.Set;
 public class FlutterEngine {
   private static final String TAG = "FlutterEngine";
 
-  @NonNull @VisibleForTesting /*package*/ final FlutterJNI flutterJNI;
+  @NonNull private final FlutterJNI flutterJNI;
   @NonNull private final FlutterRenderer renderer;
   @NonNull private final DartExecutor dartExecutor;
   @NonNull private final FlutterEngineConnectionRegistry pluginRegistry;
@@ -595,6 +595,12 @@ public class FlutterEngine {
   @NonNull
   public ContentProviderControlSurface getContentProviderControlSurface() {
     return pluginRegistry;
+  }
+
+  /** Returns the {@link io.flutter.embedding.engine.FlutterJNI} instance. */
+  @VisibleForTesting
+  public FlutterJNI getFlutterJNI() {
+    return flutterJNI;
   }
 
   /** Lifecycle callbacks for Flutter engine lifecycle events. */

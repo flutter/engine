@@ -318,6 +318,6 @@ public class FlutterEngineTest {
             /*flutterJNI=*/ null,
             /*dartVmArgs=*/ new String[] {},
             /*automaticallyRegisterPlugins=*/ false);
-    assertEquals(engineUnderTest.flutterJNI, injector.flutterLoader().getFlutterJNI());
+    assertEquals(engineUnderTest.getFlutterJNI(), injector.flutterLoader().getFlutterJNI());
   }
 }
