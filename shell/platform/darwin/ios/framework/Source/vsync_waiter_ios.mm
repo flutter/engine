@@ -61,7 +61,8 @@ void VsyncWaiterIOS::UpdateFrameRateRange(const FrameRateRange& frame_rate_range
     display_link_ = fml::scoped_nsobject<CADisplayLink> {
       [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
     };
-    display_link_.get().paused = YES;;
+    display_link_.get().paused = YES;
+    ;
 
     task_runner->PostTask([client = [self retain]]() {
       [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
@@ -121,7 +122,14 @@ void VsyncWaiterIOS::UpdateFrameRateRange(const FrameRateRange& frame_rate_range
   FML_DLOG(ERROR) << "====================================================";
   FML_DLOG(ERROR) << ">>> engine preferred rate " << preferred;
   FML_DLOG(ERROR) << ">>> engine max rate " << max;
-  FML_DLOG(ERROR) << ">>> system rate " << displayRefreshRate;
+  FML_DLOG(ERROR) << ">>> system preferred rate " << displayRefreshRate;
+  if (@available(iOS 10, *)) {
+    double systemFrameDuration =
+        display_link_.get().targetTimestamp - display_link_.get().timestamp;
+    FML_DLOG(ERROR) << ">>> system actual frame duration " << systemFrameDuration;
+    double systemFrameRate = 1 / systemFrameDuration;
+    FML_DLOG(ERROR) << ">>> system actual frame rate " << systemFrameRate;
+  }
   FML_DLOG(ERROR) << ">>> min rate " << minRate;
   FML_DLOG(ERROR) << ">>> final preferred rate " << preferredRate;
   FML_DLOG(ERROR) << ">>> final max rate " << maxRate;
