@@ -1,1 +1,2 @@
 Checks: 'google-*'
+WarningsAsErrors: '*'

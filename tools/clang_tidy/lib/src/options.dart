@@ -105,7 +105,7 @@ class Options {
     ..addFlag(
       'lint-all',
       help: 'lint all of the sources, regardless of FLUTTER_NOLINT.',
-      defaultsTo: false,
+      defaultsTo: true,
     )
     ..addFlag(
       'fix',
