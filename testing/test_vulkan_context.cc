@@ -45,7 +45,7 @@ TestVulkanContext::TestVulkanContext() : valid_(false) {
 
 TestVulkanContext::~TestVulkanContext() = default;
 
-bool TestVulkanContext::is_valid() {
+bool TestVulkanContext::IsValid() {
   return valid_;
 }
 

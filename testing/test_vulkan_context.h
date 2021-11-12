@@ -17,13 +17,15 @@ class TestVulkanContext {
  public:
   TestVulkanContext();
   ~TestVulkanContext();
-  bool is_valid();
+  bool IsValid();
 
  private:
-  bool valid_;
+  bool valid_ = false;
   fml::RefPtr<vulkan::VulkanProcTable> vk_;
   std::unique_ptr<vulkan::VulkanApplication> application_;
   std::unique_ptr<vulkan::VulkanDevice> logical_device_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(TestVulkanContext);
 };
 
 }  // namespace flutter

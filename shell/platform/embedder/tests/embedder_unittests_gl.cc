@@ -47,7 +47,7 @@ using EmbedderTest = testing::EmbedderTest;
 ///
 TEST_F(EmbedderTest, CanInitializeTestVulkanContext) {
   TestVulkanContext ctx;
-  ASSERT_TRUE(ctx.is_valid());
+  ASSERT_TRUE(ctx.IsValid());
 }
 
 TEST_F(EmbedderTest, CanCreateOpenGLRenderingEngine) {
