@@ -207,10 +207,9 @@ public class FlutterEngineGroupComponentTest {
     List<String> firstDartEntrypointArgs = new ArrayList<String>();
     FlutterEngine firstEngine =
         engineGroupUnderTest.createAndRunEngine(
-            RuntimeEnvironment.application,
-            mock(DartEntrypoint.class),
-            null,
-            firstDartEntrypointArgs);
+            new FlutterEngineGroup.Options(RuntimeEnvironment.application)
+                .setDartEntrypoint(mock(DartEntrypoint.class))
+                .setDartEntrypointArgs(firstDartEntrypointArgs));
     assertEquals(1, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
         .runBundleAndSnapshotFromLibrary(
@@ -235,10 +234,9 @@ public class FlutterEngineGroupComponentTest {
     List<String> secondDartEntrypointArgs = new ArrayList<String>();
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
-            RuntimeEnvironment.application,
-            mock(DartEntrypoint.class),
-            null,
-            secondDartEntrypointArgs);
+            new FlutterEngineGroup.Options(RuntimeEnvironment.application)
+                .setDartEntrypoint(mock(DartEntrypoint.class))
+                .setDartEntrypointArgs(secondDartEntrypointArgs));
 
     assertEquals(2, engineGroupUnderTest.activeEngines.size());
     verify(mockflutterJNI, times(1))
