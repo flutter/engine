@@ -124,7 +124,7 @@ FLUTTER_ASSERT_ARC
                               libraryURI:nil
                             initialRoute:nil
                           entrypointArgs:secondEntrypointArgs]);
-  }
+}
 
 - (void)testReleasesProjectOnDealloc {
   __weak FlutterDartProject* weakProject;
