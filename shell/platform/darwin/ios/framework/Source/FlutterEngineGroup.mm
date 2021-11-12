@@ -5,6 +5,18 @@
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngineGroup.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 
+@implementation FlutterEngineGroupOptions
+
+- (void)dealloc {
+  [_entrypoint release];
+  [_libraryURI release];
+  [_initialRoute release];
+  [_entrypointArgs release];
+  [super dealloc];
+}
+
+@end
+
 @interface FlutterEngineGroup ()
 @property(nonatomic, copy) NSString* name;
 @property(nonatomic, strong) NSMutableArray<NSValue*>* engines;
@@ -41,16 +53,19 @@
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI
                               initialRoute:(nullable NSString*)initialRoute {
-  return [self makeEngineWithEntrypoint:entrypoint
-                             libraryURI:libraryURI
-                           initialRoute:initialRoute
-                         entrypointArgs:nil];
+  FlutterEngineGroupOptions* options = [FlutterEngineGroupOptions new];
+  options.entrypoint = entrypoint;
+  options.libraryURI = libraryURI;
+  options.initialRoute = initialRoute;
+  return [self makeEngineWithOptions:options];
 }
 
-- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
-                                libraryURI:(nullable NSString*)libraryURI
-                              initialRoute:(nullable NSString*)initialRoute
-                            entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs {
+- (FlutterEngine*)makeEngineWithOptions:(nullable FlutterEngineGroupOptions*)options {
+  NSString* entrypoint = options.entrypoint;
+  NSString* libraryURI = options.libraryURI;
+  NSString* initialRoute = options.initialRoute;
+  NSArray<NSString*>* entrypointArgs = options.entrypointArgs;
+
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
     engine = [self makeEngine];

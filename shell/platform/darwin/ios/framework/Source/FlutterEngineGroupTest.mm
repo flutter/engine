@@ -96,7 +96,6 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testCustomEntrypointArgs {
-  NSArray* firstEntrypointArgs = @[ @"foo", @"first" ];
   FlutterEngineGroup* group = OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"foo"
                                                                               project:nil]);
   FlutterEngine* mockEngine = OCMClassMock([FlutterEngine class]);
@@ -106,10 +105,10 @@ FLUTTER_ASSERT_ARC
                              initialRoute:[OCMArg any]
                            entrypointArgs:[OCMArg any]])
       .andReturn(OCMClassMock([FlutterEngine class]));
-  FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil
-                                                libraryURI:nil
-                                              initialRoute:nil
-                                            entrypointArgs:firstEntrypointArgs];
+  FlutterEngineGroupOptions* firstOptions = [FlutterEngineGroupOptions new];
+  NSArray* firstEntrypointArgs = @[ @"foo", @"first" ];
+  firstOptions.entrypointArgs = firstEntrypointArgs;
+  FlutterEngine* spawner = [group makeEngineWithOptions:firstOptions];
   XCTAssertNotNil(spawner);
   OCMVerify([spawner runWithEntrypoint:nil
                             libraryURI:nil
@@ -117,10 +116,9 @@ FLUTTER_ASSERT_ARC
                         entrypointArgs:firstEntrypointArgs]);
 
   NSArray* secondEntrypointArgs = @[ @"bar", @"second" ];
-  FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil
-                                                libraryURI:nil
-                                              initialRoute:nil
-                                            entrypointArgs:secondEntrypointArgs];
+  FlutterEngineGroupOptions* secondOptions = [FlutterEngineGroupOptions new];
+  secondOptions.entrypointArgs = secondEntrypointArgs;
+  FlutterEngine* spawnee = [group makeEngineWithOptions:secondOptions];
   XCTAssertNotNil(spawnee);
   OCMVerify([spawner spawnWithEntrypoint:nil
                               libraryURI:nil
