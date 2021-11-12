@@ -1372,5 +1372,29 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
   }
 }
 
+TEST(DisplayList, SetMaskBlurSigmaZeroResetsMaskFilter) {
+  DisplayListBuilder builder;
+  builder.setMaskBlurFilter(SkBlurStyle::kNormal_SkBlurStyle, 2.0);
+  builder.drawRect({10, 10, 20, 20});
+  builder.setMaskBlurFilter(SkBlurStyle::kNormal_SkBlurStyle, 0.0);
+  EXPECT_EQ(builder.getMaskFilter(), nullptr);
+  builder.drawRect({30, 30, 40, 40});
+  sk_sp<DisplayList> display_list = builder.Build();
+  ASSERT_EQ(display_list->op_count(), 2);
+  ASSERT_EQ(display_list->bytes(), sizeof(DisplayList) + 8u + 24u + 8u + 24u);
+}
+
+TEST(DisplayList, SetMaskFilterNullResetsMaskFilter) {
+  DisplayListBuilder builder;
+  builder.setMaskBlurFilter(SkBlurStyle::kNormal_SkBlurStyle, 2.0);
+  builder.drawRect({10, 10, 20, 20});
+  builder.setMaskFilter(nullptr);
+  EXPECT_EQ(builder.getMaskFilter(), nullptr);
+  builder.drawRect({30, 30, 40, 40});
+  sk_sp<DisplayList> display_list = builder.Build();
+  ASSERT_EQ(display_list->op_count(), 2);
+  ASSERT_EQ(display_list->bytes(), sizeof(DisplayList) + 8u + 24u + 8u + 24u);
+}
+
 }  // namespace testing
 }  // namespace flutter

@@ -834,8 +834,9 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
     }
   }
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {
-    if (mask_sigma_valid(sigma) &&
-        (current_mask_style_ != style || current_mask_sigma_ != sigma)) {
+    if (!mask_sigma_valid(sigma)) {
+      setMaskFilter(nullptr);
+    } else if (current_mask_style_ != style || current_mask_sigma_ != sigma) {
       onSetMaskBlurFilter(style, sigma);
     }
   }
@@ -863,7 +864,12 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
                             : SkBlender::Mode(current_blend_mode_);
   }
   sk_sp<SkPathEffect> getPathEffect() const { return current_path_effect_; }
-  sk_sp<SkMaskFilter> getMaskFilter() const { return current_mask_filter_; }
+  sk_sp<SkMaskFilter> getMaskFilter() const {
+    return mask_sigma_valid(current_mask_sigma_)
+               ? SkMaskFilter::MakeBlur(current_mask_style_,
+                                        current_mask_sigma_)
+               : current_mask_filter_;
+  }
   // No utility getter for the utility setter:
   // void setMaskBlurFilter (SkBlurStyle style, SkScalar sigma)
   sk_sp<SkImageFilter> getImageFilter() const { return current_image_filter_; }
@@ -983,7 +989,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
-  bool mask_sigma_valid(SkScalar sigma) {
+  static bool mask_sigma_valid(SkScalar sigma) {
     return SkScalarIsFinite(sigma) && sigma > 0.0;
   }
 
@@ -1023,7 +1029,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   sk_sp<SkImageFilter> current_image_filter_;
   sk_sp<SkPathEffect> current_path_effect_;
   sk_sp<SkMaskFilter> current_mask_filter_;
-  int current_mask_style_;
+  SkBlurStyle current_mask_style_;
   SkScalar current_mask_sigma_ = kInvalidSigma;
 };
 

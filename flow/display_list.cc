@@ -1150,8 +1150,9 @@ void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
 }
 void DisplayListBuilder::onSetMaskFilter(sk_sp<SkMaskFilter> filter) {
   current_mask_sigma_ = kInvalidSigma;
-  current_mask_filter_ = filter;
-  Push<SetMaskFilterOp>(0, 0, std::move(filter));
+  (current_mask_filter_ = filter)  //
+      ? Push<SetMaskFilterOp>(0, 0, std::move(filter))
+      : Push<ClearMaskFilterOp>(0, 0);
 }
 void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style,
                                              SkScalar sigma) {
