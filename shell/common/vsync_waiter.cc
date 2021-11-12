@@ -206,7 +206,7 @@ void DynamicFrameRateRangeProvider::Record(int64_t frame_duration) {
   if (frame_durations_.size() == size_) {
     frame_durations_.erase(frame_durations_.begin());
   }
-  FML_DLOG(ERROR) << ">>> record frame duration " << frame_duration;
+  FML_LOG(ERROR) << ">>> record frame duration " << frame_duration;
   frame_durations_.push_back(frame_duration);
 }
 

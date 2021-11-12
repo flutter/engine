@@ -119,20 +119,20 @@ void VsyncWaiterIOS::UpdateFrameRateRange(const FrameRateRange& frame_rate_range
   }
   // No-op as setting the dynamic frame rate is not possible in lower iOS versions.
   // TODO(cyanglaz) remove logs
-  FML_DLOG(ERROR) << "====================================================";
-  FML_DLOG(ERROR) << ">>> engine preferred rate " << preferred;
-  FML_DLOG(ERROR) << ">>> engine max rate " << max;
-  FML_DLOG(ERROR) << ">>> system preferred rate " << displayRefreshRate;
+  FML_LOG(ERROR) << "====================================================";
+  FML_LOG(ERROR) << ">>> engine preferred rate " << preferred;
+  FML_LOG(ERROR) << ">>> engine max rate " << max;
+  FML_LOG(ERROR) << ">>> system preferred rate " << displayRefreshRate;
   if (@available(iOS 10, *)) {
     double systemFrameDuration =
         display_link_.get().targetTimestamp - display_link_.get().timestamp;
-    FML_DLOG(ERROR) << ">>> system actual frame duration " << systemFrameDuration;
+    FML_LOG(ERROR) << ">>> system actual frame duration " << systemFrameDuration;
     double systemFrameRate = 1 / systemFrameDuration;
-    FML_DLOG(ERROR) << ">>> system actual frame rate " << systemFrameRate;
+    FML_LOG(ERROR) << ">>> system actual frame rate " << systemFrameRate;
   }
-  FML_DLOG(ERROR) << ">>> min rate " << minRate;
-  FML_DLOG(ERROR) << ">>> final preferred rate " << preferredRate;
-  FML_DLOG(ERROR) << ">>> final max rate " << maxRate;
+  FML_LOG(ERROR) << ">>> min rate " << minRate;
+  FML_LOG(ERROR) << ">>> final preferred rate " << preferredRate;
+  FML_LOG(ERROR) << ">>> final max rate " << maxRate;
 }
 
 - (void)dealloc {
