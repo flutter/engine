@@ -47,16 +47,16 @@ Future<BrowserInstallation> getOrInstallChrome(
         ? await ChromeInstaller.latest()
         : ChromeInstaller(version: requestedVersion);
 
-    if (installer.isInstalled) {
-      print(
-          'Installation was skipped because Chrome version ${installer.version} is already installed.');
-    } else {
+    // if (installer.isInstalled) {
+    //   print(
+    //       'Installation was skipped because Chrome version ${installer.version} is already installed.');
+    // } else {
       print('Installing Chrome version: ${installer.version}');
       await installer.install();
       final BrowserInstallation installation = installer.getInstallation()!;
       print(
           'Installations complete. To launch it run ${installation.executable}');
-    }
+    // }
     return installer.getInstallation()!;
   } finally {
     installer?.close();
