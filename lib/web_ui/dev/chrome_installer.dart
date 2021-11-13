@@ -31,7 +31,7 @@ Future<BrowserInstallation> getOrInstallChrome(
   String requestedVersion, {
   StringSink? infoLog,
 }) async {
-  infoLog = io.stdout;
+  infoLog ??= io.stdout;
 
   if (requestedVersion == 'system') {
     print('>>> Using system Chrome');
@@ -48,13 +48,13 @@ Future<BrowserInstallation> getOrInstallChrome(
         : ChromeInstaller(version: requestedVersion);
 
     if (installer.isInstalled) {
-      infoLog.writeln(
+      print(
           'Installation was skipped because Chrome version ${installer.version} is already installed.');
     } else {
-      infoLog.writeln('Installing Chrome version: ${installer.version}');
+      print('Installing Chrome version: ${installer.version}');
       await installer.install();
       final BrowserInstallation installation = installer.getInstallation()!;
-      infoLog.writeln(
+      print(
           'Installations complete. To launch it run ${installation.executable}');
     }
     return installer.getInstallation()!;
@@ -156,9 +156,9 @@ class ChromeInstaller {
       versionDir.createSync(recursive: true);
     }
 
-    print('INFO: Starting Chrome download.');
-
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
+
+    print('INFO: Downloading Chrome from $url');
     final StreamedResponse download = await client.send(Request(
       'GET',
       Uri.parse(url),
