@@ -15,6 +15,7 @@ declare_args() {
 declare_args() {
   test_enable_gl = shell_enable_gl
   test_enable_metal = shell_enable_metal
+
   # The Vulkan unittests are combined with the GL unittests.
   test_enable_vulkan = shell_enable_gl
   test_enable_software = shell_enable_software
