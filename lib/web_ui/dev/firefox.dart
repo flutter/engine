@@ -18,9 +18,13 @@ import 'firefox_installer.dart';
 
 /// Provides an environment for the desktop Firefox.
 class FirefoxEnvironment implements BrowserEnvironment {
+  late final BrowserInstallation _installation;
+  late final Directory _temporaryProfileDirectory;
+
   @override
   Browser launchBrowserInstance(Uri url, {bool debug = false}) {
-    return Firefox(url, debug: debug);
+    print('>>> launchBrowserInstance(firefox)');
+    return Firefox(url, this, debug: debug);
   }
 
   @override
@@ -28,7 +32,30 @@ class FirefoxEnvironment implements BrowserEnvironment {
 
   @override
   Future<void> prepareEnvironment() async {
-    // Firefox doesn't need any special prep.
+    _installation = await getOrInstallFirefox(
+      browserLock.firefoxLock.version,
+      infoLog: isCirrus ? stdout : DevNull(),
+    );
+
+    // Using a profile on opening will prevent popups related to profiles.
+    const String _profile = '''
+user_pref("browser.shell.checkDefaultBrowser", false);
+user_pref("dom.disable_open_during_load", false);
+user_pref("dom.max_script_run_time", 0);
+''';
+
+    _temporaryProfileDirectory = Directory(
+        path.join(environment.webUiDartToolDir.path, 'firefox_profile'));
+
+    // A good source of various Firefox Command Line options:
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#Browser
+    //
+    if (_temporaryProfileDirectory.existsSync()) {
+      _temporaryProfileDirectory.deleteSync(recursive: true);
+    }
+    _temporaryProfileDirectory.createSync(recursive: true);
+    File(path.join(_temporaryProfileDirectory.path, 'prefs.js'))
+        .writeAsStringSync(_profile);
   }
 
   @override
@@ -54,35 +81,11 @@ class Firefox extends Browser {
 
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Firefox(Uri url, {bool debug = false}) {
+  factory Firefox(Uri url, FirefoxEnvironment firefoxEnvironment, {bool debug = false}) {
+    final Directory temporaryProfileDirectory = firefoxEnvironment._temporaryProfileDirectory;
+    final BrowserInstallation installation = firefoxEnvironment._installation;
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(() async {
-      print('>>> Using Firefox ${browserLock.firefoxLock.version}');
-      final BrowserInstallation installation = await getOrInstallFirefox(
-        browserLock.firefoxLock.version,
-        infoLog: isCirrus ? stdout : DevNull(),
-      );
-
-      // Using a profile on opening will prevent popups related to profiles.
-      const String _profile = '''
-user_pref("browser.shell.checkDefaultBrowser", false);
-user_pref("dom.disable_open_during_load", false);
-user_pref("dom.max_script_run_time", 0);
-''';
-
-      final Directory temporaryProfileDirectory = Directory(
-          path.join(environment.webUiDartToolDir.path, 'firefox_profile'));
-
-      // A good source of various Firefox Command Line options:
-      // https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#Browser
-      //
-      if (temporaryProfileDirectory.existsSync()) {
-        temporaryProfileDirectory.deleteSync(recursive: true);
-      }
-      temporaryProfileDirectory.createSync(recursive: true);
-
-      File(path.join(temporaryProfileDirectory.path, 'prefs.js'))
-          .writeAsStringSync(_profile);
       final bool isMac = Platform.isMacOS;
       final List<String> args = <String>[
         url.toString(),

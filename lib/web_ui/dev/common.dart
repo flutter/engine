@@ -238,6 +238,7 @@ BrowserEnvironment getBrowserEnvironment(String browserName) {
     case kEdge:
       return EdgeEnvironment();
     case kFirefox:
+      print('>>> Firefox!');
       return FirefoxEnvironment();
     case kSafari:
       return SafariMacOsEnvironment();

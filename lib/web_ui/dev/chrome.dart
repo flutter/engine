@@ -21,9 +21,11 @@ import 'environment.dart';
 
 /// Provides an environment for desktop Chrome.
 class ChromeEnvironment implements BrowserEnvironment {
+  late final BrowserInstallation _installation;
+
   @override
   Browser launchBrowserInstance(Uri url, {bool debug = false}) {
-    return Chrome(url, debug: debug);
+    return Chrome(url, _installation, debug: debug);
   }
 
   @override
@@ -31,7 +33,11 @@ class ChromeEnvironment implements BrowserEnvironment {
 
   @override
   Future<void> prepareEnvironment() async {
-    // Chrome doesn't need any special prep.
+    final String version = browserLock.chromeLock.versionForCurrentPlatform;
+    _installation = await getOrInstallChrome(
+      version,
+      infoLog: isCirrus ? stdout : DevNull(),
+    );
   }
 
   @override
@@ -64,15 +70,9 @@ class Chrome extends Browser {
 
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Chrome(Uri url, {bool debug = false}) {
-    final String version = browserLock.chromeLock.versionForCurrentPlatform;
+  factory Chrome(Uri url, BrowserInstallation installation, {bool debug = false}) {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(() async {
-      final BrowserInstallation installation = await getOrInstallChrome(
-        version,
-        infoLog: isCirrus ? stdout : DevNull(),
-      );
-
       // A good source of various Chrome CLI options:
       // https://peter.sh/experiments/chromium-command-line-switches/
       //
