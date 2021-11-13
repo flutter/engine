@@ -306,18 +306,27 @@ public class FlutterEngineTest {
 
   @Test
   public void itShouldUsesFlutterJNIInFlutterInjectorByDefault() throws NameNotFoundException {
-    Context context = mock(Context.class);
-    Context packageContext = mock(Context.class);
-    when(context.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    FlutterInjector.reset();
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    when(mockFlutterLoader.getFlutterJNI()).thenReturn(flutterJNI);
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+    assertEquals(FlutterInjector.instance().flutterLoader(), mockFlutterLoader);
+    assertEquals(mockFlutterLoader.getFlutterJNI(), flutterJNI);
+    assertEquals(FlutterInjector.instance().flutterLoader().getFlutterJNI(), flutterJNI);
 
-    FlutterInjector injector = FlutterInjector.instance();
+    Context mockContext = mock(Context.class);
+    Context packageContext = mock(Context.class);
+    when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
+    when(flutterJNI.isAttached()).thenReturn(true);
+
     FlutterEngine engineUnderTest =
         new FlutterEngine(
-            context,
-            /*flutterLoader=*/ null,
-            /*flutterJNI=*/ null,
+            mockContext,
+            /* flutterLoader */ null,
+            /* flutterJNI */ flutterJNI,
             /*dartVmArgs=*/ new String[] {},
             /*automaticallyRegisterPlugins=*/ false);
-    assertEquals(engineUnderTest.getFlutterJNI(), injector.flutterLoader().getFlutterJNI());
+    assertEquals(engineUnderTest.getFlutterJNI(), flutterJNI);
   }
 }
