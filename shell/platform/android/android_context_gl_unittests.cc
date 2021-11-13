@@ -32,11 +32,11 @@ class InterceptingAndroidEnvironmentGL : public AndroidEnvironmentGL {
 
   bool SetPresentationTime(EGLSurface surface,
                            fml::TimePoint time) const override {
-    presentation_time_called_ = true;
+    presentation_time_ = time;
     return AndroidEnvironmentGL::SetPresentationTime(surface, time);
   }
 
-  mutable bool presentation_time_called_ = false;
+  mutable std::optional<fml::TimePoint> presentation_time_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(InterceptingAndroidEnvironmentGL);
 };
@@ -82,9 +82,6 @@ TEST(AndroidContextGl, CreateSingleThread) {
 }
 
 TEST(AndroidEGLSurface, SwapBuffersNotifiesAboutPresentationTime) {
-  GrMockOptions main_context_options;
-  sk_sp<GrDirectContext> main_context =
-      GrDirectContext::MakeMock(&main_context_options);
   auto environment = fml::MakeRefCounted<InterceptingAndroidEnvironmentGL>();
   std::string thread_label =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -98,9 +95,11 @@ TEST(AndroidEGLSurface, SwapBuffersNotifiesAboutPresentationTime) {
       AndroidRenderingAPI::kOpenGLES, environment, task_runners);
 
   auto surface = context->CreatePbufferSurface();
-  surface->SwapBuffers(fml::TimePoint::Now());
-
-  EXPECT_TRUE(environment->presentation_time_called_);
+  EXPECT_TRUE(surface);
+  EXPECT_FALSE(environment->presentation_time_.has_value());
+  auto now = fml::TimePoint::Now();
+  surface->SwapBuffers(now);
+  EXPECT_EQ(environment->presentation_time_, now);
 }
 }  // namespace android
 }  // namespace testing
