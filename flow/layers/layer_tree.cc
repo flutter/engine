@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/layer_tree.h"
 
+#include "flutter/common/constants.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/fml/time/time_point.h"
@@ -52,6 +53,15 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       device_pixel_ratio_};
 
   root_layer_->Preroll(&context, frame.root_surface_transformation());
+
+#if !FLUTTER_RELEASE
+  FML_TRACE_COUNTER("flutter",                                            //
+                    "LayerTree::Usage", reinterpret_cast<int64_t>(this),  //
+                    "PictureCount", context.picture_count,                //
+                    "PictureKBytes",
+                    context.picture_bytes / kKiloByteSizeInBytes);
+#endif  // !FLUTTER_RELEASE
+
   return context.surface_needs_readback;
 }
 

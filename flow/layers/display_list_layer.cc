@@ -88,6 +88,8 @@ void DisplayListLayer::Preroll(PrerollContext* context,
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
 
   DisplayList* disp_list = display_list();
+  context->picture_count++;
+  context->picture_bytes += disp_list->bytes(true);
 
   SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
 

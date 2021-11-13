@@ -6,16 +6,20 @@
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/display_list_layer.h"
+#include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/testing/mock_layer.h"
+#include "flutter/flow/testing/skia_gpu_object_layer_test.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/canvas_test.h"
 #include "flutter/testing/mock_canvas.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 namespace testing {
 
-class LayerTreeTest : public CanvasTest {
+class LayerTreeTest : public SkiaGPUObjectLayerTest {
  public:
   LayerTreeTest()
       : layer_tree_(SkISize::Make(64, 64), 1.0f),
@@ -191,6 +195,50 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
                        0, MockCanvas::DrawPathData{child_path1, child_paint1}},
                    MockCanvas::DrawCall{0, MockCanvas::DrawPathData{
                                                child_path2, child_paint2}}}));
+}
+
+TEST_F(LayerTreeTest, PictureUsage) {
+  SkPictureRecorder recorder;
+  SkCanvas* canvas = recorder.beginRecording(100, 100);
+  canvas->drawRect({10, 10, 80, 80}, SkPaint());
+  sk_sp<SkPicture> picture = recorder.finishRecordingAsPicture();
+
+  DisplayListBuilder builder({0, 0, 100, 100});
+  builder.drawRect({10, 10, 80, 80});
+  sk_sp<DisplayList> display_list = builder.Build();
+  SkPoint offset = SkPoint::Make(0, 0);
+
+  auto picture_layer = std::make_shared<PictureLayer>(
+      offset, SkiaGPUObject<SkPicture>(picture, unref_queue()), false, false);
+  auto display_list_layer = std::make_shared<DisplayListLayer>(
+      offset, SkiaGPUObject<DisplayList>(display_list, unref_queue()), false,
+      false);
+  auto layer = std::make_shared<ContainerLayer>();
+  layer->Add(picture_layer);
+  layer->Add(display_list_layer);
+
+  MutatorsStack mutators_stack;
+  TextureRegistry texture_registry;
+
+  PrerollContext context{
+      nullptr,                                /* raster_cache */
+      nullptr,                                /* gr_context */
+      nullptr,                                /* external_view_embedder */
+      mutators_stack,                         /* mutators_stack */
+      mock_canvas().imageInfo().colorSpace(), /* dst_color_space */
+      kGiantRect,                             /* cull_rect */
+      false,                                  /* layer reads from surface */
+      Stopwatch(),                            /* raster_time */
+      Stopwatch(),                            /* ui_time */
+      texture_registry,                       /* texture_registry */
+      false,                                  /* checkerboard_offscr_layers */
+      1.0f,                                   /* frame_device_pixel_ratio */
+      false,                                  /* has_platform_view */
+  };
+  layer->Preroll(&context, SkMatrix::I());
+  ASSERT_EQ(context.picture_count, 2);
+  ASSERT_EQ(context.picture_bytes,
+            picture->approximateBytesUsed() + display_list->bytes(true));
 }
 
 }  // namespace testing

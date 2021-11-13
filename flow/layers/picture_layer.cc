@@ -111,6 +111,8 @@ void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
   SkPicture* sk_picture = picture();
+  context->picture_count++;
+  context->picture_bytes += sk_picture->approximateBytesUsed();
 
   SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
 

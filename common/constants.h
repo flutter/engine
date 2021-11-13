@@ -4,4 +4,5 @@
 
 namespace flutter {
 constexpr double kMegaByteSizeInBytes = (1 << 20);
+constexpr double kKiloByteSizeInBytes = (1 << 10);
 }  // namespace flutter

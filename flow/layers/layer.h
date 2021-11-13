@@ -61,6 +61,9 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a texture layer during Preroll.
   bool has_texture_layer = false;
+
+  int picture_count = 0;
+  size_t picture_bytes = 0;
 };
 
 class PictureLayer;
