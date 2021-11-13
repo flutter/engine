@@ -1,2 +1,2 @@
-Checks: 'google-*'
+Checks: 'google-*,-clang-analyzer-core.StackAddressEscape'
 WarningsAsErrors: '*'
