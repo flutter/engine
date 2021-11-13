@@ -29,7 +29,9 @@ namespace flutter {
 ///
 class AndroidEGLSurface {
  public:
-  AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
+  AndroidEGLSurface(EGLSurface surface,
+                    fml::RefPtr<AndroidEnvironmentGL> environment,
+                    EGLContext context);
   ~AndroidEGLSurface();
 
   //----------------------------------------------------------------------------
@@ -64,7 +66,7 @@ class AndroidEGLSurface {
 
  private:
   const EGLSurface surface_;
-  const EGLDisplay display_;
+  const fml::RefPtr<AndroidEnvironmentGL> environment_;
   const EGLContext context_;
 };
 

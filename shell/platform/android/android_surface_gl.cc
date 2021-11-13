@@ -102,10 +102,6 @@ bool AndroidSurfaceGL::SetNativeWindow(
   FML_DCHECK(IsValid());
   FML_DCHECK(window);
   native_window_ = window;
-  // Ensure the destructor is called since it destroys the `EGLSurface` before
-  // creating a new onscreen surface.
-  onscreen_surface_ = nullptr;
-  // Create the onscreen surface.
   onscreen_surface_ = GLContextPtr()->CreateOnscreenSurface(window);
   if (!onscreen_surface_->IsValid()) {
     return false;
@@ -168,7 +164,6 @@ sk_sp<const GrGLInterface> AndroidSurfaceGL::GetGLInterface() const {
       FML_DCHECK(result == EGL_TRUE);
     }
   }
-
   return GPUSurfaceGLDelegate::GetGLInterface();
 }
 
