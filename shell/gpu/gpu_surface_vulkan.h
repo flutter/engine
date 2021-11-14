@@ -60,6 +60,9 @@ class GPUSurfaceVulkan : public Surface {
   size_t current_backbuffer_index_;
 
   fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
+
+  sk_sp<SkSurface> AcquireSurfaceFromVulkanImage(VkImage image);
+
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
 };
 

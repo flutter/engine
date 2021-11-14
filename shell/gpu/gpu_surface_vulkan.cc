@@ -67,4 +67,9 @@ GrDirectContext* GPUSurfaceVulkan::GetContext() {
   return skia_context_;
 }
 
+sk_sp<SkSurface> GPUSurfaceVulkan::AcquireSurfaceFromVulkanImage(
+    VkImage image) {
+
+}
+
 }  // namespace flutter
