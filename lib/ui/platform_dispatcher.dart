@@ -350,8 +350,12 @@ class PlatformDispatcher {
   }
 
   /// Called by [_dispatchKeyData].
-  void _respondToKeyData(int responseId, bool handled)
-      native 'PlatformConfiguration_respondToKeyData';
+  void _respondToKeyData(int responseId, bool handled) =>
+      __respondToKeyData(responseId, handled);
+
+  @FfiNative<Void Function(IntPtr, Bool)>(
+      'PlatformConfiguration::RespondToKeyData')
+  external static void __respondToKeyData(int responseId, bool handled);
 
   /// A callback that is invoked when key data is available.
   ///
@@ -442,8 +446,13 @@ class PlatformDispatcher {
   }
 
   late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
-  void _nativeSetNeedsReportTimings(bool value)
-      native 'PlatformConfiguration_setNeedsReportTimings';
+
+  void _nativeSetNeedsReportTimings(bool value) =>
+      __nativeSetNeedsReportTimings(value);
+
+  @FfiNative<Void Function(Bool)>(
+      'PlatformConfiguration::SetNeedsReportTimingsOrThrow')
+  external static void __nativeSetNeedsReportTimings(bool value);
 
   // Called from the engine, via hooks.dart
   void _reportTimings(List<int> timings) {
@@ -471,8 +480,14 @@ class PlatformDispatcher {
       throw Exception(error);
   }
 
-  String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data)
-      native 'PlatformConfiguration_sendPlatformMessage';
+  String? _sendPlatformMessage(String name,
+          PlatformMessageResponseCallback? callback, ByteData? data) =>
+      __sendPlatformMessage(name, callback, data);
+
+  @FfiNative<Handle Function(Handle, Handle, Handle)>(
+      'PlatformConfiguration::SendPlatformMessage')
+  external static String? __sendPlatformMessage(
+      String name, PlatformMessageResponseCallback? callback, ByteData? data);
 
   /// Called whenever this platform dispatcher receives a message from a
   /// platform-specific plugin.
@@ -498,8 +513,13 @@ class PlatformDispatcher {
   }
 
   /// Called by [_dispatchPlatformMessage].
-  void _respondToPlatformMessage(int responseId, ByteData? data)
-      native 'PlatformConfiguration_respondToPlatformMessage';
+  void _respondToPlatformMessage(int responseId, ByteData? data) =>
+      __respondToPlatformMessage(responseId, data);
+
+  @FfiNative<Void Function(IntPtr, Handle)>(
+      'PlatformConfiguration::RespondToPlatformMessage')
+  external static void __respondToPlatformMessage(
+      int responseId, ByteData? data);
 
   /// Wraps the given [callback] in another callback that ensures that the
   /// original callback is called in the zone it was registered in.
@@ -556,7 +576,11 @@ class PlatformDispatcher {
   /// This can be combined with flutter tools `--isolate-filter` flag to debug
   /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
   /// Note that this does not rename any child isolates of the root.
-  void setIsolateDebugName(String name) native 'PlatformConfiguration_setIsolateDebugName';
+  void setIsolateDebugName(String name) => _setIsolateDebugName(name);
+
+  @FfiNative<Void Function(Handle)>(
+      'PlatformConfiguration::SetIsolateDebugName')
+  external static void _setIsolateDebugName(String name);
 
   /// The embedder can specify data that the isolate can request synchronously
   /// on launch. This accessor fetches that data.
@@ -567,7 +591,11 @@ class PlatformDispatcher {
   ///
   /// For asynchronous communication between the embedder and isolate, a
   /// platform channel may be used.
-  ByteData? getPersistentIsolateData() native 'PlatformConfiguration_getPersistentIsolateData';
+  ByteData? getPersistentIsolateData() => _getPersistentIsolateData();
+
+  @FfiNative<Handle Function()>(
+      'PlatformConfiguration::GetPersistentIsolateDataOrThrow')
+  external static ByteData? _getPersistentIsolateData();
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
   /// [onDrawFrame] callbacks be invoked.
@@ -576,7 +604,10 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  void scheduleFrame() native 'PlatformConfiguration_scheduleFrame';
+  void scheduleFrame() => _scheduleFrame();
+
+  @FfiNative<Void Function()>('PlatformConfiguration::ScheduleFrameOrThrow')
+  external static void _scheduleFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
@@ -616,7 +647,11 @@ class PlatformDispatcher {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native 'PlatformConfiguration_updateSemantics';
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
+
+  @FfiNative<Void Function(Pointer<Void>)>(
+      'PlatformConfiguration::UpdateSemanticsOrThrow')
+  external static void _updateSemantics(SemanticsUpdate update);
 
   /// The system-reported default locale of the device.
   ///
@@ -674,7 +709,15 @@ class PlatformDispatcher {
     }
     return null;
   }
-  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'PlatformConfiguration_computePlatformResolvedLocale';
+
+  List<String> _computePlatformResolvedLocale(
+          List<String?> supportedLocalesData) =>
+      __computePlatformResolvedLocale(supportedLocalesData);
+
+  @FfiNative<Handle Function(Handle)>(
+      'PlatformConfiguration::ComputePlatformResolvedLocale')
+  external static List<String> __computePlatformResolvedLocale(
+      List<String?> supportedLocalesData);
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -956,7 +999,9 @@ class PlatformDispatcher {
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
-  String _defaultRouteName() native 'PlatformConfiguration_defaultRouteName';
+
+  @FfiNative<Handle Function()>('PlatformConfiguration::DefaultRouteName')
+  external static String _defaultRouteName();
 }
 
 /// Configuration of the platform.

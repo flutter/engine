@@ -17,6 +17,7 @@
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/tonic/dart_persistent_value.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 class FontCollection;
@@ -453,6 +454,35 @@ class PlatformConfiguration final {
   /// @param[in] handled     Whether the key data is handled.
   ///
   void CompleteKeyDataResponse(uint64_t response_id, bool handled);
+
+  static void RenderOrThrow(Scene* scene);
+
+  static void ReportUnhandledExceptionOrThrow(std::string error_name,
+                                              std::string stack_trace);
+
+  static void RespondToKeyData(int response_id, bool handled);
+
+  static void SetNeedsReportTimingsOrThrow(bool value);
+
+  static Dart_Handle SendPlatformMessage(const std::string& name,
+                                         Dart_Handle callback,
+                                         Dart_Handle data_handle);
+
+  static void RespondToPlatformMessage(int response_id,
+                                       const tonic::DartByteData& data);
+
+  static void SetIsolateDebugNameOrThrow(const std::string name);
+
+  static Dart_Handle GetPersistentIsolateDataOrThrow();
+
+  static void ScheduleFrameOrThrow();
+
+  static void UpdateSemanticsOrThrow(SemanticsUpdate* update);
+
+  static Dart_Handle ComputePlatformResolvedLocale(
+      Dart_Handle supportedLocalesHandle);
+
+  static std::string DefaultRouteName();
 
  private:
   PlatformConfigurationClient* client_;

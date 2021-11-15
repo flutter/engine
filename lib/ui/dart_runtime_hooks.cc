@@ -37,12 +37,12 @@ namespace flutter {
 #define DECLARE_FUNCTION(name, count) \
   extern void name(Dart_NativeArguments args);
 
-#define BUILTIN_NATIVE_LIST(V)  \
-  V(Logger_PrintString, 1)      \
-  V(Logger_PrintDebugString, 1) \
-  V(ScheduleMicrotask, 1)       \
-  V(GetCallbackHandle, 1)       \
-  V(GetCallbackFromHandle, 1)
+#define BUILTIN_NATIVE_LIST(V)   \
+  V(_Logger_PrintString, 1)      \
+  V(_Logger_PrintDebugString, 1) \
+  V(_ScheduleMicrotask, 1)       \
+  V(_GetCallbackHandle, 1)       \
+  V(_GetCallbackFromHandle, 1)
 
 BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
 
@@ -155,15 +155,21 @@ void DartRuntimeHooks::Install(bool is_ui_isolate,
   InitDartIO(builtin, script_uri);
 }
 
-void Logger_PrintDebugString(Dart_NativeArguments args) {
+void _Logger_PrintDebugString(Dart_NativeArguments args) {
 #ifndef NDEBUG
-  Logger_PrintString(args);
+  _Logger_PrintString(args);
+#endif
+}
+
+void DartRuntimeHooks::Logger_PrintDebugString(std::string message) {
+#ifndef NDEBUG
+  DartRuntimeHooks::Logger_PrintString(message);
 #endif
 }
 
 // Implementation of native functions which are used for some
 // test/debug functionality in standalone dart mode.
-void Logger_PrintString(Dart_NativeArguments args) {
+void _Logger_PrintString(Dart_NativeArguments args) {
   // Obtain the log buffer from Dart code.
   std::string message;
   {
@@ -180,7 +186,10 @@ void Logger_PrintString(Dart_NativeArguments args) {
                             static_cast<size_t>(length)};
     }
   }
+  DartRuntimeHooks::Logger_PrintString(message);
+}
 
+void DartRuntimeHooks::Logger_PrintString(std::string message) {
   const auto& tag = UIDartState::Current()->logger_prefix();
   UIDartState::Current()->LogMessage(tag, message);
 
@@ -201,8 +210,12 @@ void Logger_PrintString(Dart_NativeArguments args) {
   }
 }
 
-void ScheduleMicrotask(Dart_NativeArguments args) {
+void _ScheduleMicrotask(Dart_NativeArguments args) {
   Dart_Handle closure = Dart_GetNativeArgument(args, 0);
+  DartRuntimeHooks::ScheduleMicrotask(closure);
+}
+
+void DartRuntimeHooks::ScheduleMicrotask(Dart_Handle closure) {
   UIDartState::Current()->ScheduleMicrotask(closure);
 }
 
@@ -279,8 +292,12 @@ static std::string GetFunctionName(Dart_Handle func) {
   return DartConverter<std::string>::FromDart(result);
 }
 
-void GetCallbackHandle(Dart_NativeArguments args) {
+void _GetCallbackHandle(Dart_NativeArguments args) {
   Dart_Handle func = Dart_GetNativeArgument(args, 0);
+  Dart_SetReturnValue(args, DartRuntimeHooks::GetCallbackHandle(func));
+}
+
+Dart_Handle DartRuntimeHooks::GetCallbackHandle(Dart_Handle func) {
   std::string name = GetFunctionName(func);
   std::string class_name = GetFunctionClassName(func);
   std::string library_path = GetFunctionLibraryUrl(func);
@@ -290,18 +307,20 @@ void GetCallbackHandle(Dart_NativeArguments args) {
   // closures (e.g. `(int a, int b) => a + b;`) also cannot be used as
   // callbacks, so `func` must be a tear-off of a named static function.
   if (!Dart_IsTearOff(func) || name.empty()) {
-    Dart_SetReturnValue(args, Dart_Null());
-    return;
+    return Dart_Null();
   }
-  Dart_SetReturnValue(
-      args, DartConverter<int64_t>::ToDart(DartCallbackCache::GetCallbackHandle(
-                name, class_name, library_path)));
+  return DartConverter<int64_t>::ToDart(
+      DartCallbackCache::GetCallbackHandle(name, class_name, library_path));
 }
 
-void GetCallbackFromHandle(Dart_NativeArguments args) {
+void _GetCallbackFromHandle(Dart_NativeArguments args) {
   Dart_Handle h = Dart_GetNativeArgument(args, 0);
-  int64_t handle = DartConverter<int64_t>::FromDart(h);
-  Dart_SetReturnValue(args, DartCallbackCache::GetCallback(handle));
+  Dart_SetReturnValue(args, DartRuntimeHooks::GetCallbackFromHandle(
+                                DartConverter<int64_t>::FromDart(h)));
+}
+
+Dart_Handle DartRuntimeHooks::GetCallbackFromHandle(int64_t handle) {
+  return DartCallbackCache::GetCallback(handle);
 }
 
 }  // namespace flutter

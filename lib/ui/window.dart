@@ -253,8 +253,11 @@ abstract class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene, this);
-  void _render(Scene scene, FlutterView view) native 'PlatformConfiguration_render';
+  void render(Scene scene) => _render(scene);
+
+  @FfiNative<Void Function(Pointer<Void>)>(
+      'PlatformConfiguration::RenderOrThrow')
+  external static void _render(Scene scene);
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a

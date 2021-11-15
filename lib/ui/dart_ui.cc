@@ -94,31 +94,48 @@ typedef CanvasGradient Gradient;
 typedef CanvasPath Path;
 
 // Functions.
-#define FFI_FUNCTION_LIST(V)                               \
-  /* Constructors */                                       \
-  V(Canvas::CreateOrThrow, 6)                              \
-  V(ColorFilter::CreateOrThrow, 1)                         \
-  V(FragmentProgram::CreateOrThrow, 1)                     \
-  V(Gradient::CreateOrThrow, 1)                            \
-  V(ImageFilter::CreateOrThrow, 1)                         \
-  V(ImageShader::CreateOrThrow, 1)                         \
-  V(ParagraphBuilder::CreateOrThrow, 9)                    \
-  V(PathMeasure::CreateOrThrow, 3)                         \
-  V(Path::CreateOrThrow, 1)                                \
-  V(PictureRecorder::CreateOrThrow, 1)                     \
-  V(SceneBuilder::CreateOrThrow, 1)                        \
-  V(SemanticsUpdateBuilder::CreateOrThrow, 1)              \
-  /* Other */                                              \
-  V(ImageDescriptor::initEncodedHandle, 3)                 \
-  V(ImmutableBuffer::initHandle, 3)                        \
-  V(ImageDescriptor::initRaw, 6)                           \
-  V(IsolateNameServerNatives::LookupPortByName, 1)         \
-  V(IsolateNameServerNatives::RegisterPortWithName, 2)     \
-  V(IsolateNameServerNatives::RemovePortNameMapping, 1)    \
-  V(NativeStringAttribute::initLocaleStringAttribute, 4)   \
-  V(NativeStringAttribute::initSpellOutStringAttribute, 3) \
-  V(Vertices::init, 6)                                     \
-  V(FontCollection::LoadFontFromListOrThrowHandle, 3)
+#define FFI_FUNCTION_LIST(V)                                   \
+  /* Constructors */                                           \
+  V(Canvas::CreateOrThrow, 6)                                  \
+  V(ColorFilter::CreateOrThrow, 1)                             \
+  V(FragmentProgram::CreateOrThrow, 1)                         \
+  V(Gradient::CreateOrThrow, 1)                                \
+  V(ImageFilter::CreateOrThrow, 1)                             \
+  V(ImageShader::CreateOrThrow, 1)                             \
+  V(ParagraphBuilder::CreateOrThrow, 9)                        \
+  V(PathMeasure::CreateOrThrow, 3)                             \
+  V(Path::CreateOrThrow, 1)                                    \
+  V(PictureRecorder::CreateOrThrow, 1)                         \
+  V(SceneBuilder::CreateOrThrow, 1)                            \
+  V(SemanticsUpdateBuilder::CreateOrThrow, 1)                  \
+  /* Other */                                                  \
+  V(FontCollection::LoadFontFromListOrThrowHandle, 3)          \
+  V(ImageDescriptor::initEncodedHandle, 3)                     \
+  V(ImmutableBuffer::initHandle, 3)                            \
+  V(ImageDescriptor::initRaw, 6)                               \
+  V(IsolateNameServerNatives::LookupPortByName, 1)             \
+  V(IsolateNameServerNatives::RegisterPortWithName, 2)         \
+  V(IsolateNameServerNatives::RemovePortNameMapping, 1)        \
+  V(NativeStringAttribute::initLocaleStringAttribute, 4)       \
+  V(NativeStringAttribute::initSpellOutStringAttribute, 3)     \
+  V(PlatformConfiguration::RenderOrThrow, 1)                   \
+  V(PlatformConfiguration::ReportUnhandledExceptionOrThrow, 2) \
+  V(PlatformConfiguration::RespondToKeyData, 2)                \
+  V(PlatformConfiguration::SetNeedsReportTimingsOrThrow, 1)    \
+  V(PlatformConfiguration::SendPlatformMessage, 3)             \
+  V(PlatformConfiguration::RespondToPlatformMessage, 2)        \
+  V(PlatformConfiguration::SetIsolateDebugNameOrThrow, 1)      \
+  V(PlatformConfiguration::GetPersistentIsolateDataOrThrow, 0) \
+  V(PlatformConfiguration::ScheduleFrameOrThrow, 0)            \
+  V(PlatformConfiguration::UpdateSemanticsOrThrow, 1)          \
+  V(PlatformConfiguration::ComputePlatformResolvedLocale, 1)   \
+  V(PlatformConfiguration::DefaultRouteName, 0)                \
+  V(DartRuntimeHooks::Logger_PrintDebugString, 1)              \
+  V(DartRuntimeHooks::Logger_PrintString, 1)                   \
+  V(DartRuntimeHooks::ScheduleMicrotask, 1)                    \
+  V(DartRuntimeHooks::GetCallbackHandle, 1)                    \
+  V(DartRuntimeHooks::GetCallbackFromHandle, 1)                \
+  V(Vertices::init, 6)
 
 // Instance methods.
 #define FFI_METHOD_LIST(V)                             \

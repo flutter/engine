@@ -21,7 +21,7 @@
 namespace flutter {
 namespace {
 
-void DefaultRouteName(Dart_NativeArguments args) {
+void _DefaultRouteName(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
   std::string routeName = UIDartState::Current()
                               ->platform_configuration()
@@ -105,62 +105,12 @@ void ReportUnhandledException(Dart_NativeArguments args) {
                                                    std::move(stack_trace));
 }
 
-Dart_Handle SendPlatformMessage(Dart_Handle window,
-                                const std::string& name,
-                                Dart_Handle callback,
-                                Dart_Handle data_handle) {
-  UIDartState* dart_state = UIDartState::Current();
-
-  if (!dart_state->platform_configuration()) {
-    return tonic::ToDart(
-        "Platform messages can only be sent from the main isolate");
-  }
-
-  fml::RefPtr<PlatformMessageResponse> response;
-  if (!Dart_IsNull(callback)) {
-    response = fml::MakeRefCounted<PlatformMessageResponseDart>(
-        tonic::DartPersistentValue(dart_state, callback),
-        dart_state->GetTaskRunners().GetUITaskRunner());
-  }
-  if (Dart_IsNull(data_handle)) {
-    dart_state->platform_configuration()->client()->HandlePlatformMessage(
-        std::make_unique<PlatformMessage>(name, response));
-  } else {
-    tonic::DartByteData data(data_handle);
-    const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
-    dart_state->platform_configuration()->client()->HandlePlatformMessage(
-        std::make_unique<PlatformMessage>(
-            name, fml::MallocMapping::Copy(buffer, data.length_in_bytes()),
-            response));
-  }
-
-  return Dart_Null();
-}
-
 void _SendPlatformMessage(Dart_NativeArguments args) {
-  tonic::DartCallStatic(&SendPlatformMessage, args);
-}
-
-void RespondToPlatformMessage(Dart_Handle window,
-                              int response_id,
-                              const tonic::DartByteData& data) {
-  if (Dart_IsNull(data.dart_handle())) {
-    UIDartState::Current()
-        ->platform_configuration()
-        ->CompletePlatformMessageEmptyResponse(response_id);
-  } else {
-    // TODO(engine): Avoid this copy.
-    const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
-    UIDartState::Current()
-        ->platform_configuration()
-        ->CompletePlatformMessageResponse(
-            response_id,
-            std::vector<uint8_t>(buffer, buffer + data.length_in_bytes()));
-  }
+  tonic::DartCallStatic(&PlatformConfiguration::SendPlatformMessage, args);
 }
 
 void _RespondToPlatformMessage(Dart_NativeArguments args) {
-  tonic::DartCallStatic(&RespondToPlatformMessage, args);
+  tonic::DartCallStatic(&PlatformConfiguration::RespondToPlatformMessage, args);
 }
 
 void GetPersistentIsolateData(Dart_NativeArguments args) {
@@ -181,13 +131,8 @@ void GetPersistentIsolateData(Dart_NativeArguments args) {
                                         persistent_isolate_data->GetSize()));
 }
 
-void RespondToKeyData(Dart_Handle window, int response_id, bool handled) {
-  UIDartState::Current()->platform_configuration()->CompleteKeyDataResponse(
-      response_id, handled);
-}
-
 void _RespondToKeyData(Dart_NativeArguments args) {
-  tonic::DartCallStatic(&RespondToKeyData, args);
+  tonic::DartCallStatic(&PlatformConfiguration::RespondToKeyData, args);
 }
 
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
@@ -465,31 +410,17 @@ void PlatformConfiguration::CompleteKeyDataResponse(uint64_t response_id,
       [handled, callback]() { callback(handled); });
 }
 
-Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
-  std::vector<std::string> supportedLocales =
-      tonic::DartConverter<std::vector<std::string>>::FromDart(
-          supportedLocalesHandle);
-
-  std::vector<std::string> results =
-      *UIDartState::Current()
-           ->platform_configuration()
-           ->client()
-           ->ComputePlatformResolvedLocale(supportedLocales);
-
-  return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
-}
-
 static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  Dart_Handle result =
-      ComputePlatformResolvedLocale(Dart_GetNativeArgument(args, 1));
+  Dart_Handle result = PlatformConfiguration::ComputePlatformResolvedLocale(
+      Dart_GetNativeArgument(args, 1));
   Dart_SetReturnValue(args, result);
 }
 
 void PlatformConfiguration::RegisterNatives(
     tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"PlatformConfiguration_defaultRouteName", DefaultRouteName, 1, true},
+      {"PlatformConfiguration_defaultRouteName", _DefaultRouteName, 1, true},
       {"PlatformConfiguration_scheduleFrame", ScheduleFrame, 1, true},
       {"PlatformConfiguration_sendPlatformMessage", _SendPlatformMessage, 4,
        true},
@@ -509,6 +440,137 @@ void PlatformConfiguration::RegisterNatives(
       {"PlatformConfiguration_computePlatformResolvedLocale",
        _ComputePlatformResolvedLocale, 2, true},
   });
+}
+
+void PlatformConfiguration::RenderOrThrow(Scene* scene) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()->platform_configuration()->client()->Render(scene);
+}
+
+void PlatformConfiguration::ReportUnhandledExceptionOrThrow(
+    std::string error_name,
+    std::string stack_trace) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()->ReportUnhandledException(std::move(error_name),
+                                                   std::move(stack_trace));
+}
+
+void PlatformConfiguration::RespondToKeyData(int response_id, bool handled) {
+  UIDartState::Current()->platform_configuration()->CompleteKeyDataResponse(
+      response_id, handled);
+}
+
+void PlatformConfiguration::SetNeedsReportTimingsOrThrow(bool value) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->SetNeedsReportTimings(value);
+}
+
+Dart_Handle PlatformConfiguration::SendPlatformMessage(
+    const std::string& name,
+    Dart_Handle callback,
+    Dart_Handle data_handle) {
+  UIDartState* dart_state = UIDartState::Current();
+
+  if (!dart_state->platform_configuration()) {
+    return tonic::ToDart(
+        "Platform messages can only be sent from the main isolate");
+  }
+
+  fml::RefPtr<PlatformMessageResponse> response;
+  if (!Dart_IsNull(callback)) {
+    response = fml::MakeRefCounted<PlatformMessageResponseDart>(
+        tonic::DartPersistentValue(dart_state, callback),
+        dart_state->GetTaskRunners().GetUITaskRunner());
+  }
+  if (Dart_IsNull(data_handle)) {
+    dart_state->platform_configuration()->client()->HandlePlatformMessage(
+        std::make_unique<PlatformMessage>(name, response));
+  } else {
+    tonic::DartByteData data(data_handle);
+    const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
+    dart_state->platform_configuration()->client()->HandlePlatformMessage(
+        std::make_unique<PlatformMessage>(
+            name, fml::MallocMapping::Copy(buffer, data.length_in_bytes()),
+            response));
+  }
+
+  return Dart_Null();
+}
+
+void PlatformConfiguration::RespondToPlatformMessage(
+    int response_id,
+    const tonic::DartByteData& data) {
+  if (Dart_IsNull(data.dart_handle())) {
+    UIDartState::Current()
+        ->platform_configuration()
+        ->CompletePlatformMessageEmptyResponse(response_id);
+  } else {
+    // TODO(engine): Avoid this copy.
+    const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
+    UIDartState::Current()
+        ->platform_configuration()
+        ->CompletePlatformMessageResponse(
+            response_id,
+            std::vector<uint8_t>(buffer, buffer + data.length_in_bytes()));
+  }
+}
+
+void PlatformConfiguration::SetIsolateDebugNameOrThrow(const std::string name) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()->SetDebugName(name);
+}
+
+Dart_Handle PlatformConfiguration::GetPersistentIsolateDataOrThrow() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+
+  auto persistent_isolate_data = UIDartState::Current()
+                                     ->platform_configuration()
+                                     ->client()
+                                     ->GetPersistentIsolateData();
+
+  if (!persistent_isolate_data) {
+    return Dart_Null();
+  }
+
+  return tonic::DartByteData::Create(persistent_isolate_data->GetMapping(),
+                                     persistent_isolate_data->GetSize());
+}
+
+void PlatformConfiguration::ScheduleFrameOrThrow() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
+}
+
+void PlatformConfiguration::UpdateSemanticsOrThrow(SemanticsUpdate* update) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()->platform_configuration()->client()->UpdateSemantics(
+      update);
+}
+
+Dart_Handle PlatformConfiguration::ComputePlatformResolvedLocale(
+    Dart_Handle supportedLocalesHandle) {
+  std::vector<std::string> supportedLocales =
+      tonic::DartConverter<std::vector<std::string>>::FromDart(
+          supportedLocalesHandle);
+
+  std::vector<std::string> results =
+      *UIDartState::Current()
+           ->platform_configuration()
+           ->client()
+           ->ComputePlatformResolvedLocale(supportedLocales);
+
+  return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
+}
+
+std::string PlatformConfiguration::DefaultRouteName() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  return UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->DefaultRouteName();
 }
 
 }  // namespace flutter
