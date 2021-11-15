@@ -320,13 +320,16 @@ public class FlutterEngineTest {
     when(mockContext.createPackageContext(any(), anyInt())).thenReturn(packageContext);
     when(flutterJNI.isAttached()).thenReturn(true);
 
+    // If the user does not provide FlutterJNI, we should use the existing one in FlutterInjector
+    // instead of creating new instances.
     FlutterEngine engineUnderTest =
         new FlutterEngine(
             mockContext,
             /* flutterLoader */ null,
-            /* flutterJNI */ flutterJNI,
+            /* flutterJNI */ null,
             /*dartVmArgs=*/ new String[] {},
             /*automaticallyRegisterPlugins=*/ false);
+
     assertEquals(engineUnderTest.getFlutterJNI(), flutterJNI);
   }
 }
