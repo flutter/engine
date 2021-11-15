@@ -14,7 +14,7 @@
 
 namespace flutter {
 
-static constexpr const int64_t kFrameRateMin = 0;
+static constexpr const int64_t kFrameRateMin = 30;
 static constexpr const int64_t kFrameRateMedium = 60;
 static constexpr const int64_t kFrameRateHigh = 120;
 
@@ -211,7 +211,6 @@ void DynamicFrameRateRangeProvider::Record(int64_t frame_duration) {
 }
 
 FrameRateRange DynamicFrameRateRangeProvider::Provide() {
-  int64_t min = 0;
   int64_t preferred = kFrameRateHigh;
   if (frame_durations_.size() == size_) {
     int64_t sum = 0;
@@ -224,6 +223,7 @@ FrameRateRange DynamicFrameRateRangeProvider::Provide() {
       preferred = kFrameRateMedium;
     }
   }
+  int64_t min = preferred/2;
   return FrameRateRange(min, preferred, preferred);
 }
 
