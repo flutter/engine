@@ -1345,12 +1345,62 @@ typedef void (*FlutterLogMessageCallback)(const char* /* tag */,
 /// FlutterEngine instance in AOT mode.
 typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
 
+/// An immutable buffer of potentially shared data. 
+typedef struct {
+  /// The size of the struct. Must be sizeof(FlutterEngineMapping).
+  size_t struct_size;
+
+  /// A pointer to the data accessed by the Flutter Engine. The data will not be
+  /// mutated by the Flutter Engine, and must not be mutated by the Embedder until
+  /// the mapping is destroyed.
+  const uint8_t* data;
+  /// The size of the data backed by this mapping. The data must be valid for
+  /// reading until this point. Bytes past the end are undefined and not accessed
+  /// by the Engine. 
+  size_t data_size;
+
+  /// An opaque baton passed back to the embedder when the destruction_callback is
+  /// invoked. The engine does not interpret this field in any way.
+  void* user_data;
+  /// Called once by the engine to destroy this mapping. The `user_data` specified
+  /// above is passed in as the only argument. This call may mutate/free/unmap the
+  /// data, as it will no longer be accessed by the Flutter Engine.
+  VoidCallback destruction_callback;
+} FlutterEngineMapping;
+
+/// Callback for fetching assets for a `FlutterEngineAssetResolver`.
+///
+/// This may be called by multiple threads.
+///
+/// The `asset_name` parameter contains the path to the asset to load.
+/// `user_data` is the user data from `FlutterEngineAssetResolver`, registered via
+/// `FlutterProjectArgs`.
+///
+/// If the asset was found and successfully loaded, return a valid
+/// `FlutterEngineMapping`. Otherwise return NULL to indicate an error occurred 
+/// while loading the asset.
+typedef FlutterEngineMapping* (*FlutterAssetResolverGetAssetCallback)(const char* /* asset_name */,
+                                                                      void* /* user_data */);
+
+/// Resolves assets on the behalf of the Flutter Engine, instead of accessing the
+/// filesystem directly.
+typedef struct {
+  /// The size of the struct. Must be sizeof(FlutterEngineAssetResolver).
+  size_t struct_size;
+
+  /// Required. Gets and returns an asset if available. See the documentation on
+  /// `FlutterAssetResolverGetAssetCallback` for more information.
+  FlutterAssetResolverGetAssetCallback get_asset;
+} FlutterEngineAssetResolver;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterProjectArgs).
   size_t struct_size;
   /// The path to the Flutter assets directory containing project assets. The
   /// string can be collected after the call to `FlutterEngineRun` returns. The
   /// string must be NULL terminated.
+  ///
+  /// If `asset_resolver` is provided, this path is ignored and may be NULL.
   const char* assets_path;
   /// The path to the Dart file containing the `main` entry point.
   /// The string can be collected after the call to `FlutterEngineRun` returns.
@@ -1589,6 +1639,11 @@ typedef struct {
   //
   // The first argument is the `user_data` from `FlutterEngineInitialize`.
   OnPreEngineRestartCallback on_pre_engine_restart_callback;
+
+  /// An asset resolver that fetches assets for the Engine.
+  ///
+  /// If provided, this replaces the default asset resolver.
+  const FlutterEngineAssetResolver* asset_resolver;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
