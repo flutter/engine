@@ -835,6 +835,8 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   }
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {
     if (!mask_sigma_valid(sigma)) {
+      // SkMastFilter::MakeBlur(invalid sigma) returns a nullptr, so we
+      // reset the mask filter here rather than recording the invalid values.
       setMaskFilter(nullptr);
     } else if (current_mask_style_ != style || current_mask_sigma_ != sigma) {
       onSetMaskBlurFilter(style, sigma);
