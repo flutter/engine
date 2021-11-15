@@ -73,7 +73,7 @@ typedef struct MouseState {
  * Keyboard animation properties
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
-@property(nonatomic, strong) CADisplayLink* displayLink;
+@property(nonatomic, retain) CADisplayLink* displayLink;
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -242,8 +242,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #pragma mark - Common view controller initialization tasks
 
 - (void)performCommonViewControllerInitialization {
-  if (_initialized)
+  if (_initialized) {
     return;
+  }
 
   _initialized = YES;
 
@@ -671,21 +672,24 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)addInternalPlugins {
-  [self.keyboardManager release];
-  self.keyboardManager = [[FlutterKeyboardManager alloc] init];
+  self.keyboardManager = [[[FlutterKeyboardManager alloc] init] autorelease];
+  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
-        [_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
       };
   [self.keyboardManager
       addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc] initWithSendEvent:sendEvent]];
-  [self.keyboardManager addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
-                                                initWithChannel:self.engine.keyEventChannel]];
-  [self.keyboardManager addSecondaryResponder:self.engine.textInputPlugin];
+  FlutterChannelKeyResponder* responder = [[[FlutterChannelKeyResponder alloc]
+      initWithChannel:self.engine.keyEventChannel] autorelease];
+  [self.keyboardManager addPrimaryResponder:responder];
+  FlutterTextInputPlugin* textInputPlugin = self.engine.textInputPlugin;
+  if (textInputPlugin != nil) {
+    [self.keyboardManager addSecondaryResponder:textInputPlugin];
+  }
 }
 
 - (void)removeInternalPlugins {
-  [self.keyboardManager release];
   self.keyboardManager = nil;
 }
 
@@ -784,8 +788,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)dealloc {
+  // It will be destroyed and invalidate its weak pointers
+  // before any other members are destroyed.
+  _weakFactory.reset();
+
   [self removeInternalPlugins];
   [self deregisterNotifications];
+
+  [_displayLink release];
   [super dealloc];
 }
 
@@ -794,8 +804,9 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
   self.view.accessibilityElementsHidden = NO;
-  if (_viewportMetrics.physical_width)
+  if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
+  }
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
@@ -1415,8 +1426,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #else
   _isVoiceOverRunning = UIAccessibilityIsVoiceOverRunning();
   bool enabled = _isVoiceOverRunning || UIAccessibilityIsSwitchControlRunning();
-  if (enabled)
+  if (enabled) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kAccessibleNavigation);
+  }
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
@@ -1462,32 +1474,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // We compute the scale as relative difference from size L (large, the default size), where
   // L is assumed to have scale 1.0.
-  if ([category isEqualToString:UIContentSizeCategoryExtraSmall])
+  if ([category isEqualToString:UIContentSizeCategoryExtraSmall]) {
     return xs / l;
-  else if ([category isEqualToString:UIContentSizeCategorySmall])
+  } else if ([category isEqualToString:UIContentSizeCategorySmall]) {
     return s / l;
-  else if ([category isEqualToString:UIContentSizeCategoryMedium])
+  } else if ([category isEqualToString:UIContentSizeCategoryMedium]) {
     return m / l;
-  else if ([category isEqualToString:UIContentSizeCategoryLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryLarge]) {
     return 1.0;
-  else if ([category isEqualToString:UIContentSizeCategoryExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryExtraLarge]) {
     return xl / l;
-  else if ([category isEqualToString:UIContentSizeCategoryExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryExtraExtraLarge]) {
     return xxl / l;
-  else if ([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge]) {
     return xxxl / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityMedium])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityMedium]) {
     return ax1 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityLarge]) {
     return ax2 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraLarge]) {
     return ax3 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraLarge]) {
     return ax4 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraExtraLarge]) {
     return ax5 / l;
-  else
+  } else {
     return 1.0;
+  }
 }
 
 - (BOOL)isAlwaysUse24HourFormat {
@@ -1729,6 +1742,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
   [coder encodeDataObject:restorationData];
+  [super encodeRestorableStateWithCoder:coder];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {
