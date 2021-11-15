@@ -28,11 +28,11 @@ static BOOL performBoolSelector(id target, SEL selector) {
   return returnValue;
 }
 
-static int assertOneMessageAndGetSequenceNo(NSMutableDictionary* messages, NSString* message) {
-  NSMutableArray* matchingMessages = [messages objectForKey:message];
+static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, NSString* message) {
+  NSMutableArray<NSNumber*>* matchingMessages = messages[message];
   XCTAssertNotNil(matchingMessages, @"Did not receive \"%@\" message", message);
-  XCTAssertEqual([matchingMessages count], 1, @"More than one \"%@\" message", message);
-  return [[matchingMessages firstObject] intValue];
+  XCTAssertEqual(matchingMessages.count, 1, @"More than one \"%@\" message", message);
+  return matchingMessages.firstObject.intValue;
 }
 
 // TODO(85810): Remove reflection in this test when Xcode version is upgraded to 13.
@@ -52,11 +52,7 @@ static int assertOneMessageAndGetSequenceNo(NSMutableDictionary* messages, NSStr
   [app launch];
 
   NSPredicate* predicateToFindFlutterView =
-      [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
-                                            NSDictionary<NSString*, id>* _Nullable bindings) {
-        XCUIElement* element = evaluatedObject;
-        return [element.identifier hasPrefix:@"flutter_view"];
-      }];
+      [NSPredicate predicateWithFormat:@"identifier BEGINSWITH 'flutter_view'"];
   XCUIElement* flutterView = [[app descendantsMatchingType:XCUIElementTypeAny]
       elementMatchingPredicate:predicateToFindFlutterView];
   if (![flutterView waitForExistenceWithTimeout:kSecondsToWaitForFlutterView]) {
@@ -87,54 +83,64 @@ static int assertOneMessageAndGetSequenceNo(NSMutableDictionary* messages, NSStr
   XCTAssertTrue(
       [app.textFields[@"3,PointerChange.add,device=1,buttons=0"] waitForExistenceWithTimeout:1],
       @"PointerChange.add event did not occur for a right-click's hover pointer");
-  [NSThread sleepForTimeInterval:5.0];  // The hover pointer is removed after ~3.5 seconds, this
-                                        // ensures all events have been received
+
+  // The hover pointer is removed after ~3.5 seconds, this ensures that all events are received
+  XCTestExpectation* sleepExpectation = [self expectationWithDescription:@"never fires"];
+  sleepExpectation.inverted = true;
+  [self waitForExpectations:@[ sleepExpectation ] timeout:5.0];
+
   // The hover events are interspersed with the right-click events in a varying order
   // Ensure the individual orderings are respected without hardcoding the absolute sequence
-  NSMutableDictionary* messages = [NSMutableDictionary dictionary];
+  NSMutableDictionary<NSString*, NSMutableArray<NSNumber*>*>* messages =
+      [[NSMutableDictionary alloc] init];
   for (XCUIElement* element in [app.textFields allElementsBoundByIndex]) {
     NSString* rawMessage = element.value;
+    // Parse out the sequence number
     NSUInteger commaIndex = [rawMessage rangeOfString:@","].location;
-    NSInteger messageSequenceNo =
-        [[rawMessage substringWithRange:NSMakeRange(0, commaIndex)] integerValue];
+    NSInteger messageSequenceNumber =
+        [rawMessage substringWithRange:NSMakeRange(0, commaIndex)].integerValue;
+    // Parse out the rest of the message
     NSString* message = [rawMessage
-        substringWithRange:NSMakeRange(commaIndex + 1, [rawMessage length] - (commaIndex + 1))];
-    NSMutableArray* messageSequenceNoList = [messages objectForKey:message];
-    if (messageSequenceNoList == nil) {
-      messageSequenceNoList = [[NSMutableArray alloc] init];
-      [messages setObject:messageSequenceNoList forKey:message];
+        substringWithRange:NSMakeRange(commaIndex + 1, rawMessage.length - (commaIndex + 1))];
+    NSMutableArray<NSNumber*>* messageSequenceNumberList = messages[message];
+    if (messageSequenceNumberList == nil) {
+      messageSequenceNumberList = [[NSMutableArray alloc] init];
+      messages[message] = messageSequenceNumberList;
     }
-    [messageSequenceNoList addObject:[NSNumber numberWithInteger:messageSequenceNo]];
+    [messageSequenceNumberList addObject:@(messageSequenceNumber)];
   }
-  // The number of hover events is not consistent
-  NSMutableArray* hoverSeqNos = [messages objectForKey:@"PointerChange.hover,device=1,buttons=0"];
-  int hoverRemovedSeqNo =
-      assertOneMessageAndGetSequenceNo(messages, @"PointerChange.remove,device=1,buttons=0");
+  // The number of hover events is not consistent, there could be one or many
+  NSMutableArray<NSNumber*>* hoverSequenceNumbers =
+      messages[@"PointerChange.hover,device=1,buttons=0"];
+  int hoverRemovedSequenceNumber =
+      assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.remove,device=1,buttons=0");
   // Right click should have buttons = 2
-  int rightClickAddedSeqNo, rightClickDownSeqNo, rightClickUpSeqNo;
-  if ([messages objectForKey:@"PointerChange.add,device=2,buttons=0"] == nil) {
+  int rightClickAddedSequenceNumber;
+  int rightClickDownSequenceNumber;
+  int rightClickUpSequenceNumber;
+  if (messages[@"PointerChange.add,device=2,buttons=0"] == nil) {
     // Sometimes the tap pointer has the same device as the right-click (the UITouch is reused)
-    rightClickAddedSeqNo = 0;
-    rightClickDownSeqNo =
-        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.down,device=0,buttons=2");
-    rightClickUpSeqNo =
-        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.up,device=0,buttons=2");
+    rightClickAddedSequenceNumber = 0;
+    rightClickDownSequenceNumber =
+        assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.down,device=0,buttons=2");
+    rightClickUpSequenceNumber =
+        assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.up,device=0,buttons=2");
   } else {
-    rightClickAddedSeqNo =
-        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.add,device=2,buttons=0");
-    rightClickDownSeqNo =
-        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.down,device=2,buttons=2");
-    rightClickUpSeqNo =
-        assertOneMessageAndGetSequenceNo(messages, @"PointerChange.up,device=2,buttons=2");
+    rightClickAddedSequenceNumber =
+        assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.add,device=2,buttons=0");
+    rightClickDownSequenceNumber =
+        assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.down,device=2,buttons=2");
+    rightClickUpSequenceNumber =
+        assertOneMessageAndGetSequenceNumber(messages, @"PointerChange.up,device=2,buttons=2");
   }
-  XCTAssertGreaterThan(rightClickDownSeqNo, rightClickAddedSeqNo,
-                       @"Right-click pointer was down before add");
-  XCTAssertGreaterThan(rightClickUpSeqNo, rightClickDownSeqNo,
-                       @"Right-click pointer was up before down");
-  XCTAssertGreaterThan([[hoverSeqNos firstObject] intValue], 3,
-                       @"Right-click pointer caused hover before hover pointer add");
-  XCTAssertGreaterThan(hoverRemovedSeqNo, [[hoverSeqNos lastObject] intValue],
-                       @"Right-click pointer's hover pointer had hover event after it was removed");
+  XCTAssertGreaterThan(rightClickDownSequenceNumber, rightClickAddedSequenceNumber,
+                       @"Right-click pointer was pressed before it was added");
+  XCTAssertGreaterThan(rightClickUpSequenceNumber, rightClickDownSequenceNumber,
+                       @"Right-click pointer was released before it was pressed");
+  XCTAssertGreaterThan([[hoverSequenceNumbers firstObject] intValue], 3,
+                       @"Hover occured before hover pointer was added");
+  XCTAssertGreaterThan(hoverRemovedSequenceNumber, [[hoverSequenceNumbers lastObject] intValue],
+                       @"Hover occured after hover pointer was removed");
 }
 
 - (void)testPointerHover {
@@ -150,11 +156,7 @@ static int assertOneMessageAndGetSequenceNo(NSMutableDictionary* messages, NSStr
   [app launch];
 
   NSPredicate* predicateToFindFlutterView =
-      [NSPredicate predicateWithBlock:^BOOL(id _Nullable evaluatedObject,
-                                            NSDictionary<NSString*, id>* _Nullable bindings) {
-        XCUIElement* element = evaluatedObject;
-        return [element.identifier hasPrefix:@"flutter_view"];
-      }];
+      [NSPredicate predicateWithFormat:@"identifier BEGINSWITH 'flutter_view'"];
   XCUIElement* flutterView = [[app descendantsMatchingType:XCUIElementTypeAny]
       elementMatchingPredicate:predicateToFindFlutterView];
   if (![flutterView waitForExistenceWithTimeout:kSecondsToWaitForFlutterView]) {
@@ -176,7 +178,7 @@ static int assertOneMessageAndGetSequenceNo(NSMutableDictionary* messages, NSStr
       [app.textFields[@"1,PointerChange.hover,device=0,buttons=0"] waitForExistenceWithTimeout:1],
       @"PointerChange.hover event did not occur for a hover");
   // The number of hover events fired is not always the same
-  int i = 2;
+  NSUInteger i = 2;
   while (
       [app.textFields[[NSString stringWithFormat:@"%d,PointerChange.hover,device=0,buttons=0", i]]
           waitForExistenceWithTimeout:1]) {
