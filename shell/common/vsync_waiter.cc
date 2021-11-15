@@ -223,7 +223,7 @@ FrameRateRange DynamicFrameRateRangeProvider::Provide() {
       preferred = kFrameRateMedium;
     }
   }
-  int64_t min = preferred/2;
+  int64_t min = preferred / 2;
   return FrameRateRange(min, preferred, preferred);
 }
 
