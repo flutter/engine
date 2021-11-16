@@ -543,19 +543,19 @@ typedef struct {
 } FlutterMetalRendererConfig;
 
 /// Alias for VkInstance.
-typedef const uint64_t* FlutterVulkanInstanceHandle;
+typedef void* FlutterVulkanInstanceHandle;
 
 /// Alias for VkPhysicalDevice.
-typedef const uint64_t* FlutterVulkanPhysicalDeviceHandle;
+typedef void* FlutterVulkanPhysicalDeviceHandle;
 
 /// Alias for VkDevice.
-typedef const uint64_t* FlutterVulkanDeviceHandle;
+typedef void* FlutterVulkanDeviceHandle;
 
 /// Alias for VkQueue.
-typedef const uint64_t* FlutterVulkanQueueHandle;
+typedef void* FlutterVulkanQueueHandle;
 
 /// Alias for VkImage.
-typedef const uint64_t* FlutterVulkanImageHandle;
+typedef void* FlutterVulkanImageHandle;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanImage).
@@ -567,8 +567,8 @@ typedef struct {
   /// back to the embedder in the destruction callback below. Embedder resources
   /// may be associated with this baton.
   void* user_data;
-  /// The callback invoked by the engine when it no longer needs this backing
-  /// store.
+  /// Only called when releasing custom compositor backing stores. The callback
+  /// invoked by the engine when it no longer needs this backing store.
   VoidCallback destruction_callback;
 } FlutterVulkanImage;
 

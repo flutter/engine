@@ -18,7 +18,6 @@
 
 namespace flutter {
 
-
 //------------------------------------------------------------------------------
 /// @brief  A GPU surface backed by VkImages provided by a
 ///         GPUSurfaceVulkanDelegate.
@@ -29,8 +28,9 @@ class GPUSurfaceVulkan : public Surface {
   /// @brief      Create a GPUSurfaceVulkan while letting it reuse an existing
   ///             GrDirectContext.
   ///
-  GPUSurfaceVulkan(const sk_sp<GrDirectContext>& context,
-                   GPUSurfaceVulkanDelegate* delegate);
+  GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
+                   const sk_sp<GrDirectContext>& context,
+                   bool render_to_surface);
 
   ~GPUSurfaceVulkan() override;
 
@@ -52,11 +52,12 @@ class GPUSurfaceVulkan : public Surface {
   GrDirectContext* GetContext() override;
 
  private:
-  sk_sp<GrDirectContext> skia_context_;
   GPUSurfaceVulkanDelegate* delegate_;
+  sk_sp<GrDirectContext> skia_context_;
+  bool render_to_surface_;
 
-  std::vector<std::unique_ptr<VulkanBackbuffer>> backbuffers_;
-  std::vector<sk_sp<SkSurface>> surfaces_;
+  std::unique_ptr<vulkan::VulkanBackbuffer> backbuffer_;
+  sk_sp<SkSurface> surface_;
   size_t current_backbuffer_index_;
 
   fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;

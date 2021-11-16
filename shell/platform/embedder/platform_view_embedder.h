@@ -23,7 +23,7 @@
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #endif
 
-#ifdef SHELL_ENABLE_METAL
+#ifdef SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #endif
 

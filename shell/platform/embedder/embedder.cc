@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "shell/platform/embedder/embedder_surface_vulkan.h"
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -401,11 +403,51 @@ InferVulkanPlatformViewCreationCallback(
   }
 
 #ifdef SHELL_ENABLE_VULKAN
+  std::function<void*(VkInstance, const char*)>
+      vulkan_get_instance_proc_address =
+          [ptr = config->vulkan.get_instance_proc_address_callback, user_data](
+              VkInstance instance, const char* proc_name) -> void* {
+    ptr(user_data, instance, proc_name);
+  };
+
+  auto vulkan_get_next_image =
+      [ptr = config->vulkan.get_next_image_callback,
+       user_data](const SkISize& frame_size) -> VkImage {
+    FlutterFrameInfo frame_info = {
+        .struct_size = sizeof(FlutterFrameInfo),
+        .size = {static_cast<uint32_t>(frame_size.width()),
+                 static_cast<uint32_t>(frame_size.height())},
+    };
+
+    FlutterVulkanImage vulkan_image = ptr(user_data, &frame_info);
+    return static_cast<VkImage>(vulkan_image.image);
+  };
+
+  auto vulkan_present_image_callback =
+      [ptr = config->vulkan.present_image_callback,
+       user_data](VkImage image) -> bool {
+    FlutterVulkanImage image_desc = {
+        .struct_size = sizeof(FlutterVulkanImage),
+        .image = image,
+        .user_data = user_data,
+    };
+    return ptr(user_data, &image_desc);
+  };
+
+  flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
+      .get_instance_proc_address = vulkan_get_instance_proc_address,
+      .get_next_image = vulkan_get_next_image,
+      .present_image = vulkan_present_image_callback,
+  };
+
   std::shared_ptr<flutter::EmbedderExternalViewEmbedder> view_embedder =
       std::move(external_view_embedder);
 
   std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
-      std::make_unique<flutter::EmbedderSurfaceVulkan>(view_embedder);
+      std::make_unique<flutter::EmbedderSurfaceVulkan>(
+          config->vulkan.device, config->vulkan.physical_device,
+          config->vulkan.instance, config->vulkan.queue_family_index,
+          config->vulkan.queue, vulkan_dispatch_table, view_embedder);
 
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
@@ -671,7 +713,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterVulkanBackingStore* vulkan) {
-  assert(false); // TODO(bdero)
+  assert(false);  // TODO(bdero)
   return nullptr;
 }
 

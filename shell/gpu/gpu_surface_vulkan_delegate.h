@@ -31,7 +31,7 @@ class GPUSurfaceVulkanDelegate {
 
   /// @brief  Obtain a reference to the Vulkan implementation's proc table.
   ///
-  virtual fml::RefPtr<vulkan::VulkanProcTable> vk() = 0;
+  virtual const vulkan::VulkanProcTable& vk() = 0;
 
   /// @brief  Called by the engine to fetch a VkImage for writing the next
   ///         frame.

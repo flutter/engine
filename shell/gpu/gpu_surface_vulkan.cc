@@ -8,14 +8,18 @@
 
 namespace flutter {
 
-GPUSurfaceVulkan::GPUSurfaceVulkan(const sk_sp<GrDirectContext>& skia_context,
-                                   GPUSurfaceVulkanDelegate* delegate)
-    : skia_context_(skia_context), delegate_(delegate), weak_factory_(this) {}
+GPUSurfaceVulkan::GPUSurfaceVulkan(GPUSurfaceVulkanDelegate* delegate,
+                                   const sk_sp<GrDirectContext>& skia_context,
+                                   bool render_to_surface)
+    : delegate_(delegate),
+      skia_context_(skia_context),
+      render_to_surface_(render_to_surface),
+      weak_factory_(this) {}
 
 GPUSurfaceVulkan::~GPUSurfaceVulkan() = default;
 
 bool GPUSurfaceVulkan::IsValid() {
-  return image_ != nullptr;
+  return skia_context_ != nullptr;
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
@@ -64,12 +68,10 @@ SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {
 }
 
 GrDirectContext* GPUSurfaceVulkan::GetContext() {
-  return skia_context_;
+  return skia_context_.get();
 }
 
 sk_sp<SkSurface> GPUSurfaceVulkan::AcquireSurfaceFromVulkanImage(
-    VkImage image) {
-
-}
+    VkImage image) {}
 
 }  // namespace flutter
