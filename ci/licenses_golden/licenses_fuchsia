@@ -1,4 +1,4 @@
-Signature: 66d8e24962e8dfe17282e63a5ca7f784
+Signature: 4627cc80698af10e6bb428f9593b8f1b
 
 UNUSED LICENSES:
 
@@ -65,7 +65,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/shm.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/signal.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/socket.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/stat.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/statfs.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/termios.h
@@ -270,7 +269,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/shm.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/signal.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/socket.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/stat.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/statfs.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/termios.h
@@ -808,7 +806,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/shm.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/signal.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/socket.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/stat.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/statfs.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/termios.h
@@ -1013,7 +1010,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/shm.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/signal.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/socket.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/stat.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/statfs.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/termios.h
@@ -1448,7 +1444,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/shm.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/signal.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/socket.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/stat.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/statfs.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/termios.h
@@ -1653,7 +1648,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/shm.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/signal.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/socket.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/stat.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/statfs.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/termios.h
@@ -2265,6 +2259,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.test/realm_builder.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/binder.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/realm.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/component.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/log_settings.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/realm.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_provider_controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/codec_connect.fidl

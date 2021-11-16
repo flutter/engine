@@ -110,9 +110,6 @@ FILE: ../../../flutter/flow/layers/texture_layer_unittests.cc
 FILE: ../../../flutter/flow/layers/transform_layer.cc
 FILE: ../../../flutter/flow/layers/transform_layer.h
 FILE: ../../../flutter/flow/layers/transform_layer_unittests.cc
-FILE: ../../../flutter/flow/matrix_decomposition.cc
-FILE: ../../../flutter/flow/matrix_decomposition.h
-FILE: ../../../flutter/flow/matrix_decomposition_unittests.cc
 FILE: ../../../flutter/flow/mutators_stack_unittests.cc
 FILE: ../../../flutter/flow/paint_region.cc
 FILE: ../../../flutter/flow/paint_region.h
@@ -1099,6 +1096,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKeyEvents.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKeyEvents.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterHeadlessDartRunner.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyPrimaryResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h
@@ -1135,6 +1133,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewControllerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterViewTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/IOKit.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/KeyCodeMap.mm
