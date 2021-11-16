@@ -216,16 +216,20 @@ public class FlutterJNI {
     return observatoryUri;
   }
 
+  /**
+   * Notifies the engine about the refresh rate of the display when the API level is below 30.
+   *
+   * <p>For API 30 and above, this value is ignored.
+   *
+   * <p>Calling this method multiple times will update the refresh rate for the next vsync period.
+   * However, callers should avoid calling {@link android.view.Display#getRefreshRate} frequently,
+   * since it is expensive on some vendor implementations.
+   *
+   * @param refreshRateFPS The refresh rate in nanoseconds.
+   */
   public static void setRefreshRateFPS(float refreshRateFPS) {
-    if (FlutterJNI.setRefreshRateFPSCalled) {
-      Log.w(TAG, "FlutterJNI.setRefreshRateFPS called more than once");
-    }
-
     FlutterJNI.refreshRateFPS = refreshRateFPS;
-    FlutterJNI.setRefreshRateFPSCalled = true;
   }
-
-  private static boolean setRefreshRateFPSCalled = false;
 
   // TODO(mattcarroll): add javadocs
   public static void setAsyncWaitForVsyncDelegate(@Nullable AsyncWaitForVsyncDelegate delegate) {
@@ -243,9 +247,20 @@ public class FlutterJNI {
     }
   }
 
-  // TODO(mattcarroll): add javadocs
+  /**
+   * Notifies the engine that the Choreographer has signaled a vsync.
+   *
+   * @param frameDelayNanos The time in nanoseconds when the frame started being rendered,
+   *     subtracted from the {@link System#nanoTime} timebase.
+   * @param fallbackRefreshPeriodNanos The display refresh period in nanoseconds. On API30 and
+   *     above, this parameter will be ignored. For other API levels, a best estimate must be
+   *     provided, e.g. the refresh rate at initialization of the application. Callers should avoid
+   *     calling {@link android.view.Display#getRefreshRate} frequently, since it is expensive on
+   *     some vendor implementations.
+   * @param cookie An opaque handle to the C++ VSyncWaiter object.
+   */
   public static native void nativeOnVsync(
-      long frameDelayNanos, long refreshPeriodNanos, long cookie);
+      long frameDelayNanos, long fallbackRefreshPeriodNanos, long cookie);
 
   // TODO(mattcarroll): add javadocs
   @NonNull
@@ -337,8 +352,7 @@ public class FlutterJNI {
    * #attachToNative()}.
    *
    * <p>Static methods that should be only called once such as {@link #init(Context, String[],
-   * String, String, String, long)} or {@link #setRefreshRateFPS(float)} shouldn't be called again
-   * on the spawned FlutterJNI instance.
+   * String, String, String, long)} shouldn't be called again on the spawned FlutterJNI instance.
    */
   @UiThread
   @NonNull

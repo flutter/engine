@@ -49,8 +49,6 @@ public class VsyncWaiter {
 
   public void init() {
     FlutterJNI.setAsyncWaitForVsyncDelegate(asyncWaitForVsyncDelegate);
-
-    // TODO(mattcarroll): look into moving FPS reporting to a plugin
     FlutterJNI.setRefreshRateFPS(fps);
   }
 }
