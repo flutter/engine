@@ -182,7 +182,9 @@ FrameRateRange::FrameRateRange(const int64_t min,
     : min_(min), preferred_(preferred), max_(max) {}
 
 FrameRateRange::FrameRateRange()
-    : min_(kFrameRateMin), preferred_(kFrameRateHigh), max_(kFrameRateHigh) {}
+    : min_(kFrameRateMin),
+      preferred_(kFrameRateMedium),
+      max_(kFrameRateMedium) {}
 
 int64_t FrameRateRange::GetMin() const {
   return min_;
