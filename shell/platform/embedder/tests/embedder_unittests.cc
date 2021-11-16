@@ -1522,7 +1522,7 @@ TEST_F(EmbedderTest, KeyDataAreBuffered) {
   // All previous events should be received now.
   EXPECT_EQ(echoed_events.size(), 1u);
 
-  // Send a third event.
+  // Send a second event.
   sample_event.timestamp = 10.0l;
   FlutterEngineSendKeyEvent(
       engine.get(), &sample_event, [](bool handled, void* user_data) {},
