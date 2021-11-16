@@ -69,6 +69,10 @@ class DynamicFrameRateRangeProvider {
   // Provides a |FrameRateRange| based on the recorded frame_durations.
   FrameRateRange Provide();
 
+  // Lose all memory about the recent frame performances, resets to inital
+  // state.
+  void Reset();
+
  private:
   std::vector<int64_t> frame_durations_;
   size_t size_;

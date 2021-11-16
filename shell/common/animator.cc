@@ -104,11 +104,7 @@ static fml::TimePoint FxlToDartOrEarlier(fml::TimePoint time) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  FrameRateRange new_frame_rate_range = dynamic_frr_provider_->Provide();
-  if (current_frame_rate_range_ != new_frame_rate_range) {
-    current_frame_rate_range_ = new_frame_rate_range;
-    waiter_->UpdateFrameRateRange(current_frame_rate_range_);
-  }
+  UpdateFrameRateRangeIfChanged();
 
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
@@ -164,6 +160,8 @@ void Animator::BeginFrame(
   }
 
   if (!frame_scheduled_ && has_rendered_) {
+    dynamic_frr_provider_->Reset();
+    UpdateFrameRateRangeIfChanged();
     // Under certain workloads (such as our parent view resizing us, which is
     // communicated to us by repeat viewport metrics events), we won't
     // actually have a frame scheduled yet, despite the fact that we *will* be
@@ -312,6 +310,14 @@ void Animator::ScheduleMaybeClearTraceFlowIds() {
           }
         }
       });
+}
+
+void Animator::UpdateFrameRateRangeIfChanged() {
+  FrameRateRange new_frame_rate_range = dynamic_frr_provider_->Provide();
+  if (current_frame_rate_range_ != new_frame_rate_range) {
+    current_frame_rate_range_ = new_frame_rate_range;
+    waiter_->UpdateFrameRateRange(current_frame_rate_range_);
+  }
 }
 
 }  // namespace flutter

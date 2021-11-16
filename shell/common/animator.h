@@ -109,6 +109,8 @@ class Animator final {
   // Clear |trace_flow_ids_| if |frame_scheduled_| is false.
   void ScheduleMaybeClearTraceFlowIds();
 
+  void UpdateFrameRateRangeIfChanged();
+
   Delegate& delegate_;
   TaskRunners task_runners_;
   std::shared_ptr<VsyncWaiter> waiter_;

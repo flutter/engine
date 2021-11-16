@@ -211,7 +211,7 @@ void DynamicFrameRateRangeProvider::Record(int64_t frame_duration) {
 }
 
 FrameRateRange DynamicFrameRateRangeProvider::Provide() {
-  int64_t preferred = kFrameRateHigh;
+  int64_t preferred = kFrameRateMedium;
   if (frame_durations_.size() == size_) {
     int64_t sum = 0;
     for (auto& duration : frame_durations_) {
@@ -219,12 +219,18 @@ FrameRateRange DynamicFrameRateRangeProvider::Provide() {
       sum += duration;
     }
     int64_t average = sum / size_;
-    if (average > 8) {
-      preferred = kFrameRateMedium;
+    if (average > 16) {
+      preferred = kFrameRateMin;
+    } else if (average < 8) {
+      preferred = kFrameRateHigh;
     }
   }
   int64_t min = preferred / 2;
   return FrameRateRange(min, preferred, preferred);
+}
+
+void DynamicFrameRateRangeProvider::Reset() {
+  frame_durations_.clear();
 }
 
 }  // namespace flutter
