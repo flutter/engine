@@ -1641,8 +1641,8 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
 
 // This test case occurs when the following two cases collide:
 //
-// 1. When holding shift, AltRight key gives logical GDK_KEY_Meta_R with the state
-//    bitmask still MOD3 (Alt).
+// 1. When holding shift, AltRight key gives logical GDK_KEY_Meta_R with the
+//    state bitmask still MOD3 (Alt).
 // 2. When holding AltRight, ShiftLeft key gives logical GDK_KEY_ISO_Next_Group
 //    with the state bitmask RESERVED_14.
 //
@@ -1674,8 +1674,7 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
 
   send_key_event(kPress, GDK_KEY_Shift_L, kKeyCodeShiftLeft, 0x2000000);
   EXPECT_EQ(g_call_records->len, 1u);
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    0));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 0));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(record->event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(record->event->logical, kLogicalShiftLeft);
@@ -1683,8 +1682,7 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
 
   send_key_event(kPress, GDK_KEY_Meta_R, kKeyCodeAltRight, 0x2000001);
   EXPECT_EQ(g_call_records->len, 2u);
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    1));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 1));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(record->event->physical, kPhysicalAltRight);
   EXPECT_EQ(record->event->logical, kLogicalMetaRight);
@@ -1693,32 +1691,27 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
   send_key_event(kRelease, GDK_KEY_ISO_Next_Group, kKeyCodeShiftLeft,
                  0x2000009);
   EXPECT_EQ(g_call_records->len, 5u);
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    2));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 2));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(record->event->physical, kPhysicalAltLeft);
   EXPECT_EQ(record->event->logical, kLogicalAltLeft);
   EXPECT_EQ(record->event->synthesized, true);
 
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    3));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 3));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(record->event->physical, kPhysicalAltRight);
   EXPECT_EQ(record->event->logical, kLogicalMetaRight);
   EXPECT_EQ(record->event->synthesized, true);
 
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    4));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 4));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(record->event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(record->event->logical, kLogicalShiftLeft);
   EXPECT_EQ(record->event->synthesized, false);
 
-  send_key_event(kPress, GDK_KEY_ISO_Next_Group, kKeyCodeShiftLeft,
-                 0x2000008);
+  send_key_event(kPress, GDK_KEY_ISO_Next_Group, kKeyCodeShiftLeft, 0x2000008);
   EXPECT_EQ(g_call_records->len, 6u);
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    5));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 5));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(record->event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(record->event->logical, kLogicalGroupNext);
@@ -1727,23 +1720,19 @@ TEST(FlKeyEmbedderResponderTest, HandlesShiftAltVersusGroupNext) {
   send_key_event(kRelease, GDK_KEY_ISO_Level3_Shift, kKeyCodeAltRight,
                  0x2002008);
   EXPECT_EQ(g_call_records->len, 7u);
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    6));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 6));
   EXPECT_EQ(record->event->physical, 0u);
   EXPECT_EQ(record->event->logical, 0u);
 
-  send_key_event(kRelease, GDK_KEY_Shift_L, kKeyCodeShiftLeft,
-                 0x2002000);
+  send_key_event(kRelease, GDK_KEY_Shift_L, kKeyCodeShiftLeft, 0x2002000);
   EXPECT_EQ(g_call_records->len, 9u);
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    7));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 7));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(record->event->physical, kPhysicalAltLeft);
   EXPECT_EQ(record->event->logical, kLogicalAltLeft);
   EXPECT_EQ(record->event->synthesized, true);
 
-  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records,
-    8));
+  record = FL_KEY_EMBEDDER_CALL_RECORD(g_ptr_array_index(g_call_records, 8));
   EXPECT_EQ(record->event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(record->event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(record->event->logical, kLogicalGroupNext);
