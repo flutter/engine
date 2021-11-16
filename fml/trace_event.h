@@ -47,7 +47,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA))
+#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA) && !defined(OS_ANDROID))
 #define FLUTTER_TIMELINE_ENABLED 0
 #else
 #define FLUTTER_TIMELINE_ENABLED 1
@@ -370,13 +370,13 @@ class TraceFlow {
     other.nonce_ = 0;
   }
 
-  void Step(const char* label) const {
-    TraceEventFlowStep0("flutter", label, nonce_);
+  void Step(const char* label = nullptr) const {
+    TraceEventFlowStep0("flutter", label ? label : label_, nonce_);
   }
 
   void End(const char* label = nullptr) {
     if (nonce_ != 0) {
-      TraceEventFlowEnd0("flutter", label == nullptr ? label_ : label, nonce_);
+      TraceEventFlowEnd0("flutter", label ? label : label_, nonce_);
       nonce_ = 0;
     }
   }

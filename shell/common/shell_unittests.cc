@@ -45,6 +45,10 @@
 
 namespace flutter {
 namespace testing {
+
+using ::testing::_;
+using ::testing::Return;
+
 namespace {
 class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD1(OnPlatformViewCreated, void(std::unique_ptr<Surface> surface));
@@ -119,6 +123,27 @@ class MockPlatformView : public PlatformView {
   MockPlatformView(MockPlatformViewDelegate& delegate, TaskRunners task_runners)
       : PlatformView(delegate, task_runners) {}
   MOCK_METHOD0(CreateRenderingSurface, std::unique_ptr<Surface>());
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     std::shared_ptr<PlatformMessageHandler>());
+};
+
+class MockPlatformMessageHandler : public PlatformMessageHandler {
+ public:
+  MOCK_METHOD1(HandlePlatformMessage,
+               void(std::unique_ptr<PlatformMessage> message));
+  MOCK_METHOD2(InvokePlatformMessageResponseCallback,
+               void(int response_id, std::unique_ptr<fml::Mapping> mapping));
+  MOCK_METHOD1(InvokePlatformMessageEmptyResponseCallback,
+               void(int response_id));
+};
+
+class MockPlatformMessageResponse : public PlatformMessageResponse {
+ public:
+  static fml::RefPtr<MockPlatformMessageResponse> Create() {
+    return fml::AdoptRef(new MockPlatformMessageResponse());
+  }
+  MOCK_METHOD1(Complete, void(std::unique_ptr<fml::Mapping> data));
+  MOCK_METHOD0(CompleteEmpty, void());
 };
 }  // namespace
 
@@ -439,12 +464,14 @@ TEST_F(ShellTest, LastEntrypoint) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
-TEST_F(ShellTest, DisallowedDartVMFlag) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_DisallowedDartVMFlag
+#else
+       DisallowedDartVMFlag
 #endif  // defined(WINUWP)
-
+) {
   // Run this test in a thread-safe manner, otherwise gtest will complain.
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
 
@@ -458,11 +485,14 @@ TEST_F(ShellTest, DisallowedDartVMFlag) {
   ASSERT_DEATH(flutter::SettingsFromCommandLine(command_line), expected);
 }
 
-TEST_F(ShellTest, AllowedDartVMFlag) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_AllowedDartVMFlag
+#else
+       AllowedDartVMFlag
 #endif  // defined(WINUWP)
+) {
   std::vector<const char*> flags = {
       "--enable-isolate-groups",
       "--no-enable-isolate-groups",
@@ -758,18 +788,15 @@ TEST_F(ShellTest,
   DestroyShell(std::move(shell));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(OS_FUCHSIA) || defined(WINUWP)
+       // TODO(dworsham): https://github.com/flutter/flutter/issues/59816
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
        DISABLED_OnPlatformViewDestroyDisablesThreadMerger
 #else
        OnPlatformViewDestroyDisablesThreadMerger
 #endif
 ) {
-#if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP. Not yet implemented";
-#endif  // defined(WINUWP)
   auto settings = CreateSettingsForFixture();
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger;
   auto end_frame_callback =
@@ -1349,12 +1376,14 @@ TEST_F(ShellTest, ReloadSystemFonts) {
   shell.reset();
 }
 
-TEST_F(ShellTest, WaitForFirstFrame) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires fix";
-#endif  // defined(WINUWP)
-
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_WaitForFirstFrame
+#else
+       WaitForFirstFrame
+#endif
+) {
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
 
@@ -1409,11 +1438,14 @@ TEST_F(ShellTest, WaitForFirstFrameTimeout) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, WaitForFirstFrameMultiple) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires threading fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_WaitForFirstFrameMultiple
+#else
+       WaitForFirstFrameMultiple
 #endif  // defined(WINUWP)
+) {
 
   auto settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -1438,11 +1470,14 @@ TEST_F(ShellTest, WaitForFirstFrameMultiple) {
 
 /// Makes sure that WaitForFirstFrame works if we rendered a frame with the
 /// single-thread setup.
-TEST_F(ShellTest, WaitForFirstFrameInlined) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires threading fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_WaitForFirstFrameInlined
+#else
+       WaitForFirstFrameInlined
 #endif  // defined(WINUWP)
+) {
 
   Settings settings = CreateSettingsForFixture();
   auto task_runner = CreateNewThread();
@@ -2029,12 +2064,14 @@ TEST_F(ShellTest, CanRegisterImageDecoders) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, OnServiceProtocolGetSkSLsWorks) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires vm service sandboxing fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_OnServiceProtocolGetSkSLsWorks
+#else
+       OnServiceProtocolGetSkSLsWorks
 #endif  // defined(WINUWP)
-
+) {
   fml::ScopedTemporaryDirectory base_dir;
   ASSERT_TRUE(base_dir.fd().is_valid());
   PersistentCache::SetCacheDirectoryPath(base_dir.path());
@@ -2465,11 +2502,14 @@ TEST_F(ShellTest, IgnoresInvalidMetrics) {
   DestroyShell(std::move(shell), std::move(task_runners));
 }
 
-TEST_F(ShellTest, OnServiceProtocolSetAssetBundlePathWorks) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires vm service sandboxing fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_OnServiceProtocolSetAssetBundlePathWorks
+#else
+       OnServiceProtocolSetAssetBundlePathWorks
 #endif  // defined(WINUWP)
+) {
 
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
@@ -2542,11 +2582,14 @@ TEST_F(ShellTest, EngineRootIsolateLaunchesDontTakeVMDataSettings) {
   isolate_create_latch.Wait();
 }
 
-TEST_F(ShellTest, AssetManagerSingle) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires filesystem sandboxing fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_AssetManagerSingle
+#else
+       AssetManagerSingle
 #endif  // defined(WINUWP)
+) {
 
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
@@ -2572,11 +2615,14 @@ TEST_F(ShellTest, AssetManagerSingle) {
   ASSERT_TRUE(result == content);
 }
 
-TEST_F(ShellTest, AssetManagerMulti) {
+TEST_F(ShellTest,
 #if defined(WINUWP)
-  // TODO(cbracken): Re-enable. https://github.com/flutter/flutter/issues/90481
-  GTEST_SKIP() << "Skipped on WinUWP; requires filesystem sandboxing fix";
+       // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
+       DISABLED_AssetManagerMulti
+#else
+       AssetManagerMulti
 #endif  // defined(WINUWP)
+) {
 
   fml::ScopedTemporaryDirectory asset_dir;
   fml::UniqueFD asset_dir_fd = fml::OpenDirectory(
@@ -2695,6 +2741,8 @@ TEST_F(ShellTest, Spawn) {
   ASSERT_TRUE(second_configuration.IsValid());
   second_configuration.SetEntrypoint("testCanLaunchSecondaryIsolate");
 
+  const std::string initial_route("/foo");
+
   fml::AutoResetWaitableEvent main_latch;
   std::string last_entry_point;
   // Fulfill native function for the first Shell's entrypoint.
@@ -2719,10 +2767,11 @@ TEST_F(ShellTest, Spawn) {
 
   PostSync(
       shell->GetTaskRunners().GetPlatformTaskRunner(),
-      [this, &spawner = shell, &second_configuration, &second_latch]() {
+      [this, &spawner = shell, &second_configuration, &second_latch,
+       initial_route]() {
         MockPlatformViewDelegate platform_view_delegate;
         auto spawn = spawner->Spawn(
-            std::move(second_configuration),
+            std::move(second_configuration), initial_route,
             [&platform_view_delegate](Shell& shell) {
               auto result = std::make_unique<MockPlatformView>(
                   platform_view_delegate, shell.GetTaskRunners());
@@ -2736,10 +2785,11 @@ TEST_F(ShellTest, Spawn) {
         ASSERT_TRUE(ValidateShell(spawn.get()));
 
         PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
-                 [&spawn, &spawner] {
+                 [&spawn, &spawner, initial_route] {
                    // Check second shell ran the second entrypoint.
                    ASSERT_EQ("testCanLaunchSecondaryIsolate",
                              spawn->GetEngine()->GetLastEntrypoint());
+                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
 
                    // TODO(74520): Remove conditional once isolate groups are
                    // supported by JIT.
@@ -3038,6 +3088,152 @@ TEST_F(ShellTest, UserTagSetOnStartup) {
 
   DestroyShell(std::move(shell));
   isolate_create_latch.Wait();
+}
+
+TEST_F(ShellTest, PrefetchDefaultFontManager) {
+  auto settings = CreateSettingsForFixture();
+  settings.prefetched_default_font_manager = true;
+  std::unique_ptr<Shell> shell;
+
+  auto get_font_manager_count = [&] {
+    fml::AutoResetWaitableEvent latch;
+    size_t font_manager_count;
+    fml::TaskRunner::RunNowOrPostTask(
+        shell->GetTaskRunners().GetUITaskRunner(),
+        [this, &shell, &latch, &font_manager_count]() {
+          font_manager_count =
+              GetFontCollection(shell.get())->GetFontManagersCount();
+          latch.Signal();
+        });
+    latch.Wait();
+    return font_manager_count;
+  };
+  size_t initial_font_manager_count = 0;
+  settings.root_isolate_create_callback = [&](const auto& isolate) {
+    ASSERT_GT(initial_font_manager_count, 0ul);
+    // Should not have fetched the default font manager yet, since the root
+    // isolate was only just created.
+    ASSERT_EQ(get_font_manager_count(), initial_font_manager_count);
+  };
+
+  shell = CreateShell(std::move(settings));
+
+  initial_font_manager_count = get_font_manager_count();
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  // If the prefetched_default_font_manager flag is set, then the default font
+  // manager will not be added until the engine starts running.
+  ASSERT_EQ(get_font_manager_count(), initial_font_manager_count + 1);
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, OnPlatformViewCreatedWhenUIThreadIsBusy) {
+  // This test will deadlock if the threading logic in
+  // Shell::OnCreatePlatformView is wrong.
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(std::move(settings));
+
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
+                                    [&latch]() { latch.Wait(); });
+
+  ShellTest::PlatformViewNotifyCreated(shell.get());
+  latch.Signal();
+
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UIWorkAfterOnPlatformViewDestroyed) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(std::move(settings));
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("drawFrames");
+
+  fml::AutoResetWaitableEvent latch;
+  fml::AutoResetWaitableEvent notify_native_latch;
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      notify_native_latch.Signal();
+                      latch.Wait();
+                    }));
+
+  RunEngine(shell.get(), std::move(configuration));
+  // Wait to make sure we get called back from Dart and thus have latched
+  // the UI thread before we create/destroy the platform view.
+  notify_native_latch.Wait();
+
+  ShellTest::PlatformViewNotifyCreated(shell.get());
+
+  fml::AutoResetWaitableEvent destroy_latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [&shell, &destroy_latch]() {
+        shell->GetPlatformView()->NotifyDestroyed();
+        destroy_latch.Signal();
+      });
+
+  destroy_latch.Wait();
+
+  // Unlatch the UI thread and let it send us a scene to render.
+  latch.Signal();
+
+  // Flush the UI task runner to make sure we process the render/scheduleFrame
+  // request.
+  fml::AutoResetWaitableEvent ui_flush_latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetUITaskRunner(),
+      [&ui_flush_latch]() { ui_flush_latch.Signal(); });
+  ui_flush_latch.Wait();
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, UsesPlatformMessageHandler) {
+  TaskRunners task_runners = GetTaskRunnersForFixture();
+  auto settings = CreateSettingsForFixture();
+  MockPlatformViewDelegate platform_view_delegate;
+  auto platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  int message_id = 1;
+  EXPECT_CALL(*platform_message_handler, HandlePlatformMessage(_));
+  EXPECT_CALL(*platform_message_handler,
+              InvokePlatformMessageEmptyResponseCallback(message_id));
+  Shell::CreateCallback<PlatformView> platform_view_create_callback =
+      [&platform_view_delegate, task_runners,
+       platform_message_handler](flutter::Shell& shell) {
+        auto result = std::make_unique<MockPlatformView>(platform_view_delegate,
+                                                         task_runners);
+        EXPECT_CALL(*result, GetPlatformMessageHandler())
+            .WillOnce(Return(platform_message_handler));
+        return result;
+      };
+  auto shell = CreateShell(
+      /*settings=*/std::move(settings),
+      /*task_runners=*/task_runners,
+      /*simulate_vsync=*/false,
+      /*shell_test_external_view_embedder=*/nullptr,
+      /*is_gpu_disabled=*/false,
+      /*rendering_backend=*/
+      ShellTestPlatformView::BackendType::kDefaultBackend,
+      /*platform_view_create_callback=*/platform_view_create_callback);
+
+  EXPECT_EQ(platform_message_handler, shell->GetPlatformMessageHandler());
+  PostSync(task_runners.GetUITaskRunner(), [&shell]() {
+    size_t data_size = 4;
+    fml::MallocMapping bytes =
+        fml::MallocMapping(static_cast<uint8_t*>(malloc(data_size)), data_size);
+    fml::RefPtr<MockPlatformMessageResponse> response =
+        MockPlatformMessageResponse::Create();
+    auto message = std::make_unique<PlatformMessage>(
+        /*channel=*/"foo", /*data=*/std::move(bytes), /*response=*/response);
+    (static_cast<Engine::Delegate*>(shell.get()))
+        ->OnEngineHandlePlatformMessage(std::move(message));
+  });
+  shell->GetPlatformMessageHandler()
+      ->InvokePlatformMessageEmptyResponseCallback(message_id);
+  DestroyShell(std::move(shell));
 }
 
 }  // namespace testing

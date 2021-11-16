@@ -51,8 +51,9 @@
 }
 
 - (void)dealloc {
-  if (_data->character != nullptr)
+  if (_data->character != nullptr) {
     delete[] _data->character;
+  }
   delete _data;
 }
 @end
@@ -750,8 +751,12 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
+  EXPECT_EQ([events lastObject].data->physical, 0u);
+  EXPECT_EQ([events lastObject].data->logical, 0u);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
   EXPECT_EQ(last_handled, TRUE);
+  [events removeAllObjects];
 
   last_handled = FALSE;
   [responder
@@ -782,8 +787,12 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
+  EXPECT_EQ([events lastObject].data->physical, 0u);
+  EXPECT_EQ([events lastObject].data->logical, 0u);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
   EXPECT_EQ(last_handled, TRUE);
+  [events removeAllObjects];
 
   // Case 3:
   // In:  L down, (L up), (R down), R up

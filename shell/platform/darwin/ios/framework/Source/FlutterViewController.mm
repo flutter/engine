@@ -70,6 +70,12 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
 /**
+ * Keyboard animation properties
+ */
+@property(nonatomic, assign) double targetViewInsetBottom;
+@property(nonatomic, retain) CADisplayLink* displayLink;
+
+/**
  * Creates and registers plugins used by this view controller.
  */
 - (void)addInternalPlugins;
@@ -113,6 +119,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIPointerInteraction> _pointerInteraction API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
+  fml::scoped_nsobject<UIView> _keyboardAnimationView;
   MouseState _mouseState;
 }
 
@@ -235,8 +242,9 @@ typedef enum UIAccessibilityContrast : NSInteger {
 #pragma mark - Common view controller initialization tasks
 
 - (void)performCommonViewControllerInitialization {
-  if (_initialized)
+  if (_initialized) {
     return;
+  }
 
   _initialized = YES;
 
@@ -542,6 +550,10 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   return _splashScreenView.get();
 }
 
+- (UIView*)keyboardAnimationView {
+  return _keyboardAnimationView.get();
+}
+
 - (BOOL)loadDefaultSplashScreenView {
   NSString* launchscreenName =
       [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
@@ -660,61 +672,70 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)addInternalPlugins {
-  [self.keyboardManager release];
-  self.keyboardManager = [[FlutterKeyboardManager alloc] init];
+  self.keyboardManager = [[[FlutterKeyboardManager alloc] init] autorelease];
+  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
-        [_engine.get() sendKeyEvent:event callback:callback userData:userData];
+        [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
       };
   [self.keyboardManager
       addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc] initWithSendEvent:sendEvent]];
-  [self.keyboardManager addPrimaryResponder:[[FlutterChannelKeyResponder alloc]
-                                                initWithChannel:self.engine.keyEventChannel]];
-  [self.keyboardManager addSecondaryResponder:self.engine.textInputPlugin];
+  FlutterChannelKeyResponder* responder = [[[FlutterChannelKeyResponder alloc]
+      initWithChannel:self.engine.keyEventChannel] autorelease];
+  [self.keyboardManager addPrimaryResponder:responder];
+  FlutterTextInputPlugin* textInputPlugin = self.engine.textInputPlugin;
+  if (textInputPlugin != nil) {
+    [self.keyboardManager addSecondaryResponder:textInputPlugin];
+  }
 }
 
 - (void)removeInternalPlugins {
-  [self.keyboardManager release];
   self.keyboardManager = nil;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
+  if ([_engine.get() viewController] == self) {
+    // Send platform settings to Flutter, e.g., platform brightness.
+    [self onUserSettingsChanged:nil];
 
-  // Send platform settings to Flutter, e.g., platform brightness.
-  [self onUserSettingsChanged:nil];
-
-  // Only recreate surface on subsequent appearances when viewport metrics are known.
-  // First time surface creation is done on viewDidLayoutSubviews.
-  if (_viewportMetrics.physical_width) {
-    [self surfaceUpdated:YES];
+    // Only recreate surface on subsequent appearances when viewport metrics are known.
+    // First time surface creation is done on viewDidLayoutSubviews.
+    if (_viewportMetrics.physical_width) {
+      [self surfaceUpdated:YES];
+    }
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+    [[_engine.get() restorationPlugin] markRestorationComplete];
   }
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
-  [[_engine.get() restorationPlugin] markRestorationComplete];
 
   [super viewWillAppear:animated];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidAppear");
-  [self onUserSettingsChanged:nil];
-  [self onAccessibilityStatusChanged:nil];
-  if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
-    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  if ([_engine.get() viewController] == self) {
+    [self onUserSettingsChanged:nil];
+    [self onAccessibilityStatusChanged:nil];
+    if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
+      [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+    }
   }
   [super viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
-
+  if ([_engine.get() viewController] == self) {
+    [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  }
   [super viewWillDisappear:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   if ([_engine.get() viewController] == self) {
+    [self invalidateDisplayLink];
+    [self ensureViewportMetricsIsCorrect];
     [self surfaceUpdated:NO];
     [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
     [self flushOngoingTouches];
@@ -767,8 +788,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 }
 
 - (void)dealloc {
+  // It will be destroyed and invalidate its weak pointers
+  // before any other members are destroyed.
+  _weakFactory.reset();
+
   [self removeInternalPlugins];
   [self deregisterNotifications];
+
+  [_displayLink release];
   [super dealloc];
 }
 
@@ -776,13 +803,16 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  if (_viewportMetrics.physical_width)
+  self.view.accessibilityElementsHidden = NO;
+  if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
+  }
   [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
+  self.view.accessibilityElementsHidden = YES;
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
@@ -1098,29 +1128,115 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
   }
 
+  // Ignore keyboard notifications if engine’s viewController is not current viewController.
+  if ([_engine.get() viewController] != self) {
+    return;
+  }
+
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
+
+  // Get the animation duration
+  NSTimeInterval duration =
+      [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
 
   // Considering the iPad's split keyboard, Flutter needs to check if the keyboard frame is present
   // in the screen to see if the keyboard is visible.
   if (CGRectIntersectsRect(keyboardFrame, screenRect)) {
     CGFloat bottom = CGRectGetHeight(keyboardFrame);
     CGFloat scale = [UIScreen mainScreen].scale;
-
     // The keyboard is treated as an inset since we want to effectively reduce the window size by
     // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
     // bottom padding.
-    _viewportMetrics.physical_view_inset_bottom = bottom * scale;
+    self.targetViewInsetBottom = bottom * scale;
   } else {
-    _viewportMetrics.physical_view_inset_bottom = 0;
+    self.targetViewInsetBottom = 0;
   }
-
-  [self updateViewportMetrics];
+  [self startKeyBoardAnimation:duration];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
-  _viewportMetrics.physical_view_inset_bottom = 0;
-  [self updateViewportMetrics];
+  // When keyboard hide, the keyboardWillChangeFrame function will be called to update viewport
+  // metrics. So do not call [self updateViewportMetrics] here again.
+}
+
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration {
+  // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing.
+  if (_viewportMetrics.physical_view_inset_bottom == self.targetViewInsetBottom) {
+    return;
+  }
+
+  // When call this method first time,
+  // initialize the keyboardAnimationView to get animation interpolation during animation.
+  if ([self keyboardAnimationView] == nil) {
+    UIView* keyboardAnimationView = [[UIView alloc] init];
+    [keyboardAnimationView setHidden:YES];
+    _keyboardAnimationView.reset(keyboardAnimationView);
+  }
+
+  if ([self keyboardAnimationView].superview == nil) {
+    [self.view addSubview:[self keyboardAnimationView]];
+  }
+
+  // Remove running animation when start another animation.
+  // After calling this line,the old display link will invalidate.
+  [[self keyboardAnimationView].layer removeAllAnimations];
+
+  // Set animation begin value.
+  [self keyboardAnimationView].frame =
+      CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
+
+  // Invalidate old display link if the old animation is not complete
+  [self invalidateDisplayLink];
+
+  self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink)];
+  [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+  __block CADisplayLink* currentDisplayLink = self.displayLink;
+
+  [UIView animateWithDuration:duration
+      animations:^{
+        // Set end value.
+        [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
+      }
+      completion:^(BOOL finished) {
+        if (self.displayLink == currentDisplayLink) {
+          [self invalidateDisplayLink];
+        }
+        if (finished) {
+          [self removeKeyboardAnimationView];
+          [self ensureViewportMetricsIsCorrect];
+        }
+      }];
+}
+
+- (void)invalidateDisplayLink {
+  [self.displayLink invalidate];
+}
+
+- (void)removeKeyboardAnimationView {
+  if ([self keyboardAnimationView].superview != nil) {
+    [[self keyboardAnimationView] removeFromSuperview];
+  }
+}
+
+- (void)ensureViewportMetricsIsCorrect {
+  if (_viewportMetrics.physical_view_inset_bottom != self.targetViewInsetBottom) {
+    // Make sure the `physical_view_inset_bottom` is the target value.
+    _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
+    [self updateViewportMetrics];
+  }
+}
+
+- (void)onDisplayLink {
+  if ([self keyboardAnimationView].superview == nil) {
+    // Ensure the keyboardAnimationView is in view hierarchy when animation running.
+    [self.view addSubview:[self keyboardAnimationView]];
+  }
+  if ([self keyboardAnimationView].layer.presentationLayer) {
+    CGFloat value = [self keyboardAnimationView].layer.presentationLayer.frame.origin.y;
+    _viewportMetrics.physical_view_inset_bottom = value;
+    [self updateViewportMetrics];
+  }
 }
 
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
@@ -1152,7 +1268,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesBegan:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1166,7 +1283,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
              withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesChanged:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1180,7 +1298,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
            withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesEnded:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1194,7 +1313,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   if (@available(iOS 13.4, *)) {
     for (UIPress* press in presses) {
-      [self handlePressEvent:[[FlutterUIPressProxy alloc] initWithPress:press withEvent:event]
+      [self handlePressEvent:[[[FlutterUIPressProxy alloc] initWithPress:press
+                                                               withEvent:event] autorelease]
                   nextAction:^() {
                     [super pressesCancelled:[NSSet setWithObject:press] withEvent:event];
                   }];
@@ -1306,8 +1426,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #else
   _isVoiceOverRunning = UIAccessibilityIsVoiceOverRunning();
   bool enabled = _isVoiceOverRunning || UIAccessibilityIsSwitchControlRunning();
-  if (enabled)
+  if (enabled) {
     flags |= static_cast<int32_t>(flutter::AccessibilityFeatureFlag::kAccessibleNavigation);
+  }
   platformView->SetSemanticsEnabled(enabled || UIAccessibilityIsSpeakScreenEnabled());
   platformView->SetAccessibilityFeatures(flags);
 #endif
@@ -1353,32 +1474,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // We compute the scale as relative difference from size L (large, the default size), where
   // L is assumed to have scale 1.0.
-  if ([category isEqualToString:UIContentSizeCategoryExtraSmall])
+  if ([category isEqualToString:UIContentSizeCategoryExtraSmall]) {
     return xs / l;
-  else if ([category isEqualToString:UIContentSizeCategorySmall])
+  } else if ([category isEqualToString:UIContentSizeCategorySmall]) {
     return s / l;
-  else if ([category isEqualToString:UIContentSizeCategoryMedium])
+  } else if ([category isEqualToString:UIContentSizeCategoryMedium]) {
     return m / l;
-  else if ([category isEqualToString:UIContentSizeCategoryLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryLarge]) {
     return 1.0;
-  else if ([category isEqualToString:UIContentSizeCategoryExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryExtraLarge]) {
     return xl / l;
-  else if ([category isEqualToString:UIContentSizeCategoryExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryExtraExtraLarge]) {
     return xxl / l;
-  else if ([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryExtraExtraExtraLarge]) {
     return xxxl / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityMedium])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityMedium]) {
     return ax1 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityLarge]) {
     return ax2 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraLarge]) {
     return ax3 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraLarge]) {
     return ax4 / l;
-  else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraExtraLarge])
+  } else if ([category isEqualToString:UIContentSizeCategoryAccessibilityExtraExtraExtraLarge]) {
     return ax5 / l;
-  else
+  } else {
     return 1.0;
+  }
 }
 
 - (BOOL)isAlwaysUse24HourFormat {
@@ -1490,8 +1612,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                               binaryMessageHandler:handler];
 }
 
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection {
-  [_engine.get().binaryMessenger cleanupConnection:connection];
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
+  [_engine.get().binaryMessenger cleanUpConnection:connection];
 }
 
 #pragma mark - FlutterTextureRegistry
@@ -1620,6 +1742,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (void)encodeRestorableStateWithCoder:(NSCoder*)coder {
   NSData* restorationData = [[_engine.get() restorationPlugin] restorationData];
   [coder encodeDataObject:restorationData];
+  [super encodeRestorableStateWithCoder:coder];
 }
 
 - (void)decodeRestorableStateWithCoder:(NSCoder*)coder {

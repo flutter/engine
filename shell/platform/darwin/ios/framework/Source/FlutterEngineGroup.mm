@@ -7,8 +7,8 @@
 
 @interface FlutterEngineGroup ()
 @property(nonatomic, copy) NSString* name;
-@property(nonatomic, strong) NSMutableArray<NSValue*>* engines;
-@property(nonatomic, strong) FlutterDartProject* project;
+@property(nonatomic, retain) NSMutableArray<NSValue*>* engines;
+@property(nonatomic, retain) FlutterDartProject* project;
 @end
 
 @implementation FlutterEngineGroup {
@@ -18,9 +18,9 @@
 - (instancetype)initWithName:(NSString*)name project:(nullable FlutterDartProject*)project {
   self = [super init];
   if (self) {
-    self.name = name;
-    self.engines = [[NSMutableArray<NSValue*> alloc] init];
-    self.project = project;
+    _name = [name copy];
+    _engines = [[NSMutableArray<NSValue*> alloc] init];
+    _project = [project retain];
   }
   return self;
 }
@@ -30,19 +30,28 @@
   [center removeObserver:self];
   [_name release];
   [_engines release];
+  [_project release];
   [super dealloc];
 }
 
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI {
+  return [self makeEngineWithEntrypoint:entrypoint libraryURI:libraryURI initialRoute:nil];
+}
+
+- (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
+                                libraryURI:(nullable NSString*)libraryURI
+                              initialRoute:(nullable NSString*)initialRoute {
   NSString* engineName = [NSString stringWithFormat:@"%@.%d", self.name, ++_enginesCreatedCount];
   FlutterEngine* engine;
   if (self.engines.count <= 0) {
     engine = [[FlutterEngine alloc] initWithName:engineName project:self.project];
-    [engine runWithEntrypoint:entrypoint libraryURI:libraryURI];
+    [engine runWithEntrypoint:entrypoint libraryURI:libraryURI initialRoute:initialRoute];
   } else {
     FlutterEngine* spawner = (FlutterEngine*)[self.engines[0] pointerValue];
-    engine = [spawner spawnWithEntrypoint:entrypoint libraryURI:libraryURI];
+    engine = [spawner spawnWithEntrypoint:entrypoint
+                               libraryURI:libraryURI
+                             initialRoute:initialRoute];
   }
   [_engines addObject:[NSValue valueWithPointer:engine]];
 

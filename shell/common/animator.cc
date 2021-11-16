@@ -27,7 +27,6 @@ Animator::Animator(Delegate& delegate,
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
       waiter_(std::move(waiter)),
-      dart_frame_deadline_(0),
 #if SHELL_ENABLE_METAL
       layer_tree_pipeline_(std::make_shared<LayerTreePipeline>(2)),
 #else   // SHELL_ENABLE_METAL
@@ -41,11 +40,6 @@ Animator::Animator(Delegate& delegate,
               : 2)),
 #endif  // SHELL_ENABLE_METAL
       pending_frame_semaphore_(1),
-      paused_(false),
-      regenerate_layer_tree_(false),
-      frame_scheduled_(false),
-      notify_idle_task_id_(0),
-      dimension_change_pending_(false),
       weak_factory_(this) {
 }
 
@@ -92,10 +86,10 @@ const char* Animator::FrameParity() {
   return (frame_number % 2) ? "even" : "odd";
 }
 
-static int64_t FxlToDartOrEarlier(fml::TimePoint time) {
-  int64_t dart_now = Dart_TimelineGetMicros();
+static fml::TimePoint FxlToDartOrEarlier(fml::TimePoint time) {
+  auto dart_now = fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros());
   fml::TimePoint fxl_now = fml::TimePoint::Now();
-  return (time - fxl_now).ToMicroseconds() + dart_now;
+  return fml::TimePoint::FromEpochDelta(time - fxl_now + dart_now);
 }
 
 void Animator::BeginFrame(
@@ -153,7 +147,7 @@ void Animator::BeginFrame(
     delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
   }
 
-  if (!frame_scheduled_) {
+  if (!frame_scheduled_ && has_rendered_) {
     // Under certain workloads (such as our parent view resizing us, which is
     // communicated to us by repeat viewport metrics events), we won't
     // actually have a frame scheduled yet, despite the fact that we *will* be
@@ -183,6 +177,7 @@ void Animator::BeginFrame(
 }
 
 void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+  has_rendered_ = true;
   if (dimension_change_pending_ &&
       layer_tree->frame_size() != last_layer_tree_size_) {
     dimension_change_pending_ = false;
@@ -274,8 +269,10 @@ void Animator::AwaitVSync() {
           }
         }
       });
-
-  delegate_.OnAnimatorNotifyIdle(dart_frame_deadline_);
+  if (has_rendered_) {
+    delegate_.OnAnimatorNotifyIdle(
+        dart_frame_deadline_.ToEpochDelta().ToMicroseconds());
+  }
 }
 
 void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,

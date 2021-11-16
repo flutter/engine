@@ -148,6 +148,17 @@ class FlutterWindowsEngine {
   // Invoke on the embedder's vsync callback to schedule a frame.
   void OnVsync(intptr_t baton);
 
+  // Dispatches a semantics action to the specified semantics node.
+  bool DispatchSemanticsAction(uint64_t id,
+                               FlutterSemanticsAction action,
+                               const std::vector<uint8_t>& data);
+
+  // Informs the engine that the semantics enabled state has changed.
+  void UpdateSemanticsEnabled(bool enabled);
+
+  // Returns true if the semantics tree is enabled.
+  bool semantics_enabled() const { return semantics_enabled_; }
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -214,6 +225,8 @@ class FlutterWindowsEngine {
   // An override of the frame interval used by EngineModifier for testing.
   std::optional<std::chrono::nanoseconds> frame_interval_override_ =
       std::nullopt;
+
+  bool semantics_enabled_ = false;
 
 #ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.

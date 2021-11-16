@@ -7,8 +7,6 @@
 
 namespace flutter {
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 DiffContext::DiffContext(SkISize frame_size,
                          double frame_device_pixel_ratio,
                          PaintRegionMap& this_frame_paint_region_map,
@@ -22,27 +20,51 @@ DiffContext::DiffContext(SkISize frame_size,
 void DiffContext::BeginSubtree() {
   state_stack_.push_back(state_);
   state_.rect_index_ = rects_->size();
+  state_.has_filter_bounds_adjustment = false;
+  state_.has_texture = false;
+  if (state_.transform_override) {
+    state_.transform = *state_.transform_override;
+    state_.transform_override = std::nullopt;
+  }
 }
 
 void DiffContext::EndSubtree() {
   FML_DCHECK(!state_stack_.empty());
+  if (state_.has_filter_bounds_adjustment) {
+    filter_bounds_adjustment_stack_.pop_back();
+  }
   state_ = std::move(state_stack_.back());
   state_stack_.pop_back();
 }
 
 DiffContext::State::State()
-    : dirty(false), cull_rect(kGiantRect), rect_index_(0) {}
+    : dirty(false),
+      cull_rect(kGiantRect),
+      rect_index_(0),
+      has_filter_bounds_adjustment(false),
+      has_texture(false) {}
 
 void DiffContext::PushTransform(const SkMatrix& transform) {
   state_.transform.preConcat(transform);
-  SkMatrix inverse_transform;
-  // Perspective projections don't produce rectangles that are useful for
-  // culling for some reason.
-  if (!transform.hasPerspective() && transform.invert(&inverse_transform)) {
-    inverse_transform.mapRect(&state_.cull_rect);
-  } else {
-    state_.cull_rect = kGiantRect;
+}
+
+void DiffContext::SetTransform(const SkMatrix& transform) {
+  state_.transform_override = transform;
+}
+
+void DiffContext::PushFilterBoundsAdjustment(FilterBoundsAdjustment filter) {
+  FML_DCHECK(state_.has_filter_bounds_adjustment == false);
+  state_.has_filter_bounds_adjustment = true;
+  filter_bounds_adjustment_stack_.push_back(filter);
+}
+
+SkRect DiffContext::ApplyFilterBoundsAdjustment(SkRect rect) const {
+  // Apply filter bounds adjustment in reverse order
+  for (auto i = filter_bounds_adjustment_stack_.rbegin();
+       i != filter_bounds_adjustment_stack_.rend(); ++i) {
+    rect = (*i)(rect);
   }
+  return rect;
 }
 
 Damage DiffContext::ComputeDamage(
@@ -72,7 +94,20 @@ Damage DiffContext::ComputeDamage(
 }
 
 bool DiffContext::PushCullRect(const SkRect& clip) {
-  return state_.cull_rect.intersect(clip);
+  SkRect cull_rect = state_.transform.mapRect(clip);
+  return state_.cull_rect.intersect(cull_rect);
+}
+
+SkRect DiffContext::GetCullRect() const {
+  SkMatrix inverse_transform;
+  // Perspective projections don't produce rectangles that are useful for
+  // culling for some reason.
+  if (!state_.transform.hasPerspective() &&
+      state_.transform.invert(&inverse_transform)) {
+    return inverse_transform.mapRect(state_.cull_rect);
+  } else {
+    return kGiantRect;
+  }
 }
 
 void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
@@ -83,17 +118,38 @@ void DiffContext::MarkSubtreeDirty(const PaintRegion& previous_paint_region) {
   state_.dirty = true;
 }
 
+void DiffContext::MarkSubtreeDirty(const SkRect& previous_paint_region) {
+  FML_DCHECK(!IsSubtreeDirty());
+  AddDamage(previous_paint_region);
+  state_.dirty = true;
+}
+
 void DiffContext::AddLayerBounds(const SkRect& rect) {
-  SkRect r(rect);
-  if (r.intersect(state_.cull_rect)) {
-    state_.transform.mapRect(&r);
-    if (!r.isEmpty()) {
-      rects_->push_back(r);
-      if (IsSubtreeDirty()) {
-        AddDamage(r);
-      }
+  // During painting we cull based on non-overriden transform and then
+  // override the transform right before paint. Do the same thing here to get
+  // identical paint rect.
+  auto transformed_rect =
+      ApplyFilterBoundsAdjustment(state_.transform.mapRect(rect));
+  if (transformed_rect.intersects(state_.cull_rect)) {
+    auto paint_rect = state_.transform_override
+                          ? ApplyFilterBoundsAdjustment(
+                                state_.transform_override->mapRect(rect))
+                          : transformed_rect;
+    rects_->push_back(paint_rect);
+    if (IsSubtreeDirty()) {
+      AddDamage(paint_rect);
     }
   }
+}
+
+void DiffContext::MarkSubtreeHasTextureLayer() {
+  // Set the has_texture flag on current state and all parent states. That
+  // way we'll know that we can't skip diff for retained layers because
+  // they contain a TextureLayer.
+  for (auto& state : state_stack_) {
+    state.has_texture = true;
+  }
+  state_.has_texture = true;
 }
 
 void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
@@ -118,7 +174,8 @@ PaintRegion DiffContext::CurrentSubtreeRegion() const {
   bool has_readback = std::any_of(
       readbacks_.begin(), readbacks_.end(),
       [&](const Readback& r) { return r.position >= state_.rect_index_; });
-  return PaintRegion(rects_, state_.rect_index_, rects_->size(), has_readback);
+  return PaintRegion(rects_, state_.rect_index_, rects_->size(), has_readback,
+                     state_.has_texture);
 }
 
 void DiffContext::AddDamage(const PaintRegion& damage) {
@@ -159,7 +216,5 @@ void DiffContext::Statistics::LogStatistics() {
                     different_instance_but_equal_pictures_);
 #endif  // !FLUTTER_RELEASE
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace flutter

@@ -34,7 +34,8 @@ struct TestResponseHandle {
   void* user_data;
 };
 
-static const bool test_response = false;
+static bool test_response = false;
+static bool semantics_enabled = false;
 
 constexpr uint64_t kKeyEventFromChannel = 0x11;
 constexpr uint64_t kKeyEventFromEmbedder = 0x22;
@@ -87,6 +88,8 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 TEST(FlutterWindowsViewTest, KeySequence) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
 
+  test_response = false;
+
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
@@ -99,6 +102,54 @@ TEST(FlutterWindowsViewTest, KeySequence) {
   EXPECT_EQ(key_event_logs[1], kKeyEventFromChannel);
 
   key_event_logs.clear();
+}
+
+TEST(FlutterWindowsViewTest, RestartClearsKeyboardState) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  FlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(std::move(engine));
+
+  test_response = false;
+
+  // Receives a KeyA down. Events are dispatched and decided unhandled. Now the
+  // keyboard key handler is waiting for the redispatched event.
+  view.OnKey(kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, false);
+  EXPECT_EQ(key_event_logs.size(), 2);
+  EXPECT_EQ(key_event_logs[0], kKeyEventFromEmbedder);
+  EXPECT_EQ(key_event_logs[1], kKeyEventFromChannel);
+  key_event_logs.clear();
+
+  // Resets state so that the keyboard key handler is no longer waiting.
+  view.OnPreEngineRestart();
+
+  // Receives another KeyA down. If the state had not been cleared, this event
+  // will be considered the redispatched event and ignored.
+  view.OnKey(kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, false);
+  EXPECT_EQ(key_event_logs.size(), 2);
+  EXPECT_EQ(key_event_logs[0], kKeyEventFromEmbedder);
+  EXPECT_EQ(key_event_logs[1], kKeyEventFromChannel);
+  key_event_logs.clear();
+}
+
+TEST(FlutterWindowsViewTest, EnableSemantics) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().UpdateSemanticsEnabled =
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine, bool enabled) {
+        semantics_enabled = enabled;
+        return kSuccess;
+      };
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  FlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(std::move(engine));
+
+  view.OnUpdateSemanticsEnabled(true);
+  EXPECT_TRUE(semantics_enabled);
 }
 
 }  // namespace testing

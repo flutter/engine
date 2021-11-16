@@ -2,12 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+@JS()
+library util;
+
 import 'dart:async';
 import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -391,6 +395,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
 bool isNsErrorFailureException(Object e) {
+  // ignore: implicit_dynamic_function
   return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
@@ -422,8 +427,20 @@ const Set<String> _genericFontFamilies = <String>{
 ///
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
-final String _fallbackFontFamily =
-    isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
+String get _fallbackFontFamily {
+  if (isIOS15) {
+    // Remove the "-apple-system" fallback font because it causes a crash in
+    // iOS 15.
+    //
+    // See github issue: https://github.com/flutter/flutter/issues/90705
+    // See webkit bug: https://bugs.webkit.org/show_bug.cgi?id=231686
+    return 'BlinkMacSystemFont';
+  }
+  if (isMacOrIOS) {
+    return '-apple-system, BlinkMacSystemFont';
+  }
+  return 'Arial';
+}
 
 /// Create a font-family string appropriate for CSS.
 ///
@@ -500,16 +517,6 @@ class FastMatrix32 {
 /// Flutter mobile.
 double convertSigmaToRadius(double sigma) {
   return sigma * 2.0;
-}
-
-/// Used to check for null values that are non-nullable.
-///
-/// This is useful when some external API (e.g. HTML DOM) disagrees with
-/// Dart type declarations (e.g. `dart:html`). Where `dart:html` may believe
-/// something to be non-null, it may actually be null (e.g. old browsers do
-/// not implement a feature, such as clipboard).
-bool isUnsoundNull(dynamic object) {
-  return object == null;
 }
 
 int clampInt(int value, int min, int max) {
@@ -639,4 +646,26 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   double? tryDouble(String propertyName) {
     return this[propertyName] as double?;
   }
+}
+
+typedef JsParseFloat = num? Function(String source);
+
+@JS('parseFloat')
+external JsParseFloat get _jsParseFloat;
+
+/// Parses a string [source] into a double.
+///
+/// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
+/// because the latter can't parse strings like "20px".
+///
+/// Returns null if it fails to parse.
+num? parseFloat(String source) {
+  // Using JavaScript's `parseFloat` here because it can parse values
+  // like "20px", while Dart's `double.tryParse` fails.
+  final num? result = _jsParseFloat(source);
+
+  if (result == null || result.isNaN) {
+    return null;
+  }
+  return result;
 }

@@ -7,6 +7,7 @@ import 'dart:html' as html;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../configuration.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../window.dart';
@@ -114,9 +115,6 @@ class Surface {
   SurfaceFrame acquireFrame(ui.Size size) {
     final CkSurface surface = createOrUpdateSurfaces(size);
 
-    if (surface.context != null) {
-      canvasKit.setCurrentContext(surface.context!);
-    }
     // ignore: prefer_function_declarations_over_variables
     final SubmitCallback submitCallback =
         (SurfaceFrame surfaceFrame, CkCanvas canvas) {
@@ -171,10 +169,6 @@ class Surface {
       // new canvas larger than required to avoid many canvas creations.
       final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
 
-      // Only resources from the current context can be disposed.
-      if (_glContext != null && _glContext != 0) {
-        canvasKit.setCurrentContext(_glContext!);
-      }
       _surface?.dispose();
       _surface = null;
       _addedToScene = false;
@@ -302,7 +296,7 @@ class Surface {
     _forceNewContext = false;
     _contextLost = false;
 
-    if (webGLVersion != -1 && !canvasKitForceCpuOnly) {
+    if (webGLVersion != -1 && !configuration.canvasKitForceCpuOnly) {
       final int glContext = canvasKit.GetWebGLContext(
         htmlCanvas,
         SkWebGLContextOptions(
@@ -335,14 +329,13 @@ class Surface {
     if (webGLVersion == -1) {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'WebGL support not detected');
-    } else if (canvasKitForceCpuOnly) {
+    } else if (configuration.canvasKitForceCpuOnly) {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'CPU rendering forced by application');
     } else if (_glContext == 0) {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'Failed to initialize WebGL context');
     } else {
-      canvasKit.setCurrentContext(_glContext!);
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
         size.width.ceil(),
@@ -374,9 +367,6 @@ class Surface {
   }
 
   bool _presentSurface() {
-    if (_surface!.context != null) {
-      canvasKit.setCurrentContext(_surface!.context!);
-    }
     _surface!.flush();
     return true;
   }

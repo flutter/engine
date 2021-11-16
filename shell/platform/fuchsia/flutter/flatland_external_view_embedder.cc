@@ -11,20 +11,19 @@
 
 namespace flutter_runner {
 
-constexpr uint32_t kFlatlandDefaultViewportSize = 32;
-
 FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
-    std::string debug_label,
     fuchsia::ui::views::ViewCreationToken view_creation_token,
-    scenic::ViewRefPair view_ref_pair,
+    fuchsia::ui::views::ViewIdentityOnCreation view_identity,
+    fuchsia::ui::composition::ViewBoundProtocols view_protocols,
     fidl::InterfaceRequest<fuchsia::ui::composition::ParentViewportWatcher>
         parent_viewport_watcher_request,
     FlatlandConnection& flatland,
     SurfaceProducer& surface_producer,
     bool intercept_all_input)
     : flatland_(flatland), surface_producer_(surface_producer) {
-  flatland_.flatland()->CreateView(std::move(view_creation_token),
-                                   std::move(parent_viewport_watcher_request));
+  flatland_.flatland()->CreateView2(
+      std::move(view_creation_token), std::move(view_identity),
+      std::move(view_protocols), std::move(parent_viewport_watcher_request));
 
   root_transform_id_ = flatland_.NextTransformId();
   flatland_.flatland()->CreateTransform(root_transform_id_);
@@ -219,6 +218,7 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // Attach the FlatlandView to the main scene graph.
         flatland_.flatland()->AddChild(root_transform_id_,
                                        viewport.transform_id);
+        child_transforms_.emplace_back(viewport.transform_id);
       }
 
       // Acquire the surface associated with the layer.
@@ -244,22 +244,25 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         // Create a new layer if needed for the surface.
         FML_CHECK(flatland_layer_index <= flatland_layers_.size());
         if (flatland_layer_index == flatland_layers_.size()) {
-          FlatlandLayer new_layer{
-              .transform_id = flatland_.NextTransformId(),
-              .image_id = {surface_for_layer->GetImageId()}};
+          FlatlandLayer new_layer{.transform_id = flatland_.NextTransformId()};
           flatland_.flatland()->CreateTransform(new_layer.transform_id);
-          flatland_.flatland()->SetContent(new_layer.transform_id,
-                                           new_layer.image_id);
-          const auto& size = surface_for_layer->GetSize();
-          flatland_.flatland()->SetImageDestinationSize(
-              new_layer.image_id, {static_cast<uint32_t>(size.width()),
-                                   static_cast<uint32_t>(size.height())});
           flatland_layers_.emplace_back(std::move(new_layer));
         }
+
+        // Update the image content and set size.
+        flatland_.flatland()->SetContent(
+            flatland_layers_[flatland_layer_index].transform_id,
+            {surface_for_layer->GetImageId()});
+        flatland_.flatland()->SetImageDestinationSize(
+            {surface_for_layer->GetImageId()},
+            {static_cast<uint32_t>(surface_for_layer->GetSize().width()),
+             static_cast<uint32_t>(surface_for_layer->GetSize().height())});
 
         // Attach the FlatlandLayer to the main scene graph.
         flatland_.flatland()->AddChild(
             root_transform_id_,
+            flatland_layers_[flatland_layer_index].transform_id);
+        child_transforms_.emplace_back(
             flatland_layers_[flatland_layer_index].transform_id);
       }
 
@@ -349,7 +352,20 @@ void FlatlandExternalViewEmbedder::DestroyView(
     FlatlandViewIdCallback on_view_unbound) {
   auto flatland_view = flatland_views_.find(view_id);
   FML_CHECK(flatland_view != flatland_views_.end());
+
   auto viewport_id = flatland_view->second.viewport_id;
+  auto transform_id = flatland_view->second.transform_id;
+  flatland_.flatland()->ReleaseViewport(viewport_id, [](auto) {});
+  auto itr =
+      std::find_if(child_transforms_.begin(), child_transforms_.end(),
+                   [transform_id](fuchsia::ui::composition::TransformId id) {
+                     return id.value == transform_id.value;
+                   });
+  if (itr != child_transforms_.end()) {
+    flatland_.flatland()->RemoveChild(root_transform_id_, transform_id);
+    child_transforms_.erase(itr);
+  }
+  flatland_.flatland()->ReleaseTransform(transform_id);
 
   flatland_views_.erase(flatland_view);
   on_view_unbound(viewport_id);
@@ -371,9 +387,15 @@ void FlatlandExternalViewEmbedder::Reset() {
   frame_composition_order_.clear();
   frame_size_ = SkISize::Make(0, 0);
 
+  // Clear all children from root.
+  for (const auto& transform : child_transforms_) {
+    flatland_.flatland()->RemoveChild(root_transform_id_, transform);
+  }
+  child_transforms_.clear();
+
   // Clear images on all layers so they aren't cached unnecessarily.
-  for (auto& layer : flatland_layers_) {
-    flatland_.flatland()->RemoveChild(root_transform_id_, layer.transform_id);
+  for (const auto& layer : flatland_layers_) {
+    flatland_.flatland()->SetContent(layer.transform_id, {0});
   }
 }
 

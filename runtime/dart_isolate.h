@@ -70,6 +70,7 @@ class DartIsolate : public UIDartState {
     ~Flags();
 
     void SetNullSafetyEnabled(bool enabled);
+    void SetIsDontNeedSafe(bool value);
 
     Dart_IsolateFlags Get() const;
 
@@ -172,6 +173,13 @@ class DartIsolate : public UIDartState {
   /// @param[in]  isolate_configuration       The isolate configuration used to
   ///                                         configure the isolate before
   ///                                         invoking the entrypoint.
+  /// @param[in]  root_isolate_create_callback  A callback called after the root
+  ///                                         isolate is created, _without_
+  ///                                         isolate scope. This gives the
+  ///                                         caller a chance to finish any
+  ///                                         setup before running the Dart
+  ///                                         program, and after any embedder
+  ///                                         callbacks in the settings object.
   /// @param[in]  isolate_create_callback     The isolate create callback. This
   ///                                         will be called when the before the
   ///                                         main Dart entrypoint is invoked in
@@ -186,7 +194,7 @@ class DartIsolate : public UIDartState {
   ///                                         isolate is still running at this
   ///                                         point and an isolate scope is
   ///                                         current.
-  /// @param[in]  context              Engine-owned state which is
+  /// @param[in]  context                     Engine-owned state which is
   ///                                         accessed by the root dart isolate.
   /// @param[in]  spawning_isolate            The isolate that is spawning the
   ///                                         new isolate. See also
@@ -202,11 +210,12 @@ class DartIsolate : public UIDartState {
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       std::unique_ptr<PlatformConfiguration> platform_configuration,
       Flags flags,
+      fml::closure root_isolate_create_callback,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::unique_ptr<IsolateConfiguration> isolate_configration,
+      std::unique_ptr<IsolateConfiguration> isolate_configuration,
       const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
@@ -236,7 +245,7 @@ class DartIsolate : public UIDartState {
       const fml::closure& isolate_shutdown_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
-      std::unique_ptr<IsolateConfiguration> isolate_configration) const;
+      std::unique_ptr<IsolateConfiguration> isolate_configuration) const;
 
   // |UIDartState|
   ~DartIsolate() override;

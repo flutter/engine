@@ -20,6 +20,7 @@ import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
@@ -237,11 +238,7 @@ public class PlatformPlugin {
   }
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
-    int enabledOverlays =
-        DEFAULT_SYSTEM_UI
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    int enabledOverlays;
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -300,6 +297,9 @@ public class PlatformPlugin {
           View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+    } else {
+      // When none of the conditions are matched, return without updating the system UI overlays.
+      return;
     }
 
     mEnabledOverlays = enabledOverlays;
@@ -364,7 +364,8 @@ public class PlatformPlugin {
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
     View view = window.getDecorView();
-    int flags = view.getSystemUiVisibility();
+    WindowInsetsControllerCompat windowInsetsControllerCompat =
+        new WindowInsetsControllerCompat(window, view);
 
     // SYSTEM STATUS BAR -------------------------------------------------------------------
     // You can't change the color of the system status bar until SDK 21, and you can't change the
@@ -377,11 +378,14 @@ public class PlatformPlugin {
       if (systemChromeStyle.statusBarIconBrightness != null) {
         switch (systemChromeStyle.statusBarIconBrightness) {
           case DARK:
-            // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            flags |= 0x2000;
+            // Dark status bar icon brightness.
+            // Light status bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
             break;
           case LIGHT:
-            flags &= ~0x2000;
+            // Light status bar icon brightness.
+            // Dark status bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
             break;
         }
       }
@@ -393,7 +397,7 @@ public class PlatformPlugin {
     // You can't override the enforced contrast for a transparent status bar until SDK 29.
     // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
     // contrast is appropriate when using full screen layout modes like Edge to Edge.
-    if (!systemChromeStyle.systemStatusBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
+    if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
       window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
     }
 
@@ -408,11 +412,14 @@ public class PlatformPlugin {
       if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
         switch (systemChromeStyle.systemNavigationBarIconBrightness) {
           case DARK:
-            // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-            flags |= 0x10;
+            // Dark navigation bar icon brightness.
+            // Light navigation bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightNavigationBars(true);
             break;
           case LIGHT:
-            flags &= ~0x10;
+            // Light navigation bar icon brightness.
+            // Dark navigation bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightNavigationBars(false);
             break;
         }
       }
@@ -432,12 +439,12 @@ public class PlatformPlugin {
     // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on
     // SDK 29+ to ensure contrast is appropriate when using full screen layout modes like
     // Edge to Edge.
-    if (!systemChromeStyle.systemNavigationBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
+    if (systemChromeStyle.systemNavigationBarContrastEnforced != null
+        && Build.VERSION.SDK_INT >= 29) {
       window.setNavigationBarContrastEnforced(
           systemChromeStyle.systemNavigationBarContrastEnforced);
     }
 
-    view.setSystemUiVisibility(flags);
     currentTheme = systemChromeStyle;
   }
 

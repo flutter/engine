@@ -92,10 +92,6 @@ class Environment {
   /// The "pub" executable file.
   String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
 
-  /// The "dart2js" executable file.
-  String get dart2jsExecutable =>
-      pathlib.join(dartSdkDir.path, 'bin', 'dart2js');
-
   /// Path to where github.com/flutter/engine is checked out inside the engine workspace.
   io.Directory get flutterDirectory =>
       io.Directory(pathlib.join(engineSrcDir.path, 'flutter'));
@@ -155,8 +151,14 @@ class Environment {
 
   /// Path to the clone of the flutter/goldens repository.
   io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
-        webUiDartToolDir.path,
+        webUiBuildDir.path,
         'goldens',
+      ));
+
+  /// Path to the base directory to be used by Skia Gold.
+  io.Directory get webUiSkiaGoldDirectory => io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'skia_gold',
       ));
 
   /// Directory to add test results which would later be uploaded to a gcs

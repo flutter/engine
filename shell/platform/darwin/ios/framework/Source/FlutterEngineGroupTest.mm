@@ -24,10 +24,12 @@ FLUTTER_ASSERT_ARC
 - (void)testSpawn {
   FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo" project:nil];
   FlutterEngine* spawner = [group makeEngineWithEntrypoint:nil libraryURI:nil];
+  spawner.isGpuDisabled = YES;
   FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil libraryURI:nil];
   XCTAssertNotNil(spawner);
   XCTAssertNotNil(spawnee);
   XCTAssertEqual(&spawner.threadHost, &spawnee.threadHost);
+  XCTAssertEqual(spawner.isGpuDisabled, spawnee.isGpuDisabled);
 }
 
 - (void)testDeleteLastEngine {
@@ -38,6 +40,20 @@ FLUTTER_ASSERT_ARC
   }
   FlutterEngine* spawnee = [group makeEngineWithEntrypoint:nil libraryURI:nil];
   XCTAssertNotNil(spawnee);
+}
+
+- (void)testReleasesProjectOnDealloc {
+  __weak FlutterDartProject* weakProject;
+  @autoreleasepool {
+    FlutterDartProject* mockProject = OCMClassMock([FlutterDartProject class]);
+    FlutterEngineGroup* group = [[FlutterEngineGroup alloc] initWithName:@"foo"
+                                                                 project:mockProject];
+    weakProject = mockProject;
+    XCTAssertNotNil(weakProject);
+    group = nil;
+    mockProject = nil;
+  }
+  XCTAssertNil(weakProject);
 }
 
 @end

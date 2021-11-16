@@ -106,8 +106,6 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 using DisplayListLayerDiffTest = DiffContextTest;
 
 TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
@@ -128,6 +126,21 @@ TEST_F(DisplayListLayerDiffTest, SimpleDisplayList) {
   MockLayerTree tree3;
   damage = DiffLayerTree(tree3, tree2);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 60, 60));
+}
+
+TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+
+  MockLayerTree tree1;
+  tree1.root()->Add(
+      CreateDisplayListLayer(display_list, SkPoint::Make(0.5, 0.5)));
+
+  auto damage = DiffLayerTree(tree1, MockLayerTree());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(11, 11, 61, 61));
+#else
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 61, 61));
+#endif
 }
 
 TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
@@ -163,8 +176,6 @@ TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
   damage = DiffLayerTree(tree4, tree3);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(20, 20, 70, 70));
 }
-
-#endif
 
 }  // namespace testing
 }  // namespace flutter

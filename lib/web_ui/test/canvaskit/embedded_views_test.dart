@@ -213,7 +213,7 @@ void testMain() {
 
       // Initialize all platform views to be used in the test.
       final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < HtmlViewEmbedder.maximumSurfaces * 2; i++) {
+      for (int i = 0; i < configuration.canvasKitMaximumSurfaces * 2; i++) {
         ui.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (int viewId) => html.DivElement()..id = 'view-$i',
@@ -242,8 +242,8 @@ void testMain() {
       // Frame 1:
       //   Render: up to cache size platform views.
       //   Expect: main canvas plus platform view overlays.
-      renderTestScene(viewCount: HtmlViewEmbedder.maximumSurfaces);
-      expect(countCanvases(), HtmlViewEmbedder.maximumSurfaces);
+      renderTestScene(viewCount: configuration.canvasKitMaximumSurfaces);
+      expect(countCanvases(), configuration.canvasKitMaximumSurfaces);
 
       // Frame 2:
       //   Render: zero platform views.
@@ -256,15 +256,15 @@ void testMain() {
       //   Render: less than cache size platform views.
       //   Expect: overlays reused.
       await Future<void>.delayed(Duration.zero);
-      renderTestScene(viewCount: HtmlViewEmbedder.maximumSurfaces - 2);
-      expect(countCanvases(), HtmlViewEmbedder.maximumSurfaces - 1);
+      renderTestScene(viewCount: configuration.canvasKitMaximumSurfaces - 2);
+      expect(countCanvases(), configuration.canvasKitMaximumSurfaces - 1);
 
       // Frame 4:
       //   Render: more platform views than max cache size.
       //   Expect: main canvas, backup overlay, maximum overlays.
       await Future<void>.delayed(Duration.zero);
-      renderTestScene(viewCount: HtmlViewEmbedder.maximumSurfaces * 2);
-      expect(countCanvases(), HtmlViewEmbedder.maximumSurfaces);
+      renderTestScene(viewCount: configuration.canvasKitMaximumSurfaces * 2);
+      expect(countCanvases(), configuration.canvasKitMaximumSurfaces);
 
       // Frame 5:
       //   Render: zero platform views.
@@ -346,21 +346,21 @@ void testMain() {
       //   Render: Views 1-10
       //   Expect: main canvas plus platform view overlays; empty cache.
       renderTestScene(<int>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-      expect(countCanvases(), HtmlViewEmbedder.maximumSurfaces);
+      expect(countCanvases(), configuration.canvasKitMaximumSurfaces);
 
       // Frame 2:
       //   Render: Views 2-11
       //   Expect: main canvas plus platform view overlays; empty cache.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
-      expect(countCanvases(), HtmlViewEmbedder.maximumSurfaces);
+      expect(countCanvases(), configuration.canvasKitMaximumSurfaces);
 
       // Frame 3:
       //   Render: Views 3-12
       //   Expect: main canvas plus platform view overlays; empty cache.
       await Future<void>.delayed(Duration.zero);
       renderTestScene(<int>[3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
-      expect(countCanvases(), HtmlViewEmbedder.maximumSurfaces);
+      expect(countCanvases(), configuration.canvasKitMaximumSurfaces);
 
       // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
     }, skip: isSafari);
@@ -600,6 +600,47 @@ void testMain() {
           domRenderer.glassPaneShadow!
               .querySelectorAll('flt-platform-view-slot'),
           hasLength(1));
+      HtmlViewEmbedder.debugDisableOverlays = false;
+    });
+
+    test(
+        'correctly renders when overlays are disabled and a subset '
+        'of views is used', () async {
+      HtmlViewEmbedder.debugDisableOverlays = true;
+      ui.platformViewRegistry.registerViewFactory(
+        'test-platform-view',
+        (int viewId) => html.DivElement()..id = 'view-0',
+      );
+      await _createPlatformView(0, 'test-platform-view');
+      await _createPlatformView(1, 'test-platform-view');
+
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
+
+      LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.pop();
+      // The below line should not throw an error.
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+
+      expect(
+          domRenderer.glassPaneShadow!
+              .querySelectorAll('flt-platform-view-slot'),
+          hasLength(2));
+
+      sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.pop();
+      // The below line should not throw an error.
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+      expect(
+          domRenderer.glassPaneShadow!
+              .querySelectorAll('flt-platform-view-slot'),
+          hasLength(1));
+
       HtmlViewEmbedder.debugDisableOverlays = false;
     });
     // TODO(dit): https://github.com/flutter/flutter/issues/60040

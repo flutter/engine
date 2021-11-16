@@ -137,24 +137,43 @@ void Engine::Initialize(
 
   // Connect to Scenic.
   auto scenic = runner_services->Connect<fuchsia::ui::scenic::Scenic>();
-  fuchsia::ui::scenic::SessionEndpoints endpoints;
-  fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session;
-  endpoints.set_session(session.NewRequest());
-  fidl::InterfaceHandle<fuchsia::ui::scenic::SessionListener> session_listener;
+  fuchsia::ui::scenic::SessionEndpoints gfx_protocols;
+  fuchsia::ui::scenic::SessionHandle session;
+  gfx_protocols.set_session(session.NewRequest());
+  fuchsia::ui::scenic::SessionListenerHandle session_listener;
   auto session_listener_request = session_listener.NewRequest();
-  endpoints.set_session_listener(session_listener.Bind());
-  fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser;
-  endpoints.set_view_focuser(focuser.NewRequest());
-  fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> view_ref_focused;
-  endpoints.set_view_ref_focused(view_ref_focused.NewRequest());
-  fidl::InterfaceHandle<fuchsia::ui::pointer::TouchSource> touch_source;
-  // TODO(fxbug.dev/85125): Enable TouchSource for GFX.
-  // endpoints.set_touch_source(touch_source.NewRequest());
-  scenic->CreateSessionT(std::move(endpoints), [] {});
+  gfx_protocols.set_session_listener(session_listener.Bind());
+  fuchsia::ui::views::FocuserHandle focuser;
+  fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused;
+  fuchsia::ui::pointer::TouchSourceHandle touch_source;
+  fuchsia::ui::pointer::MouseSourceHandle mouse_source;
+
+  fuchsia::ui::composition::ViewBoundProtocols flatland_view_protocols;
+  if (use_flatland) {
+    flatland_view_protocols.set_view_focuser(focuser.NewRequest());
+    flatland_view_protocols.set_view_ref_focused(view_ref_focused.NewRequest());
+    flatland_view_protocols.set_touch_source(touch_source.NewRequest());
+    flatland_view_protocols.set_mouse_source(mouse_source.NewRequest());
+  } else {
+    gfx_protocols.set_view_focuser(focuser.NewRequest());
+    gfx_protocols.set_view_ref_focused(view_ref_focused.NewRequest());
+    // TODO(fxbug.dev/85125): Enable TouchSource for GFX.
+    // gfx_protocols.set_touch_source(touch_source.NewRequest());
+  }
+  scenic->CreateSessionT(std::move(gfx_protocols), [] {});
+
+  // Connect to Flatland.
+  fuchsia::ui::composition::FlatlandHandle flatland;
+  zx_status_t flatland_status =
+      runner_services->Connect<fuchsia::ui::composition::Flatland>(
+          flatland.NewRequest());
+  if (flatland_status != ZX_OK && use_flatland) {
+    FML_LOG(WARNING) << "fuchsia::ui::composition::Flatland connection failed: "
+                     << zx_status_get_string(flatland_status);
+  }
 
   // Connect to SemanticsManager service.
-  fidl::InterfaceHandle<fuchsia::accessibility::semantics::SemanticsManager>
-      semantics_manager;
+  fuchsia::accessibility::semantics::SemanticsManagerHandle semantics_manager;
   zx_status_t semantics_status =
       runner_services
           ->Connect<fuchsia::accessibility::semantics::SemanticsManager>(
@@ -167,7 +186,7 @@ void Engine::Initialize(
   }
 
   // Connect to ImeService service.
-  fidl::InterfaceHandle<fuchsia::ui::input::ImeService> ime_service;
+  fuchsia::ui::input::ImeServiceHandle ime_service;
   zx_status_t ime_status =
       runner_services->Connect<fuchsia::ui::input::ImeService>(
           ime_service.NewRequest());
@@ -177,7 +196,7 @@ void Engine::Initialize(
   }
 
   // Connect to Keyboard service.
-  fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard;
+  fuchsia::ui::input3::KeyboardHandle keyboard;
   zx_status_t keyboard_status =
       runner_services->Connect<fuchsia::ui::input3::Keyboard>(
           keyboard.NewRequest());
@@ -203,6 +222,7 @@ void Engine::Initialize(
                                          weak = weak_factory_.GetWeakPtr()]() {
     task_runner->PostTask([weak]() {
       if (weak) {
+        FML_LOG(ERROR) << "Terminating from session_error_callback";
         weak->Terminate();
       }
     });
@@ -218,23 +238,28 @@ void Engine::Initialize(
   task_runners.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [this, &view_embedder_latch,
        session_inspect_node = std::move(session_inspect_node),
-       session = std::move(session),
+       session = std::move(session), flatland = std::move(flatland),
        session_error_callback = std::move(session_error_callback), use_flatland,
        view_token = std::move(view_token_),
        view_creation_token = std::move(view_creation_token_),
+       flatland_view_protocols = std::move(flatland_view_protocols),
        request = parent_viewport_watcher.NewRequest(),
        view_ref_pair = std::move(view_ref_pair),
        max_frames_in_flight = product_config.get_max_frames_in_flight(),
        vsync_offset = product_config.get_vsync_offset()]() mutable {
         if (use_flatland) {
           flatland_connection_ = std::make_shared<FlatlandConnection>(
-              thread_label_, std::move(session_error_callback), [](auto) {},
+              thread_label_, std::move(flatland),
+              std::move(session_error_callback), [](auto) {},
               max_frames_in_flight, vsync_offset);
           surface_producer_.emplace(/*scenic_session=*/nullptr);
+          fuchsia::ui::views::ViewIdentityOnCreation view_identity = {
+              .view_ref = std::move(view_ref_pair.view_ref),
+              .view_ref_control = std::move(view_ref_pair.control_ref)};
           flatland_view_embedder_ =
               std::make_shared<FlatlandExternalViewEmbedder>(
-                  thread_label_, std::move(view_creation_token),
-                  std::move(view_ref_pair), std::move(request),
+                  std::move(view_creation_token), std::move(view_identity),
+                  std::move(flatland_view_protocols), std::move(request),
                   *flatland_connection_.get(), surface_producer_.value(),
                   intercept_all_input_);
         } else {
@@ -243,11 +268,10 @@ void Engine::Initialize(
               std::move(session), std::move(session_error_callback),
               [](auto) {}, max_frames_in_flight, vsync_offset);
           surface_producer_.emplace(session_connection_->get());
-          external_view_embedder_ =
-              std::make_shared<FuchsiaExternalViewEmbedder>(
-                  thread_label_, std::move(view_token),
-                  std::move(view_ref_pair), *session_connection_.get(),
-                  surface_producer_.value(), intercept_all_input_);
+          external_view_embedder_ = std::make_shared<GfxExternalViewEmbedder>(
+              thread_label_, std::move(view_token), std::move(view_ref_pair),
+              *session_connection_.get(), surface_producer_.value(),
+              intercept_all_input_);
         }
         view_embedder_latch.Signal();
       }));
@@ -317,6 +341,8 @@ void Engine::Initialize(
        weak = weak_factory_.GetWeakPtr()]() {
         task_runner->PostTask([weak]() {
           if (weak) {
+            FML_LOG(ERROR) << "Terminating from "
+                              "on_session_listener_error_callback";
             weak->Terminate();
           }
         });
@@ -348,6 +374,7 @@ void Engine::Initialize(
            focuser = std::move(focuser),
            view_ref_focused = std::move(view_ref_focused),
            touch_source = std::move(touch_source),
+           mouse_source = std::move(mouse_source),
            on_session_listener_error_callback =
                std::move(on_session_listener_error_callback),
            on_enable_wireframe_callback =
@@ -423,7 +450,8 @@ void Engine::Initialize(
                       shell, shell.GetTaskRunners(), std::move(view_ref),
                       std::move(external_view_embedder), std::move(ime_service),
                       std::move(keyboard), std::move(touch_source),
-                      std::move(focuser), std::move(view_ref_focused),
+                      std::move(mouse_source), std::move(focuser),
+                      std::move(view_ref_focused),
                       std::move(parent_viewport_watcher),
                       std::move(on_enable_wireframe_callback),
                       std::move(on_create_flatland_view_callback),
@@ -440,7 +468,8 @@ void Engine::Initialize(
                   shell, shell.GetTaskRunners(), std::move(view_ref),
                   std::move(external_view_embedder), std::move(ime_service),
                   std::move(keyboard), std::move(touch_source),
-                  std::move(focuser), std::move(view_ref_focused),
+                  std::move(mouse_source), std::move(focuser),
+                  std::move(view_ref_focused),
                   std::move(session_listener_request),
                   std::move(on_session_listener_error_callback),
                   std::move(on_enable_wireframe_callback),
@@ -593,6 +622,7 @@ void Engine::Initialize(
     // The engine could have been killed by the caller right after the
     // constructor was called but before it could run on the UI thread.
     if (weak) {
+      FML_LOG(ERROR) << "Terminating from on_run_failure";
       weak->Terminate();
     }
   };

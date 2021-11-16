@@ -100,6 +100,7 @@ class SpyTextInputPlugin : public KeyboardHandlerBase,
                void(const std::u16string& text, int cursor_pos));
 
   virtual void OnCursorRectUpdated(const Rect& rect) {}
+  virtual void OnResetImeComposing() {}
 
  private:
   std::unique_ptr<TextInputPlugin> real_implementation_;
@@ -155,6 +156,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
   MOCK_METHOD0(GetDpiScale, float());
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
+  MOCK_METHOD0(OnResetImeComposing, void());
 
  protected:
   virtual BOOL Win32PeekMessage(LPMSG lpMsg,
@@ -214,6 +216,7 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
   MOCK_METHOD0(OnComposeCommit, void());
   MOCK_METHOD0(OnComposeEnd, void());
   MOCK_METHOD2(OnComposeChange, void(const std::u16string&, int));
+  MOCK_METHOD1(OnUpdateSemanticsEnabled, void(bool));
   MOCK_METHOD7(OnScroll,
                void(double,
                     double,

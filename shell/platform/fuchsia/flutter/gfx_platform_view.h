@@ -11,7 +11,7 @@
 #include <fuchsia/ui/pointer/cpp/fidl.h>
 
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
+#include "flutter/shell/platform/fuchsia/flutter/gfx_external_view_embedder.h"
 
 namespace flutter_runner {
 
@@ -21,7 +21,7 @@ using OnDestroyGfxView = fit::function<void(int64_t, GfxViewIdCallback)>;
 
 // The GfxPlatformView implements SessionListener and gets Session events but it
 // does *not* actually own the Session itself; that is owned by the
-// FuchsiaExternalViewEmbedder on the raster thread.
+// GfxExternalViewEmbedder on the raster thread.
 class GfxPlatformView final : public flutter_runner::PlatformView,
                               private fuchsia::ui::scenic::SessionListener {
  public:
@@ -30,12 +30,12 @@ class GfxPlatformView final : public flutter_runner::PlatformView,
       flutter::TaskRunners task_runners,
       fuchsia::ui::views::ViewRef view_ref,
       std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
-      fidl::InterfaceHandle<fuchsia::ui::input::ImeService> ime_service,
-      fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard,
-      fidl::InterfaceHandle<fuchsia::ui::pointer::TouchSource> touch_source,
-      fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
-      fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused>
-          view_ref_focused,
+      fuchsia::ui::input::ImeServiceHandle ime_service,
+      fuchsia::ui::input3::KeyboardHandle keyboard,
+      fuchsia::ui::pointer::TouchSourceHandle touch_source,
+      fuchsia::ui::pointer::MouseSourceHandle mouse_source,
+      fuchsia::ui::views::FocuserHandle focuser,
+      fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused,
       fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
           session_listener_request,
       fit::closure on_session_listener_error_callback,

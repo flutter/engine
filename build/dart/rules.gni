@@ -8,12 +8,13 @@ import("//build/compiled_action.gni")
 import("//build/module_args/dart.gni")
 import("//flutter/common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
+import("//third_party/dart/sdk_args.gni")
 
 frontend_server_files =
     exec_script("//third_party/dart/tools/list_dart_files.py",
                 [
                   "absolute",
-                  rebase_path("."),
+                  rebase_path("//flutter/flutter_frontend_server"),
                 ],
                 "list lines")
 
@@ -21,7 +22,7 @@ frontend_server_files +=
     exec_script("//third_party/dart/tools/list_dart_files.py",
                 [
                   "absolute",
-                  rebase_path("../../third_party/dart/pkg"),
+                  rebase_path("//third_party/dart/pkg"),
                 ],
                 "list lines")
 
@@ -31,6 +32,9 @@ frontend_server_files +=
 #
 # Invoker must supply dart_main and package_config. Invoker may optionally
 # supply aot as a boolean and product as a boolean.
+#
+# On Android, the invoker may provide output_aot_lib as a string to override
+# the default filename for the aot-elf snapshot.
 template("flutter_snapshot") {
   assert(!is_fuchsia)
   assert(defined(invoker.main_dart), "main_dart is a required parameter.")
@@ -87,12 +91,12 @@ template("flutter_snapshot") {
       # build) causes the vm service isolate code to be tree-shaken from an app.
       # See the pragma on the entrypoint here:
       #
-      # https://github.com/dart-lang/sdk/blob/master/sdk/lib/_internal/vm/bin/vmservice_io.dart#L240
+      # https://github.com/dart-lang/sdk/blob/main/sdk/lib/_internal/vm/bin/vmservice_io.dart#L240
       #
       # Also, this define excludes debugging and profiling code from Flutter.
       args += [ "-Ddart.vm.product=true" ]
     } else {
-      if (!is_debug) {
+      if (flutter_runtime_mode == "profile") {
         # The following define excludes debugging code from Flutter.
         args += [ "-Ddart.vm.profile=true" ]
       }
@@ -134,7 +138,12 @@ template("flutter_snapshot") {
           "--assembly=" + rebase_path(snapshot_assembly),
         ]
       } else if (is_android) {
-        libapp = "$target_gen_dir/android/libs/$android_app_abi/libapp.so"
+        if (defined(invoker.output_aot_lib)) {
+          output_aot_lib = invoker.output_aot_lib
+        } else {
+          output_aot_lib = "libapp.so"
+        }
+        libapp = "$target_gen_dir/android/libs/$android_app_abi/$output_aot_lib"
         outputs += [ libapp ]
         args += [
           "--snapshot_kind=app-aot-elf",
@@ -259,6 +268,13 @@ template("application_snapshot") {
     assert(false, "Bad snapshot_kind: '$snapshot_kind'")
   }
 
+  # Ensure the compiled appliation (e.g. frontend-server, ...) will use this
+  # Dart SDK hash when consuming/producing kernel.
+  #
+  # (Instead of ensuring every user of the "application_snapshot" passes it's
+  # own)
+  snapshot_vm_args += [ "-Dsdk_hash=$sdk_hash" ]
+
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {
       forward_variables_from(invoker,
@@ -266,7 +282,7 @@ template("application_snapshot") {
                                "testonly",
                                "visibility",
                              ])
-      deps = extra_deps + [ "//flutter:dart_sdk" ]
+      deps = extra_deps
       script = "//build/gn_run_binary.py"
       inputs = extra_inputs
       outputs = [ output ]
@@ -277,7 +293,7 @@ template("application_snapshot") {
       if (is_win) {
         ext = ".exe"
       }
-      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
+      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_build_dir)
 
       args = [ dart ]
       args += snapshot_vm_args

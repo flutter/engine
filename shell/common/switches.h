@@ -28,6 +28,10 @@ DEF_SWITCHES_START
 DEF_SWITCH(AotSharedLibraryName,
            "aot-shared-library-name",
            "Name of the *.so containing AOT compiled Dart assets.")
+DEF_SWITCH(AotVMServiceSharedLibraryName,
+           "aot-vmservice-shared-library-name",
+           "Name of the *.so containing AOT compiled Dart assets for "
+           "launching the service isolate.")
 DEF_SWITCH(SnapshotAssetPath,
            "snapshot-asset-path",
            "Path to the directory containing the four files specified by "
@@ -169,6 +173,10 @@ DEF_SWITCH(UseTestFonts,
            "will make font resolution default to the Ahem test font on all "
            "platforms (See https://www.w3.org/Style/CSS/Test/Fonts/Ahem/). "
            "This option is only available on the desktop test shells.")
+DEF_SWITCH(PrefetchedDefaultFontManager,
+           "prefetched-default-font-manager",
+           "Indicates whether the embedding started a prefetch of the "
+           "default font manager before creating the engine.")
 DEF_SWITCH(VerboseLogging,
            "verbose-logging",
            "By default, only errors are logged. This flag enabled logging at "

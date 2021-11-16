@@ -116,6 +116,10 @@ struct Settings {
   // case the primary path to the library can not be loaded.
   std::vector<std::string> application_library_path;
 
+  // Path to a library containing compiled Dart code usable for launching
+  // the VM service isolate.
+  std::vector<std::string> vmservice_snapshot_library_path;
+
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
   MappingsCallback application_kernels;
@@ -181,11 +185,15 @@ struct Settings {
   // Font settings
   bool use_test_fonts = false;
 
+  // Indicates whether the embedding started a prefetch of the default font
+  // manager before creating the engine.
+  bool prefetched_default_font_manager = false;
+
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
 
   // Selects the DisplayList for storage of rendering operations.
-  bool enable_display_list = false;
+  bool enable_display_list = true;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;

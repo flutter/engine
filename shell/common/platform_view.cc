@@ -8,8 +8,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/shell/common/rasterizer.h"
-#include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/vsync_waiter_fallback.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 
@@ -115,8 +113,9 @@ void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
-  if (auto response = message->response())
+  if (auto response = message->response()) {
     response->CompleteEmpty();
+  }
 }
 
 void PlatformView::OnPreEngineRestart() const {}
@@ -183,6 +182,11 @@ void PlatformView::UpdateAssetResolverByType(
 
 std::unique_ptr<SnapshotSurfaceProducer>
 PlatformView::CreateSnapshotSurfaceProducer() {
+  return nullptr;
+}
+
+std::shared_ptr<PlatformMessageHandler>
+PlatformView::GetPlatformMessageHandler() const {
   return nullptr;
 }
 

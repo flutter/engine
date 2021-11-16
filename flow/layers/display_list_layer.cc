@@ -17,8 +17,6 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
   // Only return true for identical display lists; This way
@@ -42,6 +40,10 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
   context->AddLayerBounds(display_list()->bounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
@@ -81,21 +83,24 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
   return res;
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
 
   DisplayList* disp_list = display_list();
 
+  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
-                   offset_);
+    if (context->cull_rect.intersects(bounds)) {
+      cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
+                     offset_);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(disp_list, matrix);
+    }
   }
-
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 }
 

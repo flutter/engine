@@ -18,8 +18,6 @@ PictureLayer::PictureLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 bool PictureLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Only return true for identical pictures; This way
   // ContainerLayer::DiffChildren can detect when a picture layer got inserted
@@ -42,6 +40,10 @@ void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
   context->AddLayerBounds(picture()->cullRect());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
@@ -51,6 +53,7 @@ bool PictureLayer::Compare(DiffContext::Statistics& statistics,
                            const PictureLayer* l2) {
   const auto& pic1 = l1->picture_.skia_object();
   const auto& pic2 = l2->picture_.skia_object();
+
   if (pic1.get() == pic2.get()) {
     statistics.AddSameInstancePicture();
     return true;
@@ -104,20 +107,24 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
   return cached_serialized_picture_;
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
   SkPicture* sk_picture = picture();
 
+  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-    cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
-                   offset_);
+    if (context->cull_rect.intersects(bounds)) {
+      cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
+                     offset_);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(sk_picture, matrix);
+    }
   }
 
-  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 }
 

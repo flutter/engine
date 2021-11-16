@@ -21,6 +21,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
@@ -67,7 +68,8 @@ extern NSString* _Nonnull const FlutterEngineWillDealloc;
  * This should only be called on a FlutterEngine that is running.
  */
 - (nonnull FlutterEngine*)spawnWithEntrypoint:(nullable NSString*)entrypoint
-                                   libraryURI:(nullable NSString*)libraryURI;
+                                   libraryURI:(nullable NSString*)libraryURI
+                                 initialRoute:(nullable NSString*)initialRoute;
 
 /**
  * Dispatches the given key event data to the framework through the engine.

@@ -46,13 +46,14 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 }
 
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
-    bool use_software_rendering) {
+    bool use_software_rendering,
+    const flutter::TaskRunners task_runners) {
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   return std::make_unique<AndroidContextGL>(
       AndroidRenderingAPI::kOpenGLES,
-      fml::MakeRefCounted<AndroidEnvironmentGL>());
+      fml::MakeRefCounted<AndroidEnvironmentGL>(), task_runners);
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -60,10 +61,11 @@ PlatformViewAndroid::PlatformViewAndroid(
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering)
-    : PlatformViewAndroid(delegate,
-                          std::move(task_runners),
-                          std::move(jni_facade),
-                          CreateAndroidContext(use_software_rendering)) {}
+    : PlatformViewAndroid(
+          delegate,
+          std::move(task_runners),
+          std::move(jni_facade),
+          CreateAndroidContext(use_software_rendering, task_runners)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
@@ -73,9 +75,8 @@ PlatformViewAndroid::PlatformViewAndroid(
     : PlatformView(delegate, std::move(task_runners)),
       jni_facade_(jni_facade),
       android_context_(std::move(android_context)),
-      platform_view_android_delegate_(jni_facade) {
-  // TODO(dnfield): always create a pbuffer surface for background use to
-  // resolve https://github.com/flutter/flutter/issues/73675
+      platform_view_android_delegate_(jni_facade),
+      platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
   if (android_context_) {
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";
@@ -190,52 +191,11 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
                                                  std::move(response)));
 }
 
-void PlatformViewAndroid::InvokePlatformMessageResponseCallback(
-    JNIEnv* env,
-    jint response_id,
-    jobject java_response_data,
-    jint java_response_position) {
-  if (!response_id)
-    return;
-  auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
-    return;
-  uint8_t* response_data =
-      static_cast<uint8_t*>(env->GetDirectBufferAddress(java_response_data));
-  FML_DCHECK(response_data != nullptr);
-  std::vector<uint8_t> response = std::vector<uint8_t>(
-      response_data, response_data + java_response_position);
-  auto message_response = std::move(it->second);
-  pending_responses_.erase(it);
-  message_response->Complete(
-      std::make_unique<fml::DataMapping>(std::move(response)));
-}
-
-void PlatformViewAndroid::InvokePlatformMessageEmptyResponseCallback(
-    JNIEnv* env,
-    jint response_id) {
-  if (!response_id)
-    return;
-  auto it = pending_responses_.find(response_id);
-  if (it == pending_responses_.end())
-    return;
-  auto message_response = std::move(it->second);
-  pending_responses_.erase(it);
-  message_response->CompleteEmpty();
-}
-
 // |PlatformView|
 void PlatformViewAndroid::HandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) {
-  int response_id = 0;
-  if (auto response = message->response()) {
-    response_id = next_response_id_++;
-    pending_responses_[response_id] = response;
-  }
-  // This call can re-enter in InvokePlatformMessageXxxResponseCallback.
-  jni_facade_->FlutterViewHandlePlatformMessage(std::move(message),
-                                                response_id);
-  message = nullptr;
+  // Called from the ui thread.
+  platform_message_handler_->HandlePlatformMessage(std::move(message));
 }
 
 // |PlatformView|
@@ -287,7 +247,8 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
   if (!android_surface_) {
     return nullptr;
   }
-  return android_surface_->CreateGPUSurface();
+  return android_surface_->CreateGPUSurface(
+      android_context_->GetMainSkiaContext().get());
 }
 
 // |PlatformView|

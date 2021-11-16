@@ -90,6 +90,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
+  // Invoked by the engine right before the engine is restarted.
+  //
+  // This should reset necessary states to as if the view has just been
+  // created. This is typically caused by a hot restart (Shift-R in CLI.)
+  void OnPreEngineRestart();
+
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) override;
 
@@ -152,8 +158,14 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |WindowBindingHandlerDelegate|
   void OnPlatformBrightnessChanged() override;
 
+  // |WindowBindingHandlerDelegate|
+  virtual void OnUpdateSemanticsEnabled(bool enabled) override;
+
   // |TextInputPluginDelegate|
   void OnCursorRectUpdated(const Rect& rect) override;
+
+  // |TextInputPluginDelegate|
+  void OnResetImeComposing() override;
 
  protected:
   // Called to create the keyboard hook handlers.
@@ -206,6 +218,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
     // and the buffers have been swapped.
     kDone,
   };
+
+  // Initialize states related to keyboard.
+  //
+  // This is called when the view is first created, or restarted.
+  void InitializeKeyboard();
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
@@ -332,6 +349,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Target for the window width. Valid when resize_pending_ is set. Guarded by
   // resize_mutex_.
   size_t resize_target_height_ = 0;
+
+  // True when flutter's semantics tree is enabled.
+  bool semantics_enabled_ = false;
 };
 
 }  // namespace flutter
