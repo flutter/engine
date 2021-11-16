@@ -49,6 +49,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
+#include "flutter/shell/platform/embedder/embedder_mapping.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
@@ -2360,6 +2361,19 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
   }
 }
 
+FlutterEngineResult FlutterEngineCreateMapping(
+    const FlutterEngineMappingCreateInfo* create_info,
+    FlutterEngineMapping* out_mapping) {
+  if (SAFE_ACCESS(create_info, data, nullptr) == nullptr && SAFE_ACCESS(create_info, data_size, 0) > 0) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid mapping specified.");
+  }
+
+  auto mapping = flutter::CreateEmbedderMapping(create_info);
+  *out_mapping = reinterpret_cast<FlutterEngineMapping>(mapping.release());
+
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2410,6 +2424,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(PostCallbackOnAllNativeThreads,
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
+  SET_PROC(CreateMapping, FlutterEngineCreateMapping);
 #undef SET_PROC
 
   return kSuccess;

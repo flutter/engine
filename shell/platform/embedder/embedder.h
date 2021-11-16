@@ -1366,7 +1366,9 @@ typedef struct {
   /// above is passed in as the only argument. This call may mutate/free/unmap the
   /// data, as it will no longer be accessed by the Flutter Engine.
   VoidCallback destruction_callback;
-} FlutterEngineMapping;
+} FlutterEngineMappingCreateInfo;
+
+typedef struct FlutterEngineMappingPrivate* FlutterEngineMapping;
 
 /// Callback for fetching assets for a `FlutterEngineAssetResolver`.
 ///
@@ -1379,7 +1381,7 @@ typedef struct {
 /// If the asset was found and successfully loaded, return a valid
 /// `FlutterEngineMapping`. Otherwise return NULL to indicate an error occurred 
 /// while loading the asset.
-typedef FlutterEngineMapping* (*FlutterAssetResolverGetAssetCallback)(const char* /* asset_name */,
+typedef FlutterEngineMapping (*FlutterAssetResolverGetAssetCallback)(const char* /* asset_name */,
                                                                       void* /* user_data */);
 
 /// Resolves assets on the behalf of the Flutter Engine, instead of accessing the
@@ -2306,6 +2308,23 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
     const FlutterEngineDisplay* displays,
     size_t display_count);
 
+//------------------------------------------------------------------------------
+/// @brief      Creates a `FlutterEngineMapping` using the given creation info.
+///             The backing memory is never mutated by the Engine, and must not
+///             be mutated by the embedder until the mapping is destroyed.
+///             The engine may access the mapping from multiple threads, and may
+///             destroy the mapping from any thread.
+///
+/// @param[in]  create_info     Struct describing the mapping to create.
+/// @param[out] out_mapping     The created mapping, if successful.
+///
+/// @return     Whether the mapping was successfully created.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineCreateMapping(
+    const FlutterEngineMappingCreateInfo* create_info,
+    FlutterEngineMapping* out_mapping);
+
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
 // Typedefs for the function pointers in FlutterEngineProcTable.
@@ -2422,6 +2441,9 @@ typedef FlutterEngineResult (*FlutterEngineNotifyDisplayUpdateFnPtr)(
     FlutterEngineDisplaysUpdateType update_type,
     const FlutterEngineDisplay* displays,
     size_t display_count);
+typedef FlutterEngineResult (*FlutterEngineCreateMappingFnPtr)(
+    const FlutterEngineMappingCreateInfo* create_info,
+    FlutterEngineMapping* out_mapping);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
@@ -2466,6 +2488,7 @@ typedef struct {
   FlutterEnginePostCallbackOnAllNativeThreadsFnPtr
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
+  FlutterEngineCreateMappingFnPtr CreateMapping;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------

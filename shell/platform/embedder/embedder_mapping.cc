@@ -42,11 +42,11 @@ private:
   size_t size_;
   void* user_data_;
   VoidCallback destruction_callback_;
-  
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderMapping);
 };
 
-std::unique_ptr<fml::Mapping> CreateEmbedderMapping(const FlutterEngineMapping* mapping) {
+std::unique_ptr<fml::Mapping> CreateEmbedderMapping(const FlutterEngineMappingCreateInfo* mapping) {
   return std::make_unique<EmbedderMapping>(
     SAFE_ACCESS(mapping, data, nullptr),
     SAFE_ACCESS(mapping, data_size, 0),
