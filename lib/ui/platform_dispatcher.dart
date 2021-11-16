@@ -351,6 +351,21 @@ class PlatformDispatcher {
     return PointerDataPacket(data: data);
   }
 
+  static ChannelCallback _keyDataListener(KeyDataCallback onKeyData, Zone zone) =>
+    (ByteData? packet, PlatformMessageResponseCallback callback) {
+      _invoke1<KeyData>(
+        (KeyData keyData) {
+          final bool handled = onKeyData(keyData);
+          final Uint8List response = Uint8List.fromList(<int>[
+            if (handled) 1 else 0,
+          ]);
+          callback(ByteData.sublistView(response));
+        },
+        zone,
+        _unpackKeyData(packet!),
+      );
+    };
+
   /// A callback that is invoked when key data is available.
   ///
   /// The framework invokes this callback in the same zone in which the callback
@@ -360,25 +375,13 @@ class PlatformDispatcher {
   /// framework and should not be propagated further.
   KeyDataCallback? get onKeyData => _onKeyData;
   KeyDataCallback? _onKeyData;
-  Zone _onKeyDataZone = Zone.root;
   set onKeyData(KeyDataCallback? callback) {
     _onKeyData = callback;
-    _onKeyDataZone = Zone.current;
-    channelBuffers.setListener(_kFlutterKeyDataChannel, _keyDataListener);
-  }
-
-  void _keyDataListener(ByteData? packet, PlatformMessageResponseCallback callback) {
-    _invoke1<KeyData>(
-      (KeyData keyData) {
-        final bool handled = _onKeyData != null && _onKeyData!(keyData);
-        final Uint8List response = Uint8List.fromList(<int>[
-          if (handled) 1 else 0,
-        ]);
-        callback(ByteData.sublistView(response));
-      },
-      _onKeyDataZone,
-      _unpackKeyData(packet!),
-    );
+    if (callback != null) {
+      channelBuffers.setListener(_kFlutterKeyDataChannel, _keyDataListener(callback, Zone.current));
+    } else {
+      channelBuffers.clearListener(_kFlutterKeyDataChannel);
+    }
   }
 
   // If this value changes, update the encoding code in the following files:

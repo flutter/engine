@@ -69,12 +69,14 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
-// A message channel to send FlutterKeyData to the framework.
+// A message channel to send platform-independent FlutterKeyData to the
+// framework.
 //
-// This should be kept in sync with the following files:
+// This should be kept in sync with the following variables:
 //
-// - lib/ui/platform_dispatcher.dart
-// - shell/platform/darwin/ios/framework/Source/FlutterEngine.mm
+// - lib/ui/platform_dispatcher.dart, _kFlutterKeyDataChannel
+// - shell/platform/darwin/ios/framework/Source/FlutterEngine.mm,
+//   FlutterKeyDataChannel
 //
 // Not to be confused with "flutter/keyevent", which is used to send raw
 // key event data in a platform-dependent format.
@@ -84,7 +86,7 @@ const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 // Send: KeyDataPacket.data().
 //
 // Expected reply: Whether the event is handled. Exactly 1 byte long, with value
-// 1 for handled, and 0 for not.
+// 1 for handled, and 0 for not. Malformed value is considered false.
 const char* kFlutterKeyDataChannel = "flutter/keydata";
 
 static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
@@ -1611,6 +1613,9 @@ static inline flutter::KeyEventType MapKeyEventType(
   return flutter::KeyEventType::kUp;
 }
 
+// Send a platform message to the framework.
+//
+// The `data_callback` will be invoked with `user_data`, and must not be empty.
 static FlutterEngineResult InternalSendPlatformMessage(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const char* channel,
@@ -1636,13 +1641,15 @@ static FlutterEngineResult InternalSendPlatformMessage(
   };
 
   result = FlutterEngineSendPlatformMessage(engine, &message);
-  FlutterEngineResult result2 =
+  // Whether `SendPlatformMessage` succeeds or not, the response handle must be
+  // released.
+  FlutterEngineResult release_result =
       FlutterPlatformMessageReleaseResponseHandle(engine, response_handle);
   if (result != kSuccess) {
     return result;
   }
 
-  return result2;
+  return release_result;
 }
 
 FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
@@ -1680,10 +1687,8 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
       new MessageData{.callback = callback, .user_data = user_data};
 
   return InternalSendPlatformMessage(
-      engine,
-      kFlutterKeyDataChannel,  // channel
-      packet->data().data(),   // message
-      packet->data().size(),   // message_size
+      engine, kFlutterKeyDataChannel, packet->data().data(),
+      packet->data().size(),
       [](const uint8_t* data, size_t size, void* user_data) {
         auto message_data = std::unique_ptr<MessageData>(
             reinterpret_cast<MessageData*>(user_data));
