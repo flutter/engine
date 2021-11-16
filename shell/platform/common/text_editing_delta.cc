@@ -8,16 +8,30 @@ namespace flutter {
 
 TextEditingDelta::~TextEditingDelta() = default;
 
-TextEditingDelta::TextEditingDelta(std::string textBeforeChange,
+TextEditingDelta::TextEditingDelta(std::u16string textBeforeChange,
                                    TextRange range,
-                                   std::string text) {
+                                   std::u16string text) {
   int start = range.start();
   int end = range.start() + range.length();
   setDeltas(textBeforeChange, text, start, end);
 }
 
+TextEditingDelta::TextEditingDelta(std::string textBeforeChange,
+                                   TextRange range,
+                                   std::string text) {
+  int start = range.start();
+  int end = range.start() + range.length();
+  std::u16string textBeforeChange16 = utf8ToUtf16(textBeforeChange);
+  std::u16string text16 = utf8ToUtf16(text);
+  setDeltas(textBeforeChange16, text16, start, end);
+}
+
+TextEditingDelta::TextEditingDelta(std::u16string text) {
+  setDeltas(text, u"", -1, -1);
+}
+
 TextEditingDelta::TextEditingDelta(std::string text) {
-  setDeltas(text, "", -1, -1);
+  setDeltas(utf8ToUtf16(text), u"", -1, -1);
 }
 
 }  // namespace flutter
