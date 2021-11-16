@@ -23,6 +23,7 @@ constexpr guint16 kKeyCodeDigit1 = 0x0au;
 constexpr guint16 kKeyCodeKeyA = 0x26u;
 constexpr guint16 kKeyCodeShiftLeft = 0x32u;
 constexpr guint16 kKeyCodeShiftRight = 0x3Eu;
+constexpr guint16 kKeyCodeAltRight = 0x6Cu;
 constexpr guint16 kKeyCodeNumpad1 = 0x57u;
 constexpr guint16 kKeyCodeNumLock = 0x4Du;
 constexpr guint16 kKeyCodeCapsLock = 0x42u;
@@ -1632,6 +1633,45 @@ TEST(FlKeyEmbedderResponderTest, SynthesizationOccursOnIgnoredEvents) {
   EXPECT_EQ(record->event->synthesized, true);
 
   g_ptr_array_clear(g_call_records);
+
+  clear_g_call_records();
+  g_object_unref(engine);
+  g_object_unref(responder);
+}
+
+TEST(FlKeyEmbedderResponderTest, Fix) {
+  EXPECT_EQ(g_call_records, nullptr);
+  g_call_records = g_ptr_array_new_with_free_func(g_object_unref);
+  FlEngine* engine = make_mock_engine_with_records();
+  FlKeyResponder* responder =
+      FL_KEY_RESPONDER(fl_key_embedder_responder_new(engine));
+
+  // FlKeyEmbedderCallRecord* record;
+
+  g_expected_handled = true;
+  guint32 now_time = 1;
+  // A convenient shorthand to simulate events.
+  auto send_key_event = [responder, &now_time](bool is_press, guint keyval,
+                                               guint16 keycode, int state) {
+    now_time += 1;
+    int user_data = 123;  // Arbitrary user data
+    fl_key_responder_handle_event(
+        responder,
+        fl_key_event_new_by_mock(now_time, is_press, keyval, keycode, state,
+                                 kIsModifier),
+        verify_response_handled, &user_data);
+  };
+
+  send_key_event(kPress, GDK_KEY_Shift_L, kKeyCodeShiftLeft, 0x2000000);
+  send_key_event(kPress, GDK_KEY_Meta_R, kKeyCodeAltRight, 0x2000001);
+  send_key_event(kRelease, GDK_KEY_ISO_Next_Group, kKeyCodeShiftLeft,
+                 0x2000009);
+  send_key_event(kPress, GDK_KEY_ISO_Next_Group, kKeyCodeShiftLeft,
+                 0x2000008);
+  send_key_event(kRelease, GDK_KEY_ISO_Level3_Shift, kKeyCodeAltRight,
+                 0x2002008);
+  send_key_event(kRelease, GDK_KEY_Shift_L, kKeyCodeShiftLeft,
+                 0x2002000);
 
   clear_g_call_records();
   g_object_unref(engine);
