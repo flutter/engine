@@ -4,8 +4,11 @@
 
 #include "string_utils.h"
 
+#include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <codecvt>
+#include <iostream>
 #include <locale>
 #include <regex>
 #include <sstream>
@@ -48,8 +51,8 @@ std::wstring UTF16ToWide(const std::u16string& src) {
   return std::wstring(src.begin(), src.end());
 }
 
-std::u16string NumberToString16(float number) {
-  return ASCIIToUTF16(NumberToString(number));
+std::u16string NumberToString16(float number, int precision) {
+  return ASCIIToUTF16(NumberToString(number, precision));
 }
 
 std::u16string NumberToString16(int32_t number) {
@@ -60,8 +63,8 @@ std::u16string NumberToString16(unsigned int number) {
   return ASCIIToUTF16(NumberToString(number));
 }
 
-std::u16string NumberToString16(double number) {
-  return ASCIIToUTF16(NumberToString(number));
+std::u16string NumberToString16(double number, int precision) {
+  return ASCIIToUTF16(NumberToString(number, precision));
 }
 
 std::string NumberToString(int32_t number) {
@@ -72,16 +75,39 @@ std::string NumberToString(unsigned int number) {
   return std::to_string(number);
 }
 
-std::string NumberToString(float number) {
-  // TODO(gw280): Format decimals to the shortest reasonable representation.
-  // See: https://github.com/flutter/flutter/issues/78460
-  return std::to_string(number);
+std::string NumberToString(float number, int precision) {
+  return NumberToString(static_cast<double>(number), precision);
 }
 
-std::string NumberToString(double number) {
-  // TODO(gw280): Format decimals to the shortest reasonable representation.
-  // See: https://github.com/flutter/flutter/issues/78460
-  return std::to_string(number);
+std::string NumberToString(double number, int precision) {
+  if (number == 0.0) {
+    return "0";
+  }
+
+  std::stringstream ss;
+  ss.precision(precision);
+  ss << std::fixed << number;
+  std::string str = ss.str();
+
+  int strip = 0;
+  // Strip any trailing zeros, including the decimal marker if there are nothing
+  // but zeros after the decimal.
+  for (std::string::reverse_iterator it = str.rbegin(); it != str.rend() - 1;
+       ++it) {
+    if (*it == '0') {
+      strip++;
+    } else if (*it == '.' || *it == ',') {
+      strip++;
+      // Don't keep stripping once we hit a decimal marker.
+      break;
+    } else {
+      break;
+    }
+  }
+  if (strip != 0) {
+    return str.substr(0, str.length() - strip);
+  }
+  return str;
 }
 
 std::string JoinString(std::vector<std::string> tokens, std::string delimiter) {
