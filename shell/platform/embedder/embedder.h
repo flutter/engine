@@ -1381,6 +1381,11 @@ typedef struct FlutterEngineMappingPrivate* FlutterEngineMapping;
 /// If the asset was found and successfully loaded, return a valid
 /// `FlutterEngineMapping`. Otherwise return NULL to indicate an error occurred 
 /// while loading the asset.
+///
+/// Note that the returned `FlutterEngineMapping` is owned by the Engine and should
+/// be cached or reused. Each callback invocation must return a new 
+/// FlutterEngineMapping. Multiple mappings may refer to the same area in memory,
+/// proper book-keeping is up to the embedder.
 typedef FlutterEngineMapping (*FlutterAssetResolverGetAssetCallback)(const char* /* asset_name */,
                                                                       void* /* user_data */);
 
@@ -1389,6 +1394,10 @@ typedef FlutterEngineMapping (*FlutterAssetResolverGetAssetCallback)(const char*
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterEngineAssetResolver).
   size_t struct_size;
+
+  /// An opaque baton passed back to the embedder when a callback is
+  /// invoked. The engine does not interpret this field in any way.
+  void* user_data;
 
   /// Required. Gets and returns an asset if available. See the documentation on
   /// `FlutterAssetResolverGetAssetCallback` for more information.
@@ -1402,7 +1411,11 @@ typedef struct {
   /// string can be collected after the call to `FlutterEngineRun` returns. The
   /// string must be NULL terminated.
   ///
-  /// If `asset_resolver` is provided, this path is ignored and may be NULL.
+  /// If `asset_resolver` is provided, may be NULL.
+  ///
+  /// If both `asset_resolver` and `assets_path` are provided, the `asset_resolver`
+  /// comes first in the asset search order, then `assets_path`. This effectively
+  /// makes `asset_resolver` an overlay over `assets_path`.
   const char* assets_path;
   /// The path to the Dart file containing the `main` entry point.
   /// The string can be collected after the call to `FlutterEngineRun` returns.
@@ -1644,7 +1657,11 @@ typedef struct {
 
   /// An asset resolver that fetches assets for the Engine.
   ///
-  /// If provided, this replaces the default asset resolver.
+  /// If `assets_path` is provided, may be NULL.
+  ///
+  /// If both `asset_resolver` and `assets_path` are provided, the `asset_resolver`
+  /// comes first in the asset search order, then `assets_path`. This effectively
+  /// makes `asset_resolver` an overlay over `assets_path`.
   const FlutterEngineAssetResolver* asset_resolver;
 } FlutterProjectArgs;
 
