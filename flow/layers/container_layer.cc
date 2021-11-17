@@ -132,10 +132,6 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   bool subtree_can_accept_opacity =
       container_can_pass_opacity_to_children() && layers_.size() < 2;
 
-  // FML_LOG(ERROR) << "container can pass opacity: " << container_can_pass_opacity_to_children();
-  // FML_LOG(ERROR) << "container child layers: " << layers_.size();
-  // FML_LOG(ERROR) << "subtree_opacity start = " << subtree_can_accept_opacity;
-
   for (auto& layer : layers_) {
     // Reset context->has_platform_view to false so that layers aren't treated
     // as if they have a platform view based on one being previously found in a
@@ -149,7 +145,6 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
         child_has_platform_view || context->has_platform_view;
     child_has_texture_layer =
         child_has_texture_layer || context->has_texture_layer;
-    // FML_LOG(ERROR) << "  layer_opacity = " << layer->layer_can_accept_opacity();
     if (subtree_can_accept_opacity) {
       subtree_can_accept_opacity = layer->layer_can_accept_opacity();
     }
@@ -157,7 +152,6 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
 
   context->has_platform_view = child_has_platform_view;
   context->has_texture_layer = child_has_texture_layer;
-  // FML_LOG(ERROR) << "subtree_opacity end = " << subtree_can_accept_opacity;
   context->subtree_can_accept_opacity = subtree_can_accept_opacity;
   set_subtree_has_platform_view(child_has_platform_view);
 }

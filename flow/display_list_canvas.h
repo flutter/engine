@@ -29,7 +29,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
  public:
   explicit DisplayListCanvasDispatcher(SkCanvas* canvas,
                                        SkAlpha extra_alpha = SK_AlphaOPAQUE)
-     : SkPaintDispatchHelper(extra_alpha), canvas_(canvas) {}
+      : SkPaintDispatchHelper(extra_alpha), canvas_(canvas) {}
 
   void save() override;
   void restore() override;

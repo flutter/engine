@@ -37,7 +37,6 @@ class DisplayListLayer : public Layer {
   void Paint(PaintContext& context) const override;
 
   bool layer_can_accept_opacity() override {
-    // FML_LOG(ERROR) << "display list ops: " << display_list()->op_count();
     return display_list()->op_count() == 1;
   }
 

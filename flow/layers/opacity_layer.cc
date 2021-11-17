@@ -41,8 +41,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // reverse transformation to the cull rect to properly cull child layers.
   context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
 
-  // FML_LOG(ERROR) << "Opacity layer prerolling children: ";
-
   context->mutators_stack.PushTransform(
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
@@ -56,8 +54,6 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->subtree_can_accept_opacity = true;
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
-
-  // FML_LOG(ERROR) << "Opacity layer can pass opacity: " << subtree_can_accept_opacity_;
 
   if (!subtree_can_accept_opacity_) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION

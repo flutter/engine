@@ -54,7 +54,7 @@ void SkPaintDispatchHelper::setStrokeMiter(SkScalar limit) {
 void SkPaintDispatchHelper::setColor(SkColor color) {
   if (extra_alpha_ < SK_AlphaOPAQUE) {
     SkAlpha alpha = (SkColorGetA(color) * extra_alpha_ + SK_AlphaOPAQUE / 2) /
-        SK_AlphaOPAQUE;
+                    SK_AlphaOPAQUE;
     color = SkColorSetA(color, alpha);
   }
   paint_.setColor(color);
