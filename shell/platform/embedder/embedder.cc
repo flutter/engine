@@ -47,6 +47,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder_asset_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_mapping.h"
@@ -927,10 +928,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "The Flutter project arguments were missing.");
   }
 
-  if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr) {
+  if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr && SAFE_ACCESS(args, asset_resolver, nullptr) == nullptr) {
     return LOG_EMBEDDER_ERROR(
         kInvalidArguments,
-        "The assets path in the Flutter project arguments was missing.");
+        "The assets path or asset resolver in the Flutter project arguments was missing.");
   }
 
   if (SAFE_ACCESS(args, main_path__unused__, nullptr) != nullptr) {
@@ -988,19 +989,22 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   PopulateSnapshotMappingCallbacks(args, settings);
 
   settings.icu_data_path = icu_data_path;
-  settings.assets_path = args->assets_path;
+  if (args->assets_path) settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
   settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
     // Verify the assets path contains Dart 2 kernel assets.
+    // NOTE: This check is skipped if using a custom asset resolver.
     const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
-    std::string application_kernel_path = fml::paths::JoinPaths(
-        {settings.assets_path, kApplicationKernelSnapshotFileName});
-    if (!fml::IsFile(application_kernel_path)) {
-      return LOG_EMBEDDER_ERROR(
-          kInvalidArguments,
-          "Not running in AOT mode but could not resolve the kernel binary.");
+    if (args->assets_path) {
+      std::string application_kernel_path = fml::paths::JoinPaths(
+          {settings.assets_path, kApplicationKernelSnapshotFileName});
+      if (!fml::IsFile(application_kernel_path)) {
+        return LOG_EMBEDDER_ERROR(
+            kInvalidArguments,
+            "Not running in AOT mode but could not resolve the kernel binary.");
+      }
     }
     settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
   }
@@ -1297,8 +1301,25 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "Task runner configuration was invalid.");
   }
 
+  auto asset_manager = std::make_shared<flutter::AssetManager>();
+
+  if (SAFE_ACCESS(args, asset_resolver, nullptr) != nullptr) {
+    asset_manager->PushBack(flutter::CreateEmbedderAssetResolver(args->asset_resolver));
+  }
+
+  if (args->assets_path) {
+    asset_manager->PushBack(std::make_unique<flutter::DirectoryAssetBundle>(
+        fml::OpenDirectory(args->assets_path, false,
+                           fml::FilePermission::kRead),
+        true));
+  }
+
   auto run_configuration =
-      flutter::RunConfiguration::InferFromSettings(settings);
+      flutter::RunConfiguration(
+        flutter::IsolateConfiguration::InferFromSettings(settings, asset_manager,
+                                                  nullptr),
+        asset_manager
+      );
 
   if (SAFE_ACCESS(args, custom_dart_entrypoint, nullptr) != nullptr) {
     auto dart_entrypoint = std::string{args->custom_dart_entrypoint};

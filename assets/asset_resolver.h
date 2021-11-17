@@ -26,7 +26,8 @@ class AssetResolver {
   enum AssetResolverType {
     kAssetManager,
     kApkAssetProvider,
-    kDirectoryAssetBundle
+    kDirectoryAssetBundle,
+    kEmbedderAssetResolver
   };
 
   virtual bool IsValid() const = 0;
