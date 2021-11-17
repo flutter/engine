@@ -3,7 +3,6 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
-import("//flutter/shell/config.gni")
 
 source_set("context") {
   sources = [
@@ -17,8 +16,4 @@ source_set("context") {
     "//flutter/fml",
     "//third_party/skia",
   ]
-
-  if (shell_enable_vulkan) {
-    deps += [ "//flutter/vulkan" ]
-  }
 }

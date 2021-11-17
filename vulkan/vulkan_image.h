@@ -26,7 +26,7 @@ class VulkanImage {
       const VulkanCommandBuffer& command_buffer,
       VkPipelineStageFlagBits src_pipline_bits,
       VkPipelineStageFlagBits dest_pipline_bits,
-      VkAccessFlags dest_access_flags,
+      VkAccessFlagBits dest_access_flags,
       VkImageLayout dest_layout);
 
  private:

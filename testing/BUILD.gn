@@ -125,17 +125,9 @@ if (enable_unittests) {
   source_set("vulkan") {
     testonly = true
 
-    sources = [
-      "test_vulkan_context.cc",
-      "test_vulkan_context.h",
-    ]
-
-    defines = [ "TEST_VULKAN_PROCS" ]
-
     deps = [
       ":skia",
       "//flutter/fml",
-      "//flutter/vulkan",
     ]
 
     # SwiftShader only supports x86/x86_64
@@ -182,12 +174,9 @@ if (enable_unittests) {
         "test_metal_surface_impl.mm",
       ]
 
-      # Skia's Vulkan support is enabled for all platforms, and so parts of
-      # Skia's graphics context reference Vulkan symbols.
       deps = [
         ":skia",
         "//flutter/fml",
-        "//flutter/vulkan",
       ]
     }
 
@@ -210,7 +199,6 @@ if (enable_unittests) {
       ":testing",
       ":testing_fixtures",
       "//flutter/runtime:libdart",
-      "//flutter/vulkan",
     ]
 
     if (shell_enable_metal) {
