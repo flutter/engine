@@ -23,14 +23,17 @@
 
 - (instancetype)init {
   NSAssert(NO, @"FlutterView must initWithDelegate");
+  return nil;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
   NSAssert(NO, @"FlutterView must initWithDelegate");
+  return nil;
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
   NSAssert(NO, @"FlutterView must initWithDelegate");
+  return nil;
 }
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {

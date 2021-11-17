@@ -23,10 +23,12 @@
 
 - (instancetype)initWithFrame:(CGRect)frame {
   NSAssert(NO, @"FlutterOverlayView must init or initWithContentsScale");
+  return nil;
 }
 
 - (instancetype)initWithCoder:(NSCoder*)aDecoder {
   NSAssert(NO, @"FlutterOverlayView must init or initWithContentsScale");
+  return nil;
 }
 
 - (instancetype)init {
