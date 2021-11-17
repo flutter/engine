@@ -407,7 +407,7 @@ InferVulkanPlatformViewCreationCallback(
       vulkan_get_instance_proc_address =
           [ptr = config->vulkan.get_instance_proc_address_callback, user_data](
               VkInstance instance, const char* proc_name) -> void* {
-    ptr(user_data, instance, proc_name);
+    return ptr(user_data, instance, proc_name);
   };
 
   auto vulkan_get_next_image =
@@ -713,8 +713,53 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterVulkanBackingStore* vulkan) {
-  assert(false);  // TODO(bdero)
+#ifdef SHELL_ENABLE_VULKAN
+  if (!vulkan->image.image) {
+    FML_LOG(ERROR) << "Embedder supplied null Vulkan image.";
+    return nullptr;
+  }
+
+  GrVkImageInfo image_info = {
+      .fImage = static_cast<VkImage>(vulkan->image.image),
+      .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
+      .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .fFormat = VK_FORMAT_R8G8B8A8_UNORM,
+      .fImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                          VK_IMAGE_USAGE_SAMPLED_BIT,
+      .fSampleCount = 1,
+      .fLevelCount = 1,
+  };
+  GrBackendTexture backend_texture(config.size.width,   //
+                                   config.size.height,  //
+                                   image_info           //
+  );
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  auto surface = SkSurface::MakeFromBackendTexture(
+      context,                   // context
+      backend_texture,           // back-end texture
+      kTopLeft_GrSurfaceOrigin,  // surface origin
+      1,                         // sample count
+      kRGBA_8888_SkColorType,    // color type
+      SkColorSpace::MakeSRGB(),  // color space
+      &surface_properties,       // surface properties
+      static_cast<SkSurface::TextureReleaseProc>(
+          vulkan->image.destruction_callback),  // release proc
+      vulkan->image.user_data                   // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied Vulkan render texture.";
+    return nullptr;
+  }
+
+  return surface;
+#else
   return nullptr;
+#endif
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>

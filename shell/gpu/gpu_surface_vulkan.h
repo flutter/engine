@@ -40,11 +40,6 @@ class GPUSurfaceVulkan : public Surface {
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
-  /// @brief  Called when a frame is done rendering. It blocks on the render
-  ///         fence and then calls `GPUSurfaceVulkanDelegate::PresentImage` with
-  ///         the populated image.
-  bool Present();
-
   // |Surface|
   SkMatrix GetRootTransformation() const override;
 
@@ -56,13 +51,10 @@ class GPUSurfaceVulkan : public Surface {
   sk_sp<GrDirectContext> skia_context_;
   bool render_to_surface_;
 
-  std::unique_ptr<vulkan::VulkanBackbuffer> backbuffer_;
-  sk_sp<SkSurface> surface_;
-  size_t current_backbuffer_index_;
-
   fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
 
-  sk_sp<SkSurface> AcquireSurfaceFromVulkanImage(VkImage image);
+  sk_sp<SkSurface> CreateSurfaceFromVulkanImage(VkImage image,
+                                                const SkISize& size);
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);
 };
