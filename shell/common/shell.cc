@@ -484,37 +484,33 @@ std::unique_ptr<Shell> Shell::Spawn(
     const CreateCallback<PlatformView>& on_create_platform_view,
     const CreateCallback<Rasterizer>& on_create_rasterizer) const {
   FML_DCHECK(task_runners_.IsValid());
-  auto shell_maker = [&](bool is_gpu_disabled) {
-    std::unique_ptr<Shell> result(CreateWithSnapshot(
-        PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
-        GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
-        on_create_platform_view, on_create_rasterizer,
-        [engine = this->engine_.get(), initial_route](
-            Engine::Delegate& delegate,
-            const PointerDataDispatcherMaker& dispatcher_maker, DartVM& vm,
-            fml::RefPtr<const DartSnapshot> isolate_snapshot,
-            TaskRunners task_runners, const PlatformData& platform_data,
-            Settings settings, std::unique_ptr<Animator> animator,
-            fml::WeakPtr<IOManager> io_manager,
-            fml::RefPtr<SkiaUnrefQueue> unref_queue,
-            fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
-            std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
-          return engine->Spawn(/*delegate=*/delegate,
-                               /*dispatcher_maker=*/dispatcher_maker,
-                               /*settings=*/settings,
-                               /*animator=*/std::move(animator),
-                               /*initial_route=*/initial_route);
-        },
-        is_gpu_disabled));
-    return result;
-  };
   // It's safe to store this value since it is set on the platform thread.
-  bool isGpuDisabled = false;
+  bool is_gpu_disabled = false;
   GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
-          .SetIfFalse([&isGpuDisabled] { isGpuDisabled = false; })
-          .SetIfTrue([&isGpuDisabled] { isGpuDisabled = true; }));
-  std::unique_ptr<Shell> result = shell_maker(isGpuDisabled);
+          .SetIfFalse([&is_gpu_disabled] { is_gpu_disabled = false; })
+          .SetIfTrue([&is_gpu_disabled] { is_gpu_disabled = true; }));
+  std::unique_ptr<Shell> result = (CreateWithSnapshot(
+      PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
+      GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
+      on_create_platform_view, on_create_rasterizer,
+      [engine = this->engine_.get(), initial_route](
+          Engine::Delegate& delegate,
+          const PointerDataDispatcherMaker& dispatcher_maker, DartVM& vm,
+          fml::RefPtr<const DartSnapshot> isolate_snapshot,
+          TaskRunners task_runners, const PlatformData& platform_data,
+          Settings settings, std::unique_ptr<Animator> animator,
+          fml::WeakPtr<IOManager> io_manager,
+          fml::RefPtr<SkiaUnrefQueue> unref_queue,
+          fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+          std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
+        return engine->Spawn(/*delegate=*/delegate,
+                             /*dispatcher_maker=*/dispatcher_maker,
+                             /*settings=*/settings,
+                             /*animator=*/std::move(animator),
+                             /*initial_route=*/initial_route);
+      },
+      is_gpu_disabled));
   result->shared_resource_context_ = io_manager_->GetSharedResourceContext();
   result->RunEngine(std::move(run_configuration));
   return result;
