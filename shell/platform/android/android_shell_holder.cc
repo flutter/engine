@@ -25,6 +25,7 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/shell/platform/android/android_display.h"
 #include "flutter/shell/platform/android/android_image_generator.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
@@ -61,7 +62,7 @@ AndroidShellHolder::AndroidShellHolder(
                 .enable_software_rendering  // use software rendering
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
-        auto display = Display(jni_facade->GetDisplayRefreshRate());
+        auto display = AndroidDisplay(jni_facade->GetDisplayRefreshRate());
         shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});
         return platform_view_android;
       };
@@ -209,7 +210,7 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
             android_context          // Android context
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
-        auto display = Display(jni_facade->GetDisplayRefreshRate());
+        auto display = AndroidDisplay(jni_facade->GetDisplayRefreshRate());
         shell.OnDisplayUpdates(DisplayUpdateType::kStartup, {display});
         return platform_view_android;
       };

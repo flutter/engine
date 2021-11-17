@@ -9,22 +9,28 @@
 
 #include <memory>
 
+#include "display_refresh_listener.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "flutter/shell/platform/android/display_refresh_listener.h"
 
 namespace flutter {
 
-class VsyncWaiterAndroid final : public VsyncWaiter {
+class VsyncWaiterAndroid final : public VsyncWaiter,
+                                 DisplayRefreshListener::Delegate {
  public:
   static bool Register(JNIEnv* env);
 
-  VsyncWaiterAndroid(flutter::TaskRunners task_runners);
+  explicit VsyncWaiterAndroid(flutter::TaskRunners task_runners);
 
   ~VsyncWaiterAndroid() override;
 
  private:
   // |VsyncWaiter|
   void AwaitVSync() override;
+
+  // |DisplayRefreshListener::Delegate|
+  void OnDisplayRefreshUpdated(int64_t vsync_period_nanos) override;
 
   static void OnNativeVsync(JNIEnv* env,
                             jclass jcaller,
@@ -35,6 +41,11 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
   static void ConsumePendingCallback(jlong java_baton,
                                      fml::TimePoint frame_start_time,
                                      fml::TimePoint frame_target_time);
+
+  DisplayRefreshListener display_refresh_listener_;
+  // Accessed from static functions. Luckily, there is only ever one VSync
+  // waiter.
+  static std::optional<int64_t> current_vsync_period_nanos_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterAndroid);
 };

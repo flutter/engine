@@ -773,6 +773,8 @@ FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/android_context_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
+FILE: ../../../flutter/shell/platform/android/android_display.cc
+FILE: ../../../flutter/shell/platform/android/android_display.h
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.cc
 FILE: ../../../flutter/shell/platform/android/android_environment_gl.h
 FILE: ../../../flutter/shell/platform/android/android_exports.lst
@@ -791,6 +793,8 @@ FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/android/context/android_context.cc
 FILE: ../../../flutter/shell/platform/android/context/android_context.h
+FILE: ../../../flutter/shell/platform/android/display_refresh_listener.cc
+FILE: ../../../flutter/shell/platform/android/display_refresh_listener.h
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder.cc
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder.h
 FILE: ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc

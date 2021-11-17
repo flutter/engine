@@ -36,11 +36,11 @@ class Display {
   explicit Display(double refresh_rate)
       : display_id_({}), refresh_rate_(refresh_rate) {}
 
-  ~Display() = default;
+  virtual ~Display() = default;
 
   // Get the display's maximum refresh rate in the unit of frame per second.
   // Return `kUnknownDisplayRefreshRate` if the refresh rate is unknown.
-  double GetRefreshRate() const { return refresh_rate_; }
+  virtual double GetRefreshRate() const { return refresh_rate_; }
 
   /// Returns the `DisplayId` of the display.
   std::optional<DisplayId> GetDisplayId() const { return display_id_; }
