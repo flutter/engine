@@ -64,7 +64,9 @@ struct TextEditingDelta {
 
   void set_old_text(const std::u16string& old_text) { old_text_ = old_text; }
 
-  void set_delta_text(const std::u16string& delta_text) { delta_text_ = delta_text; }
+  void set_delta_text(const std::u16string& delta_text) {
+    delta_text_ = delta_text;
+  }
 
   void set_delta_start(int delta_start) { delta_start_ = delta_start; }
 
