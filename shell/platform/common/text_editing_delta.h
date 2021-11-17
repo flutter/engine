@@ -15,19 +15,19 @@ namespace flutter {
 
 /// A change in the state of an input field.
 struct TextEditingDelta {
-  TextEditingDelta(std::u16string text_before_change,
+  TextEditingDelta(const std::u16string& text_before_change,
                    TextRange range,
-                   std::u16string text);
+                   const std::u16string& text);
 
   TextEditingDelta(const std::string& text_before_change,
                    TextRange range,
                    const std::string& text);
 
-  TextEditingDelta(std::u16string text);
+  TextEditingDelta(const std::u16string& text);
 
   TextEditingDelta(const std::string& text);
 
-  virtual ~TextEditingDelta();
+  virtual ~TextEditingDelta() = default;
 
   /// Get the old_text_ value.
   ///
@@ -62,16 +62,16 @@ struct TextEditingDelta {
   int delta_start_;
   int delta_end_;
 
-  void set_old_text(std::u16string old_text) { old_text_ = old_text; }
+  void set_old_text(const std::u16string& old_text) { old_text_ = old_text; }
 
-  void set_delta_text(std::u16string delta_text) { delta_text_ = delta_text; }
+  void set_delta_text(const std::u16string& delta_text) { delta_text_ = delta_text; }
 
   void set_delta_start(int delta_start) { delta_start_ = delta_start; }
 
   void set_delta_end(int delta_end) { delta_end_ = delta_end; }
 
   // Given a UTF16-encoded string, returns the string encoded in UTF8.
-  static std::string Utf16ToUtf8(std::u16string string) {
+  static std::string Utf16ToUtf8(const std::u16string& string) {
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
         utf8_converter;
     return utf8_converter.to_bytes(string);

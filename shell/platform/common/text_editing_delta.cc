@@ -6,11 +6,9 @@
 
 namespace flutter {
 
-TextEditingDelta::~TextEditingDelta() = default;
-
-TextEditingDelta::TextEditingDelta(std::u16string text_before_change,
+TextEditingDelta::TextEditingDelta(const std::u16string& text_before_change,
                                    TextRange range,
-                                   std::u16string text)
+                                   const std::u16string& text)
     : old_text_(text_before_change),
       delta_text_(text),
       delta_start_(range.start()),
@@ -24,7 +22,7 @@ TextEditingDelta::TextEditingDelta(const std::string& text_before_change,
       delta_start_(range.start()),
       delta_end_(range.start() + range.length()) {}
 
-TextEditingDelta::TextEditingDelta(std::u16string text)
+TextEditingDelta::TextEditingDelta(const std::u16string& text)
     : old_text_(text), delta_text_(u""), delta_start_(-1), delta_end_(-1) {}
 
 TextEditingDelta::TextEditingDelta(const std::string& text)
