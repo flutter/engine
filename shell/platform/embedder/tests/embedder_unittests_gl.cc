@@ -49,15 +49,15 @@ using EmbedderTest = testing::EmbedderTest;
 /// support lands in the embedder API, it'll be tested via a new
 /// EmbedderTestContext type/config.
 ///
-TEST_F(EmbedderTest, CanInitializeTestVulkanContext) {
-  TestVulkanContext ctx;
-  ASSERT_TRUE(ctx.IsValid());
-}
+//TEST_F(EmbedderTest, CanInitializeTestVulkanContext) {
+//  TestVulkanContext ctx;
+//  ASSERT_TRUE(ctx.IsValid());
+//}
 
-TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kVulkanContext);
-  EmbedderConfigBuilder builder(context);
-}
+//TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {
+//  auto& context = GetEmbedderContext(EmbedderTestContextType::kVulkanContext);
+//  EmbedderConfigBuilder builder(context);
+//}
 
 TEST_F(EmbedderTest, CanCreateOpenGLRenderingEngine) {
   EmbedderConfigBuilder builder(

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "shell/gpu/gpu_surface_vulkan_delegate.h"
-#include "shell/platform/embedder/embedder_surface_vulkan.h"
 #define FML_USED_ON_EMBEDDER
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -445,9 +443,12 @@ InferVulkanPlatformViewCreationCallback(
 
   std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
       std::make_unique<flutter::EmbedderSurfaceVulkan>(
-          config->vulkan.device, config->vulkan.physical_device,
-          config->vulkan.instance, config->vulkan.queue_family_index,
-          config->vulkan.queue, vulkan_dispatch_table, view_embedder);
+          static_cast<VkInstance>(config->vulkan.instance),
+          static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
+          static_cast<VkDevice>(config->vulkan.device),
+          config->vulkan.queue_family_index,
+          static_cast<VkQueue>(config->vulkan.queue), vulkan_dispatch_table,
+          view_embedder);
 
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,

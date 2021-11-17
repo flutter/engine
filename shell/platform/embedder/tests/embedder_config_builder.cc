@@ -73,40 +73,37 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   };
 #endif
 
-  //#ifdef SHELL_ENABLE_VULKAN
+  #ifdef SHELL_ENABLE_VULKAN
   vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
-  vulkan_renderer_config_.get_proc_address_callback =
-      [](void* context, const char* name) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan>(context)
-        ->vk_->AcquireProc(name, nullptr);
-  };
+  vulkan_renderer_config_.instance =
+      reinterpret_cast<EmbedderTestContextVulkan>(context)
+          ->application_->GetInstance();
+  vulkan_renderer_config_.physical_device =
+      reinterpret_cast<EmbedderTestContextVulkan>(context)
+          ->application_->GetPhysicalDevice();
+  vulkan_renderer_config_.device =
+      reinterpret_cast<EmbedderTestContextVulkan>(context)
+          ->application_->GetDevice();
+  vulkan_renderer_config_.queue_family_index =
+      reinterpret_cast<EmbedderTestContextVulkan>(context)
+          ->application_->GetQueueFamilyIndex();
+  vulkan_renderer_config_.queue =
+      reinterpret_cast<EmbedderTestContextVulkan>(context)
+          ->application_->GetQueue();
   vulkan_renderer_config_.get_instance_proc_address_callback =
       [](void* context, uintptr_t* instance, const char* name) -> void* {
     return reinterpret_cast<EmbedderTestContextVulkan>(context)
         ->vk_->AcquireProc(name, instance);
   };
-  vulkan_renderer_config_.get_instance_handle_callback =
-      [](void* context) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan>(context)
-        ->application_->GetInstance();
-  };
-  vulkan_renderer_config_.get_physical_device_handle_callback =
-      [](void* context) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan>(context)
-        ->logical_device_->GetPhysicalDeviceHandle();
-  };
-  vulkan_renderer_config_.get_device_handle_callback =
-      [](void* context) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan>(context)
-        ->logical_device_->GetHandle();
-  };
-  vulkan_renderer_config_->acquire_next_image_callback =
+  vulkan_renderer_config_->get_next_image_callback =
       [](void* context) -> void* {
     // TODO(bdero): Return VkImage handles
-    return reinterpret_cast<EmbedderTestContextVulkan>(context)
-        ->GetNextImage();
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)->GetNextImage();
   };
-  //#endif
+  vulkan_renderer_config_->present_image_callback = [](void* context) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan>(context)->PresentImage();
+  };
+  #endif
 
 #ifdef SHELL_ENABLE_METAL
   InitializeMetalRendererConfig();

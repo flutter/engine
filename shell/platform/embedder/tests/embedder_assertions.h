@@ -70,9 +70,14 @@ inline bool operator==(const FlutterMetalTexture& a,
   return a.texture_id == b.texture_id && a.texture == b.texture;
 }
 
+inline bool operator==(const FlutterVulkanImage& a,
+                       const FlutterVulkanImage& b) {
+  return a.image == b.image;
+}
+
 inline bool operator==(const FlutterVulkanBackingStore& a,
                        const FlutterVulkanBackingStore& b) {
-  return a.handle == b.handle && a.image_ready == b.image_ready;
+  return a.image == b.image;
 }
 
 inline bool operator==(const FlutterMetalBackingStore& a,
@@ -265,6 +270,13 @@ inline std::ostream& operator<<(std::ostream& out,
              << item.texture_id << std::dec << " Handle: 0x" << std::hex
              << item.texture;
 }
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterVulkanImage& item) {
+  return out << "(FlutterVulkanTexture) Image Handle: " << std::hex
+             << item.image;
+}
+
 inline std::string FlutterPlatformViewMutationTypeToString(
     FlutterPlatformViewMutationType type) {
   switch (type) {
@@ -358,8 +370,7 @@ inline std::ostream& operator<<(std::ostream& out,
 
 inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterVulkanBackingStore& item) {
-  return out << "(FlutterVulkanBackingStore) Handle: " << item.handle
-             << "Image Ready Semaphore: " << item.image_ready;
+  return out << "(FlutterVulkanBackingStore) Image: " << item.image;
 }
 
 inline std::ostream& operator<<(std::ostream& out,
