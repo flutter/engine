@@ -508,11 +508,13 @@ std::unique_ptr<Shell> Shell::Spawn(
         is_gpu_disabled));
     return result;
   };
-  std::unique_ptr<Shell> result;
+  // It's safe to store this value since it is set on the platform thread.
+  bool isGpuDisabled = false;
   GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
-          .SetIfFalse([&] { result = shell_maker(false); })
-          .SetIfTrue([&] { result = shell_maker(true); }));
+          .SetIfFalse([&isGpuDisabled] { isGpuDisabled = false; })
+          .SetIfTrue([&isGpuDisabled] { isGpuDisabled = true; }));
+  std::unique_ptr<Shell> result = shell_maker(isGpuDisabled);
   result->shared_resource_context_ = io_manager_->GetSharedResourceContext();
   result->RunEngine(std::move(run_configuration));
   return result;
@@ -1843,6 +1845,7 @@ std::shared_ptr<const fml::SyncSwitch> Shell::GetIsGpuDisabledSyncSwitch()
 }
 
 void Shell::SetGpuAvailability(GpuAvailability availability) {
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   switch (availability) {
     case GpuAvailability::kAvailable:
       is_gpu_disabled_sync_switch_->SetSwitch(false);
