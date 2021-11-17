@@ -30,11 +30,12 @@ typedef void (*AChoreographer_frameCallback)(long frameTimeNanos, void* data);
 // AChoreographer is supported from API 24. To allow compilation for minSDK < 24
 // and still use AChoreographer for SDK >= 24 we need runtime support to call
 // AChoreographer APIs.
-using PFN_AChoreographer_getInstance = AChoreographer *(*)();
+using PFN_AChoreographer_getInstance = AChoreographer* (*)();
 
 using PFN_AChoreographer_postFrameCallback =
-    void (*)(AChoreographer *choreographer,
-             AChoreographer_frameCallback callback, void *data);
+    void (*)(AChoreographer* choreographer,
+             AChoreographer_frameCallback callback,
+             void* data);
 
 class VsyncWaiterAndroid final : public VsyncWaiter {
  public:
@@ -57,8 +58,8 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
   static void OnAChoreographerVsync(long frameTimeNanos, void* java_baton);
 
   static void SetRefreshRateFPS(JNIEnv* env,
-                               jobject jcaller,
-                               jfloat refreshRateFPS);
+                                jobject jcaller,
+                                jfloat refreshRateFPS);
 
   static void ConsumePendingCallback(jlong java_baton,
                                      fml::TimePoint frame_start_time,
@@ -66,11 +67,11 @@ class VsyncWaiterAndroid final : public VsyncWaiter {
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterAndroid);
 
-  private:
-    PFN_AChoreographer_getInstance mAChoreographer_getInstance = nullptr;
-    PFN_AChoreographer_postFrameCallback mAChoreographer_postFrameCallback =
-        nullptr;
-    bool useAChoreographer_ = false;
+ private:
+  PFN_AChoreographer_getInstance mAChoreographer_getInstance = nullptr;
+  PFN_AChoreographer_postFrameCallback mAChoreographer_postFrameCallback =
+      nullptr;
+  bool useAChoreographer_ = false;
 };
 
 }  // namespace flutter

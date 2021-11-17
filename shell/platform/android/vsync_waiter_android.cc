@@ -82,16 +82,16 @@ void VsyncWaiterAndroid::OnAChoreographerVsync(long frameTimeNanos,
 
   auto frame_time =
       fml::TimePoint::Now() - fml::TimeDelta::FromNanoseconds(delay);
-  auto target_time =
-      frame_time + fml::TimeDelta::FromNanoseconds(1000000000.0 / refreshRateFPS_);
+  auto target_time = frame_time + fml::TimeDelta::FromNanoseconds(
+                                      1000000000.0 / refreshRateFPS_);
 
   ConsumePendingCallback(reinterpret_cast<jlong>(java_baton), frame_time,
                          target_time);
 }
 
 void VsyncWaiterAndroid::SetRefreshRateFPS(JNIEnv* env,
-                               jobject jcaller,
-                               jfloat refreshRateFPS){
+                                           jobject jcaller,
+                                           jfloat refreshRateFPS) {
   refreshRateFPS_ = static_cast<double>(refreshRateFPS);
 }
 
@@ -128,17 +128,16 @@ void VsyncWaiterAndroid::ConsumePendingCallback(
 // static
 bool VsyncWaiterAndroid::Register(JNIEnv* env) {
   static const JNINativeMethod methods[] = {
-    {
-      .name = "nativeOnVsync",
-      .signature = "(JJJ)V",
-      .fnPtr = reinterpret_cast<void*>(&OnNativeVsync),
-    },
-    {
-      .name = "nativeSetRefreshRateFPS",
-      .signature = "(F)V",
-      .fnPtr = reinterpret_cast<void*>(&SetRefreshRateFPS),
-    }
-  };
+      {
+          .name = "nativeOnVsync",
+          .signature = "(JJJ)V",
+          .fnPtr = reinterpret_cast<void*>(&OnNativeVsync),
+      },
+      {
+          .name = "nativeSetRefreshRateFPS",
+          .signature = "(F)V",
+          .fnPtr = reinterpret_cast<void*>(&SetRefreshRateFPS),
+      }};
 
   jclass clazz = env->FindClass("io/flutter/embedding/engine/FlutterJNI");
 
