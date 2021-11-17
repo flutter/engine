@@ -441,12 +441,6 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
                                                             : kTextAffinityDownstream;
 }
 
-- (NSRange)clampSelection:(NSRange*)range forText:(NSString*)text {
-  int start = MIN(MAX(range->location, 0), text.length);
-  int length = MIN(range->length, text.length - start);
-  return NSMakeRange(start, length);
-}
-
 #pragma mark -
 #pragma mark FlutterKeySecondaryResponder
 
