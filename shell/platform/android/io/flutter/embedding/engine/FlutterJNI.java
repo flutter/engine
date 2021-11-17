@@ -122,7 +122,6 @@ public class FlutterJNI {
 
     System.loadLibrary("flutter");
     FlutterJNI.loadLibraryCalled = true;
-    nativeSetRefreshRateFPS(refreshRateFPS);
   }
 
   private static boolean loadLibraryCalled = false;
@@ -227,8 +226,6 @@ public class FlutterJNI {
   }
 
   private static boolean setRefreshRateFPSCalled = false;
-
-  private static native void nativeSetRefreshRateFPS(float refreshRateFPS);
 
   // TODO(mattcarroll): add javadocs
   public static void setAsyncWaitForVsyncDelegate(@Nullable AsyncWaitForVsyncDelegate delegate) {

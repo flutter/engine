@@ -14,40 +14,13 @@
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
 
-#include <dlfcn.h>
-#include <time.h>
-#include <chrono>
-#include <ctime>
-
 namespace flutter {
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_vsync_waiter_class = nullptr;
 static jmethodID g_async_wait_for_vsync_method_ = nullptr;
-static double refreshRateFPS_ = 60.0;
 
 VsyncWaiterAndroid::VsyncWaiterAndroid(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)) {
-  void* libAndroid = dlopen("libandroid.so", RTLD_NOW | RTLD_LOCAL);
-  if (libAndroid == nullptr) {
-    FML_LOG(ERROR) << "FATAL: cannot open libandroid.so: " << errno;
-    return;
-  }
-
-  mAChoreographer_getInstance =
-      reinterpret_cast<PFN_AChoreographer_getInstance>(
-          dlsym(libAndroid, "AChoreographer_getInstance"));
-
-  mAChoreographer_postFrameCallback =
-      reinterpret_cast<PFN_AChoreographer_postFrameCallback>(
-          dlsym(libAndroid, "AChoreographer_postFrameCallback"));
-
-  if (!mAChoreographer_getInstance || !mAChoreographer_postFrameCallback) {
-    FML_LOG(ERROR) << "FATAL: cannot get AChoreographer symbols";
-    return;
-  } else {
-    useAChoreographer_ = true;
-  }
-}
+    : VsyncWaiter(std::move(task_runners)) {}
 
 VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 
@@ -55,44 +28,14 @@ VsyncWaiterAndroid::~VsyncWaiterAndroid() = default;
 void VsyncWaiterAndroid::AwaitVSync() {
   auto* weak_this = new std::weak_ptr<VsyncWaiter>(shared_from_this());
   jlong java_baton = reinterpret_cast<jlong>(weak_this);
-  if (!useAChoreographer_) {
-    task_runners_.GetPlatformTaskRunner()->PostTask([java_baton]() {
-      JNIEnv* env = fml::jni::AttachCurrentThread();
-      env->CallStaticVoidMethod(g_vsync_waiter_class->obj(),     //
-                                g_async_wait_for_vsync_method_,  //
-                                java_baton                       //
-      );
-    });
-  } else {
-    mAChoreographer_postFrameCallback(mAChoreographer_getInstance(),
-                                      VsyncWaiterAndroid::OnAChoreographerVsync,
-                                      reinterpret_cast<void*>(java_baton));
-  }
-}
 
-void VsyncWaiterAndroid::OnAChoreographerVsync(long frameTimeNanos,
-                                               void* java_baton) {
-  struct timespec tp;
-  clock_gettime(CLOCK_MONOTONIC, &tp);
-  auto now = tp.tv_sec * (1000 * 1000 * 1000) + tp.tv_nsec;
-  long delay = now - frameTimeNanos;
-  if (delay < 0) {
-    delay = 0;
-  }
-
-  auto frame_time =
-      fml::TimePoint::Now() - fml::TimeDelta::FromNanoseconds(delay);
-  auto target_time =
-      frame_time + fml::TimeDelta::FromNanoseconds(1000000000.0 / refreshRateFPS_);
-
-  ConsumePendingCallback(reinterpret_cast<jlong>(java_baton), frame_time,
-                         target_time);
-}
-
-void VsyncWaiterAndroid::SetRefreshRateFPS(JNIEnv* env,
-                               jobject jcaller,
-                               jfloat refreshRateFPS){
-  refreshRateFPS_ = static_cast<double>(refreshRateFPS);
+  task_runners_.GetPlatformTaskRunner()->PostTask([java_baton]() {
+    JNIEnv* env = fml::jni::AttachCurrentThread();
+    env->CallStaticVoidMethod(g_vsync_waiter_class->obj(),     //
+                              g_async_wait_for_vsync_method_,  //
+                              java_baton                       //
+    );
+  });
 }
 
 // static
@@ -127,18 +70,11 @@ void VsyncWaiterAndroid::ConsumePendingCallback(
 
 // static
 bool VsyncWaiterAndroid::Register(JNIEnv* env) {
-  static const JNINativeMethod methods[] = {
-    {
+  static const JNINativeMethod methods[] = {{
       .name = "nativeOnVsync",
       .signature = "(JJJ)V",
       .fnPtr = reinterpret_cast<void*>(&OnNativeVsync),
-    },
-    {
-      .name = "nativeSetRefreshRateFPS",
-      .signature = "(F)V",
-      .fnPtr = reinterpret_cast<void*>(&SetRefreshRateFPS),
-    }
-  };
+  }};
 
   jclass clazz = env->FindClass("io/flutter/embedding/engine/FlutterJNI");
 
