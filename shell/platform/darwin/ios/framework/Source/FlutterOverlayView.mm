@@ -21,6 +21,14 @@
 // TODO(amirh): once GL support is in evaluate if we can merge this with FlutterView.
 @implementation FlutterOverlayView
 
+- (instancetype)initWithFrame:(CGRect)frame {
+  NSAssert(NO, @"FlutterOverlayView must init or initWithContentsScale");
+}
+
+- (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  NSAssert(NO, @"FlutterOverlayView must init or initWithContentsScale");
+}
+
 - (instancetype)init {
   self = [super initWithFrame:CGRectZero];
 

@@ -21,6 +21,18 @@
   id<FlutterViewEngineDelegate> _delegate;
 }
 
+- (instancetype)init {
+  NSAssert(NO, @"FlutterView must initWithDelegate");
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+  NSAssert(NO, @"FlutterView must initWithDelegate");
+}
+
+- (instancetype)initWithCoder:(NSCoder*)aDecoder {
+  NSAssert(NO, @"FlutterView must initWithDelegate");
+}
+
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
   if (delegate == nil) {
     NSLog(@"FlutterView delegate was nil.");
