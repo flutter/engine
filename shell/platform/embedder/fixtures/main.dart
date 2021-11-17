@@ -299,6 +299,28 @@ void null_platform_messages() {
   signalNativeTest();
 }
 
+const String channel = 'flutter/assets';
+ByteData encodePath(String path) => ByteData.sublistView(utf8.encoder.convert(path));
+
+void handleAssetReply(ByteData? reply) {
+  if (reply != null) {
+    signalNativeCount(reply.lengthInBytes);
+    signalNativeMessage(utf8.decode(Uint8List.sublistView(reply)));
+  } else {
+    signalNativeCount(-1);
+  }
+}
+
+@pragma('vm:entry-point')
+void existing_asset() {
+  PlatformDispatcher.instance.sendPlatformMessage(channel, encodePath('existing_asset'), handleAssetReply);
+}
+
+@pragma('vm:entry-point')
+void invalid_asset() {
+  PlatformDispatcher.instance.sendPlatformMessage(channel, encodePath('invalid_asset'), handleAssetReply);
+}
+
 Picture CreateSimplePicture() {
   Paint blackPaint = Paint();
   PictureRecorder baseRecorder = PictureRecorder();

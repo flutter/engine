@@ -475,6 +475,104 @@ TEST_F(EmbedderTest, InvalidPlatformMessages) {
 }
 
 //------------------------------------------------------------------------------
+/// Tests that an asset can be loaded from a custom asset resolver.
+///
+TEST_F(EmbedderTest, CustomAssetResolverReturnsValidAsset) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("existing_asset");
+
+  fml::AutoResetWaitableEvent destroy;
+
+  FlutterEngineAssetResolver resolver = {};
+  resolver.struct_size = sizeof(FlutterEngineAssetResolver);
+  resolver.user_data = reinterpret_cast<void*>(&destroy);
+  resolver.get_asset = [](const char* asset, void* user_data) -> FlutterEngineMapping {
+    if (strcmp(asset, "existing_asset") == 0) {
+      // Return an asset with the string "hello" as its contents.
+      // When the mapping is destroyed (on GC or Engine shutdown) the
+      // `destroy` event is signaled.
+      FlutterEngineMappingCreateInfo create_info = {};
+      FlutterEngineMapping out = nullptr;
+      create_info.struct_size = sizeof(FlutterEngineMappingCreateInfo);
+      create_info.data = reinterpret_cast<const uint8_t*>("hello");
+      create_info.data_size = 5;
+      create_info.user_data = user_data;
+      create_info.destruction_callback = [](void* user_data) {
+        reinterpret_cast<fml::AutoResetWaitableEvent*>(user_data)->Signal();
+      };
+      auto result = FlutterEngineCreateMapping(&create_info, &out);
+      EXPECT_EQ(result, kSuccess);
+      return out;
+    }
+    return nullptr;
+  };
+
+  builder.SetAssetResolver(&resolver);
+
+  fml::AutoResetWaitableEvent message;
+  context.AddNativeCallback(
+      "SignalNativeCount",
+      CREATE_NATIVE_ENTRY([](Dart_NativeArguments args) {
+        auto count = tonic::DartConverter<int64_t>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        // Dart should receive a 5 byte message reply.
+        EXPECT_EQ(5, count);
+      }));
+  context.AddNativeCallback(
+      "SignalNativeMessage",
+      CREATE_NATIVE_ENTRY(([&message](Dart_NativeArguments args) {
+        auto received_message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        // The message received from the asset channel should be the string "hello".
+        EXPECT_EQ("hello", received_message);
+        message.Signal();
+      })));
+
+  {
+    auto engine = builder.LaunchEngine();
+    ASSERT_TRUE(engine.is_valid());
+    message.Wait();
+  }
+  // Before or during Engine shutdown, the mapping should be destroyed.
+  destroy.Wait();
+}
+
+//------------------------------------------------------------------------------
+/// Tests that an asset that aren't found return null responses.
+///
+TEST_F(EmbedderTest, CustomAssetResolverReturnsInvalidAsset) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("invalid_asset");
+
+  FlutterEngineAssetResolver resolver = {};
+  resolver.struct_size = sizeof(FlutterEngineAssetResolver);
+  resolver.get_asset = [](const char* asset, void* user_data) -> FlutterEngineMapping {
+    return nullptr;
+  };
+
+  builder.SetAssetResolver(&resolver);
+
+  fml::AutoResetWaitableEvent message;
+  context.AddNativeCallback(
+      "SignalNativeCount",
+      CREATE_NATIVE_ENTRY([&message](Dart_NativeArguments args) {
+        auto count = tonic::DartConverter<int64_t>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        // Dart should receive a null reply.
+        EXPECT_EQ(-1, count);
+        message.Signal();
+      }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  message.Wait();
+}
+
+//------------------------------------------------------------------------------
 /// Tests that setting a custom log callback works as expected and defaults to
 /// using tag "flutter".
 TEST_F(EmbedderTest, CanSetCustomLogMessageCallback) {

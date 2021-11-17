@@ -174,6 +174,11 @@ void EmbedderConfigBuilder::SetAssetsPath() {
   project_args_.assets_path = context_.GetAssetsPath().c_str();
 }
 
+void EmbedderConfigBuilder::SetAssetResolver(const FlutterEngineAssetResolver* resolver) {
+  asset_resolver_ = *resolver;
+  project_args_.asset_resolver = &asset_resolver_;
+}
+
 void EmbedderConfigBuilder::SetSnapshots() {
   if (auto mapping = context_.GetVMSnapshotData()) {
     project_args_.vm_snapshot_data = mapping->GetMapping();

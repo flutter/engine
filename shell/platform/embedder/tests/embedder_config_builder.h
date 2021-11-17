@@ -65,6 +65,8 @@ class EmbedderConfigBuilder {
 
   void SetAssetsPath();
 
+  void SetAssetResolver(const FlutterEngineAssetResolver* resolver);
+
   void SetSnapshots();
 
   void SetAOTDataElf();
@@ -124,6 +126,7 @@ class EmbedderConfigBuilder {
   std::string dart_entrypoint_;
   FlutterCustomTaskRunners custom_task_runners_ = {};
   FlutterCompositor compositor_ = {};
+  FlutterEngineAssetResolver asset_resolver_ = {};
   std::vector<std::string> command_line_arguments_;
   std::vector<std::string> dart_entrypoint_arguments_;
   std::string log_tag_;
