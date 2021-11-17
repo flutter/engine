@@ -129,6 +129,13 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   FML_DCHECK(!context->has_platform_view);
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
+  bool subtree_can_accept_opacity =
+      container_can_pass_opacity_to_children() && layers_.size() < 2;
+
+  // FML_LOG(ERROR) << "container can pass opacity: " << container_can_pass_opacity_to_children();
+  // FML_LOG(ERROR) << "container child layers: " << layers_.size();
+  // FML_LOG(ERROR) << "subtree_opacity start = " << subtree_can_accept_opacity;
+
   for (auto& layer : layers_) {
     // Reset context->has_platform_view to false so that layers aren't treated
     // as if they have a platform view based on one being previously found in a
@@ -142,10 +149,16 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
         child_has_platform_view || context->has_platform_view;
     child_has_texture_layer =
         child_has_texture_layer || context->has_texture_layer;
+    // FML_LOG(ERROR) << "  layer_opacity = " << layer->layer_can_accept_opacity();
+    if (subtree_can_accept_opacity) {
+      subtree_can_accept_opacity = layer->layer_can_accept_opacity();
+    }
   }
 
   context->has_platform_view = child_has_platform_view;
   context->has_texture_layer = child_has_texture_layer;
+  // FML_LOG(ERROR) << "subtree_opacity end = " << subtree_can_accept_opacity;
+  context->subtree_can_accept_opacity = subtree_can_accept_opacity;
   set_subtree_has_platform_view(child_has_platform_view);
 }
 
@@ -178,6 +191,8 @@ void ContainerLayer::TryToPrepareRasterCache(PrerollContext* context,
   }
 }
 
+OpacityPassingContainerLayer::OpacityPassingContainerLayer() {}
+
 MergedContainerLayer::MergedContainerLayer() {
   // Ensure the layer has only one direct child.
   //
@@ -188,7 +203,7 @@ MergedContainerLayer::MergedContainerLayer() {
   // If multiple child layers are added, then this implicit container
   // child becomes the cacheable child, but at the potential cost of
   // not being as stable in the raster cache from frame to frame.
-  ContainerLayer::Add(std::make_shared<ContainerLayer>());
+  ContainerLayer::Add(std::make_shared<OpacityPassingContainerLayer>());
 }
 
 void MergedContainerLayer::DiffChildren(DiffContext* context,

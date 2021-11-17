@@ -33,9 +33,14 @@ class OpacityLayer : public MergedContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
+  bool layer_can_accept_opacity() override { return true; }
+
+  bool container_can_pass_opacity_to_children() override { return true; }
+
  private:
   SkAlpha alpha_;
   SkPoint offset_;
+  bool subtree_can_accept_opacity_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };

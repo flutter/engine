@@ -27,7 +27,9 @@ namespace flutter {
 class DisplayListCanvasDispatcher : public virtual Dispatcher,
                                     public SkPaintDispatchHelper {
  public:
-  explicit DisplayListCanvasDispatcher(SkCanvas* canvas) : canvas_(canvas) {}
+  explicit DisplayListCanvasDispatcher(SkCanvas* canvas,
+                                       SkAlpha extra_alpha = SK_AlphaOPAQUE)
+     : SkPaintDispatchHelper(extra_alpha), canvas_(canvas) {}
 
   void save() override;
   void restore() override;

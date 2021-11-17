@@ -61,6 +61,13 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // prescence of a texture layer during Preroll.
   bool has_texture_layer = false;
+
+  // A layer that can accept an opacity value from its parent can set this
+  // field to true so that an OpacityLayer can pass the alpha value down
+  // to it during Paint rather than using a saveLayer.  Leaving the value
+  // untouched will be compliant since the ContainerLayer will set it to
+  // false before calling each child.
+  bool subtree_can_accept_opacity = false;
 };
 
 class PictureLayer;
@@ -147,6 +154,7 @@ class Layer {
     const RasterCache* raster_cache;
     const bool checkerboard_offscreen_layers;
     const float frame_device_pixel_ratio;
+    SkAlpha inherited_alpha = SK_AlphaOPAQUE;
   };
 
   // Calls SkCanvas::saveLayer and restores the layer upon destruction. Also
@@ -215,6 +223,12 @@ class Layer {
   void set_subtree_has_platform_view(bool value) {
     subtree_has_platform_view_ = value;
   }
+
+  // Returns true if the layer can render with an added opacity value
+  // inherited from an OpacityLayer ancestor. These values will be
+  // accumulated during Preroll to inform OpacityLayer if it can avoid
+  // its implicit saveLayer by passing down the opacity during Paint.
+  virtual bool layer_can_accept_opacity() { return false; }
 
   // Returns the paint bounds in the layer's local coordinate system
   // as determined during Preroll().  The bounds should include any

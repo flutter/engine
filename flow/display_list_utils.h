@@ -96,6 +96,13 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
 // which can be accessed at any time via paint().
 class SkPaintDispatchHelper : public virtual Dispatcher {
  public:
+  SkPaintDispatchHelper(SkAlpha extra_alpha = SK_AlphaOPAQUE)
+      : extra_alpha_(extra_alpha) {
+    if (extra_alpha < SK_AlphaOPAQUE) {
+      paint_.setAlpha(extra_alpha);
+    }
+  }
+
   void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;
   void setStyle(SkPaint::Style style) override;
@@ -118,6 +125,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
 
  private:
   SkPaint paint_;
+  SkAlpha extra_alpha_;
   bool invert_colors_ = false;
   sk_sp<SkColorFilter> color_filter_;
 

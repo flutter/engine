@@ -41,6 +41,8 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   // reverse transformation to the cull rect to properly cull child layers.
   context->cull_rect = context->cull_rect.makeOffset(-offset_.fX, -offset_.fY);
 
+  // FML_LOG(ERROR) << "Opacity layer prerolling children: ";
+
   context->mutators_stack.PushTransform(
       SkMatrix::Translate(offset_.fX, offset_.fY));
   context->mutators_stack.PushOpacity(alpha_);
@@ -50,8 +52,14 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
 
-  {
-    set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
+  subtree_can_accept_opacity_ = context->subtree_can_accept_opacity;
+  context->subtree_can_accept_opacity = true;
+
+  set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
+
+  // FML_LOG(ERROR) << "Opacity layer can pass opacity: " << subtree_can_accept_opacity_;
+
+  if (!subtree_can_accept_opacity_) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
 #endif
@@ -66,11 +74,22 @@ void OpacityLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "OpacityLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  SkPaint paint;
-  paint.setAlpha(alpha_);
-
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
+
+  SkAlpha inherited_alpha = context.inherited_alpha;
+  SkAlpha alpha =
+      (alpha_ * inherited_alpha + SK_AlphaOPAQUE / 2) / SK_AlphaOPAQUE;
+
+  if (subtree_can_accept_opacity_) {
+    context.inherited_alpha = alpha;
+    PaintChildren(context);
+    context.inherited_alpha = inherited_alpha;
+    return;
+  }
+
+  SkPaint paint;
+  paint.setAlpha(alpha);
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(

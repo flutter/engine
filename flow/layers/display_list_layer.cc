@@ -122,7 +122,9 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     return;
   }
 
-  display_list()->RenderTo(context.leaf_nodes_canvas);
+  DisplayListCanvasDispatcher dispatcher(context.leaf_nodes_canvas, context.inherited_alpha);
+  display_list()->Dispatch(dispatcher);
+  // display_list()->RenderTo(context.leaf_nodes_canvas);
 }
 
 }  // namespace flutter
