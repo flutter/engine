@@ -13,54 +13,72 @@
 
 namespace flutter {
 
+/// A change in the state of an input field.
 struct TextEditingDelta {
- public:
-  TextEditingDelta(std::u16string textBeforeChange,
+  TextEditingDelta(std::u16string text_before_change,
                    TextRange range,
                    std::u16string text);
+
+  TextEditingDelta(const std::string& text_before_change,
+                   TextRange range,
+                   const std::string& text);
+
+  TextEditingDelta(std::u16string text);
+
+  TextEditingDelta(const std::string& text);
+
   virtual ~TextEditingDelta();
 
-  std::string oldText() const { return utf16ToUtf8(oldText_); }
-  std::string deltaText() const { return utf16ToUtf8(deltaText_); }
-  int deltaStart() const { return deltaStart_; }
-  int deltaEnd() const { return deltaEnd_; }
+  /// Get the old_text_ value.
+  ///
+  /// All strings are stored as UTF16 but converted to UTF8 when accessed.
+  std::string old_text() const { return Utf16ToUtf8(old_text_); }
 
-  TextEditingDelta(std::string textBeforeChange,
-                   TextRange range,
-                   std::string text);
-  TextEditingDelta(std::u16string text);
-  TextEditingDelta(std::string text);
+  /// Get the delta_text value.
+  ///
+  /// All strings are stored as UTF16 but converted to UTF8 when accessed.
+  std::string delta_text() const { return Utf16ToUtf8(delta_text_); }
+
+  /// Get the delta_start_ value.
+  int delta_start() const { return delta_start_; }
+
+  /// Get the delta_end_ value.
+  int delta_end() const { return delta_end_; }
 
   bool operator==(const TextEditingDelta& rhs) const {
-    return oldText_ == rhs.oldText_ && deltaText_ == rhs.deltaText_ &&
-           deltaStart_ == rhs.deltaStart_ && deltaEnd_ == rhs.deltaEnd_;
+    return old_text_ == rhs.old_text_ && delta_text_ == rhs.delta_text_ &&
+           delta_start_ == rhs.delta_start_ && delta_end_ == rhs.delta_end_;
   }
 
   bool operator!=(const TextEditingDelta& rhs) const { return !(*this == rhs); }
 
+  TextEditingDelta(const TextEditingDelta& other) = default;
+
+  TextEditingDelta& operator=(const TextEditingDelta& other) = default;
+
  private:
-  std::u16string oldText_;
-  std::u16string deltaText_;
-  int deltaStart_;
-  int deltaEnd_;
+  std::u16string old_text_;
+  std::u16string delta_text_;
+  int delta_start_;
+  int delta_end_;
 
-  void setDeltas(std::u16string oldText,
-                 std::u16string newTxt,
-                 int newStart,
-                 int newEnd) {
-    oldText_ = oldText;
-    deltaText_ = newTxt;
-    deltaStart_ = newStart;
-    deltaEnd_ = newEnd;
-  }
+  void set_old_text(std::u16string old_text) { old_text_ = old_text; }
 
-  std::string utf16ToUtf8(std::u16string string) const {
+  void set_delta_text(std::u16string delta_text) { delta_text_ = delta_text; }
+
+  void set_delta_start(int delta_start) { delta_start_ = delta_start; }
+
+  void set_delta_end(int delta_end) { delta_end_ = delta_end; }
+
+  // Given a UTF16-encoded string, returns the string encoded in UTF8.
+  static std::string Utf16ToUtf8(std::u16string string) {
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
         utf8_converter;
     return utf8_converter.to_bytes(string);
   }
 
-  std::u16string utf8ToUtf16(std::string string) const {
+  // Given a UTF8-encoded string, returns the string encoded in UTF16.
+  static std::u16string Utf8ToUtf16(const std::string& string) {
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
         utf16_converter;
     return utf16_converter.from_bytes(string);

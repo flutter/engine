@@ -290,7 +290,7 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
     if (!_enableDeltaModel) {
       [self updateEditState];
     } else {
-      // Send an "empty" delta. The client can compare the oldText with their
+      // Send an "empty" delta. The client can compare the old_text with their
       // current text and update with that if the race condition described above
       // occurs.
       [self updateEditStateWithDelta:flutter::TextEditingDelta(_activeModel->GetText().c_str(),
@@ -398,10 +398,10 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   NSString* const textAffinity = [self textAffinityString];
 
   NSDictionary* deltaToFramework = @{
-    @"oldText" : @(delta.oldText().c_str()),
-    @"deltaText" : @(delta.deltaText().c_str()),
-    @"deltaStart" : @(delta.deltaStart()),
-    @"deltaEnd" : @(delta.deltaEnd()),
+    @"oldText" : @(delta.old_text().c_str()),
+    @"deltaText" : @(delta.delta_text().c_str()),
+    @"deltaStart" : @(delta.delta_start()),
+    @"deltaEnd" : @(delta.delta_end()),
     @"selectionBase" : @(selectionBase),
     @"selectionExtent" : @(selectionExtent),
     @"selectionAffinity" : textAffinity,

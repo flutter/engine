@@ -8,30 +8,29 @@ namespace flutter {
 
 TextEditingDelta::~TextEditingDelta() = default;
 
-TextEditingDelta::TextEditingDelta(std::u16string textBeforeChange,
+TextEditingDelta::TextEditingDelta(std::u16string text_before_change,
                                    TextRange range,
-                                   std::u16string text) {
-  int start = range.start();
-  int end = range.start() + range.length();
-  setDeltas(textBeforeChange, text, start, end);
-}
+                                   std::u16string text)
+    : old_text_(text_before_change),
+      delta_text_(text),
+      delta_start_(range.start()),
+      delta_end_(range.start() + range.length()) {}
 
-TextEditingDelta::TextEditingDelta(std::string textBeforeChange,
+TextEditingDelta::TextEditingDelta(const std::string& text_before_change,
                                    TextRange range,
-                                   std::string text) {
-  int start = range.start();
-  int end = range.start() + range.length();
-  std::u16string textBeforeChange16 = utf8ToUtf16(textBeforeChange);
-  std::u16string text16 = utf8ToUtf16(text);
-  setDeltas(textBeforeChange16, text16, start, end);
-}
+                                   const std::string& text)
+    : old_text_(Utf8ToUtf16(text_before_change)),
+      delta_text_(Utf8ToUtf16(text)),
+      delta_start_(range.start()),
+      delta_end_(range.start() + range.length()) {}
 
-TextEditingDelta::TextEditingDelta(std::u16string text) {
-  setDeltas(text, u"", -1, -1);
-}
+TextEditingDelta::TextEditingDelta(std::u16string text)
+    : old_text_(text), delta_text_(u""), delta_start_(-1), delta_end_(-1) {}
 
-TextEditingDelta::TextEditingDelta(std::string text) {
-  setDeltas(utf8ToUtf16(text), u"", -1, -1);
-}
+TextEditingDelta::TextEditingDelta(const std::string& text)
+    : old_text_(Utf8ToUtf16(text)),
+      delta_text_(u""),
+      delta_start_(-1),
+      delta_end_(-1) {}
 
 }  // namespace flutter

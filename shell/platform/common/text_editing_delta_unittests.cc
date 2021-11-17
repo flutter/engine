@@ -10,28 +10,28 @@ namespace flutter {
 
 TEST(TextEditingDeltaTest, TestTextEditingDeltaConstructor) {
   // Here we are simulating inserting an "o" at the end of "hell".
-  std::string oldText = "hell";
+  std::string old_text = "hell";
   std::string replacementText = "hello";
-  flutter::TextRange range = flutter::TextRange(0, 4);
+  TextRange range(0, 4);
 
-  TextEditingDelta delta = TextEditingDelta(oldText, range, replacementText);
+  TextEditingDelta delta = TextEditingDelta(old_text, range, replacementText);
 
-  ASSERT_EQ(delta.oldText(), oldText);
-  ASSERT_EQ(delta.deltaText(), "hello");
-  ASSERT_EQ(delta.deltaStart(), 0);
-  ASSERT_EQ(delta.deltaEnd(), 4);
+  EXPECT_EQ(delta.old_text(), old_text);
+  EXPECT_EQ(delta.delta_text(), "hello");
+  EXPECT_EQ(delta.delta_start(), 0);
+  EXPECT_EQ(delta.delta_end(), 4);
 }
 
 TEST(TextEditingDeltaTest, TestTextEditingDeltaNonTextConstructor) {
   // Here we are simulating inserting an "o" at the end of "hell".
-  std::string oldText = "hello";
+  std::string old_text = "hello";
 
-  TextEditingDelta delta = TextEditingDelta(oldText);
+  TextEditingDelta delta = TextEditingDelta(old_text);
 
-  ASSERT_EQ(delta.oldText(), oldText);
-  ASSERT_EQ(delta.deltaText(), "");
-  ASSERT_EQ(delta.deltaStart(), -1);
-  ASSERT_EQ(delta.deltaEnd(), -1);
+  EXPECT_EQ(delta.old_text(), old_text);
+  EXPECT_EQ(delta.delta_text(), "");
+  EXPECT_EQ(delta.delta_start(), -1);
+  EXPECT_EQ(delta.delta_end(), -1);
 }
 
 }  // namespace flutter

@@ -1770,10 +1770,10 @@ static BOOL isScribbleAvailable() {
   }
 
   NSDictionary* deltaToFramework = @{
-    @"oldText" : @(delta.oldText().c_str()),
-    @"deltaText" : @(delta.deltaText().c_str()),
-    @"deltaStart" : @(delta.deltaStart()),
-    @"deltaEnd" : @(delta.deltaEnd()),
+    @"oldText" : @(delta.old_text().c_str()),
+    @"deltaText" : @(delta.delta_text().c_str()),
+    @"deltaStart" : @(delta.delta_start()),
+    @"deltaEnd" : @(delta.delta_end()),
     @"selectionBase" : @(selectionBase),
     @"selectionExtent" : @(selectionExtent),
     @"selectionAffinity" : @(_selectionAffinity),
