@@ -34,11 +34,12 @@ EmbedderTestContext& EmbedderTest::GetEmbedderContext(
             std::make_unique<EmbedderTestContextSoftware>(
                 GetFixturesDirectory());
         break;
+#ifdef SHELL_ENABLE_VULKAN
       case EmbedderTestContextType::kVulkanContext:
         embedder_contexts_[type] =
-            std::make_unique<EmbedderTestContextVulkan>(
-                GetFixturesDirectory());
+            std::make_unique<EmbedderTestContextVulkan>(GetFixturesDirectory());
         break;
+#endif
 #ifdef SHELL_ENABLE_GL
       case EmbedderTestContextType::kOpenGLContext:
         embedder_contexts_[type] =
