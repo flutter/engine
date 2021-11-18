@@ -10,6 +10,9 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
+
+static constexpr char kValueKey[] = "value";
+
 namespace flutter {
 
 // static
@@ -74,8 +77,7 @@ void PlatformHandlerWinUwp::GetPlainText(
 }
 
 void PlatformHandlerWinUwp::GetHasStrings(
-    std::unique_ptr<MethodResult<rapidjson::Document>> result,
-    std::string_view key) {
+    std::unique_ptr<MethodResult<rapidjson::Document>> result) {
   bool has_string = false;
 
   // We call `Clipboard::GetContent()` when the application window is in
@@ -90,7 +92,7 @@ void PlatformHandlerWinUwp::GetHasStrings(
   rapidjson::Document document;
   document.SetObject();
   rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
-  document.AddMember(rapidjson::Value(key.data(), allocator),
+  document.AddMember(rapidjson::Value(kValueKey, allocator),
                      rapidjson::Value(has_string), allocator);
   result->Success(document);
 }
