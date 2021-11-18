@@ -4,8 +4,6 @@
 
 #include "flutter/shell/common/display.h"
 
-#include "flutter/fml/logging.h"
-
 namespace flutter {
 double Display::GetRefreshRate() const {
   return refresh_rate_;
