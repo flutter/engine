@@ -10,7 +10,8 @@
 
 namespace flutter {
 
-std::unique_ptr<flutter::AssetResolver> CreateEmbedderAssetResolver(const FlutterEngineAssetResolver* resolver);
+std::unique_ptr<flutter::AssetResolver> CreateEmbedderAssetResolver(
+    const FlutterEngineAssetResolver* resolver);
 
 }  // namespace flutter
 

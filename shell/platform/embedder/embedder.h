@@ -1345,26 +1345,27 @@ typedef void (*FlutterLogMessageCallback)(const char* /* tag */,
 /// FlutterEngine instance in AOT mode.
 typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
 
-/// An immutable buffer of potentially shared data. 
+/// An immutable buffer of potentially shared data.
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterEngineMapping).
   size_t struct_size;
 
   /// A pointer to the data accessed by the Flutter Engine. The data will not be
-  /// mutated by the Flutter Engine, and must not be mutated by the Embedder until
-  /// the mapping is destroyed.
+  /// mutated by the Flutter Engine, and must not be mutated by the Embedder
+  /// until the mapping is destroyed.
   const uint8_t* data;
   /// The size of the data backed by this mapping. The data must be valid for
-  /// reading until this point. Bytes past the end are undefined and not accessed
-  /// by the Engine. 
+  /// reading until this point. Bytes past the end are undefined and not
+  /// accessed by the Engine.
   size_t data_size;
 
-  /// An opaque baton passed back to the embedder when the destruction_callback is
-  /// invoked. The engine does not interpret this field in any way.
+  /// An opaque baton passed back to the embedder when the destruction_callback
+  /// is invoked. The engine does not interpret this field in any way.
   void* user_data;
-  /// Called once by the engine to destroy this mapping. The `user_data` specified
-  /// above is passed in as the only argument. This call may mutate/free/unmap the
-  /// data, as it will no longer be accessed by the Flutter Engine.
+  /// Called once by the engine to destroy this mapping. The `user_data`
+  /// specified above is passed in as the only argument. This call may
+  /// mutate/free/unmap the data, as it will no longer be accessed by the
+  /// Flutter Engine.
   VoidCallback destruction_callback;
 } FlutterEngineMappingCreateInfo;
 
@@ -1375,22 +1376,23 @@ typedef struct FlutterEngineMappingPrivate* FlutterEngineMapping;
 /// This may be called by multiple threads.
 ///
 /// The `asset_name` parameter contains the path to the asset to load.
-/// `user_data` is the user data from `FlutterEngineAssetResolver`, registered via
-/// `FlutterProjectArgs`.
+/// `user_data` is the user data from `FlutterEngineAssetResolver`, registered
+/// via `FlutterProjectArgs`.
 ///
 /// If the asset was found and successfully loaded, return a valid
-/// `FlutterEngineMapping`. Otherwise return NULL to indicate an error occurred 
+/// `FlutterEngineMapping`. Otherwise return NULL to indicate an error occurred
 /// while loading the asset.
 ///
-/// Note that the returned `FlutterEngineMapping` is owned by the Engine and should
-/// be cached or reused. Each callback invocation must return a new 
-/// FlutterEngineMapping. Multiple mappings may refer to the same area in memory,
-/// proper book-keeping is up to the embedder.
-typedef FlutterEngineMapping (*FlutterAssetResolverGetAssetCallback)(const char* /* asset_name */,
-                                                                      void* /* user_data */);
+/// Note that the returned `FlutterEngineMapping` is owned by the Engine and
+/// should be cached or reused. Each callback invocation must return a new
+/// FlutterEngineMapping. Multiple mappings may refer to the same area in
+/// memory, proper book-keeping is up to the embedder.
+typedef FlutterEngineMapping (*FlutterAssetResolverGetAssetCallback)(
+    const char* /* asset_name */,
+    void* /* user_data */);
 
-/// Resolves assets on the behalf of the Flutter Engine, instead of accessing the
-/// filesystem directly.
+/// Resolves assets on the behalf of the Flutter Engine, instead of accessing
+/// the filesystem directly.
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterEngineAssetResolver).
   size_t struct_size;
@@ -1413,9 +1415,10 @@ typedef struct {
   ///
   /// If `asset_resolver` is provided, may be NULL.
   ///
-  /// If both `asset_resolver` and `assets_path` are provided, the `asset_resolver`
-  /// comes first in the asset search order, then `assets_path`. This effectively
-  /// makes `asset_resolver` an overlay over `assets_path`.
+  /// If both `asset_resolver` and `assets_path` are provided, the
+  /// `asset_resolver` comes first in the asset search order, then
+  /// `assets_path`. This effectively makes `asset_resolver` an overlay over
+  /// `assets_path`.
   const char* assets_path;
   /// The path to the Dart file containing the `main` entry point.
   /// The string can be collected after the call to `FlutterEngineRun` returns.
@@ -1659,9 +1662,10 @@ typedef struct {
   ///
   /// If `assets_path` is provided, may be NULL.
   ///
-  /// If both `asset_resolver` and `assets_path` are provided, the `asset_resolver`
-  /// comes first in the asset search order, then `assets_path`. This effectively
-  /// makes `asset_resolver` an overlay over `assets_path`.
+  /// If both `asset_resolver` and `assets_path` are provided, the
+  /// `asset_resolver` comes first in the asset search order, then
+  /// `assets_path`. This effectively makes `asset_resolver` an overlay over
+  /// `assets_path`.
   const FlutterEngineAssetResolver* asset_resolver;
 } FlutterProjectArgs;
 

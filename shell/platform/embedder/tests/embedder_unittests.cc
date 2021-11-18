@@ -488,7 +488,8 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsValidAsset) {
   FlutterEngineAssetResolver resolver = {};
   resolver.struct_size = sizeof(FlutterEngineAssetResolver);
   resolver.user_data = reinterpret_cast<void*>(&destroy);
-  resolver.get_asset = [](const char* asset, void* user_data) -> FlutterEngineMapping {
+  resolver.get_asset = [](const char* asset,
+                          void* user_data) -> FlutterEngineMapping {
     if (strcmp(asset, "existing_asset") == 0) {
       // Return an asset with the string "hello" as its contents.
       // When the mapping is destroyed (on GC or Engine shutdown) the
@@ -513,8 +514,7 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsValidAsset) {
 
   fml::AutoResetWaitableEvent message;
   context.AddNativeCallback(
-      "SignalNativeCount",
-      CREATE_NATIVE_ENTRY([](Dart_NativeArguments args) {
+      "SignalNativeCount", CREATE_NATIVE_ENTRY([](Dart_NativeArguments args) {
         auto count = tonic::DartConverter<int64_t>::FromDart(
             Dart_GetNativeArgument(args, 0));
         // Dart should receive a 5 byte message reply.
@@ -525,7 +525,8 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsValidAsset) {
       CREATE_NATIVE_ENTRY(([&message](Dart_NativeArguments args) {
         auto received_message = tonic::DartConverter<std::string>::FromDart(
             Dart_GetNativeArgument(args, 0));
-        // The message received from the asset channel should be the string "hello".
+        // The message received from the asset channel should be the string
+        // "hello".
         EXPECT_EQ("hello", received_message);
         message.Signal();
       })));
@@ -550,7 +551,8 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsInvalidAsset) {
 
   FlutterEngineAssetResolver resolver = {};
   resolver.struct_size = sizeof(FlutterEngineAssetResolver);
-  resolver.get_asset = [](const char* asset, void* user_data) -> FlutterEngineMapping {
+  resolver.get_asset = [](const char* asset,
+                          void* user_data) -> FlutterEngineMapping {
     return nullptr;
   };
 

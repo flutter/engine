@@ -10,7 +10,8 @@
 
 namespace flutter {
 
-std::unique_ptr<fml::Mapping> CreateEmbedderMapping(const FlutterEngineMappingCreateInfo* mapping);
+std::unique_ptr<fml::Mapping> CreateEmbedderMapping(
+    const FlutterEngineMappingCreateInfo* mapping);
 
 }  // namespace flutter
 

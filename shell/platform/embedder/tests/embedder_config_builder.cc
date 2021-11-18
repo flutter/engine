@@ -174,7 +174,8 @@ void EmbedderConfigBuilder::SetAssetsPath() {
   project_args_.assets_path = context_.GetAssetsPath().c_str();
 }
 
-void EmbedderConfigBuilder::SetAssetResolver(const FlutterEngineAssetResolver* resolver) {
+void EmbedderConfigBuilder::SetAssetResolver(
+    const FlutterEngineAssetResolver* resolver) {
   asset_resolver_ = *resolver;
   project_args_.asset_resolver = &asset_resolver_;
 }

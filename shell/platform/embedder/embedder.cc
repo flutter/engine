@@ -928,10 +928,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "The Flutter project arguments were missing.");
   }
 
-  if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr && SAFE_ACCESS(args, asset_resolver, nullptr) == nullptr) {
-    return LOG_EMBEDDER_ERROR(
-        kInvalidArguments,
-        "The assets path or asset resolver in the Flutter project arguments was missing.");
+  if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr &&
+      SAFE_ACCESS(args, asset_resolver, nullptr) == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "The assets path or asset resolver in the "
+                              "Flutter project arguments was missing.");
   }
 
   if (SAFE_ACCESS(args, main_path__unused__, nullptr) != nullptr) {
@@ -989,7 +990,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   PopulateSnapshotMappingCallbacks(args, settings);
 
   settings.icu_data_path = icu_data_path;
-  if (args->assets_path) settings.assets_path = args->assets_path;
+  if (args->assets_path)
+    settings.assets_path = args->assets_path;
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
   settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
 
@@ -1304,7 +1306,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   auto asset_manager = std::make_shared<flutter::AssetManager>();
 
   if (SAFE_ACCESS(args, asset_resolver, nullptr) != nullptr) {
-    asset_manager->PushBack(flutter::CreateEmbedderAssetResolver(args->asset_resolver));
+    asset_manager->PushBack(
+        flutter::CreateEmbedderAssetResolver(args->asset_resolver));
   }
 
   if (args->assets_path) {
@@ -1314,12 +1317,10 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         true));
   }
 
-  auto run_configuration =
-      flutter::RunConfiguration(
-        flutter::IsolateConfiguration::InferFromSettings(settings, asset_manager,
-                                                  nullptr),
-        asset_manager
-      );
+  auto run_configuration = flutter::RunConfiguration(
+      flutter::IsolateConfiguration::InferFromSettings(settings, asset_manager,
+                                                       nullptr),
+      asset_manager);
 
   if (SAFE_ACCESS(args, custom_dart_entrypoint, nullptr) != nullptr) {
     auto dart_entrypoint = std::string{args->custom_dart_entrypoint};
@@ -2385,7 +2386,8 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
 FlutterEngineResult FlutterEngineCreateMapping(
     const FlutterEngineMappingCreateInfo* create_info,
     FlutterEngineMapping* out_mapping) {
-  if (SAFE_ACCESS(create_info, data, nullptr) == nullptr && SAFE_ACCESS(create_info, data_size, 0) > 0) {
+  if (SAFE_ACCESS(create_info, data, nullptr) == nullptr &&
+      SAFE_ACCESS(create_info, data_size, 0) > 0) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid mapping specified.");
   }
 
