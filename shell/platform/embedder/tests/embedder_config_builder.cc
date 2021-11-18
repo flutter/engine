@@ -13,10 +13,10 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
 #endif
 
-//#ifdef SHELL_ENABLE_VULKAN
+#ifdef SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
 #include "flutter/vulkan/vulkan_device.h"
-//#endif
+#endif
 
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
@@ -74,51 +74,12 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   };
 #endif
 
-#ifdef SHELL_ENABLE_VULKAN
-  vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
-  vulkan_renderer_config_.instance =
-      static_cast<EmbedderTestContextVulkan&>(context)
-          .application_->GetInstance();
-  vulkan_renderer_config_.physical_device =
-      static_cast<EmbedderTestContextVulkan&>(context)
-          .logical_device_->GetPhysicalDeviceHandle();
-  vulkan_renderer_config_.device =
-      static_cast<EmbedderTestContextVulkan&>(context)
-          .logical_device_->GetHandle();
-  vulkan_renderer_config_.queue_family_index =
-      static_cast<EmbedderTestContextVulkan&>(context)
-          .logical_device_->GetGraphicsQueueIndex();
-  vulkan_renderer_config_.queue =
-      static_cast<EmbedderTestContextVulkan&>(context)
-          .logical_device_->GetQueueHandle();
-  vulkan_renderer_config_.get_instance_proc_address_callback =
-      [](void* context, FlutterVulkanInstanceHandle instance,
-         const char* name) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan*>(context)
-        ->vk_->GetInstanceProcAddr(reinterpret_cast<VkInstance>(instance),
-                                   name);
-  };
-  vulkan_renderer_config_.get_next_image_callback =
-      [](void* context,
-         const FlutterFrameInfo* frame_info) -> FlutterVulkanImage {
-    VkImage image =
-        reinterpret_cast<EmbedderTestContextVulkan*>(context)->GetNextImage(
-            {static_cast<int>(frame_info->size.width),
-             static_cast<int>(frame_info->size.height)});
-    return {
-        .struct_size = sizeof(FlutterVulkanImage),
-        .image = image,
-    };
-  };
-  vulkan_renderer_config_.present_image_callback =
-      [](void* context, const FlutterVulkanImage* image) -> bool {
-    return reinterpret_cast<EmbedderTestContextVulkan*>(context)->PresentImage(
-        reinterpret_cast<VkImage>(image->image));
-  };
-#endif
-
 #ifdef SHELL_ENABLE_METAL
   InitializeMetalRendererConfig();
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+  InitializeVulkanRendererConfig();
 #endif
 
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
@@ -214,6 +175,14 @@ void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
 #ifdef SHELL_ENABLE_METAL
   renderer_config_.type = FlutterRendererType::kMetal;
   renderer_config_.metal = metal_renderer_config_;
+  context_.SetupSurface(surface_size);
+#endif
+}
+
+void EmbedderConfigBuilder::SetVulkanRendererConfig(SkISize surface_size) {
+#ifdef SHELL_ENABLE_VULKAN
+  renderer_config_.type = FlutterRendererType::kVulkan;
+  renderer_config_.vulkan = vulkan_renderer_config_;
   context_.SetupSurface(surface_size);
 #endif
 }
@@ -475,6 +444,57 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
 }
 
 #endif  // SHELL_ENABLE_METAL
+
+#ifdef SHELL_ENABLE_VULKAN
+
+void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
+  if (context_.GetContextType() != EmbedderTestContextType::kVulkanContext) {
+    return;
+  }
+
+  vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
+  vulkan_renderer_config_.instance =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .application_->GetInstance();
+  vulkan_renderer_config_.physical_device =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .logical_device_->GetPhysicalDeviceHandle();
+  vulkan_renderer_config_.device =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .logical_device_->GetHandle();
+  vulkan_renderer_config_.queue_family_index =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .logical_device_->GetGraphicsQueueIndex();
+  vulkan_renderer_config_.queue =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .logical_device_->GetQueueHandle();
+  vulkan_renderer_config_.get_instance_proc_address_callback =
+      [](void* context, FlutterVulkanInstanceHandle instance,
+         const char* name) -> void* {
+    return reinterpret_cast<EmbedderTestContextVulkan*>(context)
+        ->vk_->GetInstanceProcAddr(reinterpret_cast<VkInstance>(instance),
+                                   name);
+  };
+  vulkan_renderer_config_.get_next_image_callback =
+      [](void* context,
+         const FlutterFrameInfo* frame_info) -> FlutterVulkanImage {
+    VkImage image =
+        reinterpret_cast<EmbedderTestContextVulkan*>(context)->GetNextImage(
+            {static_cast<int>(frame_info->size.width),
+             static_cast<int>(frame_info->size.height)});
+    return {
+        .struct_size = sizeof(FlutterVulkanImage),
+        .image = image,
+    };
+  };
+  vulkan_renderer_config_.present_image_callback =
+      [](void* context, const FlutterVulkanImage* image) -> bool {
+    return reinterpret_cast<EmbedderTestContextVulkan*>(context)->PresentImage(
+        reinterpret_cast<VkImage>(image->image));
+  };
+}
+
+#endif
 
 }  // namespace testing
 }  // namespace flutter

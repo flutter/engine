@@ -18,7 +18,6 @@ VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
 
 VulkanProcTable::VulkanProcTable(const char* so_path)
     : handle_(nullptr), acquired_mandatory_proc_addresses_(false) {
-  FML_DLOG(WARNING) << "Cowabunga";
   acquired_mandatory_proc_addresses_ = OpenLibraryHandle(so_path) &&
                                        SetupGetInstanceProcAddress() &&
                                        SetupLoaderProcAddresses();

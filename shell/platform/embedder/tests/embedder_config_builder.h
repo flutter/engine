@@ -49,9 +49,9 @@ class EmbedderConfigBuilder {
 
   void SetOpenGLRendererConfig(SkISize surface_size);
 
-  void SetVulkanRendererConfig(SkISize surface_size);
-
   void SetMetalRendererConfig(SkISize surface_size);
+
+  void SetVulkanRendererConfig(SkISize surface_size);
 
   // Used to explicitly set an `open_gl.fbo_callback`. Using this method will
   // cause your test to fail since the ctor for this class sets
@@ -120,6 +120,7 @@ class EmbedderConfigBuilder {
   FlutterOpenGLRendererConfig opengl_renderer_config_ = {};
 #endif
 #ifdef SHELL_ENABLE_VULKAN
+  void InitializeVulkanRendererConfig();
   FlutterVulkanRendererConfig vulkan_renderer_config_ = {};
 #endif
 #ifdef SHELL_ENABLE_METAL
