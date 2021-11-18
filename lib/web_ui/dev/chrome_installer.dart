@@ -139,21 +139,17 @@ class ChromeInstaller {
   }
 
   Future<void> install() async {
-    if (versionDir.existsSync() && !isLuci) {
-      versionDir.deleteSync(recursive: true);
-      versionDir.createSync(recursive: true);
-    } else if (versionDir.existsSync() && isLuci) {
-      print('INFO: Chrome version directory in LUCI: '
-          '${versionDir.path}');
-    } else if (!versionDir.existsSync() && isLuci) {
-      // Chrome should have been deployed as a CIPD package on LUCI.
-      // Throw if it does not exists.
-      throw StateError('Failed to locate Chrome on LUCI on path:'
-          '${versionDir.path}');
-    } else {
-      // If the directory does not exists and felt is not running on LUCI.
-      versionDir.createSync(recursive: true);
+    if (isLuci) {
+      throw StateError(
+        'Rejecting attempt to install Chromium on LUCI. LUCI is expected to '
+        'provide Chromium as a CIPD dependency managed using .ci.yaml.',
+      );
     }
+
+    if (versionDir.existsSync()) {
+      versionDir.deleteSync(recursive: true);
+    }
+    versionDir.createSync(recursive: true);
 
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
     print('Downloading Chrome from $url');
