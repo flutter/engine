@@ -11,7 +11,6 @@ import 'package:archive/archive_io.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 
-import 'browser_lock.dart';
 import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
@@ -156,9 +155,9 @@ class ChromeInstaller {
       versionDir.createSync(recursive: true);
     }
 
-    print('INFO: Starting Chrome download.');
-
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
+    print('Downloading Chrome from $url');
+
     final StreamedResponse download = await client.send(Request(
       'GET',
       Uri.parse(url),
@@ -254,26 +253,5 @@ Future<String> fetchLatestChromeVersion() async {
     return response.body;
   } finally {
     client.close();
-  }
-}
-
-/// Make sure LUCI bot has the pinned Chrome version and return the executable.
-///
-/// We are using CIPD packages in LUCI. The pinned chrome version from the
-/// `browser_lock.yaml` file will already be installed in the LUCI bot.
-/// Verify if Chrome is installed and use it for the integration tests.
-String preinstalledChromeExecutable() {
-  // Note that build number and major version is different for Chrome.
-  // For example for a build number `753189`, major version is 83.
-  final String buildNumber = browserLock.chromeLock.versionForCurrentPlatform;
-  final ChromeInstaller chromeInstaller = ChromeInstaller(version: buildNumber);
-  if (chromeInstaller.isInstalled) {
-    final String executable = chromeInstaller.getInstallation()!.executable;
-    print('INFO: Found chrome executable for LUCI: $executable');
-    return executable;
-  } else {
-    throw StateError(
-      'Failed to locate pinned Chrome build: $buildNumber on LUCI.',
-    );
   }
 }
