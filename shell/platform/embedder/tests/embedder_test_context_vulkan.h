@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_VULKAN_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_VULKAN_H_
 
+#include "tests/embedder_test_context.h"
 #include "vulkan/vulkan_application.h"
 
 namespace flutter {
@@ -24,6 +25,10 @@ class EmbedderTestContextVulkan : public EmbedderTestContext {
 
   // |EmbedderTestContext|
   void SetupCompositor() override;
+
+  VkImage GetNextImage(const SkISize& size);
+
+  bool PresentImage(VkImage image);
 
  private:
   // This allows the builder to access the hooks.

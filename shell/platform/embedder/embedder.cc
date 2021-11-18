@@ -427,7 +427,6 @@ InferVulkanPlatformViewCreationCallback(
     FlutterVulkanImage image_desc = {
         .struct_size = sizeof(FlutterVulkanImage),
         .image = image,
-        .user_data = user_data,
     };
     return ptr(user_data, &image_desc);
   };
@@ -748,8 +747,8 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       SkColorSpace::MakeSRGB(),  // color space
       &surface_properties,       // surface properties
       static_cast<SkSurface::TextureReleaseProc>(
-          vulkan->image.destruction_callback),  // release proc
-      vulkan->image.user_data                   // release context
+          vulkan->destruction_callback),  // release proc
+      vulkan->user_data                   // release context
   );
 
   if (!surface) {

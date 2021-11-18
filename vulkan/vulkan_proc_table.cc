@@ -169,7 +169,11 @@ bool VulkanProcTable::OpenLibraryHandle(const char* path) {
 #else  // VULKAN_LINK_STATICALLY
   handle_ = fml::NativeLibrary::Create(path);
 #endif  // VULKAN_LINK_STATICALLY
-  return !!handle_;
+  if (!handle_) {
+    FML_DLOG(WARNING) << "Could not open Vulkan library handle: " << path;
+    return false;
+  }
+  return true;
 }
 
 bool VulkanProcTable::CloseLibraryHandle() {

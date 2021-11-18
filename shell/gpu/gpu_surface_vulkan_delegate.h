@@ -36,12 +36,12 @@ class GPUSurfaceVulkanDelegate {
   /// @brief  Called by the engine to fetch a VkImage for writing the next
   ///         frame.
   ///
-  virtual VkImage AcquireImage(const SkISize& size);
+  virtual VkImage AcquireImage(const SkISize& size) = 0;
 
   /// @brief  Called by the engine once a frame has been rendered to the image
   ///         and it's ready to be bound for further reading/writing.
   ///
-  virtual bool PresentImage(VkImage image);
+  virtual bool PresentImage(VkImage image) = 0;
 };
 
 }  // namespace flutter

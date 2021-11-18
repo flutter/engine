@@ -8,9 +8,10 @@
 
 #include "embedder.h"
 #include "flutter/fml/logging.h"
-//#include
-//"flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
+// #include
+// "flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
 
+#include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
 
 #ifdef OS_MACOSX
@@ -27,16 +28,28 @@ namespace testing {
 EmbedderTestContextVulkan::EmbedderTestContextVulkan(std::string assets_path)
     : EmbedderTestContext(assets_path) {
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH);
-  FML_DCHECK(vk_->HasAcquiredMandatoryProcAddresses());
+  if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
+    FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
+    return;
+  }
 
   application_ = std::unique_ptr<vulkan::VulkanApplication>(
       new vulkan::VulkanApplication(*vk_, "Flutter Unittests", {}));
-  FML_DCHECK(application_->IsValid());
-  FML_DCHECK(vk_->AreInstanceProcsSetup());
+  if (!application_->IsValid()) {
+    FML_DLOG(ERROR) << "Failed to initialize basic Vulkan state.";
+    return;
+  }
+  if (!vk_->AreInstanceProcsSetup()) {
+    FML_DLOG(ERROR) << "Failed to acquire full proc table.";
+    return;
+  }
 
   logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
-  FML_DCHECK(logical_device_ != nullptr);
-  FML_DCHECK(logical_device_->IsValid());
+  if (!logical_device_ || !logical_device_->IsValid()) {
+    FML_DLOG(ERROR) << "Failed to create compatible logical device.";
+    return;
+  }
+
 }
 
 EmbedderTestContextVulkan::~EmbedderTestContextVulkan() {}
@@ -52,6 +65,16 @@ void EmbedderTestContextVulkan::SetupSurface(SkISize surface_size) {
 
 size_t EmbedderTestContextVulkan::GetSurfacePresentCount() const {
   return present_count_;
+}
+
+VkImage EmbedderTestContextVulkan::GetNextImage(const SkISize& size) {
+  assert(false);  // TODO(bdero)
+  return nullptr;
+}
+
+bool EmbedderTestContextVulkan::PresentImage(VkImage image) {
+  assert(false);  // TODO(bdero)
+  return false;
 }
 
 EmbedderTestContextType EmbedderTestContextVulkan::GetContextType() const {

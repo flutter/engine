@@ -109,6 +109,13 @@ template("embedder_source_set") {
       deps += [ "//flutter/shell/platform/darwin/graphics" ]
     }
 
+    if (embedder_enable_vulkan) {
+      sources += [
+        "embedder_surface_vulkan.cc",
+        "embedder_surface_vulkan.h",
+      ]
+    }
+
     public_deps = [ ":embedder_headers" ]
 
     public_configs += [
@@ -234,9 +241,7 @@ if (enable_unittests) {
         "tests/embedder_unittests_gl.cc",
       ]
 
-      deps += [
-        "//flutter/testing:opengl",
-      ]
+      deps += [ "//flutter/testing:opengl" ]
     }
 
     if (test_enable_metal) {

@@ -563,13 +563,6 @@ typedef struct {
   /// Handle to the VkImage that is owned by the embedder. The engine will
   /// bind this image for writing the frame.
   FlutterVulkanImageHandle image;
-  /// A baton that is not interpreted by the engine in any way. It will be given
-  /// back to the embedder in the destruction callback below. Embedder resources
-  /// may be associated with this baton.
-  void* user_data;
-  /// Only called when releasing custom compositor backing stores. The callback
-  /// invoked by the engine when it no longer needs this backing store.
-  VoidCallback destruction_callback;
 } FlutterVulkanImage;
 
 /// Callback to fetch a Vulkan function pointer for a given instance. Normally,
@@ -589,7 +582,6 @@ typedef FlutterVulkanImage (*FlutterVulkanImageCallback)(
 typedef bool (*FlutterVulkanPresentCallback)(
     void* /* user data */,
     const FlutterVulkanImage* /* image */);
-typedef uint64_t* (*Uint64Callback)(void* /* user data */);
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanRendererConfig).
@@ -1067,7 +1059,6 @@ typedef struct {
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanBackingStore).
   size_t struct_size;
-
   /// The Vulkan image that the layer will be rendered to. This image must
   /// already be available for the engine to bind for writing when it's given to
   /// the engine via the backing store creation callback. The engine will
@@ -1075,6 +1066,13 @@ typedef struct {
   /// callback, and so the written layer images can be freely bound by the
   /// embedder without any additional synchronization.
   FlutterVulkanImage image;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it no longer needs this backing
+  /// store.
+  VoidCallback destruction_callback;
 } FlutterVulkanBackingStore;
 
 typedef enum {
