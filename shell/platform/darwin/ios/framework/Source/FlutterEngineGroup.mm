@@ -54,7 +54,7 @@
 - (FlutterEngine*)makeEngineWithEntrypoint:(nullable NSString*)entrypoint
                                 libraryURI:(nullable NSString*)libraryURI
                               initialRoute:(nullable NSString*)initialRoute {
-  FlutterEngineGroupOptions* options = [[FlutterEngineGroupOptions alloc] init];
+  FlutterEngineGroupOptions* options = [[[FlutterEngineGroupOptions alloc] init] autorelease];
   options.entrypoint = entrypoint;
   options.libraryURI = libraryURI;
   options.initialRoute = initialRoute;
