@@ -10,7 +10,6 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
-
 namespace flutter {
 
 // static
@@ -105,6 +104,12 @@ void PlatformHandlerWinUwp::SetPlainText(
       content);
 
   result->Success();
+}
+
+void PlatformHandlerWinUwp::SystemSoundPlay(
+    const std::string& sound_type,
+    std::unique_ptr<MethodResult<rapidjson::Document>> result) {
+    result->NotImplemented();
 }
 
 }  // namespace flutter
