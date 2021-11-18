@@ -1365,6 +1365,8 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_metal.mm
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_software.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_vulkan.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_surface_vulkan.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_task_runner.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_thread_host.cc
