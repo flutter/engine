@@ -39,7 +39,6 @@ class EmbedderTestContextVulkan : public EmbedderTestContext {
   std::unique_ptr<vulkan::VulkanDevice> logical_device_;
 
   SkISize surface_size_ = SkISize::MakeEmpty();
-  //std::unique_ptr<TestVulkanContext> vulkan_context_;
   size_t present_count_ = 0;
 
   void SetupSurface(SkISize surface_size) override;

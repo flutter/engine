@@ -51,8 +51,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   VulkanProcTable();
   explicit VulkanProcTable(const char* so_path);
   explicit VulkanProcTable(
-      std::function<void*(VkInstance, const char*)>
-          get_instance_proc_addr);
+      std::function<void*(VkInstance, const char*)> get_instance_proc_addr);
   ~VulkanProcTable();
 
   bool HasAcquiredMandatoryProcAddresses() const;
@@ -69,8 +68,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
 
   GrVkGetProc CreateSkiaGetProc() const;
 
-  std::function<void*(VkInstance, const char*)>
-      GetInstanceProcAddr = nullptr;
+  std::function<void*(VkInstance, const char*)> GetInstanceProcAddr = nullptr;
 
 #define DEFINE_PROC(name) Proc<PFN_vk##name> name;
 

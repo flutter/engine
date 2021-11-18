@@ -49,7 +49,6 @@ EmbedderTestContextVulkan::EmbedderTestContextVulkan(std::string assets_path)
     FML_DLOG(ERROR) << "Failed to create compatible logical device.";
     return;
   }
-
 }
 
 EmbedderTestContextVulkan::~EmbedderTestContextVulkan() {}

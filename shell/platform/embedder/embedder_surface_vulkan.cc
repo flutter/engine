@@ -53,17 +53,17 @@ EmbedderSurfaceVulkan::~EmbedderSurfaceVulkan() = default;
 
 // |GPUSurfaceVulkanDelegate|
 const vulkan::VulkanProcTable& EmbedderSurfaceVulkan::vk() {
-    return vk_;
+  return vk_;
 }
 
 // |GPUSurfaceVulkanDelegate|
 VkImage EmbedderSurfaceVulkan::AcquireImage(const SkISize& size) {
-    return vulkan_dispatch_table_.get_next_image(size);
+  return vulkan_dispatch_table_.get_next_image(size);
 }
 
 // |GPUSurfaceVulkanDelegate|
 bool EmbedderSurfaceVulkan::PresentImage(VkImage image) {
-    return vulkan_dispatch_table_.present_image(image);
+  return vulkan_dispatch_table_.present_image(image);
 }
 
 // |EmbedderSurface|

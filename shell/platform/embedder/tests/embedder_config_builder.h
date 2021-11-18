@@ -119,9 +119,9 @@ class EmbedderConfigBuilder {
 #ifdef SHELL_ENABLE_GL
   FlutterOpenGLRendererConfig opengl_renderer_config_ = {};
 #endif
-//#ifdef SHELL_ENABLE_VULKAN
+#ifdef SHELL_ENABLE_VULKAN
   FlutterVulkanRendererConfig vulkan_renderer_config_ = {};
-//#endif
+#endif
 #ifdef SHELL_ENABLE_METAL
   void InitializeMetalRendererConfig();
   FlutterMetalRendererConfig metal_renderer_config_ = {};
