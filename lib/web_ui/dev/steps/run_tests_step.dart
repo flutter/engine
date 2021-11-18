@@ -15,8 +15,10 @@ import 'package:test_core/src/runner/configuration/reporters.dart' as hack;
 import 'package:test_core/src/runner/engine.dart' as hack;
 import 'package:test_core/src/runner/hack_register_platform.dart' as hack;
 import 'package:test_core/src/runner/reporter.dart' as hack;
+import 'package:web_test_utils/skia_client.dart';
 
 import '../browser.dart';
+import '../common.dart';
 import '../environment.dart';
 import '../exceptions.dart';
 import '../pipeline.dart';
@@ -33,16 +35,20 @@ const int _testConcurrency = int.fromEnvironment('FELT_TEST_CONCURRENCY', defaul
 /// them from another bot.
 class RunTestsStep implements PipelineStep {
   RunTestsStep({
-    required this.browserEnvironment,
+    required this.browserName,
     required this.isDebug,
     required this.doUpdateScreenshotGoldens,
     this.testFiles,
-  });
+    required this.overridePathToCanvasKit,
+  }) : _browserEnvironment = getBrowserEnvironment(browserName);
 
-  final BrowserEnvironment browserEnvironment;
+  final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
   final bool doUpdateScreenshotGoldens;
+  final String? overridePathToCanvasKit;
+
+  final BrowserEnvironment _browserEnvironment;
 
   /// Global list of shards that failed.
   ///
@@ -67,7 +73,9 @@ class RunTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await _prepareTestResultsDirectory();
-    await browserEnvironment.prepareEnvironment();
+    await _browserEnvironment.prepareEnvironment();
+
+    final SkiaGoldClient? skiaClient = await _createSkiaClient();
 
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
@@ -108,11 +116,13 @@ class RunTestsStep implements PipelineStep {
     if (testFiles.contains(failureSmokeTestPath)) {
       await _runTestBatch(
         testFiles: <FilePath>[failureSmokeTestPath],
-        browserEnvironment: browserEnvironment,
+        browserEnvironment: _browserEnvironment,
         concurrency: 1,
         expectFailure: true,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
     }
 
@@ -120,11 +130,13 @@ class RunTestsStep implements PipelineStep {
     if (unitTestFiles.isNotEmpty) {
       await _runTestBatch(
         testFiles: unitTestFiles,
-        browserEnvironment: browserEnvironment,
+        browserEnvironment: _browserEnvironment,
         concurrency: _testConcurrency,
         expectFailure: false,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
       _checkExitCode('Unit tests');
     }
@@ -134,11 +146,13 @@ class RunTestsStep implements PipelineStep {
     if (screenshotTestFiles.isNotEmpty) {
       await _runTestBatch(
         testFiles: screenshotTestFiles,
-        browserEnvironment: browserEnvironment,
+        browserEnvironment: _browserEnvironment,
         concurrency: 1,
         expectFailure: false,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
       _checkExitCode('Golden tests');
     }
@@ -163,6 +177,47 @@ class RunTestsStep implements PipelineStep {
     }
     return message.toString();
   }
+
+  Future<SkiaGoldClient?> _createSkiaClient() async {
+    final SkiaGoldClient skiaClient = SkiaGoldClient(
+      environment.webUiSkiaGoldDirectory,
+      browserName: browserName,
+    );
+
+    if (!await _checkSkiaClient(skiaClient)) {
+      print('WARNING: Unable to use Skia Client in this environment.');
+      return null;
+    }
+
+    return skiaClient;
+  }
+
+  /// Checks whether the Skia Client is usable in this environment.
+  Future<bool> _checkSkiaClient(SkiaGoldClient skiaClient) async {
+    // Now let's check whether Skia Gold is reachable or not.
+    if (isLuci) {
+      if (SkiaGoldClient.isAvailable) {
+        try {
+          await skiaClient.auth();
+          return true;
+        } catch (e) {
+          print(e);
+        }
+      }
+    } else {
+      try {
+        // Check if we can reach Gold.
+        await skiaClient.getExpectationForTest('');
+        return true;
+      } on io.OSError catch (_) {
+        print('OSError occurred, could not reach Gold.');
+      } on io.SocketException catch (_) {
+        print('SocketException occurred, could not reach Gold.');
+      }
+    }
+
+    return false;
+  }
 }
 
 Future<void> _prepareTestResultsDirectory() async {
@@ -183,6 +238,8 @@ Future<void> _runTestBatch({
   required bool doUpdateScreenshotGoldens,
   required int concurrency,
   required bool expectFailure,
+  required SkiaGoldClient? skiaClient,
+  required String? overridePathToCanvasKit,
 }) async {
   final String configurationFilePath = pathlib.join(
     environment.webUiRootDir.path,
@@ -219,6 +276,8 @@ Future<void> _runTestBatch({
       // It doesn't make sense to update a screenshot for a test that is
       // expected to fail.
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
+      skiaClient: skiaClient,
+      overridePathToCanvasKit: overridePathToCanvasKit,
     );
   });
 

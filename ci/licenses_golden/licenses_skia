@@ -1,4 +1,4 @@
-Signature: 1dd27762b300fedd5f34436ff24bf6f3
+Signature: 571012f0865e6e86c6853ead28039f95
 
 UNUSED LICENSES:
 
@@ -800,6 +800,7 @@ FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD
 FILE: ../../../third_party/skia/gm/BUILD.bazel
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
+FILE: ../../../third_party/skia/include/android/BUILD.bazel
 FILE: ../../../third_party/skia/include/codec/BUILD.bazel
 FILE: ../../../third_party/skia/include/config/BUILD.bazel
 FILE: ../../../third_party/skia/include/core/BUILD.bazel
@@ -1190,6 +1191,7 @@ FILE: ../../../third_party/skia/site/featured-background.png
 FILE: ../../../third_party/skia/specs/web-img-decode/current/index.html
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/impl/impl.js
 FILE: ../../../third_party/skia/specs/web-img-decode/proposed/index.html
+FILE: ../../../third_party/skia/src/android/BUILD.bazel
 FILE: ../../../third_party/skia/src/codec/BUILD.bazel
 FILE: ../../../third_party/skia/src/core/BUILD.bazel
 FILE: ../../../third_party/skia/src/core/SkOrderedReadBuffer.h
@@ -2362,13 +2364,14 @@ FILE: ../../../third_party/skia/bench/BigPath.cpp
 FILE: ../../../third_party/skia/bench/BigPath.h
 FILE: ../../../third_party/skia/bench/CanvasSaveRestoreBench.cpp
 FILE: ../../../third_party/skia/bench/TriangulatorBench.cpp
+FILE: ../../../third_party/skia/experimental/graphite/include/BackendTexture.h
 FILE: ../../../third_party/skia/experimental/graphite/include/Context.h
 FILE: ../../../third_party/skia/experimental/graphite/include/GraphiteTypes.h
 FILE: ../../../third_party/skia/experimental/graphite/include/SkStuff.h
 FILE: ../../../third_party/skia/experimental/graphite/include/TextureInfo.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlBackendContext.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlTypes.h
-FILE: ../../../third_party/skia/experimental/graphite/include/private/GraphiteTypesPriv.h
+FILE: ../../../third_party/skia/experimental/graphite/src/BackendTexture.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.h
 FILE: ../../../third_party/skia/experimental/graphite/src/CommandBuffer.cpp
@@ -2389,6 +2392,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/DrawList.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawOrder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawTypes.h
+FILE: ../../../third_party/skia/experimental/graphite/src/EnumBitMask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.h
 FILE: ../../../third_party/skia/experimental/graphite/src/GpuWorkSubmission.h
@@ -2409,6 +2414,7 @@ FILE: ../../../third_party/skia/experimental/graphite/src/RenderPassTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Renderer.h
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceProvider.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/ResourceProvider.h
+FILE: ../../../third_party/skia/experimental/graphite/src/ResourceTypes.h
 FILE: ../../../third_party/skia/experimental/graphite/src/SkStuff.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Surface_Graphite.h
@@ -2434,6 +2440,7 @@ FILE: ../../../third_party/skia/experimental/graphite/src/geom/Shape.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/Shape.h
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/Transform.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/geom/Transform_graphite.h
+FILE: ../../../third_party/skia/experimental/graphite/src/geom/VectorTypes.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCaps.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCaps.mm
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlCommandBuffer.h
@@ -2531,6 +2538,8 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsConstantExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramVisitor.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLSwitchCaseContainsExit.cpp
+FILE: ../../../third_party/skia/src/sksl/codegen/SkVMDebugInfo.cpp
+FILE: ../../../third_party/skia/src/sksl/codegen/SkVMDebugInfo.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBinaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLChildCall.cpp
