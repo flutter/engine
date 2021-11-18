@@ -149,7 +149,8 @@ public class FlutterLoader {
 
       VsyncWaiter waiter;
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 /* 17 */) {
-        final DisplayManager dm = appContext.getSystemService(DisplayManager.class);
+        final DisplayManager dm =
+            (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
         waiter = VsyncWaiter.getInstance(dm, flutterJNI);
       } else {
         float fps =
