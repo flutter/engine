@@ -184,10 +184,10 @@ public class FlutterEngineGroup {
 
   /** Options that control how a FlutterEngine should be created. */
   public static class Options {
-    private Context context;
-    private DartEntrypoint dartEntrypoint;
-    private String initialRoute;
-    private List<String> dartEntrypointArgs;
+    @NonNull private Context context;
+    @Nullable private DartEntrypoint dartEntrypoint;
+    @Nullable private String initialRoute;
+    @Nullable private List<String> dartEntrypointArgs;
 
     public Options(@NonNull Context context) {
       this.context = context;

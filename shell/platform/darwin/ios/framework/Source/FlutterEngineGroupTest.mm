@@ -105,7 +105,7 @@ FLUTTER_ASSERT_ARC
                              initialRoute:[OCMArg any]
                            entrypointArgs:[OCMArg any]])
       .andReturn(OCMClassMock([FlutterEngine class]));
-  FlutterEngineGroupOptions* firstOptions = [FlutterEngineGroupOptions new];
+  FlutterEngineGroupOptions* firstOptions = [[FlutterEngineGroupOptions alloc] init];
   NSArray* firstEntrypointArgs = @[ @"foo", @"first" ];
   firstOptions.entrypointArgs = firstEntrypointArgs;
   FlutterEngine* spawner = [group makeEngineWithOptions:firstOptions];
@@ -116,7 +116,7 @@ FLUTTER_ASSERT_ARC
                         entrypointArgs:firstEntrypointArgs]);
 
   NSArray* secondEntrypointArgs = @[ @"bar", @"second" ];
-  FlutterEngineGroupOptions* secondOptions = [FlutterEngineGroupOptions new];
+  FlutterEngineGroupOptions* secondOptions = [[FlutterEngineGroupOptions alloc] init];
   secondOptions.entrypointArgs = secondEntrypointArgs;
   FlutterEngine* spawnee = [group makeEngineWithOptions:secondOptions];
   XCTAssertNotNil(spawnee);

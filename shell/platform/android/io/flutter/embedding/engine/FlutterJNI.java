@@ -368,7 +368,7 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @Nullable String initialRoute,
-      @NonNull List<String> entrypointArgs);
+      @Nullable List<String> entrypointArgs);
 
   /**
    * Detaches this {@code FlutterJNI} instance from Flutter's native engine, which precludes any
@@ -849,7 +849,7 @@ public class FlutterJNI {
       @Nullable String entrypointFunctionName,
       @Nullable String pathToEntrypointFunction,
       @NonNull AssetManager manager,
-      @NonNull List<String> entrypointArgs);
+      @Nullable List<String> entrypointArgs);
   // ------ End Dart Execution Support -------
 
   // --------- Start Platform Message Support ------
