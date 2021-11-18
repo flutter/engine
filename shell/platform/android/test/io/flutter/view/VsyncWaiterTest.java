@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
@@ -83,5 +84,20 @@ public class VsyncWaiterTest {
     delegateCaptor.getValue().asyncWaitForVsync(1);
     shadowOf(Looper.getMainLooper()).idle();
     verify(mockFlutterJNI, times(1)).nativeOnVsync(anyLong(), eq(1000000000l / 60l), eq(1l));
+  }
+
+  @TargetApi(17)
+  @Test
+  public void itSetsFpsWhenDisplayManagerDoesNotUpdate() {
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    DisplayManager mockDisplayManager = mock(DisplayManager.class);
+    Display mockDisplay = mock(Display.class);
+    when(mockDisplayManager.getDisplay(Display.DEFAULT_DISPLAY)).thenReturn(mockDisplay);
+    when(mockDisplay.getRefreshRate()).thenReturn(90.0f);
+
+    VsyncWaiter waiter = VsyncWaiter.getInstance(mockDisplayManager, mockFlutterJNI);
+    verify(mockDisplayManager, times(1)).registerDisplayListener(any(), isNull());
+
+    verify(mockFlutterJNI, times(1)).setRefreshRateFPS(90.0f);
   }
 }

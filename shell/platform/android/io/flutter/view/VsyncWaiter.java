@@ -45,7 +45,7 @@ public class VsyncWaiter {
 
   private static VsyncWaiter instance;
   private static DisplayListener listener;
-  private long refreshPeriodNanos;
+  private long refreshPeriodNanos = -1;
   private FlutterJNI flutterJNI;
 
   @NonNull
@@ -68,6 +68,12 @@ public class VsyncWaiter {
       listener = instance.new DisplayListener(displayManager);
       listener.register();
     }
+    if (instance.refreshPeriodNanos == -1) {
+      final Display primaryDisplay = displayManager.getDisplay(Display.DEFAULT_DISPLAY);
+      float fps = primaryDisplay.getRefreshRate();
+      instance.refreshPeriodNanos = (long) (1000000000.0 / fps);
+      flutterJNI.setRefreshRateFPS(fps);
+    }
     return instance;
   }
 
@@ -75,6 +81,7 @@ public class VsyncWaiter {
   @VisibleForTesting
   public static void reset() {
     instance = null;
+    listener = null;
   }
 
   private final FlutterJNI.AsyncWaitForVsyncDelegate asyncWaitForVsyncDelegate =
