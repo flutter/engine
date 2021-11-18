@@ -95,8 +95,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
       [](void* context, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
     return reinterpret_cast<EmbedderTestContextVulkan*>(context)
-        ->vk_->GetInstanceProcAddr(reinterpret_cast<VkInstance>(instance),
-                                   name);
+        ->vk_.GetInstanceProcAddr(reinterpret_cast<VkInstance>(instance), name);
   };
   vulkan_renderer_config_.get_next_image_callback =
       [](void* context,

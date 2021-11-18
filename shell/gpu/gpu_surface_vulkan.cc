@@ -111,7 +111,7 @@ sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
   return SkSurface::MakeFromBackendTexture(
-      skia_context_.get(),             // context
+      skia_context_.get(),       // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
       1,                         // sample count

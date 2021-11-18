@@ -136,8 +136,8 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
     : vk(p_vk),
       physical_device_(std::move(physical_device)),
       device_(std::move(device)),
-      graphics_queue_index_(queue_family_index),
       queue_(std::move(queue)),
+      graphics_queue_index_(queue_family_index),
       valid_(false) {
   if (!physical_device_ || !vk.AreInstanceProcsSetup()) {
     return;

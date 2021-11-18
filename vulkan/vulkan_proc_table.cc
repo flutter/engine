@@ -18,6 +18,7 @@ VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
 
 VulkanProcTable::VulkanProcTable(const char* so_path)
     : handle_(nullptr), acquired_mandatory_proc_addresses_(false) {
+  FML_DLOG(WARNING) << "Cowabunga";
   acquired_mandatory_proc_addresses_ = OpenLibraryHandle(so_path) &&
                                        SetupGetInstanceProcAddress() &&
                                        SetupLoaderProcAddresses();
@@ -55,14 +56,13 @@ bool VulkanProcTable::SetupGetInstanceProcAddress() {
     return true;
   }
 
-  GetInstanceProcAddr =
+  GetInstanceProcAddr = reinterpret_cast<void* (*)(VkInstance, const char*)>(
 #if VULKAN_LINK_STATICALLY
-      &vkGetInstanceProcAddr;
-#else  // VULKAN_LINK_STATICALLY
-      reinterpret_cast<PFN_vkGetInstanceProcAddr>(const_cast<uint8_t*>(
-          handle_->ResolveSymbol("vkGetInstanceProcAddr")));
+      &vkGetInstanceProcAddr
+#else   // VULKAN_LINK_STATICALLY
+      const_cast<uint8_t*>(handle_->ResolveSymbol("vkGetInstanceProcAddr"))
 #endif  // VULKAN_LINK_STATICALLY
-
+  );
   if (!GetInstanceProcAddr) {
     FML_DLOG(WARNING) << "Could not acquire vkGetInstanceProcAddr.";
     return false;
@@ -166,7 +166,7 @@ bool VulkanProcTable::SetupDeviceProcAddresses(
 bool VulkanProcTable::OpenLibraryHandle(const char* path) {
 #if VULKAN_LINK_STATICALLY
   handle_ = fml::NativeLibrary::CreateForCurrentProcess();
-#else  // VULKAN_LINK_STATICALLY
+#else   // VULKAN_LINK_STATICALLY
   handle_ = fml::NativeLibrary::Create(path);
 #endif  // VULKAN_LINK_STATICALLY
   if (!handle_) {
