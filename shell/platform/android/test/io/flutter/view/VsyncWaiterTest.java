@@ -30,7 +30,6 @@ import org.robolectric.annotation.Config;
 public class VsyncWaiterTest {
   @Before
   public void setUp() {
-    org.robolectric.shadows.ShadowLog.stream = System.out;
     VsyncWaiter.reset();
   }
 
