@@ -58,8 +58,7 @@ class CFRef {
   // NOLINTNEXTLINE(google-explicit-constructor)
   operator T() const { return instance_; }
 
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  operator bool() const { return instance_ != nullptr; }
+  explicit operator bool() const { return instance_ != nullptr; }
 
  private:
   T instance_;
