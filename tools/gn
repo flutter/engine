@@ -88,15 +88,19 @@ def is_host_build(args):
     # target_os='linux' and linux-cpu='arm64'
     # TODO(fujino): make host platform explicit
     #   https://github.com/flutter/flutter/issues/79403
-    return args.target_os is None or args.target_os == 'linux'
+    return args.target_os is None or (args.target_os == 'linux' and args.linux_cpu == 'arm64')
 
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
 # We can use a prebuilt Dart SDK when:
-# 1. It is a host build, or a build targeting desktop
+# 1. It is a host build, a build targeting Fuchsia, or a build targeting desktop.
 # 2. The prebuilt SDK exists under //flutter/prebuilts/$OS-$ARCH.
 def can_use_prebuilt_dart(args):
   prebuilt = None
-  if args.target_os == None:
+  # In a Fuchsia build, we can use a prebuilt Dart SDK for the host to build
+  # platform agnostic artifacts (e.g. kernel snapshots), and a Dart SDK
+  # targeting Fuchsia is not needed. So, it is safe to say that the prebuilt
+  # Dart SDK in a Fuchsia build is the host prebuilt Dart SDK.
+  if args.target_os == None or args.target_os == 'fuchsia':
     if sys.platform.startswith(('cygwin', 'win')):
       prebuilt = 'windows-x64'
     elif sys.platform == 'darwin':
@@ -131,6 +135,8 @@ def to_gn_args(args):
         gn_args['bitcode_marker'] = True
 
     gn_args['enable_bitcode'] = args.bitcode
+    if args.enable_unittests:
+        gn_args['enable_unittests'] = args.enable_unittests
 
     # Skia GN args.
     gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
@@ -306,6 +312,17 @@ def to_gn_args(args):
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
 
+    # Enable Vulkan on all platforms except for Android and iOS. This is just
+    # to save on mobile binary size, as there's no reason the Vulkan embedder
+    # features can't work on these platforms.
+    if args.target_os not in ['android', 'ios']:
+      gn_args['skia_use_vulkan'] = True
+      gn_args['shell_enable_vulkan'] = True
+      # Disable VMA's use of std::shared_mutex in environments where the
+      # standard library doesn't support it.
+      if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
+        gn_args['skia_disable_vma_stl_shared_mutex'] = True
+
     if sys.platform.startswith(('cygwin', 'win')):
       # The buildroot currently isn't set up to support Vulkan in the
       # Windows ANGLE build, so disable it regardless of enable_vulkan's value.
@@ -394,6 +411,8 @@ def parse_args(args):
   parser = argparse.ArgumentParser(description='A script run` gn gen`.')
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
+
+  parser.add_argument('--enable-unittests', action='store_true', default=False)
 
   parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release', 'jit_release'], default='debug')
   parser.add_argument('--interpreter', default=False, action='store_true')

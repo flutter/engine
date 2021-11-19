@@ -14,34 +14,57 @@ import 'package:path/path.dart' as path;
 import 'shader_test_file_utils.dart';
 
 void main() {
-  test('throws exception for invalid shader', () {
+  test('throws exception for invalid shader', () async {
     final ByteBuffer invalidBytes = Uint8List.fromList(<int>[1, 2, 3, 4, 5]).buffer;
-    expect(() => FragmentShader(spirv: invalidBytes), throws);
+    try {
+      await FragmentProgram.compile(spirv: invalidBytes);
+      fail('expected compile to throw an exception');
+    } catch (_) {
+    }
   });
 
   test('simple shader renders correctly', () async {
     final Uint8List shaderBytes = await spvFile('general_shaders', 'functions.spv').readAsBytes();
-    final FragmentShader shader = FragmentShader(
+    final FragmentProgram program = await FragmentProgram.compile(
       spirv: shaderBytes.buffer,
+    );
+    final Shader shader = program.shader(
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
   });
 
-  test('shader with functions renders green', () {
+  test('shader with functions renders green', () async {
     final ByteBuffer spirv = spvFile('general_shaders', 'functions.spv').readAsBytesSync().buffer;
-    final FragmentShader shader = FragmentShader(
+    final FragmentProgram program = await FragmentProgram.compile(
       spirv: spirv,
+    );
+    final Shader shader = program.shader(
       floatUniforms: Float32List.fromList(<double>[1]),
     );
     _expectShaderRendersGreen(shader);
   });
 
-  test('shader with uniforms renders and updates correctly', () async {
-    final Uint8List shaderBytes = await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
-    final FragmentShader shader = FragmentShader(spirv: shaderBytes.buffer);
+  test('blue-green image renders green', () async {
+    final ByteBuffer spirv = spvFile('general_shaders', 'blue_green_sampler.spv').readAsBytesSync().buffer;
+    final FragmentProgram program = await FragmentProgram.compile(
+      debugPrint: true,
+      spirv: spirv,
+    );
+    final Image blueGreenImage = await _createBlueGreenImage();
+    final ImageShader imageShader = ImageShader(
+        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
+    final Shader shader = program.shader(
+      samplerUniforms: <ImageShader>[imageShader],
+    );
+    await _expectShaderRendersGreen(shader);
+  });
 
-    shader.update(
+  test('shader with uniforms renders correctly', () async {
+    final Uint8List shaderBytes = await spvFile('general_shaders', 'uniforms.spv').readAsBytes();
+    final FragmentProgram program = await FragmentProgram.compile(spirv: shaderBytes.buffer);
+
+    final Shader shader = program.shader(
         floatUniforms: Float32List.fromList(<double>[
       0.0, // iFloatUniform
       0.25, // iVec2Uniform.x
@@ -75,6 +98,42 @@ void main() {
   expect(supportedOpShaders.isNotEmpty, true);
   _expectShadersRenderGreen(supportedOpShaders);
   _expectShadersHaveOp(supportedOpShaders, false /* glsl ops */);
+
+  test('equality depends on floatUniforms', () async {
+    final ByteBuffer spirv = spvFile('general_shaders', 'simple.spv')
+        .readAsBytesSync().buffer;
+    final FragmentProgram program = await FragmentProgram.compile(spirv: spirv);
+    final Float32List ones = Float32List.fromList(<double>[1]);
+    final Float32List zeroes = Float32List.fromList(<double>[0]);
+
+    {
+      final a = program.shader(floatUniforms: ones);
+      final b = program.shader(floatUniforms: ones);
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+    }
+
+    {
+      final a = program.shader(floatUniforms: ones);
+      final b = program.shader(floatUniforms: zeroes);
+      expect(a, notEquals(b));
+      expect(a.hashCode, notEquals(b.hashCode));
+    }
+  });
+
+  test('equality depends on spirv', () async {
+    final ByteBuffer spirvA = spvFile('general_shaders', 'simple.spv')
+        .readAsBytesSync().buffer;
+    final ByteBuffer spirvB = spvFile('general_shaders', 'uniforms.spv')
+        .readAsBytesSync().buffer;
+    final FragmentProgram programA = await FragmentProgram.compile(spirv: spirvA);
+    final FragmentProgram programB = await FragmentProgram.compile(spirv: spirvB);
+    final a = programA.shader();
+    final b = programB.shader();
+
+    expect(a, notEquals(b));
+    expect(a.hashCode, notEquals(b.hashCode));
+  });
 }
 
 // Expect that all of the spirv shaders in this folder render green.
@@ -82,9 +141,11 @@ void main() {
 // of the file name within the test case.
 void _expectShadersRenderGreen(Map<String, ByteBuffer> shaders) {
   for (final String key in shaders.keys) {
-    test('$key renders green', () {
-      final FragmentShader shader = FragmentShader(
+    test('$key renders green', () async {
+      final FragmentProgram program = await FragmentProgram.compile(
         spirv: shaders[key]!,
+      );
+      final Shader shader = program.shader(
         floatUniforms: Float32List.fromList(<double>[1]),
       );
       _expectShaderRendersGreen(shader);
@@ -138,7 +199,7 @@ void _expectShaderHasOp(ByteBuffer spirv, String filename, bool glsl) {
 }
 
 // Expects that a spirv shader only outputs the color green.
-Future<void> _expectShaderRendersGreen(FragmentShader shader) async {
+Future<void> _expectShaderRendersGreen(Shader shader) async {
   final ByteData renderedBytes = (await _imageByteDataFromShader(
     shader: shader,
     imageDimension: _shaderImageDimension,
@@ -149,7 +210,7 @@ Future<void> _expectShaderRendersGreen(FragmentShader shader) async {
 }
 
 Future<ByteData?> _imageByteDataFromShader({
-  required FragmentShader shader,
+  required Shader shader,
   int imageDimension = 100,
 }) async {
   final PictureRecorder recorder = PictureRecorder();
@@ -190,6 +251,7 @@ Map<String, ByteBuffer> _loadSpv(String leafFolderName) {
 const int _shaderImageDimension = 4;
 
 const Color _greenColor = Color(0xFF00FF00);
+const Color _blueColor = Color(0xFF0000FF);
 
 // Precision for checking uniform values.
 const double epsilon = 0.5 / 255.0;
@@ -198,3 +260,43 @@ const double epsilon = 0.5 / 255.0;
 double toFloat(int v) => v.toDouble() / 255.0;
 
 String toHexString(int color) => '#${color.toRadixString(16)}';
+
+// 10x10 image where the left half is blue and the right half is
+// green.
+Future<Image> _createBlueGreenImage() async {
+  final int length = 10;
+  final int bytesPerPixel = 4;
+  final Uint8List pixels = Uint8List(length * length * bytesPerPixel);
+  int i = 0;
+  for (int y = 0; y < length; y++) {
+    for (int x = 0; x < length; x++) {
+      if (x < length/2) {
+        pixels[i+2] = 0xFF;  // blue channel
+      } else {
+        pixels[i+1] = 0xFF;  // green channel
+      }
+      pixels[i+3] = 0xFF;  // alpha channel
+      i += bytesPerPixel;
+    }
+  }
+  final ImageDescriptor descriptor = ImageDescriptor.raw(
+    await ImmutableBuffer.fromUint8List(pixels),
+    width: length,
+    height: length,
+    pixelFormat: PixelFormat.rgba8888,
+  );
+  final Codec codec = await descriptor.instantiateCodec();
+  final FrameInfo frame = await codec.getNextFrame();
+  return frame.image;
+}
+
+// A single uniform with value 1.
+final Float32List _singleUniform = Float32List.fromList(<double>[1]);
+
+final Float64List _identityMatrix = Float64List.fromList(<double>[
+  1, 0, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 1,
+]);
+

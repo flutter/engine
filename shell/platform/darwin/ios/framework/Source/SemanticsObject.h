@@ -20,7 +20,11 @@ constexpr float kScrollExtentMaxForInf = 1000;
 @class FlutterPlatformViewSemanticsContainer;
 
 /**
- * A node in the iOS semantics tree.
+ * A node in the iOS semantics tree. This object is a wrapper over a native accessibiliy
+ * object, which is stored in the property `nativeAccessibility`. In the most case, the
+ * `nativeAccessibility` directly returns this object. Some subclasses such as the
+ * `FlutterScrollableSemanticsObject` creates a native `UIScrollView` as its `nativeAccessibility`
+ * so that it can interact with iOS.
  */
 @interface SemanticsObject : UIAccessibilityElement
 
@@ -60,11 +64,6 @@ constexpr float kScrollExtentMaxForInf = 1000;
  * be equal to this object.
  */
 @property(nonatomic, strong) NSArray<SemanticsObject*>* children;
-
-/**
- * Used if this SemanticsObject is for a platform view.
- */
-@property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
 
 /**
  * The UIAccessibility that represents this object.
@@ -159,16 +158,14 @@ constexpr float kScrollExtentMaxForInf = 1000;
  * * `SemanticsObject` for the other type of semantics objects.
  * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
  */
-@interface FlutterPlatformViewSemanticsContainer : UIAccessibilityElement
+@interface FlutterPlatformViewSemanticsContainer : SemanticsObject
 
-/**
- * The position inside an accessibility container.
- */
-@property(nonatomic) NSInteger index;
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid NS_UNAVAILABLE;
 
-- (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
-
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)object;
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid
+                  platformView:(UIView*)platformView NS_DESIGNATED_INITIALIZER;
 
 @end
 

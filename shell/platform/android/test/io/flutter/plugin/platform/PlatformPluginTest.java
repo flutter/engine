@@ -1,5 +1,7 @@
 package io.flutter.plugin.platform;
 
+import static android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+import static android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -20,6 +22,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import androidx.activity.OnBackPressedCallback;
 import androidx.fragment.app.FragmentActivity;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -216,6 +219,98 @@ public class PlatformPluginTest {
     }
   }
 
+  @Config(sdk = 30)
+  @Test
+  public void setNavigationBarIconBrightness() {
+    if (Build.VERSION.SDK_INT >= 30) {
+      View fakeDecorView = mock(View.class);
+      WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
+      Window fakeWindow = mock(Window.class);
+      when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+      when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
+      Activity fakeActivity = mock(Activity.class);
+      when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+      PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+      PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+      SystemChromeStyle style =
+          new SystemChromeStyle(
+              null, // statusBarColor
+              null, // statusBarIconBrightness
+              null, // systemStatusBarContrastEnforced
+              null, // systemNavigationBarColor
+              Brightness.LIGHT, // systemNavigationBarIconBrightness
+              null, // systemNavigationBarDividerColor
+              null); // systemNavigationBarContrastEnforced
+
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+
+      verify(fakeWindowInsetsController)
+          .setSystemBarsAppearance(0, APPEARANCE_LIGHT_NAVIGATION_BARS);
+
+      style =
+          new SystemChromeStyle(
+              null, // statusBarColor
+              null, // statusBarIconBrightness
+              null, // systemStatusBarContrastEnforced
+              null, // systemNavigationBarColor
+              Brightness.DARK, // systemNavigationBarIconBrightness
+              null, // systemNavigationBarDividerColor
+              null); // systemNavigationBarContrastEnforced
+
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+
+      verify(fakeWindowInsetsController)
+          .setSystemBarsAppearance(
+              APPEARANCE_LIGHT_NAVIGATION_BARS, APPEARANCE_LIGHT_NAVIGATION_BARS);
+    }
+  }
+
+  @Config(sdk = 30)
+  @Test
+  public void setStatusBarIconBrightness() {
+    if (Build.VERSION.SDK_INT >= 30) {
+      View fakeDecorView = mock(View.class);
+      WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
+      Window fakeWindow = mock(Window.class);
+      when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+      when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
+      Activity fakeActivity = mock(Activity.class);
+      when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+      PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+      PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+      SystemChromeStyle style =
+          new SystemChromeStyle(
+              null, // statusBarColor
+              Brightness.LIGHT, // statusBarIconBrightness
+              null, // systemStatusBarContrastEnforced
+              null, // systemNavigationBarColor
+              null, // systemNavigationBarIconBrightness
+              null, // systemNavigationBarDividerColor
+              null); // systemNavigationBarContrastEnforced
+
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+
+      verify(fakeWindowInsetsController).setSystemBarsAppearance(0, APPEARANCE_LIGHT_STATUS_BARS);
+
+      style =
+          new SystemChromeStyle(
+              null, // statusBarColor
+              Brightness.DARK, // statusBarIconBrightness
+              null, // systemStatusBarContrastEnforced
+              null, // systemNavigationBarColor
+              null, // systemNavigationBarIconBrightness
+              null, // systemNavigationBarDividerColor
+              null); // systemNavigationBarContrastEnforced
+
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+
+      verify(fakeWindowInsetsController)
+          .setSystemBarsAppearance(APPEARANCE_LIGHT_STATUS_BARS, APPEARANCE_LIGHT_STATUS_BARS);
+    }
+  }
+
   @Config(sdk = 29)
   @Test
   public void setSystemUiMode() {
@@ -270,6 +365,26 @@ public class PlatformPluginTest {
                   | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                   | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
     }
+  }
+
+  @Config(sdk = 28)
+  @Test
+  public void doNotEnableEdgeToEdgeOnOlderSdk() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+        PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
+    verify(fakeDecorView, never())
+        .setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
   }
 
   @Test

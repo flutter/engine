@@ -72,6 +72,7 @@ namespace testing {
 
 namespace {
 constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeAltLeft = 0x38;
 constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 constexpr uint64_t kScanCodeNumLock = 0x45;
 constexpr uint64_t kScanCodeControl = 0x1d;
@@ -79,6 +80,7 @@ constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
+constexpr uint64_t kVirtualAltLeft = 0xa4;
 
 using namespace ::flutter::testing::keycodes;
 }  // namespace
@@ -323,8 +325,9 @@ TEST(KeyboardKeyEmbedderHandlerTest, ImeEventsAreIgnored) {
   EXPECT_EQ(last_handled, true);
 }
 
-// Test if modifier keys that are told apart by the extended bit
-// can be identified.
+// Test if modifier keys that are told apart by the extended bit can be
+// identified. (Their physical keys must be searched with the extended bit
+// considered.)
 TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
   TestKeystate key_state;
   std::vector<TestFlutterKeyEvent> results;
@@ -343,7 +346,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
   last_handled = false;
   key_state.Set(VK_LCONTROL, true);
   handler->KeyboardHook(
-      VK_CONTROL, kScanCodeControl, WM_KEYDOWN, 0, false, false,
+      VK_LCONTROL, kScanCodeControl, WM_KEYDOWN, 0, false, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(results.size(), 1);
@@ -362,7 +365,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
   last_handled = false;
   key_state.Set(VK_RCONTROL, true);
   handler->KeyboardHook(
-      VK_CONTROL, kScanCodeControl, WM_KEYDOWN, 0, true, true,
+      VK_RCONTROL, kScanCodeControl, WM_KEYDOWN, 0, true, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(results.size(), 1);
@@ -381,7 +384,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
   last_handled = false;
   key_state.Set(VK_LCONTROL, false);
   handler->KeyboardHook(
-      VK_CONTROL, kScanCodeControl, WM_KEYUP, 0, false, true,
+      VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0, false, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(results.size(), 1);
@@ -400,7 +403,7 @@ TEST(KeyboardKeyEmbedderHandlerTest, ModifierKeysByExtendedBit) {
   last_handled = false;
   key_state.Set(VK_RCONTROL, false);
   handler->KeyboardHook(
-      VK_CONTROL, kScanCodeControl, WM_KEYUP, 0, true, true,
+      VK_RCONTROL, kScanCodeControl, WM_KEYUP, 0, true, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(results.size(), 1);
@@ -852,7 +855,8 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledState) {
   event->callback(false, event->user_data);
 }
 
-TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
+TEST(KeyboardKeyEmbedderHandlerTest,
+     SynthesizeForDesyncToggledStateByItselfsUp) {
   TestKeystate key_state;
   std::vector<TestFlutterKeyEvent> results;
   TestFlutterKeyEvent* event;
@@ -911,6 +915,61 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeForDesyncToggledStateByItself) {
   EXPECT_EQ(last_handled, true);
 }
 
+TEST(KeyboardKeyEmbedderHandlerTest,
+     SynthesizeForDesyncToggledStateByItselfsDown) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  // NumLock is started up and disabled
+  key_state.Set(VK_NUMLOCK, false, false);
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter());
+
+  // NumLock is toggled somewhere else
+  // key_state.Set(VK_NUMLOCK, false, true);
+
+  // NumLock is pressed
+  key_state.Set(VK_NUMLOCK, true, false);
+  handler->KeyboardHook(
+      VK_NUMLOCK, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(last_handled, false);
+  EXPECT_EQ(results.size(), 3);
+  event = &results[0];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_EQ(event->callback, nullptr);
+
+  event = &results[1];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, true);
+  EXPECT_EQ(event->callback, nullptr);
+
+  event = &results[2];
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalNumLock);
+  EXPECT_EQ(event->logical, kLogicalNumLock);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, false);
+
+  last_handled = false;
+  event->callback(true, event->user_data);
+  EXPECT_EQ(last_handled, true);
+}
+
 TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeWithInitialTogglingState) {
   TestKeystate key_state;
   std::vector<TestFlutterKeyEvent> results;
@@ -945,6 +1004,52 @@ TEST(KeyboardKeyEmbedderHandlerTest, SynthesizeWithInitialTogglingState) {
   event->callback(true, event->user_data);
   EXPECT_EQ(last_handled, true);
   results.clear();
+}
+
+TEST(KeyboardKeyEmbedderHandlerTest, SysKeyPress) {
+  TestKeystate key_state;
+  std::vector<TestFlutterKeyEvent> results;
+  TestFlutterKeyEvent* event;
+  bool last_handled = false;
+
+  std::unique_ptr<KeyboardKeyEmbedderHandler> handler =
+      std::make_unique<KeyboardKeyEmbedderHandler>(
+          [&results](const FlutterKeyEvent& event,
+                     FlutterKeyEventCallback callback, void* user_data) {
+            results.emplace_back(event, callback, user_data);
+          },
+          key_state.Getter());
+
+  // Press KeyAltLeft.
+  handler->KeyboardHook(
+      kVirtualAltLeft, kScanCodeAltLeft, WM_SYSKEYDOWN, 0, false, false,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(last_handled, false);
+  EXPECT_EQ(results.size(), 1);
+  event = results.data();
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalAltLeft);
+  EXPECT_EQ(event->logical, kLogicalAltLeft);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, false);
+
+  event->callback(true, event->user_data);
+  EXPECT_EQ(last_handled, true);
+  results.clear();
+  key_state.Set(kVirtualAltLeft, true);
+
+  // Release KeyAltLeft.
+  handler->KeyboardHook(
+      kVirtualAltLeft, kScanCodeAltLeft, WM_SYSKEYUP, 0, false, true,
+      [&last_handled](bool handled) { last_handled = handled; });
+  EXPECT_EQ(results.size(), 1);
+  event = results.data();
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalAltLeft);
+  EXPECT_EQ(event->logical, kLogicalAltLeft);
+  EXPECT_STREQ(event->character, "");
+  EXPECT_EQ(event->synthesized, false);
+  event->callback(false, event->user_data);
 }
 
 }  // namespace testing

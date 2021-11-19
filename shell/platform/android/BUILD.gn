@@ -64,6 +64,8 @@ source_set("flutter_shell_native_src") {
     "$root_build_dir/flutter_icu/icudtl.o",
     "android_context_gl.cc",
     "android_context_gl.h",
+    "android_display.cc",
+    "android_display.h",
     "android_environment_gl.cc",
     "android_environment_gl.h",
     "android_external_texture_gl.cc",
@@ -167,6 +169,7 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterFragment.java",
   "io/flutter/embedding/android/FlutterFragmentActivity.java",
   "io/flutter/embedding/android/FlutterImageView.java",
+  "io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java",
   "io/flutter/embedding/android/FlutterSplashView.java",
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
@@ -443,6 +446,17 @@ action("android_jar") {
     ":pom_embedding",
     ":pom_libflutter",
   ]
+
+  if (flutter_runtime_mode == "profile") {
+    deps += [ "//flutter/shell/vmservice:vmservice_snapshot" ]
+    args += [
+      "--native_lib",
+      rebase_path(
+          "$root_gen_dir/flutter/shell/vmservice/android/libs/$android_app_abi/libvmservice_snapshot.so",
+          root_build_dir,
+          root_build_dir),
+    ]
+  }
 }
 
 action("pom_libflutter") {
@@ -532,7 +546,7 @@ zip_bundle("flutter_jar_zip") {
 }
 
 action("gen_android_javadoc") {
-  script = "//flutter/tools/gen_javadoc.py"
+  script = "//flutter/tools/javadoc/gen_javadoc.py"
   sources = android_java_sources + embedding_dependencies_jars
 
   outputs = [ "$target_gen_dir/javadocs" ]

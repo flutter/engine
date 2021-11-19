@@ -35,6 +35,7 @@ import 'package:test_core/src/util/stack_trace_mapper.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_test_utils/goldens.dart';
 import 'package:web_test_utils/image_compare.dart';
+import 'package:web_test_utils/skia_client.dart';
 
 import 'browser.dart';
 import 'common.dart';
@@ -51,16 +52,18 @@ class BrowserPlatform extends PlatformPlugin {
   static Future<BrowserPlatform> start({
     required BrowserEnvironment browserEnvironment,
     required bool doUpdateScreenshotGoldens,
+    required SkiaGoldClient? skiaClient,
+    required String? overridePathToCanvasKit,
   }) async {
     final shelf_io.IOServer server = shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
       browserEnvironment: browserEnvironment,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
-      faviconPath: p.fromUri(await Isolate.resolvePackageUri(
-          Uri.parse('package:test/src/runner/browser/static/favicon.ico'))),
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       packageConfig: await loadPackageConfigUri((await Isolate.packageConfig)!),
+      skiaClient: skiaClient,
+      overridePathToCanvasKit: overridePathToCanvasKit,
     );
   }
 
@@ -100,13 +103,20 @@ class BrowserPlatform extends PlatformPlugin {
 
   final PackageConfig packageConfig;
 
+  /// A client for communicating with the Skia Gold backend to fetch, compare
+  /// and update images.
+  final SkiaGoldClient? skiaClient;
+
+  final String? overridePathToCanvasKit;
+
   BrowserPlatform._({
     required this.browserEnvironment,
     required this.server,
     required this.isDebug,
-    required String faviconPath,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
+    required this.skiaClient,
+    required this.overridePathToCanvasKit,
   }) : _screenshotManager = browserEnvironment.getScreenshotManager() {
     // The cascade of request handlers.
     final shelf.Cascade cascade = shelf.Cascade()
@@ -114,9 +124,6 @@ class BrowserPlatform extends PlatformPlugin {
         // reporting restuls. See [_browserManagerFor] and [BrowserManager.start]
         // for details on how the channels are established.
         .add(_webSocketHandler.handler)
-
-        // Serves /favicon.ico
-        .add(createFileHandler(faviconPath))
 
         // Serves /packages/* requests; fetches files and sources from
         // pubspec dependencies.
@@ -126,15 +133,12 @@ class BrowserPlatform extends PlatformPlugin {
         //  * Assets that are part of the engine sources, such as Ahem.ttf
         .add(_packageUrlHandler)
 
-        // Serves CanvasKit assets.
-        .add(_canvasKitHandler)
+        .add(_canvasKitOverrideHandler)
 
         // Serves files from the web_ui/build/ directory at the root (/) URL path.
-        //
-        // Includes:
-        //  * Precompiles .js files for tests
-        //  * Sourcemaps
-        .add(createStaticHandler(env.environment.webUiBuildDir.path))
+        .add(buildDirectoryHandler)
+
+        .add(_testImageListingHandler)
 
         // Serves the initial HTML for the test.
         .add(_testBootstrapHandler)
@@ -152,9 +156,85 @@ class BrowserPlatform extends PlatformPlugin {
         // Serves absolute package URLs (i.e. not /packages/* but /Users/user/*/hosted/pub.dartlang.org/*).
         // This handler goes last, after all more specific handlers failed to handle the request.
         .add(_createAbsolutePackageUrlHandler())
-        .add(_screeshotHandler);
+        .add(_screeshotHandler)
+        .add(_fileNotFoundCatcher);
 
     server.mount(cascade.handler);
+  }
+
+  /// If a path to a custom local build of CanvasKit was specified, serve from
+  /// there instead of serving the default CanvasKit in the build/ directory.
+  Future<shelf.Response> _canvasKitOverrideHandler(shelf.Request request) async {
+    final String? pathOverride = overridePathToCanvasKit;
+
+    if (pathOverride == null || !request.url.path.startsWith('canvaskit/')) {
+      return shelf.Response.notFound('Not a request for CanvasKit.');
+    }
+
+    final File file = File(p.joinAll(<String>[
+      pathOverride,
+      ...p.split(request.url.path).skip(1),
+    ]));
+
+    if (!file.existsSync()) {
+      return shelf.Response.notFound('File not found: ${request.url.path}');
+    }
+
+    final String extension = p.extension(file.path);
+    final String? contentType = contentTypes[extension];
+
+    if (contentType == null) {
+      final String error = 'Failed to determine Content-Type for "${request.url.path}".';
+      stderr.writeln(error);
+      return shelf.Response.internalServerError(body: error);
+    }
+
+    return shelf.Response.ok(
+      file.readAsBytesSync(),
+      headers: <String, Object>{
+        HttpHeaders.contentTypeHeader: contentType,
+      },
+    );
+  }
+
+  /// Lists available test images under `web_ui/build/test_images`.
+  Future<shelf.Response> _testImageListingHandler(shelf.Request request) async {
+    const Map<String, String> supportedImageTypes = <String, String>{
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.bmp': 'image/bmp',
+    };
+
+    if (request.url.path != 'test_images/') {
+      return shelf.Response.notFound('Not found.');
+    }
+
+    final Directory testImageDirectory = Directory(p.join(
+      env.environment.webUiBuildDir.path,
+      'test_images',
+    ));
+
+    final List<String> testImageFiles = testImageDirectory
+      .listSync(recursive: true)
+      .whereType<File>()
+      .map<String>((File file) => p.relative(file.path, from: testImageDirectory.path))
+      .where((String path) => supportedImageTypes.containsKey(p.extension(path)))
+      .toList();
+
+    return shelf.Response.ok(
+      json.encode(testImageFiles),
+      headers: <String, Object>{
+        HttpHeaders.contentTypeHeader: 'application/json',
+      },
+    );
+  }
+
+  Future<shelf.Response> _fileNotFoundCatcher(shelf.Request request) async {
+    print('HTTP 404: ${request.url}');
+    return shelf.Response.notFound('File not found');
   }
 
   /// Handles URLs pointing to Dart sources using absolute URI paths.
@@ -274,9 +354,6 @@ class BrowserPlatform extends PlatformPlugin {
       write = true;
     }
 
-    filename =
-        filename.replaceAll('.png', '${_screenshotManager!.filenameSuffix}.png');
-
     String goldensDirectory;
     if (filename.startsWith('__local__')) {
       filename = filename.substring('__local__/'.length);
@@ -304,53 +381,63 @@ class BrowserPlatform extends PlatformPlugin {
     final Image screenshot = await _screenshotManager!.capture(regionAsRectange);
 
     return compareImage(
-        screenshot,
-        doUpdateScreenshotGoldens,
-        filename,
-        pixelComparison,
-        maxDiffRateFailure,
-        goldensDirectory: goldensDirectory,
-        write: write);
+      screenshot,
+      doUpdateScreenshotGoldens,
+      filename,
+      pixelComparison,
+      maxDiffRateFailure,
+      skiaClient,
+      goldensDirectory: goldensDirectory,
+      filenameSuffix: _screenshotManager!.filenameSuffix,
+      write: write,
+    );
   }
 
-  /// Serves /canvaskit/* requests.
-  ///
-  /// The requested path is rewritten to look for CanvasKit assets under:
-  ///
-  ///     ENGINE_ROOT/src/third_party/web_dependencies/canvaskit
-  shelf.Response _canvasKitHandler(shelf.Request request) {
-    if (!request.url.path.startsWith('canvaskit/')) {
-      return shelf.Response.notFound('Not found.');
-    }
+  static const Map<String, String> contentTypes = <String, String>{
+    '.js': 'text/javascript',
+    '.wasm': 'application/wasm',
+    '.html': 'text/html',
+    '.htm': 'text/html',
+    '.css': 'text/css',
+    '.ico': 'image/icon-x',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+    '.svg': 'image/svg+xml',
+    '.json': 'application/json',
+    '.ttf': 'font/ttf',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+  };
 
-    final String filePath = p.join(
-      env.environment.engineSrcDir.path,
-      'third_party',
-      'web_dependencies',
+  /// A simple file handler that serves files whose URLs and paths are
+  /// statically known.
+  ///
+  /// This is used for trivial use-cases, such as `favicon.ico`, host pages, etc.
+  shelf.Response buildDirectoryHandler(shelf.Request request) {
+    final File fileInBuild = File(p.join(
+      env.environment.webUiBuildDir.path,
       request.url.path,
-    );
-    final File fileInPackage = File(filePath);
-    if (!fileInPackage.existsSync()) {
+    ));
+
+    if (!fileInBuild.existsSync()) {
       return shelf.Response.notFound('File not found: ${request.url.path}');
     }
 
-    final String extension = p.extension(filePath);
-    final String contentType;
-    switch (extension) {
-      case '.js':
-        contentType = 'text/javascript';
-        break;
-      case '.wasm':
-        contentType = 'application/wasm';
-        break;
-      default:
-        final String error = 'Failed to determine Content-Type for "${request.url.path}".';
-        stderr.writeln(error);
-        return shelf.Response.internalServerError(body: error);
+    final String extension = p.extension(fileInBuild.path);
+    final String? contentType = contentTypes[extension];
+
+    if (contentType == null) {
+      final String error = 'Failed to determine Content-Type for "${request.url.path}".';
+      stderr.writeln(error);
+      return shelf.Response.internalServerError(body: error);
     }
 
     return shelf.Response.ok(
-      fileInPackage.readAsBytesSync(),
+      fileInBuild.readAsBytesSync(),
       headers: <String, Object>{
         HttpHeaders.contentTypeHeader: contentType,
       },
@@ -373,6 +460,7 @@ class BrowserPlatform extends PlatformPlugin {
         <html>
         <head>
           <title>${htmlEscape.convert(test)} Test</title>
+          <meta name="assetBase" content="/">
           <script>
             window.flutterConfiguration = {
               canvasKitBaseUrl: "/canvaskit/"
@@ -446,7 +534,7 @@ class BrowserPlatform extends PlatformPlugin {
     final String path = _webSocketHandler.create(webSocketHandler(completer.complete));
     final Uri webSocketUrl = url.replace(scheme: 'ws').resolve(path);
     final Uri hostUrl = url
-        .resolve('packages/web_engine_tester/static/index.html')
+        .resolve('host/index.html')
         .replace(queryParameters: <String, dynamic>{
       'managerUrl': webSocketUrl.toString(),
       'debug': isDebug.toString()

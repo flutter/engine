@@ -12,10 +12,12 @@
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_dart_project_private.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer.h"
 #include "flutter/shell/platform/linux/fl_renderer_headless.h"
 #include "flutter/shell/platform/linux/fl_settings_plugin.h"
+#include "flutter/shell/platform/linux/fl_texture_gl_private.h"
 #include "flutter/shell/platform/linux/fl_texture_registrar_private.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_plugin_registry.h"
 
@@ -48,7 +50,7 @@ struct _FlEngine {
   gpointer update_semantics_node_handler_data;
   GDestroyNotify update_semantics_node_handler_destroy_notify;
 
-  // Function to call when the engine is restarted.
+  // Function to call right before the engine is restarted.
   FlEngineOnPreEngineRestartHandler on_pre_engine_restart_handler;
   gpointer on_pre_engine_restart_handler_data;
   GDestroyNotify on_pre_engine_restart_handler_destroy_notify;
@@ -203,13 +205,9 @@ static uint32_t fl_engine_gl_get_fbo(void* user_data) {
 }
 
 static bool fl_engine_gl_present(void* user_data) {
-  FlEngine* self = static_cast<FlEngine*>(user_data);
-  g_autoptr(GError) error = nullptr;
-  gboolean result = fl_renderer_present(self->renderer, &error);
-  if (!result) {
-    g_warning("%s", error->message);
-  }
-  return result;
+  // No action required, as this is handled in
+  // compositor_present_layers_callback.
+  return true;
 }
 
 static bool fl_engine_gl_make_resource_current(void* user_data) {
@@ -228,18 +226,39 @@ static bool fl_engine_gl_external_texture_frame_callback(
     int64_t texture_id,
     size_t width,
     size_t height,
-    FlutterOpenGLTexture* texture) {
+    FlutterOpenGLTexture* opengl_texture) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
   if (!self->texture_registrar) {
     return false;
   }
+
+  FlTexture* texture =
+      fl_texture_registrar_lookup_texture(self->texture_registrar, texture_id);
+  if (texture == nullptr) {
+    g_warning("Unable to find texture %" G_GINT64_FORMAT, texture_id);
+    return false;
+  }
+
+  gboolean result;
   g_autoptr(GError) error = nullptr;
-  gboolean result = fl_texture_registrar_populate_gl_external_texture(
-      self->texture_registrar, texture_id, width, height, texture, &error);
+  if (FL_IS_TEXTURE_GL(texture)) {
+    result = fl_texture_gl_populate(FL_TEXTURE_GL(texture), width, height,
+                                    opengl_texture, &error);
+  } else if (FL_IS_PIXEL_BUFFER_TEXTURE(texture)) {
+    result =
+        fl_pixel_buffer_texture_populate(FL_PIXEL_BUFFER_TEXTURE(texture),
+                                         width, height, opengl_texture, &error);
+  } else {
+    g_warning("Unsupported texture type %" G_GINT64_FORMAT, texture_id);
+    return false;
+  }
+
   if (!result) {
     g_warning("%s", error->message);
+    return false;
   }
-  return result;
+
+  return true;
 }
 
 // Called by the engine to determine if it is on the GTK thread.
@@ -288,7 +307,7 @@ static void fl_engine_update_semantics_node_cb(const FlutterSemanticsNode* node,
   }
 }
 
-// Called when the engine is restarted.
+// Called right before the engine is restarted.
 //
 // This method should reset states to as if the engine has just been started,
 // which usually indicates the user has requested a hot restart (Shift-R in the
@@ -501,8 +520,9 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   fl_settings_plugin_start(self->settings_plugin);
 
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
-  if (result != kSuccess)
+  if (result != kSuccess) {
     g_warning("Failed to enable accessibility features on Flutter engine");
+  }
 
   return TRUE;
 }

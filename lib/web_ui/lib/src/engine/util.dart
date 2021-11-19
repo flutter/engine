@@ -519,16 +519,6 @@ double convertSigmaToRadius(double sigma) {
   return sigma * 2.0;
 }
 
-/// Used to check for null values that are non-nullable.
-///
-/// This is useful when some external API (e.g. HTML DOM) disagrees with
-/// Dart type declarations (e.g. `dart:html`). Where `dart:html` may believe
-/// something to be non-null, it may actually be null (e.g. old browsers do
-/// not implement a feature, such as clipboard).
-bool isUnsoundNull(dynamic object) {
-  return object == null;
-}
-
 int clampInt(int value, int min, int max) {
   assert(min <= max);
   if (value < min) {
@@ -678,4 +668,17 @@ num? parseFloat(String source) {
     return null;
   }
   return result;
+}
+
+/// Prints a list of bytes in hex format.
+///
+/// Bytes are separated by one space and are padded on the left to always show
+/// two digits.
+///
+/// Example:
+///
+///     Input: [0, 1, 2, 3]
+///     Output: 0x00 0x01 0x02 0x03
+String bytesToHexString(List<int> data) {
+  return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
 }

@@ -88,6 +88,18 @@ source_set("skia") {
   ]
 }
 
+dart_snapshot_kernel("vmservice_kernel") {
+  dart_main =
+      rebase_path("//flutter/shell/vmservice/empty.dart", root_build_dir)
+  dart_kernel = "$target_gen_dir/assets/vmservice_kernel.bin"
+}
+
+dart_snapshot_aot("vmservice_snapshot") {
+  dart_kernel = "$target_gen_dir/assets/vmservice_kernel.bin"
+  dart_elf_filename = "libvmservice_snapshot.so"
+  deps = [ ":vmservice_kernel" ]
+}
+
 source_set("fixture_test") {
   testonly = true
 
@@ -103,25 +115,37 @@ source_set("fixture_test") {
     "//flutter/common",
     "//flutter/runtime",
   ]
+
+  if (flutter_runtime_mode == "profile") {
+    public_deps += [ ":vmservice_snapshot" ]
+  }
 }
 
 if (enable_unittests) {
   source_set("vulkan") {
     testonly = true
 
+    sources = [
+      "test_vulkan_context.cc",
+      "test_vulkan_context.h",
+    ]
+
+    defines = [ "TEST_VULKAN_PROCS" ]
+
     deps = [
       ":skia",
       "//flutter/fml",
+      "//flutter/vulkan",
     ]
 
-    # SwiftShader only supports x86/x64_64
+    # SwiftShader only supports x86/x86_64
     if (target_cpu == "x86" || target_cpu == "x64") {
       configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
       deps += [ "//third_party/swiftshader_flutter:swiftshader_vulkan" ]
     }
   }
 
-  # SwiftShader only supports x86/x64_64
+  # SwiftShader only supports x86/x86_64
   if (target_cpu == "x86" || target_cpu == "x64") {
     source_set("opengl") {
       testonly = true
@@ -158,9 +182,12 @@ if (enable_unittests) {
         "test_metal_surface_impl.mm",
       ]
 
+      # Skia's Vulkan support is enabled for all platforms, and so parts of
+      # Skia's graphics context reference Vulkan symbols.
       deps = [
         ":skia",
         "//flutter/fml",
+        "//flutter/vulkan",
       ]
     }
 
@@ -183,6 +210,7 @@ if (enable_unittests) {
       ":testing",
       ":testing_fixtures",
       "//flutter/runtime:libdart",
+      "//flutter/vulkan",
     ]
 
     if (shell_enable_metal) {

@@ -81,6 +81,36 @@ class ComponentV1 final : public Engine::Delegate,
 #endif  // !defined(DART_PRODUCT)
 
  private:
+  ComponentV1(
+      TerminationCallback termination_callback,
+      fuchsia::sys::Package package,
+      fuchsia::sys::StartupInfo startup_info,
+      std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
+      fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller);
+
+  // |fuchsia::sys::ComponentController|
+  void Kill() override;
+
+  // |fuchsia::sys::ComponentController|
+  void Detach() override;
+
+  // |fuchsia::ui::app::ViewProvider|
+  void CreateView(
+      zx::eventpair token,
+      fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> incoming_services,
+      fuchsia::sys::ServiceProviderHandle outgoing_services) override;
+
+  // |fuchsia::ui::app::ViewProvider|
+  void CreateViewWithViewRef(zx::eventpair view_token,
+                             fuchsia::ui::views::ViewRefControl control_ref,
+                             fuchsia::ui::views::ViewRef view_ref) override;
+
+  // |fuchsia::ui::app::ViewProvider|
+  void CreateView2(fuchsia::ui::app::CreateView2Args view_args) override;
+
+  // |flutter::Engine::Delegate|
+  void OnEngineTerminate(const Engine* holder) override;
+
   flutter::Settings settings_;
   FlutterRunnerProductConfiguration product_config_;
   TerminationCallback termination_callback_;
@@ -101,39 +131,7 @@ class ComponentV1 final : public Engine::Delegate,
   fml::RefPtr<flutter::DartSnapshot> isolate_snapshot_;
   std::set<std::unique_ptr<Engine>> shell_holders_;
   std::pair<bool, uint32_t> last_return_code_;
-  fml::WeakPtrFactory<ComponentV1> weak_factory_;
-
-  ComponentV1(
-      TerminationCallback termination_callback,
-      fuchsia::sys::Package package,
-      fuchsia::sys::StartupInfo startup_info,
-      std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
-      fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller);
-
-  // |fuchsia::sys::ComponentController|
-  void Kill() override;
-
-  // |fuchsia::sys::ComponentController|
-  void Detach() override;
-
-  // |fuchsia::ui::app::ViewProvider|
-  void CreateView(
-      zx::eventpair token,
-      fidl::InterfaceRequest<fuchsia::sys::ServiceProvider> incoming_services,
-      fidl::InterfaceHandle<fuchsia::sys::ServiceProvider> outgoing_services)
-      override;
-
-  // |fuchsia::ui::app::ViewProvider|
-  void CreateViewWithViewRef(zx::eventpair view_token,
-                             fuchsia::ui::views::ViewRefControl control_ref,
-                             fuchsia::ui::views::ViewRef view_ref) override;
-
-  // |fuchsia::ui::app::ViewProvider|
-  void CreateView2(fuchsia::ui::app::CreateView2Args view_args) override;
-
-  // |flutter::Engine::Delegate|
-  void OnEngineTerminate(const Engine* holder) override;
-
+  fml::WeakPtrFactory<ComponentV1> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(ComponentV1);
 };
 

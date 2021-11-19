@@ -13,13 +13,9 @@ namespace flutter {
 // at all. Hence |set_transform| must be called with an initialized SkMatrix.
 class TransformLayer : public ContainerLayer {
  public:
-  TransformLayer(const SkMatrix& transform);
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
+  explicit TransformLayer(const SkMatrix& transform);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 

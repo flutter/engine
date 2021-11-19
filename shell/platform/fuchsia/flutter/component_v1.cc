@@ -194,7 +194,7 @@ ComponentV1::ComponentV1(
 
   directory_request_ = directory_ptr_.NewRequest();
 
-  fidl::InterfaceHandle<fuchsia::io::Directory> flutter_public_dir;
+  fuchsia::io::DirectoryHandle flutter_public_dir;
   // TODO(anmittal): when fixing enumeration using new c++ vfs, make sure that
   // flutter_public_dir is only accessed once we receive OnOpen Event.
   // That will prevent FL-175 for public directory
@@ -223,7 +223,7 @@ ComponentV1::ComponentV1(
         const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
-          fidl::InterfaceHandle<fuchsia::io::Directory> dir;
+          fuchsia::io::DirectoryHandle dir;
           auto request = dir.NewRequest().TakeChannel();
           auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
                                                 dir_str, request.release());
@@ -292,27 +292,28 @@ ComponentV1::ComponentV1(
       }
       auto hold_snapshot = [snapshot](const uint8_t* _, size_t __) {};
       settings_.vm_snapshot_data = [hold_snapshot, vm_data]() {
-        return std::make_unique<fml::NonOwnedMapping>(vm_data, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(vm_data, 0, hold_snapshot,
+                                                      true /* dontneed_safe */);
       };
       settings_.vm_snapshot_instr = [hold_snapshot, vm_instructions]() {
-        return std::make_unique<fml::NonOwnedMapping>(vm_instructions, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            vm_instructions, 0, hold_snapshot, true /* dontneed_safe */);
       };
       settings_.isolate_snapshot_data = [hold_snapshot, isolate_data]() {
-        return std::make_unique<fml::NonOwnedMapping>(isolate_data, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            isolate_data, 0, hold_snapshot, true /* dontneed_safe */);
       };
       settings_.isolate_snapshot_instr = [hold_snapshot,
                                           isolate_instructions]() {
-        return std::make_unique<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            isolate_instructions, 0, hold_snapshot, true /* dontneed_safe */);
       };
       isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0,
-                                                 hold_snapshot),
+          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0, hold_snapshot,
+                                                 true /* dontneed_safe */),
           std::make_shared<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                                 hold_snapshot));
+                                                 hold_snapshot,
+                                                 true /* dontneed_safe */));
     } else {
       const int namespace_fd = component_data_directory_.get();
       settings_.vm_snapshot_data = [namespace_fd]() {
@@ -484,6 +485,11 @@ void ComponentV1::OnEngineTerminate(const Engine* shell_holder) {
                             });
 
   if (found == shell_holders_.end()) {
+    // This indicates a deeper issue with memory management and should never
+    // happen.
+    FML_LOG(ERROR) << "Tried to terminate an unregistered shell holder.";
+    FML_DCHECK(false);
+
     return;
   }
 
@@ -493,11 +499,15 @@ void ComponentV1::OnEngineTerminate(const Engine* shell_holder) {
   auto return_code = shell_holder->GetEngineReturnCode();
   if (return_code.has_value()) {
     last_return_code_ = {true, return_code.value()};
+  } else {
+    FML_LOG(ERROR) << "Failed to get return code from terminated shell holder.";
   }
 
   shell_holders_.erase(found);
 
   if (shell_holders_.size() == 0) {
+    FML_VLOG(-1) << "Killing component because all shell holders have been "
+                    "terminated.";
     Kill();
     // WARNING: Don't do anything past this point because the delegate may have
     // collected this instance via the termination callback.
