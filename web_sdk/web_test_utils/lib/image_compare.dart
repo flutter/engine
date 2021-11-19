@@ -172,11 +172,13 @@ Future<void> _uploadToSkiaGold(
   final File goldenFile = File(p.join(environment.webUiSkiaGoldDirectory.path, filename));
   await goldenFile.writeAsBytes(encodePng(screenshot), flush: true);
 
+  final int screenshotSize = screenshot.width * screenshot.height;
+
   if (_isPreSubmit) {
-    return _uploadInPreSubmit(skiaClient, filename, goldenFile);
+    return _uploadInPreSubmit(skiaClient, filename, goldenFile, screenshotSize);
   }
   if (_isPostSubmit) {
-    return _uploadInPostSubmit(skiaClient, filename, goldenFile);
+    return _uploadInPostSubmit(skiaClient, filename, goldenFile, screenshotSize);
   }
 }
 
@@ -184,16 +186,18 @@ Future<void> _uploadInPreSubmit(
   SkiaGoldClient skiaClient,
   String filename,
   File goldenFile,
+  int screenshotSize,
 ) {
   assert(_isPreSubmit);
-  return skiaClient.tryjobAdd(filename, goldenFile);
+  return skiaClient.tryjobAdd(filename, goldenFile, screenshotSize);
 }
 
 Future<void> _uploadInPostSubmit(
   SkiaGoldClient skiaClient,
   String filename,
   File goldenFile,
+  int screenshotSize,
 ) {
   assert(_isPostSubmit);
-  return skiaClient.imgtestAdd(filename, goldenFile);
+  return skiaClient.imgtestAdd(filename, goldenFile, screenshotSize);
 }
