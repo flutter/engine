@@ -23,11 +23,9 @@ struct TextEditingDelta {
                    TextRange range,
                    const std::string& text);
 
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  TextEditingDelta(const std::u16string& text);
+  explicit TextEditingDelta(const std::u16string& text);
 
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  TextEditingDelta(const std::string& text);
+  explicit TextEditingDelta(const std::string& text);
 
   virtual ~TextEditingDelta() = default;
 
