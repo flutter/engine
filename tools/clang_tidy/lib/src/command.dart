@@ -35,9 +35,9 @@ enum LintAction {
 /// it.
 class Command {
   /// Generate a [Command] from a [Map].
-  Command.fromMap(Map<String, dynamic> map) :
-    directory = io.Directory(map['directory'] as String).absolute,
-    command = map['command'] as String {
+  Command.fromMap(Map<String, dynamic> map)
+      : directory = io.Directory(map['directory'] as String).absolute,
+        command = map['command'] as String {
     filePath = path.normalize(path.join(
       directory.path,
       map['file'] as String,
@@ -48,7 +48,7 @@ class Command {
   final io.Directory directory;
 
   /// The compilation command.
-  final String command ;
+  final String command;
 
   /// The file on which the command operates.
   late final String filePath;
@@ -73,16 +73,18 @@ class Command {
   /// The command but with clang-tidy instead of clang.
   String get tidyPath {
     return _tidyPath ??= _pathRegex.stringMatch(command)?.replaceAll(
-      'clang/bin/clang',
-      'clang/bin/clang-tidy',
-    ) ?? '';
+              'clang/bin/clang',
+              'clang/bin/clang-tidy',
+            ) ??
+        '';
   }
 
   /// Whether this command operates on any of the files in `queries`.
   bool containsAny(List<io.File> queries) {
     return queries.indexWhere(
-      (io.File query) => path.equals(query.path, filePath),
-    ) != -1;
+          (io.File query) => path.equals(query.path, filePath),
+        ) !=
+        -1;
   }
 
   static final RegExp _nolintRegex = RegExp(
@@ -103,9 +105,8 @@ class Command {
     if (!file.existsSync()) {
       return LintAction.skipMissing;
     }
-    final Stream<String> lines = file.openRead()
-      .transform(utf8.decoder)
-      .transform(const LineSplitter());
+    final Stream<String> lines =
+        file.openRead().transform(utf8.decoder).transform(const LineSplitter());
     return lintActionFromContents(lines);
   }
 
@@ -117,8 +118,8 @@ class Command {
       final RegExpMatch? match = _nolintRegex.firstMatch(line);
       if (match != null) {
         return match.group(1) != null
-          ? LintAction.skipNoLint
-          : LintAction.failMalformedNoLint;
+            ? LintAction.skipNoLint
+            : LintAction.failMalformedNoLint;
       } else if (line.isNotEmpty && line[0] != '\n' && line[0] != '/') {
         // Quick out once we find a line that isn't empty or a comment.  The
         // FLUTTER_NOLINT must show up before the first real code.
@@ -132,8 +133,7 @@ class Command {
   WorkerJob createLintJob(String? checks, bool fix) {
     final List<String> args = <String>[
       filePath,
-      if (checks != null)
-        checks,
+      if (checks != null) checks,
       if (fix) ...<String>[
         '--fix',
         '--format-style=file',
