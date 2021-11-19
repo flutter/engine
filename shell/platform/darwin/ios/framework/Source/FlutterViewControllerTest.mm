@@ -80,6 +80,11 @@ class PointerDataPacket {};
 - (void)notifyLowMemory;
 @end
 
+@interface FlutterEngineGroup ()
+@property(nonatomic, strong) NSMutableArray<FlutterEngine*>* engines;
+- (FlutterEngine*)makeEngineWithOptions:(nullable FlutterEngineGroupOptions*)options;
+@end
+
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 /// A simple mock class for FlutterEngine.
@@ -153,6 +158,19 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.mockEngine = nil;
   self.mockTextInputPlugin = nil;
   self.messageSent = nil;
+}
+
+- (void)testViewControllerInitWithEngineGroupWithEngineGroupOptions {
+  FlutterEngineGroup* engineGroup =
+      OCMPartialMock([[FlutterEngineGroup alloc] initWithName:@"io.flutter" project:nil]);
+  FlutterEngineGroupOptions* options = [[FlutterEngineGroupOptions alloc] init];
+
+  FlutterViewController* controller = [[FlutterViewController alloc] initWithEngineGroup:engineGroup
+                                                                                 options:options
+                                                                                 nibName:nil
+                                                                                  bundle:nil];
+  OCMStub([[engineGroup engines] firstObject]).andReturn(controller.engine);
+  OCMVerify([engineGroup makeEngineWithOptions:options]);
 }
 
 - (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {

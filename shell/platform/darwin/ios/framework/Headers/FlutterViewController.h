@@ -11,6 +11,7 @@
 #import "FlutterBinaryMessenger.h"
 #import "FlutterDartProject.h"
 #import "FlutterEngine.h"
+#import "FlutterEngineGroup.h"
 #import "FlutterMacros.h"
 #import "FlutterPlugin.h"
 #import "FlutterTexture.h"
@@ -67,6 +68,23 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+/**
+ *  Initializes this FlutterViewController with the specified `FlutterEngineGroup`
+ *
+ *  FlutterViewController will create an new `FlutterEngine` with `options` and use this engine do
+ *  the same thing like initWithEngine:nibName:bundle:, and when this `FlutterViewController`
+ *  pop,the engine will be gone.
+ *
+ * @param engineGroup The specified `FlutterEngineGroup` to use to create new `FlutterEngine`.
+ * @param options The specified options to give FlutterEngineGroup to create new `FlutterEngine`.
+ * @param nibName The NIB name to initialize this UIViewController with.
+ * @param nibBundle The NIB bundle.
+ */
+- (instancetype)initWithEngineGroup:(FlutterEngineGroup*)engineGroup
+                            options:(nullable FlutterEngineGroupOptions*)options
+                            nibName:(nullable NSString*)nibName
+                             bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 
 /**
  * Initializes a new FlutterViewController and `FlutterEngine` with the specified
