@@ -299,7 +299,7 @@ class SkiaGoldClient {
     // baseline. It's okay for this to be a slightly high number like 10% of the
     // image size because those wrong pixels are constrained by
     // `pixelDeltaThreshold` below.
-    final String maxDifferentPixels = '${screenshotSize * kMaxDifferentPixelsRate}';
+    final int maxDifferentPixels = (screenshotSize * kMaxDifferentPixelsRate).toInt();
 
     // The maximum acceptable difference in RGB channels of each pixel.
     //
