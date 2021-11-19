@@ -19,13 +19,13 @@
 - (instancetype)init {
   self = [super init];
   if (self) {
-    self.queue = dispatch_queue_create("FLTSerialTaskQueue", DISPATCH_QUEUE_SERIAL);
+    _queue = dispatch_queue_create("FLTSerialTaskQueue", DISPATCH_QUEUE_SERIAL);
   }
   return self;
 }
 
 - (void)dealloc {
-  [_queue release];
+  dispatch_release(_queue);
   [super dealloc];
 }
 
@@ -115,4 +115,4 @@ void PlatformMessageHandlerIos::SetMessageHandler(const std::string& channel,
     };
   }
 }
-}
+}  // namespace flutter
