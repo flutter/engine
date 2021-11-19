@@ -8,8 +8,8 @@ print_usage () {
   echo "    - PATH_TO_SDK_DIR is the path to the sdk folder"
   echo "    - VERSION_TAG is the version of the package, e.g. 28r6 or 31v1"
   echo ""
-  echo "This script downloads the specified packages and uploads them to CIPD. You may need"
-  echo "to accept licences during the download process."
+  echo "This script downloads the specified packages and uploads them to CIPD for linux, mac, and windows."
+  echo "You may need to accept licences during the download process."
   echo ""
   echo "Manage the packages to download in 'android_sdk_packages.txt'. You can use"
   echo "'sdkmanager --list --include_obsolete' in cmdline-tools to list all available packages"
@@ -43,20 +43,28 @@ upload_dirs=("platform-tools" "build-tools" "platforms" "tools" "cmdline-tools")
 sdkmanager_path="$1/cmdline-tools/latest/bin/sdkmanager"
 temp_dir="$1/temp"
 mkdir $temp_dir
+
 for platform in "${platforms[@]}"; do
   sdk_root="$temp_dir/sdk_$platform"
   echo "Creating temporary working directory for $platform: $sdk_root"
   mkdir $sdk_root
+
+  # Download all the packages with sdkmanager.
   for package in $(cat android_sdk_packages.txt); do
     echo "Installing $package"
     REPO_OS_OVERRIDE=$platform $sdkmanager_path --sdk_root=$sdk_root $package
   done
+
+  # We copy only the relevant directories to a temporary dir
+  # for upload. sdkmanager creates extra files that we don't need.
   echo "Consolidating files for upload"
   upload_dir="$sdk_root/upload"
   mkdir $upload_dir
   for dir in "${upload_dirs[@]}"; do
     cp -r "$sdk_root/$dir" "$upload_dir"
   done
+
+  # Mac uses a different sdkmanager name than the platform name used in gn.
   cipd_name="$platform-amd64"
   if [[ $platform == "macosx" ]]; then
     cipd_name="mac-amd64"
