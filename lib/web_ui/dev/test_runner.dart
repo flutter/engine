@@ -10,8 +10,6 @@ import 'package:path/path.dart' as path;
 
 import 'package:watcher/src/watch_event.dart';
 
-import 'browser.dart';
-import 'common.dart';
 import 'pipeline.dart';
 import 'steps/compile_tests_step.dart';
 import 'steps/run_tests_step.dart';
@@ -71,8 +69,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       ..addOption(
         'browser',
         defaultsTo: 'chrome',
-        help: 'An option to choose a browser to run the tests. Tests only work '
-            ' on Chrome for now.',
+        help: 'An option to choose a browser to run the tests. By default '
+              'tests run in Chrome.',
       )
       ..addFlag(
         'fail-early',
@@ -82,6 +80,12 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
               'failure. If not set, the test runner will continue running '
               'test despite failures and will report them after all tests '
               'finish.',
+      )
+      ..addOption(
+        'canvaskit-path',
+        help: 'Optional. The path to a local build of CanvasKit to use in '
+              'tests. If omitted, the test runner uses the default CanvasKit '
+              'build.',
       );
   }
 
@@ -111,7 +115,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get runAllTests => targets.isEmpty;
 
   /// The name of the browser to run tests in.
-  String get browser => stringArg('browser');
+  String get browserName => stringArg('browser');
 
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
@@ -120,10 +124,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Whether to fetch the goldens repo prior to running tests.
   bool get skipGoldensRepoFetch => boolArg('skip-goldens-repo-fetch');
 
+  /// Path to a CanvasKit build. Overrides the default CanvasKit.
+  String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
+
   @override
   Future<bool> run() async {
-    final BrowserEnvironment browserEnvironment = getBrowserEnvironment(browser);
-
     final List<FilePath> testFiles = runAllTests
           ? findAllTests()
           : targetFiles;
@@ -135,10 +140,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         testFiles: testFiles,
       ),
       RunTestsStep(
-        browserEnvironment: browserEnvironment,
+        browserName: browserName,
         testFiles: testFiles,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       ),
     ]);
     await testPipeline.run();

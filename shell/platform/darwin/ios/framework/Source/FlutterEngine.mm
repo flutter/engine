@@ -199,6 +199,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                       object:self
                                                     userInfo:nil];
 
+  // It will be destroyed and invalidate its weak pointers
+  // before any other members are destroyed.
+  _weakFactory.reset();
+
   /// nil out weak references.
   [_registrars
       enumerateKeysAndObjectsUsingBlock:^(id key, FlutterEngineRegistrar* registrar, BOOL* stop) {
@@ -211,6 +215,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [_registrars release];
   _binaryMessenger.parent = nil;
   [_binaryMessenger release];
+  [_isolateId release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   if (_flutterViewControllerWillDeallocObserver) {
@@ -684,8 +689,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)initializeDisplays {
   double refresh_rate = [DisplayLinkManager displayRefreshRate];
-  auto display = flutter::Display(refresh_rate);
-  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, {display});
+  std::vector<std::unique_ptr<flutter::Display>> displays;
+  displays.push_back(std::make_unique<flutter::Display>(refresh_rate));
+  _shell->OnDisplayUpdates(flutter::DisplayUpdateType::kStartup, std::move(displays));
 }
 
 - (BOOL)run {
