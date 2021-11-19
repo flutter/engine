@@ -20,7 +20,7 @@ const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
 // URL for the Ahem font, only used in tests.
-const String _ahemUrl = 'packages/ui/assets/ahem.ttf';
+const String _ahemUrl = '/assets/fonts/ahem.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
 class SkiaFontCollection {
@@ -84,7 +84,7 @@ class SkiaFontCollection {
     }
 
     final SkTypeface? typeface =
-        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(list);
+        canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
     if (typeface != null) {
       _registeredFonts.add(RegisteredFont(list, fontFamily, typeface));
       await ensureFontsLoaded();
@@ -160,7 +160,7 @@ class SkiaFontCollection {
 
     final Uint8List bytes = buffer.asUint8List();
     final SkTypeface? typeface =
-        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+        canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
     if (typeface != null) {
       return RegisteredFont(bytes, family, typeface);
     } else {

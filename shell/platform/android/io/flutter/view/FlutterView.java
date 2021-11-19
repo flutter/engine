@@ -347,6 +347,12 @@ public class FlutterView extends SurfaceView
     mFirstFrameListeners.remove(listener);
   }
 
+  @Override
+  public void enableBufferingIncomingMessages() {}
+
+  @Override
+  public void disableBufferingIncomingMessages() {}
+
   /**
    * Reverts this back to the {@link SurfaceView} defaults, at the back of its window and opaque.
    */
@@ -824,6 +830,12 @@ public class FlutterView extends SurfaceView
 
   @Override
   @UiThread
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return null;
+  }
+
+  @Override
+  @UiThread
   public void send(String channel, ByteBuffer message) {
     send(channel, message, null);
   }
@@ -842,6 +854,12 @@ public class FlutterView extends SurfaceView
   @UiThread
   public void setMessageHandler(String channel, BinaryMessageHandler handler) {
     mNativeView.setMessageHandler(channel, handler);
+  }
+
+  @Override
+  @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
+    mNativeView.setMessageHandler(channel, handler, taskQueue);
   }
 
   /** Listener will be called on the Android UI thread once when Flutter renders the first frame. */

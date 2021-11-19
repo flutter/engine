@@ -1,4 +1,4 @@
-Signature: 54dcf784ac6819534ce6d1938e91ba91
+Signature: fc54f271ff2fc1a2dd860c34464f5f7c
 
 UNUSED LICENSES:
 
@@ -9787,6 +9787,11 @@ FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/MapLookup.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/generate_maps.dart
+FILE: ../../../third_party/dart/benchmarks/NativeCall/dart/NativeCall.dart
+FILE: ../../../third_party/dart/benchmarks/NativeCall/dart/dlopen_helper.dart
+FILE: ../../../third_party/dart/benchmarks/NativeCall/dart2/NativeCall.dart
+FILE: ../../../third_party/dart/benchmarks/NativeCall/dart2/dlopen_helper.dart
+FILE: ../../../third_party/dart/benchmarks/NativeCall/native/native_functions.c
 FILE: ../../../third_party/dart/benchmarks/ObjectHash/dart/ObjectHash.dart
 FILE: ../../../third_party/dart/benchmarks/ObjectHash/dart2/ObjectHash.dart
 FILE: ../../../third_party/dart/benchmarks/SDKArtifactSizes/dart/SDKArtifactSizes.dart
@@ -9801,6 +9806,8 @@ FILE: ../../../third_party/dart/benchmarks/StringPool/dart/version2.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool.dart
 FILE: ../../../third_party/dart/benchmarks/StringPool/dart2/StringPool100.dart
 FILE: ../../../third_party/dart/runtime/bin/abstract_socket_test.cc
+FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.h
+FILE: ../../../third_party/dart/runtime/bin/platform_macos_cocoa.mm
 FILE: ../../../third_party/dart/runtime/bin/secure_socket_utils_test.cc
 FILE: ../../../third_party/dart/runtime/bin/utils.cc
 FILE: ../../../third_party/dart/runtime/bin/virtual_memory.h
@@ -9913,7 +9920,6 @@ FILE: ../../../third_party/dart/runtime/bin/ffi_test/ffi_test_functions_generate
 FILE: ../../../third_party/dart/runtime/bin/ffi_unit_test/run_ffi_unit_tests.cc
 FILE: ../../../third_party/dart/runtime/bin/file_win.h
 FILE: ../../../third_party/dart/runtime/bin/platform_macos.h
-FILE: ../../../third_party/dart/runtime/bin/platform_macos_test.cc
 FILE: ../../../third_party/dart/runtime/bin/priority_heap_test.cc
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.c
 FILE: ../../../third_party/dart/runtime/include/dart_api_dl.h
@@ -10517,7 +10523,6 @@ FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/objectpool_
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/persistent_handles.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/ports.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/timeline_page.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/view_footer.dart
 FILE: ../../../third_party/dart/runtime/observatory/lib/src/sample_profile/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.js
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/allocation_profile.dart
@@ -10536,7 +10541,6 @@ FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectpoo
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/persistent_handles.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/ports.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/timeline_page.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/view_footer.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/sample_profile/sample_profile.dart
 FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline.js
 FILE: ../../../third_party/dart/runtime/vm/atomic_test.cc

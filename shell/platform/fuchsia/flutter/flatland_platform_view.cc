@@ -13,12 +13,13 @@ FlatlandPlatformView::FlatlandPlatformView(
     flutter::TaskRunners task_runners,
     fuchsia::ui::views::ViewRef view_ref,
     std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
-    fidl::InterfaceHandle<fuchsia::ui::input::ImeService> ime_service,
-    fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard,
-    fidl::InterfaceHandle<fuchsia::ui::pointer::TouchSource> touch_source,
-    fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
-    fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> view_ref_focused,
-    fidl::InterfaceHandle<fuchsia::ui::composition::ParentViewportWatcher>
+    fuchsia::ui::input::ImeServiceHandle ime_service,
+    fuchsia::ui::input3::KeyboardHandle keyboard,
+    fuchsia::ui::pointer::TouchSourceHandle touch_source,
+    fuchsia::ui::pointer::MouseSourceHandle mouse_source,
+    fuchsia::ui::views::FocuserHandle focuser,
+    fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused,
+    fuchsia::ui::composition::ParentViewportWatcherHandle
         parent_viewport_watcher,
     OnEnableWireframe wireframe_enabled_callback,
     OnCreateFlatlandView on_create_view_callback,
@@ -38,6 +39,7 @@ FlatlandPlatformView::FlatlandPlatformView(
                    std::move(ime_service),
                    std::move(keyboard),
                    std::move(touch_source),
+                   std::move(mouse_source),
                    std::move(focuser),
                    std::move(view_ref_focused),
                    std::move(wireframe_enabled_callback),
@@ -134,6 +136,21 @@ void FlatlandPlatformView::OnChildViewStatus(
           });
 }
 
+void FlatlandPlatformView::OnChildViewViewRef(
+    uint64_t content_id,
+    uint64_t view_id,
+    fuchsia::ui::views::ViewRef view_ref) {
+  FML_CHECK(child_view_info_.count(content_id) == 1);
+
+  focus_delegate_->OnChildViewViewRef(view_id, std::move(view_ref));
+
+  child_view_info_.at(content_id)
+      .child_view_watcher->GetViewRef(
+          [this, content_id, view_id](fuchsia::ui::views::ViewRef view_ref) {
+            this->OnChildViewViewRef(content_id, view_id, std::move(view_ref));
+          });
+}
+
 void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
                                         int64_t view_id_raw,
                                         bool hit_testable,
@@ -145,10 +162,15 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
                            fuchsia::ui::composition::ContentId content_id,
                            fuchsia::ui::composition::ChildViewWatcherPtr
                                child_view_watcher) {
+    FML_CHECK(weak);
+    FML_CHECK(weak->child_view_info_.count(content_id.value) == 0);
+    FML_CHECK(child_view_watcher);
+
     child_view_watcher.set_error_handler([](zx_status_t status) {
       FML_LOG(ERROR) << "Interface error on: ChildViewWatcher status: "
                      << status;
     });
+
     platform_task_runner->PostTask(
         fml::MakeCopyable([weak, view_id, content_id,
                            watcher = std::move(child_view_watcher)]() mutable {
@@ -159,8 +181,6 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
             return;
           }
 
-          FML_DCHECK(weak->child_view_info_.count(content_id.value) == 0);
-          FML_DCHECK(watcher);
           weak->child_view_info_.emplace(
               std::piecewise_construct, std::forward_as_tuple(content_id.value),
               std::forward_as_tuple(view_id, std::move(watcher)));
@@ -170,6 +190,14 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
                   [weak, id = content_id.value](
                       fuchsia::ui::composition::ChildViewStatus status) {
                     weak->OnChildViewStatus(id, status);
+                  });
+
+          weak->child_view_info_.at(content_id.value)
+              .child_view_watcher->GetViewRef(
+                  [weak, content_id = content_id.value,
+                   view_id](fuchsia::ui::views::ViewRef view_ref) {
+                    weak->OnChildViewViewRef(content_id, view_id,
+                                             std::move(view_ref));
                   });
         }));
   };

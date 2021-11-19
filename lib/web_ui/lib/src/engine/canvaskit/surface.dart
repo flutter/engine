@@ -7,6 +7,7 @@ import 'dart:html' as html;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../configuration.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../window.dart';
@@ -112,7 +113,7 @@ class Surface {
   ///
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
-    final CkSurface surface = createOrUpdateSurfaces(size);
+    final CkSurface surface = createOrUpdateSurface(size);
 
     // ignore: prefer_function_declarations_over_variables
     final SubmitCallback submitCallback =
@@ -135,7 +136,7 @@ class Surface {
   double _currentDevicePixelRatio = -1;
 
   /// Creates a <canvas> and SkSurface for the given [size].
-  CkSurface createOrUpdateSurfaces(ui.Size size) {
+  CkSurface createOrUpdateSurface(ui.Size size) {
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
@@ -295,7 +296,7 @@ class Surface {
     _forceNewContext = false;
     _contextLost = false;
 
-    if (webGLVersion != -1 && !canvasKitForceCpuOnly) {
+    if (webGLVersion != -1 && !configuration.canvasKitForceCpuOnly) {
       final int glContext = canvasKit.GetWebGLContext(
         htmlCanvas,
         SkWebGLContextOptions(
@@ -328,7 +329,7 @@ class Surface {
     if (webGLVersion == -1) {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'WebGL support not detected');
-    } else if (canvasKitForceCpuOnly) {
+    } else if (configuration.canvasKitForceCpuOnly) {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'CPU rendering forced by application');
     } else if (_glContext == 0) {
@@ -384,31 +385,36 @@ class Surface {
 
 /// A Dart wrapper around Skia's CkSurface.
 class CkSurface {
-  final SkSurface _surface;
-  final int? _glContext;
-
-  CkSurface(this._surface, this._glContext);
+  CkSurface(this.surface, this._glContext);
 
   CkCanvas getCanvas() {
     assert(!_isDisposed, 'Attempting to use the canvas of a disposed surface');
-    return CkCanvas(_surface.getCanvas());
+    return CkCanvas(surface.getCanvas());
   }
+
+  /// The underlying CanvasKit surface object.
+  ///
+  /// Only borrow this value temporarily. Do not store it as it may be deleted
+  /// at any moment. Storing it may lead to dangling pointer bugs.
+  final SkSurface surface;
+
+  final int? _glContext;
 
   /// Flushes the graphics to be rendered on screen.
   void flush() {
-    _surface.flush();
+    surface.flush();
   }
 
   int? get context => _glContext;
 
-  int width() => _surface.width();
-  int height() => _surface.height();
+  int width() => surface.width();
+  int height() => surface.height();
 
   void dispose() {
     if (_isDisposed) {
       return;
     }
-    _surface.dispose();
+    surface.dispose();
     _isDisposed = true;
   }
 

@@ -70,7 +70,7 @@ static uint64_t KeyOfPlane(uint64_t baseKey, uint64_t plane) {
 static uint64_t GetPhysicalKeyForKeyCode(UInt32 keyCode) {
   auto physicalKey = keyCodeToPhysicalKey.find(keyCode);
   if (physicalKey == keyCodeToPhysicalKey.end()) {
-    return 0;
+    return KeyOfPlane(keyCode, kIosPlane);
   }
   return physicalKey->second;
 }
@@ -158,7 +158,7 @@ static uint64_t GetLogicalKeyForEvent(FlutterUIPressProxy* press, uint64_t physi
   const char* characters =
       getEventCharacters(press.key.charactersIgnoringModifiers, press.key.keyCode);
   NSString* keyLabel =
-      characters == nullptr ? nil : [[NSString alloc] initWithUTF8String:characters];
+      characters == nullptr ? nil : [[[NSString alloc] initWithUTF8String:characters] autorelease];
   NSUInteger keyLabelLength = [keyLabel length];
   // If this key is printable, generate the logical key from its Unicode
   // value. Control keys such as ESC, CTRL, and SHIFT are not printable. HOME,
@@ -349,7 +349,7 @@ void HandleResponse(bool handled, void* user_data);
  *
  * Set by the initializer.
  */
-@property(nonatomic) FlutterSendKeyEvent sendEvent;
+@property(nonatomic, copy, readonly) FlutterSendKeyEvent sendEvent;
 
 /**
  * A map of pressed keys.
@@ -357,7 +357,7 @@ void HandleResponse(bool handled, void* user_data);
  * The keys of the dictionary are physical keys, while the values are the logical keys
  * of the key down event.
  */
-@property(nonatomic) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
+@property(nonatomic, retain, readonly) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
 
 /**
  * A constant mask for NSEvent.modifierFlags that Flutter synchronizes with.
@@ -396,7 +396,8 @@ void HandleResponse(bool handled, void* user_data);
  * Its values are |responseId|s, and keys are the callback that was received
  * along with the event.
  */
-@property(nonatomic) NSMutableDictionary<NSNumber*, FlutterAsyncKeyCallback>* pendingResponses;
+@property(nonatomic, retain, readonly)
+    NSMutableDictionary<NSNumber*, FlutterAsyncKeyCallback>* pendingResponses;
 
 /**
  * Compare the last modifier flags and the current, and dispatch synthesized
@@ -514,11 +515,11 @@ void HandleResponse(bool handled, void* user_data);
   FlutterKeyCallbackGuard* guardedCallback = nil;
   switch (press.phase) {
     case UIPressPhaseBegan:
-      guardedCallback = [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
+      guardedCallback = [[[FlutterKeyCallbackGuard alloc] initWithCallback:callback] autorelease];
       [self handlePressBegin:press callback:guardedCallback];
       break;
     case UIPressPhaseEnded:
-      guardedCallback = [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
+      guardedCallback = [[[FlutterKeyCallbackGuard alloc] initWithCallback:callback] autorelease];
       [self handlePressEnd:press callback:guardedCallback];
       break;
     case UIPressPhaseChanged:
@@ -623,7 +624,7 @@ void HandleResponse(bool handled, void* user_data);
   _responseId += 1;
   uint64_t responseId = _responseId;
   FlutterKeyPendingResponse* pending =
-      [[FlutterKeyPendingResponse alloc] initWithHandler:self responseId:responseId];
+      [[[FlutterKeyPendingResponse alloc] initWithHandler:self responseId:responseId] autorelease];
   [callback pendTo:_pendingResponses withId:responseId];
   _sendEvent(event, HandleResponse, pending);
 }

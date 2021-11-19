@@ -44,12 +44,19 @@ static const int kMaxTouchDeviceId = 128;
 
 }  // namespace
 
-WindowWin32::WindowWin32()
-    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId) {
+WindowWin32::WindowWin32() : WindowWin32(nullptr) {}
+
+WindowWin32::WindowWin32(
+    std::unique_ptr<TextInputManagerWin32> text_input_manager)
+    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
+      text_input_manager_(std::move(text_input_manager)) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
+  if (text_input_manager_ == nullptr) {
+    text_input_manager_ = std::make_unique<TextInputManagerWin32>();
+  }
 }
 
 WindowWin32::~WindowWin32() {
@@ -119,7 +126,7 @@ LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
 
     auto that = static_cast<WindowWin32*>(cs->lpCreateParams);
     that->window_handle_ = window;
-    that->text_input_manager_.SetWindowHandle(window);
+    that->text_input_manager_->SetWindowHandle(window);
     RegisterTouchWindow(window, 0);
   } else if (WindowWin32* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
@@ -139,18 +146,45 @@ void WindowWin32::TrackMouseLeaveEvent(HWND hwnd) {
   }
 }
 
+void WindowWin32::OnGetObject(UINT const message,
+                              WPARAM const wparam,
+                              LPARAM const lparam) {
+  LRESULT reference_result = static_cast<LRESULT>(0L);
+
+  // Only the lower 32 bits of lparam are valid when checking the object id
+  // because it sometimes gets sign-extended incorrectly (but not always).
+  DWORD obj_id = static_cast<DWORD>(static_cast<DWORD_PTR>(lparam));
+
+  bool is_msaa_request = static_cast<DWORD>(OBJID_CLIENT) == obj_id;
+  if (is_msaa_request) {
+    // On Windows, we don't get a notification that the screen reader has been
+    // enabled or disabled. There is an API to query for screen reader state,
+    // but that state isn't set by all screen readers, including by Narrator,
+    // the screen reader that ships with Windows:
+    // https://docs.microsoft.com/en-us/windows/win32/winauto/screen-reader-parameter
+    //
+    // Instead, we enable semantics in Flutter if Windows issues queries for
+    // Microsoft Active Accessibility (MSAA) COM objects.
+    OnUpdateSemanticsEnabled(true);
+
+    // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
+    // Once AccessibilityBridge is wired up, look up the IAccessible
+    // representing the root view and call LresultFromObject.
+  }
+}
+
 void WindowWin32::OnImeSetContext(UINT const message,
                                   WPARAM const wparam,
                                   LPARAM const lparam) {
   if (wparam != 0) {
-    text_input_manager_.CreateImeWindow();
+    text_input_manager_->CreateImeWindow();
   }
 }
 
 void WindowWin32::OnImeStartComposition(UINT const message,
                                         WPARAM const wparam,
                                         LPARAM const lparam) {
-  text_input_manager_.CreateImeWindow();
+  text_input_manager_->CreateImeWindow();
   OnComposeBegin();
 }
 
@@ -158,21 +192,22 @@ void WindowWin32::OnImeComposition(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) {
   // Update the IME window position.
-  text_input_manager_.UpdateImeWindow();
+  text_input_manager_->UpdateImeWindow();
 
   if (lparam & GCS_COMPSTR) {
     // Read the in-progress composing string.
-    long pos = text_input_manager_.GetComposingCursorPosition();
+    long pos = text_input_manager_->GetComposingCursorPosition();
     std::optional<std::u16string> text =
-        text_input_manager_.GetComposingString();
+        text_input_manager_->GetComposingString();
     if (text) {
       OnComposeChange(text.value(), pos);
     }
-  } else if (lparam & GCS_RESULTSTR) {
+  }
+  if (lparam & GCS_RESULTSTR) {
     // Commit but don't end composing.
     // Read the committed composing string.
-    long pos = text_input_manager_.GetComposingCursorPosition();
-    std::optional<std::u16string> text = text_input_manager_.GetResultString();
+    long pos = text_input_manager_->GetComposingCursorPosition();
+    std::optional<std::u16string> text = text_input_manager_->GetResultString();
     if (text) {
       OnComposeChange(text.value(), pos);
       OnComposeCommit();
@@ -183,7 +218,7 @@ void WindowWin32::OnImeComposition(UINT const message,
 void WindowWin32::OnImeEndComposition(UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) {
-  text_input_manager_.DestroyImeWindow();
+  text_input_manager_->DestroyImeWindow();
   OnComposeEnd();
 }
 
@@ -195,8 +230,12 @@ void WindowWin32::OnImeRequest(UINT const message,
   // https://github.com/flutter/flutter/issues/74547
 }
 
+void WindowWin32::AbortImeComposing() {
+  text_input_manager_->AbortComposing();
+}
+
 void WindowWin32::UpdateCursorRect(const Rect& rect) {
-  text_input_manager_.UpdateCaretRect(rect);
+  text_input_manager_->UpdateCaretRect(rect);
 }
 
 static uint16_t ResolveKeyCode(uint16_t original,
@@ -373,6 +412,9 @@ WindowWin32::HandleMessage(UINT const message,
                 static_cast<double>(WHEEL_DELTA)),
                0.0, kFlutterPointerDeviceKindMouse, kDefaultPointerDeviceId);
       break;
+    case WM_GETOBJECT:
+      OnGetObject(message, wparam, lparam);
+      break;
     case WM_INPUTLANGCHANGE:
       // TODO(cbracken): pass this to TextInputManager to aid with
       // language-specific issues.
@@ -457,7 +499,8 @@ WindowWin32::HandleMessage(UINT const message,
                 ? Win32MapVkToChar(keycode_for_char_message_)
             : IsPrintable(code_point) ? code_point
                                       : 0;
-        bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
+        bool handled = OnKey(keycode_for_char_message_, scancode,
+                             message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN,
                              event_character, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
@@ -473,6 +516,12 @@ WindowWin32::HandleMessage(UINT const message,
           // record the text here for the redispached event to use.
           if (message == WM_CHAR) {
             text_for_scancode_on_redispatch_[scancode] = text;
+          }
+
+          // For system characters, always pass them to the default WndProc so
+          // that system keys like the ALT-TAB are processed correctly.
+          if (message == WM_SYSCHAR) {
+            break;
           }
           return 0;
         }
@@ -525,9 +574,17 @@ WindowWin32::HandleMessage(UINT const message,
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
       keyCode = ResolveKeyCode(keyCode, extended, scancode);
-      const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
+      bool is_syskey = message == WM_SYSKEYDOWN || message == WM_SYSKEYUP;
+      const int action = is_keydown_message
+                             ? (is_syskey ? WM_SYSKEYDOWN : WM_KEYDOWN)
+                             : (is_syskey ? WM_SYSKEYUP : WM_KEYUP);
       if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
+        // For system keys, always pass them to the default WndProc so that keys
+        // like the ALT-TAB or Kanji switches are processed correctly.
+        if (is_syskey) {
+          break;
+        }
         return 0;
       }
       break;
@@ -554,6 +611,7 @@ HWND WindowWin32::GetWindowHandle() {
 
 void WindowWin32::Destroy() {
   if (window_handle_) {
+    text_input_manager_->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }

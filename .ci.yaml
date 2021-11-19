@@ -177,6 +177,9 @@ targets:
 
   - name: Linux Framework Smoke Tests
     recipe: engine/framework_smoke
+    enabled_branches:
+      - main
+      - master
     timeout: 60
     scheduler: luci
 
@@ -208,6 +211,10 @@ targets:
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
     timeout: 60
     scheduler: luci
     runIf:
@@ -220,6 +227,9 @@ targets:
 
   - name: Linux Web Framework tests
     recipe: engine/web_engine_framework
+    enabled_branches:
+      - main
+      - master
     properties:
       add_recipes_cq: "true"
       framework: "true"
@@ -274,6 +284,10 @@ targets:
     recipe: web_engine
     properties:
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "goldctl"}
+        ]
     timeout: 60
     scheduler: luci
     runIf:
@@ -283,6 +297,33 @@ targets:
       - tools/**
       - ci/**
       - flutter_frontend_server/**
+
+  - name: Mac mac_ios_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine
+      environment: Staging
+    scheduler: luci
+
+  - name:  Mac mac_ios_engine_profile
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine_profile
+      environment: Staging
+    scheduler: luci
+
+  - name:  Mac mac_ios_engine_release
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: mac_ios_engine_release
+      environment: Staging
+    scheduler: luci
 
   - name: Windows Android AOT Engine
     recipe: engine
@@ -299,6 +340,24 @@ targets:
     properties:
       add_recipes_cq: "true"
       build_host: "true"
+    scheduler: luci
+
+  - name: Windows windows_android_aot_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_android_aot_engine
+      environment: Staging
+    scheduler: luci
+
+  - name: Windows windows_host_engine
+    recipe: engine_v2/engine_v2
+    bringup: true
+    timeout: 60
+    properties:
+      config_name: windows_host_engine
+      environment: Staging
     scheduler: luci
 
   - name: Windows Unopt

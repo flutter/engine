@@ -7,6 +7,9 @@ android {
         showAll true
         warningsAsErrors true
         checkTestSources true
+        htmlReport false
+        xmlReport true
+        xmlOutput file("${rootProject.buildDir}/reports/lint-results.xml")
         // UnpackedNativeCode can break stack unwinding - see b/193408481
         // NewerVersionAvailable and GradleDependency need to be taken care of
         // by a roller rather than as part of CI.
@@ -45,4 +48,5 @@ dependencies {
     implementation files(project.property('flutter_jar'))
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.2.0-alpha01'
+    implementation 'androidx.tracing:tracing:1.0.0'
 }

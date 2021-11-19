@@ -104,6 +104,7 @@ class CanvasKit {
 
   external SkFontMgrNamespace get FontMgr;
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
+  external SkTypefaceFactory get Typeface;
   external int GetWebGLContext(
       html.CanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
@@ -122,10 +123,14 @@ class CanvasKit {
   /// Typically pixel data is obtained using [SkImage.readPixels]. The
   /// parameters specified in [SkImageInfo] passed [SkImage.readPixels] must
   /// match [info].
-  external SkImage MakeImage(
+  external SkImage? MakeImage(
     SkImageInfo info,
     Uint8List pixels,
     int bytesPerRow,
+  );
+  external SkImage? MakeLazyImageFromTextureSource(
+    Object src,
+    SkPartialImageInfo info,
   );
 }
 
@@ -1869,12 +1874,17 @@ class SkTonalColors {
 class SkFontMgrNamespace {
   // TODO(yjbanov): can this be made non-null? It returns null in our unit-tests right now.
   external SkFontMgr? FromData(List<Uint8List> fonts);
-  external SkFontMgr RefDefault();
 }
 
 @JS()
 class TypefaceFontProviderNamespace {
   external TypefaceFontProvider Make();
+}
+
+@JS()
+@anonymous
+class SkTypefaceFactory {
+  external SkTypeface? MakeFreeTypeFaceFromData(ByteBuffer fontData);
 }
 
 /// Collects Skia objects that are no longer necessary.
@@ -2118,9 +2128,9 @@ class SkImageInfo {
   external factory SkImageInfo({
     required int width,
     required int height,
-    SkAlphaType alphaType,
-    ColorSpace colorSpace,
-    SkColorType colorType,
+    required SkColorType colorType,
+    required SkAlphaType alphaType,
+    required ColorSpace colorSpace,
   });
   external SkAlphaType get alphaType;
   external ColorSpace get colorSpace;
@@ -2134,4 +2144,21 @@ class SkImageInfo {
   external SkImageInfo makeColorSpace(ColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
   external SkImageInfo makeWH(int width, int height);
+}
+
+@JS()
+@anonymous
+class SkPartialImageInfo {
+  external factory SkPartialImageInfo({
+    required int width,
+    required int height,
+    required SkColorType colorType,
+    required SkAlphaType alphaType,
+    required ColorSpace colorSpace,
+  });
+  external SkAlphaType get alphaType;
+  external ColorSpace get colorSpace;
+  external SkColorType get colorType;
+  external int get height;
+  external int get width;
 }

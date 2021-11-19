@@ -240,6 +240,15 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
 - (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
                                               libraryOrNil:(nullable NSString*)dartLibraryOrNil {
+  return [self runConfigurationForEntrypoint:entrypointOrNil
+                                libraryOrNil:dartLibraryOrNil
+                              entrypointArgs:nil];
+}
+
+- (flutter::RunConfiguration)runConfigurationForEntrypoint:(nullable NSString*)entrypointOrNil
+                                              libraryOrNil:(nullable NSString*)dartLibraryOrNil
+                                            entrypointArgs:
+                                                (nullable NSArray<NSString*>*)entrypointArgs {
   auto config = flutter::RunConfiguration::InferFromSettings(_settings);
   if (dartLibraryOrNil && entrypointOrNil) {
     config.SetEntrypointAndLibrary(std::string([entrypointOrNil UTF8String]),
@@ -248,6 +257,15 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   } else if (entrypointOrNil) {
     config.SetEntrypoint(std::string([entrypointOrNil UTF8String]));
   }
+
+  if (entrypointArgs.count) {
+    std::vector<std::string> cppEntrypointArgs;
+    for (NSString* arg in entrypointArgs) {
+      cppEntrypointArgs.push_back(std::string([arg UTF8String]));
+    }
+    config.SetEntrypointArgs(cppEntrypointArgs);
+  }
+
   return config;
 }
 
@@ -273,7 +291,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   if (exceptionDomains == nil) {
     return @"";
   }
-  NSMutableArray* networkConfigArray = [[NSMutableArray alloc] init];
+  NSMutableArray* networkConfigArray = [[[NSMutableArray alloc] init] autorelease];
   for (NSString* domain in exceptionDomains) {
     NSDictionary* domainConfiguration = [exceptionDomains objectForKey:domain];
     // Default value is false.
@@ -288,7 +306,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   NSData* jsonData = [NSJSONSerialization dataWithJSONObject:networkConfigArray
                                                      options:0
                                                        error:NULL];
-  return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+  return [[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding] autorelease];
 }
 
 + (bool)allowsArbitraryLoads:(NSDictionary*)appTransportSecurity {
