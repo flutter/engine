@@ -215,6 +215,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
                                                                                 nibName:nil
                                                                                  bundle:nil];
   id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock goToApplicationLifecycle:@"AppLifecycleState.detached"]);
+  OCMStub([mockEngine destroyContext]);
   [viewController applicationWillTerminate:nil];
   OCMVerify([viewControllerMock goToApplicationLifecycle:@"AppLifecycleState.detached"]);
   OCMVerify([mockEngine destroyContext]);
