@@ -356,10 +356,9 @@ class PlatformDispatcher {
       _invoke1<KeyData>(
         (KeyData keyData) {
           final bool handled = onKeyData(keyData);
-          final Uint8List response = Uint8List.fromList(<int>[
-            if (handled) 1 else 0,
-          ]);
-          callback(ByteData.sublistView(response));
+          final Uint8List response = Uint8List(1);
+          response[0] = handled ? 1 : 0;
+          callback(response.buffer.asByteData());
         },
         zone,
         _unpackKeyData(packet!),
