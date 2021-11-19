@@ -25,8 +25,7 @@ class AndroidImageGenerator : public ImageGenerator {
   const SkImageInfo& GetInfo() override;
 
   // |ImageGenerator|
-  unsigned int GetFrameCount()
-  const override;
+  unsigned int GetFrameCount() const override;
 
   // |ImageGenerator|
   unsigned int GetPlayCount() const override;

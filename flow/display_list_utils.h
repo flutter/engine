@@ -227,8 +227,7 @@ class ClipBoundsDispatchHelper : public virtual Dispatcher,
 
 class BoundsAccumulator {
  public:
-  void accumulate(const SkPoint& p)
-  { accumulate(p.fX, p.fY); }
+  void accumulate(const SkPoint& p) { accumulate(p.fX, p.fY); }
   void accumulate(SkScalar x, SkScalar y) {
     if (min_x_ > x) {
       min_x_ = x;

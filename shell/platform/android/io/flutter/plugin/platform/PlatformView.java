@@ -29,8 +29,7 @@ public interface PlatformView {
    */
   // Default interface methods are supported on all min SDK versions of Android.
   @SuppressLint("NewApi")
-  default void
-  onFlutterViewAttached(@NonNull View flutterView) {}
+  default void onFlutterViewAttached(@NonNull View flutterView) {}
 
   /**
    * Called by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
