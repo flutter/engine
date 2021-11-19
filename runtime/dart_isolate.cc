@@ -203,7 +203,11 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
 #else
   // TODO(93459): Remove 'dart_entrypoint_args' from 'Settings' when it is no
   // longer used. https://github.com/flutter/flutter/issues/93459
-  const std::vector<std::string>& args = settings.dart_entrypoint_args;
+  FML_DCHECK(dart_entrypoint_args.empty() ||
+             settings.dart_entrypoint_args.empty());
+  const std::vector<std::string>& args = !dart_entrypoint_args.empty()
+                                             ? dart_entrypoint_args
+                                             : settings.dart_entrypoint_args;
 #endif
 
   if (!isolate->RunFromLibrary(dart_entrypoint_library,  //
