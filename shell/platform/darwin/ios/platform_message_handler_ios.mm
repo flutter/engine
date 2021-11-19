@@ -90,13 +90,13 @@ void PlatformMessageHandlerIos::InvokePlatformMessageResponseCallback(
     int response_id,
     std::unique_ptr<fml::Mapping> mapping) {
   // Called from any thread.
-  // TODO(gaaclarke: This vestigal from the Android implementation, find a way
+  // TODO(gaaclarke): This vestigal from the Android implementation, find a way
   // to migrate this to PlatformMessageHandlerAndroid.
 }
 
 void PlatformMessageHandlerIos::InvokePlatformMessageEmptyResponseCallback(int response_id) {
   // Called from any thread.
-  // TODO(gaaclarke: This vestigal from the Android implementation, find a way
+  // TODO(gaaclarke): This vestigal from the Android implementation, find a way
   // to migrate this to PlatformMessageHandlerAndroid.
 }
 

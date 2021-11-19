@@ -108,7 +108,6 @@
   OCMStub([codec encodeMethodCall:[OCMArg any]]).andReturn(encodedMethodCall);
   FlutterMethodCallHandler handler =
       ^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
-        NSLog(@"hey");
       };
   [channel setMethodCallHandler:handler];
   OCMVerify([binaryMessenger setMessageHandlerOnChannel:channelName
@@ -175,7 +174,6 @@
                                        binaryMessenger:binaryMessenger
                                                  codec:codec];
   FlutterMessageHandler handler = ^(id _Nullable message, FlutterReply callback) {
-    NSLog(@"hey");
   };
   OCMStub([binaryMessenger setMessageHandlerOnChannel:channelName
                                  binaryMessageHandler:[OCMArg any]])
@@ -223,7 +221,6 @@
                                                  codec:codec
                                              taskQueue:taskQueue];
   FlutterMessageHandler handler = ^(id _Nullable message, FlutterReply callback) {
-    NSLog(@"hey");
   };
   OCMStub([binaryMessenger setMessageHandlerOnChannel:channelName
                                  binaryMessageHandler:[OCMArg any]
@@ -249,7 +246,6 @@
                                                                    taskQueue:taskQueue];
   XCTAssertNotNil(channel);
   FlutterMethodCallHandler handler = ^(FlutterMethodCall* call, FlutterResult result) {
-    NSLog(@"hey");
   };
   OCMStub([binaryMessenger setMessageHandlerOnChannel:channelName
                                  binaryMessageHandler:[OCMArg any]

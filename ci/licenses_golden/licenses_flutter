@@ -1190,6 +1190,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_message_handler_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_message_handler_ios.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/platform_message_handler_ios_test.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
