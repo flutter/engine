@@ -42,7 +42,8 @@ class scoped_nsprotocol {
  public:
   explicit scoped_nsprotocol(NST object = nil) : object_(object) {}
 
-  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) : object_([that.object_ retain]) {}
+  scoped_nsprotocol(const scoped_nsprotocol<NST>& that) :
+  object_([that.object_ retain]) {}
 
   template <typename NSU>
   scoped_nsprotocol(const scoped_nsprotocol<NSU>& that) : object_([that.get() retain]) {}
