@@ -943,23 +943,6 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewDispatchKeyDataPacket(
-    std::unique_ptr<KeyDataPacket> packet,
-    std::function<void(bool /* handled */)> callback) {
-  TRACE_EVENT0("flutter", "Shell::OnPlatformViewDispatchKeyDataPacket");
-  FML_DCHECK(is_setup_);
-  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
-
-  task_runners_.GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = weak_engine_, packet = std::move(packet),
-                         callback = std::move(callback)]() mutable {
-        if (engine) {
-          engine->DispatchKeyDataPacket(std::move(packet), std::move(callback));
-        }
-      }));
-}
-
-// |PlatformView::Delegate|
 void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
                                                   SemanticsAction action,
                                                   fml::MallocMapping args) {
@@ -1573,6 +1556,7 @@ bool Shell::OnServiceProtocolRunInView(
 
   configuration.SetEntrypointAndLibrary(engine_->GetLastEntrypoint(),
                                         engine_->GetLastEntrypointLibrary());
+  configuration.SetEntrypointArgs(engine_->GetLastEntrypointArgs());
 
   configuration.AddAssetResolver(std::make_unique<DirectoryAssetBundle>(
       fml::OpenDirectory(asset_directory_path.c_str(), false,

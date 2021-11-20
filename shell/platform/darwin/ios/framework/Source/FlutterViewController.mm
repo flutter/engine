@@ -648,7 +648,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     // Register internal plugins before starting the engine.
     [self addInternalPlugins];
 
-    [_engine.get() launchEngine:nil libraryURI:nil];
+    [_engine.get() launchEngine:nil libraryURI:nil entrypointArgs:nil];
     [_engine.get() setViewController:self];
     _engineNeedsLaunch = NO;
   }
@@ -1610,12 +1610,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
+- (NSObject<FlutterTaskQueue>*)makeBackgroundTaskQueue {
+  return [_engine.get().binaryMessenger makeBackgroundTaskQueue];
+}
+
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
                                           binaryMessageHandler:
                                               (FlutterBinaryMessageHandler)handler {
+  return [self setMessageHandlerOnChannel:channel binaryMessageHandler:handler taskQueue:nil];
+}
+
+- (FlutterBinaryMessengerConnection)
+    setMessageHandlerOnChannel:(NSString*)channel
+          binaryMessageHandler:(FlutterBinaryMessageHandler _Nullable)handler
+                     taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   NSAssert(channel, @"The channel must not be null");
   return [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel
-                                              binaryMessageHandler:handler];
+                                              binaryMessageHandler:handler
+                                                         taskQueue:taskQueue];
 }
 
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
