@@ -21,7 +21,11 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     VulkanDispatchTable vulkan_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : vk_(vulkan_dispatch_table.get_instance_proc_address),
-      device_(vk_, physical_device, device, queue_family_index, queue),
+      device_(vk_,
+              vulkan::VulkanHandle<VkPhysicalDevice>{physical_device},
+              vulkan::VulkanHandle<VkDevice>{device},
+              queue_family_index,
+              vulkan::VulkanHandle<VkQueue>{queue}),
       vulkan_dispatch_table_(vulkan_dispatch_table),
       external_view_embedder_(external_view_embedder) {
   // Make sure all required members of the dispatch table are checked.
@@ -31,8 +35,8 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  vk_.SetupInstanceProcAddresses(instance);
-  vk_.SetupDeviceProcAddresses(device);
+  vk_.SetupInstanceProcAddresses(vulkan::VulkanHandle<VkInstance>{instance});
+  vk_.SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
   if (!vk_.IsValid()) {
     FML_LOG(ERROR) << "VulkanProcTable invalid.";
     return;
