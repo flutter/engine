@@ -1,5 +1,5 @@
-platforms;android-31
-cmdline-tools;latest
-build-tools;31.0.0
-platform-tools
-tools
+platforms;android-31:platforms
+cmdline-tools;latest:cmdline-tools
+build-tools;31.0.0:build-tools
+platform-tools:platform-tools
+tools:tools
