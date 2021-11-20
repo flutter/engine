@@ -3,15 +3,16 @@
 # This script requires depot_tools to be on path.
 
 print_usage () {
-  echo "Usage: create_sdk_cipd_united_package.sh <PATH_TO_SDK_DIR> <VERSION_TAG>"
+  echo "Usage: create_sdk_cipd_united_package.sh <VERSION_TAG> [PATH_TO_SDK_DIR]"
   echo "  where:"
-  echo "    - PATH_TO_SDK_DIR is the path to the sdk folder"
-  echo "    - VERSION_TAG is the version of the package, e.g. 28r6 or 31v1"
+  echo "    - VERSION_TAG is the tag of the cipd packages, e.g. 28r6 or 31v1"
+  echo "    - PATH_TO_SDK_DIR is the path to the sdk folder. If omitted, this defaults to"
+  echo "                      your ANDROID_SDK_ROOT environment variable."
   echo ""
   echo "This script downloads the packages specified in android_sdk_packages.txt and uploads"
   echo "them to CIPD for linux, mac, and windows."
   echo ""
-  echo "Manage the packages to download in 'android_sdk_packages.txt'. You can use"
+  echo "Manage the packages to download in 'packages.txt'. You can use"
   echo "'sdkmanager --list --include_obsolete' in cmdline-tools to list all available packages."
   echo "Packages should be listed in the format of <package-name>:<directory-to-upload>."
   echo "For example, build-tools;31.0.0:build-tools"
@@ -22,31 +23,35 @@ print_usage () {
 }
 
 # Validate version is provided
-if [[ $2 == "" ]]; then
+if [[ $1 == "" ]]; then
   print_usage
   exit 1
 fi
 
+sdk_path=${2:-$ANDROID_SDK_ROOT}
+version_tag=$1
+
 # Validate directory contains all SDK packages
-if [[ ! -d "$1" ]]; then
-  echo "Directory $1 not found."
+if [[ ! -d "$sdk_path" ]]; then
+  echo "Android SDK at '$sdk_path' not found."
   print_usage
   exit 1
 fi
-if [[ ! -d "$1/cmdline-tools" ]]; then
-  echo "SDK directory does not contain $1/cmdline-tools."
+if [[ ! -d "$sdk_path/cmdline-tools" ]]; then
+  echo "SDK directory does not contain $sdk_path/cmdline-tools."
   print_usage
   exit 1
 fi
 
 platforms=("linux" "macosx" "windows")
+package_file_name="packages.txt"
 
 # Find the sdkmanager in cmdline-tools. We default to using latest if available.
-sdkmanager_path="$1/cmdline-tools/latest/bin/sdkmanager"
+sdkmanager_path="$sdk_path/cmdline-tools/latest/bin/sdkmanager"
 find_results=()
 while IFS= read -r line; do
   find_results+=("$line")
-done < <(find "$1/cmdline-tools" -name sdkmanager)
+done < <(find "$sdk_path/cmdline-tools" -name sdkmanager)
 i=0
 while [ ! -f "$sdkmanager_path" ]; do
   if [ $i -ge ${#find_results[@]} ]; then
@@ -59,11 +64,9 @@ while [ ! -f "$sdkmanager_path" ]; do
 done
 
 # We create a new temporary SDK directory because the default working directory
-# tends to not update/redownload packages if they are being used. This guarantees
+# tends to not update/re-download packages if they are being used. This guarantees
 # a clean install of Android SDK.
-temp_dir="$1/temp_cipd_android_sdk"
-rm -rf $temp_dir
-mkdir $temp_dir
+temp_dir=`mktemp -d -t android_sdk`
 
 for platform in "${platforms[@]}"; do
   sdk_root="$temp_dir/sdk_$platform"
@@ -73,7 +76,8 @@ for platform in "${platforms[@]}"; do
   mkdir $upload_dir
 
   # Download all the packages with sdkmanager.
-  for package in $(cat android_sdk_packages.txt); do
+  for package in $(cat $package_file_name); do
+    echo $package
     split=(${package//:/ })
     echo "Installing ${split[0]}"
     REPO_OS_OVERRIDE=$platform yes "y" | $sdkmanager_path --sdk_root=$sdk_root ${split[0]}
@@ -91,7 +95,7 @@ for platform in "${platforms[@]}"; do
     cipd_name="mac-amd64"
   fi
   echo "Uploading $cipd_name to CIPD"
-  cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$2
+  cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$version_tag
 
   rm -rf $sdk_root
 done
