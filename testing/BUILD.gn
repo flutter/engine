@@ -125,11 +125,19 @@ if (enable_unittests) {
   source_set("vulkan") {
     testonly = true
 
+    sources = [
+      "test_vulkan_context.cc",
+      "test_vulkan_context.h",
+      "test_vulkan_surface.cc",
+      "test_vulkan_surface.h",
+    ]
+
     defines = [ "TEST_VULKAN_PROCS" ]
 
     deps = [
       ":skia",
       "//flutter/fml",
+      "//flutter/shell/common",
       "//flutter/vulkan",
     ]
 

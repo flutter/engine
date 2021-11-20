@@ -455,25 +455,25 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
   vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
   vulkan_renderer_config_.instance =
       static_cast<EmbedderTestContextVulkan&>(context_)
-          .application_->GetInstance();
+          .context_.application_->GetInstance();
   vulkan_renderer_config_.physical_device =
       static_cast<EmbedderTestContextVulkan&>(context_)
-          .logical_device_->GetPhysicalDeviceHandle();
+          .context_.device_->GetPhysicalDeviceHandle();
   vulkan_renderer_config_.device =
       static_cast<EmbedderTestContextVulkan&>(context_)
-          .logical_device_->GetHandle();
+          .context_.device_->GetHandle();
   vulkan_renderer_config_.queue_family_index =
       static_cast<EmbedderTestContextVulkan&>(context_)
-          .logical_device_->GetGraphicsQueueIndex();
+          .context_.device_->GetGraphicsQueueIndex();
   vulkan_renderer_config_.queue =
       static_cast<EmbedderTestContextVulkan&>(context_)
-          .logical_device_->GetQueueHandle();
+          .context_.device_->GetQueueHandle();
   vulkan_renderer_config_.get_instance_proc_address_callback =
       [](void* context, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
     return reinterpret_cast<EmbedderTestContextVulkan*>(context)
-        ->vk_->GetInstanceProcAddr(reinterpret_cast<VkInstance>(instance),
-                                   name);
+        ->context_.vk_->GetInstanceProcAddr(
+            reinterpret_cast<VkInstance>(instance), name);
   };
   vulkan_renderer_config_.get_next_image_callback =
       [](void* context,

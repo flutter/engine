@@ -5,8 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_VULKAN_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_VULKAN_H_
 
-#include "tests/embedder_test_context.h"
-#include "vulkan/vulkan_application.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
+#include "flutter/testing/test_vulkan_context.h"
+#include "flutter/vulkan/vulkan_application.h"
 
 namespace flutter {
 namespace testing {
@@ -31,17 +32,14 @@ class EmbedderTestContextVulkan : public EmbedderTestContext {
   bool PresentImage(VkImage image);
 
  private:
-  // This allows the builder to access the hooks.
-  friend class EmbedderConfigBuilder;
-
-  fml::RefPtr<vulkan::VulkanProcTable> vk_;
-  std::unique_ptr<vulkan::VulkanApplication> application_;
-  std::unique_ptr<vulkan::VulkanDevice> logical_device_;
+  TestVulkanContext context_;
 
   SkISize surface_size_ = SkISize::MakeEmpty();
   size_t present_count_ = 0;
 
   void SetupSurface(SkISize surface_size) override;
+
+  friend class EmbedderConfigBuilder;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContextVulkan);
 };
