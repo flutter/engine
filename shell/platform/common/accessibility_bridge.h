@@ -100,6 +100,7 @@ class AccessibilityBridge
     virtual std::shared_ptr<FlutterPlatformNodeDelegate>
     CreateFlutterPlatformNodeDelegate() = 0;
   };
+
   //-----------------------------------------------------------------------------
   /// @brief      Creates a new instance of a accessibility bridge.
   ///
@@ -108,6 +109,11 @@ class AccessibilityBridge
   ///                                 through GetUserData().
   AccessibilityBridge(std::unique_ptr<AccessibilityBridgeDelegate> delegate);
   ~AccessibilityBridge();
+
+  //-----------------------------------------------------------------------------
+  /// @brief      The ID of the root node in the accessibility tree. In Flutter,
+  //              this is always 0.
+  static constexpr int32_t kRootNodeId = 0;
 
   //------------------------------------------------------------------------------
   /// @brief      Adds a semantics node update to the pending semantics update.
