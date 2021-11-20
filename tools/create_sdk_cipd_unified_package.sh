@@ -58,6 +58,9 @@ while [ ! -f "$sdkmanager_path" ]; do
   ((i++))
 done
 
+# We create a new temporary SDK directory because the default working directory
+# tends to not update/redownload packages if they are being used. This guarantees
+# a clean install of Android SDK.
 temp_dir="$1/temp_cipd_android_sdk"
 rm -rf $temp_dir
 mkdir $temp_dir
@@ -88,7 +91,8 @@ for platform in "${platforms[@]}"; do
     cipd_name="mac-amd64"
   fi
   echo "Uploading $cipd_name to CIPD"
-  # cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$2
+  cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$2
+
   rm -rf $sdk_root
 done
 rm -rf $temp_dir
