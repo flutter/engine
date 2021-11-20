@@ -234,9 +234,9 @@ void FlutterWindowWinUWP::OnPointerExited(
     winrt::Windows::Foundation::IInspectable const&,
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerLeave(device_kind,
-                                            kDefaultPointerDeviceId);
+  binding_handler_delegate_->OnPointerLeave(device_kind, pointer_id);
 }
 
 void FlutterWindowWinUWP::OnPointerMoved(
