@@ -122,15 +122,6 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
   context.advisory_script_uri = "main.dart";
   context.advisory_script_entrypoint = entrypoint.c_str();
 
-  std::vector<std::string> entrypoint_args;
-#if !OS_FUCHSIA
-  entrypoint_args = args;
-#else
-  // TODO(93459): Remove 'dart_entrypoint_args' from 'Settings' when it is no
-  // longer used. https://github.com/flutter/flutter/issues/93459
-  settings.dart_entrypoint_args = args;
-#endif
-
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
           settings,                            // settings
@@ -142,7 +133,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
           settings.isolate_shutdown_callback,  // isolate shutdown callback
           entrypoint,                          // entrypoint
           std::nullopt,                        // library
-          entrypoint_args,                     // args
+          args,                                // args
           std::move(isolate_configuration),    // isolate configuration
           context                              // engine context
           )

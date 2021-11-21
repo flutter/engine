@@ -125,7 +125,7 @@ ComponentV1::ComponentV1(
 
   // LaunchInfo::arguments optional.
   if (auto& arguments = launch_info.arguments) {
-    settings_.dart_entrypoint_args = arguments.value();
+    dart_entrypoint_args_ = arguments.value();
   }
 
   // Determine where data and assets are stored within /pkg.
@@ -548,7 +548,8 @@ void ComponentV1::CreateViewWithViewRef(
       },
       std::move(fdio_ns_),            // FDIO namespace
       std::move(directory_request_),  // outgoing request
-      product_config_                 // product configuration
+      product_config_,                // product configuration
+      dart_entrypoint_args_           // dart entrypoint args
       ));
 }
 
@@ -571,7 +572,8 @@ void ComponentV1::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
       scenic::ViewRefPair::New(),                     // view ref pair
       std::move(fdio_ns_),                            // FDIO namespace
       std::move(directory_request_),                  // outgoing request
-      product_config_                                 // product configuration
+      product_config_,                                // product configuration
+      dart_entrypoint_args_                           // dart entrypoint args
       ));
 }
 

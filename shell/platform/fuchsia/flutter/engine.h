@@ -60,7 +60,8 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         FlutterRunnerProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config,
+         const std::vector<std::string>& dart_entrypoint_args);
 
   // Flatland connection ctor.
   Engine(Delegate& delegate,
@@ -72,7 +73,8 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         FlutterRunnerProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config,
+         const std::vector<std::string>& dart_entrypoint_args);
 
   ~Engine();
 
