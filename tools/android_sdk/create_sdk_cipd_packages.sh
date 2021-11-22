@@ -28,6 +28,12 @@ if [[ $1 == "" ]]; then
   exit 1
 fi
 
+# Validate path contains depot_tools
+if [[ `which cipd` == "" ]]; then
+  echo "'cipd' command not found. depot_tools should be on the path."
+  exit 1
+fi
+
 sdk_path=${2:-$ANDROID_SDK_ROOT}
 version_tag=$1
 
