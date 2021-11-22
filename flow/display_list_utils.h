@@ -97,7 +97,7 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
 class SkPaintDispatchHelper : public virtual Dispatcher {
  public:
   SkPaintDispatchHelper(SkAlpha extra_alpha = SK_AlphaOPAQUE)
-      : extra_alpha_(extra_alpha) {
+      : current_color_(SK_ColorBLACK), extra_alpha_(extra_alpha) {
     if (extra_alpha < SK_AlphaOPAQUE) {
       paint_.setAlpha(extra_alpha);
     }
@@ -124,13 +124,28 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   const SkPaint& paint() { return paint_; }
   SkAlpha extra_alpha() { return extra_alpha_; }
 
+ protected:
+  void save_extra_alpha(bool reset_and_restore);
+  void restore_extra_alpha();
+
  private:
   SkPaint paint_;
-  SkAlpha extra_alpha_;
   bool invert_colors_ = false;
   sk_sp<SkColorFilter> color_filter_;
 
   sk_sp<SkColorFilter> makeColorFilter();
+
+  struct SaveInfo {
+    SaveInfo(SkAlpha extra_alpha, bool restore_alpha)
+        : extra_alpha(extra_alpha), restore_alpha(restore_alpha) {}
+
+    SkAlpha extra_alpha;
+    bool restore_alpha;
+  };
+  std::vector<SaveInfo> save_stack_;
+
+  SkColor current_color_;
+  SkAlpha extra_alpha_;
 };
 
 class SkMatrixSource {

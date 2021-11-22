@@ -26,14 +26,17 @@ const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
 
 void DisplayListCanvasDispatcher::save() {
   canvas_->save();
+  save_extra_alpha(false);
 }
 void DisplayListCanvasDispatcher::restore() {
   canvas_->restore();
+  restore_extra_alpha();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
                                             bool restore_with_paint) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_->saveLayer(bounds, safe_paint(restore_with_paint));
+  save_extra_alpha(true);
 }
 
 void DisplayListCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {
