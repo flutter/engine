@@ -7,6 +7,7 @@ assert(is_ios)
 import("//build/config/ios/ios_sdk.gni")
 import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
 import("//flutter/testing/testing.gni")
@@ -78,8 +79,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterRestorationPlugin.mm",
     "framework/Source/FlutterSemanticsScrollView.h",
     "framework/Source/FlutterSemanticsScrollView.mm",
-    "framework/Source/FlutterTextEditingDelta.h",
-    "framework/Source/FlutterTextEditingDelta.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
@@ -101,8 +100,6 @@ source_set("flutter_framework_source") {
     "framework/Source/connection_collection.mm",
     "framework/Source/platform_message_response_darwin.h",
     "framework/Source/platform_message_response_darwin.mm",
-    "framework/Source/platform_message_router.h",
-    "framework/Source/platform_message_router.mm",
     "framework/Source/profiler_metrics_ios.h",
     "framework/Source/profiler_metrics_ios.mm",
     "framework/Source/vsync_waiter_ios.h",
@@ -127,6 +124,8 @@ source_set("flutter_framework_source") {
     "ios_surface_software.mm",
     "ios_switchable_gl_context.h",
     "ios_switchable_gl_context.mm",
+    "platform_message_handler_ios.h",
+    "platform_message_handler_ios.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
     "rendering_api_selection.h",
@@ -160,6 +159,7 @@ source_set("flutter_framework_source") {
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/shell/common",
+    "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
@@ -205,9 +205,12 @@ source_set("ios_test_flutter_mrc") {
     "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/FlutterViewTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
+    "platform_message_handler_ios_test.mm",
   ]
   deps = [
     ":flutter_framework_source",
+    "//flutter/common:common",
+    "//flutter/shell/common:common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/third_party/tonic",
@@ -216,6 +219,10 @@ source_set("ios_test_flutter_mrc") {
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
+
+  if (shell_enable_vulkan) {
+    deps += [ "//flutter/vulkan" ]
+  }
 }
 
 shared_library("ios_test_flutter") {
@@ -249,7 +256,6 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterKeyboardManagerTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
     "framework/Source/FlutterRestorationPluginTest.mm",
-    "framework/Source/FlutterTextEditingDeltaTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",

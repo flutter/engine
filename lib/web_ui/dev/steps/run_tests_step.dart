@@ -40,12 +40,14 @@ class RunTestsStep implements PipelineStep {
     required this.doUpdateScreenshotGoldens,
     required this.requireSkiaGold,
     this.testFiles,
+    required this.overridePathToCanvasKit,
   }) : _browserEnvironment = getBrowserEnvironment(browserName);
 
   final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
   final bool doUpdateScreenshotGoldens;
+  final String? overridePathToCanvasKit;
 
   /// Require Skia Gold to be available and reachable.
   final bool requireSkiaGold;
@@ -75,7 +77,7 @@ class RunTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await _prepareTestResultsDirectory();
-    await _browserEnvironment.prepareEnvironment();
+    await _browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
 
@@ -124,6 +126,7 @@ class RunTestsStep implements PipelineStep {
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
     }
 
@@ -137,6 +140,7 @@ class RunTestsStep implements PipelineStep {
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
       _checkExitCode('Unit tests');
     }
@@ -152,6 +156,7 @@ class RunTestsStep implements PipelineStep {
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
       _checkExitCode('Golden tests');
     }
@@ -239,6 +244,7 @@ Future<void> _runTestBatch({
   required int concurrency,
   required bool expectFailure,
   required SkiaGoldClient? skiaClient,
+  required String? overridePathToCanvasKit,
 }) async {
   final String configurationFilePath = pathlib.join(
     environment.webUiRootDir.path,
@@ -276,6 +282,7 @@ Future<void> _runTestBatch({
       // expected to fail.
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       skiaClient: skiaClient,
+      overridePathToCanvasKit: overridePathToCanvasKit,
     );
   });
 

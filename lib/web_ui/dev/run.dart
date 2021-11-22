@@ -63,6 +63,7 @@ class RunCommand extends Command<bool> with ArgUtils<bool> {
           isDebug: false,
           doUpdateScreenshotGoldens: false,
           requireSkiaGold: requireSkiaGold,
+          overridePathToCanvasKit: null,
         ),
     };
 
