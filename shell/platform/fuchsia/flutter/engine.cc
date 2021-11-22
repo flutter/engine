@@ -356,7 +356,7 @@ void Engine::Initialize(
   // so it must be called before WarmupSkps() is called below.
   auto run_configuration = flutter::RunConfiguration::InferFromSettings(
       settings, task_runners.GetIOTaskRunner());
-  run_configuration.SetEntrypointArgs(dart_entrypoint_args);
+  run_configuration.SetEntrypointArgs(std::move(dart_entrypoint_args));
 
   OnSemanticsNodeUpdate on_semantics_node_update_callback =
       [this](flutter::SemanticsNodeUpdates updates, float pixel_ratio) {

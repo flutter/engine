@@ -1317,7 +1317,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
       arguments[i] = std::string{args->dart_entrypoint_argv[i]};
     }
-    run_configuration.SetEntrypointArgs(arguments);
+    run_configuration.SetEntrypointArgs(std::move(arguments));
   }
 
   if (!run_configuration.IsValid()) {
