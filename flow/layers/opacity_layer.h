@@ -33,14 +33,20 @@ class OpacityLayer : public MergedContainerLayer {
 
   void Paint(PaintContext& context) const override;
 
-  bool layer_can_accept_opacity() override { return true; }
-
-  bool container_can_pass_opacity_to_children() override { return true; }
+  // Returns whether the children are capable of inheriting an opacity value
+  // and modifying their rendering accordingly. This value is only guaranteed
+  // to be valid after the local |Preroll| method is called.
+  bool children_can_accept_opacity() const {
+    return children_can_accept_opacity_;
+  }
+  void set_children_can_accept_opacity(bool value) {
+    children_can_accept_opacity_ = value;
+  }
 
  private:
   SkAlpha alpha_;
   SkPoint offset_;
-  bool subtree_can_accept_opacity_;
+  bool children_can_accept_opacity_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };

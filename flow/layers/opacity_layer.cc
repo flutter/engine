@@ -10,7 +10,12 @@
 namespace flutter {
 
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
-    : alpha_(alpha), offset_(offset) {}
+    : alpha_(alpha), offset_(offset), children_can_accept_opacity_(false) {
+  // We can always inhert opacity even if we cannot pass it along to
+  // our children as we can accumulate the inherited opacity into our
+  // own opacity value before we recurse.
+  set_layer_can_inherit_opacity(true);
+}
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -50,12 +55,11 @@ void OpacityLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   context->mutators_stack.Pop();
   context->mutators_stack.Pop();
 
-  subtree_can_accept_opacity_ = context->subtree_can_accept_opacity;
-  context->subtree_can_accept_opacity = true;
+  set_children_can_accept_opacity(context->subtree_can_inherit_opacity);
 
   set_paint_bounds(paint_bounds().makeOffset(offset_.fX, offset_.fY));
 
-  if (!subtree_can_accept_opacity_) {
+  if (!children_can_accept_opacity()) {
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
     child_matrix = RasterCache::GetIntegralTransCTM(child_matrix);
 #endif
@@ -73,19 +77,19 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
 
-  SkAlpha inherited_alpha = context.inherited_alpha;
-  SkAlpha alpha =
-      (alpha_ * inherited_alpha + SK_AlphaOPAQUE / 2) / SK_AlphaOPAQUE;
+  SkAlpha inherited_opacity = context.inherited_opacity;
+  SkAlpha subtree_opacity =
+      (alpha_ * inherited_opacity + SK_AlphaOPAQUE / 2) / SK_AlphaOPAQUE;
 
-  if (subtree_can_accept_opacity_) {
-    context.inherited_alpha = alpha;
+  if (children_can_accept_opacity()) {
+    context.inherited_opacity = subtree_opacity;
     PaintChildren(context);
-    context.inherited_alpha = inherited_alpha;
+    context.inherited_opacity = inherited_opacity;
     return;
   }
 
   SkPaint paint;
-  paint.setAlpha(alpha);
+  paint.setAlpha(subtree_opacity);
 
 #ifndef SUPPORT_FRACTIONAL_TRANSLATION
   context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(

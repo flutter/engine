@@ -171,15 +171,7 @@ class DisplayList : public SkRefCnt {
   static const SkSamplingOptions MipmapSampling;
   static const SkSamplingOptions CubicSampling;
 
-  DisplayList()
-      : byte_count_(0),
-        op_count_(0),
-        nested_byte_count_(0),
-        nested_op_count_(0),
-        unique_id_(0),
-        bounds_({0, 0, 0, 0}),
-        bounds_cull_({0, 0, 0, 0}) {}
-
+  DisplayList();
   ~DisplayList();
 
   void Dispatch(Dispatcher& ctx) const {
@@ -187,7 +179,7 @@ class DisplayList : public SkRefCnt {
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
 
-  void RenderTo(SkCanvas* canvas) const;
+  void RenderTo(SkCanvas* canvas, SkAlpha extra_alpha = SK_AlphaOPAQUE) const;
 
   // SkPicture always includes nested bytes, but nested ops are
   // only included if requested. The defaults used here for these
@@ -212,13 +204,16 @@ class DisplayList : public SkRefCnt {
 
   bool Equals(const DisplayList& other) const;
 
+  bool can_apply_group_opacity() { return can_apply_group_opacity_; }
+
  private:
   DisplayList(uint8_t* ptr,
               size_t byte_count,
               int op_count,
               size_t nested_byte_count,
               int nested_op_count,
-              const SkRect& cull_rect);
+              const SkRect& cull_rect,
+              bool can_apply_group_opacity);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t byte_count_;
@@ -232,6 +227,8 @@ class DisplayList : public SkRefCnt {
 
   // Only used for drawPaint() and drawColor()
   SkRect bounds_cull_;
+
+  bool can_apply_group_opacity_;
 
   void ComputeBounds();
   void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
@@ -548,6 +545,14 @@ class DisplayListFlags {
   static constexpr int kUsesMaskFilter_      = 1 << 18;
   static constexpr int kUsesImageFilter_     = 1 << 19;
 
+  // Some ops have an optional paint argument. If the version
+  // stored in the DisplayList ignores the paint, but there
+  // is an option to render the same op with a paint then
+  // both of the following flags are set to indicate that
+  // a default paint object can be constructed when rendering
+  // the op to carry information imposed from outside the
+  // DisplayList (for example, the extra_alpha override).
+  static constexpr int kHasOptionalPaint_    = 1 << 29;
   static constexpr int kIgnoresPaint_        = 1 << 30;
   // clang-format on
 
@@ -631,6 +636,7 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   }
 
   bool ignores_paint() const { return has_any(kIgnoresPaint_); }
+  bool supports_optional_paint() const { return has_any(kHasOptionalPaint_); }
 
   bool applies_anti_alias() const { return has_any(kUsesAntiAlias_); }
   bool applies_dither() const { return has_any(kUsesDither_); }
@@ -746,7 +752,9 @@ class DisplayListOpFlags : DisplayListFlags {
 // If there is some code that already renders to an SkCanvas object,
 // those rendering commands can be captured into a DisplayList using
 // the DisplayListCanvasRecorder class.
-class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
+class DisplayListBuilder final : public virtual Dispatcher,
+                                 public SkRefCnt,
+                                 DisplayListOpFlags {
  public:
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect_);
   ~DisplayListBuilder();
@@ -880,7 +888,7 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   void save() override;
   void saveLayer(const SkRect* bounds, bool restore_with_paint) override;
   void restore() override;
-  int getSaveCount() { return save_level_ + 1; }
+  int getSaveCount() { return layer_stack_.size(); }
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
@@ -977,7 +985,6 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   size_t used_ = 0;
   size_t allocated_ = 0;
   int op_count_ = 0;
-  int save_level_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
@@ -995,6 +1002,42 @@ class DisplayListBuilder final : public virtual Dispatcher, public SkRefCnt {
   static bool mask_sigma_valid(SkScalar sigma) {
     return SkScalarIsFinite(sigma) && sigma > 0.0;
   }
+
+  struct LayerInfo {
+    LayerInfo(bool has_layer = false)
+        : has_layer(has_layer),
+          cannot_inherit_opacity(false),
+          has_compatible_op(false) {}
+
+    bool has_layer;
+    bool cannot_inherit_opacity;
+    bool has_compatible_op;
+
+    bool compatible_with_group_opacity() const {
+      return !cannot_inherit_opacity;
+    }
+
+    void mark_incompatible() { cannot_inherit_opacity = true; }
+
+    // For now this only allows a single compatible op to mark the
+    // layer as being compatible with group opacity. If we start
+    // computing bounds of ops in the Builder methods then we
+    // can upgrade this to checking for overlapping ops.
+    // See https://github.com/flutter/flutter/issues/93899
+    void add_compatible_op() {
+      if (!cannot_inherit_opacity) {
+        if (has_compatible_op) {
+          cannot_inherit_opacity = true;
+        } else {
+          has_compatible_op = true;
+        }
+      }
+    }
+  };
+
+  std::vector<LayerInfo> layer_stack_;
+
+  void CheckOptimizations(const DisplayListAttributeFlags& flags);
 
   void onSetAntiAlias(bool aa);
   void onSetDither(bool dither);

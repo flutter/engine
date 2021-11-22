@@ -31,6 +31,8 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
                                        SkAlpha extra_alpha = SK_AlphaOPAQUE)
       : SkPaintDispatchHelper(extra_alpha), canvas_(canvas) {}
 
+  const SkPaint* safe_paint(bool use_attributes);
+
   void save() override;
   void restore() override;
   void saveLayer(const SkRect* bounds, bool restore_with_paint) override;
@@ -117,6 +119,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
 
  private:
   SkCanvas* canvas_;
+  SkPaint temp_paint_;
 };
 
 // Receives all methods on SkCanvas and sends them to a DisplayListBuilder

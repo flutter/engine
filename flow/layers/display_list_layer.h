@@ -36,10 +36,6 @@ class DisplayListLayer : public Layer {
 
   void Paint(PaintContext& context) const override;
 
-  bool layer_can_accept_opacity() override {
-    return display_list()->op_count() == 1;
-  }
-
  private:
   SkPoint offset_;
   flutter::SkiaGPUObject<DisplayList> display_list_;

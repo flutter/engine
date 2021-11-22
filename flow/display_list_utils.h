@@ -122,6 +122,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
+  SkAlpha extra_alpha() { return extra_alpha_; }
 
  private:
   SkPaint paint_;

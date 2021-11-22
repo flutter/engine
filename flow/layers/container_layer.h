@@ -28,11 +28,6 @@ class ContainerLayer : public Layer {
   virtual void DiffChildren(DiffContext* context,
                             const ContainerLayer* old_layer);
 
-  virtual bool container_can_pass_opacity_to_children() { return false; }
-  bool layer_can_accept_opacity() override {
-    return container_can_pass_opacity_to_children();
-  }
-
  protected:
   void PrerollChildren(PrerollContext* context,
                        const SkMatrix& child_matrix,
@@ -57,13 +52,6 @@ class ContainerLayer : public Layer {
   std::vector<std::shared_ptr<Layer>> layers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContainerLayer);
-};
-
-class OpacityPassingContainerLayer : public ContainerLayer {
- public:
-  OpacityPassingContainerLayer();
-
-  bool container_can_pass_opacity_to_children() override { return true; }
 };
 
 //------------------------------------------------------------------------------
