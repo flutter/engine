@@ -399,9 +399,9 @@ class SkiaGoldClient {
   /// browser the image was rendered on.
   Map<String, dynamic> _getKeys() {
     return <String, dynamic>{
+      'Browser': browserName,
       'CI': 'luci',
       'Platform': Platform.operatingSystem,
-      'Browser': browserName,
     };
   }
 
