@@ -155,7 +155,8 @@ static jobject SpawnJNI(JNIEnv* env,
                         jlong shell_holder,
                         jstring jEntrypoint,
                         jstring jLibraryUrl,
-                        jstring jInitialRoute) {
+                        jstring jInitialRoute,
+                        jobject jEntrypointArgs) {
   jobject jni = env->NewObject(g_flutter_jni_class->obj(), g_jni_constructor);
   if (jni == nullptr) {
     FML_LOG(ERROR) << "Could not create a FlutterJNI instance";
@@ -169,9 +170,10 @@ static jobject SpawnJNI(JNIEnv* env,
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto initial_route = fml::jni::JavaStringToString(env, jInitialRoute);
+  auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
   auto spawned_shell_holder = ANDROID_SHELL_HOLDER->Spawn(
-      jni_facade, entrypoint, libraryUrl, initial_route);
+      jni_facade, entrypoint, libraryUrl, initial_route, entrypoint_args);
 
   if (spawned_shell_holder == nullptr || !spawned_shell_holder->IsValid()) {
     FML_LOG(ERROR) << "Could not spawn Shell";
@@ -237,7 +239,8 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jBundlePath,
                                             jstring jEntrypoint,
                                             jstring jLibraryUrl,
-                                            jobject jAssetManager) {
+                                            jobject jAssetManager,
+                                            jobject jEntrypointArgs) {
   auto asset_manager = std::make_shared<flutter::AssetManager>();
 
   asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
@@ -248,8 +251,10 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
 
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
+  auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
-  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl);
+  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
+                               entrypoint_args);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
@@ -281,7 +286,28 @@ static void SetViewportMetrics(JNIEnv* env,
                                jint systemGestureInsetRight,
                                jint systemGestureInsetBottom,
                                jint systemGestureInsetLeft,
-                               jint physicalTouchSlop) {
+                               jint physicalTouchSlop,
+                               jintArray javaDisplayFeaturesBounds,
+                               jintArray javaDisplayFeaturesType,
+                               jintArray javaDisplayFeaturesState) {
+  // Convert java->c++. javaDisplayFeaturesBounds, javaDisplayFeaturesType and
+  // javaDisplayFeaturesState cannot be null
+  jsize rectSize = env->GetArrayLength(javaDisplayFeaturesBounds);
+  std::vector<int> boundsIntVector(rectSize);
+  env->GetIntArrayRegion(javaDisplayFeaturesBounds, 0, rectSize,
+                         &boundsIntVector[0]);
+  std::vector<double> displayFeaturesBounds(boundsIntVector.begin(),
+                                            boundsIntVector.end());
+  jsize typeSize = env->GetArrayLength(javaDisplayFeaturesType);
+  std::vector<int> displayFeaturesType(typeSize);
+  env->GetIntArrayRegion(javaDisplayFeaturesType, 0, typeSize,
+                         &displayFeaturesType[0]);
+
+  jsize stateSize = env->GetArrayLength(javaDisplayFeaturesState);
+  std::vector<int> displayFeaturesState(stateSize);
+  env->GetIntArrayRegion(javaDisplayFeaturesState, 0, stateSize,
+                         &displayFeaturesState[0]);
+
   const flutter::ViewportMetrics metrics{
       static_cast<double>(devicePixelRatio),
       static_cast<double>(physicalWidth),
@@ -299,6 +325,9 @@ static void SetViewportMetrics(JNIEnv* env,
       static_cast<double>(systemGestureInsetBottom),
       static_cast<double>(systemGestureInsetLeft),
       static_cast<double>(physicalTouchSlop),
+      displayFeaturesBounds,
+      displayFeaturesType,
+      displayFeaturesState,
   };
 
   ANDROID_SHELL_HOLDER->GetPlatformView()->SetViewportMetrics(metrics);
@@ -629,14 +658,15 @@ bool RegisterApi(JNIEnv* env) {
       {
           .name = "nativeSpawn",
           .signature = "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/"
-                       "String;)Lio/flutter/"
+                       "String;Ljava/util/List;)Lio/flutter/"
                        "embedding/engine/FlutterJNI;",
           .fnPtr = reinterpret_cast<void*>(&SpawnJNI),
       },
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
           .signature = "(JLjava/lang/String;Ljava/lang/String;"
-                       "Ljava/lang/String;Landroid/content/res/AssetManager;)V",
+                       "Ljava/lang/String;Landroid/content/res/"
+                       "AssetManager;Ljava/util/List;)V",
           .fnPtr = reinterpret_cast<void*>(&RunBundleAndSnapshotFromLibrary),
       },
       {
@@ -700,7 +730,7 @@ bool RegisterApi(JNIEnv* env) {
       },
       {
           .name = "nativeSetViewportMetrics",
-          .signature = "(JFIIIIIIIIIIIIIII)V",
+          .signature = "(JFIIIIIIIIIIIIIII[I[I[I)V",
           .fnPtr = reinterpret_cast<void*>(&SetViewportMetrics),
       },
       {
@@ -1565,13 +1595,14 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
     return kUnknownDisplayRefreshRate;
   }
 
-  jclass clazz = env->GetObjectClass(java_object.obj());
-  if (clazz == nullptr) {
+  fml::jni::ScopedJavaLocalRef<jclass> clazz(
+      env, env->GetObjectClass(java_object.obj()));
+  if (clazz.is_null()) {
     return kUnknownDisplayRefreshRate;
   }
 
-  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
-  return static_cast<double>(env->GetStaticFloatField(clazz, fid));
+  jfieldID fid = env->GetStaticFieldID(clazz.obj(), "refreshRateFPS", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz.obj(), fid));
 }
 
 bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(

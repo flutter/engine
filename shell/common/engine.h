@@ -736,21 +736,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
                                  uint64_t trace_flow_id);
 
   //----------------------------------------------------------------------------
-  /// @brief      Notifies the engine that the embedder has sent it a key data
-  ///             packet. A key data packet contains one key event. This call
-  ///             originates in the platform view and the shell has forwarded
-  ///             the same to the engine on the UI task runner here. The engine
-  ///             will decide whether to handle this event, and send the
-  ///             result using `callback`, which will be called exactly once.
-  ///
-  /// @param[in]  packet    The key data packet.
-  /// @param[in]  callback  Called when the framework has decided whether
-  ///                       to handle this key data.
-  ///
-  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                             KeyDataResponse callback);
-
-  //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
   ///             accessibility related action on the specified node. This call
   ///             originates on the platform view and has been forwarded to the
@@ -833,6 +818,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             RunConfiguration when |Engine::Run| was called.
   ///
   const std::string& GetLastEntrypointLibrary() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the last Entrypoint Arguments that was used in the
+  ///             RunConfiguration when |Engine::Run| was called.This is only
+  ///             valid in debug mode.
+  ///
+  const std::vector<std::string>& GetLastEntrypointArgs() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Getter for the initial route.  This can be set with a platform
@@ -970,6 +962,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   std::string last_entry_point_;
   std::string last_entry_point_library_;
+  std::vector<std::string> last_entry_point_args_;
   std::string initial_route_;
   ViewportMetrics viewport_metrics_;
   std::shared_ptr<AssetManager> asset_manager_;
