@@ -282,7 +282,8 @@ bool FlutterWindowsEngine::RunWithEntrypoint(const char* entrypoint) {
           host->accessibility_bridge_->CommitUpdates();
           return;
         }
-        // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
+        host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
+            action);
       };
 
   args.custom_task_runners = &custom_task_runners;
