@@ -94,8 +94,8 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
-  AccessibilityBridge* accessibility_bridge() {
-    return accessibility_bridge_.get();
+  std::weak_ptr<AccessibilityBridge> accessibility_bridge() {
+    return accessibility_bridge_;
   }
 
 #ifndef WINUWP
