@@ -21,8 +21,7 @@ namespace testing {
 
 using Embedder11yTest = testing::EmbedderTest;
 
-// TODO(52372): De-flake and re-enable.
-TEST_F(Embedder11yTest, DISABLED_A11yTreeIsConsistent) {
+TEST_F(Embedder11yTest, A11yTreeIsConsistent) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   fml::AutoResetWaitableEvent latch;
@@ -188,6 +187,7 @@ TEST_F(Embedder11yTest, DISABLED_A11yTreeIsConsistent) {
   std::vector<uint8_t> bytes({2, 1});
   result = FlutterEngineDispatchSemanticsAction(
       engine.get(), 42, kFlutterSemanticsActionTap, &bytes[0], bytes.size());
+  ASSERT_EQ(result, FlutterEngineResult::kSuccess);
   latch.Wait();
 
   // Disable semantics. Wait for NotifySemanticsEnabled(false).

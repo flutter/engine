@@ -44,8 +44,9 @@ using FlatlandViewIdCallback =
 class FlatlandExternalViewEmbedder final
     : public flutter::ExternalViewEmbedder {
  public:
+  constexpr static uint32_t kFlatlandDefaultViewportSize = 32;
+
   FlatlandExternalViewEmbedder(
-      std::string debug_label,
       fuchsia::ui::views::ViewCreationToken view_creation_token,
       fuchsia::ui::views::ViewIdentityOnCreation view_identity,
       fuchsia::ui::composition::ViewBoundProtocols endpoints,
@@ -163,6 +164,7 @@ class FlatlandExternalViewEmbedder final
   };
 
   struct FlatlandLayer {
+    // Transform on which Images are set.
     fuchsia::ui::composition::TransformId transform_id;
   };
 
@@ -177,6 +179,7 @@ class FlatlandExternalViewEmbedder final
 
   std::unordered_map<EmbedderLayerId, EmbedderLayer> frame_layers_;
   std::vector<EmbedderLayerId> frame_composition_order_;
+  std::vector<fuchsia::ui::composition::TransformId> child_transforms_;
   SkISize frame_size_ = SkISize::Make(0, 0);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlatlandExternalViewEmbedder);

@@ -129,7 +129,7 @@ static SkColorType FirstSupportedColorType(GrDirectContext* context,
 static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
                                             const SkISize& size,
                                             intptr_t fbo) {
-  GrGLenum format;
+  GrGLenum format = kUnknown_SkColorType;
   const SkColorType color_type = FirstSupportedColorType(context, &format);
 
   GrGLFramebufferInfo framebuffer_info = {};
@@ -216,11 +216,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
     return nullptr;
   }
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface.
   if (!render_to_surface_) {
+    framebuffer_info.supports_readback = true;
     return std::make_unique<SurfaceFrame>(
-        nullptr, true, [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        nullptr, std::move(framebuffer_info),
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
         });
   }
@@ -238,15 +242,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
                                           SkCanvas* canvas) {
-        return weak ? weak->PresentSurface(canvas) : false;
+        return weak ? weak->PresentSurface(
+                          surface_frame.submit_info().target_time, canvas)
+                    : false;
       };
 
-  return std::make_unique<SurfaceFrame>(
-      surface, delegate_->SurfaceSupportsReadback(), submit_callback,
-      std::move(context_switch));
+  framebuffer_info = delegate_->GLContextFramebufferInfo();
+  return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
+                                        submit_callback,
+                                        std::move(context_switch));
 }
 
-bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
+bool GPUSurfaceGL::PresentSurface(fml::TimePoint target_time,
+                                  SkCanvas* canvas) {
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
     return false;
   }
@@ -256,7 +264,7 @@ bool GPUSurfaceGL::PresentSurface(SkCanvas* canvas) {
     onscreen_surface_->getCanvas()->flush();
   }
 
-  if (!delegate_->GLContextPresent(fbo_id_)) {
+  if (!delegate_->GLContextPresent(target_time, fbo_id_)) {
     return false;
   }
 

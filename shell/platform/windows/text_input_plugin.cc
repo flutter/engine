@@ -7,7 +7,6 @@
 #include <windows.h>
 
 #include <cstdint>
-#include <iostream>
 
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
@@ -71,7 +70,7 @@ bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
   if (active_model_ == nullptr) {
     return false;
   }
-  if (action == WM_KEYDOWN) {
+  if (action == WM_KEYDOWN || action == WM_SYSKEYDOWN) {
     // Most editing keys (arrow keys, backspace, delete, etc.) are handled in
     // the framework, so don't need to be handled at this layer.
     switch (key) {
@@ -148,6 +147,12 @@ void TextInputPlugin::HandleMethodCall(
   if (method.compare(kShowMethod) == 0 || method.compare(kHideMethod) == 0) {
     // These methods are no-ops.
   } else if (method.compare(kClearClientMethod) == 0) {
+    if (active_model_ != nullptr && active_model_->composing()) {
+      active_model_->CommitComposing();
+      active_model_->EndComposing();
+      SendStateUpdate(*active_model_);
+    }
+    delegate_->OnResetImeComposing();
     active_model_ = nullptr;
   } else if (method.compare(kSetClientMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {

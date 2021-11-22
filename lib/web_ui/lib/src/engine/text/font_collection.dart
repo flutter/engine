@@ -14,9 +14,9 @@ import '../util.dart';
 import 'layout_service.dart';
 
 const String ahemFontFamily = 'Ahem';
-const String ahemFontUrl = 'packages/ui/assets/ahem.ttf';
+const String ahemFontUrl = '/assets/fonts/ahem.ttf';
 const String robotoFontFamily = 'Roboto';
-const String robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -195,6 +195,7 @@ class FontManager {
         //
         // TODO(mdebbar): Revert this once the dart:html type is fixed.
         //                https://github.com/dart-lang/sdk/issues/45676
+        // ignore: implicit_dynamic_function
         js_util.callMethod(html.document.fonts!, 'add', <dynamic>[fontFace]);
       }, onError: (dynamic e) {
         printWarning('Error while trying to load font family "$family":\n$e');

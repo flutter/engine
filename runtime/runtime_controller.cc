@@ -238,20 +238,6 @@ bool RuntimeController::DispatchPointerDataPacket(
   return false;
 }
 
-bool RuntimeController::DispatchKeyDataPacket(const KeyDataPacket& packet,
-                                              KeyDataResponse callback) {
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchKeyDataPacket", "mode",
-                 "basic");
-    uint64_t response_id =
-        platform_configuration->RegisterKeyDataResponse(std::move(callback));
-    platform_configuration->get_window(0)->DispatchKeyDataPacket(packet,
-                                                                 response_id);
-    return true;
-  }
-  return false;
-}
-
 bool RuntimeController::DispatchSemanticsAction(int32_t id,
                                                 SemanticsAction action,
                                                 fml::MallocMapping args) {
@@ -355,8 +341,10 @@ tonic::DartErrorHandleType RuntimeController::GetLastError() {
 
 bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
+    fml::closure root_isolate_create_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration) {
   if (root_isolate_.lock()) {
     FML_LOG(ERROR) << "Root isolate was already running.";
@@ -369,10 +357,12 @@ bool RuntimeController::LaunchRootIsolate(
           isolate_snapshot_,                              //
           std::make_unique<PlatformConfiguration>(this),  //
           DartIsolate::Flags{},                           //
+          root_isolate_create_callback,                   //
           isolate_create_callback_,                       //
           isolate_shutdown_callback_,                     //
           dart_entrypoint,                                //
           dart_entrypoint_library,                        //
+          dart_entrypoint_args,                           //
           std::move(isolate_configuration),               //
           context_,                                       //
           spawning_isolate_.lock().get())                 //

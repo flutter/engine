@@ -372,7 +372,7 @@ typedef uint32_t (*UIntFrameInfoCallback)(
 ///
 /// See: \ref FlutterOpenGLRendererConfig.present_with_info.
 typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterFrameInfo).
+  /// The size of this struct. Must be sizeof(FlutterPresentInfo).
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
@@ -1395,9 +1395,10 @@ typedef struct {
   /// `switches.h` engine source file.
   const char* const* command_line_argv;
   /// The callback invoked by the engine in order to give the embedder the
-  /// chance to respond to platform messages from the Dart application. The
-  /// callback will be invoked on the thread on which the `FlutterEngineRun`
-  /// call is made.
+  /// chance to respond to platform messages from the Dart application.
+  /// The callback will be invoked on the thread on which the `FlutterEngineRun`
+  /// call is made. The second parameter, `user_data`, is supplied when
+  /// `FlutterEngineRun` or `FlutterEngineInitialize` is called.
   FlutterPlatformMessageCallback platform_message_callback;
   /// The VM snapshot data buffer used in AOT operation. This buffer must be
   /// mapped in as read-only. For more information refer to the documentation on
@@ -1579,7 +1580,7 @@ typedef struct {
   // callbacks on `log_message_callback`. Defaults to "flutter" if unspecified.
   const char* log_tag;
 
-  // A callback that is invoked when the engine is restarted.
+  // A callback that is invoked right before the engine is restarted.
   //
   // This optional callback is typically used to reset states to as if the
   // engine has just been started, and usually indicates the user has requested

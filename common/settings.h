@@ -116,6 +116,10 @@ struct Settings {
   // case the primary path to the library can not be loaded.
   std::vector<std::string> application_library_path;
 
+  // Path to a library containing compiled Dart code usable for launching
+  // the VM service isolate.
+  std::vector<std::string> vmservice_snapshot_library_path;
+
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
   MappingsCallback application_kernels;
@@ -123,6 +127,8 @@ struct Settings {
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
   // Arguments passed as a List<String> to Dart's entrypoint function.
+  // TODO(93459): Remove it when it is no longer used.
+  // https://github.com/flutter/flutter/issues/93459
   std::vector<std::string> dart_entrypoint_args;
 
   // Isolate settings

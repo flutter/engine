@@ -39,12 +39,6 @@ using namespace flutter;
   fml::WeakPtr<FlutterEngine> _engine;
 }
 
-- (instancetype)init {
-  @throw([NSException exceptionWithName:@"FlutterPlatformPlugin must initWithEngine"
-                                 reason:nil
-                               userInfo:nil]);
-}
-
 - (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
   FML_DCHECK(engine) << "engine must be set";
   self = [super init];
@@ -136,19 +130,21 @@ using namespace flutter;
     mask |= UIInterfaceOrientationMaskAll;
   } else {
     for (NSString* orientation in orientations) {
-      if ([orientation isEqualToString:@"DeviceOrientation.portraitUp"])
+      if ([orientation isEqualToString:@"DeviceOrientation.portraitUp"]) {
         mask |= UIInterfaceOrientationMaskPortrait;
-      else if ([orientation isEqualToString:@"DeviceOrientation.portraitDown"])
+      } else if ([orientation isEqualToString:@"DeviceOrientation.portraitDown"]) {
         mask |= UIInterfaceOrientationMaskPortraitUpsideDown;
-      else if ([orientation isEqualToString:@"DeviceOrientation.landscapeLeft"])
+      } else if ([orientation isEqualToString:@"DeviceOrientation.landscapeLeft"]) {
         mask |= UIInterfaceOrientationMaskLandscapeLeft;
-      else if ([orientation isEqualToString:@"DeviceOrientation.landscapeRight"])
+      } else if ([orientation isEqualToString:@"DeviceOrientation.landscapeRight"]) {
         mask |= UIInterfaceOrientationMaskLandscapeRight;
+      }
     }
   }
 
-  if (!mask)
+  if (!mask) {
     return;
+  }
   [[NSNotificationCenter defaultCenter]
       postNotificationName:@(kOrientationUpdateNotificationName)
                     object:nil
@@ -205,8 +201,9 @@ using namespace flutter;
 
 - (void)setSystemChromeSystemUIOverlayStyle:(NSDictionary*)message {
   NSString* brightness = message[@"statusBarBrightness"];
-  if (brightness == (id)[NSNull null])
+  if (brightness == (id)[NSNull null]) {
     return;
+  }
 
   UIStatusBarStyle statusBarStyle;
   if ([brightness isEqualToString:@"Brightness.dark"]) {

@@ -59,10 +59,12 @@ TEST_F(DartIsolateTest, RootIsolateCreationAndShutdown) {
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
       nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
+      nullptr,                             // root_isolate_create_callback
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
+      {},                                  // dart entrypoint arguments
       std::move(isolate_configuration),    // isolate configuration
       std::move(context)                   // engine context
   );
@@ -97,10 +99,12 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
       nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
+      nullptr,                             // root_isolate_create_callback
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
+      {},                                  // dart entrypoint arguments
       std::move(isolate_configuration),    // isolate configuration
       std::move(context)                   // engine context
   );
@@ -121,7 +125,8 @@ TEST_F(DartIsolateTest, SpawnIsolate) {
       /*isolate_shutdown_callback=*/settings.isolate_shutdown_callback,
       /*dart_entrypoint=*/"main",
       /*dart_entrypoint_library=*/std::nullopt,
-      /*isolate_configration=*/std::move(spawn_configuration));
+      /*dart_entrypoint_args=*/{},
+      /*isolate_configuration=*/std::move(spawn_configuration));
   auto spawn = weak_spawn.lock();
   ASSERT_TRUE(spawn);
   ASSERT_EQ(spawn->GetPhase(), DartIsolate::Phase::Running);
@@ -170,10 +175,12 @@ TEST_F(DartIsolateTest, IsolateShutdownCallbackIsInIsolateScope) {
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
       nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
+      nullptr,                             // root_isolate_create_callback
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
+      {},                                  // dart entrypoint arguments
       std::move(isolate_configuration),    // isolate configuration
       std::move(context)                   // engine context
   );
@@ -392,10 +399,12 @@ TEST_F(DartIsolateTest, CanCreateServiceIsolate) {
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
       nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
+      nullptr,                             // root_isolate_create_callback
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
+      {},                                  // dart entrypoint arguments
       std::move(isolate_configuration),    // isolate configuration
       std::move(context)                   // engine context
   );
@@ -490,10 +499,12 @@ TEST_F(DartIsolateTest, InvalidLoadingUnitFails) {
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
       nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
+      nullptr,                             // root_isolate_create_callback
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
+      {},                                  // dart entrypoint arguments
       std::move(isolate_configuration),    // isolate configuration
       std::move(context)                   // engine context
   );

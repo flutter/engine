@@ -65,9 +65,9 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
 // A utility class that will ignore all Dispatcher methods relating
 // to setting a clip.
 class IgnoreClipDispatchHelper : public virtual Dispatcher {
-  void clipRect(const SkRect& rect, SkClipOp clip_op, bool isAA) override {}
-  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool isAA) override {}
-  void clipPath(const SkPath& path, SkClipOp clip_op, bool isAA) override {}
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override {}
+  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override {}
+  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override {}
 };
 
 // A utility class that will ignore all Dispatcher methods relating
@@ -199,7 +199,7 @@ class ClipBoundsDispatchHelper : public virtual Dispatcher,
  public:
   ClipBoundsDispatchHelper() : ClipBoundsDispatchHelper(nullptr) {}
 
-  ClipBoundsDispatchHelper(const SkRect* cull_rect)
+  explicit ClipBoundsDispatchHelper(const SkRect* cull_rect)
       : has_clip_(cull_rect),
         bounds_(cull_rect && !cull_rect->isEmpty() ? *cull_rect
                                                    : SkRect::MakeEmpty()) {}
@@ -229,14 +229,18 @@ class BoundsAccumulator {
  public:
   void accumulate(const SkPoint& p) { accumulate(p.fX, p.fY); }
   void accumulate(SkScalar x, SkScalar y) {
-    if (min_x_ > x)
+    if (min_x_ > x) {
       min_x_ = x;
-    if (min_y_ > y)
+    }
+    if (min_y_ > y) {
       min_y_ = y;
-    if (max_x_ < x)
+    }
+    if (max_x_ < x) {
       max_x_ = x;
-    if (max_y_ < y)
+    }
+    if (max_y_ < y) {
       max_y_ = y;
+    }
   }
   void accumulate(const SkRect& r) {
     if (r.fLeft <= r.fRight && r.fTop <= r.fBottom) {
@@ -267,7 +271,8 @@ class DisplayListBoundsCalculator final
     : public virtual Dispatcher,
       public virtual IgnoreAttributeDispatchHelper,
       public virtual SkMatrixDispatchHelper,
-      public virtual ClipBoundsDispatchHelper {
+      public virtual ClipBoundsDispatchHelper,
+      DisplayListOpFlags {
  public:
   // Construct a Calculator to determine the bounds of a list of
   // DisplayList dispatcher method calls. Since 2 of the method calls
@@ -278,7 +283,7 @@ class DisplayListBoundsCalculator final
   // queried using |isUnbounded| if an alternate plan is available
   // for such cases.
   // The flag should never be set if a cull_rect is provided.
-  DisplayListBoundsCalculator(const SkRect* cull_rect = nullptr);
+  explicit DisplayListBoundsCalculator(const SkRect* cull_rect = nullptr);
 
   void setStrokeCap(SkPaint::Cap cap) override;
   void setStrokeJoin(SkPaint::Join join) override;
@@ -402,7 +407,8 @@ class DisplayListBoundsCalculator final
     // the stack.
     // Some layers may substitute their own accumulator to compute
     // their own local bounds while they are on the stack.
-    LayerData(BoundsAccumulator* outer) : outer_(outer), is_unbounded_(false) {}
+    explicit LayerData(BoundsAccumulator* outer)
+        : outer_(outer), is_unbounded_(false) {}
     virtual ~LayerData() = default;
 
     // The accumulator to use while this layer is put in play by
@@ -531,61 +537,6 @@ class DisplayListBoundsCalculator final
 
   std::vector<std::unique_ptr<LayerData>> layer_infos_;
 
-  // A drawing operation that is not geometric in nature (but which
-  // may still apply a MaskFilter - see |kApplyMaskFilter| below).
-  static constexpr int kIsNonGeometric = 0x00;
-
-  // A geometric operation that is defined as a fill operation
-  // regardless of what the current paint Style is set to.
-  // This flag will automatically assume |kApplyMaskFilter|.
-  static constexpr int kIsFilledGeometry = 0x01;
-
-  // A geometric operation that is defined as a stroke operation
-  // regardless of what the current paint Style is set to.
-  // This flag will automatically assume |kApplyMaskFilter|.
-  static constexpr int kIsStrokedGeometry = 0x02;
-
-  // A geometric operation that may be a stroke or fill operation
-  // depending on the current state of the paint Style attribute.
-  // This flag will automatically assume |kApplyMaskFilter|.
-  static constexpr int kIsDrawnGeometry = 0x04;
-
-  static constexpr int kIsAnyGeometryMask =  //
-      kIsFilledGeometry |                    //
-      kIsStrokedGeometry |                   //
-      kIsDrawnGeometry;
-
-  // A geometric operation which has a path that might have
-  // end caps that are not rectilinear which means that square
-  // end caps might project further than half the stroke width
-  // from the geometry bounds.
-  // A rectilinear path such as |drawRect| will not have
-  // diagonal end caps. |drawLine| might have diagonal end
-  // caps depending on the angle of the line, and more likely
-  // |drawPath| will often have such end caps.
-  static constexpr int kGeometryMayHaveDiagonalEndCaps = 0x08;
-
-  // A geometric operation which has joined vertices that are
-  // not guaranteed to be smooth (angles of incoming and outgoing)
-  // segments at some joins may not have the same angle) or
-  // rectilinear (squares have right angles at the corners, but
-  // those corners will never extend past the bounding box of
-  // the geometry pre-transform).
-  // |drawRect|, |drawOval| and |drawRRect| all have well
-  // behaved joins, but |drawPath| might have joins that cause
-  // mitered extensions outside the pre-transformed bounding box.
-  static constexpr int kGeometryMayHaveProblematicJoins = 0x10;
-
-  // Some operations are inherently non-geometric and yet have the
-  // mask filter applied anyway.
-  // |drawImage| variants behave this way.
-  static constexpr int kApplyMaskFilter = 0x20;
-
-  // In very rare circumstances the ImageFilter is ignored.
-  // This is one of the few flags that turns off a step in
-  // estimating the bounds, rather than turning on any steps.
-  static constexpr int kIsUnfiltered = 0x40;
-
   static constexpr SkScalar kMinStrokeWidth = 0.01;
 
   skstd::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
@@ -593,7 +544,7 @@ class DisplayListBoundsCalculator final
 
   SkScalar half_stroke_width_ = kMinStrokeWidth;
   SkScalar miter_limit_ = 4.0;
-  int style_flag_ = kIsFilledGeometry;
+  SkPaint::Style style_ = SkPaint::Style::kFill_Style;
   bool join_is_miter_ = true;
   bool cap_is_square_ = false;
   sk_sp<SkImageFilter> image_filter_;
@@ -604,14 +555,14 @@ class DisplayListBoundsCalculator final
   bool paint_nops_on_transparency();
 
   static bool ComputeFilteredBounds(SkRect& rect, SkImageFilter* filter);
-  bool AdjustBoundsForPaint(SkRect& bounds, int flags);
+  bool AdjustBoundsForPaint(SkRect& bounds, DisplayListAttributeFlags flags);
 
   void AccumulateUnbounded();
-  void AccumulateRect(const SkRect& rect, int flags) {
+  void AccumulateRect(const SkRect& rect, DisplayListAttributeFlags flags) {
     SkRect bounds = rect;
     AccumulateRect(bounds, flags);
   }
-  void AccumulateRect(SkRect& rect, int flags);
+  void AccumulateRect(SkRect& rect, DisplayListAttributeFlags flags);
 };
 
 }  // namespace flutter

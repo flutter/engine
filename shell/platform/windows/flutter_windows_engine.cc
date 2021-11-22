@@ -143,8 +143,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   FlutterEngineGetProcAddresses(&embedder_api_);
 
   task_runner_ = TaskRunner::Create(
-      GetCurrentThreadId(), embedder_api_.GetCurrentTime,
-      [this](const auto* task) {
+      embedder_api_.GetCurrentTime, [this](const auto* task) {
         if (!engine_) {
           std::cerr << "Cannot post an engine task when engine is not running."
                     << std::endl;
@@ -442,6 +441,21 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
     int64_t texture_id) {
   return (embedder_api_.MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
+}
+
+bool FlutterWindowsEngine::DispatchSemanticsAction(
+    uint64_t target,
+    FlutterSemanticsAction action,
+    const std::vector<uint8_t>& data) {
+  return (embedder_api_.DispatchSemanticsAction(
+              engine_, target, action, data.data(), data.size()) == kSuccess);
+}
+
+void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
+  if (engine_ && semantics_enabled_ != enabled) {
+    semantics_enabled_ = enabled;
+    embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
+  }
 }
 
 }  // namespace flutter

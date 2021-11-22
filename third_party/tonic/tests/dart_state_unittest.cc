@@ -36,10 +36,12 @@ TEST_F(DartState, IsShuttingDown) {
       vm_data->GetIsolateSnapshot(),       // isolate snapshot
       nullptr,                             // platform configuration
       DartIsolate::Flags{},                // flags
+      nullptr,                             // root_isolate_create_callback
       settings.isolate_create_callback,    // isolate create callback
       settings.isolate_shutdown_callback,  // isolate shutdown callback
       "main",                              // dart entrypoint
       std::nullopt,                        // dart entrypoint library
+      {},                                  // dart entrypoint arguments
       std::move(isolate_configuration),    // isolate configuration
       std::move(context)                   // engine context
   );

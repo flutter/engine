@@ -6,13 +6,14 @@
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
 
 jobs:
   mirror_job:
     permissions:
       pull-requests: write
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'flutter/engine' }}
     name: Mirror main branch to master branch
     steps:
       - name: Mirror action step
@@ -20,5 +21,5 @@ jobs:
         uses: google/mirror-branch-action@c6b07e441a7ffc5ae15860c1d0a8107a3a151db8
         with:
           github-token: ${{ secrets.FLUTTERGITHUBBOT_TOKEN }}
-          source: 'master'
-          dest: 'main'
+          source: 'main'
+          dest: 'master'

@@ -30,13 +30,12 @@ static constexpr fml::TimeDelta kDefaultFlatlandPresentationInterval =
 // maintaining the Flatland instance connection and presenting updates.
 class FlatlandConnection final {
  public:
-  FlatlandConnection(
-      std::string debug_label,
-      fidl::InterfaceHandle<fuchsia::ui::composition::Flatland> flatland,
-      fml::closure error_callback,
-      on_frame_presented_event on_frame_presented_callback,
-      uint64_t max_frames_in_flight,
-      fml::TimeDelta vsync_offset);
+  FlatlandConnection(std::string debug_label,
+                     fuchsia::ui::composition::FlatlandHandle flatland,
+                     fml::closure error_callback,
+                     on_frame_presented_event on_frame_presented_callback,
+                     uint64_t max_frames_in_flight,
+                     fml::TimeDelta vsync_offset);
 
   ~FlatlandConnection();
 
@@ -67,6 +66,7 @@ class FlatlandConnection final {
   void OnNextFrameBegin(
       fuchsia::ui::composition::OnNextFrameBeginValues values);
   void OnFramePresented(fuchsia::scenic::scheduling::FramePresentedInfo info);
+  void DoPresent();
 
   fuchsia::ui::composition::FlatlandPtr flatland_;
 
@@ -77,6 +77,7 @@ class FlatlandConnection final {
 
   on_frame_presented_event on_frame_presented_callback_;
   uint32_t present_credits_ = 1;
+  bool present_pending_ = false;
 
   // This struct contains state that is accessed from both from the UI thread
   // (in AwaitVsync) and the raster thread (in OnNextFrameBegin). You should
