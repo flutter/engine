@@ -6,10 +6,10 @@
 
 #include <gtk/gtk.h>
 
+#include "flutter/shell/platform/common/text_editing_delta.h"
 #include "flutter/shell/platform/common/text_input_model.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_channel.h"
-#include "flutter/shell/platform/linux/public/flutter_linux/fl_text_editing_delta.h"
 
 static constexpr char kChannelName[] = "flutter/textinput";
 
@@ -170,7 +170,7 @@ static void update_editing_state(FlTextInputPlugin* self) {
 
 // Informs Flutter of text input changes by passing just the delta.
 static void update_editing_state_with_delta(FlTextInputPlugin* self,
-                                            FlTextEditingDelta* delta) {
+                                            flutter::TextEditingDelta* delta) {
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
 
@@ -178,18 +178,17 @@ static void update_editing_state_with_delta(FlTextInputPlugin* self,
   fl_value_append_take(args, fl_value_new_int(priv->client_id));
 
   g_autoptr(FlValue) deltaValue = fl_value_new_map();
-  fl_value_set_string_take(
-      deltaValue, "oldText",
-      fl_value_new_string(delta->textBeforeChange.c_str()));
+  fl_value_set_string_take(deltaValue, "oldText",
+                           fl_value_new_string(delta->old_text().c_str()));
 
   fl_value_set_string_take(deltaValue, "deltaText",
-                           fl_value_new_string(delta->text.c_str()));
+                           fl_value_new_string(delta->delta_text().c_str()));
 
   fl_value_set_string_take(deltaValue, "deltaStart",
-                           fl_value_new_int(delta->range.start()));
+                           fl_value_new_int(delta->delta_start()));
 
   fl_value_set_string_take(deltaValue, "deltaEnd",
-                           fl_value_new_int(delta->range.end()));
+                           fl_value_new_int(delta->delta_end()));
 
   flutter::TextRange selection = priv->text_model->selection();
   fl_value_set_string_take(deltaValue, "selectionBase",
@@ -285,9 +284,9 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
   // the other update_editing_state calls.
   if (priv->enable_delta_model) {
     std::string text(buf);
-    FlTextEditingDelta* delta = fl_text_editing_delta_new(
+    flutter::TextEditingDelta delta = flutter::TextEditingDelta(
         text_before_change, priv->text_model->composing_range(), text);
-    update_editing_state_with_delta(self, delta);
+    update_editing_state_with_delta(self, &delta);
   } else {
     update_editing_state(self);
   }

@@ -131,7 +131,6 @@ source_set("flutter_linux_sources") {
     "fl_string_codec.cc",
     "fl_task_runner.cc",
     "fl_task_runner.h",
-    "fl_text_editing_delta.cc",
     "fl_text_input_plugin.cc",
     "fl_texture.cc",
     "fl_texture_gl.cc",
