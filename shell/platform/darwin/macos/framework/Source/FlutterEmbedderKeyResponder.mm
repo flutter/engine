@@ -107,9 +107,13 @@ static uint64_t toLower(uint64_t n) {
 
 // Decode a UTF-16 sequence to an array of char32 (UTF-32).
 //
-// The returned character array must be cleared using delete[].
+// See https://en.wikipedia.org/wiki/UTF-16#Description for the algorithm.
 //
-// See https://en.wikipedia.org/wiki/UTF-16#Description.
+// The returned character array must be cleared with delete[]. The length of
+// the result is stored in `out_length`.
+//
+// Although NSString has a dataUsingEncoding method, we implement our own
+// because dataUsingEncoding outputs redundant characters for unknown reasons.
 static uint32_t* DecodeUtf16(NSString* target, size_t* out_length) {
   // The result always has a length less or equal to target.
   size_t result_pos = 0;
