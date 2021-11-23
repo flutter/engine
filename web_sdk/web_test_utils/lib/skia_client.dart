@@ -178,7 +178,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize),
+      // ..._getMatchingArguments(testName, screenshotSize),
     ];
 
     final ProcessResult result = await process.run(imgtestCommand);
@@ -267,7 +267,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize),
+      // ..._getMatchingArguments(testName, screenshotSize),
     ];
 
     final ProcessResult result = await process.run(imgtestCommand);
