@@ -1,4 +1,4 @@
-Signature: af7b80ea908c29d04c31cf147fa728ca
+Signature: 72bd3d2911719771040ba8628cf541d1
 
 UNUSED LICENSES:
 
@@ -2372,7 +2372,6 @@ FILE: ../../../third_party/skia/experimental/graphite/include/SkStuff.h
 FILE: ../../../third_party/skia/experimental/graphite/include/TextureInfo.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlBackendContext.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlTypes.h
-FILE: ../../../third_party/skia/experimental/graphite/src/Attribute.h
 FILE: ../../../third_party/skia/experimental/graphite/src/BackendTexture.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.h
@@ -6906,6 +6905,7 @@ FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/job_builder.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/nano_flags.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/schema.go
 FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/task_builder.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/canary/canary.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/compile_wasm_gm_tests/compile_wasm_gm_tests.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/fm_driver/fm_driver.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/g3_canary/g3_canary.go
