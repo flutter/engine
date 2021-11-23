@@ -549,7 +549,8 @@ void ComponentV1::CreateViewWithViewRef(
       std::move(fdio_ns_),            // FDIO namespace
       std::move(directory_request_),  // outgoing request
       product_config_,                // product configuration
-      dart_entrypoint_args_           // dart entrypoint args
+      dart_entrypoint_args_,          // dart entrypoint args
+      true                            // v1 component
       ));
 }
 
@@ -573,7 +574,8 @@ void ComponentV1::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
       std::move(fdio_ns_),                            // FDIO namespace
       std::move(directory_request_),                  // outgoing request
       product_config_,                                // product configuration
-      dart_entrypoint_args_                           // dart entrypoint args
+      dart_entrypoint_args_,                          // dart entrypoint args
+      true                                            // v1 component
       ));
 }
 
