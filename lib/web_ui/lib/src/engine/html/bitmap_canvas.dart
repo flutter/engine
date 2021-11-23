@@ -933,6 +933,7 @@ class BitmapCanvas extends EngineCanvas {
       }
       ctx.restore();
     }
+
     ctx.fillText(text, x, y);
     if (paintStroke) {
       ctx.strokeText(text, x, y);
