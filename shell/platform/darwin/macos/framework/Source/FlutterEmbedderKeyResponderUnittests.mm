@@ -278,7 +278,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
       }];
 
   [responder
-      handleEvent:keyEvent(NSEventTypeKeyDown, 100, @"àn", @"àn", FALSE, kKeyCodeKeyA)
+      handleEvent:keyEvent(NSEventTypeKeyDown, 0, @"àn", @"àn", FALSE, kKeyCodeKeyA)
          callback:^(BOOL handled){
          }];
 
@@ -286,14 +286,14 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
   event = [events lastObject].data;
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
-  EXPECT_EQ(event->logical, kLogicalAltRight);
+  EXPECT_EQ(event->logical, 0x1400000000ull);
   EXPECT_STREQ(event->character, "àn");
   EXPECT_EQ(event->synthesized, false);
 
   [events removeAllObjects];
 
   [responder
-      handleEvent:keyEvent(NSEventTypeKeyUp, 100, @"a", @"a", FALSE, kKeyCodeKeyA)
+      handleEvent:keyEvent(NSEventTypeKeyUp, 0, @"a", @"a", FALSE, kKeyCodeKeyA)
          callback:^(BOOL handled){
          }];
 
@@ -301,7 +301,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
   event = [events lastObject].data;
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
-  EXPECT_EQ(event->logical, kLogicalKeyW);
+  EXPECT_EQ(event->logical, 0x1400000000ull);
   EXPECT_STREQ(event->character, nullptr);
   EXPECT_EQ(event->synthesized, false);
 

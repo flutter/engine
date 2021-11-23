@@ -105,6 +105,36 @@ static uint64_t toLower(uint64_t n) {
   return n;
 }
 
+// Decode a UTF-16 sequence to an array of char32 (UTF-32).
+//
+// The returned character array must be cleared using delete[].
+//
+// See https://en.wikipedia.org/wiki/UTF-16#Description.
+static uint32_t* DecodeUtf16(NSString* target, size_t* out_length) {
+  // The result always has a length less or equal to target.
+  size_t result_pos = 0;
+  uint32_t* result = new uint32_t[target.length];
+  uint16_t high_surrogate = 0;
+  for (NSUInteger target_pos = 0; target_pos < target.length; target_pos += 1) {
+    uint16_t codeUnit = [target characterAtIndex:target_pos];
+    // BMP
+    if (codeUnit <= 0xD7FF || codeUnit >= 0xE000) {
+      result[result_pos] = codeUnit;
+      result_pos += 1;
+    // High surrogates
+    } else if (codeUnit <= 0xDBFF) {
+      high_surrogate = codeUnit - 0xD800;
+    // Low surrogates
+    } else {
+      uint16_t low_surrogate = codeUnit - 0xDC00;
+      result[result_pos] = (high_surrogate << 10) + low_surrogate + 0x10000;
+      result_pos += 1;
+    }
+  }
+  *out_length = result_pos;
+  return result;
+}
+
 /**
  * Returns the logical key of a KeyUp or KeyDown event.
  *
@@ -133,13 +163,23 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   // been converted in keyCodeToLogicalKey. We should convert it into an assert
   // instead. I didn't do so for now because we're still stablizing the logic.
   uint32_t character = 0;
-  if (keyLabelUtf16.length != 0 && [keyLabelUtf16 canBeConvertedToEncoding:NSUTF32StringEncoding]) {
-    NSData* keyLabelData = [keyLabelUtf16 dataUsingEncoding:NSUTF32StringEncoding];
-    if (keyLabelData.length == 4) { // 4 bytes constitutes 1 UTF32 character
-      uint32_t keyLabel = *reinterpret_cast<const uint32_t*>(keyLabelData.bytes);
-      if (!IsControlCharacter(keyLabel) && !IsUnprintableKey(keyLabel)) {
-        NSCAssert(keyLabel <= 0x10FFFF, @"Out of range keylabel 0x%x", keyLabel);
-        character = keyLabel;
+  if (keyLabelUtf16.length != 0) {
+    for (NSUInteger i = 0; i < keyLabelUtf16.length; ++i) {
+      printf("0x%04x ", [keyLabelUtf16 characterAtIndex:i]);
+    }
+    NSLog(@"");
+    size_t keyLabelLength;
+    uint32_t* keyLabel = DecodeUtf16(keyLabelUtf16, &keyLabelLength);
+    if (keyLabelLength == 1) {
+      for (NSUInteger i = 0; i < keyLabelLength; ++i) {
+        printf("0x%04x ", keyLabel[i]);
+      }
+      NSLog(@"");
+      uint32_t keyLabelChar = *keyLabel;
+      delete[] keyLabel;
+      if (!IsControlCharacter(keyLabelChar) && !IsUnprintableKey(keyLabelChar)) {
+        NSCAssert(keyLabelChar <= 0x10FFFF, @"Out of range keylabel 0x%x", keyLabelChar);
+        character = keyLabelChar;
       }
     }
   }
@@ -489,8 +529,8 @@ const char* getEventString(NSString* characters) {
   NSAssert(callback != nil, @"The callback must not be nil.");
   FlutterKeyCallbackGuard* guardedCallback =
       [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
-  NSLog(@"Type [%lu] keycode 0x%x char |%@| charIM |%@|", event.type,
-      event.keyCode, event.characters, event.charactersIgnoringModifiers);
+  // NSLog(@"Type [%lu] keycode 0x%x char |%@| charIM |%@|", event.type,
+  //     event.keyCode, event.characters, event.charactersIgnoringModifiers);
   switch (event.type) {
     case NSEventTypeKeyDown:
       [self handleDownEvent:event callback:guardedCallback];
