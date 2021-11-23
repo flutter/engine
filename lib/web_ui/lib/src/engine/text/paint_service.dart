@@ -93,6 +93,7 @@ class TextPaintService {
       _applySpanStyleToCanvas(span, canvas);
       final double x = offset.dx + line.left + box.left;
       final double y = offset.dy + line.baseline;
+      final bool paintStroke = span.style.foreground?.strokeWidth != null;
 
       // Don't paint the text for space-only boxes. This is just an
       // optimization, it doesn't have any effect on the output.
@@ -103,7 +104,7 @@ class TextPaintService {
             );
         final double? letterSpacing = span.style.letterSpacing;
         if (letterSpacing == null || letterSpacing == 0.0) {
-          canvas.fillText(text, x, y, shadows: span.style.shadows);
+          canvas.fillText(text, x, y, shadows: span.style.shadows, paintStroke: paintStroke);
         } else {
           // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
           //                https://github.com/flutter/flutter/issues/51234
@@ -112,7 +113,7 @@ class TextPaintService {
           for (int i = 0; i < len; i++) {
             final String char = text[i];
             canvas.fillText(char, charX.roundToDouble(), y,
-                shadows: span.style.shadows);
+                shadows: span.style.shadows, paintStroke: paintStroke);
             charX += letterSpacing + canvas.measureText(char).width!;
           }
         }
@@ -122,7 +123,7 @@ class TextPaintService {
       final String? ellipsis = line.ellipsis;
       if (ellipsis != null && box == line.boxes.last) {
         final double x = offset.dx + line.left + box.right;
-        canvas.fillText(ellipsis, x, y);
+        canvas.fillText(ellipsis, x, y, paintStroke: paintStroke);
       }
 
       canvas.tearDownPaint();

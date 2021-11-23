@@ -699,10 +699,9 @@ void applyTextStyleToElement({
   if (color != null) {
     cssStyle.color = colorToCssString(color);
   }
-  final ui.Paint? foreground = style.foreground;
-  if (foreground != null) {
-    cssStyle.textStroke =
-        '${foreground.strokeWidth}px ${colorToCssString(foreground.color)}';
+  final double? strokeWidth = style.foreground?.strokeWidth;
+  if (strokeWidth != null) {
+    cssStyle.textStroke = '${strokeWidth}px ${colorToCssString(color)}';
   }
   final ui.Color? background = style.background?.color;
   if (background != null) {
