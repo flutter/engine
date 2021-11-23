@@ -1,4 +1,4 @@
-Signature: 525a2804612816a5af8d915c9d8ec855
+Signature: af7b80ea908c29d04c31cf147fa728ca
 
 UNUSED LICENSES:
 
@@ -2372,6 +2372,7 @@ FILE: ../../../third_party/skia/experimental/graphite/include/SkStuff.h
 FILE: ../../../third_party/skia/experimental/graphite/include/TextureInfo.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlBackendContext.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlTypes.h
+FILE: ../../../third_party/skia/experimental/graphite/src/Attribute.h
 FILE: ../../../third_party/skia/experimental/graphite/src/BackendTexture.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Caps.h
@@ -2394,6 +2395,8 @@ FILE: ../../../third_party/skia/experimental/graphite/src/DrawOrder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawPass.h
 FILE: ../../../third_party/skia/experimental/graphite/src/DrawTypes.h
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawWriter.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/DrawWriter.h
 FILE: ../../../third_party/skia/experimental/graphite/src/EnumBitMask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Gpu.h
@@ -2484,6 +2487,7 @@ FILE: ../../../third_party/skia/include/gpu/gl/egl/GrGLMakeEGLInterface.h
 FILE: ../../../third_party/skia/include/gpu/gl/glx/GrGLMakeGLXInterface.h
 FILE: ../../../third_party/skia/include/private/GrDawnTypesPriv.h
 FILE: ../../../third_party/skia/include/private/GrMockTypesPriv.h
+FILE: ../../../third_party/skia/include/private/chromium/GrSlug.h
 FILE: ../../../third_party/skia/include/sksl/DSLSymbols.h
 FILE: ../../../third_party/skia/modules/canvaskit/paragraph_bindings_gen.cpp
 FILE: ../../../third_party/skia/src/core/SkBlendModeBlender.cpp
@@ -2522,6 +2526,7 @@ FILE: ../../../third_party/skia/src/gpu/gl/egl/GrGLMakeNativeInterface_egl.cpp
 FILE: ../../../third_party/skia/src/gpu/gl/glx/GrGLMakeNativeInterface_glx.cpp
 FILE: ../../../third_party/skia/src/gpu/mtl/GrMtlTypesPriv.mm
 FILE: ../../../third_party/skia/src/gpu/ops/FillPathFlags.h
+FILE: ../../../third_party/skia/src/gpu/text/GrSlug.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/vk/GrVkBuffer.h
 FILE: ../../../third_party/skia/src/sksl/SkSLBuiltinTypes.cpp

@@ -27,7 +27,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '7ecacbc4c6be9225a63fe332ec44ebef5b3eb1d8',
+  'skia_revision': 'c3db55663e5a38834a7eb65e39262db4d53d3e8c',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -99,7 +99,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '0b267aac6794712a6d9d0f31dda3f844325d0258',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '42be4395efc85e455bbdd555ef2791615338dbea',
 
    # Fuchsia compatibility
    #
@@ -500,60 +500,16 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/third_party/android_tools/sdk/build-tools': {
+  'src/third_party/android_tools/sdk': {
      'packages': [
        {
-        'package': 'flutter/android/sdk/build-tools/${{platform}}',
-        'version': 'version:31.0.0S'
+        'package': 'flutter/android/sdk/all/${{platform}}',
+        'version': 'version:31v2'
        }
      ],
      'condition': 'download_android_deps',
      'dep_type': 'cipd',
    },
-
-  'src/third_party/android_tools/sdk/platform-tools': {
-     'packages': [
-       {
-        'package': 'flutter/android/sdk/platform-tools/${{platform}}',
-        'version': 'version:31.0.2S'
-       }
-     ],
-     'condition': 'download_android_deps',
-     'dep_type': 'cipd',
-   },
-
-  'src/third_party/android_tools/sdk/platforms': {
-     'packages': [
-       {
-        'package': 'flutter/android/sdk/platforms',
-        'version': 'version:31S'
-       }
-     ],
-     'condition': 'download_android_deps',
-     'dep_type': 'cipd',
-   },
-
-  'src/third_party/android_tools/sdk/tools': {
-     'packages': [
-       {
-        'package': 'flutter/android/sdk/tools/${{platform}}',
-        'version': 'version:26.1.1'
-       }
-     ],
-     'condition': 'download_android_deps',
-     'dep_type': 'cipd',
-   },
-
-  'src/third_party/android_tools/sdk/cmdline-tools': {
-     'packages': [
-       {
-        'package': 'flutter/android/sdk/cmdline-tools',
-        'version': 'latest',
-       }
-     ],
-    'condition': 'download_android_deps',
-    'dep_type': 'cipd',
-  },
 
   'src/third_party/android_tools/sdk/licenses': {
      'packages': [
@@ -650,7 +606,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'PcVBwqy6c-6agg-t2gRJb0bZS86uWxivf87haVNYcOUC'
+        'version': 'MiNhUYhfNQX5pfMb6R1KzDKl0P8b1V5JlJnEHXP8CfIC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -660,7 +616,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'v32ZvdGERbtUsfNcSEWekYdiA2sZW0X56EpOYd-mgicC'
+        'version': 'hbyHcc_5xmGkGrW8frYkFx8gkU7fYd-8N9M2eqtc-hgC'
        }
      ],
      'condition': 'host_os == "linux"',

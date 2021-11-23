@@ -285,6 +285,11 @@ typedef enum UIAccessibilityContrast : NSInteger {
                object:nil];
 
   [center addObserver:self
+             selector:@selector(applicationWillTerminate:)
+                 name:UIApplicationWillTerminateNotification
+               object:nil];
+
+  [center addObserver:self
              selector:@selector(applicationDidEnterBackground:)
                  name:UIApplicationDidEnterBackgroundNotification
                object:nil];
@@ -816,6 +821,11 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
+- (void)applicationWillTerminate:(NSNotification*)notification {
+  [self goToApplicationLifecycle:@"AppLifecycleState.detached"];
+  [self.engine destroyContext];
+}
+
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
   [self surfaceUpdated:NO];
@@ -1200,9 +1210,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }
       completion:^(BOOL finished) {
         if (self.displayLink == currentDisplayLink) {
+          // Indicates the displaylink captured by this block is the original one,which also
+          // indicates the animation has not been interrupted from its beginning. Moreover,indicates
+          // the animation is over and there is no more animation about to exectute.
           [self invalidateDisplayLink];
-        }
-        if (finished) {
           [self removeKeyboardAnimationView];
           [self ensureViewportMetricsIsCorrect];
         }
