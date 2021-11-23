@@ -265,6 +265,49 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 }
 
+TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
+
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  [responder
+      handleEvent:keyEvent(NSEventTypeKeyDown, 100, @"àn", @"àn", FALSE, kKeyCodeKeyA)
+         callback:^(BOOL handled){
+         }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalAltRight);
+  EXPECT_STREQ(event->character, "àn");
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [responder
+      handleEvent:keyEvent(NSEventTypeKeyUp, 100, @"a", @"a", FALSE, kKeyCodeKeyA)
+         callback:^(BOOL handled){
+         }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, kLogicalKeyW);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+}
+
 TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
