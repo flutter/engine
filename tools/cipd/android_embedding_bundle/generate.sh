@@ -12,9 +12,8 @@ version_tag=`date +%Y-%m-%dT%T%z`
 
 cipd create --pkg-def cipd.yaml -tag last_updated:"$version_tag"
 
-echo "Final steps:"
 echo ""
-echo "1. Update the dependency in the DEPS file:"
+echo "Update the dependency in the DEPS file:"
 echo ""
 echo "'src/third_party/android_embedding_dependencies': {"
 echo "  'packages': ["
@@ -27,4 +26,4 @@ echo "  'condition': 'download_android_deps',"
 echo "  'dep_type': 'cipd',"
 echo "}"
 echo ""
-echo "3. Run gclient sync"
+echo "Run gclient sync"
