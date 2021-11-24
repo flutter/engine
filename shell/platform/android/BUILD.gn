@@ -79,6 +79,8 @@ source_set("flutter_shell_native_src") {
     "android_surface_software.h",
     "apk_asset_provider.cc",
     "apk_asset_provider.h",
+    "cpuinfo.cc",
+    "cpuinfo.h",
     "flutter_main.cc",
     "flutter_main.h",
     "library_loader.cc",

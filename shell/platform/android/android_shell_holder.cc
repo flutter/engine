@@ -30,12 +30,55 @@
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
+#include "cpuinfo.h"
 namespace flutter {
 
 static PlatformData GetDefaultPlatformData() {
   PlatformData platform_data;
   platform_data.lifecycle_state = "AppLifecycleState.detached";
   return platform_data;
+}
+
+static void SetaffinityBigCores() {
+  CpuInfo cpu;
+  cpu_set_t cpu_set;
+  CPU_ZERO(&cpu_set);
+  CPU_SET(0, &cpu_set);
+
+  if (cpu.getNumberOfCpus() > 0) {
+    FML_LOG(INFO) << "cpuinfo numbers=" << cpu.getNumberOfCpus() << ","
+                  << cpu.getHardware() << ",l=" << cpu.getNumberOfLittleCores()
+                  << ",b=" << cpu.getNumberOfBigCores();
+    if (cpu.getNumberOfLittleCores() > 0) {
+      cpu_set = cpu.getBigCoresMask();
+    }
+  }
+
+  const auto tid = gettid();
+  FML_LOG(INFO) << "Setting thread affinity " << to_mask(cpu_set)
+                << ",tid =" << tid;
+  sched_setaffinity(tid, sizeof(cpu_set), &cpu_set);
+}
+
+static void SetaffinityLittleCores() {
+  CpuInfo cpu;
+  cpu_set_t cpu_set;
+  CPU_ZERO(&cpu_set);
+  CPU_SET(0, &cpu_set);
+
+  if (cpu.getNumberOfCpus() > 0) {
+    FML_LOG(INFO) << "cpuinfo numbers=" << cpu.getNumberOfCpus() << ","
+                  << cpu.getHardware() << ",l=" << cpu.getNumberOfLittleCores()
+                  << ",b=" << cpu.getNumberOfBigCores();
+    if (cpu.getNumberOfLittleCores() > 0) {
+      cpu_set = cpu.getLittleCoresMask();
+    }
+  }
+
+  const auto tid = gettid();
+  FML_LOG(INFO) << "Setting thread affinity " << to_mask(cpu_set)
+                << ",tid =" << tid;
+  sched_setaffinity(tid, sizeof(cpu_set), &cpu_set);
 }
 
 AndroidShellHolder::AndroidShellHolder(
@@ -92,6 +135,7 @@ AndroidShellHolder::AndroidShellHolder(
                                     io_runner         // io
   );
   task_runners.GetRasterTaskRunner()->PostTask([]() {
+    SetaffinityBigCores();
     // Android describes -8 as "most important display threads, for
     // compositing the screen and retrieving input events". Conservatively
     // set the raster thread to slightly lower priority than it.
@@ -104,11 +148,13 @@ AndroidShellHolder::AndroidShellHolder(
     }
   });
   task_runners.GetUITaskRunner()->PostTask([]() {
+    SetaffinityBigCores();
     if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
       FML_LOG(ERROR) << "Failed to set UI task runner priority";
     }
   });
   task_runners.GetIOTaskRunner()->PostTask([]() {
+    SetaffinityLittleCores();
     if (::setpriority(PRIO_PROCESS, gettid(), 1) != 0) {
       FML_LOG(ERROR) << "Failed to set IO task runner priority";
     }
