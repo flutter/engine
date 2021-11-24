@@ -136,9 +136,11 @@ public class FlutterFragmentTest {
 
     fragment.onStart();
     fragment.onResume();
+    fragment.onPostResume();
     // No more events through to the delegate.
     verify(mockDelegate, times(1)).onStart();
     verify(mockDelegate, times(1)).onResume();
+    verify(mockDelegate, times(1)).onPostResume();
 
     fragment.onDestroy();
     // 1 time same as before.
