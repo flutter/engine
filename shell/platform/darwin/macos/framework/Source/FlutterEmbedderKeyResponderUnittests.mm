@@ -277,10 +277,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
                                                      userData:user_data]];
       }];
 
-  [responder
-      handleEvent:keyEvent(NSEventTypeKeyDown, 0, @"àn", @"àn", FALSE, kKeyCodeKeyA)
-         callback:^(BOOL handled){
-         }];
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0, @"àn", @"àn", FALSE, kKeyCodeKeyA)
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
@@ -292,10 +291,9 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
 
   [events removeAllObjects];
 
-  [responder
-      handleEvent:keyEvent(NSEventTypeKeyUp, 0, @"a", @"a", FALSE, kKeyCodeKeyA)
-         callback:^(BOOL handled){
-         }];
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0, @"a", @"a", FALSE, kKeyCodeKeyA)
+                callback:^(BOOL handled){
+                }];
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;

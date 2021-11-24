@@ -125,10 +125,10 @@ static uint32_t* DecodeUtf16(NSString* target, size_t* out_length) {
     if (codeUnit <= 0xD7FF || codeUnit >= 0xE000) {
       result[result_pos] = codeUnit;
       result_pos += 1;
-    // High surrogates
+      // High surrogates
     } else if (codeUnit <= 0xDBFF) {
       high_surrogate = codeUnit - 0xD800;
-    // Low surrogates
+      // Low surrogates
     } else {
       uint16_t low_surrogate = codeUnit - 0xDC00;
       result[result_pos] = (high_surrogate << 10) + low_surrogate + 0x10000;
