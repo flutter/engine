@@ -180,7 +180,8 @@ LRESULT WindowWin32::OnGetObject(UINT const message,
   if (is_uia_request && root_view) {
     Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
     root_view->QueryInterface(IID_PPV_ARGS(&root));
-    LRESULT lresult = UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
+    LRESULT lresult =
+        UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
     return lresult;
   } else if (is_msaa_request && root_view) {
     // Return the IAccessible for the root view.
