@@ -16,7 +16,7 @@ static constexpr int kClockType = CLOCK_MONOTONIC;
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_looper_class = nullptr;
 static jmethodID g_looper_prepare_method_ = nullptr;
 static jmethodID g_looper_loop_method_ = nullptr;
-static jmethodID g_looper_myLooper_method_ = nullptr;
+static jmethodID g_looper_my_looper_method_ = nullptr;
 static jmethodID g_looper_quit_method_ = nullptr;
 
 static void LooperPrepare() {
@@ -31,10 +31,10 @@ static void LooperLoop() {
 
 static void LooperQuit() {
   JNIEnv* env = fml::jni::AttachCurrentThread();
-  auto myLooper = env->CallStaticObjectMethod(g_looper_class->obj(),
-                                              g_looper_myLooper_method_);
-  if (myLooper != nullptr) {
-    env->CallVoidMethod(myLooper, g_looper_quit_method_);
+  auto my_looper = env->CallStaticObjectMethod(g_looper_class->obj(),
+                                               g_looper_my_looper_method_);
+  if (my_looper != nullptr) {
+    env->CallVoidMethod(my_looper, g_looper_quit_method_);
   }
 }
 
@@ -94,7 +94,6 @@ void MessageLoopAndroid::Run() {
 
 void MessageLoopAndroid::Terminate() {
   running_ = false;
-  ALooper_wake(looper_.get());
   LooperQuit();
 }
 
@@ -128,9 +127,9 @@ bool MessageLoopAndroid::Register(JNIEnv* env) {
       env->GetStaticMethodID(g_looper_class->obj(), "loop", "()V");
   FML_CHECK(g_looper_loop_method_ != nullptr);
 
-  g_looper_myLooper_method_ = env->GetStaticMethodID(
+  g_looper_my_looper_method_ = env->GetStaticMethodID(
       g_looper_class->obj(), "myLooper", "()Landroid/os/Looper;");
-  FML_CHECK(g_looper_myLooper_method_ != nullptr);
+  FML_CHECK(g_looper_my_looper_method_ != nullptr);
 
   g_looper_quit_method_ =
       env->GetMethodID(g_looper_class->obj(), "quit", "()V");
