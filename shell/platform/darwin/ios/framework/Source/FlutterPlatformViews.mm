@@ -457,7 +457,8 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
   return SkRect::MakeXYWH(platform_view_cgrect.origin.x * screen.scale,    //
                           platform_view_cgrect.origin.y * screen.scale,    //
                           platform_view_cgrect.size.width * screen.scale,  //
-                          platform_view_cgrect.size.height * screen.scale);
+                          platform_view_cgrect.size.height * screen.scale  //
+  );
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
@@ -483,6 +484,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   auto did_submit = true;
   auto num_platform_views = composition_order_.size();
+
   for (size_t i = 0; i < num_platform_views; i++) {
     int64_t platform_view_id = composition_order_[i];
     sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
@@ -490,7 +492,6 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
     // Check if the current picture contains overlays that intersect with the
     // current platform view or any of the previous platform views.
-
     for (size_t j = i + 1; j > 0; j--) {
       int64_t current_platform_view_id = composition_order_[j - 1];
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
@@ -611,8 +612,6 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
       [NSString stringWithFormat:@"platform_view[%lld].overlay[%lld]", view_id, overlay_id];
 
   UIView* overlay_view = layer->overlay_view.get();
-  // overlay_view_wrapper.backgroundColor = UIColor.blackColor;
-  // overlay_view.backgroundColor = UIColor.greenColor;
   // Set the size of the overlay view.
   // This size is equal to the device screen size.
   overlay_view.frame = flutter_view_.get().bounds;
