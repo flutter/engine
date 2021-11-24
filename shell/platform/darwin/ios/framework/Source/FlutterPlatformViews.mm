@@ -580,7 +580,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
     platform_view_root.layer.zPosition = zIndex++;
 
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
-      if ([layer->overlay_view_wrapper superview] != flutter_view) {
+      if ([layer->overlay_view_wrapper.get() superview] != flutter_view) {
         [flutter_view addSubview:layer->overlay_view_wrapper];
       }
       layer->overlay_view_wrapper.get().layer.zPosition = zIndex++;
