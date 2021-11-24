@@ -121,9 +121,11 @@ public class FlutterFragmentTest {
     fragment.setDelegate(mockDelegate);
     fragment.onStart();
     fragment.onResume();
+    fragment.onPostResume();
 
     verify(mockDelegate, times(1)).onStart();
     verify(mockDelegate, times(1)).onResume();
+    verify(mockDelegate, times(1)).onPostResume();
 
     fragment.onPause();
     fragment.detachFromFlutterEngine();
