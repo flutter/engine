@@ -7,6 +7,7 @@
 #include "flutter/shell/common/shell_io_manager.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
+#include "include/gpu/vk/GrVkExtensions.h"
 #include "shell/gpu/gpu_surface_vulkan.h"
 #include "shell/gpu/gpu_surface_vulkan_delegate.h"
 
@@ -103,18 +104,21 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     return nullptr;
   }
 
-  GrVkBackendContext backend_context = {
-      .fInstance = instance,
-      .fPhysicalDevice = device_.GetPhysicalDeviceHandle(),
-      .fDevice = device_.GetHandle(),
-      .fQueue = device_.GetQueueHandle(),
-      .fGraphicsQueueIndex = device_.GetGraphicsQueueIndex(),
-      .fMinAPIVersion = VK_MAKE_VERSION(1, 0, 0),
-      .fMaxAPIVersion = VK_MAKE_VERSION(1, 0, 0),
-      .fFeatures = skia_features,
-      .fGetProc = get_proc,
-      .fOwnsInstanceAndDevice = false,
-  };
+  GrVkExtensions extensions;
+
+  GrVkBackendContext backend_context = {};
+  backend_context.fInstance = instance;
+  backend_context.fPhysicalDevice = device_.GetPhysicalDeviceHandle();
+  backend_context.fDevice = device_.GetHandle();
+  backend_context.fQueue = device_.GetQueueHandle();
+  backend_context.fGraphicsQueueIndex = device_.GetGraphicsQueueIndex();
+  backend_context.fMinAPIVersion = VK_MAKE_VERSION(1, 0, 0);
+  backend_context.fMaxAPIVersion = VK_MAKE_VERSION(1, 0, 0);
+  backend_context.fFeatures = skia_features;
+  backend_context.fVkExtensions = &extensions;
+  backend_context.fGetProc = get_proc;
+  backend_context.fOwnsInstanceAndDevice = false;
+
   // TODO(bdero): Activate MEMORY_REQUIREMENTS_2 if available because VMA (the
   //              allocator used by Skia) knows how to take advantage of these
   //              features.
@@ -122,11 +126,9 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     const char* device_extensions[] = {
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
     };
-    GrVkExtensions vk_extensions;
-    vk_extensions.init(backend_context.fGetProc, backend_context.fInstance,
+    extensions.init(backend_context.fGetProc, backend_context.fInstance,
                        backend_context.fPhysicalDevice, 0, nullptr,
                        countof(device_extensions), device_extensions);
-    backend_context.fVkExtensions = &vk_extensions;
   */
 
   GrContextOptions options =

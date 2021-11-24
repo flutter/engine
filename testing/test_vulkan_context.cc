@@ -9,6 +9,7 @@
 #include "flutter/testing/test_vulkan_context.h"
 
 #include "include/gpu/GrDirectContext.h"
+#include "include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 #ifdef OS_MACOSX
@@ -68,18 +69,20 @@ TestVulkanContext::TestVulkanContext() {
     return;
   }
 
-  GrVkBackendContext backend_context = {
-      .fInstance = application_->GetInstance(),
-      .fPhysicalDevice = device_->GetPhysicalDeviceHandle(),
-      .fDevice = device_->GetHandle(),
-      .fQueue = device_->GetQueueHandle(),
-      .fGraphicsQueueIndex = device_->GetGraphicsQueueIndex(),
-      .fMinAPIVersion = VK_MAKE_VERSION(1, 0, 0),
-      .fMaxAPIVersion = VK_MAKE_VERSION(1, 0, 0),
-      .fFeatures = skia_features,
-      .fGetProc = get_proc,
-      .fOwnsInstanceAndDevice = false,
-  };
+  GrVkExtensions extensions;
+
+  GrVkBackendContext backend_context = {};
+  backend_context.fInstance = application_->GetInstance();
+  backend_context.fPhysicalDevice = device_->GetPhysicalDeviceHandle();
+  backend_context.fDevice = device_->GetHandle();
+  backend_context.fQueue = device_->GetQueueHandle();
+  backend_context.fGraphicsQueueIndex = device_->GetGraphicsQueueIndex();
+  backend_context.fMinAPIVersion = VK_MAKE_VERSION(1, 0, 0);
+  backend_context.fMaxAPIVersion = VK_MAKE_VERSION(1, 0, 0);
+  backend_context.fFeatures = skia_features;
+  backend_context.fVkExtensions = &extensions;
+  backend_context.fGetProc = get_proc;
+  backend_context.fOwnsInstanceAndDevice = false;
 
   GrContextOptions options =
       MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
