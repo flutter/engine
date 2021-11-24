@@ -13,7 +13,6 @@ namespace flutter {
 FlutterPlatformNodeDelegateWin32::FlutterPlatformNodeDelegateWin32(
     FlutterWindowsEngine* engine)
     : engine_(engine) {
-  // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
   assert(engine_);
 }
 
