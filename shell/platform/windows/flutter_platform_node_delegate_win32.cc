@@ -68,8 +68,15 @@ gfx::Rect FlutterPlatformNodeDelegateWin32::GetBoundsRect(
     const ui::AXCoordinateSystem coordinate_system,
     const ui::AXClippingBehavior clipping_behavior,
     ui::AXOffscreenResult* offscreen_result) const {
-  // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
-  return {};
+  gfx::Rect local_bounds = FlutterPlatformNodeDelegate::GetBoundsRect(
+      coordinate_system, clipping_behavior, offscreen_result);
+  POINT origin{local_bounds.x(), local_bounds.y()};
+  POINT extent{local_bounds.x() + local_bounds.width(),
+               local_bounds.y() + local_bounds.height()};
+  ClientToScreen(engine_->view()->GetPlatformWindow(), &origin);
+  ClientToScreen(engine_->view()->GetPlatformWindow(), &extent);
+  return gfx::Rect(origin.x, origin.y, extent.x - origin.x,
+                   extent.y - origin.y);
 }
 
 }  // namespace flutter
