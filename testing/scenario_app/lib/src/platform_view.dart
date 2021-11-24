@@ -765,6 +765,84 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario with _BasePlatfor
   }
 }
 
+/// Builds a scenario where many platform views are scrolling and pass under a widget
+class PlatformViewScrollingUnderWidget extends Scenario with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  ///
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewScrollingUnderWidget(PlatformDispatcher dispatcher, {required this.minId, required this.maxId})
+      : assert(dispatcher != null),
+        super(dispatcher) {
+    for (int i = minId; i < maxId+1; i ++) {
+      createPlatformView(dispatcher, 'platform view', i);
+    }
+  }
+
+  /// The platform view identifier to use for the first platform view.
+  final int minId;
+
+  /// The platform view identifier to use for the last platform view.
+  final int maxId;
+
+  double offset = 0;
+
+  bool movingUp = true;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    _buildOneFrame(offset);
+  }
+
+  @override
+  void onDrawFrame() {
+
+    // Scroll up until -1000, then scroll down until -1.
+    if (offset < -1000) {
+      movingUp = false;
+    } else if (offset > -1) {
+      movingUp = true;
+    }
+
+    if (movingUp) {
+      offset -= 100;
+    } else {
+      offset += 100;
+    }
+    window.scheduleFrame();
+    super.onDrawFrame();
+  }
+
+
+  void _buildOneFrame(double offset) {
+    const double cellWidth = 1000;
+    print(offset);
+    double localOffset = offset;
+    final SceneBuilder builder = SceneBuilder();
+    const double cellHeight = 300;
+    for (int i = minId; i < maxId+1; i ++) {
+      // Build a list view with platform views.
+      builder.pushOffset(0, localOffset);
+      _addPlatformViewToScene(builder, i, cellWidth, cellHeight);
+      builder.pop();
+      localOffset += cellHeight;
+    }
+
+    // Add a "banner" that should display on top of the list view.
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawRect(
+      const Rect.fromLTRB(0, cellHeight, cellWidth, 100),
+      Paint()..color = const Color(0xFFFF0000),
+    );
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(const Offset(0, 20), picture);
+
+    final Scene scene = builder.build();
+    window.render(scene);
+    scene.dispose();
+  }
+}
+
 mixin _BasePlatformViewScenarioMixin on Scenario {
   int? _textureId;
 

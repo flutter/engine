@@ -457,8 +457,7 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
   return SkRect::MakeXYWH(platform_view_cgrect.origin.x * screen.scale,    //
                           platform_view_cgrect.origin.y * screen.scale,    //
                           platform_view_cgrect.size.width * screen.scale,  //
-                          platform_view_cgrect.size.height * screen.scale
-  );
+                          platform_view_cgrect.size.height * screen.scale);
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
@@ -520,13 +519,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       }
       for (SkRect& joined_rect : intersection_rects) {
         // Get the intersection rect between the current rect
-        // FML_DLOG(ERROR) << "top " << joined_rect.fTop;
         // and the platform view rect.
         joined_rect.intersect(platform_view_rect);
         // Subpixels in the platform may not align with the canvas subpixels.
         // To workaround it, round the floating point bounds and make the rect slightly larger.
         // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-        // FML_DLOG(ERROR) << "joined_rect top " << std::floor(joined_rect.top());
         joined_rect.setLTRB(std::floor(joined_rect.left()), std::floor(joined_rect.top()),
                             std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
@@ -567,11 +564,10 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   FML_DCHECK(flutter_view_);
   UIView* flutter_view = flutter_view_.get();
-  // The first platform view should be above the flutter view.
+  // The first platform view should be above the flutter view, so we start the zIndex with +1.
   auto zIndex = flutter_view.layer.zPosition + 1;
   // Clear the `active_composition_order_`, which will be populated down below.
   active_composition_order_.clear();
-  // FML_LOG(ERROR) << "223";
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
@@ -579,18 +575,16 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 
     if (platform_view_root.superview != flutter_view) {
       [flutter_view addSubview:platform_view_root];
-    } else {
-      platform_view_root.layer.zPosition = zIndex++;
     }
-    FML_DLOG(ERROR) << ">> platform view zindex   " << platform_view_root.layer.zPosition;
+    platform_view_root.layer.zPosition = zIndex++;
+
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
       if ([layer->overlay_view_wrapper superview] != flutter_view) {
         [flutter_view addSubview:layer->overlay_view_wrapper];
-      } else {
-        layer->overlay_view_wrapper.get().layer.zPosition = zIndex++;
       }
-      FML_DLOG(ERROR) << ">> overlay view zindex   " << layer->overlay_view_wrapper.get().layer.zPosition;
-      FML_DCHECK(layer->overlay_view_wrapper.get().layer.zPosition > platform_view_root.layer.zPosition);
+      layer->overlay_view_wrapper.get().layer.zPosition = zIndex++;
+      FML_DCHECK(layer->overlay_view_wrapper.get().layer.zPosition >
+                 platform_view_root.layer.zPosition);
     }
     active_composition_order_.push_back(platform_view_id);
   }
@@ -952,4 +946,3 @@ void FlutterPlatformViewsController::ResetFrameState() {
   return YES;
 }
 @end
-
