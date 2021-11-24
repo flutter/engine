@@ -127,9 +127,9 @@ class WindowWin32 {
   //
   // The primary use of this function is to supply Windows with wrapped
   // semantics objects for use by Windows accessibility.
-  void OnGetObject(UINT const message,
-                   WPARAM const wparam,
-                   LPARAM const lparam);
+  LRESULT OnGetObject(UINT const message,
+                      WPARAM const wparam,
+                      LPARAM const lparam);
 
   // Called when IME composing begins.
   virtual void OnComposeBegin() = 0;
