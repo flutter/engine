@@ -4,9 +4,9 @@
 
 #include <cassert>
 
-#include "flutter/testing/test_vulkan_context.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/context_options.h"
+#include "flutter/testing/test_vulkan_context.h"
 
 #include "include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/core/SkSurface.h"
