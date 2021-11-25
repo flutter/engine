@@ -978,8 +978,8 @@ static bool CompareOps(uint8_t* ptrA,
   return true;
 }
 
-void DisplayList::RenderTo(SkCanvas* canvas, SkAlpha extra_alpha) const {
-  DisplayListCanvasDispatcher dispatcher(canvas, extra_alpha);
+void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
+  DisplayListCanvasDispatcher dispatcher(canvas, opacity);
   Dispatch(dispatcher);
 }
 

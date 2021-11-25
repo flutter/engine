@@ -170,25 +170,23 @@ class Layer {
     // The following value should be used to modulate the opacity of the
     // layer during |Paint|. If the layer does not set the corresponding
     // |layer_can_inherit_opacity()| flag, then this value should always
-    // be |SK_AlphaOPAQUE|. The value is supplied using the |SkAlpha| type
-    // but the name is meant to clearly indicate that it needs to be
-    // interpreted by the |Paint| method as specifically modulating the
-    // opacity of the resulting operations as if by using a |saveLayer|
-    // with this alpha value and a |kSrcOver| blend mode in the |SkPaint|.
-    SkAlpha inherited_opacity = SK_AlphaOPAQUE;
+    // be |SK_Scalar1|. The value is to be applied as if by using a
+    // |saveLayer| with an |SkPaint| initialized to this alphaf value and
+    // a |kSrcOver| blend mode.
+    SkScalar inherited_opacity = SK_Scalar1;
   };
 
   class AutoCachePaint {
    public:
     AutoCachePaint(PaintContext& context) : context_(context) {
-      needs_paint_ = context.inherited_opacity < SK_AlphaOPAQUE;
+      needs_paint_ = context.inherited_opacity < SK_Scalar1;
       if (needs_paint_) {
-        paint_.setAlpha(context.inherited_opacity);
-        context.inherited_opacity = SK_AlphaOPAQUE;
+        paint_.setAlphaf(context.inherited_opacity);
+        context.inherited_opacity = SK_Scalar1;
       }
     }
 
-    ~AutoCachePaint() { context_.inherited_opacity = paint_.getAlpha(); }
+    ~AutoCachePaint() { context_.inherited_opacity = paint_.getAlphaf(); }
 
     const SkPaint* paint() { return needs_paint_ ? &paint_ : nullptr; }
 

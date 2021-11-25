@@ -43,6 +43,8 @@ class OpacityLayer : public MergedContainerLayer {
     children_can_accept_opacity_ = value;
   }
 
+  SkScalar opacity() const { return alpha_ * 1.0 / SK_AlphaOPAQUE; }
+
  private:
   SkAlpha alpha_;
   SkPoint offset_;

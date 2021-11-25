@@ -28,8 +28,8 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
                                     public SkPaintDispatchHelper {
  public:
   explicit DisplayListCanvasDispatcher(SkCanvas* canvas,
-                                       SkAlpha extra_alpha = SK_AlphaOPAQUE)
-      : SkPaintDispatchHelper(extra_alpha), canvas_(canvas) {}
+                                       SkScalar opacity = SK_Scalar1)
+      : SkPaintDispatchHelper(opacity), canvas_(canvas) {}
 
   const SkPaint* safe_paint(bool use_attributes);
 

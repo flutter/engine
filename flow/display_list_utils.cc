@@ -26,20 +26,20 @@ constexpr float invert_color_matrix[20] = {
 };
 // clang-format on
 
-void SkPaintDispatchHelper::save_extra_alpha(bool reset_and_restore) {
-  if (extra_alpha_ >= SK_AlphaOPAQUE) {
+void SkPaintDispatchHelper::save_opacity(bool reset_and_restore) {
+  if (opacity_ >= SK_Scalar1) {
     reset_and_restore = false;
   }
-  save_stack_.emplace_back(extra_alpha_, reset_and_restore);
+  save_stack_.emplace_back(opacity_, reset_and_restore);
   if (reset_and_restore) {
-    extra_alpha_ = SK_AlphaOPAQUE;
+    opacity_ = SK_Scalar1;
     setColor(current_color_);
   }
 }
-void SkPaintDispatchHelper::restore_extra_alpha() {
+void SkPaintDispatchHelper::restore_opacity() {
   SaveInfo& info = save_stack_.back();
-  if (info.restore_alpha) {
-    extra_alpha_ = info.extra_alpha;
+  if (info.restore_opacity) {
+    opacity_ = info.opacity;
     setColor(current_color_);
   }
   save_stack_.pop_back();
@@ -72,12 +72,10 @@ void SkPaintDispatchHelper::setStrokeMiter(SkScalar limit) {
 }
 void SkPaintDispatchHelper::setColor(SkColor color) {
   current_color_ = color;
-  if (extra_alpha_ < SK_AlphaOPAQUE) {
-    SkAlpha alpha = (SkColorGetA(color) * extra_alpha_ + SK_AlphaOPAQUE / 2) /
-                    SK_AlphaOPAQUE;
-    color = SkColorSetA(color, alpha);
-  }
   paint_.setColor(color);
+  if (has_opacity()) {
+    paint_.setAlphaf(paint_.getAlphaf() * opacity());
+  }
 }
 void SkPaintDispatchHelper::setBlendMode(SkBlendMode mode) {
   paint_.setBlendMode(mode);

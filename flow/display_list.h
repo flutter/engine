@@ -179,7 +179,7 @@ class DisplayList : public SkRefCnt {
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
 
-  void RenderTo(SkCanvas* canvas, SkAlpha extra_alpha = SK_AlphaOPAQUE) const;
+  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
 
   // SkPicture always includes nested bytes, but nested ops are
   // only included if requested. The defaults used here for these
@@ -551,7 +551,7 @@ class DisplayListFlags {
   // both of the following flags are set to indicate that
   // a default paint object can be constructed when rendering
   // the op to carry information imposed from outside the
-  // DisplayList (for example, the extra_alpha override).
+  // DisplayList (for example, the opacity override).
   static constexpr int kHasOptionalPaint_    = 1 << 29;
   static constexpr int kIgnoresPaint_        = 1 << 30;
   // clang-format on

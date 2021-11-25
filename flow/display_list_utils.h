@@ -96,10 +96,10 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
 // which can be accessed at any time via paint().
 class SkPaintDispatchHelper : public virtual Dispatcher {
  public:
-  SkPaintDispatchHelper(SkAlpha extra_alpha = SK_AlphaOPAQUE)
-      : current_color_(SK_ColorBLACK), extra_alpha_(extra_alpha) {
-    if (extra_alpha < SK_AlphaOPAQUE) {
-      paint_.setAlpha(extra_alpha);
+  SkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
+      : current_color_(SK_ColorBLACK), opacity_(opacity) {
+    if (opacity < SK_Scalar1) {
+      paint_.setAlphaf(opacity);
     }
   }
 
@@ -122,11 +122,12 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
-  SkAlpha extra_alpha() { return extra_alpha_; }
+  SkScalar opacity() { return opacity_; }
+  bool has_opacity() { return opacity_ < SK_Scalar1; }
 
  protected:
-  void save_extra_alpha(bool reset_and_restore);
-  void restore_extra_alpha();
+  void save_opacity(bool reset_and_restore);
+  void restore_opacity();
 
  private:
   SkPaint paint_;
@@ -136,16 +137,16 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   sk_sp<SkColorFilter> makeColorFilter();
 
   struct SaveInfo {
-    SaveInfo(SkAlpha extra_alpha, bool restore_alpha)
-        : extra_alpha(extra_alpha), restore_alpha(restore_alpha) {}
+    SaveInfo(SkScalar opacity, bool restore_opacity)
+        : opacity(opacity), restore_opacity(restore_opacity) {}
 
-    SkAlpha extra_alpha;
-    bool restore_alpha;
+    SkScalar opacity;
+    bool restore_opacity;
   };
   std::vector<SaveInfo> save_stack_;
 
   SkColor current_color_;
-  SkAlpha extra_alpha_;
+  SkScalar opacity_;
 };
 
 class SkMatrixSource {

@@ -16,8 +16,8 @@ const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
     // The accumulated SkPaint object will already have incorporated
     // any attribute overrides.
     return &paint();
-  } else if (extra_alpha() < SK_AlphaOPAQUE) {
-    temp_paint_.setAlpha(extra_alpha());
+  } else if (has_opacity()) {
+    temp_paint_.setAlphaf(opacity());
     return &temp_paint_;
   } else {
     return nullptr;
@@ -26,17 +26,17 @@ const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
 
 void DisplayListCanvasDispatcher::save() {
   canvas_->save();
-  save_extra_alpha(false);
+  save_opacity(false);
 }
 void DisplayListCanvasDispatcher::restore() {
   canvas_->restore();
-  restore_extra_alpha();
+  restore_opacity();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
                                             bool restore_with_paint) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_->saveLayer(bounds, safe_paint(restore_with_paint));
-  save_extra_alpha(true);
+  save_opacity(true);
 }
 
 void DisplayListCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {
@@ -206,7 +206,7 @@ void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
   int save_count = canvas_->save();
   {
-    DisplayListCanvasDispatcher dispatcher(canvas_, extra_alpha());
+    DisplayListCanvasDispatcher dispatcher(canvas_, opacity());
     display_list->Dispatch(dispatcher);
   }
   canvas_->restoreToCount(save_count);

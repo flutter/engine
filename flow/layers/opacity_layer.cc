@@ -77,9 +77,13 @@ void OpacityLayer::Paint(PaintContext& context) const {
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
   context.internal_nodes_canvas->translate(offset_.fX, offset_.fY);
 
-  SkAlpha inherited_opacity = context.inherited_opacity;
-  SkAlpha subtree_opacity =
-      (alpha_ * inherited_opacity + SK_AlphaOPAQUE / 2) / SK_AlphaOPAQUE;
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
+      context.leaf_nodes_canvas->getTotalMatrix()));
+#endif
+
+  SkScalar inherited_opacity = context.inherited_opacity;
+  SkScalar subtree_opacity = opacity() * inherited_opacity;
 
   if (children_can_accept_opacity()) {
     context.inherited_opacity = subtree_opacity;
@@ -89,12 +93,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
   }
 
   SkPaint paint;
-  paint.setAlpha(subtree_opacity);
-
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.internal_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.leaf_nodes_canvas->getTotalMatrix()));
-#endif
+  paint.setAlphaf(subtree_opacity);
 
   if (context.raster_cache &&
       context.raster_cache->Draw(GetCacheableChild(),

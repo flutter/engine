@@ -151,7 +151,7 @@ void PictureLayer::Paint(PaintContext& context) const {
     }
   }
 
-  FML_DCHECK(context.inherited_opacity == SK_AlphaOPAQUE);
+  FML_DCHECK(context.inherited_opacity == SK_Scalar1);
   picture()->playback(context.leaf_nodes_canvas);
 }
 
