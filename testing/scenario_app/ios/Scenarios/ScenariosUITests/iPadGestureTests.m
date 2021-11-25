@@ -178,14 +178,21 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
       [app.textFields[@"1,PointerChange.hover,device=0,buttons=0"] waitForExistenceWithTimeout:1],
       @"PointerChange.hover event did not occur for a hover");
   // The number of hover events fired is not always the same
-  NSUInteger i = 2;
-  while (
-      [app.textFields[[NSString stringWithFormat:@"%d,PointerChange.hover,device=0,buttons=0", i]]
-          waitForExistenceWithTimeout:1]) {
-    i++;
+  NSInteger lastHoverSequenceNumber = -1;
+  NSPredicate* predicateToFindHoverEvents =
+      [NSPredicate predicateWithFormat:@"value ENDSWITH ',PointerChange.hover,device=0,buttons=0'"];
+  for (XCUIElement* textField in
+       [[app.textFields matchingPredicate:predicateToFindHoverEvents] allElementsBoundByIndex]) {
+    NSInteger messageSequenceNumber =
+        [[textField.value componentsSeparatedByString:@","] firstObject].integerValue;
+    if (messageSequenceNumber > lastHoverSequenceNumber) {
+      lastHoverSequenceNumber = messageSequenceNumber;
+    }
   }
-  NSString* removeMessage =
-      [NSString stringWithFormat:@"%d,PointerChange.remove,device=0,buttons=0", i];
+  XCTAssertNotEqual(lastHoverSequenceNumber, -1,
+                    @"PointerChange.hover event did not occur for a hover");
+  NSString* removeMessage = [NSString
+      stringWithFormat:@"%d,PointerChange.remove,device=0,buttons=0", lastHoverSequenceNumber + 1];
   XCTAssertTrue([app.textFields[removeMessage] waitForExistenceWithTimeout:1],
                 @"PointerChange.remove event did not occur for a hover");
 }
