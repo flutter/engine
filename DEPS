@@ -616,7 +616,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'ZfCMJBPs8JgI7odemdVks4VuboszbAHUM7YOMzTkw3QC'
+        'version': 'LJw9DmqvWngfrVvR8aotccNF_RKSs3492b0hGo5OsW4C'
        }
      ],
      'condition': 'host_os == "linux"',
