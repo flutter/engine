@@ -82,7 +82,7 @@ external void _scheduleMicrotask(void Function() callback);
 @FfiNative<Handle Function(Handle)>('DartRuntimeHooks::GetCallbackHandle')
 external int? _getCallbackHandle(Function closure);
 
-@FfiNative<Handle Function(IntPtr)>('DartRuntimeHooks::GetCallbackFromHandle')
+@FfiNative<Handle Function(Int64)>('DartRuntimeHooks::GetCallbackFromHandle')
 external Function? _getCallbackFromHandle(int handle);
 
 // Required for gen_snapshot to work correctly.

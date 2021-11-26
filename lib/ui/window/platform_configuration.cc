@@ -455,7 +455,8 @@ void PlatformConfiguration::ReportUnhandledExceptionOrThrow(
                                                    std::move(stack_trace));
 }
 
-void PlatformConfiguration::RespondToKeyData(int response_id, bool handled) {
+void PlatformConfiguration::RespondToKeyData(uint64_t response_id,
+                                             bool handled) {
   UIDartState::Current()->platform_configuration()->CompleteKeyDataResponse(
       response_id, handled);
 }

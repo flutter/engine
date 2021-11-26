@@ -353,7 +353,7 @@ class PlatformDispatcher {
   void _respondToKeyData(int responseId, bool handled) =>
       __respondToKeyData(responseId, handled);
 
-  @FfiNative<Void Function(IntPtr, Bool)>(
+  @FfiNative<Void Function(Uint64, Bool)>(
       'PlatformConfiguration::RespondToKeyData')
   external static void __respondToKeyData(int responseId, bool handled);
 
@@ -579,7 +579,7 @@ class PlatformDispatcher {
   void setIsolateDebugName(String name) => _setIsolateDebugName(name);
 
   @FfiNative<Void Function(Handle)>(
-      'PlatformConfiguration::SetIsolateDebugName')
+      'PlatformConfiguration::SetIsolateDebugNameOrThrow')
   external static void _setIsolateDebugName(String name);
 
   /// The embedder can specify data that the isolate can request synchronously
