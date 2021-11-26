@@ -116,6 +116,7 @@ struct DartConverterInteger {
   static T FromFfi(FfiType val) { return val; }
   static FfiType ToFfi(T val) { return val; }
   static const char* GetDartRepresentation() { return kDartRepresentation; }
+  // Note: Returns the correct bit-width for the host architecture.
   static const char* GetFfiRepresentation() {
     if (std::is_signed<T>()) {
       if (sizeof(T) == 4) {
