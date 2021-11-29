@@ -15,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializeTestDomRenderer();
+  await ui.webOnlyInitializeTestFlutterViewEmbedder();
   group('HtmCodec', () {
     test('supports raw images - RGBA8888', () async {
       final Completer<ui.Image> completer = Completer<ui.Image>();

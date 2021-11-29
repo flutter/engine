@@ -16,7 +16,7 @@ import 'canvaskit/initialization.dart';
 import 'canvaskit/layer_scene_builder.dart';
 import 'canvaskit/rasterizer.dart';
 import 'clipboard.dart';
-import 'dom_renderer.dart';
+import 'embedder.dart';
 import 'html/scene.dart';
 import 'mouse_cursor.dart';
 import 'platform_views/message_handler.dart';
@@ -434,7 +434,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic> arguments = decoded.arguments as List<dynamic>;
-            domRenderer.setPreferredOrientation(arguments).then((bool success) {
+            flutterViewEmbedder.setPreferredOrientation(arguments).then((bool success) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(success));
             });
@@ -483,7 +483,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (html.Element content) {
-            domRenderer.glassPaneElement!.append(content);
+            flutterViewEmbedder.glassPaneElement!.append(content);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
@@ -606,7 +606,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      domRenderer.renderScene(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.renderScene(surfaceScene.webOnlyRootElement);
     }
     frameTimingsOnRasterFinish();
   }
@@ -727,7 +727,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
-  // Called by DomRenderer when browser languages change.
+  // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
     _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
   }

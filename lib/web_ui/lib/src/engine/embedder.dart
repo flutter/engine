@@ -21,10 +21,23 @@ import 'text_editing/text_editing.dart';
 import 'util.dart';
 import 'window.dart';
 
-class DomRenderer {
-  DomRenderer() {
+/// Controls the placement and lifecycle of a Flutter view on the web page.
+///
+/// Manages several top-level elements that host Flutter-generated content,
+/// including:
+///
+/// - [glassPaneElement], the root element of a Flutter view.
+/// - [glassPaneShadow], the shadow root used to isolate Flutter-rendered
+///   content from the surrounding page content, including from the platform
+///   views.
+/// - [sceneElement], the element that hosts Flutter layers and pictures, and
+///   projects platform views.
+/// - [sceneHostElement], the anchor that provides a stable location in the DOM
+///   tree for the [sceneElement].
+/// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
+class FlutterViewEmbedder {
+  FlutterViewEmbedder() {
     reset();
-
     assert(() {
       _setupHotRestart();
       return true;
@@ -527,7 +540,7 @@ void applyGlobalCssRulesToSheet(
   html.CssStyleSheet sheet, {
   required BrowserEngine browserEngine,
   required bool hasAutofillOverlay,
-  String glassPaneTagName = DomRenderer._glassPaneTagName,
+  String glassPaneTagName = FlutterViewEmbedder._glassPaneTagName,
 }) {
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
   final bool isFirefox = browserEngine == BrowserEngine.firefox;
@@ -646,9 +659,9 @@ void applyGlobalCssRulesToSheet(
   }
 }
 
-/// Singleton DOM renderer.
-DomRenderer get domRenderer => ensureDomRendererInitialized();
+/// The embedder singleton.
+FlutterViewEmbedder get flutterViewEmbedder => ensureFlutterViewEmbedderInitialized();
 
-/// Initializes the [DomRenderer], if it's not already initialized.
-DomRenderer ensureDomRendererInitialized() => _domRenderer ??= DomRenderer();
-DomRenderer? _domRenderer;
+/// Initializes the [FlutterViewEmbedder], if it's not already initialized.
+FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() => _flutterViewEmbedder ??= FlutterViewEmbedder();
+FlutterViewEmbedder? _flutterViewEmbedder;

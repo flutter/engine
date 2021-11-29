@@ -17,7 +17,7 @@ void main() {
 
 void testMain() {
   test('populates flt-renderer and flt-build-mode', () {
-    DomRenderer();
+    FlutterViewEmbedder();
     expect(html.document.body!.attributes['flt-renderer'],
         'html (requested explicitly)');
     expect(html.document.body!.attributes['flt-build-mode'], 'debug');
@@ -52,7 +52,7 @@ void testMain() {
     html.document.head!.append(existingMeta);
     expect(existingMeta.isConnected, isTrue);
 
-    final DomRenderer renderer = DomRenderer();
+    final FlutterViewEmbedder renderer = FlutterViewEmbedder();
     renderer.reset();
   },
       // TODO(ferhat): https://github.com/flutter/flutter/issues/46638
@@ -61,7 +61,7 @@ void testMain() {
           browserEngine == BrowserEngine.edge);
 
   test('accesibility placeholder is attached after creation', () {
-    final DomRenderer renderer = DomRenderer();
+    final FlutterViewEmbedder renderer = FlutterViewEmbedder();
 
     expect(
       renderer.glassPaneShadow?.querySelectorAll('flt-semantics-placeholder'),
@@ -70,7 +70,7 @@ void testMain() {
   });
 
   test('renders a shadowRoot by default', () {
-    final DomRenderer renderer = DomRenderer();
+    final FlutterViewEmbedder renderer = FlutterViewEmbedder();
 
     final HostNode hostNode = renderer.glassPaneShadow!;
 
@@ -83,7 +83,7 @@ void testMain() {
 
     attachShadow = null; // Break ShadowDOM
 
-    final DomRenderer renderer = DomRenderer();
+    final FlutterViewEmbedder renderer = FlutterViewEmbedder();
 
     final HostNode hostNode = renderer.glassPaneShadow!;
 
@@ -97,7 +97,7 @@ void testMain() {
   });
 
   test('should add/remove global resource', () {
-    final DomRenderer renderer = DomRenderer();
+    final FlutterViewEmbedder renderer = FlutterViewEmbedder();
     final html.DivElement resource = html.DivElement();
     renderer.addResource(resource);
     final html.Element? resourceRoot = resource.parent;
@@ -108,7 +108,7 @@ void testMain() {
   });
 
   test('hide placeholder text for textfield', () {
-    final DomRenderer renderer = DomRenderer();
+    final FlutterViewEmbedder renderer = FlutterViewEmbedder();
     final html.InputElement regularTextField = html.InputElement();
     regularTextField.placeholder = 'Now you see me';
     renderer.addResource(regularTextField);

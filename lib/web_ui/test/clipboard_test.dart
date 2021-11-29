@@ -15,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializeTestDomRenderer();
+  await ui.webOnlyInitializeTestFlutterViewEmbedder();
   group('message handler', () {
     const String testText = 'test text';
 

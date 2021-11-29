@@ -39,7 +39,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializeTestDomRenderer();
+  await ui.webOnlyInitializeTestFlutterViewEmbedder();
 
   test('no text', () {
     final CanvasParagraph paragraph = CanvasParagraphBuilder(ahemStyle).build();

@@ -21,9 +21,9 @@ Future<dynamic> ensureTestPlatformInitializedThenRunTest(dynamic Function() body
 
 Future<void>? _platformInitializedFuture;
 
-Future<void> webOnlyInitializeTestDomRenderer({double devicePixelRatio = 3.0}) {
-  // Force-initialize DomRenderer so it doesn't overwrite test pixel ratio.
-  engine.ensureDomRendererInitialized();
+Future<void> webOnlyInitializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) {
+  // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
+  engine.ensureFlutterViewEmbedderInitialized();
 
   // The following parameters are hard-coded in Flutter's test embedder. Since
   // we don't have an embedder yet this is the lowest-most layer we can put

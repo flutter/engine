@@ -6,7 +6,7 @@ import 'dart:html' as html;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../dom_renderer.dart';
+import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
 import '../util.dart';
@@ -598,7 +598,7 @@ class RootStyleNode extends StyleNode {
   ui.TextBaseline? get _textBaseline => null;
 
   @override
-  String get _fontFamily => paragraphStyle.fontFamily ?? DomRenderer.defaultFontFamily;
+  String get _fontFamily => paragraphStyle.fontFamily ?? FlutterViewEmbedder.defaultFontFamily;
 
   @override
   List<String>? get _fontFamilyFallback => null;
@@ -607,7 +607,7 @@ class RootStyleNode extends StyleNode {
   List<ui.FontFeature>? get _fontFeatures => null;
 
   @override
-  double get _fontSize => paragraphStyle.fontSize ?? DomRenderer.defaultFontSize;
+  double get _fontSize => paragraphStyle.fontSize ?? FlutterViewEmbedder.defaultFontSize;
 
   @override
   double? get _letterSpacing => null;

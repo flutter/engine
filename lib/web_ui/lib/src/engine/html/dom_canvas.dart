@@ -10,7 +10,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
+import '../embedder.dart';
 import '../engine_canvas.dart';
 import '../html_image_codec.dart';
 import '../text/paragraph.dart';
@@ -32,7 +32,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void clear() {
     super.clear();
-    domRenderer.removeAllChildren(rootElement);
+    flutterViewEmbedder.removeAllChildren(rootElement);
   }
 
   @override

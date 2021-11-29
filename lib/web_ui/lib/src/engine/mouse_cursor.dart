@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dom_renderer.dart';
+import 'embedder.dart';
 import 'util.dart';
 
 /// Provides mouse cursor bindings, such as the `flutter/mousecursor` channel.
@@ -67,7 +67,7 @@ class MouseCursor {
 
   void activateSystemCursor(String? kind) {
     setElementStyle(
-      domRenderer.glassPaneElement!,
+      flutterViewEmbedder.glassPaneElement!,
       'cursor',
       _mapKindToCssValue(kind),
     );
