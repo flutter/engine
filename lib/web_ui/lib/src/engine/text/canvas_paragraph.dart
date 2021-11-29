@@ -144,7 +144,7 @@ class CanvasParagraph implements EngineParagraph {
 
   html.HtmlElement _createDomElement() {
     final html.HtmlElement rootElement =
-        domRenderer.createElement('p') as html.HtmlElement;
+        html.document.createElement('p') as html.HtmlElement;
 
     // 1. Set paragraph-level styles.
     _applyNecessaryParagraphStyles(element: rootElement, style: paragraphStyle);
@@ -181,7 +181,7 @@ class CanvasParagraph implements EngineParagraph {
     for (int i = 0; i < lines.length; i++) {
       // Insert a <BR> element before each line except the first line.
       if (i > 0) {
-        element.append(domRenderer.createElement('br'));
+        element.append(html.document.createElement('br'));
       }
 
       final EngineLineMetrics line = lines[i];
@@ -197,13 +197,13 @@ class CanvasParagraph implements EngineParagraph {
         }
 
         if (buffer.isNotEmpty) {
-          domRenderer.appendText(element, buffer.toString());
+          element.appendText(buffer.toString());
           buffer.clear();
         }
 
         if (box is SpanBox) {
           span = box.span;
-          element = domRenderer.createElement('span') as html.HtmlElement;
+          element = html.document.createElement('span') as html.HtmlElement;
           applyTextStyleToElement(
             element: element,
             style: box.span.style,
@@ -225,13 +225,13 @@ class CanvasParagraph implements EngineParagraph {
       }
 
       if (buffer.isNotEmpty) {
-        domRenderer.appendText(element, buffer.toString());
+        element.appendText(buffer.toString());
         buffer.clear();
       }
 
       final String? ellipsis = line.ellipsis;
       if (ellipsis != null) {
-        domRenderer.appendText(element, ellipsis);
+        element.appendText(ellipsis);
       }
     }
 

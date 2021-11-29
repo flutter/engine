@@ -23,33 +23,18 @@ void testMain() {
     expect(html.document.body!.attributes['flt-build-mode'], 'debug');
   });
 
-  test('creating elements works', () {
-    final DomRenderer renderer = DomRenderer();
-    final html.Element element = renderer.createElement('div');
-    expect(element, isNotNull);
-  });
-
   test('can set style properties on elements', () {
-    final DomRenderer renderer = DomRenderer();
-    final html.Element element = renderer.createElement('div');
-    DomRenderer.setElementStyle(element, 'color', 'red');
+    final html.Element element = html.document.createElement('div');
+    setElementStyle(element, 'color', 'red');
     expect(element.style.color, 'red');
   });
 
   test('can remove style properties from elements', () {
-    final DomRenderer renderer = DomRenderer();
-    final html.Element element = renderer.createElement('div');
-    DomRenderer.setElementStyle(element, 'color', 'blue');
+    final html.Element element = html.document.createElement('div');
+    setElementStyle(element, 'color', 'blue');
     expect(element.style.color, 'blue');
-    DomRenderer.setElementStyle(element, 'color', null);
+    setElementStyle(element, 'color', null);
     expect(element.style.color, '');
-  });
-
-  test('elements can have children', () {
-    final DomRenderer renderer = DomRenderer();
-    final html.Element element = renderer.createElement('div');
-    renderer.createElement('div', parent: element);
-    expect(element.children, hasLength(1));
   });
 
   test('innerHeight/innerWidth are equal to visualViewport height and width',

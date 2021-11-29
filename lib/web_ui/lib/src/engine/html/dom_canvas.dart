@@ -165,7 +165,7 @@ html.HtmlElement buildDrawRectElement(
     ui.Rect rect, SurfacePaintData paint, String tagName, Matrix4 transform) {
   assert(paint.shader == null);
   final html.HtmlElement rectangle =
-      domRenderer.createElement(tagName) as html.HtmlElement;
+      html.document.createElement(tagName) as html.HtmlElement;
   assert(() {
     rectangle.setAttribute('flt-rect', '$rect');
     rectangle.setAttribute('flt-paint', '$paint');

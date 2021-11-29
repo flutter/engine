@@ -744,7 +744,7 @@ void applyTextStyleToElement({
           _textDecorationToCssString(style.decoration, style.decorationStyle);
       if (textDecoration != null) {
         if (browserEngine == BrowserEngine.webkit) {
-          DomRenderer.setElementStyle(
+          setElementStyle(
               element, '-webkit-text-decoration', textDecoration);
         } else {
           cssStyle.textDecoration = textDecoration;
@@ -766,7 +766,7 @@ void applyTextStyleToElement({
 html.Element createPlaceholderElement({
   required ParagraphPlaceholder placeholder,
 }) {
-  final html.Element element = domRenderer.createElement('span');
+  final html.Element element = html.document.createElement('span');
   final html.CssStyleDeclaration style = element.style;
   style
     ..display = 'inline-block'

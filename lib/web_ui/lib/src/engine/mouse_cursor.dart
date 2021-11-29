@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dom_renderer.dart';
+import 'util.dart';
 
 /// Provides mouse cursor bindings, such as the `flutter/mousecursor` channel.
 class MouseCursor {
@@ -65,7 +66,7 @@ class MouseCursor {
   }
 
   void activateSystemCursor(String? kind) {
-    DomRenderer.setElementStyle(
+    setElementStyle(
       domRenderer.glassPaneElement!,
       'cursor',
       _mapKindToCssValue(kind),
