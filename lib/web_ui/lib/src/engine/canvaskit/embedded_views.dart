@@ -4,10 +4,11 @@
 
 import 'dart:html' as html;
 import 'dart:math' as math;
+import 'dart:svg' as svg;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show NullTreeSanitizer, platformViewManager;
+import '../../engine.dart' show platformViewManager;
 import '../configuration.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
@@ -337,12 +338,13 @@ class HtmlViewEmbedder {
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
             final String clipId = 'svgClip$_clipPathCount';
-            final html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="$clipId">'
-              '<path d="${path.toSvgString()}">'
-              '</path></clipPath>',
-              treeSanitizer: NullTreeSanitizer(),
+            final svg.ClipPathElement newClipPath = svg.ClipPathElement();
+            newClipPath.id = clipId;
+            newClipPath.append(
+              svg.PathElement()
+                ..setAttribute('d', path.toSvgString()!)
             );
+
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
@@ -356,11 +358,11 @@ class HtmlViewEmbedder {
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
             final String clipId = 'svgClip$_clipPathCount';
-            final html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="$clipId">'
-              '<path d="${path.toSvgString()}">'
-              '</path></clipPath>',
-              treeSanitizer: NullTreeSanitizer(),
+            final svg.ClipPathElement newClipPath = svg.ClipPathElement();
+            newClipPath.id = clipId;
+            newClipPath.append(
+              svg.PathElement()
+                ..setAttribute('d', path.toSvgString()!)
             );
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
@@ -414,10 +416,8 @@ class HtmlViewEmbedder {
     if (_svgPathDefs != null) {
       return;
     }
-    _svgPathDefs = html.Element.html(
-      '$kSvgResourceHeader<defs id="sk_path_defs"></defs></svg>',
-      treeSanitizer: NullTreeSanitizer(),
-    );
+    _svgPathDefs = kSvgResourceHeader.clone(false) as svg.SvgSvgElement;
+    _svgPathDefs!.append(svg.DefsElement()..id = 'sk_path_defs');
     skiaSceneHost!.append(_svgPathDefs!);
   }
 
