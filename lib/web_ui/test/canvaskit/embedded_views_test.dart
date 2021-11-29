@@ -641,6 +641,39 @@ void testMain() {
 
       HtmlViewEmbedder.debugDisableOverlays = false;
     });
+
+    test('does not create overlays for invisible platform views', () async {
+      ui.platformViewRegistry.registerViewFactory(
+          'test-visible-view',
+          (int viewId) =>
+              html.DivElement()..className = 'visible-platform-view');
+      ui.platformViewRegistry.registerViewFactory(
+        'test-invisible-view',
+        (int viewId) =>
+            html.DivElement()..className = 'invisible-platform-view',
+        isVisible: false,
+      );
+      await createPlatformView(0, 'test-visible-view');
+      await createPlatformView(1, 'test-invisible-view');
+
+      final EnginePlatformDispatcher dispatcher =
+          ui.window.platformDispatcher as EnginePlatformDispatcher;
+
+      int countCanvases() {
+        return domRenderer.sceneElement!.querySelectorAll('canvas').length;
+      }
+
+      expect(platformViewManager.isInvisible(0), isFalse);
+      expect(platformViewManager.isInvisible(1), isTrue);
+
+      LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.pop();
+      dispatcher.rasterizer!.draw(sb.build().layerTree);
+
+      expect(countCanvases(), 1);
+    });
     // TODO(dit): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

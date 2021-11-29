@@ -91,6 +91,8 @@ class HtmlViewEmbedder {
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
+  int _numVisibleViews = 0;
+
   /// The most recent composition order.
   List<int> _activeCompositionOrder = <int>[];
 
@@ -126,7 +128,7 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    if (!disableOverlays) {
+    if (!disableOverlays && !platformViewManager.isInvisible(viewId)) {
       // We must decide in the preroll phase if a platform view will use the
       // backup overlay, so that draw commands after the platform view will
       // correctly paint to the backup surface.
@@ -169,12 +171,15 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
-    final int compositedViewCount = _compositionOrder.length;
+    final int overlayIndex = _numVisibleViews;
     _compositionOrder.add(viewId);
+    if (!platformViewManager.isInvisible(viewId)) {
+      _numVisibleViews++;
+    }
     if (!disableOverlays) {
-      if (compositedViewCount < _pictureRecordersCreatedDuringPreroll.length) {
+      if (overlayIndex < _pictureRecordersCreatedDuringPreroll.length) {
         _pictureRecorders[viewId] =
-            _pictureRecordersCreatedDuringPreroll[compositedViewCount];
+            _pictureRecordersCreatedDuringPreroll[overlayIndex];
       } else {
         _viewsUsingBackupSurface.add(viewId);
         _pictureRecorders[viewId] = _backupPictureRecorder!;
@@ -455,6 +460,7 @@ class HtmlViewEmbedder {
     _viewsUsingBackupSurface.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
+      _numVisibleViews = 0;
       return;
     }
 
@@ -542,6 +548,7 @@ class HtmlViewEmbedder {
     }
 
     _compositionOrder.clear();
+    _numVisibleViews = 0;
 
     disposeViews(unusedViews);
 
@@ -728,6 +735,7 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.clear();
     _activeCompositionOrder.clear();
     _compositionOrder.clear();
+    _numVisibleViews = 0;
   }
 }
 
