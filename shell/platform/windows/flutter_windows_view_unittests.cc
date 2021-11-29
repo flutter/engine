@@ -189,11 +189,13 @@ TEST(FlutterWindowsEngine, AddSemanticsNodeUpdate) {
   IAccessible* native_view = node_delegate->GetNativeViewAccessible();
   ASSERT_TRUE(native_view != nullptr);
 
-  // Verify node name matches our label.
-  BSTR bname = nullptr;
+  // Property lookups will be made against this node itself.
   VARIANT varchild{};
   varchild.vt = VT_I4;
   varchild.lVal = CHILDID_SELF;
+
+  // Verify node name matches our label.
+  BSTR bname = nullptr;
   ASSERT_EQ(native_view->get_accName(varchild, &bname), S_OK);
   std::string name(_com_util::ConvertBSTRToString(bname));
   EXPECT_EQ(name, "name");
