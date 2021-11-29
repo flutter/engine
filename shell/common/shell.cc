@@ -1059,10 +1059,26 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+void Shell::OnAnimatorBeginFrame(fml::TimePoint vsync_start_time,
+                                 fml::TimePoint frame_target_time,
                                  uint64_t frame_number) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+
+  auto is_frame_rate_same = [](double fr1, double fr2) {
+    const double kRefreshRateCompareEpsilon = 1;
+    return fabs(fr1 - fr2) < kRefreshRateCompareEpsilon;
+  };
+
+  double new_frame_rate =
+      round((1 / (frame_target_time - vsync_start_time).ToSecondsF()));
+  if (!is_frame_rate_same(frame_rate_, new_frame_rate)) {
+    frame_rate_ = new_frame_rate;
+    std::vector<std::unique_ptr<flutter::Display>> displays;
+    displays.push_back(std::make_unique<flutter::Display>(frame_rate_));
+    OnDisplayUpdates(flutter::DisplayUpdateType::kNewFrame,
+                     std::move(displays));
+  }
 
   // record the target time for use by rasterizer.
   {

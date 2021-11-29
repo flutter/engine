@@ -565,7 +565,8 @@ class Shell final : public PlatformView::Delegate,
       AssetResolver::AssetResolverType type) override;
 
   // |Animator::Delegate|
-  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+  void OnAnimatorBeginFrame(fml::TimePoint vsync_start_time,
+                            fml::TimePoint frame_target_time,
                             uint64_t frame_number) override;
 
   // |Animator::Delegate|
@@ -689,6 +690,11 @@ class Shell final : public PlatformView::Delegate,
 
   fml::WeakPtrFactory<Shell> weak_factory_;
   friend class testing::ShellTest;
+
+  // Indicates the current frame_rate_.
+  //
+  // Every new frame may update this value if necessary.
+  double frame_rate_ = -1;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);
 };

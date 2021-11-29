@@ -32,6 +32,13 @@ void DisplayManager::HandleDisplayUpdates(
       FML_CHECK(displays_.empty());
       displays_ = std::move(displays);
       return;
+    case DisplayUpdateType::kNewFrame:
+      displays_.insert(displays_.end(),
+                       std::make_move_iterator(displays.begin()),
+                       std::make_move_iterator(displays.end()));
+      FML_DLOG(ERROR) << "display updated "
+                      << displays_.back()->GetRefreshRate();
+      break;
     default:
       FML_CHECK(false) << "Unknown DisplayUpdateType.";
   }

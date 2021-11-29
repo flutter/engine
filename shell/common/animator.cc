@@ -133,9 +133,10 @@ void Animator::BeginFrame(
   // We have acquired a valid continuation from the pipeline and are ready
   // to service potential frame.
   FML_DCHECK(producer_continuation_);
+  const fml::TimePoint vsync_start_time =
+      frame_timings_recorder_->GetVsyncStartTime();
   fml::tracing::TraceEventAsyncComplete(
-      "flutter", "VsyncSchedulingOverhead",
-      frame_timings_recorder_->GetVsyncStartTime(),
+      "flutter", "VsyncSchedulingOverhead", vsync_start_time,
       frame_timings_recorder_->GetBuildStartTime());
   const fml::TimePoint frame_target_time =
       frame_timings_recorder_->GetVsyncTargetTime();
@@ -144,7 +145,8 @@ void Animator::BeginFrame(
     TRACE_EVENT2("flutter", "Framework Workload", "mode", "basic", "frame",
                  FrameParity());
     uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
-    delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
+    delegate_.OnAnimatorBeginFrame(vsync_start_time, frame_target_time,
+                                   frame_number);
   }
 
   if (!frame_scheduled_ && has_rendered_) {

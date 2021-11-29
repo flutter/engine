@@ -20,7 +20,11 @@ enum class DisplayUpdateType {
   ///    1. The frame buffer hardware is connected.
   ///    2. The display is drawable, e.g. it isn't being mirrored from another
   ///       connected display or sleeping.
-  kStartup
+  kStartup,
+
+  /// The `flutter::Display` that were active and a new frame requests an
+  /// update.
+  kNewFrame,
 };
 
 /// Manages lifecycle of the connected displays. This class is thread-safe.

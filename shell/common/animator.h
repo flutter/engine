@@ -31,7 +31,8 @@ class Animator final {
  public:
   class Delegate {
    public:
-    virtual void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+    virtual void OnAnimatorBeginFrame(fml::TimePoint vsync_start_time,
+                                      fml::TimePoint frame_target_time,
                                       uint64_t frame_number) = 0;
 
     virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;

@@ -20,7 +20,8 @@ namespace testing {
 
 class FakeAnimatorDelegate : public Animator::Delegate {
  public:
-  void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+  void OnAnimatorBeginFrame(fml::TimePoint vsync_start_time,
+                            fml::TimePoint frame_target_time,
                             uint64_t frame_number) override {}
 
   void OnAnimatorNotifyIdle(int64_t deadline) override {
