@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h"
 
+#import <objc/runtime.h>
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
@@ -11,9 +12,11 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h"
 
 static const char* kCallbackCacheSubDir = "Library/Caches/";
+static NSString* const kApplicationDidReceiveRemoteNotificationFetchCompletionHandler =
+    @"application:didReceiveRemoteNotification:fetchCompletionHandler:";
 
 static const SEL selectorsHandledByPlugins[] = {
-    @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:),
+    NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler),
     @selector(application:performFetchWithCompletionHandler:)};
 
 @interface FlutterPluginAppLifeCycleDelegate ()
@@ -30,6 +33,26 @@ static const SEL selectorsHandledByPlugins[] = {
 
   // Weak references to registered plugins.
   NSPointerArray* _delegates;
+}
+
++ (void)load {
+  // Swap out `performApplication:didReceiveRemoteNotification:fetchCompletionHandler:` for
+  // `application:didReceiveRemoteNotification:fetchCompletionHandler:`.  This has to be done
+  // to avoid a potential false positive email when uploading apps to the AppStore about
+  // entitlements.  Linked NSPlugin implementations that have
+  // `application:didReceiveRemoteNotification:fetchCompletionHandler:` defined will cause the
+  // email to happen if the entitlements are missing.
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    Class thisClass = [self class];
+    SEL originalSelector = @selector(performApplication:
+                           didReceiveRemoteNotification:fetchCompletionHandler:);
+    SEL addedSelector =
+        NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler);
+    Method originalMethod = class_getInstanceMethod(thisClass, originalSelector);
+    IMP originalImp = method_getImplementation(originalMethod);
+    class_addMethod(thisClass, addedSelector, originalImp, method_getTypeEncoding(originalMethod));
+  });
 }
 
 - (void)addObserverFor:(NSString*)name selector:(SEL)selector {
@@ -260,7 +283,9 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
   }
 }
 
-- (void)application:(UIApplication*)application
+// This will get swapped into `application:didReceiveRemoteNotification:fetchCompletionHandler:`
+// in +[FlutterPluginAppLifeCycleDelegate load].
+- (void)performApplication:(UIApplication*)application
     didReceiveRemoteNotification:(NSDictionary*)userInfo
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
   for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {

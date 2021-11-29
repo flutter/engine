@@ -10,6 +10,12 @@
 
 FLUTTER_ASSERT_ARC
 
+@interface FlutterPluginAppLifeCycleDelegate ()
+- (void)application:(UIApplication*)application
+    didReceiveRemoteNotification:(NSDictionary*)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
+@end
+
 @interface FlutterPluginAppLifeCycleDelegateTest : XCTestCase
 @end
 
@@ -87,6 +93,23 @@ FLUTTER_ASSERT_ARC
                                                       object:nil];
   [self waitForExpectations:@[ expectation ] timeout:5.0];
   OCMVerify([plugin applicationWillTerminate:[UIApplication sharedApplication]]);
+}
+
+- (void)testDidReceiveRemoteNotification {
+  FlutterPluginAppLifeCycleDelegate* delegate = [[FlutterPluginAppLifeCycleDelegate alloc] init];
+  id plugin = OCMProtocolMock(@protocol(FlutterPlugin));
+  [delegate addDelegate:plugin];
+  NSDictionary* info = @{};
+  void (^handler)(UIBackgroundFetchResult) = ^(UIBackgroundFetchResult result) {
+  };
+  XCTAssertTrue([delegate respondsToSelector:@selector
+                          (application:didReceiveRemoteNotification:fetchCompletionHandler:)]);
+  [delegate application:[UIApplication sharedApplication]
+      didReceiveRemoteNotification:info
+            fetchCompletionHandler:handler];
+  [(NSObject<FlutterPlugin>*)[plugin verify] application:[UIApplication sharedApplication]
+                            didReceiveRemoteNotification:info
+                                  fetchCompletionHandler:handler];
 }
 
 @end

@@ -15,6 +15,12 @@ static NSString* const kUIBackgroundMode = @"UIBackgroundModes";
 static NSString* const kRemoteNotificationCapabitiliy = @"remote-notification";
 static NSString* const kBackgroundFetchCapatibility = @"fetch";
 static NSString* const kRestorationStateAppModificationKey = @"mod-date";
+static NSString* const kApplicationDidReceiveRemoteNotificationFetchCompletionHandler =
+    @"application:didReceiveRemoteNotification:fetchCompletionHandler:";
+
+static SEL ApplicationDidReceiveRemoteNotificationFetchCompletionHandlerSelector() {
+  return NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler);
+}
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
@@ -296,7 +302,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
   NSSet* backgroundModesSet = [[[NSSet alloc] initWithArray:backgroundModesArray] autorelease];
-  if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
+  if (selector == ApplicationDidReceiveRemoteNotificationFetchCompletionHandlerSelector()) {
     if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
       NSLog(
           @"You've implemented -[<UIApplicationDelegate> "
