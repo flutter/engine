@@ -172,7 +172,6 @@ TEST(FlutterWindowsEngine, AddSemanticsNodeUpdate) {
   // Add root node.
   FlutterSemanticsNode node{sizeof(FlutterSemanticsNode), 0};
   node.label = "name";
-  node.hint = "hint";
   node.value = "value";
   node.platform_view_id = -1;
   bridge->AddFlutterSemanticsNodeUpdate(&node);
@@ -192,12 +191,19 @@ TEST(FlutterWindowsEngine, AddSemanticsNodeUpdate) {
 
   // Verify node name matches our label.
   BSTR bname = nullptr;
-  VARIANT varchild{};
-  varchild.vt = VT_I4;
-  varchild.lVal = 0;
-  native_view->get_accName(varchild, &bname);
+  VARIANT varvalue{};
+  varvalue.vt = VT_I4;
+  varvalue.lVal = 0;
+  native_view->get_accName(varvalue, &bname);
   std::string name(_com_util::ConvertBSTRToString(bname));
   ASSERT_EQ(name, "name");
+
+  // Verify node value matches.
+  BSTR bvalue = nullptr;
+  varvalue.lVal = 0;
+  native_view->get_accValue(varvalue, &bvalue);
+  std::string value(_com_util::ConvertBSTRToString(bvalue));
+  ASSERT_EQ(value, "value");
 }
 
 }  // namespace testing
