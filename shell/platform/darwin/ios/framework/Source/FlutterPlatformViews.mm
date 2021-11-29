@@ -565,10 +565,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   FML_DCHECK(flutter_view_);
   UIView* flutter_view = flutter_view_.get();
-  // The first platform view should be above the flutter view, so we start the zIndex with +1.
-  auto zIndex = flutter_view.layer.zPosition + 1;
-  // Clear the `active_composition_order_`, which will be populated down below.
-  active_composition_order_.clear();
+  auto zIndex = 0
+                // Clear the `active_composition_order_`, which will be populated down below.
+                active_composition_order_.clear();
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
