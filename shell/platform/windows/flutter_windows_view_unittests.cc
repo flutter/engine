@@ -191,19 +191,24 @@ TEST(FlutterWindowsEngine, AddSemanticsNodeUpdate) {
 
   // Verify node name matches our label.
   BSTR bname = nullptr;
-  VARIANT varvalue{};
-  varvalue.vt = VT_I4;
-  varvalue.lVal = 0;
-  native_view->get_accName(varvalue, &bname);
+  VARIANT varchild{};
+  varchild.vt = VT_I4;
+  varchild.lVal = CHILDID_SELF;
+  ASSERT_EQ(native_view->get_accName(varchild, &bname), S_OK);
   std::string name(_com_util::ConvertBSTRToString(bname));
-  ASSERT_EQ(name, "name");
+  EXPECT_EQ(name, "name");
 
   // Verify node value matches.
   BSTR bvalue = nullptr;
-  varvalue.lVal = 0;
-  native_view->get_accValue(varvalue, &bvalue);
+  ASSERT_EQ(native_view->get_accValue(varchild, &bvalue), S_OK);
   std::string value(_com_util::ConvertBSTRToString(bvalue));
-  ASSERT_EQ(value, "value");
+  EXPECT_EQ(value, "value");
+
+  // Verify node type is a group.
+  VARIANT varrole{};
+  varrole.vt = VT_I4;
+  ASSERT_EQ(native_view->get_accRole(varchild, &varrole), S_OK);
+  EXPECT_EQ(varrole.lVal, ROLE_SYSTEM_STATICTEXT);
 }
 
 }  // namespace testing
