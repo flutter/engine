@@ -169,7 +169,12 @@ class SkiaGoldClient {
   ///
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
-  Future<bool> imgtestAdd(String testName, File goldenFile, int screenshotSize) async {
+  Future<bool> imgtestAdd(
+    String testName,
+    File goldenFile,
+    int screenshotSize,
+    bool isCanvaskitTest,
+  ) async {
     await _imgtestInit();
 
     final List<String> imgtestCommand = <String>[
@@ -178,7 +183,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize),
+      ..._getMatchingArguments(testName, screenshotSize, isCanvaskitTest),
     ];
 
     final ProcessResult result = await process.run(imgtestCommand);
@@ -258,7 +263,12 @@ class SkiaGoldClient {
   ///
   /// The [testName] and [goldenFile] parameters reference the current
   /// comparison being evaluated.
-  Future<void> tryjobAdd(String testName, File goldenFile, int screenshotSize) async {
+  Future<void> tryjobAdd(
+    String testName,
+    File goldenFile,
+    int screenshotSize,
+    bool isCanvaskitTest,
+  ) async {
     await _tryjobInit();
 
     final List<String> imgtestCommand = <String>[
@@ -267,7 +277,7 @@ class SkiaGoldClient {
       '--work-dir', _tempPath,
       '--test-name', cleanTestName(testName),
       '--png-file', goldenFile.path,
-      ..._getMatchingArguments(testName, screenshotSize),
+      ..._getMatchingArguments(testName, screenshotSize, isCanvaskitTest),
     ];
 
     final ProcessResult result = await process.run(imgtestCommand);
@@ -288,7 +298,11 @@ class SkiaGoldClient {
     }
   }
 
-  List<String> _getMatchingArguments(String testName, int screenshotSize) {
+  List<String> _getMatchingArguments(
+    String testName,
+    int screenshotSize,
+    bool isCanvaskitTest,
+  ) {
     // The algorithm to be used when matching images. The available options are:
     // - "fuzzy": Allows for customizing the thresholds of pixel differences.
     // - "sobel": Same as "fuzzy" but performs edge detection before performing
@@ -307,7 +321,7 @@ class SkiaGoldClient {
     // abs(r(image) - r(golden)) + abs(g(image) - g(golden)) + abs(b(image) - b(golden)) <= pixelDeltaThreshold
     // ```
     final String pixelDeltaThreshold;
-    if (testName.startsWith('canvaskit_')) {
+    if (isCanvaskitTest) {
       pixelDeltaThreshold = '21';
     } else if (browserName == 'ios-safari') {
       pixelDeltaThreshold = '15';
