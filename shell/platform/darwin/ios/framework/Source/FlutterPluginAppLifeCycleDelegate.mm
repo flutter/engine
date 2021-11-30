@@ -59,13 +59,12 @@ static void RemapMethod(Class thisClass, SEL originalSelector, SEL addedSelector
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     RemapMethod(
-        [self class],
-        @selector(performApplication:didReceiveRemoteNotification:fetchCompletionHandler:),
+        self, @selector(performApplication:didReceiveRemoteNotification:fetchCompletionHandler:),
         NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler));
-    RemapMethod([self class],
+    RemapMethod(self,
                 @selector(performApplication:didRegisterForRemoteNotificationsWithDeviceToken:),
                 NSSelectorFromString(kApplicationDidRegisterForRemoteNotificationsWithDeviceToken));
-    RemapMethod([self class],
+    RemapMethod(self,
                 @selector(performApplication:didFailToRegisterForRemoteNotificationsWithError:),
                 NSSelectorFromString(kApplicationDidFailToRegisterForRemoteNotificationsWithError));
   });
