@@ -29,7 +29,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializeTestFlutterViewEmbedder();
+  await initializeTestFlutterViewEmbedder();
 
   group('$CanvasParagraph.getBoxesForRange', () {
     test('return empty list for invalid ranges', () {

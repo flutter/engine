@@ -33,7 +33,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await webOnlyInitializeTestFlutterViewEmbedder();
+  await initializeTestFlutterViewEmbedder();
 
   setUpAll(() {
     WebExperiments.ensureInitialized();

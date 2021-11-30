@@ -413,13 +413,6 @@ class FlutterViewEmbedder {
     }
   }
 
-  /// Removes all children of a DOM node.
-  void removeAllChildren(html.Node node) {
-    while (node.lastChild != null) {
-      node.lastChild!.remove();
-    }
-  }
-
   static const String orientationLockTypeAny = 'any';
   static const String orientationLockTypeNatural = 'natural';
   static const String orientationLockTypeLandscape = 'landscape';

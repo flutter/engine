@@ -750,3 +750,10 @@ void drawEllipse(
     context.restore();
   }
 }
+
+/// Removes all children of a DOM node.
+void removeAllChildren(html.Node node) {
+  while (node.lastChild != null) {
+    node.lastChild!.remove();
+  }
+}
