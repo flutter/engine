@@ -36,12 +36,14 @@ static const SEL selectorsHandledByPlugins[] = {
 }
 
 + (void)load {
-  // Swap out `performApplication:didReceiveRemoteNotification:fetchCompletionHandler:` for
-  // `application:didReceiveRemoteNotification:fetchCompletionHandler:`.  This has to be done
-  // to avoid a potential false positive email when uploading apps to the AppStore about
-  // entitlements.  Linked NSPlugin implementations that have
-  // `application:didReceiveRemoteNotification:fetchCompletionHandler:` defined will cause the
-  // email to happen if the entitlements are missing.
+  // Swap out
+  // `performApplication:didReceiveRemoteNotification:fetchCompletionHandler:`
+  // for `application:didReceiveRemoteNotification:fetchCompletionHandler:`.
+  // This has to be done to avoid a potential false positive "Missing Push
+  // Notification Entitlement" validation failure when uploading apps to the App
+  // Store.  Linked NSPlugin implementations that have
+  // `application:didReceiveRemoteNotification:fetchCompletionHandler:` defined
+  // will cause the failure to happen correctly if the entitlements are missing.
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     Class thisClass = [self class];
