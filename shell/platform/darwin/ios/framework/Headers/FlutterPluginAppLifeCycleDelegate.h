@@ -53,6 +53,9 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
+ *
+ * At runtime this is also mapped to
+ * `application:didRegisterForRemoteNotificationsWithDeviceToken:`.
  */
 - (void)performApplication:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
@@ -65,6 +68,9 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
+ *
+ * At runtime this is also mapped to
+ * `application:didReceiveRemoteNotification:fetchCompletionHandler:`.
  */
 - (void)performApplication:(UIApplication*)application
     didReceiveRemoteNotification:(NSDictionary*)userInfo

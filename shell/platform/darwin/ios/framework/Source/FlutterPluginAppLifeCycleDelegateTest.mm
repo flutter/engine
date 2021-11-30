@@ -18,6 +18,21 @@ FLUTTER_ASSERT_ARC
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
 @end
 
+@interface FlutterPluginAppLifeCycleDelegateSubclass : FlutterPluginAppLifeCycleDelegate
+@property(nonatomic, strong) XCTestExpectation* didReceiveRemoteNotificationExpectation;
+@end
+
+@implementation FlutterPluginAppLifeCycleDelegateSubclass
+- (void)performApplication:(UIApplication*)application
+    didReceiveRemoteNotification:(NSDictionary*)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+  [self.didReceiveRemoteNotificationExpectation fulfill];
+  [super performApplication:application
+      didReceiveRemoteNotification:userInfo
+            fetchCompletionHandler:completionHandler];
+}
+@end
+
 @interface FlutterPluginAppLifeCycleDelegateTest : XCTestCase
 @end
 
@@ -112,6 +127,27 @@ FLUTTER_ASSERT_ARC
   [(NSObject<FlutterPlugin>*)[plugin verify] application:[UIApplication sharedApplication]
                             didReceiveRemoteNotification:info
                                   fetchCompletionHandler:handler];
+}
+
+- (void)flutterPluginAppLifeCycleDelegateSubclass {
+  FlutterPluginAppLifeCycleDelegateSubclass* delegate =
+      [[FlutterPluginAppLifeCycleDelegateSubclass alloc] init];
+  XCTestExpectation* expecation = [self expectationWithDescription:@"subclass called"];
+  delegate.didReceiveRemoteNotificationExpectation = expecation;
+  id plugin = OCMProtocolMock(@protocol(FlutterPlugin));
+  [delegate addDelegate:plugin];
+  NSDictionary* info = @{};
+  void (^handler)(UIBackgroundFetchResult) = ^(UIBackgroundFetchResult result) {
+  };
+  XCTAssertTrue([delegate respondsToSelector:@selector
+                          (application:didReceiveRemoteNotification:fetchCompletionHandler:)]);
+  [delegate application:[UIApplication sharedApplication]
+      didReceiveRemoteNotification:info
+            fetchCompletionHandler:handler];
+  [(NSObject<FlutterPlugin>*)[plugin verify] application:[UIApplication sharedApplication]
+                            didReceiveRemoteNotification:info
+                                  fetchCompletionHandler:handler];
+  [self waitForExpectationsWithTimeout:1.0 handler:nil];
 }
 
 - (void)testDidRegisterForRemoteNotificationsWithDeviceToken {
