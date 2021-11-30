@@ -97,12 +97,6 @@ static SEL ApplicationDidReceiveRemoteNotificationFetchCompletionHandlerSelector
 #pragma GCC diagnostic pop
 
 - (void)application:(UIApplication*)application
-    didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
-  [_lifeCycleDelegate application:application
-      didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
-}
-
-- (void)application:(UIApplication*)application
     didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
   [_lifeCycleDelegate application:application
       didFailToRegisterForRemoteNotificationsWithError:error];

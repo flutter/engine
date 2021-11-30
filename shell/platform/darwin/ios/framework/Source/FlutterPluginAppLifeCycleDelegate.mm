@@ -14,9 +14,12 @@
 static const char* kCallbackCacheSubDir = "Library/Caches/";
 static NSString* const kApplicationDidReceiveRemoteNotificationFetchCompletionHandler =
     @"application:didReceiveRemoteNotification:fetchCompletionHandler:";
+static NSString* const kApplicationDidRegisterForRemoteNotificationsWithDeviceToken =
+    @"application:didRegisterForRemoteNotificationsWithDeviceToken:";
 
 static const SEL selectorsHandledByPlugins[] = {
     NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler),
+    NSSelectorFromString(kApplicationDidRegisterForRemoteNotificationsWithDeviceToken),
     @selector(application:performFetchWithCompletionHandler:)};
 
 @interface FlutterPluginAppLifeCycleDelegate ()
@@ -35,6 +38,12 @@ static const SEL selectorsHandledByPlugins[] = {
   NSPointerArray* _delegates;
 }
 
+static void RemapMethod(Class thisClass, SEL originalSelector, SEL addedSelector) {
+  Method originalMethod = class_getInstanceMethod(thisClass, originalSelector);
+  IMP originalImp = method_getImplementation(originalMethod);
+  class_addMethod(thisClass, addedSelector, originalImp, method_getTypeEncoding(originalMethod));
+}
+
 + (void)load {
   // Swap out
   // `performApplication:didReceiveRemoteNotification:fetchCompletionHandler:`
@@ -46,14 +55,13 @@ static const SEL selectorsHandledByPlugins[] = {
   // will cause the failure to happen correctly if the entitlements are missing.
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
-    Class thisClass = [self class];
-    SEL originalSelector = @selector(performApplication:
-                           didReceiveRemoteNotification:fetchCompletionHandler:);
-    SEL addedSelector =
-        NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler);
-    Method originalMethod = class_getInstanceMethod(thisClass, originalSelector);
-    IMP originalImp = method_getImplementation(originalMethod);
-    class_addMethod(thisClass, addedSelector, originalImp, method_getTypeEncoding(originalMethod));
+    RemapMethod(
+        [self class],
+        @selector(performApplication:didReceiveRemoteNotification:fetchCompletionHandler:),
+        NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler));
+    RemapMethod([self class],
+                @selector(performApplication:didRegisterForRemoteNotificationsWithDeviceToken:),
+                NSSelectorFromString(kApplicationDidRegisterForRemoteNotificationsWithDeviceToken));
   });
 }
 
@@ -260,7 +268,7 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
 }
 #pragma GCC diagnostic pop
 
-- (void)application:(UIApplication*)application
+- (void)performApplication:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
   for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
     if (!delegate) {
