@@ -666,7 +666,7 @@ void testMain() {
       expect(platformViewManager.isInvisible(0), isFalse);
       expect(platformViewManager.isInvisible(1), isTrue);
 
-      LayerSceneBuilder sb = LayerSceneBuilder();
+      final LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
