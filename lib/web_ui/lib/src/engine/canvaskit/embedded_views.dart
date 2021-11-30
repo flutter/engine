@@ -129,7 +129,7 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    if (!disableOverlays && !platformViewManager.isInvisible(viewId)) {
+    if (!disableOverlays && platformViewManager.isVisible(viewId)) {
       // We must decide in the preroll phase if a platform view will use the
       // backup overlay, so that draw commands after the platform view will
       // correctly paint to the backup surface.
@@ -174,11 +174,11 @@ class HtmlViewEmbedder {
   CkCanvas? compositeEmbeddedView(int viewId) {
     final int overlayIndex = _numVisibleViews;
     _compositionOrder.add(viewId);
-    if (!platformViewManager.isInvisible(viewId)) {
+    if (platformViewManager.isVisible(viewId)) {
       _numVisibleViews++;
     }
     final bool needOverlay =
-        !disableOverlays && !platformViewManager.isInvisible(viewId);
+        !disableOverlays && platformViewManager.isVisible(viewId);
     if (needOverlay) {
       if (overlayIndex < _pictureRecordersCreatedDuringPreroll.length) {
         _pictureRecorders[viewId] =
@@ -426,10 +426,10 @@ class HtmlViewEmbedder {
         ? null
         : diffViewList(
             _activeCompositionOrder
-                .where((int viewId) => !platformViewManager.isInvisible(viewId))
+                .where((int viewId) => platformViewManager.isVisible(viewId))
                 .toList(),
             _compositionOrder
-                .where((int viewId) => !platformViewManager.isInvisible(viewId))
+                .where((int viewId) => platformViewManager.isVisible(viewId))
                 .toList());
     final Map<int, int>? insertBeforeMap = _updateOverlays(diffResult);
 
@@ -616,7 +616,7 @@ class HtmlViewEmbedder {
       SurfaceFactory.instance.releaseSurfaces();
       _overlays.clear();
       final List<int> viewsNeedingOverlays = _compositionOrder
-          .where((int viewId) => !platformViewManager.isInvisible(viewId))
+          .where((int viewId) => platformViewManager.isVisible(viewId))
           .toList();
       final int numOverlays = math.min(
         SurfaceFactory.instance.maximumOverlays,
@@ -680,7 +680,7 @@ class HtmlViewEmbedder {
           final bool activeView = index < lastOriginalIndex;
           final int viewId = _compositionOrder[index];
           if (!_overlays.containsKey(viewId) &&
-              !platformViewManager.isInvisible(viewId)) {
+              platformViewManager.isVisible(viewId)) {
             _initializeOverlay(viewId);
             overlaysToAssign--;
             if (activeView) {

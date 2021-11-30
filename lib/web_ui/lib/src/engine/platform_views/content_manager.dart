@@ -204,6 +204,10 @@ class PlatformViewManager {
     }
   }
 
+  /// Returns `true` if the given [viewId] is a platform view with a visible
+  /// component.
+  bool isVisible(int viewId) => !isInvisible(viewId);
+
   /// Clears the state. Used in tests.
   ///
   /// Returns the set of know view ids, so they can be cleaned up.
