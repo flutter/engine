@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/test_vulkan_surface.h"
+#include <memory>
 #include "flutter/fml/logging.h"
 #include "flutter/testing/test_vulkan_context.h"
 
@@ -12,13 +13,16 @@
 namespace flutter {
 namespace testing {
 
-TestVulkanSurface::TestVulkanSurface(const TestVulkanContext& context,
-                                     const SkISize& surface_size) {
+TestVulkanSurface::TestVulkanSurface() = default;
+
+std::unique_ptr<TestVulkanSurface> TestVulkanSurface::Create(
+    const TestVulkanContext& context,
+    const SkISize& surface_size) {
   VkImage image = context.CreateImage(surface_size);
 
   if (!image) {
     FML_LOG(ERROR) << "Could not create VkImage.";
-    return;
+    return nullptr;
   }
 
   GrVkImageInfo image_info = {
@@ -40,7 +44,9 @@ TestVulkanSurface::TestVulkanSurface(const TestVulkanContext& context,
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  surface_ = SkSurface::MakeFromBackendTexture(
+  auto result = std::unique_ptr<TestVulkanSurface>(new TestVulkanSurface());
+
+  result->surface_ = SkSurface::MakeFromBackendTexture(
       context.GetGrDirectContext().get(),  // context
       backend_texture,                     // back-end texture
       kTopLeft_GrSurfaceOrigin,            // surface origin
@@ -52,11 +58,13 @@ TestVulkanSurface::TestVulkanSurface(const TestVulkanContext& context,
       nullptr                              // release context
   );
 
-  if (!surface_) {
+  if (!result->surface_) {
     FML_LOG(ERROR)
         << "Could not wrap VkImage as an SkSurface Vulkan render texture.";
-    return;
+    return nullptr;
   }
+
+  return result;
 }
 
 bool TestVulkanSurface::IsValid() const {

@@ -5,6 +5,7 @@
 #ifndef FLUTTER_TESTING_TEST_VULKAN_SURFACE_IMPL_H_
 #define FLUTTER_TESTING_TEST_VULKAN_SURFACE_IMPL_H_
 
+#include <memory>
 #include "flutter/testing/test_vulkan_context.h"
 
 #include "third_party/skia/include/core/SkRefCnt.h"
@@ -17,14 +18,17 @@ namespace testing {
 
 class TestVulkanSurface {
  public:
-  TestVulkanSurface(const TestVulkanContext& context,
-                    const SkISize& surface_size);
+  static std::unique_ptr<TestVulkanSurface> Create(
+      const TestVulkanContext& context,
+      const SkISize& surface_size);
 
   bool IsValid() const;
 
   sk_sp<SkImage> GetSurfaceSnapshot() const;
 
  private:
+  TestVulkanSurface();
+
   sk_sp<SkSurface> surface_;
 };
 

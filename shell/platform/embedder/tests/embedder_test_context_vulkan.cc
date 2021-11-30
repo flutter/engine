@@ -10,25 +10,26 @@
 #include "flutter/fml/logging.h"
 // #include
 // "flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
-
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
+#include "testing/test_vulkan_context.h"
+#include "testing/test_vulkan_surface.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 namespace testing {
 
 EmbedderTestContextVulkan::EmbedderTestContextVulkan(std::string assets_path)
-    : EmbedderTestContext(assets_path), context_() {}
+    : EmbedderTestContext(assets_path),
+      context_(std::make_unique<TestVulkanContext>()),
+      surface_() {}
 
 EmbedderTestContextVulkan::~EmbedderTestContextVulkan() {}
 
 void EmbedderTestContextVulkan::SetupSurface(SkISize surface_size) {
   FML_CHECK(surface_size_.isEmpty());
   surface_size_ = surface_size;
-
-  assert(false);  // TODO(bdero)
-  // vulkan_surface_ = TestVulkanSurface::Create(*vulkan_context_,
-  // surface_size_);
+  surface_ = TestVulkanSurface::Create(*context_, surface_size_);
 }
 
 size_t EmbedderTestContextVulkan::GetSurfacePresentCount() const {

@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 #include "flutter/testing/test_vulkan_context.h"
 #include "flutter/vulkan/vulkan_application.h"
+#include "testing/test_vulkan_surface.h"
 
 namespace flutter {
 namespace testing {
@@ -32,7 +33,8 @@ class EmbedderTestContextVulkan : public EmbedderTestContext {
   bool PresentImage(VkImage image);
 
  private:
-  TestVulkanContext context_;
+  std::unique_ptr<TestVulkanContext> context_;
+  std::unique_ptr<TestVulkanSurface> surface_;
 
   SkISize surface_size_ = SkISize::MakeEmpty();
   size_t present_count_ = 0;
