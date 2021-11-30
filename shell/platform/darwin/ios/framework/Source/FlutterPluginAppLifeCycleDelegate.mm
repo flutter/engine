@@ -16,10 +16,13 @@ static NSString* const kApplicationDidReceiveRemoteNotificationFetchCompletionHa
     @"application:didReceiveRemoteNotification:fetchCompletionHandler:";
 static NSString* const kApplicationDidRegisterForRemoteNotificationsWithDeviceToken =
     @"application:didRegisterForRemoteNotificationsWithDeviceToken:";
+static NSString* const kApplicationDidFailToRegisterForRemoteNotificationsWithError =
+    @"application:didFailToRegisterForRemoteNotificationsWithError:";
 
 static const SEL selectorsHandledByPlugins[] = {
     NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler),
     NSSelectorFromString(kApplicationDidRegisterForRemoteNotificationsWithDeviceToken),
+    NSSelectorFromString(kApplicationDidFailToRegisterForRemoteNotificationsWithError),
     @selector(application:performFetchWithCompletionHandler:)};
 
 @interface FlutterPluginAppLifeCycleDelegate ()
@@ -62,6 +65,9 @@ static void RemapMethod(Class thisClass, SEL originalSelector, SEL addedSelector
     RemapMethod([self class],
                 @selector(performApplication:didRegisterForRemoteNotificationsWithDeviceToken:),
                 NSSelectorFromString(kApplicationDidRegisterForRemoteNotificationsWithDeviceToken));
+    RemapMethod([self class],
+                @selector(performApplication:didFailToRegisterForRemoteNotificationsWithError:),
+                NSSelectorFromString(kApplicationDidFailToRegisterForRemoteNotificationsWithError));
   });
 }
 
@@ -281,7 +287,7 @@ static BOOL IsPowerOfTwo(NSUInteger x) {
   }
 }
 
-- (void)application:(UIApplication*)application
+- (void)performApplication:(UIApplication*)application
     didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
   for (NSObject<FlutterApplicationLifeCycleDelegate>* delegate in _delegates) {
     if (!delegate) {

@@ -16,6 +16,8 @@ FLUTTER_ASSERT_ARC
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 @end
 
 @interface FlutterPluginAppLifeCycleDelegateSubclass : FlutterPluginAppLifeCycleDelegate
@@ -161,6 +163,19 @@ FLUTTER_ASSERT_ARC
       didRegisterForRemoteNotificationsWithDeviceToken:token];
   [(NSObject<FlutterPlugin>*)[plugin verify] application:[UIApplication sharedApplication]
         didRegisterForRemoteNotificationsWithDeviceToken:token];
+}
+
+- (void)testDidFailToRegisterForRemoteNotificationsWithError {
+  FlutterPluginAppLifeCycleDelegate* delegate = [[FlutterPluginAppLifeCycleDelegate alloc] init];
+  id plugin = OCMProtocolMock(@protocol(FlutterPlugin));
+  [delegate addDelegate:plugin];
+  NSError* error = [[NSError alloc] init];
+  XCTAssertTrue([delegate
+      respondsToSelector:@selector(application:didFailToRegisterForRemoteNotificationsWithError:)]);
+  [delegate application:[UIApplication sharedApplication]
+      didFailToRegisterForRemoteNotificationsWithError:error];
+  [(NSObject<FlutterPlugin>*)[plugin verify] application:[UIApplication sharedApplication]
+        didFailToRegisterForRemoteNotificationsWithError:error];
 }
 
 @end

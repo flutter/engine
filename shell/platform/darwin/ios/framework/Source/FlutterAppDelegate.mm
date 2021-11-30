@@ -96,12 +96,6 @@ static SEL ApplicationDidReceiveRemoteNotificationFetchCompletionHandlerSelector
 }
 #pragma GCC diagnostic pop
 
-- (void)application:(UIApplication*)application
-    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
-  [_lifeCycleDelegate application:application
-      didFailToRegisterForRemoteNotificationsWithError:error];
-}
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application

@@ -62,8 +62,10 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
+ * At runtime this is also mapped to
+ * `application:didFailToRegisterForRemoteNotificationsWithError:`.
  */
-- (void)application:(UIApplication*)application
+- (void)performApplication:(UIApplication*)application
     didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 
 /**
