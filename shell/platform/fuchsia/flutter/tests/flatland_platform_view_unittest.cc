@@ -497,6 +497,11 @@ class FlatlandPlatformViewTests : public ::testing::Test {
     loop_.ResetQuit();
   }
 
+  void RunLoopOnce() {
+    loop_.Run(zx::time::infinite(), true);
+    loop_.ResetQuit();
+  }
+
   fuchsia::ui::input3::KeyEvent MakeEvent(
       fuchsia::ui::input3::KeyEventType event_type,
       std::optional<fuchsia::ui::input3::Modifiers> modifiers,
@@ -915,12 +920,9 @@ TEST_F(FlatlandPlatformViewTests, DestroyViewTest) {
                            nullptr                               // io
       );
 
-  // Test wireframe callback function. If the message sent to the platform
-  // view was properly handled and parsed, this function should be called,
-  // setting |wireframe_enabled| to true.
   bool destroy_view_called = false;
 
-  auto DestroyViewCallback =
+  auto on_destroy_view =
       [&destroy_view_called](
           int64_t view_id,
           flutter_runner::FlatlandViewIdCallback on_view_unbound) {
@@ -929,14 +931,42 @@ TEST_F(FlatlandPlatformViewTests, DestroyViewTest) {
         on_view_unbound(std::move(content_id));
       };
 
+  bool create_view_called = false;
+  auto on_create_view =
+      [&create_view_called, this](
+          int64_t view_id, flutter_runner::ViewCallback on_view_created,
+          flutter_runner::FlatlandViewCreatedCallback on_view_bound,
+          bool hit_testable, bool focusable) {
+        create_view_called = true;
+        on_view_created();
+        fuchsia::ui::composition::ContentId content_id;
+        on_view_bound(std::move(content_id), MakeChildViewWatcher());
+      };
+
   auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
-                           .SetDestroyViewCallback(DestroyViewCallback)
+                           .SetCreateViewCallback(on_create_view)
+                           .SetDestroyViewCallback(on_destroy_view)
                            .Build();
 
   // Cast platform_view to its base view so we can have access to the public
   // "HandlePlatformMessage" function.
   auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
+
+  std::ostringstream create_message;
+  create_message << "{"
+                 << "    \"method\":\"View.create\","
+                 << "    \"args\": {"
+                 << "       \"viewId\":42,"
+                 << "       \"hitTestable\":true,"
+                 << "       \"focusable\":true"
+                 << "    }"
+                 << "}";
+
+  auto create_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(create_response->WithMessage(
+      "flutter/platform_views", create_message.str()));
+  RunLoopUntilIdle();
 
   // JSON for the message to be passed into the PlatformView.
   const uint8_t txt[] =
@@ -1073,6 +1103,7 @@ TEST_F(FlatlandPlatformViewTests, RequestFocusTest) {
   auto create_response = FakePlatformMessageResponse::Create();
   base_view->HandlePlatformMessage(create_response->WithMessage(
       "flutter/platform_views", create_message.str()));
+
   RunLoopUntilIdle();
 
   // JSON for the message to be passed into the PlatformView.
@@ -1093,52 +1124,157 @@ TEST_F(FlatlandPlatformViewTests, RequestFocusTest) {
   EXPECT_TRUE(focuser.request_focus_called());
 }
 
-// This test makes sure that the PlatformView correctly replies with an error
-// response when a View.focus.request call fails.
-TEST_F(FlatlandPlatformViewTests, RequestFocusFailTest) {
+// This test tries to set focus on a view without creating it first
+TEST_F(FlatlandPlatformViewTests, RequestFocusNeverCreatedTest) {
   MockPlatformViewDelegate delegate;
   flutter::TaskRunners task_runners =
-      flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
 
   FakeFocuser focuser;
-  focuser.fail_request_focus();
   fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
   auto focuser_handle = focuser_bindings.AddBinding(&focuser);
 
+  bool create_view_called = false;
+  auto on_create_view =
+      [&create_view_called, this](
+          int64_t view_id, flutter_runner::ViewCallback on_view_created,
+          flutter_runner::FlatlandViewCreatedCallback on_view_bound,
+          bool hit_testable, bool focusable) {
+        create_view_called = true;
+        on_view_created();
+        fuchsia::ui::composition::ContentId content_id;
+        on_view_bound(std::move(content_id), MakeChildViewWatcher());
+      };
+
   auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
                            .SetFocuser(std::move(focuser_handle))
+                           .SetCreateViewCallback(on_create_view)
                            .Build();
 
-  // Cast platform_view to its base view so we can have access to the public
-  // "HandlePlatformMessage" function.
   auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
   EXPECT_TRUE(base_view);
 
-  // This "Mock" ViewRef serves as the target for the RequestFocus operation.
-  auto mock_view_ref_pair = scenic::ViewRefPair::New();
+  uint64_t view_id = 42;
 
-  // JSON for the message to be passed into the PlatformView.
-  std::ostringstream message;
-  message << "{"
-          << "    \"method\":\"View.focus.request\","
-          << "    \"args\": {"
-          << "       \"viewRef\":"
-          << mock_view_ref_pair.view_ref.reference.get() << "    }"
-          << "}";
+  std::ostringstream focus_message;
+  focus_message << "{"
+                << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {"
+                << "       \"viewId\":" << view_id << "    }"
+                << "}";
 
   // Dispatch the plaform message request.
-  auto response = FakePlatformMessageResponse::Create();
-  base_view->HandlePlatformMessage(
-      response->WithMessage("flutter/platform_views", message.str()));
+  auto focus_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(focus_response->WithMessage(
+      "flutter/platform_views", focus_message.str()));
   RunLoopUntilIdle();
 
-  response->ExpectCompleted(
-      "[" +
-      std::to_string(
-          static_cast<std::underlying_type_t<fuchsia::ui::views::Error>>(
-              fuchsia::ui::views::Error::DENIED)) +
-      "]");
-  EXPECT_TRUE(focuser.request_focus_called());
+  focus_response->ExpectCompleted("[1]");
+  EXPECT_FALSE(focuser.request_focus_called());
+}
+
+TEST_F(FlatlandPlatformViewTests, RequestFocusDisposedTest) {
+  MockPlatformViewDelegate delegate;
+  flutter::TaskRunners task_runners =
+      flutter::TaskRunners("test_runners",  // label
+                           flutter_runner::CreateFMLTaskRunner(
+                               async_get_default_dispatcher()),  // platform
+                           nullptr,                              // raster
+                           nullptr,                              // ui
+                           nullptr                               // io
+      );
+
+  FakeFocuser focuser;
+  fidl::BindingSet<fuchsia::ui::views::Focuser> focuser_bindings;
+  auto focuser_handle = focuser_bindings.AddBinding(&focuser);
+
+  bool create_view_called = false;
+  auto on_create_view =
+      [&create_view_called, this](
+          int64_t view_id, flutter_runner::ViewCallback on_view_created,
+          flutter_runner::FlatlandViewCreatedCallback on_view_bound,
+          bool hit_testable, bool focusable) {
+        create_view_called = true;
+        on_view_created();
+        fuchsia::ui::composition::ContentId content_id;
+        on_view_bound(std::move(content_id), MakeChildViewWatcher());
+      };
+
+  bool destroy_view_called = false;
+
+  auto on_destroy_view =
+      [&destroy_view_called](
+          int64_t view_id,
+          flutter_runner::FlatlandViewIdCallback on_view_unbound) {
+        destroy_view_called = true;
+        fuchsia::ui::composition::ContentId content_id;
+        on_view_unbound(std::move(content_id));
+      };
+
+  auto platform_view = PlatformViewBuilder(delegate, std::move(task_runners))
+                           .SetFocuser(std::move(focuser_handle))
+                           .SetCreateViewCallback(on_create_view)
+                           .SetDestroyViewCallback(on_destroy_view)
+                           .Build();
+
+  auto base_view = static_cast<flutter::PlatformView*>(&platform_view);
+  EXPECT_TRUE(base_view);
+
+  uint64_t view_id = 42;
+
+  // Create a new view
+  std::ostringstream create_message;
+  create_message << "{"
+                 << "    \"method\":\"View.create\","
+                 << "    \"args\": {"
+                 << "       \"viewId\":" << view_id << ","
+                 << "       \"hitTestable\":true,"
+                 << "       \"focusable\":true"
+                 << "    }"
+                 << "}";
+
+  auto create_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(create_response->WithMessage(
+      "flutter/platform_views", create_message.str()));
+  RunLoopUntilIdle();
+
+  EXPECT_FALSE(destroy_view_called);
+  // Dispose of the view
+  std::ostringstream dispose_message;
+  dispose_message << "{"
+                  << "    \"method\":\"View.dispose\","
+                  << "    \"args\": {"
+                  << "       \"viewId\":" << view_id << "    }"
+                  << "}";
+
+  auto dispose_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(dispose_response->WithMessage(
+      "flutter/platform_views", dispose_message.str()));
+  RunLoopUntilIdle();
+  EXPECT_TRUE(destroy_view_called);
+
+  // Request focus on newly disposed view
+  std::ostringstream focus_message;
+  focus_message << "{"
+                << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {"
+                << "       \"viewId\":" << view_id << "    }"
+                << "}";
+
+  auto focus_response = FakePlatformMessageResponse::Create();
+  base_view->HandlePlatformMessage(focus_response->WithMessage(
+      "flutter/platform_views", focus_message.str()));
+  RunLoopUntilIdle();
+
+  // Expect it to fail
+  focus_response->ExpectCompleted("[1]");
+  EXPECT_FALSE(focuser.request_focus_called());
 }
 
 // Makes sure that OnKeyEvent is dispatched as a platform message.
@@ -1163,18 +1299,19 @@ TEST_F(FlatlandPlatformViewTests, OnKeyEvent) {
 
   std::vector<EventFlow> events;
   // Press A.  Get 'a'.
+  // The HID usage for the key A is 0x70004, or 458756.
   events.emplace_back(EventFlow{
       MakeEvent(fuchsia::ui::input3::KeyEventType::PRESSED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":4,"codePoint":97,"modifiers":0})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458756,"codePoint":97,"modifiers":0})",
   });
   // Release A. Get 'a' release.
   events.emplace_back(EventFlow{
       MakeEvent(fuchsia::ui::input3::KeyEventType::RELEASED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keyup","keymap":"fuchsia","hidUsage":4,"codePoint":97,"modifiers":0})",
+      R"({"type":"keyup","keymap":"fuchsia","hidUsage":458756,"codePoint":97,"modifiers":0})",
   });
   // Press CAPS_LOCK.  Modifier now active.
   events.emplace_back(EventFlow{
@@ -1182,14 +1319,14 @@ TEST_F(FlatlandPlatformViewTests, OnKeyEvent) {
                 fuchsia::ui::input3::Modifiers::CAPS_LOCK,
                 fuchsia::input::Key::CAPS_LOCK),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":57,"codePoint":0,"modifiers":1})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458809,"codePoint":0,"modifiers":1})",
   });
-  // Pres A.  Get 'A'.
+  // Press A.  Get 'A'.
   events.emplace_back(EventFlow{
       MakeEvent(fuchsia::ui::input3::KeyEventType::PRESSED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":4,"codePoint":65,"modifiers":1})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458756,"codePoint":65,"modifiers":1})",
   });
   // Release CAPS_LOCK.
   events.emplace_back(EventFlow{
@@ -1197,7 +1334,7 @@ TEST_F(FlatlandPlatformViewTests, OnKeyEvent) {
                 fuchsia::ui::input3::Modifiers::CAPS_LOCK,
                 fuchsia::input::Key::CAPS_LOCK),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keyup","keymap":"fuchsia","hidUsage":57,"codePoint":0,"modifiers":1})",
+      R"({"type":"keyup","keymap":"fuchsia","hidUsage":458809,"codePoint":0,"modifiers":1})",
   });
   // Press A again.  This time get 'A'.
   // CAPS_LOCK is latched active even if it was just released.
@@ -1205,7 +1342,7 @@ TEST_F(FlatlandPlatformViewTests, OnKeyEvent) {
       MakeEvent(fuchsia::ui::input3::KeyEventType::PRESSED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":4,"codePoint":65,"modifiers":1})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458756,"codePoint":65,"modifiers":1})",
   });
 
   for (const auto& event : events) {

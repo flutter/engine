@@ -208,6 +208,7 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
                   });
         }));
   };
+
   on_create_view_callback_(view_id_raw, std::move(on_view_created),
                            std::move(on_view_bound), hit_testable, focusable);
 }
@@ -215,9 +216,9 @@ void FlatlandPlatformView::OnCreateView(ViewCallback on_view_created,
 void FlatlandPlatformView::OnDisposeView(int64_t view_id_raw) {
   auto on_view_unbound =
       [weak = weak_factory_.GetWeakPtr(),
-       platform_task_runner = task_runners_.GetPlatformTaskRunner()](
-          fuchsia::ui::composition::ContentId content_id) {
-        platform_task_runner->PostTask([weak, content_id]() {
+       platform_task_runner = task_runners_.GetPlatformTaskRunner(),
+       view_id_raw](fuchsia::ui::composition::ContentId content_id) {
+        platform_task_runner->PostTask([weak, content_id, view_id_raw]() {
           if (!weak) {
             FML_LOG(WARNING)
                 << "Flatland View unbound from PlatformView after PlatformView"
@@ -227,6 +228,7 @@ void FlatlandPlatformView::OnDisposeView(int64_t view_id_raw) {
 
           FML_DCHECK(weak->child_view_info_.count(content_id.value) == 1);
           weak->child_view_info_.erase(content_id.value);
+          weak->focus_delegate_->OnDisposeChildView(view_id_raw);
         });
       };
   on_destroy_view_callback_(view_id_raw, std::move(on_view_unbound));
