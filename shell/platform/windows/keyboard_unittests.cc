@@ -58,15 +58,6 @@ uint32_t LayoutFrench(uint32_t virtual_key) {
   }
 }
 
-uint32_t LayoutUsIntl(uint32_t virtual_key) {
-  switch (virtual_key) {
-    case '6':
-      return 0x36;
-    default:
-      return MapVirtualKey(virtual_key, MAPVK_VK_TO_CHAR);
-  }
-}
-
 class MockFlutterWindowWin32 : public FlutterWindowWin32,
                                public MockMessageQueue {
  public:
@@ -878,8 +869,6 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
 TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
   KeyboardTester tester;
   tester.Responding(false);
-
-  tester.SetLayout(LayoutUsIntl);
 
   // Press ShiftLeft
   tester.SetKeyState(VK_LSHIFT, true, true);
