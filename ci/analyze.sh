@@ -80,3 +80,4 @@ echo ""
 echo "Checking web_ui api conformance..."
 (cd "$FLUTTER_DIR/web_sdk"; "$DART" pub get)
 (cd "$FLUTTER_DIR"; "$DART" "web_sdk/test/api_conform_test.dart")
+(cd "$FLUTTER_DIR"; "$DART" "web_sdk/test/js_access_test.dart")

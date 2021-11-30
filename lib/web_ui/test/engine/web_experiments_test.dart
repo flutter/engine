@@ -7,21 +7,12 @@ import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/web_experiments.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  setUp(() {
-    WebExperiments.ensureInitialized();
-  });
-
-  tearDown(() {
-    WebExperiments.instance!.reset();
-  });
-
   test('js interop throws on wrong type', () {
     expect(() => jsUpdateExperiment(123, true), throwsA(anything));
     expect(() => jsUpdateExperiment('foo', 123), throwsA(anything));

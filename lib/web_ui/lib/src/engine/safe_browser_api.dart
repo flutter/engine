@@ -2,16 +2,375 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+/// JavaScript API bindings for browser APIs.
+///
+/// The public surface of this API must be safe to use. In particular, using the
+/// API of this library it must not be possible to execute arbitrary code from
+/// strings by injecting it into HTML or URLs.
+
+@JS()
+library browser_api;
+
+import 'dart:async';
 import 'dart:html' as html;
+import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../browser_detection.dart';
-import '../../vector_math.dart';
-import '../offscreen_canvas.dart';
+import 'browser_detection.dart';
+import 'platform_dispatcher.dart';
+import 'vector_math.dart';
+
+/// Creates JavaScript object populated with [properties].
+///
+/// This is equivalent to writing `{}` in plain JavaScript.
+Object createPlainJsObject([Map<String, Object?>? properties]) {
+  if (properties != null) {
+    return js.JsObject.jsify(properties);
+  } else {
+    return js_util.newObject<Object>();
+  }
+}
+
+/// Returns true if [object] has property [name], false otherwise.
+///
+/// This is equivalent to writing `name in object` in plain JavaScript.
+bool hasJsProperty(Object object, String name) {
+  return js_util.hasProperty(object, name);
+}
+
+/// Returns the value of property [name] from a JavaScript [object].
+///
+/// This is equivalent to writing `object.name` in plain JavaScript.
+T getJsProperty<T>(Object object, String name) {
+  return js_util.getProperty<T>(object, name);
+}
+
+const Set<String> _safeJsProperties = <String>{
+  'decoding',
+  '__flutter_state',
+};
+
+/// Sets the value of property [name] on a JavaScript [object].
+///
+/// This is equivalent to writing `object.name = value` in plain JavaScript.
+T setJsProperty<T>(Object object, String name, T value) {
+  assert(
+    _safeJsProperties.contains(name),
+    'Attempted to set property "$name" on a JavaScript object. This property '
+    'has not been checked for safety. Possible solutions to this problem:\n'
+    ' - Do not set this property.\n'
+    ' - Use a `dart:html` API that does the same thing.\n'
+    ' - Ensure that the property is safe then add it to _safeJsProperties set.',
+  );
+  return js_util.setProperty<T>(object, name, value);
+}
+
+/// Wraps function [f] to be callable from JavaScript.
+F allowInterop<F extends Function>(F f) {
+  return js.allowInterop<F>(f);
+}
+
+/// Converts a JavaScript `Promise` into Dart [Future].
+Future<T> promiseToFuture<T>(Object jsPromise) {
+  return js_util.promiseToFuture<T>(jsPromise);
+}
+
+/// Adds an event [listener] of type [type] to the [target].
+///
+/// [eventOptions] supply additional configuration parameters.
+///
+/// This is different from [html.Element.addEventListener] in that the listener
+/// is added as a plain JavaScript function, as opposed to a Dart function.
+///
+/// To remove the listener, call [removeJsEventListener].
+void addJsEventListener(Object target, String type, Function listener, Object eventOptions) {
+  js_util.callMethod<void>(
+    target,
+    'addEventListener', <dynamic>[
+      type,
+      listener,
+      eventOptions,
+    ]
+  );
+}
+
+/// Removes an event listener that was added using [addJsEventListener].
+void removeJsEventListener(Object target, String type, Function listener) {
+  js_util.callMethod<void>(
+    target,
+    'removeEventListener', <dynamic>[
+      type,
+      listener,
+    ]
+  );
+}
+
+/// The signature of the `parseFloat` JavaScript function.
+typedef _JsParseFloat = num? Function(String source);
+
+/// The JavaScript-side `parseFloat` function.
+@JS('parseFloat')
+external _JsParseFloat get _jsParseFloat;
+
+/// Parses a string [source] into a double.
+///
+/// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
+/// because the latter can't parse strings like "20px".
+///
+/// Returns null if it fails to parse.
+num? parseFloat(String source) {
+  // Using JavaScript's `parseFloat` here because it can parse values
+  // like "20px", while Dart's `double.tryParse` fails.
+  final num? result = _jsParseFloat(source);
+
+  if (result == null || result.isNaN) {
+    return null;
+  }
+  return result;
+}
+
+final bool supportsFontLoadingApi =
+    js_util.hasProperty(html.window, 'FontFace');
+
+final bool supportsFontsClearApi =
+    js_util.hasProperty(html.document, 'fonts') &&
+        js_util.hasProperty(html.document.fonts!, 'clear');
+
+/// Used to decide if the browser tab still has the focus.
+///
+/// This information is useful for deciding on the blur behavior.
+/// See [DefaultTextEditingStrategy].
+///
+/// This getter calls the `hasFocus` method of the `Document` interface.
+/// See for more details:
+/// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
+bool get windowHasFocus =>
+    js_util.callMethod<bool>(html.document, 'hasFocus', <dynamic>[]);
+
+/// Parses the font size of [element] and returns the value without a unit.
+num? parseFontSize(html.Element element) {
+  num? fontSize;
+
+  if (hasJsProperty(element, 'computedStyleMap')) {
+    // Use the newer `computedStyleMap` API available on some browsers.
+    final dynamic computedStyleMap =
+        // ignore: implicit_dynamic_function
+        js_util.callMethod(element, 'computedStyleMap', <Object?>[]);
+    if (computedStyleMap is Object) {
+      final dynamic fontSizeObject =
+          // ignore: implicit_dynamic_function
+          js_util.callMethod(computedStyleMap, 'get', <Object?>['font-size']);
+      if (fontSizeObject is Object) {
+        // ignore: implicit_dynamic_function
+        fontSize = js_util.getProperty(fontSizeObject, 'value') as num;
+      }
+    }
+  }
+
+  if (fontSize == null) {
+    // Fallback to `getComputedStyle`.
+    final String fontSizeString = element.getComputedStyle().fontSize;
+    fontSize = parseFloat(fontSizeString);
+  }
+
+  return fontSize;
+}
+
+/// Provides haptic feedback.
+void vibrate(int durationMs) {
+  final html.Navigator navigator = html.window.navigator;
+  if (hasJsProperty(navigator, 'vibrate')) {
+    // ignore: implicit_dynamic_function
+    js_util.callMethod(navigator, 'vibrate', <num>[durationMs]);
+  }
+}
+
+/// Creates a `<canvas>` but anticipates that the result may be null.
+///
+/// The [html.CanvasElement] factory assumes that element allocation will
+/// succeed and will return a non-null element. This is not always true. For
+/// example, when Safari on iOS runs out of memory it returns null.
+html.CanvasElement? tryCreateCanvasElement(int width, int height) {
+  final html.CanvasElement? canvas = js_util.callMethod<html.CanvasElement?>(
+    html.document,
+    'createElement',
+    <dynamic>['CANVAS'],
+  );
+  if (canvas != null) {
+    try {
+      canvas.width = width;
+      canvas.height = height;
+    } catch (e) {
+      // It seems the tribal knowledge of why we anticipate an exception while
+      // setting width/height on a non-null canvas and why it's OK to return
+      // null in this case has been lost. Kudos to the one who can recover it
+      // and leave a proper comment here!
+      return null;
+    }
+    return canvas;
+  }
+}
+
+@JS('window.ImageDecoder')
+external Object? get _imageDecoderConstructor;
+
+/// Whether the current browser supports `ImageDecoder`.
+bool browserSupportsImageDecoder =
+    _imageDecoderConstructor != null && browserEngine == BrowserEngine.blink;
+
+/// Sets the value of [browserSupportsImageDecoder] to its default value.
+void debugResetBrowserSupportsImageDecoder() {
+  browserSupportsImageDecoder =
+      _imageDecoderConstructor != null;
+}
+
+/// Corresponds to JavaScript's `Promise`.
+///
+/// This type doesn't need any members. Instead, it should be first converted
+/// to Dart's [Future] using [promiseToFuture] then interacted with through the
+/// [Future] API.
+@JS()
+@anonymous
+class JsPromise {}
+
+/// Corresponds to the browser's `ImageDecoder` type.
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#imagedecoder-interface
+@JS('window.ImageDecoder')
+class ImageDecoder {
+  external ImageDecoder(ImageDecoderOptions options);
+  external ImageTrackList get tracks;
+  external bool get complete;
+  external JsPromise decode(DecodeOptions options);
+  external void close();
+}
+
+/// Options passed to the `ImageDecoder` constructor.
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#imagedecoderinit-interface
+@JS()
+@anonymous
+class ImageDecoderOptions {
+  external factory ImageDecoderOptions({
+    required String type,
+    required Uint8List data,
+    required String premultiplyAlpha,
+    required int? desiredWidth,
+    required int? desiredHeight,
+    required String colorSpaceConversion,
+    required bool preferAnimation,
+  });
+}
+
+/// The result of [ImageDecoder.decode].
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#imagedecoderesult-interface
+@JS()
+@anonymous
+class DecodeResult {
+  external VideoFrame get image;
+  external bool get complete;
+}
+
+/// Options passed to [ImageDecoder.decode].
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#dictdef-imagedecodeoptions
+@JS()
+@anonymous
+class DecodeOptions {
+  external factory DecodeOptions({
+    required int frameIndex,
+  });
+}
+
+/// The only frame in a static image, or one of the frames in an animated one.
+///
+/// This class maps to the `VideoFrame` type provided by the browser.
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#videoframe-interface
+@JS()
+@anonymous
+class VideoFrame {
+  external int allocationSize();
+  external JsPromise copyTo(Uint8List destination);
+  external String? get format;
+  external int get codedWidth;
+  external int get codedHeight;
+  external int get displayWidth;
+  external int get displayHeight;
+  external int? get duration;
+  external void close();
+}
+
+/// Corresponds to the browser's `ImageTrackList` type.
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#imagetracklist-interface
+@JS()
+@anonymous
+class ImageTrackList {
+  external JsPromise get ready;
+  external ImageTrack? get selectedTrack;
+}
+
+/// Corresponds to the browser's `ImageTrack` type.
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/webcodecs/#imagetrack
+@JS()
+@anonymous
+class ImageTrack {
+  external int get repetitionCount;
+  external int get frameCount;
+}
+
+void scaleCanvas2D(Object context2d, num x, num y) {
+  js_util.callMethod<void>(context2d, 'scale', <dynamic>[x, y]);
+}
+
+void drawImageCanvas2D(Object context2d, Object imageSource, num width, num height) {
+  js_util.callMethod<void>(context2d, 'drawImage', <dynamic>[
+    imageSource,
+    width,
+    height,
+  ]);
+}
+
+void vertexAttribPointerGlContext(
+  Object glContext,
+  Object index,
+  num size,
+  Object type,
+  bool normalized,
+  num stride,
+  num offset,
+) {
+  js_util.callMethod<void>(glContext, 'vertexAttribPointer', <dynamic>[
+    index,
+    size,
+    type,
+    normalized,
+    stride,
+    offset,
+  ]);
+}
 
 /// Compiled and cached gl program.
 class GlProgram {
@@ -23,25 +382,25 @@ class GlProgram {
 class GlContext {
   final Object glContext;
   final bool isOffscreen;
-  dynamic _kCompileStatus;
-  dynamic _kArrayBuffer;
-  dynamic _kElementArrayBuffer;
-  dynamic _kStaticDraw;
-  dynamic _kFloat;
-  dynamic _kColorBufferBit;
-  dynamic _kTexture2D;
-  dynamic _kTextureWrapS;
-  dynamic _kTextureWrapT;
-  dynamic _kRepeat;
-  dynamic _kClampToEdge;
-  dynamic _kMirroredRepeat;
-  dynamic _kTriangles;
-  dynamic _kLinkStatus;
-  dynamic _kUnsignedByte;
-  dynamic _kUnsignedShort;
-  dynamic _kRGBA;
-  dynamic _kLinear;
-  dynamic _kTextureMinFilter;
+  Object? _kCompileStatus;
+  Object? _kArrayBuffer;
+  Object? _kElementArrayBuffer;
+  Object? _kStaticDraw;
+  Object? _kFloat;
+  Object? _kColorBufferBit;
+  Object? _kTexture2D;
+  Object? _kTextureWrapS;
+  Object? _kTextureWrapT;
+  Object? _kRepeat;
+  Object? _kClampToEdge;
+  Object? _kMirroredRepeat;
+  Object? _kTriangles;
+  Object? _kLinkStatus;
+  Object? _kUnsignedByte;
+  Object? _kUnsignedShort;
+  Object? _kRGBA;
+  Object? _kLinear;
+  Object? _kTextureMinFilter;
   int? _kTexture0;
 
   Object? _canvas;
@@ -305,62 +664,59 @@ class GlContext {
 
   /// Error state of gl context.
   // ignore: implicit_dynamic_function
-  dynamic get error => js_util.callMethod(glContext, 'getError', const <dynamic>[]);
+  Object? get error => js_util.callMethod(glContext, 'getError', const <dynamic>[]);
 
   /// Shader compiler error, if this returns [kFalse], to get details use
   /// [getShaderInfoLog].
-  dynamic get compileStatus =>
+  Object? get compileStatus =>
       // ignore: implicit_dynamic_function
       _kCompileStatus ??= js_util.getProperty(glContext, 'COMPILE_STATUS');
 
-  dynamic get kArrayBuffer =>
+  Object? get kArrayBuffer =>
       // ignore: implicit_dynamic_function
       _kArrayBuffer ??= js_util.getProperty(glContext, 'ARRAY_BUFFER');
 
-  dynamic get kElementArrayBuffer =>
+  Object? get kElementArrayBuffer =>
       // ignore: implicit_dynamic_function
       _kElementArrayBuffer ??= js_util.getProperty(glContext,
           'ELEMENT_ARRAY_BUFFER');
 
-  dynamic get kLinkStatus =>
-      // ignore: implicit_dynamic_function
-      _kLinkStatus ??= js_util.getProperty(glContext, 'LINK_STATUS');
+  Object get kLinkStatus =>
+      _kLinkStatus ??= js_util.getProperty<Object>(glContext, 'LINK_STATUS');
+
+  Object get kFloat => _kFloat ??= js_util.getProperty<Object>(glContext, 'FLOAT');
 
   // ignore: implicit_dynamic_function
-  dynamic get kFloat => _kFloat ??= js_util.getProperty(glContext, 'FLOAT');
+  Object? get kRGBA => _kRGBA ??= js_util.getProperty(glContext, 'RGBA');
 
-  // ignore: implicit_dynamic_function
-  dynamic get kRGBA => _kRGBA ??= js_util.getProperty(glContext, 'RGBA');
+  Object get kUnsignedByte =>
+      _kUnsignedByte ??= js_util.getProperty<Object>(glContext, 'UNSIGNED_BYTE');
 
-  dynamic get kUnsignedByte =>
-      // ignore: implicit_dynamic_function
-      _kUnsignedByte ??= js_util.getProperty(glContext, 'UNSIGNED_BYTE');
-
-  dynamic get kUnsignedShort =>
+  Object? get kUnsignedShort =>
       // ignore: implicit_dynamic_function
       _kUnsignedShort ??= js_util.getProperty(glContext, 'UNSIGNED_SHORT');
 
-  dynamic get kStaticDraw =>
+  Object? get kStaticDraw =>
       // ignore: implicit_dynamic_function
       _kStaticDraw ??= js_util.getProperty(glContext, 'STATIC_DRAW');
 
-  dynamic get kTriangles =>
+  Object? get kTriangles =>
       // ignore: implicit_dynamic_function
       _kTriangles ??= js_util.getProperty(glContext, 'TRIANGLES');
 
-  dynamic get kTriangleFan =>
+  Object? get kTriangleFan =>
       // ignore: implicit_dynamic_function
       _kTriangles ??= js_util.getProperty(glContext, 'TRIANGLE_FAN');
 
-  dynamic get kTriangleStrip =>
+  Object? get kTriangleStrip =>
       // ignore: implicit_dynamic_function
       _kTriangles ??= js_util.getProperty(glContext, 'TRIANGLE_STRIP');
 
-  dynamic get kColorBufferBit =>
+  Object? get kColorBufferBit =>
       // ignore: implicit_dynamic_function
       _kColorBufferBit ??= js_util.getProperty(glContext, 'COLOR_BUFFER_BIT');
 
-  dynamic get kTexture2D =>
+  Object? get kTexture2D =>
       // ignore: implicit_dynamic_function
       _kTexture2D ??= js_util.getProperty(glContext, 'TEXTURE_2D');
 
@@ -368,31 +724,31 @@ class GlContext {
       // ignore: implicit_dynamic_function
       _kTexture0 ??= js_util.getProperty(glContext, 'TEXTURE0') as int;
 
-  dynamic get kTextureWrapS =>
+  Object? get kTextureWrapS =>
       // ignore: implicit_dynamic_function
       _kTextureWrapS ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_S');
 
-  dynamic get kTextureWrapT =>
+  Object? get kTextureWrapT =>
       // ignore: implicit_dynamic_function
       _kTextureWrapT ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_T');
 
-  dynamic get kRepeat =>
+  Object? get kRepeat =>
       // ignore: implicit_dynamic_function
       _kRepeat ??= js_util.getProperty(glContext, 'REPEAT');
 
-  dynamic get kClampToEdge =>
+  Object? get kClampToEdge =>
       // ignore: implicit_dynamic_function
       _kClampToEdge ??= js_util.getProperty(glContext, 'CLAMP_TO_EDGE');
 
-  dynamic get kMirroredRepeat =>
+  Object? get kMirroredRepeat =>
       // ignore: implicit_dynamic_function
       _kMirroredRepeat ??= js_util.getProperty(glContext, 'MIRRORED_REPEAT');
 
-  dynamic get kLinear =>
+  Object? get kLinear =>
       // ignore: implicit_dynamic_function
       _kLinear ??= js_util.getProperty(glContext, 'LINEAR');
 
-  dynamic get kTextureMinFilter =>
+  Object? get kTextureMinFilter =>
       // ignore: implicit_dynamic_function
       _kTextureMinFilter ??= js_util.getProperty(glContext,
           'TEXTURE_MIN_FILTER');
@@ -454,7 +810,7 @@ class GlContext {
   }
 
   /// Shader compile error log.
-  dynamic getShaderInfoLog(Object glShader) {
+  Object? getShaderInfoLog(Object glShader) {
     // ignore: implicit_dynamic_function
     return js_util.callMethod(glContext, 'getShaderInfoLog', <dynamic>[glShader]);
   }
@@ -616,4 +972,98 @@ dynamic tileModeToGlWrapping(GlContext gl, ui.TileMode tileMode) {
     case ui.TileMode.repeated:
     return gl.kRepeat;
   }
+}
+
+/// Polyfill for html.OffscreenCanvas that is not supported on some browsers.
+class OffScreenCanvas {
+  html.OffscreenCanvas? offScreenCanvas;
+  html.CanvasElement? canvasElement;
+  int width;
+  int height;
+  static bool? _supported;
+
+  OffScreenCanvas(this.width, this.height) {
+    if (OffScreenCanvas.supported) {
+      offScreenCanvas = html.OffscreenCanvas(width, height);
+    } else {
+      canvasElement = html.CanvasElement(
+        width: width,
+        height: height,
+      );
+      canvasElement!.className = 'gl-canvas';
+      final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
+      final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
+      canvasElement!.style
+        ..position = 'absolute'
+        ..width = '${cssWidth}px'
+        ..height = '${cssHeight}px';
+    }
+  }
+
+  void dispose() {
+    offScreenCanvas = null;
+    canvasElement = null;
+  }
+
+  /// Returns CanvasRenderContext2D or OffscreenCanvasRenderingContext2D to
+  /// paint into.
+  Object? getContext2d() {
+    return offScreenCanvas != null
+        ? offScreenCanvas!.getContext('2d')
+        : canvasElement!.getContext('2d');
+  }
+
+  /// Feature detection for transferToImageBitmap on OffscreenCanvas.
+  bool get transferToImageBitmapSupported =>
+      js_util.hasProperty(offScreenCanvas!, 'transferToImageBitmap');
+
+  /// Creates an ImageBitmap object from the most recently rendered image
+  /// of the OffscreenCanvas.
+  ///
+  /// !Warning API still in experimental status, feature detect before using.
+  Object? transferToImageBitmap() {
+    return js_util.callMethod(offScreenCanvas!, 'transferToImageBitmap',
+        <dynamic>[]);
+  }
+
+  /// Draws canvas contents to a rendering context.
+  void transferImage(Object targetContext) {
+    // Actual size of canvas may be larger than viewport size. Use
+    // source/destination to draw part of the image data.
+    // ignore: implicit_dynamic_function
+    js_util.callMethod(targetContext, 'drawImage',
+        <dynamic>[offScreenCanvas ?? canvasElement!, 0, 0, width, height,
+          0, 0, width, height]);
+  }
+
+  /// Converts canvas contents to an image and returns as data URL.
+  Future<String> toDataUrl() {
+    final Completer<String> completer = Completer<String>();
+    if (offScreenCanvas != null) {
+      offScreenCanvas!.convertToBlob().then((html.Blob value) {
+        final html.FileReader fileReader = html.FileReader();
+        fileReader.onLoad.listen((html.ProgressEvent event) {
+          completer.complete(
+            // ignore: implicit_dynamic_function
+            js_util.getProperty(js_util.getProperty(event, 'target') as Object, 'result') as String,
+          );
+        });
+        fileReader.readAsDataUrl(value);
+      });
+      return completer.future;
+    } else {
+      return Future<String>.value(canvasElement!.toDataUrl());
+    }
+  }
+
+  /// Draws an image to canvas for both offscreen canvas canvas context2d.
+  void drawImage(Object image, int x, int y, int width, int height) {
+    // ignore: implicit_dynamic_function
+    js_util.callMethod(
+        getContext2d()!, 'drawImage', <dynamic>[image, x, y, width, height]);
+  }
+
+  /// Feature detects OffscreenCanvas.
+  static bool get supported => _supported ??=
+      js_util.hasProperty(html.window, 'OffscreenCanvas');
 }
