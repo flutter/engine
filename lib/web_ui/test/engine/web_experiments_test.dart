@@ -22,8 +22,7 @@ void testMain() {
 }
 
 void jsUpdateExperiment(dynamic name, dynamic enabled) {
-  // ignore: implicit_dynamic_function
-  js_util.callMethod(
+  js_util.callMethod<void>(
     html.window,
     '_flutter_internal_update_experiment',
     <dynamic>[name, enabled],

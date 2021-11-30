@@ -106,9 +106,7 @@ class FlutterViewEmbedder {
 
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
-    _staleHotRestartState =
-        // ignore: implicit_dynamic_function
-        getJsProperty(html.window, _staleHotRestartStore) as List<html.Element?>?;
+    _staleHotRestartState = getJsProperty<List<html.Element?>?>(html.window, _staleHotRestartStore);
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <html.Element?>[];
       setJsProperty(
@@ -354,8 +352,7 @@ class FlutterViewEmbedder {
 
   // Creates a [HostNode] into a `root` [html.Element].
   HostNode _createHostNode(html.Element root) {
-    // ignore: implicit_dynamic_function
-    if (getJsProperty(root, 'attachShadow') != null) {
+    if (getJsProperty<Object?>(root, 'attachShadow') != null) {
       return ShadowDomHostNode(root);
     } else {
       // attachShadow not available, fall back to ElementHostNode.

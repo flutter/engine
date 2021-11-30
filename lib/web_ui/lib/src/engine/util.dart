@@ -711,8 +711,7 @@ void drawEllipse(
     double startAngle,
     double endAngle,
     bool antiClockwise) {
-  // ignore: implicit_dynamic_function
-  _ellipseFeatureDetected ??= getJsProperty(context, 'ellipse') != null;
+  _ellipseFeatureDetected ??= getJsProperty<Object?>(context, 'ellipse') != null;
   if (_ellipseFeatureDetected!) {
     context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
         endAngle, antiClockwise);
