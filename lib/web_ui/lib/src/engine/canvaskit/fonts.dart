@@ -13,26 +13,26 @@ import 'font_fallbacks.dart';
 
 // Runtime parameters.
 //
-// This URL was found by using the Google Fonts Developer API to find the URL
-// for Roboto. The API warns that this URL is not stable. In order to update
-// this, list out all of the fonts and find the URL for the regular
-// Roboto font. The API reference is here:
-// https://developers.google.com/fonts/docs/developer_api
-//
-// The base URL can be overridden using the `ROBOTO_FONT_URL`
-// environment variable.
-//
-// When specifying using the environment variable set it in the Flutter tool
-// using the `--dart-define` option.
-//
-// Example:
-//
-// ```
-// flutter run \
-//   -d chrome \
-//   --web-renderer=canvaskit \
-//   --dart-define=ROBOTO_FONT_URL=https://example.com/roboto.ttf
-// ```
+/// This URL was found by using the Google Fonts Developer API to find the URL
+/// for Roboto. The API warns that this URL is not stable. In order to update
+/// this, list out all of the fonts and find the URL for the regular
+/// Roboto font. The API reference is here:
+/// https://developers.google.com/fonts/docs/developer_api
+///
+/// The base URL can be overridden using the `ROBOTO_FONT_URL`
+/// environment variable.
+///
+/// When specifying using the environment variable set it in the Flutter tool
+/// using the `--dart-define` option.
+///
+/// Example:
+///
+/// ```
+/// flutter run \
+///   -d chrome \
+///   --web-renderer=canvaskit \
+///   --dart-define=ROBOTO_FONT_URL=https://example.com/roboto.ttf
+/// ```
 const String _robotoUrl = String.fromEnvironment(
   'ROBOTO_FONT_URL',
   defaultValue: 'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf',

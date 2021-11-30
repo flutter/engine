@@ -20,22 +20,22 @@ import 'interval_tree.dart';
 
 // Runtime parameters.
 
-// The URL to use when downloading the font resources.
-// 
-// The base URL can be overridden using the `FONT_API_SERVER`
-// environment variable.
-//
-// When specifying using the environment variable set it in the Flutter tool
-// using the `--dart-define` option. The value must end with a `/`.
-//
-// Example:
-//
-// ```
-// flutter run \
-//   -d chrome \
-//   --web-renderer=canvaskit \
-//   --dart-define=FONT_API_SERVER=https://example.com/
-// ```
+/// The URL to use when downloading the font resources.
+/// 
+/// The base URL can be overridden using the `FONT_API_SERVER`
+/// environment variable.
+///
+/// When specifying using the environment variable set it in the Flutter tool
+/// using the `--dart-define` option. The value must end with a `/`.
+///
+/// Example:
+///
+/// ```
+/// flutter run \
+///   -d chrome \
+///   --web-renderer=canvaskit \
+///   --dart-define=FONT_API_SERVER=https://example.com/
+/// ```
 const String defaultFontServerUrl = String.fromEnvironment(
   'FONT_API_SERVER',
   defaultValue: 'https://fonts.googleapis.com/',
