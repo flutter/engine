@@ -154,37 +154,23 @@ static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   // Convert `charactersIgnoringModifiers` to UTF32.
   NSString* keyLabelUtf16 = event.charactersIgnoringModifiers;
 
-  // Check if this key is a single printable character, which will be used to
-  // generate the logical key from its Unicode value. This excludes:
+  // Check if this key is a single character, which will be used to generate the
+  // logical key from its Unicode value.
   //
-  // - Control keys such as ESC, CTRL, and SHIFT, which are not printable.
-  // - HOME, DEL, arrow keys, and function keys, which are considered modifier function
-  //   keys and generate invalid Unicode scalar values.
-  // - A string of multiple characters, which has been observed in
-  //   https://github.com/flutter/flutter/issues/82673.
-  //
-  // TODO(dkwingsmt): Theoretically control keys and modifier keys should have
-  // been converted in keyCodeToLogicalKey. We should convert it into an assert
-  // instead. I didn't do so for now because we're still stablizing the logic.
+  // Multi-char keys will be minted onto the macOS plane because there are no
+  // meaningful values for them. Control keys and unprintable keys have been
+  // converted by `keyCodeToLogicalKey` earlier.
   uint32_t character = 0;
   if (keyLabelUtf16.length != 0) {
-    for (NSUInteger i = 0; i < keyLabelUtf16.length; ++i) {
-      printf("0x%04x ", [keyLabelUtf16 characterAtIndex:i]);
-    }
-    NSLog(@"");
     size_t keyLabelLength;
     uint32_t* keyLabel = DecodeUtf16(keyLabelUtf16, &keyLabelLength);
     if (keyLabelLength == 1) {
-      for (NSUInteger i = 0; i < keyLabelLength; ++i) {
-        printf("0x%04x ", keyLabel[i]);
-      }
-      NSLog(@"");
       uint32_t keyLabelChar = *keyLabel;
       delete[] keyLabel;
-      if (!IsControlCharacter(keyLabelChar) && !IsUnprintableKey(keyLabelChar)) {
-        NSCAssert(keyLabelChar <= 0x10FFFF, @"Out of range keylabel 0x%x", keyLabelChar);
-        character = keyLabelChar;
-      }
+      NSCAssert(!IsControlCharacter(keyLabelChar) && !IsUnprintableKey(keyLabelChar),
+                @"Unexpected control or unprintable keylabel 0x%x", keyLabelChar);
+      NSCAssert(keyLabelChar <= 0x10FFFF, @"Out of range keylabel 0x%x", keyLabelChar);
+      character = keyLabelChar;
     }
   }
   if (character != 0) {
@@ -533,8 +519,6 @@ const char* getEventString(NSString* characters) {
   NSAssert(callback != nil, @"The callback must not be nil.");
   FlutterKeyCallbackGuard* guardedCallback =
       [[FlutterKeyCallbackGuard alloc] initWithCallback:callback];
-  // NSLog(@"Type [%lu] keycode 0x%x char |%@| charIM |%@|", event.type,
-  //     event.keyCode, event.characters, event.charactersIgnoringModifiers);
   switch (event.type) {
     case NSEventTypeKeyDown:
       [self handleDownEvent:event callback:guardedCallback];
