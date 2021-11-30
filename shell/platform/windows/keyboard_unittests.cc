@@ -896,9 +896,8 @@ TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
           kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalDigit6, kLogicalDigit6, "6",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit6,
+                       kLogicalDigit6, "6", kNotSynthesized);
   clear_key_calls();
 
   EXPECT_EQ(tester.InjectPendingEvents(), 0);
@@ -907,13 +906,11 @@ TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
 
   // Release 6^
   tester.InjectMessages(
-      1, WmKeyUpInfo{'6', kScanCodeDigit6, kNotExtended}.Build(
-             kWmResultZero));
+      1, WmKeyUpInfo{'6', kScanCodeDigit6, kNotExtended}.Build(kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalDigit6, kLogicalDigit6, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit6,
+                       kLogicalDigit6, "", kNotSynthesized);
   clear_key_calls();
 
   tester.InjectPendingEvents();
