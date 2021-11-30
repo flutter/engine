@@ -21,6 +21,9 @@ const List<String> _jsAccessLibraries = <String>[
   'package:js',
 ];
 
+// Libraries that are allowed to make direct calls to JavaScript. These
+// libraries must be reviewed carefully to make sure JavaScript APIs are used
+// safely.
 const List<String> _auditedLibraries = <String>[
   'lib/web_ui/lib/src/engine/canvaskit/canvaskit_api.dart',
   'lib/web_ui/lib/src/engine/safe_browser_api.dart',
