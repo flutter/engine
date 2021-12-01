@@ -1317,7 +1317,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     for (int i = 0; i < args->dart_entrypoint_argc; ++i) {
       arguments[i] = std::string{args->dart_entrypoint_argv[i]};
     }
-    settings.dart_entrypoint_args = std::move(arguments);
+    run_configuration.SetEntrypointArgs(std::move(arguments));
   }
 
   if (!run_configuration.IsValid()) {
@@ -1692,6 +1692,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
       [](const uint8_t* data, size_t size, void* user_data) {
         auto message_data = std::unique_ptr<MessageData>(
             reinterpret_cast<MessageData*>(user_data));
+        if (message_data->callback == nullptr) {
+          return;
+        }
         bool handled = false;
         if (size == 1) {
           handled = *data != 0;

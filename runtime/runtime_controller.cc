@@ -68,6 +68,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           p_persistent_isolate_data,     //
                                           spawned_context);              //
   result->spawning_isolate_ = root_isolate_;
+  result->platform_data_.viewport_metrics = ViewportMetrics();
   return result;
 }
 

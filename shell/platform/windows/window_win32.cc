@@ -4,11 +4,18 @@
 
 #include "flutter/shell/platform/windows/window_win32.h"
 
+#include "base/win/atl.h"  // NOLINT(build/include_order)
+
 #include <imm.h>
+#include <oleacc.h>
+#include <uiautomationcore.h>
+#include <uiautomationcoreapi.h>
+#include <wrl/client.h>
 
 #include <cstring>
 
 #include "dpi_utils_win32.h"
+#include "keyboard_win32_common.h"
 
 namespace flutter {
 
@@ -146,17 +153,19 @@ void WindowWin32::TrackMouseLeaveEvent(HWND hwnd) {
   }
 }
 
-void WindowWin32::OnGetObject(UINT const message,
-                              WPARAM const wparam,
-                              LPARAM const lparam) {
+LRESULT WindowWin32::OnGetObject(UINT const message,
+                                 WPARAM const wparam,
+                                 LPARAM const lparam) {
   LRESULT reference_result = static_cast<LRESULT>(0L);
 
   // Only the lower 32 bits of lparam are valid when checking the object id
   // because it sometimes gets sign-extended incorrectly (but not always).
   DWORD obj_id = static_cast<DWORD>(static_cast<DWORD_PTR>(lparam));
 
+  bool is_uia_request = static_cast<DWORD>(UiaRootObjectId) == obj_id;
   bool is_msaa_request = static_cast<DWORD>(OBJID_CLIENT) == obj_id;
-  if (is_msaa_request) {
+
+  if (is_uia_request || is_msaa_request) {
     // On Windows, we don't get a notification that the screen reader has been
     // enabled or disabled. There is an API to query for screen reader state,
     // but that state isn't set by all screen readers, including by Narrator,
@@ -166,11 +175,22 @@ void WindowWin32::OnGetObject(UINT const message,
     // Instead, we enable semantics in Flutter if Windows issues queries for
     // Microsoft Active Accessibility (MSAA) COM objects.
     OnUpdateSemanticsEnabled(true);
-
-    // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
-    // Once AccessibilityBridge is wired up, look up the IAccessible
-    // representing the root view and call LresultFromObject.
   }
+
+  gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
+  if (is_uia_request && root_view) {
+    Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
+    root_view->QueryInterface(IID_PPV_ARGS(&root));
+    LRESULT lresult =
+        UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
+    return lresult;
+  } else if (is_msaa_request && root_view) {
+    // Return the IAccessible for the root view.
+    Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
+    return lresult;
+  }
+  return 0;
 }
 
 void WindowWin32::OnImeSetContext(UINT const message,
@@ -412,9 +432,13 @@ WindowWin32::HandleMessage(UINT const message,
                 static_cast<double>(WHEEL_DELTA)),
                0.0, kFlutterPointerDeviceKindMouse, kDefaultPointerDeviceId);
       break;
-    case WM_GETOBJECT:
-      OnGetObject(message, wparam, lparam);
+    case WM_GETOBJECT: {
+      LRESULT lresult = OnGetObject(message, wparam, lparam);
+      if (lresult) {
+        return lresult;
+      }
       break;
+    }
     case WM_INPUTLANGCHANGE:
       // TODO(cbracken): pass this to TextInputManager to aid with
       // language-specific issues.
@@ -491,14 +515,18 @@ WindowWin32::HandleMessage(UINT const message,
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
         // Certain key combinations yield control characters as WM_CHAR's
-        // lParam. For example, 0x01 for Ctrl-A. Filter these characters.
-        // See
+        // lParam. For example, 0x01 for Ctrl-A. Filter these characters. See
         // https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
-        const char32_t event_character =
-            (message == WM_DEADCHAR || message == WM_SYSDEADCHAR)
-                ? Win32MapVkToChar(keycode_for_char_message_)
-            : IsPrintable(code_point) ? code_point
-                                      : 0;
+        char32_t event_character;
+        if (message == WM_DEADCHAR || message == WM_SYSDEADCHAR) {
+          // Mask the resulting char with kDeadKeyCharMask anyway, because in
+          // rare cases the bit is *not* set (US INTL Shift-6 circumflex, see
+          // https://github.com/flutter/flutter/issues/92654 .)
+          event_character =
+              Win32MapVkToChar(keycode_for_char_message_) | kDeadKeyCharMask;
+        } else {
+          event_character = IsPrintable(code_point) ? code_point : 0;
+        }
         bool handled = OnKey(keycode_for_char_message_, scancode,
                              message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN,
                              event_character, extended, was_down);

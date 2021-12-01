@@ -29,6 +29,8 @@ import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 // ignore: unused_import
 import 'dart:math' as math;
+// ignore: unused_import
+import 'dart:svg' as svg;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
@@ -39,7 +41,7 @@ import '../ui.dart' as ui;
 
 // ignore: unused_import
 import 'engine/configuration.dart';
-import 'engine/dom_renderer.dart';
+import 'engine/embedder.dart';
 import 'engine/keyboard.dart';
 import 'engine/mouse_cursor.dart';
 import 'engine/navigation/js_url_strategy.dart';
@@ -128,7 +130,7 @@ export 'engine/color_filter.dart';
 
 export 'engine/configuration.dart';
 
-export 'engine/dom_renderer.dart';
+export 'engine/embedder.dart';
 
 export 'engine/engine_canvas.dart';
 
@@ -411,8 +413,8 @@ void initializeEngine() {
 
   _engineInitialized = true;
 
-  // Initialize the DomRenderer before initializing framework bindings.
-  ensureDomRendererInitialized();
+  // Initialize the FlutterViewEmbedder before initializing framework bindings.
+  ensureFlutterViewEmbedderInitialized();
 
   WebExperiments.ensureInitialized();
 
@@ -474,13 +476,6 @@ void _addUrlStrategyListener() {
   registerHotRestartListener(() {
     jsSetUrlStrategy = null;
   });
-}
-
-/// Sanitizer used to convert const svg filter and clippath snippets to
-/// SvgElement without sanitization.
-class NullTreeSanitizer implements html.NodeTreeSanitizer {
-  @override
-  void sanitizeTree(html.Node node) {}
 }
 
 /// The shared instance of PlatformViewManager shared across the engine to handle
