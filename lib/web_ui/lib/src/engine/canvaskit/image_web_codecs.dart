@@ -7,7 +7,6 @@
 /// See also:
 ///
 ///  * `image_wasm_codecs.dart`, which uses codecs supplied by the CanvasKit WASM bundle.
-library image_web_codecs;
 
 import 'dart:async';
 import 'dart:html' as html;
