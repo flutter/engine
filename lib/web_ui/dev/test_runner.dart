@@ -33,12 +33,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Run in watch mode so the tests re-run whenever a change is '
             'made.',
       )
-      ..addFlag(
-        'unit-tests-only',
-        defaultsTo: false,
-        help: 'felt test command runs the unit tests and the integration tests '
-            'at the same time. If this flag is set, only run the unit tests.',
-      )
       ..addFlag('use-system-flutter',
           defaultsTo: false,
           help:
@@ -51,6 +45,13 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
               'won\'t be consistent with CIs when this flag is set. flutter '
               'command should be set in the PATH for this flag to be useful.'
               'This flag can also be used to test local Flutter changes.')
+      ..addFlag(
+        'require-skia-gold',
+        defaultsTo: false,
+        help:
+            'Whether we require Skia Gold to be available or not. When this '
+            'flag is true, the tests will fail if Skia Gold is not available.',
+      )
       ..addFlag(
         'update-screenshot-goldens',
         defaultsTo: false,
@@ -117,6 +118,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// The name of the browser to run tests in.
   String get browserName => stringArg('browser');
 
+  /// When running screenshot tests, require Skia Gold to be available and
+  /// reachable.
+  bool get requireSkiaGold => boolArg('require-skia-gold');
+
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
   bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
@@ -144,6 +149,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         testFiles: testFiles,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        requireSkiaGold: requireSkiaGold,
         overridePathToCanvasKit: overridePathToCanvasKit,
       ),
     ]);
