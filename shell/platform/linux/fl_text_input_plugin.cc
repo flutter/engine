@@ -128,6 +128,7 @@ static void update_editing_state_response_cb(GObject* object,
 
 // Informs Flutter of text input changes.
 static void update_editing_state(FlTextInputPlugin* self) {
+  FML_DLOG(ERROR) << "justin update_editing_state" << std::endl;
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
 
@@ -171,6 +172,7 @@ static void update_editing_state(FlTextInputPlugin* self) {
 // Informs Flutter of text input changes by passing just the delta.
 static void update_editing_state_with_delta(FlTextInputPlugin* self,
                                             flutter::TextEditingDelta* delta) {
+  FML_DLOG(ERROR) << "justin update_editing_state_with_delta" << std::endl;
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
 
@@ -268,6 +270,7 @@ static void im_preedit_start_cb(FlTextInputPlugin* self) {
 
 // Signal handler for GtkIMContext::preedit-changed
 static void im_preedit_changed_cb(FlTextInputPlugin* self) {
+  FML_DLOG(ERROR) << "justin im_preedit_changed_cb" << std::endl;
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
   std::string text_before_change = priv->text_model->GetText();
@@ -296,15 +299,26 @@ static void im_preedit_changed_cb(FlTextInputPlugin* self) {
 static void im_commit_cb(FlTextInputPlugin* self, const gchar* text) {
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
+  std::string text_before_change = priv->text_model->GetText();
+  flutter::TextRange selection_before_change = priv->text_model->selection();
+
   priv->text_model->AddText(text);
   if (priv->text_model->composing()) {
     priv->text_model->CommitComposing();
   }
-  update_editing_state(self);
+
+  if (priv->enable_delta_model) {
+    flutter::TextEditingDelta delta = flutter::TextEditingDelta(
+        text_before_change, selection_before_change, text);
+    update_editing_state_with_delta(self, &delta);
+  } else {
+    update_editing_state(self);
+  }
 }
 
 // Signal handler for GtkIMContext::preedit-end
 static void im_preedit_end_cb(FlTextInputPlugin* self) {
+  FML_DLOG(ERROR) << "justin im_preedit_end_cb" << std::endl;
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
   priv->text_model->EndComposing();
@@ -326,6 +340,7 @@ static gboolean im_retrieve_surrounding_cb(FlTextInputPlugin* self) {
 static gboolean im_delete_surrounding_cb(FlTextInputPlugin* self,
                                          gint offset,
                                          gint n_chars) {
+  FML_DLOG(ERROR) << "justin im_delete_surrounding_cb" << std::endl;
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
       fl_text_input_plugin_get_instance_private(self));
   if (priv->text_model->DeleteSurrounding(offset, n_chars)) {
@@ -336,6 +351,7 @@ static gboolean im_delete_surrounding_cb(FlTextInputPlugin* self,
 
 // Called when the input method client is set up.
 static FlMethodResponse* set_client(FlTextInputPlugin* self, FlValue* args) {
+  FML_DLOG(ERROR) << "justin checking set_client" << std::endl;
   if (fl_value_get_type(args) != FL_VALUE_TYPE_LIST ||
       fl_value_get_length(args) < 2) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
@@ -592,6 +608,8 @@ static void fl_text_input_plugin_dispose(GObject* object) {
 static gboolean fl_text_input_plugin_filter_keypress_default(
     FlTextInputPlugin* self,
     FlKeyEvent* event) {
+  FML_DLOG(ERROR) << "justin fl_text_input_plugin_filter_keypress_default"
+                  << std::endl;
   g_return_val_if_fail(FL_IS_TEXT_INPUT_PLUGIN(self), false);
 
   FlTextInputPluginPrivate* priv = static_cast<FlTextInputPluginPrivate*>(
