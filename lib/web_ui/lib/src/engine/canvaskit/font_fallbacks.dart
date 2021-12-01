@@ -18,14 +18,14 @@ import 'initialization.dart';
 import 'interval_tree.dart';
 
 
-// Runtime parameters.
+// Compile time parameters.
 
 /// The URL to use when downloading the font resources.
 /// 
 /// The base URL can be overridden using the `FONT_API_SERVER`
 /// environment variable.
 ///
-/// When specifying using the environment variable set it in the Flutter tool
+/// The environment variable can be set in the Flutter tool
 /// using the `--dart-define` option. The value must end with a `/`.
 ///
 /// Example:
@@ -36,7 +36,7 @@ import 'interval_tree.dart';
 ///   --web-renderer=canvaskit \
 ///   --dart-define=FONT_API_SERVER=https://example.com/
 /// ```
-const String defaultFontServerUrl = String.fromEnvironment(
+const String fontServerBaseUrl = String.fromEnvironment(
   'FONT_API_SERVER',
   defaultValue: 'https://fonts.googleapis.com/',
 );
@@ -452,9 +452,9 @@ Future<void> _registerSymbolsAndEmoji() async {
   }
   data.registeredSymbolsAndEmoji = true;
   const String emojiUrl =
-      '${defaultFontServerUrl}css2?family=Noto+Color+Emoji+Compat';
+      '${fontServerBaseUrl}css2?family=Noto+Color+Emoji+Compat';
   const String symbolsUrl =
-      '${defaultFontServerUrl}css2?family=Noto+Sans+Symbols';
+      '${fontServerBaseUrl}css2?family=Noto+Sans+Symbols';
 
   final String emojiCss =
       await notoDownloadQueue.downloader.downloadAsString(emojiUrl);
@@ -583,7 +583,7 @@ class NotoFont {
   NotoFont(this.name, this.approximateUnicodeRanges);
 
   String get googleFontsCssUrl =>
-      '${defaultFontServerUrl}css2?family=${name.replaceAll(' ', '+')}';
+      '${fontServerBaseUrl}css2?family=${Uri.encodeQueryComponent(name)}';
 
   Future<void> ensureResolved() async {
     if (resolvedFont == null) {
