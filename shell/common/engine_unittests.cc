@@ -331,7 +331,7 @@ TEST_F(EngineTest, SpawnResetsViewportMetrics) {
     EXPECT_EQ(old_platform_data.viewport_metrics.physical_height, kViewHeight);
 
     auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
-                               std::string());
+                               std::string(), io_manager_);
     EXPECT_TRUE(spawn != nullptr);
     auto& new_viewport_metrics =
         spawn->GetRuntimeController()->GetPlatformData().viewport_metrics;
