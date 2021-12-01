@@ -12,6 +12,7 @@ enabled_branches:
   - beta
   - stable
   - flutter-2.7-candidate.5
+  - fuchsia_f7
 
 platform_properties:
   linux:
