@@ -63,11 +63,9 @@ typedef PlatformViewFactory = html.Element Function(int viewId);
 /// A registry for factories that create platform views.
 class PlatformViewRegistry {
   /// Register [viewTypeId] as being creating by the given [factory].
-  bool registerViewFactory(String viewTypeId, PlatformViewFactory viewFactory,
-      {bool isVisible = true}) {
+  bool registerViewFactory(String viewTypeId, PlatformViewFactory viewFactory) {
     // TODO(web): Deprecate this once there's another way of calling `registerFactory` (js interop?)
-    return engine.platformViewManager
-        .registerFactory(viewTypeId, viewFactory, isVisible: isVisible);
+    return engine.platformViewManager.registerFactory(viewTypeId, viewFactory);
   }
 }
 

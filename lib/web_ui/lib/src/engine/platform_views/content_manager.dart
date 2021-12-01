@@ -43,9 +43,6 @@ class PlatformViewManager {
   // The references to content tags, indexed by their framework-given ID.
   final Map<int, html.Element> _contents = <int, html.Element>{};
 
-  final Set<String> _invisibleViews = <String>{};
-  final Map<int, String> _viewIdToType = <int, String>{};
-
   /// Returns `true` if the passed in `viewType` has been registered before.
   ///
   /// See [registerViewFactory] to understand how factories are registered.
@@ -67,8 +64,7 @@ class PlatformViewManager {
   /// it's been set.
   ///
   /// `factoryFunction` needs to be a [PlatformViewFactory].
-  bool registerFactory(String viewType, Function factoryFunction,
-      {bool isVisible = true}) {
+  bool registerFactory(String viewType, Function factoryFunction) {
     assert(factoryFunction is PlatformViewFactory ||
         factoryFunction is ParameterizedPlatformViewFactory);
 
@@ -76,9 +72,6 @@ class PlatformViewManager {
       return false;
     }
     _factories[viewType] = factoryFunction;
-    if (!isVisible) {
-      _invisibleViews.add(viewType);
-    }
     return true;
   }
 
@@ -112,7 +105,6 @@ class PlatformViewManager {
         'Attempted to render contents of unregistered viewType: $viewType');
 
     final String slotName = getPlatformViewSlotName(viewId);
-    _viewIdToType[viewId] = viewType;
 
     return _contents.putIfAbsent(viewId, () {
       final html.Element wrapper = html.document
@@ -194,16 +186,6 @@ class PlatformViewManager {
     }
   }
 
-  /// Returns `true` if the given [viewId] is for an invisible platform view.
-  bool isInvisible(int viewId) {
-    final String? viewType = _viewIdToType[viewId];
-    return viewType != null && _invisibleViews.contains(viewType);
-  }
-
-  /// Returns `true` if the given [viewId] is a platform view with a visible
-  /// component.
-  bool isVisible(int viewId) => !isInvisible(viewId);
-
   /// Clears the state. Used in tests.
   ///
   /// Returns the set of know view ids, so they can be cleaned up.
@@ -212,8 +194,6 @@ class PlatformViewManager {
     result.forEach(clearPlatformView);
     _factories.clear();
     _contents.clear();
-    _invisibleViews.clear();
-    _viewIdToType.clear();
     return result;
   }
 }
