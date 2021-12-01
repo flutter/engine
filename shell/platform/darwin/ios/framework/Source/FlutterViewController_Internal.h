@@ -12,6 +12,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
 namespace flutter {
 class FlutterPlatformViewsController;
@@ -26,11 +27,11 @@ extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
-@interface FlutterViewController ()
+@interface FlutterViewController () <FlutterViewResponder>
 
 @property(nonatomic, readonly) BOOL isPresentingViewController;
 @property(nonatomic, readonly) BOOL isVoiceOverRunning;
-@property(nonatomic) FlutterKeyboardManager* keyboardManager;
+@property(nonatomic, retain) FlutterKeyboardManager* keyboardManager;
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;

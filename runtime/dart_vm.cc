@@ -6,24 +6,18 @@
 
 #include <sys/stat.h>
 
-#include <mutex>
 #include <sstream>
 #include <vector>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/io/dart_io.h"
-#include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate.h"
-#include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm_initializer.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
@@ -33,7 +27,6 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_error.h"
-#include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace dart {
@@ -175,6 +168,14 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
       ::dart::observatory::observatory_assets_archive,
       ::dart::observatory::observatory_assets_archive_len);
 #endif
+}
+
+void PostTaskCallback(void* post_task_data,
+                      Dart_Task task,
+                      Dart_TaskData task_data) {
+  auto* dart_vm = reinterpret_cast<DartVM*>(post_task_data);
+  dart_vm->GetConcurrentWorkerTaskRunner()->PostTask(
+      [task] { Dart_RunTask(task); });
 }
 
 static const char kStdoutStreamId[] = "Stdout";
@@ -449,6 +450,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
     params.entropy_source = dart::bin::GetEntropy;
+    params.post_task = PostTaskCallback;
+    params.post_task_data = this;
     DartVMInitializer::Initialize(&params);
     // Send the earliest available timestamp in the application lifecycle to
     // timeline. The difference between this timestamp and the time we render
@@ -483,6 +486,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
                                      dart_library_sources->GetSize());
   }
+
+  // Update thread names now that the Dart VM is initialized.
+  concurrent_message_loop_->PostTaskToAllWorkers(
+      [] { Dart_SetThreadName("FlutterConcurrentMessageLoopWorker"); });
 }
 
 DartVM::~DartVM() {

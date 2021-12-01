@@ -240,11 +240,7 @@ public class PlatformPlugin {
   }
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
-    int enabledOverlays =
-        DEFAULT_SYSTEM_UI
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    int enabledOverlays;
 
     Window window = activity.getWindow();
     View view = window.getDecorView();
@@ -255,7 +251,7 @@ public class PlatformPlugin {
       // LEAN BACK
       // Available starting at SDK 16
       // Should not show overlays, tap to reveal overlays, needs onChange callback
-      // When the overlays come in on tap, the app does not recieve the gesture and does not know
+      // When the overlays come in on tap, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
@@ -343,6 +339,9 @@ public class PlatformPlugin {
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
       }
+    } else {
+      // When none of the conditions are matched, return without updating the system UI overlays.
+      return;
     }
 
     if (Build.VERSION.SDK_INT >= 30) {

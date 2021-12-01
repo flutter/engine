@@ -254,6 +254,10 @@ static void CommonInit(FlutterViewController* controller) {
              selector:@selector(onAccessibilityStatusChanged:)
                  name:EnhancedUserInterfaceNotification
                object:nil];
+  [center addObserver:controller
+             selector:@selector(applicationWillTerminate:)
+                 name:NSApplicationWillTerminateNotification
+               object:nil];
 }
 
 - (instancetype)initWithCoder:(NSCoder*)coder {
@@ -400,8 +404,9 @@ static void CommonInit(FlutterViewController* controller) {
                                          ([[event window] firstResponder] ==
                                           weakSelf.flutterView) &&
                                          ([event modifierFlags] & NSEventModifierFlagCommand) &&
-                                         ([event type] == NSEventTypeKeyUp))
+                                         ([event type] == NSEventTypeKeyUp)) {
                                        [weakSelf keyUp:event];
+                                     }
                                      return event;
                                    }];
 }
@@ -555,6 +560,13 @@ static void CommonInit(FlutterViewController* controller) {
   } else if (phase == kRemove) {
     _mouseState.Reset();
   }
+}
+
+- (void)applicationWillTerminate:(NSNotification*)notification {
+  if (!_engine) {
+    return;
+  }
+  [_engine shutDownEngine];
 }
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {

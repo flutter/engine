@@ -70,7 +70,9 @@ Engine::Engine(Delegate& delegate,
                scenic::ViewRefPair view_ref_pair,
                UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-               FlutterRunnerProductConfiguration product_config)
+               FlutterRunnerProductConfiguration product_config,
+               const std::vector<std::string>& dart_entrypoint_args,
+               bool for_v1_component)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
       thread_host_(CreateThreadHost(thread_label_)),
@@ -82,7 +84,7 @@ Engine::Engine(Delegate& delegate,
   Initialize(/*=use_flatland*/ false, std::move(view_ref_pair), std::move(svc),
              std::move(runner_services), std::move(settings),
              std::move(fdio_ns), std::move(directory_request),
-             std::move(product_config));
+             std::move(product_config), dart_entrypoint_args, for_v1_component);
 }
 
 Engine::Engine(Delegate& delegate,
@@ -94,7 +96,9 @@ Engine::Engine(Delegate& delegate,
                scenic::ViewRefPair view_ref_pair,
                UniqueFDIONS fdio_ns,
                fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-               FlutterRunnerProductConfiguration product_config)
+               FlutterRunnerProductConfiguration product_config,
+               const std::vector<std::string>& dart_entrypoint_args,
+               bool for_v1_component)
     : delegate_(delegate),
       thread_label_(std::move(thread_label)),
       thread_host_(CreateThreadHost(thread_label_)),
@@ -106,7 +110,7 @@ Engine::Engine(Delegate& delegate,
   Initialize(/*=use_flatland*/ true, std::move(view_ref_pair), std::move(svc),
              std::move(runner_services), std::move(settings),
              std::move(fdio_ns), std::move(directory_request),
-             std::move(product_config));
+             std::move(product_config), dart_entrypoint_args, for_v1_component);
 }
 
 void Engine::Initialize(
@@ -117,7 +121,9 @@ void Engine::Initialize(
     flutter::Settings settings,
     UniqueFDIONS fdio_ns,
     fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-    FlutterRunnerProductConfiguration product_config) {
+    FlutterRunnerProductConfiguration product_config,
+    const std::vector<std::string>& dart_entrypoint_args,
+    bool for_v1_component) {
   // Flatland uses |view_creation_token_| for linking. Gfx uses |view_token_|.
   FML_CHECK((use_flatland && view_creation_token_.value.is_valid()) ||
             (!use_flatland && view_token_.value.is_valid()));
@@ -222,6 +228,7 @@ void Engine::Initialize(
                                          weak = weak_factory_.GetWeakPtr()]() {
     task_runner->PostTask([weak]() {
       if (weak) {
+        FML_LOG(ERROR) << "Terminating from session_error_callback";
         weak->Terminate();
       }
     });
@@ -340,6 +347,8 @@ void Engine::Initialize(
        weak = weak_factory_.GetWeakPtr()]() {
         task_runner->PostTask([weak]() {
           if (weak) {
+            FML_LOG(ERROR) << "Terminating from "
+                              "on_session_listener_error_callback";
             weak->Terminate();
           }
         });
@@ -350,6 +359,7 @@ void Engine::Initialize(
   // so it must be called before WarmupSkps() is called below.
   auto run_configuration = flutter::RunConfiguration::InferFromSettings(
       settings, task_runners.GetIOTaskRunner());
+  run_configuration.SetEntrypointArgs(std::move(dart_entrypoint_args));
 
   OnSemanticsNodeUpdate on_semantics_node_update_callback =
       [this](flutter::SemanticsNodeUpdates updates, float pixel_ratio) {
@@ -526,14 +536,15 @@ void Engine::Initialize(
   // configurator.
   {
     fuchsia::sys::EnvironmentPtr environment;
-    svc->Connect(environment.NewRequest());
+    if (for_v1_component) {
+      svc->Connect(environment.NewRequest());
+    }
 
     isolate_configurator_ = std::make_unique<IsolateConfigurator>(
-        std::move(fdio_ns),                    //
-        std::move(environment),                //
-        directory_request.TakeChannel(),       //
-        std::move(isolate_view_ref.reference)  //
-    );
+        std::move(fdio_ns),
+        // v2 components do not use fuchsia.sys.Environment.
+        for_v1_component ? std::move(environment) : nullptr,
+        directory_request.TakeChannel(), std::move(isolate_view_ref.reference));
   }
 
   //  This platform does not get a separate surface platform view creation
@@ -619,6 +630,7 @@ void Engine::Initialize(
     // The engine could have been killed by the caller right after the
     // constructor was called but before it could run on the UI thread.
     if (weak) {
+      FML_LOG(ERROR) << "Terminating from on_run_failure";
       weak->Terminate();
     }
   };

@@ -200,7 +200,7 @@ Matcher<FakeGraph> IsFlutterGraph(
       Pointee(FieldsAre(
           /*id*/ _, FakeTransform::kDefaultTranslation,
           FakeTransform::kDefaultClipBounds, FakeTransform::kDefaultOrientation,
-          FakeTransform::kDefaultOpacity, ElementsAreArray(layer_matchers),
+          /*children*/ ElementsAreArray(layer_matchers),
           /*content*/ Eq(nullptr))),
       Eq(FakeView{
           .view_token = viewport_token_koids.second,
@@ -219,10 +219,12 @@ Matcher<std::shared_ptr<FakeTransform>> IsImageLayer(
   return Pointee(FieldsAre(
       /*id*/ _, FakeTransform::kDefaultTranslation,
       FakeTransform::kDefaultClipBounds, FakeTransform::kDefaultOrientation,
-      FakeTransform::kDefaultOpacity, IsEmpty(),
+      /*children*/ IsEmpty(),
+      /*content*/
       Pointee(VariantWith<FakeImage>(FieldsAre(
           /*id*/ _, IsImageProperties(layer_size),
           FakeImage::kDefaultSampleRegion, layer_size,
+          FakeImage::kDefaultOpacity,
           /*buffer_import_token*/ _, /*vmo_index*/ 0)))));
 }
 
@@ -233,7 +235,8 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
   return Pointee(
       FieldsAre(_ /* id */, view_transform, FakeTransform::kDefaultClipBounds,
                 FakeTransform::kDefaultOrientation,
-                FakeTransform::kDefaultOpacity, IsEmpty(),
+                /*children*/ IsEmpty(),
+                /*content*/
                 Pointee(VariantWith<FakeViewport>(FieldsAre(
                     /* id */ _, IsViewportProperties(view_logical_size),
                     /* viewport_token */ GetKoids(view_token).second,
@@ -259,9 +262,11 @@ void DrawSimpleFrame(FlatlandExternalViewEmbedder& external_view_embedder,
     draw_callback(root_canvas);
   }
   external_view_embedder.EndFrame(false, nullptr);
+  flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
   external_view_embedder.SubmitFrame(
       nullptr, std::make_unique<flutter::SurfaceFrame>(
-                   nullptr, true,
+                   nullptr, std::move(framebuffer_info),
                    [](const flutter::SurfaceFrame& surface_frame,
                       SkCanvas* canvas) { return true; }));
 }
@@ -285,9 +290,11 @@ void DrawFrameWithView(FlatlandExternalViewEmbedder& external_view_embedder,
     overlay_draw_callback(overlay_canvas);
   }
   external_view_embedder.EndFrame(false, nullptr);
+  flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
   external_view_embedder.SubmitFrame(
       nullptr, std::make_unique<flutter::SurfaceFrame>(
-                   nullptr, true,
+                   nullptr, std::move(framebuffer_info),
                    [](const flutter::SurfaceFrame& surface_frame,
                       SkCanvas* canvas) { return true; }));
 }

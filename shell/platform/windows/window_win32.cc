@@ -4,11 +4,18 @@
 
 #include "flutter/shell/platform/windows/window_win32.h"
 
+#include "base/win/atl.h"  // NOLINT(build/include_order)
+
 #include <imm.h>
+#include <oleacc.h>
+#include <uiautomationcore.h>
+#include <uiautomationcoreapi.h>
+#include <wrl/client.h>
 
 #include <cstring>
 
 #include "dpi_utils_win32.h"
+#include "keyboard_win32_common.h"
 
 namespace flutter {
 
@@ -44,12 +51,19 @@ static const int kMaxTouchDeviceId = 128;
 
 }  // namespace
 
-WindowWin32::WindowWin32()
-    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId) {
+WindowWin32::WindowWin32() : WindowWin32(nullptr) {}
+
+WindowWin32::WindowWin32(
+    std::unique_ptr<TextInputManagerWin32> text_input_manager)
+    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
+      text_input_manager_(std::move(text_input_manager)) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
   current_dpi_ = GetDpiForHWND(nullptr);
+  if (text_input_manager_ == nullptr) {
+    text_input_manager_ = std::make_unique<TextInputManagerWin32>();
+  }
 }
 
 WindowWin32::~WindowWin32() {
@@ -119,7 +133,7 @@ LRESULT CALLBACK WindowWin32::WndProc(HWND const window,
 
     auto that = static_cast<WindowWin32*>(cs->lpCreateParams);
     that->window_handle_ = window;
-    that->text_input_manager_.SetWindowHandle(window);
+    that->text_input_manager_->SetWindowHandle(window);
     RegisterTouchWindow(window, 0);
   } else if (WindowWin32* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
@@ -139,17 +153,19 @@ void WindowWin32::TrackMouseLeaveEvent(HWND hwnd) {
   }
 }
 
-void WindowWin32::OnGetObject(UINT const message,
-                              WPARAM const wparam,
-                              LPARAM const lparam) {
+LRESULT WindowWin32::OnGetObject(UINT const message,
+                                 WPARAM const wparam,
+                                 LPARAM const lparam) {
   LRESULT reference_result = static_cast<LRESULT>(0L);
 
   // Only the lower 32 bits of lparam are valid when checking the object id
   // because it sometimes gets sign-extended incorrectly (but not always).
   DWORD obj_id = static_cast<DWORD>(static_cast<DWORD_PTR>(lparam));
 
+  bool is_uia_request = static_cast<DWORD>(UiaRootObjectId) == obj_id;
   bool is_msaa_request = static_cast<DWORD>(OBJID_CLIENT) == obj_id;
-  if (is_msaa_request) {
+
+  if (is_uia_request || is_msaa_request) {
     // On Windows, we don't get a notification that the screen reader has been
     // enabled or disabled. There is an API to query for screen reader state,
     // but that state isn't set by all screen readers, including by Narrator,
@@ -159,25 +175,36 @@ void WindowWin32::OnGetObject(UINT const message,
     // Instead, we enable semantics in Flutter if Windows issues queries for
     // Microsoft Active Accessibility (MSAA) COM objects.
     OnUpdateSemanticsEnabled(true);
-
-    // TODO(cbracken): https://github.com/flutter/flutter/issues/77838
-    // Once AccessibilityBridge is wired up, look up the IAccessible
-    // representing the root view and call LresultFromObject.
   }
+
+  gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
+  if (is_uia_request && root_view) {
+    Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
+    root_view->QueryInterface(IID_PPV_ARGS(&root));
+    LRESULT lresult =
+        UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
+    return lresult;
+  } else if (is_msaa_request && root_view) {
+    // Return the IAccessible for the root view.
+    Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
+    return lresult;
+  }
+  return 0;
 }
 
 void WindowWin32::OnImeSetContext(UINT const message,
                                   WPARAM const wparam,
                                   LPARAM const lparam) {
   if (wparam != 0) {
-    text_input_manager_.CreateImeWindow();
+    text_input_manager_->CreateImeWindow();
   }
 }
 
 void WindowWin32::OnImeStartComposition(UINT const message,
                                         WPARAM const wparam,
                                         LPARAM const lparam) {
-  text_input_manager_.CreateImeWindow();
+  text_input_manager_->CreateImeWindow();
   OnComposeBegin();
 }
 
@@ -185,21 +212,22 @@ void WindowWin32::OnImeComposition(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) {
   // Update the IME window position.
-  text_input_manager_.UpdateImeWindow();
+  text_input_manager_->UpdateImeWindow();
 
   if (lparam & GCS_COMPSTR) {
     // Read the in-progress composing string.
-    long pos = text_input_manager_.GetComposingCursorPosition();
+    long pos = text_input_manager_->GetComposingCursorPosition();
     std::optional<std::u16string> text =
-        text_input_manager_.GetComposingString();
+        text_input_manager_->GetComposingString();
     if (text) {
       OnComposeChange(text.value(), pos);
     }
-  } else if (lparam & GCS_RESULTSTR) {
+  }
+  if (lparam & GCS_RESULTSTR) {
     // Commit but don't end composing.
     // Read the committed composing string.
-    long pos = text_input_manager_.GetComposingCursorPosition();
-    std::optional<std::u16string> text = text_input_manager_.GetResultString();
+    long pos = text_input_manager_->GetComposingCursorPosition();
+    std::optional<std::u16string> text = text_input_manager_->GetResultString();
     if (text) {
       OnComposeChange(text.value(), pos);
       OnComposeCommit();
@@ -210,7 +238,7 @@ void WindowWin32::OnImeComposition(UINT const message,
 void WindowWin32::OnImeEndComposition(UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) {
-  text_input_manager_.DestroyImeWindow();
+  text_input_manager_->DestroyImeWindow();
   OnComposeEnd();
 }
 
@@ -223,11 +251,11 @@ void WindowWin32::OnImeRequest(UINT const message,
 }
 
 void WindowWin32::AbortImeComposing() {
-  text_input_manager_.AbortComposing();
+  text_input_manager_->AbortComposing();
 }
 
 void WindowWin32::UpdateCursorRect(const Rect& rect) {
-  text_input_manager_.UpdateCaretRect(rect);
+  text_input_manager_->UpdateCaretRect(rect);
 }
 
 static uint16_t ResolveKeyCode(uint16_t original,
@@ -404,9 +432,13 @@ WindowWin32::HandleMessage(UINT const message,
                 static_cast<double>(WHEEL_DELTA)),
                0.0, kFlutterPointerDeviceKindMouse, kDefaultPointerDeviceId);
       break;
-    case WM_GETOBJECT:
-      OnGetObject(message, wparam, lparam);
+    case WM_GETOBJECT: {
+      LRESULT lresult = OnGetObject(message, wparam, lparam);
+      if (lresult) {
+        return lresult;
+      }
       break;
+    }
     case WM_INPUTLANGCHANGE:
       // TODO(cbracken): pass this to TextInputManager to aid with
       // language-specific issues.
@@ -483,15 +515,20 @@ WindowWin32::HandleMessage(UINT const message,
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
         // Certain key combinations yield control characters as WM_CHAR's
-        // lParam. For example, 0x01 for Ctrl-A. Filter these characters.
-        // See
+        // lParam. For example, 0x01 for Ctrl-A. Filter these characters. See
         // https://docs.microsoft.com/en-us/windows/win32/learnwin32/accelerator-tables
-        const char32_t event_character =
-            (message == WM_DEADCHAR || message == WM_SYSDEADCHAR)
-                ? Win32MapVkToChar(keycode_for_char_message_)
-            : IsPrintable(code_point) ? code_point
-                                      : 0;
-        bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
+        char32_t event_character;
+        if (message == WM_DEADCHAR || message == WM_SYSDEADCHAR) {
+          // Mask the resulting char with kDeadKeyCharMask anyway, because in
+          // rare cases the bit is *not* set (US INTL Shift-6 circumflex, see
+          // https://github.com/flutter/flutter/issues/92654 .)
+          event_character =
+              Win32MapVkToChar(keycode_for_char_message_) | kDeadKeyCharMask;
+        } else {
+          event_character = IsPrintable(code_point) ? code_point : 0;
+        }
+        bool handled = OnKey(keycode_for_char_message_, scancode,
+                             message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN,
                              event_character, extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
@@ -507,6 +544,12 @@ WindowWin32::HandleMessage(UINT const message,
           // record the text here for the redispached event to use.
           if (message == WM_CHAR) {
             text_for_scancode_on_redispatch_[scancode] = text;
+          }
+
+          // For system characters, always pass them to the default WndProc so
+          // that system keys like the ALT-TAB are processed correctly.
+          if (message == WM_SYSCHAR) {
+            break;
           }
           return 0;
         }
@@ -559,9 +602,17 @@ WindowWin32::HandleMessage(UINT const message,
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
       keyCode = ResolveKeyCode(keyCode, extended, scancode);
-      const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       const bool was_down = lparam & 0x40000000;
+      bool is_syskey = message == WM_SYSKEYDOWN || message == WM_SYSKEYUP;
+      const int action = is_keydown_message
+                             ? (is_syskey ? WM_SYSKEYDOWN : WM_KEYDOWN)
+                             : (is_syskey ? WM_SYSKEYUP : WM_KEYUP);
       if (OnKey(keyCode, scancode, action, 0, extended, was_down)) {
+        // For system keys, always pass them to the default WndProc so that keys
+        // like the ALT-TAB or Kanji switches are processed correctly.
+        if (is_syskey) {
+          break;
+        }
         return 0;
       }
       break;
@@ -588,7 +639,7 @@ HWND WindowWin32::GetWindowHandle() {
 
 void WindowWin32::Destroy() {
   if (window_handle_) {
-    text_input_manager_.SetWindowHandle(nullptr);
+    text_input_manager_->SetWindowHandle(nullptr);
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }

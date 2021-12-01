@@ -17,6 +17,7 @@ import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.StringCodec;
 import io.flutter.view.FlutterCallbackInformation;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Configures, bootstraps, and starts executing Dart code.
@@ -121,6 +122,20 @@ public class DartExecutor implements BinaryMessenger {
    * @param dartEntrypoint specifies which Dart function to run, and where to find it
    */
   public void executeDartEntrypoint(@NonNull DartEntrypoint dartEntrypoint) {
+    executeDartEntrypoint(dartEntrypoint, null);
+  }
+
+  /**
+   * Starts executing Dart code based on the given {@code dartEntrypoint} and the {@code
+   * dartEntrypointArgs}.
+   *
+   * <p>See {@link DartEntrypoint} for configuration options.
+   *
+   * @param dartEntrypoint specifies which Dart function to run, and where to find it
+   * @param dartEntrypointArgs Arguments passed as a list of string to Dart's entrypoint function.
+   */
+  public void executeDartEntrypoint(
+      @NonNull DartEntrypoint dartEntrypoint, @Nullable List<String> dartEntrypointArgs) {
     if (isApplicationRunning) {
       Log.w(TAG, "Attempted to run a DartExecutor that is already running.");
       return;
@@ -134,7 +149,8 @@ public class DartExecutor implements BinaryMessenger {
           dartEntrypoint.pathToBundle,
           dartEntrypoint.dartEntrypointFunctionName,
           dartEntrypoint.dartEntrypointLibrary,
-          assetManager);
+          assetManager,
+          dartEntrypointArgs);
 
       isApplicationRunning = true;
     } finally {
@@ -163,7 +179,8 @@ public class DartExecutor implements BinaryMessenger {
           dartCallback.pathToBundle,
           dartCallback.callbackHandle.callbackName,
           dartCallback.callbackHandle.callbackLibraryPath,
-          dartCallback.androidAssetManager);
+          dartCallback.androidAssetManager,
+          null);
 
       isApplicationRunning = true;
     } finally {
@@ -185,8 +202,8 @@ public class DartExecutor implements BinaryMessenger {
   @Deprecated
   @UiThread
   @Override
-  public TaskQueue makeBackgroundTaskQueue() {
-    return binaryMessenger.makeBackgroundTaskQueue();
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return binaryMessenger.makeBackgroundTaskQueue(options);
   }
 
   /** @deprecated Use {@link #getBinaryMessenger()} instead. */
@@ -226,6 +243,20 @@ public class DartExecutor implements BinaryMessenger {
       @Nullable BinaryMessenger.BinaryMessageHandler handler,
       @Nullable TaskQueue taskQueue) {
     binaryMessenger.setMessageHandler(channel, handler, taskQueue);
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  public void enableBufferingIncomingMessages() {
+    dartMessenger.enableBufferingIncomingMessages();
+  }
+
+  /** @deprecated Use {@link #getBinaryMessenger()} instead. */
+  @Deprecated
+  @Override
+  public void disableBufferingIncomingMessages() {
+    dartMessenger.disableBufferingIncomingMessages();
   }
   // ------ END BinaryMessenger -----
 
@@ -279,6 +310,9 @@ public class DartExecutor implements BinaryMessenger {
    *
    * <p>This does not notify a Flutter application about memory pressure. For that, use the {@link
    * io.flutter.embedding.engine.systemchannels.SystemChannel#sendMemoryPressureWarning}.
+   *
+   * <p>Calling this method may cause jank or latency in the application. Avoid calling it during
+   * critical periods like application startup or periods of animation.
    */
   public void notifyLowMemoryWarning() {
     if (flutterJNI.isAttached()) {
@@ -403,8 +437,8 @@ public class DartExecutor implements BinaryMessenger {
       this.messenger = messenger;
     }
 
-    public TaskQueue makeBackgroundTaskQueue() {
-      return messenger.makeBackgroundTaskQueue();
+    public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+      return messenger.makeBackgroundTaskQueue(options);
     }
 
     /**
@@ -460,6 +494,16 @@ public class DartExecutor implements BinaryMessenger {
         @Nullable BinaryMessenger.BinaryMessageHandler handler,
         @Nullable TaskQueue taskQueue) {
       messenger.setMessageHandler(channel, handler, taskQueue);
+    }
+
+    @Override
+    public void enableBufferingIncomingMessages() {
+      messenger.enableBufferingIncomingMessages();
+    }
+
+    @Override
+    public void disableBufferingIncomingMessages() {
+      messenger.disableBufferingIncomingMessages();
     }
   }
 }

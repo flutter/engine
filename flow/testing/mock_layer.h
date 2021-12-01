@@ -16,10 +16,10 @@ namespace testing {
 // verify the data against expected values.
 class MockLayer : public Layer {
  public:
-  MockLayer(SkPath path,
-            SkPaint paint = SkPaint(),
-            bool fake_has_platform_view = false,
-            bool fake_reads_surface = false);
+  explicit MockLayer(SkPath path,
+                     SkPaint paint = SkPaint(),
+                     bool fake_has_platform_view = false,
+                     bool fake_reads_surface = false);
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
   void Paint(PaintContext& context) const override;
@@ -29,13 +29,9 @@ class MockLayer : public Layer {
   const SkRect& parent_cull_rect() { return parent_cull_rect_; }
   bool parent_has_platform_view() { return parent_has_platform_view_; }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
   bool IsReplacing(DiffContext* context, const Layer* layer) const override;
   void Diff(DiffContext* context, const Layer* old_layer) override;
   const MockLayer* as_mock_layer() const override { return this; }
-
-#endif
 
  private:
   MutatorsStack parent_mutators_;

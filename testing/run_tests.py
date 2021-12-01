@@ -42,7 +42,7 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
   start_time = time.time()
   stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
   stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
-  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, env=env, **kwargs)
+  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, env=env, universal_newlines=True, **kwargs)
   stdout, stderr = process.communicate()
   end_time = time.time()
 
@@ -179,11 +179,11 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
 
   RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags, coverage=coverage)
 
-  # https://github.com/flutter/flutter/issues/36294
-  if not IsWindows():
-    RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags, coverage=coverage)
-    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags, coverage=coverage)
-  else:
+  RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags, coverage=coverage)
+
+  RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags, coverage=coverage)
+
+  if IsWindows():
     RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags, coverage=coverage)
 
     RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags, coverage=coverage)
@@ -297,12 +297,13 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
   tmp_out_dir = os.path.join(out_dir, ios_out_dir)
+  ios_test_lib = os.path.join(tmp_out_dir, 'libios_test_flutter.dylib')
   message = []
   message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
   message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
-  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
-      ios_out_dir, '\n'.join(message))
-  assert os.path.exists(tmp_out_dir), final_message
+  final_message = '%s or %s doesn\'t exist. Please run the following commands: \n%s' % (
+      ios_out_dir, ios_test_lib, '\n'.join(message))
+  assert os.path.exists(tmp_out_dir) and os.path.exists(ios_test_lib), final_message
 
 
 def AssertExpectedXcodeVersion():

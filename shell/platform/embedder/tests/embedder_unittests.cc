@@ -793,7 +793,7 @@ TEST_F(EmbedderTest, CanRunInitializedEngine) {
 //------------------------------------------------------------------------------
 /// Test that an engine can be deinitialized.
 ///
-TEST_F(EmbedderTest, CaDeinitializeAnEngine) {
+TEST_F(EmbedderTest, CanDeinitializeAnEngine) {
   EmbedderConfigBuilder builder(
       GetEmbedderContext(EmbedderTestContextType::kSoftwareContext));
   builder.SetSoftwareRendererConfig();
@@ -1105,7 +1105,7 @@ TEST_F(EmbedderTest, CanPostTaskToAllNativeThreads) {
     size_t ui_threads_count = 0;
     size_t worker_threads_count = 0;
 
-    Captures(size_t count) : latch(count) {}
+    explicit Captures(size_t count) : latch(count) {}
   };
 
   Captures captures(engine_threads_count);
@@ -1355,7 +1355,7 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
     echoed_event.type =
         UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 0)));
-    echoed_event.timestamp = tonic::DartConverter<uint64_t>::FromDart(
+    echoed_event.timestamp = (double)tonic::DartConverter<uint64_t>::FromDart(
         Dart_GetNativeArgument(args, 1));
     echoed_event.physical = tonic::DartConverter<uint64_t>::FromDart(
         Dart_GetNativeArgument(args, 2));
@@ -1396,9 +1396,8 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .character = "A",
       .synthesized = false,
   };
-  FlutterEngineSendKeyEvent(
-      engine.get(), &down_event_upper_a, [](bool handled, void* user_data) {},
-      nullptr);
+  FlutterEngineSendKeyEvent(engine.get(), &down_event_upper_a, nullptr,
+                            nullptr);
   message_latch->Wait();
 
   ExpectKeyEventEq(echoed_event, down_event_upper_a);
@@ -1414,9 +1413,8 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .character = "∆",
       .synthesized = false,
   };
-  FlutterEngineSendKeyEvent(
-      engine.get(), &repeat_event_wide_char,
-      [](bool handled, void* user_data) {}, nullptr);
+  FlutterEngineSendKeyEvent(engine.get(), &repeat_event_wide_char, nullptr,
+                            nullptr);
   message_latch->Wait();
 
   ExpectKeyEventEq(echoed_event, repeat_event_wide_char);
@@ -1432,12 +1430,100 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
       .character = nullptr,
       .synthesized = true,
   };
-  FlutterEngineSendKeyEvent(
-      engine.get(), &up_event, [](bool handled, void* user_data) {}, nullptr);
+  FlutterEngineSendKeyEvent(engine.get(), &up_event, nullptr, nullptr);
   message_latch->Wait();
 
   ExpectKeyEventEq(echoed_event, up_event);
   EXPECT_EQ(echoed_char, 0llu);
+}
+
+TEST_F(EmbedderTest, KeyDataAreBuffered) {
+  auto message_latch = std::make_shared<fml::AutoResetWaitableEvent>();
+  std::vector<FlutterKeyEvent> echoed_events;
+
+  auto native_echo_event = [&](Dart_NativeArguments args) {
+    echoed_events.push_back(FlutterKeyEvent{
+        .timestamp = (double)tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 1)),
+        .type =
+            UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
+                Dart_GetNativeArgument(args, 0))),
+        .physical = tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 2)),
+        .logical = tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 3)),
+        .synthesized = tonic::DartConverter<bool>::FromDart(
+            Dart_GetNativeArgument(args, 5)),
+    });
+
+    message_latch->Signal();
+  };
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("key_data_late_echo");
+  fml::AutoResetWaitableEvent ready;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready](Dart_NativeArguments args) { ready.Signal(); }));
+
+  context.AddNativeCallback("EchoKeyEvent",
+                            CREATE_NATIVE_ENTRY(native_echo_event));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ready.Wait();
+
+  FlutterKeyEvent sample_event{
+      .struct_size = sizeof(FlutterKeyEvent),
+      .type = kFlutterKeyEventTypeDown,
+      .physical = 0x00070004,
+      .logical = 0x00000000061,
+      .character = "A",
+      .synthesized = false,
+  };
+
+  // Send an event.
+  sample_event.timestamp = 1.0l;
+  FlutterEngineSendKeyEvent(engine.get(), &sample_event, nullptr, nullptr);
+
+  // Should not receive echos because the callback is not set yet.
+  EXPECT_EQ(echoed_events.size(), 0u);
+
+  // Send an empty message to 'test/starts_echo' to start echoing.
+  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
+  FlutterPlatformMessageCreateResponseHandle(
+      engine.get(), [](const uint8_t* data, size_t size, void* user_data) {},
+      nullptr, &response_handle);
+
+  FlutterPlatformMessage message{
+      .struct_size = sizeof(FlutterPlatformMessage),
+      .channel = "test/starts_echo",
+      .message = nullptr,
+      .message_size = 0,
+      .response_handle = response_handle,
+  };
+
+  FlutterEngineResult result =
+      FlutterEngineSendPlatformMessage(engine.get(), &message);
+  ASSERT_EQ(result, kSuccess);
+
+  FlutterPlatformMessageReleaseResponseHandle(engine.get(), response_handle);
+
+  // message_latch->Wait();
+  message_latch->Wait();
+  // All previous events should be received now.
+  EXPECT_EQ(echoed_events.size(), 1u);
+
+  // Send a second event.
+  sample_event.timestamp = 10.0l;
+  FlutterEngineSendKeyEvent(engine.get(), &sample_event, nullptr, nullptr);
+  message_latch->Wait();
+
+  // The event should be echoed, too.
+  EXPECT_EQ(echoed_events.size(), 2u);
 }
 
 TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
@@ -1488,6 +1574,12 @@ TEST_F(EmbedderTest, KeyDataResponseIsCorrectlyInvoked) {
   // Entrypoint `key_data_echo` returns `event.synthesized` as `handled`.
   event.synthesized = true;
   platform_task_runner->PostTask([&]() {
+    // Test when the response callback is empty.
+    // It should not cause a crash.
+    FlutterEngineSendKeyEvent(engine.get(), &event, nullptr, nullptr);
+
+    // Test when the response callback is non-empty.
+    // It should be invoked (so that the latch can be unlocked.)
     FlutterEngineSendKeyEvent(
         engine.get(), &event,
         [](bool handled, void* untyped_user_data) {
@@ -1587,11 +1679,16 @@ TEST_F(EmbedderTest, BackToBackKeyEventResponsesCorrectlyInvoked) {
   shutdown_latch.Wait();
 }
 
+//------------------------------------------------------------------------------
+// Vsync waiter
+//------------------------------------------------------------------------------
+
 // This test schedules a frame for the future and asserts that vsync waiter
 // posts the event at the right frame start time (which is in the future).
 TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
   UniqueEngine engine;
   fml::AutoResetWaitableEvent present_latch;
+  fml::AutoResetWaitableEvent vsync_latch;
 
   // One of the threads that the callback (FlutterEngineOnVsync) will be posted
   // to is the platform thread. So we cannot wait for assertions to complete on
@@ -1604,9 +1701,10 @@ TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
         GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
     context.SetVsyncCallback([&](intptr_t baton) {
-      platform_task_runner->PostTask([baton = baton, engine = engine.get()]() {
-        FlutterEngineOnVsync(engine, baton, NanosFromEpoch(16),
+      platform_task_runner->PostTask([baton = baton, &engine, &vsync_latch]() {
+        FlutterEngineOnVsync(engine.get(), baton, NanosFromEpoch(16),
                              NanosFromEpoch(32));
+        vsync_latch.Signal();
       });
     });
     context.AddNativeCallback(
@@ -1632,6 +1730,7 @@ TEST_F(EmbedderTest, VsyncCallbackPostedIntoFuture) {
               kSuccess);
   });
 
+  vsync_latch.Wait();
   present_latch.Wait();
 
   fml::AutoResetWaitableEvent shutdown_latch;

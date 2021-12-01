@@ -272,8 +272,9 @@ sk_sp<SkImage> Rasterizer::DoMakeRasterSnapshot(
     snapshot_surface = surface_.get();
   } else if (snapshot_surface_producer_) {
     pbuffer_surface = snapshot_surface_producer_->CreateSnapshotSurface();
-    if (pbuffer_surface && pbuffer_surface->GetContext())
+    if (pbuffer_surface && pbuffer_surface->GetContext()) {
       snapshot_surface = pbuffer_surface.get();
+    }
   }
 
   if (!snapshot_surface) {
@@ -532,41 +533,64 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       external_view_embedder_.get(),  // external view embedder
       root_surface_transformation,    // root surface transformation
       true,                           // instrumentation enabled
-      frame->supports_readback(),     // surface supports pixel reads
-      raster_thread_merger_           // thread merger
+      frame->framebuffer_info()
+          .supports_readback,  // surface supports pixel reads
+      raster_thread_merger_    // thread merger
   );
-  if (compositor_frame) {
-    compositor_context_->raster_cache().PrepareNewFrame();
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+  if (!compositor_frame) {
+    return RasterStatus::kFailed;
+  }
 
-    RasterStatus raster_status = compositor_frame->Raster(layer_tree, false);
-    if (raster_status == RasterStatus::kFailed ||
-        raster_status == RasterStatus::kSkipAndRetry) {
-      return raster_status;
-    }
-    if (external_view_embedder_ &&
-        (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
-      FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                           std::move(frame));
-    } else {
-      frame->Submit();
-    }
+  compositor_context_->raster_cache().PrepareNewFrame();
+  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
-    compositor_context_->raster_cache().CleanupAfterFrame();
-    frame_timings_recorder.RecordRasterEnd(
-        &compositor_context_->raster_cache());
-    FireNextFrameCallbackIfPresent();
+  // Disable partial repaint if external_view_embedder_ SubmitFrame is
+  // involved - ExternalViewEmbedder unconditionally clears the entire
+  // surface and also partial repaint with platform view present is something
+  // that still need to be figured out.
+  bool disable_partial_repaint =
+      external_view_embedder_ &&
+      (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
-    if (surface_->GetContext()) {
-      TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
-      surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
-    }
+  FrameDamage damage;
+  if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
+    damage.SetPreviousLayerTree(last_layer_tree_.get());
+    damage.AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
+  }
 
+  RasterStatus raster_status =
+      compositor_frame->Raster(layer_tree, false, &damage);
+  if (raster_status == RasterStatus::kFailed ||
+      raster_status == RasterStatus::kSkipAndRetry) {
     return raster_status;
   }
 
-  return RasterStatus::kFailed;
+  SurfaceFrame::SubmitInfo submit_info;
+  submit_info.frame_damage = damage.GetFrameDamage();
+  submit_info.buffer_damage = damage.GetBufferDamage();
+  submit_info.target_time = frame_timings_recorder.GetVsyncTargetTime();
+
+  frame->set_submit_info(submit_info);
+
+  if (external_view_embedder_ &&
+      (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
+    FML_DCHECK(!frame->IsSubmitted());
+    external_view_embedder_->SubmitFrame(surface_->GetContext(),
+                                         std::move(frame));
+  } else {
+    frame->Submit();
+  }
+
+  compositor_context_->raster_cache().CleanupAfterFrame();
+  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
+  FireNextFrameCallbackIfPresent();
+
+  if (surface_->GetContext()) {
+    TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
+    surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
+  }
+
+  return raster_status;
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
@@ -585,7 +609,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
       root_surface_transformation, false, true, nullptr);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
   SkSerialProcs procs = {0};
@@ -653,7 +677,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
                                                root_surface_transformation,
                                                false, true, nullptr);
   canvas->clear(SK_ColorTRANSPARENT);
-  frame->Raster(*tree, true);
+  frame->Raster(*tree, true, nullptr);
   canvas->flush();
 
   // Prepare an image from the surface, this image may potentially be on th GPU.

@@ -6,7 +6,7 @@
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
 
 jobs:
   mirror_job:
@@ -20,6 +20,6 @@ jobs:
         id: mirror
         uses: google/mirror-branch-action@c6b07e441a7ffc5ae15860c1d0a8107a3a151db8
         with:
-          github-token: ${{ secrets.FLUTTERGITHUBBOT_TOKEN }}
-          source: 'master'
-          dest: 'main'
+          github-token: ${{ secrets.FLUTTERMIRRORINGBOT_TOKEN }}
+          source: 'main'
+          dest: 'master'

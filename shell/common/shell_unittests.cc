@@ -6,15 +6,12 @@
 
 #include <algorithm>
 #include <ctime>
-#include <functional>
 #include <future>
 #include <memory>
 #include <vector>
 
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
-#include "flutter/common/graphics/persistent_cache.h"
-#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/command_line.h"
@@ -66,10 +63,6 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
 
   MOCK_METHOD1(OnPlatformViewDispatchPointerDataPacket,
                void(std::unique_ptr<PointerDataPacket> packet));
-
-  MOCK_METHOD2(OnPlatformViewDispatchKeyDataPacket,
-               void(std::unique_ptr<KeyDataPacket> packet,
-                    KeyDataResponse callback));
 
   MOCK_METHOD3(OnPlatformViewDispatchSemanticsAction,
                void(int32_t id,
@@ -459,6 +452,39 @@ TEST_F(ShellTest, LastEntrypoint) {
   RunEngine(shell.get(), std::move(configuration));
   main_latch.Wait();
   EXPECT_EQ(entry_point, last_entry_point);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  DestroyShell(std::move(shell));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, LastEntrypointArgs) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+  std::string entry_point = "fixturesAreFunctionalMain";
+  std::vector<std::string> entry_point_args = {"arg1"};
+  configuration.SetEntrypoint(entry_point);
+  configuration.SetEntrypointArgs(entry_point_args);
+
+  fml::AutoResetWaitableEvent main_latch;
+  std::vector<std::string> last_entry_point_args;
+  AddNativeCallback(
+      "SayHiFromFixturesAreFunctionalMain", CREATE_NATIVE_ENTRY([&](auto args) {
+        last_entry_point_args = shell->GetEngine()->GetLastEntrypointArgs();
+        main_latch.Signal();
+      }));
+
+  RunEngine(shell.get(), std::move(configuration));
+  main_latch.Wait();
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  EXPECT_EQ(last_entry_point_args, entry_point_args);
+#else
+  ASSERT_TRUE(last_entry_point_args.empty());
+#endif
   ASSERT_TRUE(DartVMRef::IsInstanceRunning());
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
@@ -1538,8 +1564,11 @@ TEST_F(ShellTest, SetResourceCacheSize) {
   PumpOneFrame(shell.get());
 
   // The Vulkan and GL backends set different default values for the resource
-  // cache size.
-#ifdef SHELL_ENABLE_VULKAN
+  // cache size. The default backend (specified by the default param of
+  // `CreateShell` in this test) will only resolve to Vulkan (in
+  // `ShellTestPlatformView::Create`) if GL is disabled. This situation arises
+  // when targeting the Fuchsia Emulator.
+#if defined(SHELL_ENABLE_VULKAN) && !defined(SHELL_ENABLE_GL)
   EXPECT_EQ(GetRasterizerResourceCacheBytesSync(*shell),
             vulkan::kGrCacheMaxByteSize);
 #else
@@ -1877,7 +1906,7 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
   const size_t buffer_size = 2 << 20;
 
   uint8_t* buffer = static_cast<uint8_t*>(::malloc(buffer_size));
-  ASSERT_NE(buffer, nullptr);
+  ASSERT_TRUE(buffer != nullptr);
   ASSERT_TRUE(MemsetPatternSetOrCheck(
       buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
 
@@ -2822,6 +2851,214 @@ TEST_F(ShellTest, Spawn) {
 
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, SpawnWithDartEntrypointArgs) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(configuration.IsValid());
+  configuration.SetEntrypoint("canReceiveArgumentsWhenEngineRun");
+  const std::vector<std::string> entrypoint_args{"foo", "bar"};
+  configuration.SetEntrypointArgs(entrypoint_args);
+
+  auto second_configuration = RunConfiguration::InferFromSettings(settings);
+  ASSERT_TRUE(second_configuration.IsValid());
+  second_configuration.SetEntrypoint("canReceiveArgumentsWhenEngineSpawn");
+  const std::vector<std::string> second_entrypoint_args{"arg1", "arg2"};
+  second_configuration.SetEntrypointArgs(second_entrypoint_args);
+
+  const std::string initial_route("/foo");
+
+  fml::AutoResetWaitableEvent main_latch;
+  std::string last_entry_point;
+  // Fulfill native function for the first Shell's entrypoint.
+  AddNativeCallback("NotifyNativeWhenEngineRun",
+                    CREATE_NATIVE_ENTRY(([&](Dart_NativeArguments args) {
+                      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(
+                          Dart_GetNativeArgument(args, 0)));
+                      last_entry_point =
+                          shell->GetEngine()->GetLastEntrypoint();
+                      main_latch.Signal();
+                    })));
+
+  fml::AutoResetWaitableEvent second_latch;
+  // Fulfill native function for the second Shell's entrypoint.
+  AddNativeCallback("NotifyNativeWhenEngineSpawn",
+                    CREATE_NATIVE_ENTRY(([&](Dart_NativeArguments args) {
+                      ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(
+                          Dart_GetNativeArgument(args, 0)));
+                      last_entry_point =
+                          shell->GetEngine()->GetLastEntrypoint();
+                      second_latch.Signal();
+                    })));
+
+  RunEngine(shell.get(), std::move(configuration));
+  main_latch.Wait();
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  // Check first Shell ran the first entrypoint.
+  ASSERT_EQ("canReceiveArgumentsWhenEngineRun", last_entry_point);
+
+  PostSync(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [this, &spawner = shell, &second_configuration, &second_latch,
+       initial_route]() {
+        MockPlatformViewDelegate platform_view_delegate;
+        auto spawn = spawner->Spawn(
+            std::move(second_configuration), initial_route,
+            [&platform_view_delegate](Shell& shell) {
+              auto result = std::make_unique<MockPlatformView>(
+                  platform_view_delegate, shell.GetTaskRunners());
+              ON_CALL(*result, CreateRenderingSurface())
+                  .WillByDefault(::testing::Invoke(
+                      [] { return std::make_unique<MockSurface>(); }));
+              return result;
+            },
+            [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+        ASSERT_NE(nullptr, spawn.get());
+        ASSERT_TRUE(ValidateShell(spawn.get()));
+
+        PostSync(spawner->GetTaskRunners().GetUITaskRunner(),
+                 [&spawn, &spawner, initial_route] {
+                   // Check second shell ran the second entrypoint.
+                   ASSERT_EQ("canReceiveArgumentsWhenEngineSpawn",
+                             spawn->GetEngine()->GetLastEntrypoint());
+                   ASSERT_EQ(initial_route, spawn->GetEngine()->InitialRoute());
+
+                   // TODO(74520): Remove conditional once isolate groups are
+                   // supported by JIT.
+                   if (DartVM::IsRunningPrecompiledCode()) {
+                     ASSERT_NE(spawner->GetEngine()
+                                   ->GetRuntimeController()
+                                   ->GetRootIsolateGroup(),
+                               0u);
+                     ASSERT_EQ(spawner->GetEngine()
+                                   ->GetRuntimeController()
+                                   ->GetRootIsolateGroup(),
+                               spawn->GetEngine()
+                                   ->GetRuntimeController()
+                                   ->GetRootIsolateGroup());
+                   }
+                 });
+
+        PostSync(
+            spawner->GetTaskRunners().GetIOTaskRunner(), [&spawner, &spawn] {
+              ASSERT_EQ(spawner->GetIOManager()->GetResourceContext().get(),
+                        spawn->GetIOManager()->GetResourceContext().get());
+            });
+
+        // Before destroying the shell, wait for expectations of the spawned
+        // isolate to be met.
+        second_latch.Wait();
+
+        DestroyShell(std::move(spawn));
+      });
+
+  DestroyShell(std::move(shell));
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, IOManagerIsSharedBetweenParentAndSpawnedShell) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [this,
+                                                             &spawner = shell,
+                                                             &settings] {
+    auto second_configuration = RunConfiguration::InferFromSettings(settings);
+    ASSERT_TRUE(second_configuration.IsValid());
+    second_configuration.SetEntrypoint("emptyMain");
+    const std::string initial_route("/foo");
+    MockPlatformViewDelegate platform_view_delegate;
+    auto spawn = spawner->Spawn(
+        std::move(second_configuration), initial_route,
+        [&platform_view_delegate](Shell& shell) {
+          auto result = std::make_unique<MockPlatformView>(
+              platform_view_delegate, shell.GetTaskRunners());
+          ON_CALL(*result, CreateRenderingSurface())
+              .WillByDefault(::testing::Invoke(
+                  [] { return std::make_unique<MockSurface>(); }));
+          return result;
+        },
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+    ASSERT_TRUE(ValidateShell(spawn.get()));
+
+    PostSync(spawner->GetTaskRunners().GetIOTaskRunner(), [&spawner, &spawn] {
+      ASSERT_NE(spawner->GetIOManager().get(), nullptr);
+      ASSERT_EQ(spawner->GetIOManager().get(), spawn->GetIOManager().get());
+    });
+
+    // Destroy the child shell.
+    DestroyShell(std::move(spawn));
+  });
+  // Destroy the parent shell.
+  DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, IOManagerInSpawnedShellIsNotNullAfterParentShellDestroyed) {
+  auto settings = CreateSettingsForFixture();
+  auto shell = CreateShell(settings);
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  PostSync(shell->GetTaskRunners().GetUITaskRunner(), [&shell] {
+    // We must get engine on UI thread.
+    auto runtime_controller = shell->GetEngine()->GetRuntimeController();
+    PostSync(shell->GetTaskRunners().GetIOTaskRunner(),
+             [&shell, &runtime_controller] {
+               // We must get io_manager on IO thread.
+               auto io_manager = runtime_controller->GetIOManager();
+               // Check io_manager existence.
+               ASSERT_NE(io_manager.get(), nullptr);
+               ASSERT_NE(io_manager->GetSkiaUnrefQueue().get(), nullptr);
+               // Get io_manager directly from shell and check its existence.
+               ASSERT_NE(shell->GetIOManager().get(), nullptr);
+             });
+  });
+
+  std::unique_ptr<Shell> spawn;
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell, &settings,
+                                                             &spawn] {
+    auto second_configuration = RunConfiguration::InferFromSettings(settings);
+    ASSERT_TRUE(second_configuration.IsValid());
+    second_configuration.SetEntrypoint("emptyMain");
+    const std::string initial_route("/foo");
+    MockPlatformViewDelegate platform_view_delegate;
+    auto child = shell->Spawn(
+        std::move(second_configuration), initial_route,
+        [&platform_view_delegate](Shell& shell) {
+          auto result = std::make_unique<MockPlatformView>(
+              platform_view_delegate, shell.GetTaskRunners());
+          ON_CALL(*result, CreateRenderingSurface())
+              .WillByDefault(::testing::Invoke(
+                  [] { return std::make_unique<MockSurface>(); }));
+          return result;
+        },
+        [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
+    spawn = std::move(child);
+  });
+  // Destroy the parent shell.
+  DestroyShell(std::move(shell));
+
+  PostSync(spawn->GetTaskRunners().GetUITaskRunner(), [&spawn] {
+    // We must get engine on UI thread.
+    auto runtime_controller = spawn->GetEngine()->GetRuntimeController();
+    PostSync(spawn->GetTaskRunners().GetIOTaskRunner(),
+             [&spawn, &runtime_controller] {
+               // We must get io_manager on IO thread.
+               auto io_manager = runtime_controller->GetIOManager();
+               // Check io_manager existence here.
+               ASSERT_NE(io_manager.get(), nullptr);
+               ASSERT_NE(io_manager->GetSkiaUnrefQueue().get(), nullptr);
+               // Get io_manager directly from shell and check its existence.
+               ASSERT_NE(spawn->GetIOManager().get(), nullptr);
+             });
+  });
+  // Destroy the child shell.
+  DestroyShell(std::move(spawn));
 }
 
 TEST_F(ShellTest, UpdateAssetResolverByTypeReplaces) {

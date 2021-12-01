@@ -124,6 +124,12 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)scrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
+- (void)applicationWillTerminate:(NSNotification*)notification;
+- (void)goToApplicationLifecycle:(nonnull NSString*)state;
+- (void)keyboardWillChangeFrame:(NSNotification*)notification;
+- (void)startKeyBoardAnimation:(NSTimeInterval)duration;
+- (void)ensureViewportMetricsIsCorrect;
+- (void)invalidateDisplayLink;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
@@ -151,6 +157,49 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self.messageSent = nil;
 }
 
+- (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  CGFloat width = UIScreen.mainScreen.bounds.size.width;
+  CGRect keyboardFrame = CGRectMake(0, 100, width, 400);
+  BOOL isLocal = YES;
+  NSNotification* notification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
+                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal]
+                  }];
+
+  XCTestExpectation* expectation = [self expectationWithDescription:@"update viewport"];
+  OCMStub([mockEngine updateViewportMetrics:flutter::ViewportMetrics()])
+      .ignoringNonObjectArgs()
+      .andDo(^(NSInvocation* invocation) {
+        [expectation fulfill];
+      });
+  id viewControllerMock = OCMPartialMock(viewController);
+  [viewControllerMock keyboardWillChangeFrame:notification];
+  OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testEnsureViewportMetricsWillInvokeAndDisplayLinkWillInvalidateInViewDidDisappear {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  [viewControllerMock viewDidDisappear:YES];
+  OCMVerify([viewControllerMock ensureViewportMetricsIsCorrect]);
+  OCMVerify([viewControllerMock invalidateDisplayLink]);
+}
+
 - (void)testViewDidDisappearDoesntPauseEngineWhenNotTheViewController {
   id lifecycleChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
@@ -165,6 +214,20 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [viewControllerA viewDidDisappear:NO];
   OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.paused"]);
   OCMReject([viewControllerMock surfaceUpdated:[OCMArg any]]);
+}
+
+- (void)testAppWillTerminateViewDidDestroyTheEngine {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  id viewControllerMock = OCMPartialMock(viewController);
+  OCMStub([viewControllerMock goToApplicationLifecycle:@"AppLifecycleState.detached"]);
+  OCMStub([mockEngine destroyContext]);
+  [viewController applicationWillTerminate:nil];
+  OCMVerify([viewControllerMock goToApplicationLifecycle:@"AppLifecycleState.detached"]);
+  OCMVerify([mockEngine destroyContext]);
 }
 
 - (void)testViewDidDisappearDoesPauseEngineWhenIsTheViewController {
@@ -721,6 +784,21 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [self waitForExpectations:@[ expectation ] timeout:1.0];
 }
 
+- (void)testReleasesKeyboardManagerOnDealloc {
+  __weak FlutterKeyboardManager* weakKeyboardManager = nil;
+  @autoreleasepool {
+    FlutterViewController* viewController = [[FlutterViewController alloc] init];
+
+    [viewController addInternalPlugins];
+    weakKeyboardManager = viewController.keyboardManager;
+    XCTAssertNotNil(weakKeyboardManager);
+    [viewController deregisterNotifications];
+    viewController = nil;
+  }
+  // View controller has released the keyboard manager.
+  XCTAssertNil(weakKeyboardManager);
+}
+
 - (void)testDoesntLoadViewInInit {
   FlutterDartProject* project = [[FlutterDartProject alloc] init];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
@@ -743,6 +821,25 @@ typedef enum UIAccessibilityContrast : NSInteger {
   [[NSNotificationCenter defaultCenter] postNotificationName:FlutterViewControllerHideHomeIndicator
                                                       object:nil];
   XCTAssertTrue(realVC.prefersHomeIndicatorAutoHidden, @"");
+  engine.viewController = nil;
+}
+
+- (void)testHideA11yElements {
+  FlutterDartProject* project = [[FlutterDartProject alloc] init];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+  [engine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* realVC = [[FlutterViewController alloc] initWithEngine:engine
+                                                                        nibName:nil
+                                                                         bundle:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationWillResignActiveNotification
+                    object:nil];
+  XCTAssertTrue(realVC.view.accessibilityElementsHidden);
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:UIApplicationDidBecomeActiveNotification
+                    object:nil];
+  XCTAssertFalse(realVC.view.accessibilityElementsHidden);
   engine.viewController = nil;
 }
 

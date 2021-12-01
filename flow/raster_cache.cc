@@ -234,11 +234,7 @@ bool RasterCache::Prepare(PrerollContext* context,
   SkMatrix transformation_matrix = untranslated_matrix;
   transformation_matrix.preTranslate(offset.x(), offset.y());
 
-  // Decompose the matrix (once) for all subsequent operations. We want to make
-  // sure to avoid volumetric distortions while accounting for scaling.
-  const MatrixDecomposition matrix(transformation_matrix);
-
-  if (!matrix.IsValid()) {
+  if (!transformation_matrix.invert(nullptr)) {
     // The matrix was singular. No point in going further.
     return false;
   }
@@ -285,11 +281,7 @@ bool RasterCache::Prepare(PrerollContext* context,
   SkMatrix transformation_matrix = untranslated_matrix;
   transformation_matrix.preTranslate(offset.x(), offset.y());
 
-  // Decompose the matrix (once) for all subsequent operations. We want to make
-  // sure to avoid volumetric distortions while accounting for scaling.
-  const MatrixDecomposition matrix(transformation_matrix);
-
-  if (!matrix.IsValid()) {
+  if (!transformation_matrix.invert(nullptr)) {
     // The matrix was singular. No point in going further.
     return false;
   }
@@ -317,6 +309,36 @@ bool RasterCache::Prepare(PrerollContext* context,
     display_list_cached_this_frame_++;
   }
   return true;
+}
+
+void RasterCache::Touch(Layer* layer, const SkMatrix& ctm) {
+  LayerRasterCacheKey cache_key(layer->unique_id(), ctm);
+  auto it = layer_cache_.find(cache_key);
+  if (it != layer_cache_.end()) {
+    it->second.used_this_frame = true;
+    it->second.access_count++;
+  }
+}
+
+void RasterCache::Touch(SkPicture* picture,
+                        const SkMatrix& transformation_matrix) {
+  PictureRasterCacheKey cache_key(picture->uniqueID(), transformation_matrix);
+  auto it = picture_cache_.find(cache_key);
+  if (it != picture_cache_.end()) {
+    it->second.used_this_frame = true;
+    it->second.access_count++;
+  }
+}
+
+void RasterCache::Touch(DisplayList* display_list,
+                        const SkMatrix& transformation_matrix) {
+  DisplayListRasterCacheKey cache_key(display_list->unique_id(),
+                                      transformation_matrix);
+  auto it = display_list_cache_.find(cache_key);
+  if (it != display_list_cache_.end()) {
+    it->second.used_this_frame = true;
+    it->second.access_count++;
+  }
 }
 
 bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
@@ -388,9 +410,12 @@ void RasterCache::PrepareNewFrame() {
 void RasterCache::CleanupAfterFrame() {
   picture_metrics_ = {};
   layer_metrics_ = {};
-  SweepOneCacheAfterFrame(picture_cache_, picture_metrics_);
-  SweepOneCacheAfterFrame(display_list_cache_, picture_metrics_);
-  SweepOneCacheAfterFrame(layer_cache_, layer_metrics_);
+  {
+    TRACE_EVENT0("flutter", "RasterCache::SweepCaches");
+    SweepOneCacheAfterFrame(picture_cache_, picture_metrics_);
+    SweepOneCacheAfterFrame(display_list_cache_, picture_metrics_);
+    SweepOneCacheAfterFrame(layer_cache_, layer_metrics_);
+  }
   TraceStatsToTimeline();
 }
 
