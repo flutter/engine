@@ -109,7 +109,7 @@ static uint64_t toLower(uint64_t n) {
 //
 // See https://en.wikipedia.org/wiki/UTF-16#Description for the algorithm.
 //
-// The returned character array must be cleared with delete[]. The length of
+// The returned character array must be deallocated with delete[]. The length of
 // the result is stored in `out_length`.
 //
 // Although NSString has a dataUsingEncoding method, we implement our own
