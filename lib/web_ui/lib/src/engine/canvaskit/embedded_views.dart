@@ -92,7 +92,10 @@ class HtmlViewEmbedder {
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
-  int _numVisibleViews = 0;
+  /// The number of platform views in this frame which are visible.
+  ///
+  /// These platform views will require overlays.
+  int _visibleViewCount = 0;
 
   /// The most recent composition order.
   List<int> _activeCompositionOrder = <int>[];
@@ -172,10 +175,10 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
-    final int overlayIndex = _numVisibleViews;
+    final int overlayIndex = _visibleViewCount;
     _compositionOrder.add(viewId);
     if (platformViewManager.isVisible(viewId)) {
-      _numVisibleViews++;
+      _visibleViewCount++;
     }
     final bool needOverlay =
         !disableOverlays && platformViewManager.isVisible(viewId);
@@ -343,7 +346,8 @@ class HtmlViewEmbedder {
             final svg.ClipPathElement newClipPath = svg.ClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                svg.PathElement()..setAttribute('d', path.toSvgString()!));
+                svg.PathElement()
+                  ..setAttribute('d', path.toSvgString()!));
 
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
@@ -361,7 +365,8 @@ class HtmlViewEmbedder {
             final svg.ClipPathElement newClipPath = svg.ClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                svg.PathElement()..setAttribute('d', path.toSvgString()!));
+                svg.PathElement()
+                  ..setAttribute('d', path.toSvgString()!));
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
@@ -467,7 +472,7 @@ class HtmlViewEmbedder {
     _viewsUsingBackupSurface.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
-      _numVisibleViews = 0;
+      _visibleViewCount = 0;
       return;
     }
 
@@ -555,7 +560,7 @@ class HtmlViewEmbedder {
     }
 
     _compositionOrder.clear();
-    _numVisibleViews = 0;
+    _visibleViewCount = 0;
 
     disposeViews(unusedViews);
 
@@ -747,7 +752,7 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.clear();
     _activeCompositionOrder.clear();
     _compositionOrder.clear();
-    _numVisibleViews = 0;
+    _visibleViewCount = 0;
   }
 }
 

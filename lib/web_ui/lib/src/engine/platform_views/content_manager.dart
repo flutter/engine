@@ -117,7 +117,7 @@ class PlatformViewManager {
     return _contents.putIfAbsent(viewId, () {
       final html.Element wrapper = html.document
           .createElement('flt-platform-view')
-        ..setAttribute('slot', slotName);
+            ..setAttribute('slot', slotName);
 
       final Function factoryFunction = _factories[viewType]!;
       late html.Element content;
@@ -197,11 +197,7 @@ class PlatformViewManager {
   /// Returns `true` if the given [viewId] is for an invisible platform view.
   bool isInvisible(int viewId) {
     final String? viewType = _viewIdToType[viewId];
-    if (viewType != null) {
-      return _invisibleViews.contains(viewType);
-    } else {
-      return false;
-    }
+    return viewType != null && _invisibleViews.contains(viewType);
   }
 
   /// Returns `true` if the given [viewId] is a platform view with a visible
