@@ -49,6 +49,7 @@ _third_party_deps = [
     'third_party/junit',
     'third_party/libjpeg',
     'third_party/libpng',
+    'third_party/double-conversion',
     'third_party/markupsafe',
     'third_party/mesa',
     'third_party/mockito',

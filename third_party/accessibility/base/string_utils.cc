@@ -13,6 +13,8 @@
 #include <regex>
 #include <sstream>
 
+#include "double-conversion/double-conversion.h"
+
 #if defined(_WIN32)
 #include "base/win/string_conversion.h"
 #endif
