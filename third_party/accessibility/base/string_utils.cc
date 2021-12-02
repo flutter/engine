@@ -20,35 +20,47 @@
 
 namespace base {
 
-namespace {
-char const kExponentChar = 'e';
-const char* const kInfinitySymbol = "Infinity";
-const char* const kNaNSymbol = "NaN";
-
-// Strip any trailing zeros, including the decimal marker if there are nothing
-// but zeros after the decimal.
-std::string StripTrailingZeros(const std::string& str) {
-  int strip = 0;
-  for (auto it = str.rbegin(); it != str.rend() - 1; ++it) {
-    if (*it == '0') {
-      strip++;
-    } else if (*it == '.' || *it == ',') {
-      strip++;
-      // Don't keep stripping once we hit a decimal marker.
-      break;
-    } else {
-      break;
-    }
-  }
-  if (strip != 0) {
-    return str.substr(0, str.length() - strip);
-  }
-  return str;
-}
-}  // namespace
-
 using double_conversion::DoubleToStringConverter;
 using double_conversion::StringBuilder;
+
+namespace {
+static char const kExponentChar = 'e';
+static const char* const kInfinitySymbol = "Infinity";
+static const char* const kNaNSymbol = "NaN";
+
+// The number of digits after the decimal we allow before switching to
+// exponential representation.
+constexpr int kDecimalInShortestLow = -6;
+// The number of digits before the decimal we allow before switching to
+// exponential representation.
+constexpr int kDecimalInShortestHigh = 12;
+constexpr int kConversionFlags =
+    DoubleToStringConverter::EMIT_POSITIVE_EXPONENT_SIGN;
+
+static const double_conversion::DoubleToStringConverter*
+GetDoubleToStringConverter() {
+  static DoubleToStringConverter converter(
+      kConversionFlags, kInfinitySymbol, kNaNSymbol, kExponentChar,
+      kDecimalInShortestLow, kDecimalInShortestHigh, 0, 0);
+  return &converter;
+}
+
+std::string NumberToStringImpl(double number, bool is_single_precision) {
+  if (number == 0.0) {
+    return "0";
+  }
+  constexpr int kBufferSize = 128;
+  char char_buffer[kBufferSize];
+  StringBuilder builder(char_buffer, sizeof(char_buffer));
+  if (is_single_precision) {
+    GetDoubleToStringConverter()->ToShortestSingle(static_cast<float>(number),
+                                                   &builder);
+  } else {
+    GetDoubleToStringConverter()->ToShortest(number, &builder);
+  }
+  return std::string(char_buffer, builder.position());
+}
+}  // namespace
 
 std::u16string ASCIIToUTF16(std::string src) {
   return std::u16string(src.begin(), src.end());
@@ -80,8 +92,8 @@ std::wstring UTF16ToWide(const std::u16string& src) {
   return std::wstring(src.begin(), src.end());
 }
 
-std::u16string NumberToString16(float number, int precision) {
-  return ASCIIToUTF16(NumberToString(number, precision));
+std::u16string NumberToString16(float number) {
+  return ASCIIToUTF16(NumberToString(number));
 }
 
 std::u16string NumberToString16(int32_t number) {
@@ -92,8 +104,8 @@ std::u16string NumberToString16(unsigned int number) {
   return ASCIIToUTF16(NumberToString(number));
 }
 
-std::u16string NumberToString16(double number, int precision) {
-  return ASCIIToUTF16(NumberToString(number, precision));
+std::u16string NumberToString16(double number) {
+  return ASCIIToUTF16(NumberToString(number));
 }
 
 std::string NumberToString(int32_t number) {
@@ -104,43 +116,12 @@ std::string NumberToString(unsigned int number) {
   return std::to_string(number);
 }
 
-std::string NumberToString(float number, int precision) {
-  return NumberToString(static_cast<double>(number), precision);
+std::string NumberToString(float number) {
+  return NumberToStringImpl(number, true);
 }
 
-std::string NumberToString(double number, int precision) {
-  if (number == 0.0) {
-    return "0";
-  }
-  static const int kMinPrecisionDigits = 0;
-  static const int kMaxPrecisionDigits = 21;
-  static const double kMaxFixed = 10e13;
-  static const int kConversionFlags = DoubleToStringConverter::NO_FLAGS;
-  const int kBufferSize = 128;
-
-  ASSERT(kMinPrecisionDigits <= precision && precision <= kMaxPrecisionDigits);
-
-  const DoubleToStringConverter converter(
-      kConversionFlags, kInfinitySymbol, kNaNSymbol, kExponentChar, 0, 0, 0, 0);
-  std::vector<char> char_buffer(kBufferSize);
-  char_buffer[kBufferSize - 1] = '\0';
-  StringBuilder builder(char_buffer.data(), kBufferSize);
-  std::string result;
-  double magnitude = fabs(number);
-  if (magnitude < pow(10, -precision) || magnitude > kMaxFixed) {
-    bool status = converter.ToExponential(number, precision, &builder);
-    ASSERT(status);
-    result = std::string(builder.Finalize());
-    size_t exponent_index = result.rfind(kExponentChar);
-    // Strip trailing zeros from just the mantissa.
-    result = StripTrailingZeros(result.substr(0, exponent_index)) +
-             result.substr(exponent_index);
-  } else {
-    bool status = converter.ToFixed(number, precision, &builder);
-    ASSERT(status);
-    result = StripTrailingZeros(std::string(builder.Finalize()));
-  }
-  return result;
+std::string NumberToString(double number) {
+  return NumberToStringImpl(number, false);
 }
 
 std::string JoinString(std::vector<std::string> tokens, std::string delimiter) {

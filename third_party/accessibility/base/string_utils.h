@@ -13,10 +13,6 @@ namespace base {
 
 constexpr char16_t kWhitespaceUTF16 = u' ';
 
-// The default number of digits of precision after the decimal to use when
-// converting numbers to strings.
-constexpr int kDefaultStringPrecision = 6;
-
 // Return a C++ string given printf-like input.
 template <typename... Args>
 std::string StringPrintf(const std::string& format, Args... args) {
@@ -35,17 +31,13 @@ std::wstring UTF16ToWide(const std::u16string& src);
 
 std::u16string NumberToString16(unsigned int number);
 std::u16string NumberToString16(int32_t number);
-std::u16string NumberToString16(float number,
-                                int precision = kDefaultStringPrecision);
-std::u16string NumberToString16(double number,
-                                int precision = kDefaultStringPrecision);
+std::u16string NumberToString16(float number);
+std::u16string NumberToString16(double number);
 
 std::string NumberToString(unsigned int number);
 std::string NumberToString(int32_t number);
-std::string NumberToString(float number,
-                           int precision = kDefaultStringPrecision);
-std::string NumberToString(double number,
-                           int precision = kDefaultStringPrecision);
+std::string NumberToString(float number);
+std::string NumberToString(double number);
 
 std::string ToUpperASCII(std::string str);
 std::string ToLowerASCII(std::string str);
