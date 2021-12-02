@@ -33,12 +33,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Run in watch mode so the tests re-run whenever a change is '
             'made.',
       )
-      ..addFlag(
-        'unit-tests-only',
-        defaultsTo: false,
-        help: 'felt test command runs the unit tests and the integration tests '
-            'at the same time. If this flag is set, only run the unit tests.',
-      )
       ..addFlag('use-system-flutter',
           defaultsTo: false,
           help:
@@ -51,6 +45,13 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
               'won\'t be consistent with CIs when this flag is set. flutter '
               'command should be set in the PATH for this flag to be useful.'
               'This flag can also be used to test local Flutter changes.')
+      ..addFlag(
+        'require-skia-gold',
+        defaultsTo: false,
+        help:
+            'Whether we require Skia Gold to be available or not. When this '
+            'flag is true, the tests will fail if Skia Gold is not available.',
+      )
       ..addFlag(
         'update-screenshot-goldens',
         defaultsTo: false,
@@ -69,8 +70,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       ..addOption(
         'browser',
         defaultsTo: 'chrome',
-        help: 'An option to choose a browser to run the tests. Tests only work '
-            ' on Chrome for now.',
+        help: 'An option to choose a browser to run the tests. By default '
+              'tests run in Chrome.',
       )
       ..addFlag(
         'fail-early',
@@ -80,6 +81,12 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
               'failure. If not set, the test runner will continue running '
               'test despite failures and will report them after all tests '
               'finish.',
+      )
+      ..addOption(
+        'canvaskit-path',
+        help: 'Optional. The path to a local build of CanvasKit to use in '
+              'tests. If omitted, the test runner uses the default CanvasKit '
+              'build.',
       );
   }
 
@@ -111,12 +118,19 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// The name of the browser to run tests in.
   String get browserName => stringArg('browser');
 
+  /// When running screenshot tests, require Skia Gold to be available and
+  /// reachable.
+  bool get requireSkiaGold => boolArg('require-skia-gold');
+
   /// When running screenshot tests writes them to the file system into
   /// ".dart_tool/goldens".
   bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
 
   /// Whether to fetch the goldens repo prior to running tests.
   bool get skipGoldensRepoFetch => boolArg('skip-goldens-repo-fetch');
+
+  /// Path to a CanvasKit build. Overrides the default CanvasKit.
+  String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
 
   @override
   Future<bool> run() async {
@@ -135,6 +149,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         testFiles: testFiles,
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        requireSkiaGold: requireSkiaGold,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       ),
     ]);
     await testPipeline.run();

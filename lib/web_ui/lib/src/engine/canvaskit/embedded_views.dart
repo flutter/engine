@@ -4,10 +4,11 @@
 
 import 'dart:html' as html;
 import 'dart:math' as math;
+import 'dart:svg' as svg;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show NullTreeSanitizer, platformViewManager;
+import '../../engine.dart' show platformViewManager;
 import '../configuration.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
@@ -91,6 +92,11 @@ class HtmlViewEmbedder {
   /// The list of view ids that should be composited, in order.
   List<int> _compositionOrder = <int>[];
 
+  /// The number of platform views in this frame which are visible.
+  ///
+  /// These platform views will require overlays.
+  int _visibleViewCount = 0;
+
   /// The most recent composition order.
   List<int> _activeCompositionOrder = <int>[];
 
@@ -126,7 +132,7 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    if (!disableOverlays) {
+    if (!disableOverlays && platformViewManager.isVisible(viewId)) {
       // We must decide in the preroll phase if a platform view will use the
       // backup overlay, so that draw commands after the platform view will
       // correctly paint to the backup surface.
@@ -169,12 +175,17 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
-    final int compositedViewCount = _compositionOrder.length;
+    final int overlayIndex = _visibleViewCount;
     _compositionOrder.add(viewId);
-    if (!disableOverlays) {
-      if (compositedViewCount < _pictureRecordersCreatedDuringPreroll.length) {
+    if (platformViewManager.isVisible(viewId)) {
+      _visibleViewCount++;
+    }
+    final bool needOverlay =
+        !disableOverlays && platformViewManager.isVisible(viewId);
+    if (needOverlay) {
+      if (overlayIndex < _pictureRecordersCreatedDuringPreroll.length) {
         _pictureRecorders[viewId] =
-            _pictureRecordersCreatedDuringPreroll[compositedViewCount];
+            _pictureRecordersCreatedDuringPreroll[overlayIndex];
       } else {
         _viewsUsingBackupSurface.add(viewId);
         _pictureRecorders[viewId] = _backupPictureRecorder!;
@@ -183,7 +194,7 @@ class HtmlViewEmbedder {
 
     // Do nothing if this view doesn't need to be composited.
     if (!_viewsToRecomposite.contains(viewId)) {
-      if (!disableOverlays) {
+      if (needOverlay) {
         return _pictureRecorders[viewId]!.recordingCanvas;
       } else {
         return null;
@@ -191,7 +202,7 @@ class HtmlViewEmbedder {
     }
     _compositeWithParams(viewId, _currentCompositionParams[viewId]!);
     _viewsToRecomposite.remove(viewId);
-    if (!disableOverlays) {
+    if (needOverlay) {
       return _pictureRecorders[viewId]!.recordingCanvas;
     } else {
       return null;
@@ -332,12 +343,12 @@ class HtmlViewEmbedder {
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
             final String clipId = 'svgClip$_clipPathCount';
-            final html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="$clipId">'
-              '<path d="${path.toSvgString()}">'
-              '</path></clipPath>',
-              treeSanitizer: NullTreeSanitizer(),
-            );
+            final svg.ClipPathElement newClipPath = svg.ClipPathElement();
+            newClipPath.id = clipId;
+            newClipPath.append(
+                svg.PathElement()
+                  ..setAttribute('d', path.toSvgString()!));
+
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
@@ -351,12 +362,11 @@ class HtmlViewEmbedder {
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
             final String clipId = 'svgClip$_clipPathCount';
-            final html.Node newClipPath = html.DocumentFragment.svg(
-              '<clipPath id="$clipId">'
-              '<path d="${path.toSvgString()}">'
-              '</path></clipPath>',
-              treeSanitizer: NullTreeSanitizer(),
-            );
+            final svg.ClipPathElement newClipPath = svg.ClipPathElement();
+            newClipPath.id = clipId;
+            newClipPath.append(
+                svg.PathElement()
+                  ..setAttribute('d', path.toSvgString()!));
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
@@ -409,10 +419,8 @@ class HtmlViewEmbedder {
     if (_svgPathDefs != null) {
       return;
     }
-    _svgPathDefs = html.Element.html(
-      '$kSvgResourceHeader<defs id="sk_path_defs"></defs></svg>',
-      treeSanitizer: NullTreeSanitizer(),
-    );
+    _svgPathDefs = kSvgResourceHeader.clone(false) as svg.SvgSvgElement;
+    _svgPathDefs!.append(svg.DefsElement()..id = 'sk_path_defs');
     skiaSceneHost!.append(_svgPathDefs!);
   }
 
@@ -421,13 +429,22 @@ class HtmlViewEmbedder {
             _compositionOrder.isEmpty ||
             disableOverlays)
         ? null
-        : diffViewList(_activeCompositionOrder, _compositionOrder);
+        : diffViewList(
+            _activeCompositionOrder
+                .where((int viewId) => platformViewManager.isVisible(viewId))
+                .toList(),
+            _compositionOrder
+                .where((int viewId) => platformViewManager.isVisible(viewId))
+                .toList());
     final Map<int, int>? insertBeforeMap = _updateOverlays(diffResult);
 
     bool _didPaintBackupSurface = false;
     if (!disableOverlays) {
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
+        if (platformViewManager.isInvisible(viewId)) {
+          continue;
+        }
         if (_viewsUsingBackupSurface.contains(viewId)) {
           // Only draw the picture to the backup surface once.
           if (!_didPaintBackupSurface) {
@@ -455,6 +472,7 @@ class HtmlViewEmbedder {
     _viewsUsingBackupSurface.clear();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
       _compositionOrder.clear();
+      _visibleViewCount = 0;
       return;
     }
 
@@ -542,6 +560,7 @@ class HtmlViewEmbedder {
     }
 
     _compositionOrder.clear();
+    _visibleViewCount = 0;
 
     disposeViews(unusedViews);
 
@@ -601,12 +620,15 @@ class HtmlViewEmbedder {
       // to the backup surface.
       SurfaceFactory.instance.releaseSurfaces();
       _overlays.clear();
+      final List<int> viewsNeedingOverlays = _compositionOrder
+          .where((int viewId) => platformViewManager.isVisible(viewId))
+          .toList();
       final int numOverlays = math.min(
         SurfaceFactory.instance.maximumOverlays,
-        _compositionOrder.length,
+        viewsNeedingOverlays.length,
       );
       for (int i = 0; i < numOverlays; i++) {
-        final int viewId = _compositionOrder[i];
+        final int viewId = viewsNeedingOverlays[i];
         assert(!_viewsUsingBackupSurface.contains(viewId));
         _initializeOverlay(viewId);
       }
@@ -662,7 +684,8 @@ class HtmlViewEmbedder {
         while (overlaysToAssign > 0 && index < _compositionOrder.length) {
           final bool activeView = index < lastOriginalIndex;
           final int viewId = _compositionOrder[index];
-          if (!_overlays.containsKey(viewId)) {
+          if (!_overlays.containsKey(viewId) &&
+              platformViewManager.isVisible(viewId)) {
             _initializeOverlay(viewId);
             overlaysToAssign--;
             if (activeView) {
@@ -686,6 +709,7 @@ class HtmlViewEmbedder {
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
         assert(_viewsUsingBackupSurface.contains(viewId) ||
+            platformViewManager.isInvisible(viewId) ||
             _overlays[viewId] != null);
       }
     }
@@ -697,7 +721,7 @@ class HtmlViewEmbedder {
 
     // Try reusing a cached overlay created for another platform view.
     final Surface overlay = SurfaceFactory.instance.getOverlay()!;
-    overlay.createOrUpdateSurfaces(_frameSize);
+    overlay.createOrUpdateSurface(_frameSize);
     _overlays[viewId] = overlay;
   }
 
@@ -728,6 +752,7 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.clear();
     _activeCompositionOrder.clear();
     _compositionOrder.clear();
+    _visibleViewCount = 0;
   }
 }
 
@@ -945,8 +970,9 @@ class ViewListDiffResult {
 // similar to `Surface._insertChildDomNodes` to efficiently handle more cases,
 // https://github.com/flutter/flutter/issues/89611.
 ViewListDiffResult? diffViewList(List<int> active, List<int> next) {
-  assert(active.isNotEmpty && next.isNotEmpty,
-      'diffViewList called with empty view list');
+  if (active.isEmpty || next.isEmpty) {
+    return null;
+  }
   // If the [active] and [next] lists are in the expected form described above,
   // then either the first or last element of [next] will be in [active].
   int index = active.indexOf(next.first);

@@ -126,9 +126,6 @@ struct Settings {
 
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
-  // Arguments passed as a List<String> to Dart's entrypoint function.
-  std::vector<std::string> dart_entrypoint_args;
-
   // Isolate settings
   bool enable_checked_mode = false;
   bool start_paused = false;

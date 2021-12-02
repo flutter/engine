@@ -1,4 +1,4 @@
-Signature: 4627cc80698af10e6bb428f9593b8f1b
+Signature: 9961a3d6b8d4527b332bda9699fbde01
 
 UNUSED LICENSES:
 
@@ -2235,6 +2235,7 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/reader.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/lib/src/scenic_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/lib/src/focus_state.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/lib/src/fuchsia_views_service.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/src/dart_vm.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/camera_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/virtual_camera.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/virtual_keyboard.fidl
@@ -2247,6 +2248,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/capability.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/child.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/collection.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/component.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/environment.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/events.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.decl/expose.fidl
@@ -2265,6 +2267,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.feedback/data_provider_controller.
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/codec_connect.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/dai_connect.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/health.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/signal_processing.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.goldfish/goldfish_sync.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/port.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/radar.fidl
@@ -2296,6 +2299,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/types.fidl
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/inotify.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/transformer.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/transformer.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/wire_format_metadata.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/barrier.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/bridge.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/promise.h
@@ -2304,7 +2308,9 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/scheduler.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/scope.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/sequencer.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/single_threaded_executor.h
+FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_creation_tokens.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/include/lib/ui/scenic/cpp/view_identity.h
+FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_creation_tokens.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_identity.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/algorithm.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/atomic.h
@@ -3191,7 +3197,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/intern
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/syscalls/scheduler.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/utc.h
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/bits.dart
-FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/xunion.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/union.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/inspect.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/inspect/inspect.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/inspect/internal/_inspect_impl.dart

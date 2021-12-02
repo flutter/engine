@@ -60,7 +60,9 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         FlutterRunnerProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config,
+         const std::vector<std::string>& dart_entrypoint_args,
+         bool for_v1_component);
 
   // Flatland connection ctor.
   Engine(Delegate& delegate,
@@ -72,7 +74,9 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         FlutterRunnerProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config,
+         const std::vector<std::string>& dart_entrypoint_args,
+         bool for_v1_component);
 
   ~Engine();
 
@@ -93,7 +97,9 @@ class Engine final : public fuchsia::memorypressure::Watcher {
       flutter::Settings settings,
       UniqueFDIONS fdio_ns,
       fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-      FlutterRunnerProductConfiguration product_config);
+      FlutterRunnerProductConfiguration product_config,
+      const std::vector<std::string>& dart_entrypoint_args,
+      bool for_v1_component);
 
   static void WarmupSkps(
       fml::BasicTaskRunner* concurrent_task_runner,

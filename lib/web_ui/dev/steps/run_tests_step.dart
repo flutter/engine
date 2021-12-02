@@ -38,13 +38,19 @@ class RunTestsStep implements PipelineStep {
     required this.browserName,
     required this.isDebug,
     required this.doUpdateScreenshotGoldens,
+    required this.requireSkiaGold,
     this.testFiles,
+    required this.overridePathToCanvasKit,
   }) : _browserEnvironment = getBrowserEnvironment(browserName);
 
   final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
   final bool doUpdateScreenshotGoldens;
+  final String? overridePathToCanvasKit;
+
+  /// Require Skia Gold to be available and reachable.
+  final bool requireSkiaGold;
 
   final BrowserEnvironment _browserEnvironment;
 
@@ -71,7 +77,7 @@ class RunTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await _prepareTestResultsDirectory();
-    await _browserEnvironment.prepareEnvironment();
+    await _browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
 
@@ -120,6 +126,7 @@ class RunTestsStep implements PipelineStep {
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
     }
 
@@ -133,6 +140,7 @@ class RunTestsStep implements PipelineStep {
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
       _checkExitCode('Unit tests');
     }
@@ -148,6 +156,7 @@ class RunTestsStep implements PipelineStep {
         isDebug: isDebug,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
       );
       _checkExitCode('Golden tests');
     }
@@ -179,12 +188,13 @@ class RunTestsStep implements PipelineStep {
       browserName: browserName,
     );
 
-    if (!await _checkSkiaClient(skiaClient)) {
-      print('WARNING: Unable to use Skia Client in this environment.');
-      return null;
+    if (await _checkSkiaClient(skiaClient)) {
+      return skiaClient;
     }
 
-    return skiaClient;
+    if (requireSkiaGold) {
+      throw ToolExit('Skia Gold is required but is unavailable.');
+    }
   }
 
   /// Checks whether the Skia Client is usable in this environment.
@@ -234,6 +244,7 @@ Future<void> _runTestBatch({
   required int concurrency,
   required bool expectFailure,
   required SkiaGoldClient? skiaClient,
+  required String? overridePathToCanvasKit,
 }) async {
   final String configurationFilePath = pathlib.join(
     environment.webUiRootDir.path,
@@ -271,6 +282,7 @@ Future<void> _runTestBatch({
       // expected to fail.
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       skiaClient: skiaClient,
+      overridePathToCanvasKit: overridePathToCanvasKit,
     );
   });
 

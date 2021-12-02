@@ -7,7 +7,6 @@
 #include <cstdlib>
 #include <tuple>
 
-#include "flutter/fml/paths.h"
 #include "flutter/fml/posix_wrappers.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/io/dart_io.h"
@@ -93,6 +92,7 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration) const {
   return CreateRunningRootIsolate(
       settings,                                          //
@@ -104,6 +104,7 @@ std::weak_ptr<DartIsolate> DartIsolate::SpawnIsolate(
       isolate_shutdown_callback,                         //
       dart_entrypoint,                                   //
       dart_entrypoint_library,                           //
+      dart_entrypoint_args,                              //
       std::move(isolate_configuration),                  //
       UIDartState::Context{GetTaskRunners(),             //
                            snapshot_delegate,            //
@@ -128,6 +129,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     const fml::closure& isolate_shutdown_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration,
     const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
@@ -195,10 +197,9 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
     root_isolate_create_callback();
   }
 
-  if (!isolate->RunFromLibrary(dart_entrypoint_library,       //
-                               dart_entrypoint,               //
-                               settings.dart_entrypoint_args  //
-                               )) {
+  if (!isolate->RunFromLibrary(dart_entrypoint_library,  //
+                               dart_entrypoint,          //
+                               dart_entrypoint_args)) {
     FML_LOG(ERROR) << "Could not run the run main Dart entrypoint.";
     return {};
   }

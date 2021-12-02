@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
+#include "flutter/shell/platform/windows/keyboard_win32_common.h"
 
 namespace flutter {
 
@@ -20,7 +21,7 @@ static constexpr int kMaxPendingEvents = 1000;
 
 // Returns if a character sent by Win32 is a dead key.
 bool _IsDeadKey(uint32_t ch) {
-  return (ch & 0x80000000) != 0;
+  return (ch & kDeadKeyCharMask) != 0;
 }
 
 // Returns true if this key is a key down event of ShiftRight.
@@ -67,7 +68,8 @@ static bool IsKeyDownAltRight(int action, int virtual_key, bool extended) {
 #ifdef WINUWP
   return false;
 #else
-  return virtual_key == VK_RMENU && extended && action == WM_KEYDOWN;
+  return virtual_key == VK_RMENU && extended &&
+         (action == WM_KEYDOWN || action == WM_SYSKEYDOWN);
 #endif
 }
 
@@ -78,7 +80,8 @@ static bool IsKeyUpAltRight(int action, int virtual_key, bool extended) {
 #ifdef WINUWP
   return false;
 #else
-  return virtual_key == VK_RMENU && extended && action == WM_KEYUP;
+  return virtual_key == VK_RMENU && extended &&
+         (action == WM_KEYUP || action == WM_SYSKEYUP);
 #endif
 }
 
@@ -89,7 +92,8 @@ static bool IsKeyDownCtrlLeft(int action, int virtual_key) {
 #ifdef WINUWP
   return false;
 #else
-  return virtual_key == VK_LCONTROL && action == WM_KEYDOWN;
+  return virtual_key == VK_LCONTROL &&
+         (action == WM_KEYDOWN || action == WM_SYSKEYDOWN);
 #endif
 }
 
@@ -125,6 +129,10 @@ void KeyboardKeyHandler::DispatchEvent(const PendingEvent& event) {
   return;
 #else
   char32_t character = event.character;
+
+  if (event.action == WM_SYSKEYDOWN || event.action == WM_SYSKEYUP) {
+    return;
+  }
 
   INPUT input_event{
       .type = INPUT_KEYBOARD,
