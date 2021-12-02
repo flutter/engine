@@ -246,6 +246,7 @@ public class PlatformPlugin {
     View view = window.getDecorView();
     WindowInsetsControllerCompat windowInsetsControllerCompat =
         new WindowInsetsControllerCompat(window, view);
+
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       // LEAN BACK
@@ -255,22 +256,11 @@ public class PlatformPlugin {
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
         WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(
             WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-
-        return;
-      } else {
-        enabledOverlays =
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN;
-      }
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // IMMERSIVE
@@ -280,23 +270,12 @@ public class PlatformPlugin {
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
         WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(
             WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
 
-        return;
-      } else {
-        enabledOverlays =
-            View.SYSTEM_UI_FLAG_IMMERSIVE
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN;
-      }
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // STICKY IMMERSIVE
@@ -305,24 +284,11 @@ public class PlatformPlugin {
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      if (Build.VERSION.SDK_INT >= 30) {
         windowInsetsControllerCompat.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(
             WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-        return;
-      } else {
-        enabledOverlays =
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN;
-        mEnabledOverlays = enabledOverlays;
-        updateSystemUiOverlays();
-      }
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
         && Build.VERSION.SDK_INT >= 29) {
       // EDGE TO EDGE
@@ -330,27 +296,10 @@ public class PlatformPlugin {
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
-      if (Build.VERSION.SDK_INT >= 30) {
         WindowCompat.setDecorFitsSystemWindows(window, false);
-        return;
-      } else {
-        enabledOverlays =
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-      }
     } else {
       // When none of the conditions are matched, return without updating the system UI overlays.
       return;
-    }
-
-    if (Build.VERSION.SDK_INT >= 30) {
-      windowInsetsControllerCompat.hide(
-          WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-      WindowCompat.setDecorFitsSystemWindows(window, false);
-    } else {
-      mEnabledOverlays = enabledOverlays;
-      updateSystemUiOverlays();
     }
   }
 
