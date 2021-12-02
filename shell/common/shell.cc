@@ -1067,6 +1067,20 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
       });
 }
 
+// |PlatformView::Delegate|
+void Shell::EnableThreadMergerIfNeeded() {
+  if (rasterizer_) {
+    rasterizer_->EnableThreadMergerIfNeeded();
+  }
+}
+
+// |PlatformView::Delegate|
+void Shell::DisableThreadMergerIfNeeded() {
+  if (rasterizer_) {
+    rasterizer_->DisableThreadMergerIfNeeded();
+  }
+}
+
 // |Animator::Delegate|
 void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                                  uint64_t frame_number) {

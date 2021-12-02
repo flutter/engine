@@ -566,6 +566,10 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<AssetResolver> updated_asset_resolver,
       AssetResolver::AssetResolverType type) override;
 
+  // |PlatformView::Delegate|
+  void EnableThreadMergerIfNeeded() override;
+  void DisableThreadMergerIfNeeded() override;
+
   // |Animator::Delegate|
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                             uint64_t frame_number) override;
