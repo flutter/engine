@@ -696,12 +696,17 @@ void applyTextStyleToElement({
   final html.CssStyleDeclaration cssStyle = element.style;
 
   final ui.Color? color = style.foreground?.color ?? style.color;
-  if (color != null) {
+  if (style.foreground?.style == ui.PaintingStyle.stroke) {
+    // Use transparent text color to achieve same visual output as in canvas.
+    cssStyle.color = colorToCssString(const ui.Color(0x00));
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double? strokeWidth = style.foreground?.strokeWidth;
+    final double adaptedWidth = strokeWidth != null && strokeWidth > 0
+        ? strokeWidth
+        : 1.0 / ui.window.devicePixelRatio;
+    cssStyle.textStroke = '${adaptedWidth}px ${colorToCssString(color)}';
+  } else if (color != null) {
     cssStyle.color = colorToCssString(color);
-  }
-  final double? strokeWidth = style.foreground?.strokeWidth;
-  if (strokeWidth != null) {
-    cssStyle.textStroke = '${strokeWidth}px ${colorToCssString(color)}';
   }
   final ui.Color? background = style.background?.color;
   if (background != null) {
