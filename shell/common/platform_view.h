@@ -315,7 +315,10 @@ class PlatformView {
     ///
     /// @see        `ExternalViewEmbedder`
     ///
-    virtual void EnableThreadMergerIfNeeded() = 0;
+    virtual void EnableThreadMergerIfNeeded() {
+      FML_DLOG(WARNING) << "This platform doesn't support to enable the raster "
+                           "thread merger.";
+    }
 
     //----------------------------------------------------------------------------
     /// @brief      Disables the thread merger if the external view embedder
@@ -327,7 +330,10 @@ class PlatformView {
     ///
     /// @see        `ExternalViewEmbedder`
     ///
-    virtual void DisableThreadMergerIfNeeded() = 0;
+    virtual void DisableThreadMergerIfNeeded() {
+      FML_DLOG(WARNING) << "This platform doesn't support to disable the "
+                           "raster thread merger.";
+    }
   };
 
   //----------------------------------------------------------------------------
@@ -821,31 +827,6 @@ class PlatformView {
   /// threads should be returing a thread-safe PlatformMessageHandler instead.
   virtual std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Enables the thread merger if the external view embedder
-  ///             supports dynamic thread merging.
-  ///
-  /// @attention  This method is thread-safe. When the thread merger is
-  ///             enabled,
-  ///             the raster task queue can run in the platform thread at any
-  ///             time.
-  ///
-  /// @see        `ExternalViewEmbedder`
-  ///
-  virtual void EnableThreadMergerIfNeeded();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Disables the thread merger if the external view embedder
-  ///             supports dynamic thread merging.
-  ///
-  /// @attention  This method is thread-safe. When the thread merger is
-  ///             disabled, the raster task queue will continue to run in the
-  ///             same thread until |EnableThreadMergerIfNeeded| is called.
-  ///
-  /// @see        `ExternalViewEmbedder`
-  ///
-  virtual void DisableThreadMergerIfNeeded();
 
  protected:
   // This is the only method called on the raster task runner.

@@ -199,14 +199,4 @@ PlatformView::GetPlatformMessageHandler() const {
   return nullptr;
 }
 
-void PlatformView::EnableThreadMergerIfNeeded() {
-  FML_DLOG(WARNING)
-      << "This platform doesn't support to disable the raster thread merger.";
-}
-
-void PlatformView::DisableThreadMergerIfNeeded() {
-  FML_DLOG(WARNING)
-      << "This platform doesn't support to enable the raster thread merger.";
-}
-
 }  // namespace flutter
