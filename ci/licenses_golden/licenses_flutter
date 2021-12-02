@@ -515,7 +515,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/viewport_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/configuration.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/embedder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
@@ -638,7 +638,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/ui/path_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/pointer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/semantics.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/ui/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/window.dart
@@ -1760,6 +1759,7 @@ FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/keyboard_win32_common.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler.cc
 FILE: ../../../flutter/shell/platform/windows/platform_handler.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler_unittests.cc
@@ -2390,6 +2390,9 @@ ORIGIN: ../../../flutter/third_party/accessibility/base/win/atl_module.h + ../..
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/base/auto_reset.h
 FILE: ../../../flutter/third_party/accessibility/base/win/atl_module.h
+FILE: ../../../flutter/third_party/accessibility/base/win/display.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/display.h
+FILE: ../../../flutter/third_party/accessibility/base/win/display_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant.cc
 FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant.h
 FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant_unittest.cc
