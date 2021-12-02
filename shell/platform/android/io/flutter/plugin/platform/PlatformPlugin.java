@@ -15,13 +15,13 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsets;
 import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -260,7 +260,7 @@ public class PlatformPlugin {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
         WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(
-            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            WindowInsetsCompat.Type.systemBars());
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // IMMERSIVE
@@ -274,7 +274,7 @@ public class PlatformPlugin {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
         WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(
-            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+          WindowInsetsCompat.Type.systemBars());
 
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
@@ -288,7 +288,7 @@ public class PlatformPlugin {
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         WindowCompat.setDecorFitsSystemWindows(window, false);
         windowInsetsControllerCompat.hide(
-            WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            WindowInsetsCompat.Type.systemBars());
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
         && Build.VERSION.SDK_INT >= 29) {
       // EDGE TO EDGE
