@@ -4691,7 +4691,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///   * [new Vertices], which creates a set of vertices to draw on the canvas.
   ///   * [Vertices.raw], which creates the vertices using typed data lists
   ///     rather than unencoded lists.
-  ///   * [paint], Image shaders can also be used to draw images on a triangular mesh.
+  ///   * [paint], Image shaders can be used to draw images on a triangular mesh.
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
 
     assert(vertices != null); // vertices is checked on the engine side
