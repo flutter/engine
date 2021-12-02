@@ -5,10 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_KEY_HANDLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_KEY_HANDLER_H_
 
+#include <windows.h>
 #include <deque>
 #include <memory>
 #include <string>
-#include <windows.h>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"

@@ -4,8 +4,8 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 
 #include <rapidjson/document.h>
-#include <memory>
 #include <windows.h>
+#include <memory>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
