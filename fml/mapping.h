@@ -11,10 +11,13 @@
 #include <vector>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/native_library.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/fml/file.h"
 #include "flutter/fml/unique_fd.h"
+#endif
 
 namespace fml {
 
@@ -36,6 +39,7 @@ class Mapping {
   FML_DISALLOW_COPY_AND_ASSIGN(Mapping);
 };
 
+#ifndef FLUTTER_NO_IO
 class FileMapping final : public Mapping {
  public:
   enum class Protection {
@@ -88,6 +92,7 @@ class FileMapping final : public Mapping {
 
   FML_DISALLOW_COPY_AND_ASSIGN(FileMapping);
 };
+#endif  // FLUTTER_NO_IO
 
 class DataMapping final : public Mapping {
  public:

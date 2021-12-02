@@ -19,6 +19,7 @@ Settings::~Settings() = default;
 std::string Settings::ToString() const {
   std::stringstream stream;
   stream << "Settings: " << std::endl;
+#ifndef FLUTTER_NO_IO
   stream << "vm_snapshot_data_path: " << vm_snapshot_data_path << std::endl;
   stream << "vm_snapshot_instr_path: " << vm_snapshot_instr_path << std::endl;
   stream << "isolate_snapshot_data_path: " << isolate_snapshot_data_path
@@ -30,6 +31,7 @@ std::string Settings::ToString() const {
     stream << "    " << path << std::endl;
   }
   stream << "temp_directory_path: " << temp_directory_path << std::endl;
+#endif
   stream << "dart_flags:" << std::endl;
   for (const auto& dart_flag : dart_flags) {
     stream << "    " << dart_flag << std::endl;
@@ -56,9 +58,11 @@ std::string Settings::ToString() const {
   stream << "log_tag: " << log_tag << std::endl;
   stream << "icu_initialization_required: " << icu_initialization_required
          << std::endl;
+#ifndef FLUTTER_NO_IO
   stream << "icu_data_path: " << icu_data_path << std::endl;
   stream << "assets_dir: " << assets_dir << std::endl;
   stream << "assets_path: " << assets_path << std::endl;
+#endif
   stream << "frame_rasterized_callback set: " << !!frame_rasterized_callback
          << std::endl;
   stream << "old_gen_heap_size: " << old_gen_heap_size << std::endl;

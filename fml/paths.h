@@ -5,6 +5,8 @@
 #ifndef FLUTTER_FML_PATHS_H_
 #define FLUTTER_FML_PATHS_H_
 
+#include "flutter/fml/assert_io.h"
+
 #include <string>
 #include <utility>
 

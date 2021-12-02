@@ -88,13 +88,18 @@ source_set("runtime") {
     "//flutter/common",
     "//flutter/flow",
     "//flutter/fml",
-    "//flutter/lib/io",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
     "//third_party/dart/runtime:dart_api",
-    "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/skia",
   ]
+
+  if (!flutter_no_io) {
+    deps += [
+      "//flutter/lib/io",
+      "//third_party/dart/runtime/bin:dart_io_api",
+    ]
+  }
 
   if (flutter_runtime_mode != "release" && !is_fuchsia) {
     # Only link in Observatory in non-release modes on non-Fuchsia. Fuchsia

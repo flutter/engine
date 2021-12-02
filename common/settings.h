@@ -17,7 +17,10 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/time/time_point.h"
+
+#ifndef FLUTTER_NO_IO
 #include "flutter/fml/unique_fd.h"
+#endif
 
 namespace flutter {
 
@@ -97,20 +100,25 @@ struct Settings {
   ~Settings();
 
   // VM settings
+#ifndef FLUTTER_NO_IO
   std::string vm_snapshot_data_path;  // deprecated
-  MappingCallback vm_snapshot_data;
   std::string vm_snapshot_instr_path;  // deprecated
+  
+  std::string isolate_snapshot_data_path;  // deprecated
+  std::string isolate_snapshot_instr_path;  // deprecated
+#endif
+
+  MappingCallback vm_snapshot_data;
   MappingCallback vm_snapshot_instr;
 
-  std::string isolate_snapshot_data_path;  // deprecated
   MappingCallback isolate_snapshot_data;
-  std::string isolate_snapshot_instr_path;  // deprecated
   MappingCallback isolate_snapshot_instr;
 
   // Returns the Mapping to a kernel buffer which contains sources for dart:*
   // libraries.
   MappingCallback dart_library_sources_kernel;
 
+#ifndef FLUTTER_NO_IO
   // Path to a library containing the application's compiled Dart code.
   // This is a vector so that the embedder can provide fallback paths in
   // case the primary path to the library can not be loaded.
@@ -119,12 +127,16 @@ struct Settings {
   // Path to a library containing compiled Dart code usable for launching
   // the VM service isolate.
   std::vector<std::string> vmservice_snapshot_library_path;
+#endif
 
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
   MappingsCallback application_kernels;
 
+#ifndef FLUTTER_NO_IO
   std::string temp_directory_path;
+#endif
+
   std::vector<std::string> dart_flags;
   // Isolate settings
   bool enable_checked_mode = false;
@@ -256,13 +268,17 @@ struct Settings {
   // Some companies apply source modification here because their build system
   // brings its own ICU data files.
   bool icu_initialization_required = true;
+#ifndef FLUTTER_NO_IO
   std::string icu_data_path;
+#endif
   MappingCallback icu_mapper;
 
+#ifndef FLUTTER_NO_IO
   // Assets settings
   fml::UniqueFD::element_type assets_dir =
       fml::UniqueFD::traits_type::InvalidValue();
   std::string assets_path;
+#endif
 
   // Callback to handle the timings of a rasterized frame. This is called as
   // soon as a frame is rasterized.

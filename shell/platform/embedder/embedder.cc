@@ -35,14 +35,10 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif  // FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 }
 
-#include "flutter/assets/directory_asset_bundle.h"
-#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/switches.h"
@@ -66,6 +62,13 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_METAL
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#endif
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/fml/file.h"
+#include "flutter/fml/paths.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
@@ -781,6 +784,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 
   switch (source->type) {
     case kFlutterEngineAOTDataSourceTypeElfPath: {
+#ifndef FLUTTER_NO_IO
       if (!source->elf_path || !fml::IsFile(source->elf_path)) {
         return LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Invalid ELF path specified.");
@@ -813,6 +817,9 @@ FlutterEngineResult FlutterEngineCreateAOTData(
 
       *data_out = aot_data.release();
       return kSuccess;
+#else
+      return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine built with FLUTTER_NO_IO cannot load ELFs");
+#endif
     }
   }
 
@@ -928,12 +935,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "The Flutter project arguments were missing.");
   }
 
+#ifdef FLUTTER_NO_IO
+  if (SAFE_ACCESS(args, asset_resolver, nullptr) == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "The asset resolver in the Flutter project "
+                              "arguments was missing.");
+  }
+#else
   if (SAFE_ACCESS(args, assets_path, nullptr) == nullptr &&
       SAFE_ACCESS(args, asset_resolver, nullptr) == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments,
                               "The assets path or asset resolver in the "
                               "Flutter project arguments was missing.");
   }
+#endif
 
   if (SAFE_ACCESS(args, main_path__unused__, nullptr) != nullptr) {
     FML_LOG(WARNING)
@@ -950,6 +965,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "The renderer configuration was invalid.");
   }
 
+#ifndef FLUTTER_NO_IO
   std::string icu_data_path;
   if (SAFE_ACCESS(args, icu_data_path, nullptr) != nullptr) {
     icu_data_path = SAFE_ACCESS(args, icu_data_path, nullptr);
@@ -964,6 +980,25 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, is_persistent_cache_read_only, false)) {
     flutter::PersistentCache::gIsReadOnly = true;
   }
+#else
+  if (SAFE_ACCESS(args, icu_data_path, nullptr) != nullptr) {
+    FML_LOG(WARNING)
+      << "FlutterProjectArgs.icu_data_path has no effect when compiled with "
+          "FLUTTER_NO_IO";
+  }
+
+  if (SAFE_ACCESS(args, persistent_cache_path, nullptr) != nullptr) {
+    FML_LOG(WARNING)
+      << "FlutterProjectArgs.persistent_cache_path has no effect when compiled with "
+          "FLUTTER_NO_IO";
+  }
+
+  if (SAFE_ACCESS(args, is_persistent_cache_read_only, false)) {
+    FML_LOG(WARNING)
+      << "FlutterProjectArgs.is_persistent_cache_read_only has no effect when compiled with "
+          "FLUTTER_NO_IO";
+  }
+#endif
 
   fml::CommandLine command_line;
   if (SAFE_ACCESS(args, command_line_argc, 0) != 0 &&
@@ -989,16 +1024,26 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   PopulateSnapshotMappingCallbacks(args, settings);
 
+#ifndef FLUTTER_NO_IO
   settings.icu_data_path = icu_data_path;
   if (args->assets_path)
     settings.assets_path = args->assets_path;
+#else
+  if (args->assets_path) {
+    FML_LOG(WARNING)
+      << "FlutterProjectArgs.assets_path has no effect when compiled with "
+          "FLUTTER_NO_IO";
+  }
+#endif
+
   settings.leak_vm = !SAFE_ACCESS(args, shutdown_dart_vm_when_done, false);
   settings.old_gen_heap_size = SAFE_ACCESS(args, dart_old_gen_heap_size, -1);
 
   if (!flutter::DartVM::IsRunningPrecompiledCode()) {
+    const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
+#ifndef FLUTTER_NO_IO
     // Verify the assets path contains Dart 2 kernel assets.
     // NOTE: This check is skipped if using a custom asset resolver.
-    const std::string kApplicationKernelSnapshotFileName = "kernel_blob.bin";
     if (args->assets_path) {
       std::string application_kernel_path = fml::paths::JoinPaths(
           {settings.assets_path, kApplicationKernelSnapshotFileName});
@@ -1008,6 +1053,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
             "Not running in AOT mode but could not resolve the kernel binary.");
       }
     }
+#endif
     settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
   }
 
@@ -1310,12 +1356,14 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         flutter::CreateEmbedderAssetResolver(args->asset_resolver));
   }
 
+#ifndef FLUTTER_NO_IO
   if (args->assets_path) {
     asset_manager->PushBack(std::make_unique<flutter::DirectoryAssetBundle>(
         fml::OpenDirectory(args->assets_path, false,
                            fml::FilePermission::kRead),
         true));
   }
+#endif
 
   auto run_configuration = flutter::RunConfiguration(
       flutter::IsolateConfiguration::InferFromSettings(settings, asset_manager,

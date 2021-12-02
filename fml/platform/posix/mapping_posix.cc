@@ -46,10 +46,6 @@ static bool IsWritable(
   return false;
 }
 
-Mapping::Mapping() = default;
-
-Mapping::~Mapping() = default;
-
 FileMapping::FileMapping(const fml::UniqueFD& handle,
                          std::initializer_list<Protection> protection)
     : size_(0), mapping_(nullptr) {

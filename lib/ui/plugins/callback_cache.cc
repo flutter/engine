@@ -4,16 +4,20 @@
 
 #include "flutter/lib/ui/plugins/callback_cache.h"
 
-#include <fstream>
 #include <iterator>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/paths.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/tonic/converter/dart_converter.h"
+
+#ifndef FLUTTER_NO_IO
+#include <fstream>
+
+#include "flutter/fml/paths.h"
+#endif
 
 using rapidjson::Document;
 using rapidjson::StringBuffer;
@@ -22,19 +26,8 @@ using tonic::ToDart;
 
 namespace flutter {
 
-static const char* kHandleKey = "handle";
-static const char* kRepresentationKey = "representation";
-static const char* kNameKey = "name";
-static const char* kClassNameKey = "class_name";
-static const char* kLibraryPathKey = "library_path";
-static const char* kCacheName = "flutter_callback_cache.json";
 std::mutex DartCallbackCache::mutex_;
-std::string DartCallbackCache::cache_path_;
 std::map<int64_t, DartCallbackRepresentation> DartCallbackCache::cache_;
-
-void DartCallbackCache::SetCachePath(const std::string& path) {
-  cache_path_ = fml::paths::JoinPaths({path, kCacheName});
-}
 
 Dart_Handle DartCallbackCache::GetCallback(int64_t handle) {
   std::scoped_lock lock(mutex_);
@@ -70,6 +63,21 @@ DartCallbackCache::GetCallbackInformation(int64_t handle) {
     return std::make_unique<DartCallbackRepresentation>(iterator->second);
   }
   return nullptr;
+}
+
+#ifndef FLUTTER_NO_IO
+
+static const char* kHandleKey = "handle";
+static const char* kRepresentationKey = "representation";
+static const char* kNameKey = "name";
+static const char* kClassNameKey = "class_name";
+static const char* kLibraryPathKey = "library_path";
+static const char* kCacheName = "flutter_callback_cache.json";
+
+std::string DartCallbackCache::cache_path_;
+
+void DartCallbackCache::SetCachePath(const std::string& path) {
+  cache_path_ = fml::paths::JoinPaths({path, kCacheName});
 }
 
 void DartCallbackCache::SaveCacheToDisk() {
@@ -147,6 +155,14 @@ void DartCallbackCache::LoadCacheFromDisk() {
     cache_[hash] = cb;
   }
 }
+
+#else  // FLUTTER_NO_IO
+
+void DartCallbackCache::SetCachePath(const std::string& path) {}
+void DartCallbackCache::SaveCacheToDisk() {}
+void DartCallbackCache::LoadCacheFromDisk() {}
+
+#endif
 
 Dart_Handle DartCallbackCache::LookupDartClosure(
     const std::string& name,

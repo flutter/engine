@@ -5,6 +5,8 @@
 #ifndef TESTING_TESTING_H_
 #define TESTING_TESTING_H_
 
+#include "flutter/fml/assert_io.h"
+
 #include <string>
 #include <vector>
 

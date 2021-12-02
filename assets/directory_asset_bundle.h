@@ -5,6 +5,8 @@
 #ifndef FLUTTER_ASSETS_DIRECTORY_ASSET_BUNDLE_H_
 #define FLUTTER_ASSETS_DIRECTORY_ASSET_BUNDLE_H_
 
+#include "flutter/fml/assert_io.h"
+
 #include <optional>
 #include "flutter/assets/asset_resolver.h"
 #include "flutter/fml/macros.h"

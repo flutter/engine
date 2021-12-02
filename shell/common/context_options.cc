@@ -4,7 +4,9 @@
 
 #include "flutter/shell/common/context_options.h"
 
+#ifndef FLUTTER_NO_IO
 #include "flutter/common/graphics/persistent_cache.h"
+#endif
 
 namespace flutter {
 
@@ -12,11 +14,13 @@ GrContextOptions MakeDefaultContextOptions(ContextType type,
                                            std::optional<GrBackendApi> api) {
   GrContextOptions options;
 
+#ifndef FLUTTER_NO_IO
   if (PersistentCache::cache_sksl()) {
     options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
   }
   PersistentCache::MarkStrategySet();
   options.fPersistentCache = PersistentCache::GetCacheForProcess();
+#endif
 
   if (api.has_value() && api.value() == GrBackendApi::kOpenGL) {
     options.fAvoidStencilBuffers = true;

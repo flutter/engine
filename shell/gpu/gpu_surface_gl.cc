@@ -4,7 +4,6 @@
 
 #include "flutter/shell/gpu/gpu_surface_gl.h"
 
-#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/base32.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/size.h"
@@ -14,6 +13,10 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/common/graphics/persistent_cache.h"
+#endif
 
 // These are common defines present on all OpenGL headers. However, we don't
 // want to perform GL header reasolution on each platform we support. So just
@@ -56,7 +59,9 @@ sk_sp<GrDirectContext> GPUSurfaceGL::MakeGLContext(
 
   context->setResourceCacheLimits(kGrCacheMaxCount, kGrCacheMaxByteSize);
 
+#ifndef FLUTTER_NO_IO
   PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
+#endif
 
   return context;
 }

@@ -22,7 +22,9 @@ void UniqueFDTraits::Free_Handle(HANDLE fd) {
 
 }  // namespace os_win
 
-#else  // OS_WIN
+#endif  // OS_WIN
+
+#if OS_POSIX || OS_FUCHSIA
 
 namespace os_unix {
 
@@ -30,13 +32,15 @@ void UniqueFDTraits::Free(int fd) {
   close(fd);
 }
 
+#ifndef FLUTTER_NO_IO
 void UniqueDirTraits::Free(DIR* dir) {
   closedir(dir);
 }
+#endif
 
 }  // namespace os_unix
 
-#endif  // OS_WIN
+#endif  // OS_POSIX || OS_FUCHSIA
 
 }  // namespace internal
 }  // namespace fml

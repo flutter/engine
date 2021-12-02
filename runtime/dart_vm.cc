@@ -20,7 +20,6 @@
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm_initializer.h"
 #include "flutter/runtime/ptrace_check.h"
-#include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/skia/include/core/SkExecutor.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_class_library.h"
@@ -28,6 +27,10 @@
 #include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_error.h"
 #include "third_party/tonic/typed_data/typed_list.h"
+
+#ifndef FLUTTER_NO_IO
+#include "third_party/dart/runtime/include/bin/dart_io_api.h" // nogncheck
+#endif
 
 namespace dart {
 namespace observatory {
@@ -170,10 +173,13 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
 #endif
 }
 
+#ifndef FLUTTER_NO_IO
 static const char kStdoutStreamId[] = "Stdout";
 static const char kStderrStreamId[] = "Stderr";
+#endif
 
 static bool ServiceStreamListenCallback(const char* stream_id) {
+#ifndef FLUTTER_NO_IO
   if (strcmp(stream_id, kStdoutStreamId) == 0) {
     dart::bin::SetCaptureStdout(true);
     return true;
@@ -181,15 +187,18 @@ static bool ServiceStreamListenCallback(const char* stream_id) {
     dart::bin::SetCaptureStderr(true);
     return true;
   }
+#endif
   return false;
 }
 
 static void ServiceStreamCancelCallback(const char* stream_id) {
+#ifndef FLUTTER_NO_IO
   if (strcmp(stream_id, kStdoutStreamId) == 0) {
     dart::bin::SetCaptureStdout(false);
   } else if (strcmp(stream_id, kStderrStreamId) == 0) {
     dart::bin::SetCaptureStderr(false);
   }
+#endif
 }
 
 bool DartVM::IsRunningPrecompiledCode() {
@@ -242,7 +251,9 @@ void PushBackAll(std::vector<const char*>* args,
 
 static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
   info->version = DART_EMBEDDER_INFORMATION_CURRENT_VERSION;
+#ifndef FLUTTER_NO_IO
   dart::bin::GetIOEmbedderInformation(info);
+#endif
   info->name = "Flutter";
 }
 
@@ -294,6 +305,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   FML_DCHECK(isolate_name_server_);
   FML_DCHECK(service_protocol_);
 
+#ifndef FLUTTER_NO_IO
   {
     TRACE_EVENT0("flutter", "dart::bin::BootstrapDartIo");
     dart::bin::BootstrapDartIo();
@@ -302,6 +314,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
       dart::bin::SetSystemTempDirectory(settings_.temp_directory_path.c_str());
     }
   }
+#endif
 
   std::vector<const char*> args;
 
@@ -441,7 +454,10 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
         DartIsolate::DartIsolateGroupCleanupCallback);
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
+#ifndef FLUTTER_NO_IO
+    // TODO: Embedder-provided entropy source
     params.entropy_source = dart::bin::GetEntropy;
+#endif
     DartVMInitializer::Initialize(&params);
     // Send the earliest available timestamp in the application lifecycle to
     // timeline. The difference between this timestamp and the time we render
@@ -489,7 +505,9 @@ DartVM::~DartVM() {
 
   DartVMInitializer::Cleanup();
 
+#ifndef FLUTTER_NO_IO
   dart::bin::CleanupDartIo();
+#endif
 }
 
 std::shared_ptr<const DartVMData> DartVM::GetVMData() const {

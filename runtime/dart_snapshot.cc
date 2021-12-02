@@ -7,11 +7,14 @@
 #include <sstream>
 
 #include "flutter/fml/native_library.h"
-#include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/runtime/dart_vm.h"
 #include "third_party/dart/runtime/include/dart_api.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/fml/paths.h"
+#endif
 
 namespace flutter {
 
@@ -29,6 +32,7 @@ const char* DartSnapshot::kIsolateInstructionsSymbol =
 
 #if !DART_SNAPSHOT_STATIC_LINK
 
+#ifndef FLUTTER_NO_IO
 static std::unique_ptr<const fml::Mapping> GetFileMapping(
     const std::string& path,
     bool executable) {
@@ -38,7 +42,20 @@ static std::unique_ptr<const fml::Mapping> GetFileMapping(
     return fml::FileMapping::CreateReadOnly(path);
   }
 }
+#endif
 
+#ifdef FLUTTER_NO_IO
+static std::shared_ptr<const fml::Mapping> SearchMapping(
+    MappingCallback embedder_mapping_callback) {
+  // Ask the embedder. There is no fallback as we expect the embedders (via
+  // their embedding APIs) to just specify the mappings directly.
+  if (embedder_mapping_callback) {
+    return embedder_mapping_callback();
+  }
+
+  return nullptr;
+}
+#else
 // The first party embedders don't yet use the stable embedder API and depend on
 // the engine figuring out the locations of the various heap and instructions
 // buffers. Consequently, the engine had baked in opinions about where these
@@ -91,6 +108,7 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
 
   return nullptr;
 }
+#endif
 
 #endif  // !DART_SNAPSHOT_STATIC_LINK
 
@@ -103,6 +121,9 @@ static std::shared_ptr<const fml::Mapping> ResolveVMData(
                                                 true      // dontneed_safe
   );
 #else   // DART_SNAPSHOT_STATIC_LINK
+#ifdef FLUTTER_NO_IO
+  return SearchMapping(settings.vm_snapshot_data);
+#else
   return SearchMapping(
       settings.vm_snapshot_data,          // embedder_mapping_callback
       settings.vm_snapshot_data_path,     // file_path
@@ -110,6 +131,7 @@ static std::shared_ptr<const fml::Mapping> ResolveVMData(
       DartSnapshot::kVMDataSymbol,        // native_library_symbol_name
       false                               // is_executable
   );
+#endif  // FLUTTER_NO_IO
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
 
@@ -122,6 +144,9 @@ static std::shared_ptr<const fml::Mapping> ResolveVMInstructions(
                                                 true      // dontneed_safe
   );
 #else   // DART_SNAPSHOT_STATIC_LINK
+#ifdef FLUTTER_NO_IO
+  return SearchMapping(settings.vm_snapshot_instr);
+#else
   return SearchMapping(
       settings.vm_snapshot_instr,           // embedder_mapping_callback
       settings.vm_snapshot_instr_path,      // file_path
@@ -129,6 +154,7 @@ static std::shared_ptr<const fml::Mapping> ResolveVMInstructions(
       DartSnapshot::kVMInstructionsSymbol,  // native_library_symbol_name
       true                                  // is_executable
   );
+#endif  // FLUTTER_NO_IO
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
 
@@ -141,6 +167,9 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateData(
                                                 true      // dontneed_safe
   );
 #else   // DART_SNAPSHOT_STATIC_LINK
+#ifdef FLUTTER_NO_IO
+  return SearchMapping(settings.isolate_snapshot_data);
+#else
   return SearchMapping(
       settings.isolate_snapshot_data,       // embedder_mapping_callback
       settings.isolate_snapshot_data_path,  // file_path
@@ -148,6 +177,7 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateData(
       DartSnapshot::kIsolateDataSymbol,     // native_library_symbol_name
       false                                 // is_executable
   );
+#endif  // FLUTTER_NO_IO
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
 
@@ -161,6 +191,9 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateInstructions(
       true      // dontneed_safe
   );
 #else   // DART_SNAPSHOT_STATIC_LINK
+#ifdef FLUTTER_NO_IO
+  return SearchMapping(settings.isolate_snapshot_instr);
+#else
   return SearchMapping(
       settings.isolate_snapshot_instr,           // embedder_mapping_callback
       settings.isolate_snapshot_instr_path,      // file_path
@@ -168,6 +201,7 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateInstructions(
       DartSnapshot::kIsolateInstructionsSymbol,  // native_library_symbol_name
       true                                       // is_executable
   );
+#endif  // FLUTTER_NO_IO
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
 
@@ -213,6 +247,7 @@ fml::RefPtr<DartSnapshot> DartSnapshot::VMServiceIsolateSnapshotFromSettings(
 #if DART_SNAPSHOT_STATIC_LINK
   return nullptr;
 #else   // DART_SNAPSHOT_STATIC_LINK
+#ifndef FLUTTER_NO_IO
   if (settings.vmservice_snapshot_library_path.empty()) {
     return nullptr;
   }
@@ -224,6 +259,9 @@ fml::RefPtr<DartSnapshot> DartSnapshot::VMServiceIsolateSnapshotFromSettings(
       SearchMapping(nullptr, "", settings.vmservice_snapshot_library_path,
                     DartSnapshot::kIsolateInstructionsSymbol, true);
   return IsolateSnapshotFromMappings(snapshot_data, snapshot_instructions);
+#else  // FLUTTER_NO_IO
+  return nullptr;
+#endif  // FLUTTER_NO_IO
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
 

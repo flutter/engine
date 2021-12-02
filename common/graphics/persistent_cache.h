@@ -5,6 +5,8 @@
 #ifndef FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_
 #define FLUTTER_COMMON_GRAPHICS_PERSISTENT_CACHE_H_
 
+#include "flutter/fml/assert_io.h"
+
 #include <memory>
 #include <mutex>
 #include <set>

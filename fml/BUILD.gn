@@ -21,8 +21,6 @@ source_set("fml") {
     "delayed_task.cc",
     "delayed_task.h",
     "eintr_wrapper.h",
-    "file.cc",
-    "file.h",
     "hash_combine.h",
     "hex_codec.cc",
     "hex_codec.h",
@@ -54,8 +52,6 @@ source_set("fml") {
     "message_loop_task_queues.cc",
     "message_loop_task_queues.h",
     "native_library.h",
-    "paths.cc",
-    "paths.h",
     "posix_wrappers.h",
     "raster_thread_merger.cc",
     "raster_thread_merger.h",
@@ -95,7 +91,16 @@ source_set("fml") {
     "wakeable.h",
   ]
 
-  if (is_mac || is_ios || is_linux) {
+  if (!flutter_no_io) {
+    sources += [
+      "file.cc",
+      "file.h",
+      "paths.cc",
+      "paths.h",
+    ]
+  }
+
+  if ((is_mac || is_ios || is_linux) && !flutter_no_io) {
     sources += [ "backtrace.cc" ]
   } else {
     sources += [ "backtrace_stub.cc" ]
@@ -177,10 +182,15 @@ source_set("fml") {
     sources += [
       "platform/linux/message_loop_linux.cc",
       "platform/linux/message_loop_linux.h",
-      "platform/linux/paths_linux.cc",
       "platform/linux/timerfd.cc",
       "platform/linux/timerfd.h",
     ]
+
+    if (!flutter_no_io) {
+      sources += [
+        "platform/linux/paths_linux.cc",
+      ]
+    }
   }
 
   if (is_fuchsia) {
@@ -207,26 +217,36 @@ source_set("fml") {
     sources += [
       "platform/win/errors_win.cc",
       "platform/win/errors_win.h",
-      "platform/win/file_win.cc",
-      "platform/win/mapping_win.cc",
       "platform/win/message_loop_win.cc",
       "platform/win/message_loop_win.h",
       "platform/win/native_library_win.cc",
-      "platform/win/paths_win.cc",
       "platform/win/posix_wrappers_win.cc",
       "platform/win/wstring_conversion.h",
     ]
+
+    if (!flutter_no_io) {
+      sources += [
+        "platform/win/file_win.cc",
+        "platform/win/mapping_win.cc",
+        "platform/win/paths_win.cc",
+      ]
+    }
 
     # For wstring_conversion. See issue #50053.
     defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   } else {
     sources += [
-      "platform/posix/file_posix.cc",
-      "platform/posix/mapping_posix.cc",
       "platform/posix/native_library_posix.cc",
-      "platform/posix/paths_posix.cc",
       "platform/posix/posix_wrappers_posix.cc",
     ]
+
+    if (!flutter_no_io) {
+      sources += [
+        "platform/posix/file_posix.cc",
+        "platform/posix/mapping_posix.cc",
+        "platform/posix/paths_posix.cc",
+      ]
+    }
   }
 }
 

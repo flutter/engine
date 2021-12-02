@@ -9,16 +9,13 @@
 #include <sstream>
 #include <vector>
 
-#include "flutter/assets/directory_asset_bundle.h"
-#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/base32.h"
-#include "flutter/fml/file.h"
+#include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/icu_util.h"
 #include "flutter/fml/log_settings.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
-#include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
@@ -31,6 +28,13 @@
 #include "third_party/skia/include/core/SkGraphics.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/assets/directory_asset_bundle.h"
+#include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/fml/file.h"
+#include "flutter/fml/paths.h"
+#endif
 
 namespace flutter {
 
@@ -107,17 +111,26 @@ void PerformInitializationTasks(Settings& settings) {
     }
 
     if (settings.icu_initialization_required) {
-      if (settings.icu_data_path.size() != 0) {
-        fml::icu::InitializeICU(settings.icu_data_path);
-      } else if (settings.icu_mapper) {
-        fml::icu::InitializeICUFromMapping(settings.icu_mapper());
-      } else {
+      do {
+#ifndef FLUTTER_NO_IO
+        if (settings.icu_data_path.size() != 0) {
+          fml::icu::InitializeICU(settings.icu_data_path);
+          break;
+        }
+#endif
+        if (settings.icu_mapper) {
+          fml::icu::InitializeICUFromMapping(settings.icu_mapper());
+          break;
+        }
+
         FML_DLOG(WARNING) << "Skipping ICU initialization in the shell.";
-      }
+      } while(0);
     }
   });
 
+#ifndef FLUTTER_NO_IO
   PersistentCache::SetCacheSkSL(settings.cache_sksl);
+#endif
 }
 
 }  // namespace
@@ -425,8 +438,10 @@ Shell::Shell(DartVMRef vm,
 }
 
 Shell::~Shell() {
+#ifndef FLUTTER_NO_IO
   PersistentCache::GetCacheForProcess()->RemoveWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
+#endif
 
   vm_->GetServiceProtocol()->RemoveHandler(this);
 
@@ -651,6 +666,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   is_setup_ = true;
 
+#ifndef FLUTTER_NO_IO
   PersistentCache::GetCacheForProcess()->AddWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
 
@@ -660,6 +676,7 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
   if (settings_.purge_persistent_cache) {
     PersistentCache::GetCacheForProcess()->Purge();
   }
+#endif
 
   return true;
 }
@@ -1456,6 +1473,7 @@ ServiceProtocol::Handler::Description Shell::GetServiceProtocolDescription()
   };
 }
 
+FML_ALLOW_UNUSED_TYPE
 static void ServiceProtocolParameterError(rapidjson::Document* response,
                                           std::string error_details) {
   auto& allocator = response->GetAllocator();
@@ -1527,6 +1545,10 @@ bool Shell::OnServiceProtocolRunInView(
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+#ifdef FLUTTER_NO_IO
+  ServiceProtocolFailureError(response, "Not available in FLUTTER_NO_IO builds");
+  return false;
+#else
   if (params.count("mainScript") == 0) {
     ServiceProtocolParameterError(response,
                                   "'mainScript' parameter is missing.");
@@ -1591,6 +1613,7 @@ bool Shell::OnServiceProtocolRunInView(
 
   FML_DCHECK(false);
   return false;
+#endif
 }
 
 // Service protocol handler
@@ -1647,6 +1670,7 @@ bool Shell::OnServiceProtocolGetSkSLs(
   response->AddMember("type", "GetSkSLs", response->GetAllocator());
 
   rapidjson::Value shaders_json(rapidjson::kObjectType);
+#ifndef FLUTTER_NO_IO
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   std::vector<PersistentCache::SkSLCache> sksls = persistent_cache->LoadSkSLs();
   for (const auto& sksl : sksls) {
@@ -1666,6 +1690,7 @@ bool Shell::OnServiceProtocolGetSkSLs(
     rapidjson::Value shader_key(encode_result.second, response->GetAllocator());
     shaders_json.AddMember(shader_key, shader_value, response->GetAllocator());
   }
+#endif
   response->AddMember("SkSLs", shaders_json, response->GetAllocator());
   return true;
 }
@@ -1693,6 +1718,10 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
+#ifdef FLUTTER_NO_IO
+  ServiceProtocolFailureError(response, "Not available in FLUTTER_NO_IO builds");
+  return false;
+#else
   if (params.count("assetDirectory") == 0) {
     ServiceProtocolParameterError(response,
                                   "'assetDirectory' parameter is missing.");
@@ -1735,6 +1764,7 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
 
   FML_DCHECK(false);
   return false;
+#endif
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

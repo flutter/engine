@@ -9,7 +9,6 @@
 #include <utility>
 
 #include "flow/frame_timings.h"
-#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
@@ -21,6 +20,10 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/common/graphics/persistent_cache.h"
+#endif
 
 namespace flutter {
 
@@ -380,8 +383,10 @@ RasterStatus Rasterizer::DoDraw(
     return RasterStatus::kFailed;
   }
 
+#ifndef FLUTTER_NO_IO
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   persistent_cache->ResetStoredNewShaders();
+#endif
 
   RasterStatus raster_status =
       DrawToSurface(*frame_timings_recorder, *layer_tree);
@@ -395,12 +400,14 @@ RasterStatus Rasterizer::DoDraw(
     return raster_status;
   }
 
+#ifndef FLUTTER_NO_IO
   if (persistent_cache->IsDumpingSkp() &&
       persistent_cache->StoredNewShaders()) {
     auto screenshot =
         ScreenshotLastLayerTree(ScreenshotType::SkiaPicture, false);
     persistent_cache->DumpSkp(*screenshot.data);
   }
+#endif
 
   // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
   // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp

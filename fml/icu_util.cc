@@ -11,17 +11,22 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/native_library.h"
-#include "flutter/fml/paths.h"
 #include "third_party/icu/source/common/unicode/udata.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/fml/paths.h"
+#endif
 
 namespace fml {
 namespace icu {
 
 class ICUContext {
  public:
+#ifndef FLUTTER_NO_IO
   explicit ICUContext(const std::string& icu_data_path) : valid_(false) {
     valid_ = SetupMapping(icu_data_path) && SetupICU();
   }
+#endif
 
   explicit ICUContext(std::unique_ptr<Mapping> mapping)
       : mapping_(std::move(mapping)) {
@@ -30,6 +35,7 @@ class ICUContext {
 
   ~ICUContext() = default;
 
+#ifndef FLUTTER_NO_IO
   bool SetupMapping(const std::string& icu_data_path) {
     // Check if the path exists and it readable directly.
     auto fd =
@@ -67,6 +73,7 @@ class ICUContext {
 
     return false;
   }
+#endif
 
   bool SetupICU() {
     if (GetSize() == 0) {
@@ -93,17 +100,20 @@ class ICUContext {
   FML_DISALLOW_COPY_AND_ASSIGN(ICUContext);
 };
 
+std::once_flag g_icu_init_flag;
+
+#ifndef FLUTTER_NO_IO
 void InitializeICUOnce(const std::string& icu_data_path) {
   static ICUContext* context = new ICUContext(icu_data_path);
   FML_CHECK(context->IsValid())
       << "Must be able to initialize the ICU context. Tried: " << icu_data_path;
 }
 
-std::once_flag g_icu_init_flag;
 void InitializeICU(const std::string& icu_data_path) {
   std::call_once(g_icu_init_flag,
                  [&icu_data_path]() { InitializeICUOnce(icu_data_path); });
 }
+#endif
 
 void InitializeICUFromMappingOnce(std::unique_ptr<Mapping> mapping) {
   static ICUContext* context = new ICUContext(std::move(mapping));

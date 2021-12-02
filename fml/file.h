@@ -5,6 +5,9 @@
 #ifndef FLUTTER_FML_FILE_H_
 #define FLUTTER_FML_FILE_H_
 
+// Assert file only included in normal builds.
+#include "flutter/fml/assert_io.h"
+
 #include <functional>
 #include <initializer_list>
 #include <string>

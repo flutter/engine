@@ -13,7 +13,9 @@
 namespace fml {
 namespace icu {
 
+#ifndef FLUTTER_NO_IO
 void InitializeICU(const std::string& icu_data_path = "");
+#endif
 
 void InitializeICUFromMapping(std::unique_ptr<Mapping> mapping);
 

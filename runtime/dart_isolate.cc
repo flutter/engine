@@ -9,7 +9,6 @@
 
 #include "flutter/fml/posix_wrappers.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate_group_data.h"
@@ -31,6 +30,10 @@
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/lib/io/dart_io.h"
+#endif
 
 namespace flutter {
 
@@ -509,8 +512,10 @@ bool DartIsolate::LoadLibraries() {
 
   tonic::DartState::Scope scope(this);
 
+#ifndef FLUTTER_NO_IO
   DartIO::InitForIsolate(may_insecurely_connect_to_all_domains_,
                          domain_network_policy_);
+#endif
 
   DartUI::InitForIsolate();
 

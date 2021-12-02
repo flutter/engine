@@ -2,14 +2,21 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
+
 source_set("assets") {
   sources = [
     "asset_manager.cc",
     "asset_manager.h",
     "asset_resolver.h",
-    "directory_asset_bundle.cc",
-    "directory_asset_bundle.h",
   ]
+
+  if (!flutter_no_io) {
+    sources += [
+      "directory_asset_bundle.cc",
+      "directory_asset_bundle.h",
+    ]
+  }
 
   deps = [
     "//flutter/common",

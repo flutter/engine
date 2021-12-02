@@ -9,6 +9,11 @@
 
 namespace fml {
 
+Mapping::Mapping() = default;
+
+Mapping::~Mapping() = default;
+
+#ifndef FLUTTER_NO_IO
 // FileMapping
 
 uint8_t* FileMapping::GetMutableMapping() {
@@ -63,6 +68,7 @@ std::unique_ptr<FileMapping> FileMapping::CreateReadExecute(
 
   return mapping;
 }
+#endif  // FLUTTER_NO_IO
 
 // Data Mapping
 

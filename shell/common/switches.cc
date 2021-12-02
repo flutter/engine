@@ -10,9 +10,12 @@
 #include <string>
 
 #include "flutter/fml/native_library.h"
-#include "flutter/fml/paths.h"
 #include "flutter/fml/size.h"
 #include "flutter/shell/version/version.h"
+
+#ifndef FLUTTER_NO_IO
+#include "flutter/fml/paths.h"
+#endif
 
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
@@ -328,6 +331,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.verbose_logging =
       command_line.HasOption(FlagForSwitch(Switch::VerboseLogging));
 
+#ifndef FLUTTER_NO_IO
   command_line.GetOptionValue(FlagForSwitch(Switch::FlutterAssetsDir),
                               &settings.assets_path);
 
@@ -379,10 +383,13 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
 
   command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
                               &settings.temp_directory_path);
+#endif  // FLUTTER_NO_IO
 
   if (settings.icu_initialization_required) {
+#ifndef FLUTTER_NO_IO
     command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
                                 &settings.icu_data_path);
+#endif
     if (command_line.HasOption(FlagForSwitch(Switch::ICUSymbolPrefix))) {
       std::string icu_symbol_prefix, native_lib_path;
       command_line.GetOptionValue(FlagForSwitch(Switch::ICUSymbolPrefix),

@@ -16,10 +16,6 @@
 
 namespace fml {
 
-Mapping::Mapping() = default;
-
-Mapping::~Mapping() = default;
-
 static bool IsWritable(
     std::initializer_list<FileMapping::Protection> protection_flags) {
   for (auto protection : protection_flags) {

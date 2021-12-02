@@ -13,10 +13,19 @@
 #include <map>
 #include <mutex>
 #include <optional>
-#else  // OS_WIN
+#endif  // OS_WIN
+
+#if OS_POSIX || OS_FUCHSIA
 #include <dirent.h>
 #include <unistd.h>
-#endif  // OS_WIN
+#endif  // OS_POSIX || OS_FUCHSIA
+
+// Interaction with FLUTTER_NO_IO:
+// Because File Descriptors and Handles are not explicitly I/O, we define
+// UniqueFD on supported platforms.
+// While File I/O may not be available, implementations may still use
+// UniqueFD for handling non-files.
+// For an example of UniqueFD usage without File I/O, see message_loop_linux.cc.
 
 namespace fml {
 namespace internal {
@@ -69,7 +78,9 @@ struct UniqueFDTraits {
 
 }  // namespace os_win
 
-#else  // OS_WIN
+#endif  // OS_WIN
+
+#if OS_POSIX || OS_FUCHSIA
 
 namespace os_unix {
 
@@ -79,15 +90,17 @@ struct UniqueFDTraits {
   static void Free(int fd);
 };
 
+#ifndef FLUTTER_NO_IO
 struct UniqueDirTraits {
   static DIR* InvalidValue() { return nullptr; }
   static bool IsValid(DIR* value) { return value != nullptr; }
   static void Free(DIR* dir);
 };
+#endif
 
 }  // namespace os_unix
 
-#endif  // OS_WIN
+#endif  // OS_POSIX || OS_FUCHSIA
 
 }  // namespace internal
 
@@ -95,12 +108,17 @@ struct UniqueDirTraits {
 
 using UniqueFD = UniqueObject<HANDLE, internal::os_win::UniqueFDTraits>;
 
-#else  // OS_WIN
+#endif  // OS_WIN
+
+#if OS_POSIX || OS_FUCHSIA
 
 using UniqueFD = UniqueObject<int, internal::os_unix::UniqueFDTraits>;
-using UniqueDir = UniqueObject<DIR*, internal::os_unix::UniqueDirTraits>;
 
-#endif  // OS_WIN
+#ifndef FLUTTER_NO_IO
+using UniqueDir = UniqueObject<DIR*, internal::os_unix::UniqueDirTraits>;
+#endif
+
+#endif  // OS_POSIX || OS_FUCHSIA
 
 }  // namespace fml
 
