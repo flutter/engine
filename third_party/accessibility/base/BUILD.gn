@@ -4,10 +4,6 @@
 
 import("//flutter/common/config.gni")
 
-config("double_conversion_config") {
-  include_dirs = [ "//third_party/double-conversion" ]
-}
-
 source_set("base") {
   visibility = [ "//flutter/third_party/accessibility/*" ]
   include_dirs = [ "//flutter/third_party/accessibility" ]
@@ -57,7 +53,6 @@ source_set("base") {
   public_deps = [
     "numerics",
     "//flutter/third_party/accessibility/ax_build",
-    "//third_party/double-conversion",
-    ":double_conversion_config",
+    "//third_party/dart/runtime/third_party/double-conversion/src:libdouble_conversion",
   ]
 }

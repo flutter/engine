@@ -13,7 +13,7 @@
 #include <regex>
 #include <sstream>
 
-#include "double-conversion/double-conversion.h"
+#include "third_party/dart/runtime/third_party/double-conversion/src/double-conversion.h"
 
 #if defined(_WIN32)
 #include "base/win/string_conversion.h"
@@ -22,6 +22,20 @@
 #include "no_destructor.h"
 
 namespace base {
+
+namespace {
+char const kExponentChar = 'e';
+const char* const kInfinitySymbol = "Infinity";
+const char* const kNaNSymbol = "NaN";
+
+// The USE(x) template is used to silence C++ compiler warnings issued
+// for unused variables.
+template <typename T>
+static inline void USE(T&&) {}
+}  // namespace
+
+using double_conversion::DoubleToStringConverter;
+using double_conversion::StringBuilder;
 
 std::u16string ASCIIToUTF16(std::string src) {
   return std::u16string(src.begin(), src.end());
@@ -85,17 +99,26 @@ std::string NumberToString(double number, int precision) {
   if (number == 0.0) {
     return "0";
   }
+  static const int kMinPrecisionDigits = 0;
+  static const int kMaxPrecisionDigits = 21;
+  static const int kConversionFlags = DoubleToStringConverter::NO_FLAGS;
+  const int kBufferSize = 128;
 
-  std::stringstream ss;
-  ss.precision(precision);
-  ss << std::fixed << number;
-  std::string str = ss.str();
+  ASSERT(kMinPrecisionDigits <= precision && precision <= kMaxPrecisionDigits);
 
+  const DoubleToStringConverter converter(
+      kConversionFlags, kInfinitySymbol, kNaNSymbol, kExponentChar, 0, 0, 0, 0);
+  std::vector<char> char_buffer(kBufferSize);
+  char_buffer[kBufferSize - 1] = '\0';
+  StringBuilder builder(char_buffer.data(), kBufferSize);
+  bool status = converter.ToFixed(number, precision, &builder);
+  ASSERT(status);
+  std::string result = std::string(builder.Finalize());
   int strip = 0;
   // Strip any trailing zeros, including the decimal marker if there are nothing
   // but zeros after the decimal.
-  for (std::string::reverse_iterator it = str.rbegin(); it != str.rend() - 1;
-       ++it) {
+  for (std::string::reverse_iterator it = result.rbegin();
+       it != result.rend() - 1; ++it) {
     if (*it == '0') {
       strip++;
     } else if (*it == '.' || *it == ',') {
@@ -107,9 +130,9 @@ std::string NumberToString(double number, int precision) {
     }
   }
   if (strip != 0) {
-    return str.substr(0, str.length() - strip);
+    return result.substr(0, result.length() - strip);
   }
-  return str;
+  return result;
 }
 
 std::string JoinString(std::vector<std::string> tokens, std::string delimiter) {

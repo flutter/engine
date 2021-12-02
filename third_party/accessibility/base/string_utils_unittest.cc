@@ -44,7 +44,7 @@ TEST(StringUtilsTest, canUTF16ToUTF8) {
 
 TEST(StringUtilsTest, canNumberToString16) {
   float number = 1.123;
-  EXPECT_EQ(NumberToString16(number).compare(u"1.123"), 0);
+  EXPECT_EQ(NumberToString16(number), std::u16string(u"1.123"));
 }
 
 TEST(StringUtilsTest, numberToStringSimplifiesOutput) {
@@ -88,6 +88,8 @@ TEST(StringUtilsTest, numberToStringSimplifiesOutput) {
   EXPECT_STREQ(NumberToString(d9, 7).c_str(), "1.0000001");
   float f9 = 1.0f + 1e-7f;
   EXPECT_STREQ(NumberToString(f9, 7).c_str(), "1.0000001");
+  EXPECT_STREQ(NumberToString(d9, 0).c_str(), "1");
+  EXPECT_STREQ(NumberToString(f9, 0).c_str(), "1");
   unsigned int s = 11;
   EXPECT_STREQ(NumberToString(s).c_str(), "11");
   int32_t i = -23;
