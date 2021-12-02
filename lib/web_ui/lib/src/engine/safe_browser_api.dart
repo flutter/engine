@@ -83,20 +83,6 @@ Future<T> promiseToFuture<T>(Object jsPromise) {
 /// A function that receives a benchmark [value] labeleb by [name].
 typedef OnBenchmark = void Function(String name, double value);
 
-void callFlutterInternalOnBenchmark(String name, double value) {
-  // BEFORE:
-  // final OnBenchmark? onBenchmark =
-  //     // ignore: implicit_dynamic_function
-  //     js_util.getProperty(html.window, '_flutter_internal_on_benchmark') as OnBenchmark?;
-
-  // AFTER:
-  final OnBenchmark? onBenchmark =
-      js_util.getProperty<OnBenchmark?>(html.window, '_flutter_internal_on_benchmark');
-  if (onBenchmark != null) {
-    onBenchmark(name, value);
-  }
-}
-
 /// Adds an event [listener] of type [type] to the [target].
 ///
 /// [eventOptions] supply additional configuration parameters.

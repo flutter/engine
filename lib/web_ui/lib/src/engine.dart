@@ -2,69 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@JS()
-library engine;
-
-// This file is transformed during the build process in order to make it a
-// single library. Some notable transformations:
+// This file is transformed during the build process into a single library with
+// part files (`dart:_engine`) by performing the following:
 //
-// 1. Imports of engine/* files are stripped out.
-// 2. Exports of engine/* files are replaced with a part directive.
+//  - Replace all exports with part directives.
+//  - Rewrite the libraries into `part of` part files without imports.
+//  - Add imports to this file sufficient to cover the needs of `dart:_engine`.
 //
 // The code that performs the transformations lives in:
-// - https://github.com/flutter/engine/blob/main/web_sdk/sdk_rewriter.dart
+//
+//  - https://github.com/flutter/engine/blob/main/web_sdk/sdk_rewriter.dart
 
-// ignore: unused_import
-import 'dart:async';
-// Some of these names are used in services/buffers.dart for example.
-// ignore: unused_import
-import 'dart:collection' show ListBase, IterableBase, DoubleLinkedQueue, DoubleLinkedQueueEntry;
-// ignore: unused_import
-import 'dart:convert' hide Codec;
-// ignore: unused_import
-import 'dart:developer' as developer;
-// ignore: unused_import
-import 'dart:html' as html;
-// ignore: unused_import
-import 'dart:js' as js;
-// ignore: unused_import
-import 'dart:js_util' as js_util;
-// ignore: unused_import
-import 'dart:math' as math;
-// ignore: unused_import
-import 'dart:svg' as svg;
-// ignore: unused_import
-import 'dart:typed_data';
-// ignore: unused_import
-import 'package:js/js.dart';
-// ignore: unused_import
-import 'package:meta/meta.dart';
-// ignore: unused_import
-import '../ui.dart' as ui;
-// ignore: unused_import
-import 'engine/configuration.dart';
-// ignore: unused_import
-import 'engine/embedder.dart';
-// ignore: unused_import
-import 'engine/initialization.dart';
-// ignore: unused_import
-import 'engine/keyboard.dart';
-// ignore: unused_import
-import 'engine/mouse_cursor.dart';
-// ignore: unused_import
-import 'engine/navigation/js_url_strategy.dart';
-// ignore: unused_import
-import 'engine/navigation/url_strategy.dart';
-// ignore: unused_import
-import 'engine/platform_dispatcher.dart';
-// ignore: unused_import
-import 'engine/platform_views/content_manager.dart';
-// ignore: unused_import
-import 'engine/profiler.dart';
-// ignore: unused_import
-import 'engine/safe_browser_api.dart';
-// ignore: unused_import
-import 'engine/window.dart';
+library engine;
 
 export 'engine/alarm_clock.dart';
 export 'engine/assets.dart';

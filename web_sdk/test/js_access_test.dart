@@ -27,7 +27,6 @@ const List<String> _jsAccessLibraries = <String>[
 const List<String> _auditedLibraries = <String>[
   'lib/web_ui/lib/src/engine/canvaskit/canvaskit_api.dart',
   'lib/web_ui/lib/src/engine/safe_browser_api.dart',
-  'lib/web_ui/lib/src/engine.dart',
 ];
 
 Future<void> main(List<String> args) async {
@@ -123,52 +122,6 @@ import 'package:ui/ui.dart' as ui;
           isTrue,
         );
       }
-    }
-  });
-
-  test('Check engine.dart', () async {
-    const List<String> expectedLines = <String>[
-      '@JS()',
-      'library engine;',
-    ];
-
-    final File engineFile = File('lib/web_ui/lib/src/engine.dart');
-    final String engineDartCode = await engineFile.readAsString();
-    final List<String> lines = engineDartCode.split('\n');
-    for (int i = 0; i < lines.length; i += 1) {
-      final int lineNumber = i + 1;
-      final String line = lines[i].trim();
-
-      if (line.isEmpty) {
-        // Emply lines are OK
-        continue;
-      }
-
-      if (expectedLines.contains(line)) {
-        // Expected; let it pass.
-        continue;
-      }
-
-      if (line.startsWith('//')) {
-        // Comments are OK
-        continue;
-      }
-
-      if (line.startsWith('import ')) {
-        // Imports are OK
-        continue;
-      }
-
-      if (line.startsWith('export ')) {
-        // Exports are OK
-        continue;
-      }
-
-      fail(
-        'on line $lineNumber: unexpected code in ${engineFile.path}. This file '
-        'may only contain comments, imports, and exports. Found:\n'
-        '$line'
-      );
     }
   });
 
