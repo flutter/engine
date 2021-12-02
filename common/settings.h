@@ -101,10 +101,10 @@ struct Settings {
 
   // VM settings
 #ifndef FLUTTER_NO_IO
-  std::string vm_snapshot_data_path;  // deprecated
+  std::string vm_snapshot_data_path;   // deprecated
   std::string vm_snapshot_instr_path;  // deprecated
-  
-  std::string isolate_snapshot_data_path;  // deprecated
+
+  std::string isolate_snapshot_data_path;   // deprecated
   std::string isolate_snapshot_instr_path;  // deprecated
 #endif
 

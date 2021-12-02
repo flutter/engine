@@ -124,7 +124,7 @@ void PerformInitializationTasks(Settings& settings) {
         }
 
         FML_DLOG(WARNING) << "Skipping ICU initialization in the shell.";
-      } while(0);
+      } while (0);
     }
   });
 
@@ -1546,7 +1546,8 @@ bool Shell::OnServiceProtocolRunInView(
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
 #ifdef FLUTTER_NO_IO
-  ServiceProtocolFailureError(response, "Not available in FLUTTER_NO_IO builds");
+  ServiceProtocolFailureError(response,
+                              "Not available in FLUTTER_NO_IO builds");
   return false;
 #else
   if (params.count("mainScript") == 0) {
@@ -1719,7 +1720,8 @@ bool Shell::OnServiceProtocolSetAssetBundlePath(
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
 #ifdef FLUTTER_NO_IO
-  ServiceProtocolFailureError(response, "Not available in FLUTTER_NO_IO builds");
+  ServiceProtocolFailureError(response,
+                              "Not available in FLUTTER_NO_IO builds");
   return false;
 #else
   if (params.count("assetDirectory") == 0) {

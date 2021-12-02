@@ -29,7 +29,7 @@
 #include "third_party/tonic/typed_data/typed_list.h"
 
 #ifndef FLUTTER_NO_IO
-#include "third_party/dart/runtime/include/bin/dart_io_api.h" // nogncheck
+#include "third_party/dart/runtime/include/bin/dart_io_api.h"  // nogncheck
 #endif
 
 namespace dart {

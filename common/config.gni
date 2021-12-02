@@ -61,9 +61,7 @@ if (flutter_runtime_mode == "debug") {
 }
 
 if (flutter_no_io) {
-  feature_defines_list += [
-    "FLUTTER_NO_IO"
-  ]
+  feature_defines_list += [ "FLUTTER_NO_IO" ]
 }
 
 if (is_ios || is_mac) {

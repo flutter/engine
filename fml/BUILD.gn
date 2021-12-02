@@ -187,9 +187,7 @@ source_set("fml") {
     ]
 
     if (!flutter_no_io) {
-      sources += [
-        "platform/linux/paths_linux.cc",
-      ]
+      sources += [ "platform/linux/paths_linux.cc" ]
     }
   }
 

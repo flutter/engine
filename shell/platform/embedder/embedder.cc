@@ -818,7 +818,9 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       *data_out = aot_data.release();
       return kSuccess;
 #else
-      return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine built with FLUTTER_NO_IO cannot load ELFs");
+      return LOG_EMBEDDER_ERROR(
+          kInvalidArguments,
+          "Engine built with FLUTTER_NO_IO cannot load ELFs");
 #endif
     }
   }
@@ -983,20 +985,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 #else
   if (SAFE_ACCESS(args, icu_data_path, nullptr) != nullptr) {
     FML_LOG(WARNING)
-      << "FlutterProjectArgs.icu_data_path has no effect when compiled with "
-          "FLUTTER_NO_IO";
+        << "FlutterProjectArgs.icu_data_path has no effect when compiled with "
+           "FLUTTER_NO_IO";
   }
 
   if (SAFE_ACCESS(args, persistent_cache_path, nullptr) != nullptr) {
-    FML_LOG(WARNING)
-      << "FlutterProjectArgs.persistent_cache_path has no effect when compiled with "
-          "FLUTTER_NO_IO";
+    FML_LOG(WARNING) << "FlutterProjectArgs.persistent_cache_path has no "
+                        "effect when compiled with "
+                        "FLUTTER_NO_IO";
   }
 
   if (SAFE_ACCESS(args, is_persistent_cache_read_only, false)) {
-    FML_LOG(WARNING)
-      << "FlutterProjectArgs.is_persistent_cache_read_only has no effect when compiled with "
-          "FLUTTER_NO_IO";
+    FML_LOG(WARNING) << "FlutterProjectArgs.is_persistent_cache_read_only has "
+                        "no effect when compiled with "
+                        "FLUTTER_NO_IO";
   }
 #endif
 
@@ -1031,8 +1033,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 #else
   if (args->assets_path) {
     FML_LOG(WARNING)
-      << "FlutterProjectArgs.assets_path has no effect when compiled with "
-          "FLUTTER_NO_IO";
+        << "FlutterProjectArgs.assets_path has no effect when compiled with "
+           "FLUTTER_NO_IO";
   }
 #endif
 

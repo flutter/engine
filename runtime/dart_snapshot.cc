@@ -120,7 +120,7 @@ static std::shared_ptr<const fml::Mapping> ResolveVMData(
                                                 nullptr,  // release_func
                                                 true      // dontneed_safe
   );
-#else   // DART_SNAPSHOT_STATIC_LINK
+#else  // DART_SNAPSHOT_STATIC_LINK
 #ifdef FLUTTER_NO_IO
   return SearchMapping(settings.vm_snapshot_data);
 #else
@@ -143,7 +143,7 @@ static std::shared_ptr<const fml::Mapping> ResolveVMInstructions(
                                                 nullptr,  // release_func
                                                 true      // dontneed_safe
   );
-#else   // DART_SNAPSHOT_STATIC_LINK
+#else  // DART_SNAPSHOT_STATIC_LINK
 #ifdef FLUTTER_NO_IO
   return SearchMapping(settings.vm_snapshot_instr);
 #else
@@ -166,7 +166,7 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateData(
                                                 nullptr,  // release_func
                                                 true      // dontneed_safe
   );
-#else   // DART_SNAPSHOT_STATIC_LINK
+#else  // DART_SNAPSHOT_STATIC_LINK
 #ifdef FLUTTER_NO_IO
   return SearchMapping(settings.isolate_snapshot_data);
 #else
@@ -190,7 +190,7 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateInstructions(
       nullptr,  // release_func
       true      // dontneed_safe
   );
-#else   // DART_SNAPSHOT_STATIC_LINK
+#else  // DART_SNAPSHOT_STATIC_LINK
 #ifdef FLUTTER_NO_IO
   return SearchMapping(settings.isolate_snapshot_instr);
 #else
@@ -246,7 +246,7 @@ fml::RefPtr<DartSnapshot> DartSnapshot::VMServiceIsolateSnapshotFromSettings(
     const Settings& settings) {
 #if DART_SNAPSHOT_STATIC_LINK
   return nullptr;
-#else   // DART_SNAPSHOT_STATIC_LINK
+#else  // DART_SNAPSHOT_STATIC_LINK
 #ifndef FLUTTER_NO_IO
   if (settings.vmservice_snapshot_library_path.empty()) {
     return nullptr;
@@ -259,7 +259,7 @@ fml::RefPtr<DartSnapshot> DartSnapshot::VMServiceIsolateSnapshotFromSettings(
       SearchMapping(nullptr, "", settings.vmservice_snapshot_library_path,
                     DartSnapshot::kIsolateInstructionsSymbol, true);
   return IsolateSnapshotFromMappings(snapshot_data, snapshot_instructions);
-#else  // FLUTTER_NO_IO
+#else   // FLUTTER_NO_IO
   return nullptr;
 #endif  // FLUTTER_NO_IO
 #endif  // DART_SNAPSHOT_STATIC_LINK
