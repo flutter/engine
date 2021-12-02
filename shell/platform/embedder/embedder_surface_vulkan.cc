@@ -21,8 +21,9 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     VkQueue queue,
     VulkanDispatchTable vulkan_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : vk_(vulkan_dispatch_table.get_instance_proc_address),
-      device_(vk_,
+    : vk_(fml::MakeRefCounted<vulkan::VulkanProcTable>(
+          vulkan_dispatch_table.get_instance_proc_address)),
+      device_(*vk_,
               vulkan::VulkanHandle<VkPhysicalDevice>{physical_device},
               vulkan::VulkanHandle<VkDevice>{device},
               queue_family_index,
@@ -36,9 +37,9 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  vk_.SetupInstanceProcAddresses(vulkan::VulkanHandle<VkInstance>{instance});
-  vk_.SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
-  if (!vk_.IsValid()) {
+  vk_->SetupInstanceProcAddresses(vulkan::VulkanHandle<VkInstance>{instance});
+  vk_->SetupDeviceProcAddresses(vulkan::VulkanHandle<VkDevice>{device});
+  if (!vk_->IsValid()) {
     FML_LOG(ERROR) << "VulkanProcTable invalid.";
     return;
   }
@@ -58,7 +59,7 @@ EmbedderSurfaceVulkan::~EmbedderSurfaceVulkan() = default;
 
 // |GPUSurfaceVulkanDelegate|
 const vulkan::VulkanProcTable& EmbedderSurfaceVulkan::vk() {
-  return vk_;
+  return *vk_;
 }
 
 // |GPUSurfaceVulkanDelegate|
@@ -98,7 +99,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     return nullptr;
   }
 
-  auto get_proc = vk_.CreateSkiaGetProc();
+  auto get_proc = vk_->CreateSkiaGetProc();
   if (get_proc == nullptr) {
     FML_LOG(ERROR) << "Failed to create Vulkan getProc for Skia.";
     return nullptr;

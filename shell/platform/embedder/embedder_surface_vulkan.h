@@ -49,7 +49,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
 
  private:
   bool valid_ = false;
-  vulkan::VulkanProcTable vk_;
+  fml::RefPtr<vulkan::VulkanProcTable> vk_;
   vulkan::VulkanDevice device_;
   VulkanDispatchTable vulkan_dispatch_table_;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
