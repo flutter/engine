@@ -697,8 +697,13 @@ void applyTextStyleToElement({
 
   final ui.Color? color = style.foreground?.color ?? style.color;
   if (style.foreground?.style == ui.PaintingStyle.stroke) {
-    // Use transparent text color to achieve same visual output as in canvas.
-    cssStyle.color = colorToCssString(const ui.Color(0x00));
+    // When comparing the outputs of the Bitmap Canvas and the DOM
+    // implementation, we have found, that we need to set the background color
+    // of the text to transparent to achieve the same effect as in the Bitmap
+    // Canvas and the Skia Engine where only the text stroke is painted. 
+    // If we don't set it here to transparent, the text will inherit the color 
+    // of it's parent element.
+    cssStyle.color = 'transparent';
     // Use hairline (device pixel when strokeWidth is not specified).
     final double? strokeWidth = style.foreground?.strokeWidth;
     final double adaptedWidth = strokeWidth != null && strokeWidth > 0
