@@ -489,11 +489,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       Window window = getWindow();
       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
-      if (Build.VERSION.SDK_INT >= 30) {
-        WindowCompat.setDecorFitsSystemWindows(window, false);
-      } else {
-        window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
-      }
+      WindowCompat.setDecorFitsSystemWindows(window, false);
     }
   }
 
