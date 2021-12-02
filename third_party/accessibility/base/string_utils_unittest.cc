@@ -75,11 +75,13 @@ TEST(StringUtilsTest, numberToStringSimplifiesOutput) {
   double d6 = 1e-6;
   EXPECT_STREQ(NumberToString(d6).c_str(), "0.000001");
   float f6 = 1e-6f;
-  EXPECT_STREQ(NumberToString(f6).c_str(), "0.000001");
+  // This is different from the double version because of
+  // the precision difference in floats vs doubles.
+  EXPECT_STREQ(NumberToString(f6).c_str(), "1e-6");
   double d7 = 1e-8;
-  EXPECT_STREQ(NumberToString(d7).c_str(), "0");
+  EXPECT_STREQ(NumberToString(d7).c_str(), "1e-8");
   float f7 = 1e-8f;
-  EXPECT_STREQ(NumberToString(f7).c_str(), "0");
+  EXPECT_STREQ(NumberToString(f7).c_str(), "1e-8");
   double d8 = 100.0;
   EXPECT_STREQ(NumberToString(d8).c_str(), "100");
   float f8 = 100.0f;
@@ -90,6 +92,10 @@ TEST(StringUtilsTest, numberToStringSimplifiesOutput) {
   EXPECT_STREQ(NumberToString(f9, 7).c_str(), "1.0000001");
   EXPECT_STREQ(NumberToString(d9, 0).c_str(), "1");
   EXPECT_STREQ(NumberToString(f9, 0).c_str(), "1");
+  double d10 = 0.00000012345678;
+  EXPECT_STREQ(NumberToString(d10, 6).c_str(), "1.234568e-7");
+  float f10 = 0.00000012345678f;
+  EXPECT_STREQ(NumberToString(f10, 6).c_str(), "1.234568e-7");
   unsigned int s = 11;
   EXPECT_STREQ(NumberToString(s).c_str(), "11");
   int32_t i = -23;

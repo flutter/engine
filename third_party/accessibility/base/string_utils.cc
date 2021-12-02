@@ -28,10 +28,26 @@ char const kExponentChar = 'e';
 const char* const kInfinitySymbol = "Infinity";
 const char* const kNaNSymbol = "NaN";
 
-// The USE(x) template is used to silence C++ compiler warnings issued
-// for unused variables.
-template <typename T>
-static inline void USE(T&&) {}
+// Strip any trailing zeros, including the decimal marker if there are nothing
+// but zeros after the decimal.
+std::string StripTrailingZeros(const std::string& str) {
+  int strip = 0;
+  for (auto it = str.rbegin(); it != str.rend() - 1; ++it) {
+    if (*it == '0') {
+      strip++;
+    } else if (*it == '.' || *it == ',') {
+      strip++;
+      // Don't keep stripping once we hit a decimal marker.
+      break;
+    } else {
+      break;
+    }
+  }
+  if (strip != 0) {
+    return str.substr(0, str.length() - strip);
+  }
+  return str;
+}
 }  // namespace
 
 using double_conversion::DoubleToStringConverter;
@@ -101,6 +117,7 @@ std::string NumberToString(double number, int precision) {
   }
   static const int kMinPrecisionDigits = 0;
   static const int kMaxPrecisionDigits = 21;
+  static const double kMaxFixed = 10e13;
   static const int kConversionFlags = DoubleToStringConverter::NO_FLAGS;
   const int kBufferSize = 128;
 
@@ -111,26 +128,21 @@ std::string NumberToString(double number, int precision) {
   std::vector<char> char_buffer(kBufferSize);
   char_buffer[kBufferSize - 1] = '\0';
   StringBuilder builder(char_buffer.data(), kBufferSize);
-  bool status = converter.ToFixed(number, precision, &builder);
-  ASSERT(status);
-  std::string result = std::string(builder.Finalize());
-  int strip = 0;
-  // Strip any trailing zeros, including the decimal marker if there are nothing
-  // but zeros after the decimal.
-  for (std::string::reverse_iterator it = result.rbegin();
-       it != result.rend() - 1; ++it) {
-    if (*it == '0') {
-      strip++;
-    } else if (*it == '.' || *it == ',') {
-      strip++;
-      // Don't keep stripping once we hit a decimal marker.
-      break;
-    } else {
-      break;
-    }
-  }
-  if (strip != 0) {
-    return result.substr(0, result.length() - strip);
+  std::string result;
+  double magnitude = fabs(number);
+  if (magnitude < pow(10, -precision) || magnitude > kMaxFixed) {
+    bool status = converter.ToExponential(number, precision, &builder);
+    ASSERT(status);
+    result = std::string(builder.Finalize());
+    size_t exponent_index = result.rfind(kExponentChar);
+    // Strip trailing zeros from just the mantissa.
+    result = StripTrailingZeros(result.substr(0, exponent_index)) +
+             result.substr(exponent_index);
+  } else {
+    bool status = converter.ToFixed(number, precision, &builder);
+    ASSERT(status);
+
+    result = StripTrailingZeros(std::string(builder.Finalize()));
   }
   return result;
 }
