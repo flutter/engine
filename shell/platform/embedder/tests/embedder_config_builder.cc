@@ -6,6 +6,7 @@
 
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 
 #ifdef SHELL_ENABLE_GL
@@ -161,6 +162,24 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
   };
 #endif
+}
+
+void EmbedderConfigBuilder::SetRenderConfig(EmbedderTestContextType type,
+                                            SkISize surface_size) {
+  switch (type) {
+    case EmbedderTestContextType::kOpenGLContext:
+      SetOpenGLRendererConfig(surface_size);
+      break;
+    case EmbedderTestContextType::kMetalContext:
+      SetMetalRendererConfig(surface_size);
+      break;
+    case EmbedderTestContextType::kVulkanContext:
+      SetVulkanRendererConfig(surface_size);
+      break;
+    case EmbedderTestContextType::kSoftwareContext:
+      SetSoftwareRendererConfig(surface_size);
+      break;
+  }
 }
 
 void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {

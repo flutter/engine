@@ -37,13 +37,14 @@ size_t EmbedderTestContextVulkan::GetSurfacePresentCount() const {
 }
 
 VkImage EmbedderTestContextVulkan::GetNextImage(const SkISize& size) {
-  assert(false);  // TODO(bdero)
-  return nullptr;
+  return surface_->GetImage();
 }
 
 bool EmbedderTestContextVulkan::PresentImage(VkImage image) {
-  assert(false);  // TODO(bdero)
-  return false;
+  FireRootSurfacePresentCallbackIfPresent(
+      [&]() { return surface_->GetSurfaceSnapshot(); });
+  present_count_++;
+  return true;
 }
 
 EmbedderTestContextType EmbedderTestContextVulkan::GetContextType() const {

@@ -3,14 +3,16 @@
 // found in the LICENSE file.
 
 #include <cassert>
+#include <optional>
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/context_options.h"
 #include "flutter/testing/test_vulkan_context.h"
 
-#include "include/gpu/GrDirectContext.h"
-#include "include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
+#include "vulkan/vulkan_core.h"
 
 #ifdef OS_MACOSX
 #define VULKAN_SO_PATH "libvk_swiftshader.dylib"
@@ -90,9 +92,67 @@ TestVulkanContext::TestVulkanContext() {
   context_ = GrDirectContext::MakeVulkan(backend_context, options);
 }
 
-VkImage TestVulkanContext::CreateImage(const SkISize& size) const {
-  assert(false);  // TODO(bdero)
-  return nullptr;
+std::optional<TestVulkanImage> TestVulkanContext::CreateImage(
+    const SkISize& size) const {
+  TestVulkanImage result;
+
+  VkImageCreateInfo info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .imageType = VK_IMAGE_TYPE_2D,
+      .format = VK_FORMAT_R8G8B8A8_UNORM,
+      .extent = VkExtent3D{static_cast<uint32_t>(size.width()),
+                           static_cast<uint32_t>(size.height()), 1},
+      .mipLevels = 1,
+      .arrayLayers = 1,
+      .samples = VK_SAMPLE_COUNT_1_BIT,
+      .tiling = VK_IMAGE_TILING_OPTIMAL,
+      .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+               VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+  };
+
+  VkImage image;
+  if (VK_CALL_LOG_ERROR(VK_CALL_LOG_ERROR(
+          vk_->CreateImage(device_->GetHandle(), &info, nullptr, &image)))) {
+    return std::nullopt;
+  }
+
+  result.image_ = vulkan::VulkanHandle<VkImage>(
+      image, [&vk = vk_, &device = device_](VkImage image) {
+        vk->DestroyImage(device->GetHandle(), image, nullptr);
+      });
+
+  VkMemoryRequirements mem_req;
+  vk_->GetImageMemoryRequirements(device_->GetHandle(), image, &mem_req);
+  VkMemoryAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  alloc_info.allocationSize = mem_req.size;
+  alloc_info.memoryTypeIndex = static_cast<uint32_t>(__builtin_ctz(
+      mem_req.memoryTypeBits & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+
+  VkDeviceMemory memory;
+  if (VK_CALL_LOG_ERROR(vk_->AllocateMemory(device_->GetHandle(), &alloc_info,
+                                            nullptr, &memory)) != VK_SUCCESS) {
+    return std::nullopt;
+  }
+
+  result.memory_ = vulkan::VulkanHandle<VkDeviceMemory>{
+      memory, [&vk = vk_, &device = device_](VkDeviceMemory memory) {
+        vk->FreeMemory(device->GetHandle(), memory, nullptr);
+      }};
+
+  if (VK_CALL_LOG_ERROR(VK_CALL_LOG_ERROR(vk_->BindImageMemory(
+          device_->GetHandle(), result.image_, result.memory_, 0)))) {
+    return std::nullopt;
+  }
+
+  return result;
 }
 
 sk_sp<GrDirectContext> TestVulkanContext::GetGrDirectContext() const {

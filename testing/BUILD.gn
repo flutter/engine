@@ -128,6 +128,8 @@ if (enable_unittests) {
     sources = [
       "test_vulkan_context.cc",
       "test_vulkan_context.h",
+      "test_vulkan_image.cc",
+      "test_vulkan_image.h",
       "test_vulkan_surface.cc",
       "test_vulkan_surface.h",
     ]

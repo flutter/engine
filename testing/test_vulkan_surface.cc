@@ -13,20 +13,21 @@
 namespace flutter {
 namespace testing {
 
-TestVulkanSurface::TestVulkanSurface() = default;
+TestVulkanSurface::TestVulkanSurface(TestVulkanImage&& image)
+    : image_(std::move(image)){};
 
 std::unique_ptr<TestVulkanSurface> TestVulkanSurface::Create(
     const TestVulkanContext& context,
     const SkISize& surface_size) {
-  VkImage image = context.CreateImage(surface_size);
+  auto image_result = context.CreateImage(surface_size);
 
-  if (!image) {
+  if (!image_result.has_value()) {
     FML_LOG(ERROR) << "Could not create VkImage.";
     return nullptr;
   }
 
   GrVkImageInfo image_info = {
-      .fImage = static_cast<VkImage>(image),
+      .fImage = image_result.value().GetImage(),
       .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
       .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       .fFormat = VK_FORMAT_R8G8B8A8_UNORM,
@@ -44,8 +45,8 @@ std::unique_ptr<TestVulkanSurface> TestVulkanSurface::Create(
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
-  auto result = std::unique_ptr<TestVulkanSurface>(new TestVulkanSurface());
-
+  auto result = std::unique_ptr<TestVulkanSurface>(
+      new TestVulkanSurface(std::move(image_result.value())));
   result->surface_ = SkSurface::MakeFromBackendTexture(
       context.GetGrDirectContext().get(),  // context
       backend_texture,                     // back-end texture
@@ -99,6 +100,10 @@ sk_sp<SkImage> TestVulkanSurface::GetSurfaceSnapshot() const {
   }
 
   return host_snapshot;
+}
+
+VkImage TestVulkanSurface::GetImage() {
+  return image_.GetImage();
 }
 
 }  // namespace testing

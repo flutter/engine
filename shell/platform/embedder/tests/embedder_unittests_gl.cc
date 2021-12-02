@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "tests/embedder_test_context.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <string>
@@ -1235,13 +1236,13 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
       "scene_without_custom_compositor_with_xform.png", rendered_scene));
 }
 
-TEST_F(EmbedderTest, CanRenderGradientWithoutCompositor) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
+  auto& context = GetEmbedderContext(GetParam());
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetRenderConfig(GetParam(), SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -3687,6 +3688,12 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
 
   EXPECT_TRUE(resolve_called);
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    EmbedderTestGlVk,
+    EmbedderTestMultiBackend,
+    ::testing::Values(EmbedderTestContextType::kOpenGLContext,
+                      EmbedderTestContextType::kVulkanContext));
 
 }  // namespace testing
 }  // namespace flutter

@@ -7,6 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/testing/test_vulkan_image.h"
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
@@ -21,7 +22,7 @@ class TestVulkanContext {
  public:
   TestVulkanContext();
 
-  VkImage CreateImage(const SkISize& size) const;
+  std::optional<TestVulkanImage> CreateImage(const SkISize& size) const;
 
   sk_sp<GrDirectContext> GetGrDirectContext() const;
 
