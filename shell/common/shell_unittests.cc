@@ -94,6 +94,10 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
   MOCK_METHOD2(UpdateAssetResolverByType,
                void(std::unique_ptr<AssetResolver> updated_asset_resolver,
                     AssetResolver::AssetResolverType type));
+
+  MOCK_METHOD0(EnableThreadMergerIfNeeded, void());
+
+  MOCK_METHOD0(DisableThreadMergerIfNeeded, void());
 };
 
 class MockSurface : public Surface {
