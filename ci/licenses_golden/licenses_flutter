@@ -134,6 +134,7 @@ FILE: ../../../flutter/flow/texture_unittests.cc
 FILE: ../../../flutter/fml/ascii_trie.cc
 FILE: ../../../flutter/fml/ascii_trie.h
 FILE: ../../../flutter/fml/ascii_trie_unittests.cc
+FILE: ../../../flutter/fml/assert_io.h
 FILE: ../../../flutter/fml/backtrace.cc
 FILE: ../../../flutter/fml/backtrace.h
 FILE: ../../../flutter/fml/backtrace_stub.cc
