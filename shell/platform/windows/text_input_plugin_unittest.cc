@@ -5,10 +5,10 @@
 
 #include <rapidjson/document.h>
 #include <memory>
+#include <windows.h>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -55,7 +55,7 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
   int redispatch_scancode = 0;
   TextInputPlugin handler(&messenger, &delegate);
 
-  handler.KeyboardHook(nullptr, VK_RETURN, 100, WM_KEYDOWN, '\n', false, false);
+  handler.KeyboardHook(VK_RETURN, 100, WM_KEYDOWN, '\n', false, false);
   handler.ComposeBeginHook();
   std::u16string text;
   text.push_back('\n');
