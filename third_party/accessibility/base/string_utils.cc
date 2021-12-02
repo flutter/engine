@@ -4,11 +4,8 @@
 
 #include "string_utils.h"
 
-#include <algorithm>
 #include <cctype>
-#include <cmath>
 #include <codecvt>
-#include <iostream>
 #include <locale>
 #include <regex>
 #include <sstream>
@@ -141,7 +138,6 @@ std::string NumberToString(double number, int precision) {
   } else {
     bool status = converter.ToFixed(number, precision, &builder);
     ASSERT(status);
-
     result = StripTrailingZeros(std::string(builder.Finalize()));
   }
   return result;
