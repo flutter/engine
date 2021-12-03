@@ -258,8 +258,8 @@ public class PlatformPlugin {
       // Not compatible with top/bottom overlays enabled.
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
-      WindowCompat.setDecorFitsSystemWindows(window, false);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+      WindowCompat.setDecorFitsSystemWindows(window, false);
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // IMMERSIVE
@@ -271,9 +271,8 @@ public class PlatformPlugin {
       // Not compatible with top/bottom overlays enabled.
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
-      WindowCompat.setDecorFitsSystemWindows(window, false);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
-
+      WindowCompat.setDecorFitsSystemWindows(window, false);
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // STICKY IMMERSIVE
@@ -284,8 +283,8 @@ public class PlatformPlugin {
       // Not compatible with top/bottom overlays enabled.
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-      WindowCompat.setDecorFitsSystemWindows(window, false);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+      WindowCompat.setDecorFitsSystemWindows(window, false);
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
         && Build.VERSION.SDK_INT >= 29) {
       // EDGE TO EDGE
