@@ -700,8 +700,8 @@ void applyTextStyleToElement({
     // When comparing the outputs of the Bitmap Canvas and the DOM
     // implementation, we have found, that we need to set the background color
     // of the text to transparent to achieve the same effect as in the Bitmap
-    // Canvas and the Skia Engine where only the text stroke is painted. 
-    // If we don't set it here to transparent, the text will inherit the color 
+    // Canvas and the Skia Engine where only the text stroke is painted.
+    // If we don't set it here to transparent, the text will inherit the color
     // of it's parent element.
     cssStyle.color = 'transparent';
     // Use hairline (device pixel when strokeWidth is not specified).
