@@ -46,6 +46,9 @@ class DisplayManager {
   void HandleDisplayUpdates(DisplayUpdateType update_type,
                             std::vector<std::unique_ptr<Display>> displays);
 
+  /// Report the current frame timing.
+  void UpdateTimings();
+
  private:
   /// Guards `displays_` vector.
   mutable std::mutex displays_mutex_;
