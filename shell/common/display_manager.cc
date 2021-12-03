@@ -32,7 +32,7 @@ void DisplayManager::HandleDisplayUpdates(
       FML_CHECK(displays_.empty());
       displays_ = std::move(displays);
       return;
-    case DisplayUpdateType::kNewFrame:
+    case DisplayUpdateType::kUpdateRefreshRate:
       displays_.insert(displays_.begin(),
                        std::make_move_iterator(displays.begin()),
                        std::make_move_iterator(displays.end()));
@@ -53,7 +53,7 @@ void DisplayManager::CheckDisplayConfiguration(
   }
 }
 
-void DisplayManager::ReportFrameTimings(DisplayUpdateType update_type,
+void DisplayManager::UpdateRefreshRate(DisplayUpdateType update_type,
                                         fml::TimePoint vsync_start_time,
                                         fml::TimePoint frame_target_time) {
   auto is_frame_rate_same = [](double fr1, double fr2) {

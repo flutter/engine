@@ -699,6 +699,7 @@ FILE: ../../../flutter/shell/common/display.cc
 FILE: ../../../flutter/shell/common/display.h
 FILE: ../../../flutter/shell/common/display_manager.cc
 FILE: ../../../flutter/shell/common/display_manager.h
+FILE: ../../../flutter/shell/common/display_manager_unittests.cc
 FILE: ../../../flutter/shell/common/engine.cc
 FILE: ../../../flutter/shell/common/engine.h
 FILE: ../../../flutter/shell/common/engine_unittests.cc

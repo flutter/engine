@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_COMMON_DISPLAY_MANAGER_H_
 #define FLUTTER_SHELL_COMMON_DISPLAY_MANAGER_H_
 
+#include <math.h>
 #include <mutex>
 #include <vector>
 
@@ -23,9 +24,9 @@ enum class DisplayUpdateType {
   ///       connected display or sleeping.
   kStartup,
 
-  /// The `flutter::Display` that were active and a new frame requests an
-  /// update.
-  kNewFrame,
+  /// The `flutter::Display` that were active and a new frame indicates that the
+  /// refresh rate might be updated.
+  kUpdateRefreshRate,
 };
 
 /// Manages lifecycle of the connected displays. This class is thread-safe.
@@ -48,9 +49,9 @@ class DisplayManager {
                             std::vector<std::unique_ptr<Display>> displays);
 
   /// Reports the current frame timing to the |DisplayManager|
-  void ReportFrameTimings(DisplayUpdateType update_type,
-                          fml::TimePoint vsync_start_time,
-                          fml::TimePoint frame_target_time);
+  void UpdateRefreshRate(DisplayUpdateType update_type,
+                         fml::TimePoint vsync_start_time,
+                         fml::TimePoint frame_target_time);
 
  private:
   /// Guards `displays_` vector.
