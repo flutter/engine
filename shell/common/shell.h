@@ -693,11 +693,6 @@ class Shell final : public PlatformView::Delegate,
   fml::WeakPtrFactory<Shell> weak_factory_;
   friend class testing::ShellTest;
 
-  // Indicates the current frame_rate_.
-  //
-  // Every new frame may update this value if necessary.
-  double frame_rate_ = -1;
-
   FML_DISALLOW_COPY_AND_ASSIGN(Shell);
 };
 

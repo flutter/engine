@@ -46,8 +46,10 @@ class DisplayManager {
   void HandleDisplayUpdates(DisplayUpdateType update_type,
                             std::vector<std::unique_ptr<Display>> displays);
 
-  /// Report the current frame timing.
-  void UpdateTimings();
+  /// Reports the current frame timing to the |DisplayManager|
+  void ReportFrameTimings(DisplayUpdateType update_type,
+                          fml::TimePoint vsync_start_time,
+                          fml::TimePoint frame_target_time);
 
  private:
   /// Guards `displays_` vector.

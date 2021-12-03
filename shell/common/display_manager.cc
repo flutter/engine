@@ -33,11 +33,10 @@ void DisplayManager::HandleDisplayUpdates(
       displays_ = std::move(displays);
       return;
     case DisplayUpdateType::kNewFrame:
-      displays_.insert(displays_.end(),
+      displays_.insert(displays_.begin(),
                        std::make_move_iterator(displays.begin()),
                        std::make_move_iterator(displays.end()));
-      FML_DLOG(ERROR) << "display updated "
-                      << displays_.back()->GetRefreshRate();
+      FML_DLOG(ERROR) << "display updated " << displays_[0]->GetRefreshRate();
       break;
     default:
       FML_CHECK(false) << "Unknown DisplayUpdateType.";
@@ -51,6 +50,23 @@ void DisplayManager::CheckDisplayConfiguration(
     for (auto& display : displays) {
       FML_CHECK(display->GetDisplayId().has_value());
     }
+  }
+}
+
+void DisplayManager::ReportFrameTimings(DisplayUpdateType update_type,
+                                        fml::TimePoint vsync_start_time,
+                                        fml::TimePoint frame_target_time) {
+  auto is_frame_rate_same = [](double fr1, double fr2) {
+    const double kRefreshRateCompareEpsilon = 1;
+    return fabs(fr1 - fr2) < kRefreshRateCompareEpsilon;
+  };
+
+  double new_frame_rate =
+      round((1 / (frame_target_time - vsync_start_time).ToSecondsF()));
+  if (!is_frame_rate_same(GetMainDisplayRefreshRate(), new_frame_rate)) {
+    std::vector<std::unique_ptr<flutter::Display>> displays;
+    displays.push_back(std::make_unique<flutter::Display>(new_frame_rate));
+    HandleDisplayUpdates(update_type, std::move(displays));
   }
 }
 
