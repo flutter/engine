@@ -216,6 +216,7 @@ class EmbeddedViewParams {
     matrix_ = other.matrix_;
     final_bounding_rect_ = other.final_bounding_rect_;
   };
+  EmbeddedViewParams& operator=(const EmbeddedViewParams& e) = default;
 
   // The transformation Matrix corresponding to the sum of all the
   // transformations in the platform view's mutator stack.
