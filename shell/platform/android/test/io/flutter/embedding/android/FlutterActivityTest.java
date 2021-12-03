@@ -499,6 +499,14 @@ public class FlutterActivityTest {
     }
   }
 
+  // It‘s a compile-time check to ensure that FlutterActivity subclasses can access
+  // FlutterActivityAndFragmentDelegate.
+  static class FlutterActivitySubclass extends FlutterActivity {
+    public void performAttach() {
+      getFlutterEngine().getActivityControlSurface().attachToActivity(delegate, getLifecycle());
+    }
+  }
+
   private static class FlutterActivityWithTextureRendering extends FlutterActivity {
     @Override
     public RenderMode getRenderMode() {

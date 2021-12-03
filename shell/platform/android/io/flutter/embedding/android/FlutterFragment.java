@@ -705,7 +705,7 @@ public class FlutterFragment extends Fragment
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
-  @VisibleForTesting @Nullable /* package */ FlutterActivityAndFragmentDelegate delegate;
+  @VisibleForTesting @Nullable protected FlutterActivityAndFragmentDelegate delegate;
 
   private final OnBackPressedCallback onBackPressedCallback =
       new OnBackPressedCallback(true) {

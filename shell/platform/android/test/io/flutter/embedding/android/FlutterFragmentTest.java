@@ -222,3 +222,11 @@ public class FlutterFragmentTest {
     assertTrue(onBackPressedCalled.get());
   }
 }
+
+// It‘s a compile-time check to ensure that FlutterFragment subclasses can access
+// FlutterActivityAndFragmentDelegate.
+static class FlutterFragmentSubclass extends FlutterFragment {
+  public void performAttach() {
+    getFlutterEngine().getActivityControlSurface().attachToActivity(delegate, getLifecycle());
+  }
+}
