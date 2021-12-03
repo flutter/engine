@@ -36,7 +36,6 @@ void DisplayManager::HandleDisplayUpdates(
       displays_.insert(displays_.begin(),
                        std::make_move_iterator(displays.begin()),
                        std::make_move_iterator(displays.end()));
-      FML_DLOG(ERROR) << "display updated " << displays_[0]->GetRefreshRate();
       break;
     default:
       FML_CHECK(false) << "Unknown DisplayUpdateType.";
@@ -53,9 +52,10 @@ void DisplayManager::CheckDisplayConfiguration(
   }
 }
 
-void DisplayManager::UpdateRefreshRate(DisplayUpdateType update_type,
-                                        fml::TimePoint vsync_start_time,
-                                        fml::TimePoint frame_target_time) {
+void DisplayManager::UpdateRefreshRateIfNecessary(
+    DisplayUpdateType update_type,
+    fml::TimePoint vsync_start_time,
+    fml::TimePoint frame_target_time) {
   auto is_frame_rate_same = [](double fr1, double fr2) {
     const double kRefreshRateCompareEpsilon = 1;
     return fabs(fr1 - fr2) < kRefreshRateCompareEpsilon;

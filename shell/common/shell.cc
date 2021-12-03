@@ -1074,8 +1074,9 @@ void Shell::OnAnimatorBeginFrame(fml::TimePoint vsync_start_time,
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
-  display_manager_->UpdateRefreshRate(flutter::DisplayUpdateType::kUpdateRefreshRate,
-                                       vsync_start_time, frame_target_time);
+  display_manager_->UpdateRefreshRateIfNecessary(
+      flutter::DisplayUpdateType::kUpdateRefreshRate, vsync_start_time,
+      frame_target_time);
 
   // record the target time for use by rasterizer.
   {

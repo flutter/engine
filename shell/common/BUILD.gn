@@ -258,7 +258,7 @@ if (enable_unittests) {
     sources = [
       "animator_unittests.cc",
       "canvas_spy_unittests.cc",
-      "display_manager_unittests",
+      "display_manager_unittests.cc",
       "engine_unittests.cc",
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
