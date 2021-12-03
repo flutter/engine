@@ -8,6 +8,7 @@
 #include <mutex>
 #include <vector>
 
+#include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/display.h"
 
 namespace flutter {
