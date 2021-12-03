@@ -20,6 +20,12 @@
   NSString* prefix = @"golden_spawn_engine_works_";
   GoldenImage* golden = [[GoldenImage alloc] initWithGoldenNamePrefix:prefix];
   if (!golden.image) {
+    XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
+    XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
+    attachment.name = [golden.goldenName stringByAppendingString:@"_new"];
+    attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
+    [self addAttachment:attachment];
+
     XCTFail(@"unable to find golden image for: %@", prefix);
   }
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
