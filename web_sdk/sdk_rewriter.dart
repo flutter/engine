@@ -154,7 +154,7 @@ void _validateEngineSource(String engineDartPath, String engineDartCode) {
       continue;
     }
 
-    if (line.startsWith('export ')) {
+    if (line.startsWith('export')) {
       // Exports are OK
       continue;
     }
