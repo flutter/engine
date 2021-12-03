@@ -57,6 +57,7 @@ import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -476,9 +477,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
     this.windowInfoRepo = createWindowInfoRepo();
-    if (windowInfoRepo != null) {
+    Activity activity = ViewUtils.getActivity(getContext());
+    if (windowInfoRepo != null && activity != null) {
       windowInfoRepo.addWindowLayoutInfoListener(
-          (Activity) getContext(), ContextCompat.getMainExecutor(getContext()), windowInfoListener);
+          activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
     }
   }
 
@@ -1222,7 +1224,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
     renderSurface.detachFromRenderer();
 
-    flutterImageView = null;
+    if (flutterImageView != null) {
+      flutterImageView.closeImageReader();
+      flutterImageView = null;
+    }
     previousRenderSurface = null;
     flutterEngine = null;
   }
