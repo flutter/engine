@@ -75,7 +75,6 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   std::mutex callback_mutex_;
   Callback callback_;
   std::unordered_map<uintptr_t, fml::closure> secondary_callbacks_;
-  double frame_rate_ = -1;
 
   void PauseDartMicroTasks();
   static void ResumeDartMicroTasks(fml::TaskQueueId ui_task_queue_id);
