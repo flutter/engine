@@ -103,8 +103,7 @@ class TextPaintService {
             );
         final double? letterSpacing = span.style.letterSpacing;
         if (letterSpacing == null || letterSpacing == 0.0) {
-          canvas.drawText(text, x, y,
-              style: span.style.foreground?.style, shadows: span.style.shadows);
+          canvas.fillText(text, x, y, shadows: span.style.shadows);
         } else {
           // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
           //                https://github.com/flutter/flutter/issues/51234
@@ -112,8 +111,7 @@ class TextPaintService {
           final int len = text.length;
           for (int i = 0; i < len; i++) {
             final String char = text[i];
-            canvas.drawText(char, charX.roundToDouble(), y,
-                style: span.style.foreground?.style,
+            canvas.fillText(char, charX.roundToDouble(), y,
                 shadows: span.style.shadows);
             charX += letterSpacing + canvas.measureText(char).width!;
           }
@@ -124,7 +122,7 @@ class TextPaintService {
       final String? ellipsis = line.ellipsis;
       if (ellipsis != null && box == line.boxes.last) {
         final double x = offset.dx + line.left + box.right;
-        canvas.drawText(ellipsis, x, y, style: span.style.foreground?.style);
+        canvas.fillText(ellipsis, x, y);
       }
 
       canvas.tearDownPaint();
