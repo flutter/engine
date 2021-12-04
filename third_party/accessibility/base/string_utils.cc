@@ -24,9 +24,9 @@ using double_conversion::DoubleToStringConverter;
 using double_conversion::StringBuilder;
 
 namespace {
-static char const kExponentChar = 'e';
-static const char* const kInfinitySymbol = "Infinity";
-static const char* const kNaNSymbol = "NaN";
+constexpr char kExponentChar = 'e';
+constexpr char kInfinitySymbol[] = "Infinity";
+constexpr char kNaNSymbol[] = "NaN";
 
 // The number of digits after the decimal we allow before switching to
 // exponential representation.
@@ -37,28 +37,28 @@ constexpr int kDecimalInShortestHigh = 12;
 constexpr int kConversionFlags =
     DoubleToStringConverter::EMIT_POSITIVE_EXPONENT_SIGN;
 
-static const double_conversion::DoubleToStringConverter*
-GetDoubleToStringConverter() {
+const DoubleToStringConverter& GetDoubleToStringConverter() {
   static DoubleToStringConverter converter(
       kConversionFlags, kInfinitySymbol, kNaNSymbol, kExponentChar,
       kDecimalInShortestLow, kDecimalInShortestHigh, 0, 0);
-  return &converter;
+  return converter;
 }
 
 std::string NumberToStringImpl(double number, bool is_single_precision) {
   if (number == 0.0) {
     return "0";
   }
+
   constexpr int kBufferSize = 128;
-  char char_buffer[kBufferSize];
-  StringBuilder builder(char_buffer, sizeof(char_buffer));
+  std::vector<char> char_buffer(kBufferSize);
+  StringBuilder builder(char_buffer.data(), char_buffer.size());
   if (is_single_precision) {
-    GetDoubleToStringConverter()->ToShortestSingle(static_cast<float>(number),
-                                                   &builder);
+    GetDoubleToStringConverter().ToShortestSingle(static_cast<float>(number),
+                                                  &builder);
   } else {
-    GetDoubleToStringConverter()->ToShortest(number, &builder);
+    GetDoubleToStringConverter().ToShortest(number, &builder);
   }
-  return std::string(char_buffer, builder.position());
+  return std::string(char_buffer.data(), builder.position());
 }
 }  // namespace
 
