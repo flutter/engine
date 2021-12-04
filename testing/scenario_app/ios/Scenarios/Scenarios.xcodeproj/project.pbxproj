@@ -124,7 +124,6 @@
 		0D8470A2240F0B1F0030B565 /* StatusBarTest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StatusBarTest.h; sourceTree = "<group>"; };
 		0D8470A3240F0B1F0030B565 /* StatusBarTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StatusBarTest.m; sourceTree = "<group>"; };
 		0DB781FC22EA2C0300E9B371 /* FlutterViewControllerTest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlutterViewControllerTest.m; sourceTree = "<group>"; };
-		0DDEBC87258830B40065D0E8 /* SpawnEngineTest.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SpawnEngineTest.h; sourceTree = "<group>"; };
 		0DDEBC88258830B40065D0E8 /* SpawnEngineTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SpawnEngineTest.m; sourceTree = "<group>"; };
 		246A6610252E693A00EAB0F3 /* RenderingSelectionTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RenderingSelectionTest.m; sourceTree = "<group>"; };
 		246B4E4122E3B5F700073EBF /* App.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = App.framework; sourceTree = "<group>"; };
@@ -276,7 +275,6 @@
 				0A42BFB32447E179007E212E /* TextSemanticsFocusTest.m */,
 				0A42BFB52447E19F007E212E /* TextSemanticsFocusTest.h */,
 				246A6610252E693A00EAB0F3 /* RenderingSelectionTest.m */,
-				0DDEBC87258830B40065D0E8 /* SpawnEngineTest.h */,
 				0DDEBC88258830B40065D0E8 /* SpawnEngineTest.m */,
 				F26F15B7268B6B5500EC54D3 /* iPadGestureTests.m */,
 			);
@@ -378,7 +376,7 @@
 		248D76BF22E388370012F0C1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1310;
 				ORGANIZATIONNAME = flutter;
 				TargetAttributes = {
 					248D76C622E388370012F0C1 = {
