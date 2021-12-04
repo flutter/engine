@@ -499,8 +499,8 @@ public class FlutterActivityTest {
     }
   }
 
-  // It‘s a compile-time check to ensure that FlutterActivity subclasses can access
-  // FlutterActivityAndFragmentDelegate.
+  // It‘s a compile-time check to ensure that FlutterActivityAndFragmentDelegate is
+  // accessible to FlutterActivity subclasses.
   static class FlutterActivitySubclass extends FlutterActivity {
     public void performAttach() {
       getFlutterEngine().getActivityControlSurface().attachToActivity(delegate, getLifecycle());
