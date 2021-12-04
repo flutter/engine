@@ -51,23 +51,6 @@ NSDictionary* launchArgsMap;
 }
 
 - (void)checkGoldenForTest:(XCTestCase*)test {
-  // Wait for the home bar indicator to disappear before comparing goldens.
-  XCUIApplication* springboard =
-      [[XCUIApplication alloc] initWithBundleIdentifier:@"com.apple.springboard"];
-  XCUIElement* homeGrabber = springboard.otherElements[@"Home Grabber"];
-  NSPredicate* homeGrabberDisappear = [NSPredicate predicateWithFormat:@"exists == NO"];
-  XCTNSPredicateExpectation* homeGrabberExpectation =
-      [[XCTNSPredicateExpectation alloc] initWithPredicate:homeGrabberDisappear object:homeGrabber];
-  [test waitForExpectations:@[ homeGrabberExpectation ] timeout:10.0];
-
-  // Sometimes even when the home bar indicator element no longer exists
-  // there's still a phantom animation. Wait another second to let it finish animating.
-  XCTWaiterResult waitResult =
-      [XCTWaiter waitForExpectations:@[ [[XCTestExpectation alloc]
-                                         initWithDescription:@"Wait for home bar indicator"] ]
-                             timeout:1.0];
-  XCTAssert(waitResult != XCTWaiterResultInterrupted);
-
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   if (!_goldenImage.image) {
     XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];

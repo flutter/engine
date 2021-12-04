@@ -9,23 +9,12 @@
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
 
-@interface NoHomeIndicatorViewController : UIViewController
-@end
-
-@implementation NoHomeIndicatorViewController
-- (BOOL)prefersHomeIndicatorAutoHidden {
-  return YES;
-}
-@end
-
 @interface NoStatusBarFlutterViewController : FlutterViewController
+
 @end
 
 @implementation NoStatusBarFlutterViewController
 - (BOOL)prefersStatusBarHidden {
-  return YES;
-}
-- (BOOL)prefersHomeIndicatorAutoHidden {
   return YES;
 }
 @end
@@ -86,7 +75,7 @@
   } else if ([[[NSProcessInfo processInfo] arguments] containsObject:@"--screen-before-flutter"]) {
     self.window.rootViewController = [[ScreenBeforeFlutter alloc] initWithEngineRunCompletion:nil];
   } else {
-    self.window.rootViewController = [[NoHomeIndicatorViewController alloc] init];
+    self.window.rootViewController = [[UIViewController alloc] init];
   }
 
   [self.window makeKeyAndVisible];
@@ -162,7 +151,7 @@
   UIViewController* rootViewController = flutterViewController;
   // Make Flutter View's origin x/y not 0.
   if ([scenarioIdentifier isEqualToString:@"non_full_screen_flutter_view_platform_view"]) {
-    rootViewController = [NoHomeIndicatorViewController new];
+    rootViewController = [UIViewController new];
     [rootViewController.view addSubview:flutterViewController.view];
     flutterViewController.view.frame = CGRectMake(150, 150, 500, 500);
   }
