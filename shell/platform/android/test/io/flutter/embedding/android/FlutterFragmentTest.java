@@ -223,8 +223,8 @@ public class FlutterFragmentTest {
   }
 }
 
-// It‘s a compile-time check to ensure that FlutterFragment subclasses can access
-// FlutterActivityAndFragmentDelegate.
+// It‘s a compile-time check to ensure that FlutterActivityAndFragmentDelegate is
+// accessible to FlutterFragment subclasses.
 static class FlutterFragmentSubclass extends FlutterFragment {
   public void performAttach() {
     getFlutterEngine().getActivityControlSurface().attachToActivity(delegate, getLifecycle());
