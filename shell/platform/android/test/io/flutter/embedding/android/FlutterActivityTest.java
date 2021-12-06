@@ -39,6 +39,8 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding.OnSaveInstanceStateListener;
 import io.flutter.plugins.GeneratedPluginRegistrant;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -466,6 +468,19 @@ public class FlutterActivityTest {
     }
   }
 
+  @Test
+  public void itCanBeAccessibleFromSubclass() {
+    // To ensure that FlutterActivityAndFragmentDelegate is
+    // accessible to FlutterActivity subclasses.
+    try {
+      Field field = FlutterActivity.class.getDeclaredField("delegate");
+      field.setAccessible(true);
+      assertTrue(Modifier.isProtected(field.getModifiers()));
+    } catch (Exception e) {
+      assertTrue(false);
+    }
+  }
+
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
     @Override
     @SuppressLint("MissingSuperCall")
@@ -496,14 +511,6 @@ public class FlutterActivityTest {
 
     public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
       return new CachedEngineIntentBuilder(FlutterActivityWithIntentBuilders.class, cachedEngineId);
-    }
-  }
-
-  // It‘s a compile-time check to ensure that FlutterActivityAndFragmentDelegate is
-  // accessible to FlutterActivity subclasses.
-  static class FlutterActivitySubclass extends FlutterActivity {
-    public void performAttach() {
-      getFlutterEngine().getActivityControlSurface().attachToActivity(delegate, getLifecycle());
     }
   }
 

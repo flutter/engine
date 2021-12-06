@@ -18,6 +18,8 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -221,12 +223,17 @@ public class FlutterFragmentTest {
     verify(mockDelegate, never()).onBackPressed();
     assertTrue(onBackPressedCalled.get());
   }
-}
 
-// It‘s a compile-time check to ensure that FlutterActivityAndFragmentDelegate is
-// accessible to FlutterFragment subclasses.
-static class FlutterFragmentSubclass extends FlutterFragment {
-  public void performAttach() {
-    getFlutterEngine().getActivityControlSurface().attachToActivity(delegate, getLifecycle());
+  @Test
+  public void itCanBeAccessibleFromSubclass() {
+    // To ensure that FlutterActivityAndFragmentDelegate is
+    // accessible to FlutterFragment subclasses.
+    try {
+      Field field = FlutterFragment.class.getDeclaredField("delegate");
+      field.setAccessible(true);
+      assertTrue(Modifier.isProtected(field.getModifiers()));
+    } catch (Exception e) {
+      assertTrue(false);
+    }
   }
 }
