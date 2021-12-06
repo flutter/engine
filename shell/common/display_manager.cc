@@ -63,11 +63,13 @@ void DisplayManager::UpdateRefreshRateIfNecessary(
 
   double new_frame_rate =
       round((1 / (frame_target_time - vsync_start_time).ToSecondsF()));
-  if (!is_frame_rate_same(GetMainDisplayRefreshRate(), new_frame_rate)) {
-    std::vector<std::unique_ptr<flutter::Display>> displays;
-    displays.push_back(std::make_unique<flutter::Display>(new_frame_rate));
-    HandleDisplayUpdates(update_type, std::move(displays));
+  if (is_frame_rate_same(GetMainDisplayRefreshRate(), new_frame_rate)) {
+    return;
   }
+
+  std::vector<std::unique_ptr<flutter::Display>> displays;
+  displays.push_back(std::make_unique<flutter::Display>(new_frame_rate));
+  HandleDisplayUpdates(update_type, std::move(displays));
 }
 
 }  // namespace flutter
