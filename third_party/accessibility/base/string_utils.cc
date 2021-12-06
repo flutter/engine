@@ -4,6 +4,7 @@
 
 #include "string_utils.h"
 
+#include <array>
 #include <cctype>
 #include <codecvt>
 #include <locale>
@@ -50,7 +51,7 @@ std::string NumberToStringImpl(double number, bool is_single_precision) {
   }
 
   constexpr int kBufferSize = 128;
-  std::vector<char> char_buffer(kBufferSize);
+  std::array<char, kBufferSize> char_buffer;
   StringBuilder builder(char_buffer.data(), char_buffer.size());
   if (is_single_precision) {
     GetDoubleToStringConverter().ToShortestSingle(static_cast<float>(number),
