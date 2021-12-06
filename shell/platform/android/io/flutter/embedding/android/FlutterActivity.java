@@ -427,8 +427,22 @@ public class FlutterActivity extends Activity
    * Creates a {@link NewEngineInGroupIntentBuilder}, which can be used to configure an {@link
    * Intent} to launch a {@code FlutterActivity} that internally uses an existing {@link
    * io.flutter.embedding.engine.FlutterEngineGroup} that is cached in {@link
-   * io.flutter.embedding.engine.FlutterEngineGroupCache}. and creates a new {@link
+   * io.flutter.embedding.engine.FlutterEngineGroupCache}, and creates a new {@link
    * io.flutter.embedding.engine.FlutterEngine} by FlutterEngineGroup#createAndRunEngine
+   *
+   * <pre>{@code
+   * // Create a FlutterEngineGroup, usually we could create it in onCreate method of Application.
+   * FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
+   * FlutterEngineGroupCache.getInstance().put("my_cached_engine_group_id", engineGroup);
+   *
+   * // use the intent that build by withNewEngineInGroup to start FlutterActivity
+   * Intent intent = FlutterActivity.withNewEngineInGroup("my_cached_engine_group_id")
+   *     .dartEntrypoint("custom_entrypoint")
+   *     .initialRoute("/custom/route")
+   *     .backgroundMode(BackgroundMode.transparent)
+   *     .build(context);
+   * startActivity(intent);
+   * }</pre>
    *
    * @param engineGroupId A cached engine group ID.
    * @return The builder.
@@ -459,6 +473,23 @@ public class FlutterActivity extends Activity
      * <p>{@code return new NewEngineInGroupIntentBuilder(MyFlutterActivity.class,
      * cacheedEngineGroupId); }
      *
+     * <pre>{@code
+     * // Create a FlutterEngineGroup, usually we could create it in onCreate method of Application.
+     * FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
+     * FlutterEngineGroupCache.getInstance().put("my_cached_engine_group_id", engineGroup);
+     *
+     * // create NewEngineInGroupIntentBuilder, and start my custom FlutterActivity with the intent
+     * // that build by NewEngineInGroupIntentBuilder.
+     * FlutterActivity.NewEngineInGroupIntentBuilder intentBuilder =
+     *     new FlutterActivity.NewEngineInGroupIntentBuilder(
+     *           MyFlutterActivity.class,
+     *           app.engineGroupId);
+     * intentBuilder.dartEntrypoint("main")
+     *     .initialRoute("/custom/route")
+     *     .backgroundMode(BackgroundMode.transparent);
+     * startActivity(intentBuilder.build(context));
+     * }</pre>
+     *
      * @param activityClass A subclass of {@code FlutterActivity}.
      * @param engineGroupId The engine group id.
      */
@@ -469,8 +500,8 @@ public class FlutterActivity extends Activity
     }
 
     /**
-     * The Dart entrypoint that will be executed as soon as the Dart snapshot is loaded, default to
-     * "main".
+     * The Dart entrypoint that will be executed as soon as the Dart snapshot is loaded.
+     * Default to "main".
      *
      * @param dartEntrypoint The dart entrypoint's name
      * @return The engine group intent builder

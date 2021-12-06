@@ -245,7 +245,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    * Creates a {@link NewEngineInGroupIntentBuilder}, which can be used to configure an {@link
    * Intent} to launch a {@code FlutterFragmentActivity} that internally uses an existing {@link
    * io.flutter.embedding.engine.FlutterEngineGroup} that is cached in {@link
-   * io.flutter.embedding.engine.FlutterEngineGroupCache}. and creates a new {@link
+   * io.flutter.embedding.engine.FlutterEngineGroupCache}, and creates a new {@link
    * io.flutter.embedding.engine.FlutterEngine} by FlutterEngineGroup#createAndRunEngine
    *
    * @param engineGroupId A cached engine group ID.

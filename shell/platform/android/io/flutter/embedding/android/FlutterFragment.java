@@ -706,15 +706,18 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Returns a {@link NewEngineInGroupFragmentBuilder} to create a {@code FlutterFragment} with a
-   * cached {@link io.flutter.embedding.engine.FlutterEngineGroup} in {@link
-   * io.flutter.embedding.engine.FlutterEngineGroupCache}. creates a new {@link
-   * io.flutter.embedding.engine.FlutterEngine} by FlutterEngineGroup#createAndRunEngine
+   * Returns a {@link NewEngineInGroupFragmentBuilder} to create a {@code FlutterFragment} with a cached
+   * {@link io.flutter.embedding.engine.FlutterEngineGroup} in {@link
+   * io.flutter.embedding.engine.FlutterEngineGroupCache}.
    *
    * <p>An {@code IllegalStateException} will be thrown during the lifecycle of the {@code
    * FlutterFragment} if a cached {@link io.flutter.embedding.engine.FlutterEngineGroup} is
    * requested but does not exist in the {@link
    * io.flutter.embedding.engine.FlutterEngineGroupCache}.
+   *
+   * <p> To create a {@code FlutterFragment} that uses a new {@link
+   * io.flutter.embedding.engine.FlutterEngine} that created by {@link
+   * io.flutter.embedding.engine.FlutterEngineGroup#createAndRunEngine(context, dartEntrypoint, getInitialRoute)},
    */
   @NonNull
   public static NewEngineInGroupFragmentBuilder withNewEngineInGroup(
@@ -755,11 +758,11 @@ public class FlutterFragment extends Fragment
   public static class NewEngineInGroupFragmentBuilder {
     private final Class<? extends FlutterFragment> fragmentClass;
     private final String cachedEngineGroupId;
-    private String dartEntrypoint = "main";
-    private String initialRoute = "/";
-    private boolean handleDeeplinking = false;
-    private RenderMode renderMode = RenderMode.surface;
-    private TransparencyMode transparencyMode = TransparencyMode.transparent;
+    private @NonNull String dartEntrypoint = "main";
+    private @NonNull String initialRoute = "/";
+    private @NonNull boolean handleDeeplinking = false;
+    private @NonNull RenderMode renderMode = RenderMode.surface;
+    private @NonNull TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
     private boolean shouldDelayFirstAndroidViewDraw = false;
@@ -796,7 +799,7 @@ public class FlutterFragment extends Fragment
      * getInitialRoute} returns null.
      */
     @NonNull
-    public NewEngineInGroupFragmentBuilder handleDeeplinking(@NonNull Boolean handleDeeplinking) {
+    public NewEngineInGroupFragmentBuilder handleDeeplinking(@NonNull boolean handleDeeplinking) {
       this.handleDeeplinking = handleDeeplinking;
       return this;
     }
