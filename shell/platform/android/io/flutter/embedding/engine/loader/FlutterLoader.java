@@ -15,10 +15,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.view.Display;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.tracing.Trace;
 import io.flutter.BuildConfig;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
@@ -42,6 +42,7 @@ public class FlutterLoader {
 
   // Must match values in flutter::switches
   static final String AOT_SHARED_LIBRARY_NAME = "aot-shared-library-name";
+  static final String AOT_VMSERVICE_SHARED_LIBRARY_NAME = "aot-vmservice-shared-library-name";
   static final String SNAPSHOT_ASSET_PATH_KEY = "snapshot-asset-path";
   static final String VM_SNAPSHOT_DATA_KEY = "vm-snapshot-data";
   static final String ISOLATE_SNAPSHOT_DATA_KEY = "isolate-snapshot-data";
@@ -51,6 +52,7 @@ public class FlutterLoader {
   // Resource names used for components of the precompiled snapshot.
   private static final String DEFAULT_LIBRARY = "libflutter.so";
   private static final String DEFAULT_KERNEL_BLOB = "kernel_blob.bin";
+  private static final String VMSERVICE_SNAPSHOT_LIBRARY = "libvmservice_snapshot.so";
 
   private static FlutterLoader instance;
 
@@ -134,51 +136,64 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    // Ensure that the context is actually the application context.
-    final Context appContext = applicationContext.getApplicationContext();
+    Trace.beginSection("FlutterLoader#startInitialization");
 
-    this.settings = settings;
+    try {
+      // Ensure that the context is actually the application context.
+      final Context appContext = applicationContext.getApplicationContext();
 
-    initStartTimestampMillis = SystemClock.uptimeMillis();
-    flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
+      this.settings = settings;
 
-    float fps;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      final DisplayManager dm = appContext.getSystemService(DisplayManager.class);
-      final Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-      fps = primaryDisplay.getRefreshRate();
-    } else {
-      fps =
-          ((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
-              .getDefaultDisplay()
-              .getRefreshRate();
-    }
-    VsyncWaiter.getInstance(fps).init();
+      initStartTimestampMillis = SystemClock.uptimeMillis();
+      flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
 
-    // Use a background thread for initialization tasks that require disk access.
-    Callable<InitResult> initTask =
-        new Callable<InitResult>() {
-          @Override
-          public InitResult call() {
-            ResourceExtractor resourceExtractor = initResources(appContext);
+      VsyncWaiter waiter;
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 /* 17 */) {
+        final DisplayManager dm =
+            (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
+        waiter = VsyncWaiter.getInstance(dm, flutterJNI);
+      } else {
+        float fps =
+            ((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
+                .getDefaultDisplay()
+                .getRefreshRate();
+        waiter = VsyncWaiter.getInstance(fps, flutterJNI);
+      }
+      waiter.init();
 
-            flutterJNI.loadLibrary();
+      // Use a background thread for initialization tasks that require disk access.
+      Callable<InitResult> initTask =
+          new Callable<InitResult>() {
+            @Override
+            public InitResult call() {
+              Trace.beginSection("FlutterLoader initTask");
 
-            // Prefetch the default font manager as soon as possible on a background thread.
-            // It helps to reduce time cost of engine setup that blocks the platform thread.
-            executorService.execute(() -> flutterJNI.prefetchDefaultFontManager());
+              try {
+                ResourceExtractor resourceExtractor = initResources(appContext);
 
-            if (resourceExtractor != null) {
-              resourceExtractor.waitForCompletion();
+                flutterJNI.loadLibrary();
+
+                // Prefetch the default font manager as soon as possible on a background thread.
+                // It helps to reduce time cost of engine setup that blocks the platform thread.
+                executorService.execute(() -> flutterJNI.prefetchDefaultFontManager());
+
+                if (resourceExtractor != null) {
+                  resourceExtractor.waitForCompletion();
+                }
+
+                return new InitResult(
+                    PathUtils.getFilesDir(appContext),
+                    PathUtils.getCacheDirectory(appContext),
+                    PathUtils.getDataDirectory(appContext));
+              } finally {
+                Trace.endSection();
+              }
             }
-
-            return new InitResult(
-                PathUtils.getFilesDir(appContext),
-                PathUtils.getCacheDirectory(appContext),
-                PathUtils.getDataDirectory(appContext));
-          }
-        };
-    initResultFuture = executorService.submit(initTask);
+          };
+      initResultFuture = executorService.submit(initTask);
+    } finally {
+      Trace.endSection();
+    }
   }
 
   /**
@@ -202,6 +217,8 @@ public class FlutterLoader {
       throw new IllegalStateException(
           "ensureInitializationComplete must be called after startInitialization");
     }
+    Trace.beginSection("FlutterLoader#ensureInitializationComplete");
+
     try {
       InitResult result = initResultFuture.get();
 
@@ -240,6 +257,13 @@ public class FlutterLoader {
                 + flutterApplicationInfo.nativeLibraryDir
                 + File.separator
                 + flutterApplicationInfo.aotSharedLibraryName);
+
+        // In profile mode, provide a separate library containing a snapshot for
+        // launching the Dart VM service isolate.
+        if (BuildConfig.PROFILE) {
+          shellArgs.add(
+              "--" + AOT_VMSERVICE_SHARED_LIBRARY_NAME + "=" + VMSERVICE_SNAPSHOT_LIBRARY);
+        }
       }
 
       shellArgs.add("--cache-dir-path=" + result.engineCachesPath);
@@ -289,6 +313,8 @@ public class FlutterLoader {
     } catch (Exception e) {
       Log.e(TAG, "Flutter initialization failed.", e);
       throw new RuntimeException(e);
+    } finally {
+      Trace.endSection();
     }
   }
 

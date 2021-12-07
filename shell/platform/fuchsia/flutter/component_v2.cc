@@ -27,6 +27,7 @@
 #include <sstream>
 
 #include "file_in_namespace_buffer.h"
+#include "flutter/fml/command_line.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/platform/fuchsia/task_observers.h"
 #include "flutter/fml/synchronization/waitable_event.h"
@@ -42,8 +43,15 @@
 namespace flutter_runner {
 namespace {
 
+// "data" and "assets" are arguments that are specific to the Flutter runner.
+// They will likely go away if we migrate to the ELF runner.
 constexpr char kDataKey[] = "data";
 constexpr char kAssetsKey[] = "assets";
+
+// "args" are how the component specifies arguments to the runner.
+constexpr char kArgsKey[] = "args";
+constexpr char kOldGenHeapSizeKey[] = "old_gen_heap_size";
+
 constexpr char kTmpPath[] = "/tmp";
 constexpr char kServiceRootPath[] = "/svc";
 constexpr char kRunnerConfigPath[] = "/config/data/flutter_runner_config";
@@ -57,24 +65,53 @@ std::string DebugLabelForUrl(const std::string& url) {
   }
 }
 
+/// Parses the |args| field from the "program" field into
+/// |metadata|.
+void ParseArgs(std::vector<std::string>& args, ProgramMetadata* metadata) {
+  // fml::CommandLine expects the first argument to be the name of the program,
+  // so we prepend a dummy argument so we can use fml::CommandLine to parse the
+  // arguments for us.
+  std::vector<std::string> command_line_args = {""};
+  command_line_args.insert(command_line_args.end(), args.begin(), args.end());
+  fml::CommandLine parsed_args = fml::CommandLineFromIterators(
+      command_line_args.begin(), command_line_args.end());
+
+  std::string old_gen_heap_size_option;
+  if (parsed_args.GetOptionValue(kOldGenHeapSizeKey,
+                                 &old_gen_heap_size_option)) {
+    int64_t specified_old_gen_heap_size = strtol(
+        old_gen_heap_size_option.c_str(), nullptr /* endptr */, 10 /* base */);
+    if (specified_old_gen_heap_size != 0) {
+      metadata->old_gen_heap_size = specified_old_gen_heap_size;
+    } else {
+      FML_LOG(ERROR) << "Invalid old_gen_heap_size: "
+                     << old_gen_heap_size_option;
+    }
+  }
+}
+
 }  // namespace
 
-void ComponentV2::ParseProgramMetadata(
-    const fuchsia::data::Dictionary& program_metadata,
-    std::string* data_path,
-    std::string* assets_path) {
+ProgramMetadata ComponentV2::ParseProgramMetadata(
+    const fuchsia::data::Dictionary& program_metadata) {
+  ProgramMetadata result;
+
   for (const auto& entry : program_metadata.entries()) {
     if (entry.key.compare(kDataKey) == 0 && entry.value != nullptr) {
-      *data_path = "pkg/" + entry.value->str();
+      result.data_path = "pkg/" + entry.value->str();
     } else if (entry.key.compare(kAssetsKey) == 0 && entry.value != nullptr) {
-      *assets_path = "pkg/" + entry.value->str();
+      result.assets_path = "pkg/" + entry.value->str();
+    } else if (entry.key.compare(kArgsKey) == 0 && entry.value != nullptr) {
+      ParseArgs(entry.value->str_vec(), &result);
     }
   }
 
   // assets_path defaults to the same as data_path if omitted.
-  if (assets_path->empty()) {
-    *assets_path = *data_path;
+  if (result.assets_path.empty()) {
+    result.assets_path = result.data_path;
   }
+
+  return result;
 }
 
 ActiveComponentV2 ComponentV2::Create(
@@ -121,15 +158,12 @@ ComponentV2::ComponentV2(
 
   FML_DCHECK(fdio_ns_.is_valid());
 
-  // TODO(fxb/50694): Dart launch arguments.
-  FML_LOG(WARNING) << "program() arguments are currently ignored (fxb/50694).";
+  // TODO(fxb/88391): Dart launch arguments.
+  FML_LOG(WARNING) << "program() arguments are currently ignored (fxb/88391).";
 
-  // Determine where data and assets are stored within /pkg.
-  std::string data_path;
-  std::string assets_path;
-  ParseProgramMetadata(start_info.program(), &data_path, &assets_path);
+  ProgramMetadata metadata = ParseProgramMetadata(start_info.program());
 
-  if (data_path.empty()) {
+  if (metadata.data_path.empty()) {
     FML_DLOG(ERROR) << "Could not find a /pkg/data directory for "
                     << start_info.resolved_url();
     return;
@@ -181,11 +215,11 @@ ComponentV2::ComponentV2(
     constexpr mode_t mode = O_RDONLY | O_DIRECTORY;
 
     component_assets_directory_.reset(
-        openat(ns_fd.get(), assets_path.c_str(), mode));
+        openat(ns_fd.get(), metadata.assets_path.c_str(), mode));
     FML_DCHECK(component_assets_directory_.is_valid());
 
     component_data_directory_.reset(
-        openat(ns_fd.get(), data_path.c_str(), mode));
+        openat(ns_fd.get(), metadata.data_path.c_str(), mode));
     FML_DCHECK(component_data_directory_.is_valid());
   }
 
@@ -207,7 +241,7 @@ ComponentV2::ComponentV2(
 
   directory_request_ = directory_ptr_.NewRequest();
 
-  fidl::InterfaceHandle<fuchsia::io::Directory> flutter_public_dir;
+  fuchsia::io::DirectoryHandle flutter_public_dir;
   // TODO(anmittal): when fixing enumeration using new c++ vfs, make sure that
   // flutter_public_dir is only accessed once we receive OnOpen Event.
   // That will prevent FL-175 for public directory
@@ -236,7 +270,7 @@ ComponentV2::ComponentV2(
         const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
         // add other directories as RemoteDirs.
         for (auto& dir_str : other_dirs) {
-          fidl::InterfaceHandle<fuchsia::io::Directory> dir;
+          fuchsia::io::DirectoryHandle dir;
           auto request = dir.NewRequest().TakeChannel();
           auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
                                                 dir_str, request.release());
@@ -254,11 +288,11 @@ ComponentV2::ComponentV2(
   cloned_directory_ptr_.set_error_handler(
       [this](zx_status_t status) { cloned_directory_ptr_.Unbind(); });
 
-  // TODO(fxb/50694): Close handles from ComponentStartInfo::numbered_handles
+  // TODO(fxb/89162): Close handles from ComponentStartInfo::numbered_handles
   // since we're not using them. See documentation from ComponentController:
   // https://cs.opensource.google/fuchsia/fuchsia/+/main:sdk/fidl/fuchsia.component.runner/component_runner.fidl;l=97;drc=e3b39f2b57e720770773b857feca4f770ee0619e
 
-  // TODO(fxb/50694): There's an OnPublishDiagnostics event we may want to
+  // TODO(fxb/89162): There's an OnPublishDiagnostics event we may want to
   // fire for diagnostics. See documentation from ComponentController:
   // https://cs.opensource.google/fuchsia/fuchsia/+/main:sdk/fidl/fuchsia.component.runner/component_runner.fidl;l=181;drc=e3b39f2b57e720770773b857feca4f770ee0619e
 
@@ -310,27 +344,28 @@ ComponentV2::ComponentV2(
       }
       auto hold_snapshot = [snapshot](const uint8_t* _, size_t __) {};
       settings_.vm_snapshot_data = [hold_snapshot, vm_data]() {
-        return std::make_unique<fml::NonOwnedMapping>(vm_data, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(vm_data, 0, hold_snapshot,
+                                                      true /* dontneed_safe */);
       };
       settings_.vm_snapshot_instr = [hold_snapshot, vm_instructions]() {
-        return std::make_unique<fml::NonOwnedMapping>(vm_instructions, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            vm_instructions, 0, hold_snapshot, true /* dontneed_safe */);
       };
       settings_.isolate_snapshot_data = [hold_snapshot, isolate_data]() {
-        return std::make_unique<fml::NonOwnedMapping>(isolate_data, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            isolate_data, 0, hold_snapshot, true /* dontneed_safe */);
       };
       settings_.isolate_snapshot_instr = [hold_snapshot,
                                           isolate_instructions]() {
-        return std::make_unique<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                                      hold_snapshot);
+        return std::make_unique<fml::NonOwnedMapping>(
+            isolate_instructions, 0, hold_snapshot, true /* dontneed_safe */);
       };
       isolate_snapshot_ = fml::MakeRefCounted<flutter::DartSnapshot>(
-          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0,
-                                                 hold_snapshot),
+          std::make_shared<fml::NonOwnedMapping>(isolate_data, 0, hold_snapshot,
+                                                 true /* dontneed_safe */),
           std::make_shared<fml::NonOwnedMapping>(isolate_instructions, 0,
-                                                 hold_snapshot));
+                                                 hold_snapshot,
+                                                 true /* dontneed_safe */));
     } else {
       const int namespace_fd = component_data_directory_.get();
       settings_.vm_snapshot_data = [namespace_fd]() {
@@ -396,6 +431,10 @@ ComponentV2::ComponentV2(
   settings_.application_kernel_list_asset = "app.dilplist";
 
   settings_.log_tag = debug_label_ + std::string{"(flutter)"};
+
+  if (metadata.old_gen_heap_size.has_value()) {
+    settings_.old_gen_heap_size = *metadata.old_gen_heap_size;
+  }
 
   // No asserts in debug or release product.
   // No asserts in release with flutter_profile=true (non-product)
@@ -483,20 +522,28 @@ const std::string& ComponentV2::GetDebugLabel() const {
 }
 
 void ComponentV2::Kill() {
-  FML_VLOG(-1) << "ComponentController: received Kill";
+  FML_VLOG(-1) << "received Kill event";
 
   // From the documentation for ComponentController, ZX_OK should be sent when
-  // the ComponentController receives a termination request.
+  // the ComponentController receives a termination request. However, if the
+  // component exited with a non-zero return code, we indicate this by sending
+  // an INTERNAL epitaph instead.
   //
-  // TODO(fxb/50694): How should we communicate the return code of the process
-  // with the epitaph? Should we avoid sending ZX_OK if the return code is not
-  // 0?
-  //
-  // CF v1 logic for reference (the OnTerminated event no longer exists):
-  //   component_controller_.events().OnTerminated(
-  //       last_return_code_.second, fuchsia::sys::TerminationReason::EXITED);
+  // TODO(fxb/86666): Communicate return code from the ComponentController once
+  // v2 has support.
+  auto [got_return_code, return_code] = last_return_code_;
+  if (got_return_code && return_code == 0) {
+    KillWithEpitaph(ZX_OK);
+  } else {
+    if (got_return_code) {
+      FML_LOG(ERROR) << "Component exited with non-zero return code: "
+                     << return_code;
+    } else {
+      FML_LOG(ERROR) << "Failed to get return code for component";
+    }
 
-  KillWithEpitaph(ZX_OK);
+    KillWithEpitaph(zx_status_t(fuchsia::component::Error::INTERNAL));
+  }
 
   // WARNING: Don't do anything past this point as this instance may have been
   // collected.
@@ -512,9 +559,9 @@ void ComponentV2::KillWithEpitaph(zx_status_t epitaph_status) {
 }
 
 void ComponentV2::Stop() {
-  FML_VLOG(-1) << "ComponentController v2: received Stop";
+  FML_VLOG(-1) << "received Stop event";
 
-  // TODO(fxb/50694): Any other cleanup logic we should do that's appropriate
+  // TODO(fxb/89162): Any other cleanup logic we should do that's appropriate
   // for Stop but not for Kill?
   KillWithEpitaph(ZX_OK);
 }
@@ -526,20 +573,29 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
                             });
 
   if (found == shell_holders_.end()) {
+    // This indicates a deeper issue with memory management and should never
+    // happen.
+    FML_LOG(ERROR) << "Tried to terminate an unregistered shell holder.";
+    FML_DCHECK(false);
+
     return;
   }
 
-  // We may launch multiple shell in this component. However, we will
+  // We may launch multiple shells in this component. However, we will
   // terminate when the last shell goes away. The error code returned to the
   // component controller will be the last isolate that had an error.
   auto return_code = shell_holder->GetEngineReturnCode();
   if (return_code.has_value()) {
     last_return_code_ = {true, return_code.value()};
+  } else {
+    FML_LOG(ERROR) << "Failed to get return code from terminated shell holder.";
   }
 
   shell_holders_.erase(found);
 
   if (shell_holders_.size() == 0) {
+    FML_VLOG(-1) << "Killing component because all shell holders have been "
+                    "terminated.";
     Kill();
     // WARNING: Don't do anything past this point because the delegate may have
     // collected this instance via the termination callback.
@@ -580,7 +636,9 @@ void ComponentV2::CreateViewWithViewRef(
       },
       std::move(fdio_ns_),            // FDIO namespace
       std::move(directory_request_),  // outgoing request
-      product_config_                 // product configuration
+      product_config_,                // product configuration
+      std::vector<std::string>(),     // dart entrypoint args
+      false                           // not a v1 component
       ));
 }
 
@@ -603,7 +661,9 @@ void ComponentV2::CreateView2(fuchsia::ui::app::CreateView2Args view_args) {
       scenic::ViewRefPair::New(),                     // view ref pair
       std::move(fdio_ns_),                            // FDIO namespace
       std::move(directory_request_),                  // outgoing request
-      product_config_                                 // product configuration
+      product_config_,                                // product configuration
+      std::vector<std::string>(),                     // dart entrypoint args
+      false                                           // not a v1 component
       ));
 }
 

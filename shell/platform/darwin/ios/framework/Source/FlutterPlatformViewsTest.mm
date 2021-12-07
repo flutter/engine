@@ -95,8 +95,6 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   void OnPlatformViewDispatchPlatformMessage(std::unique_ptr<PlatformMessage> message) override {}
   void OnPlatformViewDispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet) override {
   }
-  void OnPlatformViewDispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                                           std::function<void(bool)> callback) override {}
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              SemanticsAction action,
                                              fml::MallocMapping args) override {}
@@ -965,8 +963,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_1));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
+  flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
-      nullptr, true,
+      nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return false; });
   XCTAssertFalse(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -976,7 +975,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams_2));
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   auto mock_surface_submit_false = std::make_unique<flutter::SurfaceFrame>(
-      nullptr, true,
+      nullptr, framebuffer_info,
       [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
   XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
                                                             std::move(mock_surface_submit_false)));

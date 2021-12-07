@@ -1157,7 +1157,7 @@ class FontFeature {
   ///
   /// {@tool sample --template=stateless_widget}
   ///
-  /// The Piazzolla font supports the `ssXX` feature for for more
+  /// The Piazzolla font supports the `ssXX` feature for more
   /// elaborate stylistic effects. Set 1 turns some Latin characters
   /// into Roman numerals, set 2 enables some ASCII characters to be
   /// used to create pretty arrows, and so forth.
@@ -1626,14 +1626,16 @@ enum TextLeadingDistribution {
 /// {@template dart.ui.textHeightBehavior}
 /// Defines how to apply [TextStyle.height] over and under text.
 ///
-/// [applyHeightToFirstAscent] and [applyHeightToLastDescent] represent whether
-/// the [TextStyle.height] modifier will be applied to the corresponding metric.
-/// By default both properties are true, and [TextStyle.height] is applied as
+/// [TextHeightBehavior.applyHeightToFirstAscent] and
+/// [TextHeightBehavior.applyHeightToLastDescent] represent whether the
+/// [TextStyle.height] modifier will be applied to the corresponding metric. By
+/// default both properties are true, and [TextStyle.height] is applied as
 /// normal. When set to false, the font's default ascent will be used.
 ///
-/// [leadingDistribution] determines how the [leading] is distributed over and
-/// under text. This property applies before [applyHeightToFirstAscent] and
-/// [applyHeightToLastDescent].
+/// [TextHeightBehavior.leadingDistribution] determines how the
+/// leading is distributed over and under text. This
+/// property applies before [TextHeightBehavior.applyHeightToFirstAscent] and
+/// [TextHeightBehavior.applyHeightToLastDescent].
 ///
 /// {@endtemplate}
 class TextHeightBehavior {
@@ -1646,7 +1648,7 @@ class TextHeightBehavior {
   ///  * applyHeightToLastDescent: When true, the [TextStyle.height] modifier
   ///    will be applied to the descent of the last line. When false, the font's
   ///    default descent will be used.
-  ///  * leadingDistribution: How the [leading] is distributed over and under
+  ///  * leadingDistribution: How the leading is distributed over and under
   ///    text.
   ///
   /// All properties default to true (height modifications applied as normal).
@@ -3479,7 +3481,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// [PlaceholderAlignment.aboveBaseline], and [PlaceholderAlignment.belowBaseline]
   /// alignment modes are used, the baseline needs to be set with the `baseline`.
   /// When using [PlaceholderAlignment.baseline], `baselineOffset` indicates the distance
-  /// of the baseline down from the top of of the rectangle. The default `baselineOffset`
+  /// of the baseline down from the top of the rectangle. The default `baselineOffset`
   /// is the `height`.
   ///
   /// Examples:
@@ -3576,17 +3578,5 @@ FutureOr<void> _sendFontChangeMessage() async {
     channelBuffers.push(kSystemChannelName, _fontChangeMessage, (ByteData? responseData) { });
   }
 }
-
-// TODO(gspencergoog): remove this template block once the framework templates
-// are renamed to not reference it.
-/// {@template flutter.dart:ui.textHeightBehavior}
-/// Defines how the paragraph will apply [TextStyle.height] to the ascent of the
-/// first line and descent of the last line.
-///
-/// Each boolean value represents whether the [TextStyle.height] modifier will
-/// be applied to the corresponding metric. By default, all properties are true,
-/// and [TextStyle.height] is applied as normal. When set to false, the font's
-/// default ascent will be used.
-/// {@endtemplate}
 
 void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily) native 'loadFontFromList';

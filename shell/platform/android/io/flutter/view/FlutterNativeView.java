@@ -111,7 +111,11 @@ public class FlutterNativeView implements BinaryMessenger {
     if (applicationIsRunning)
       throw new AssertionError("This Flutter engine instance is already running an application");
     mFlutterJNI.runBundleAndSnapshotFromLibrary(
-        args.bundlePath, args.entrypoint, args.libraryPath, mContext.getResources().getAssets());
+        args.bundlePath,
+        args.entrypoint,
+        args.libraryPath,
+        mContext.getResources().getAssets(),
+        null);
 
     applicationIsRunning = true;
   }
@@ -126,8 +130,8 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
-  public TaskQueue makeBackgroundTaskQueue() {
-    return dartExecutor.getBinaryMessenger().makeBackgroundTaskQueue();
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return dartExecutor.getBinaryMessenger().makeBackgroundTaskQueue(options);
   }
 
   @Override
@@ -149,9 +153,21 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
+  public void setMessageHandler(String channel, BinaryMessageHandler handler) {
+    dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler);
+  }
+
+  @Override
+  @UiThread
   public void setMessageHandler(String channel, BinaryMessageHandler handler, TaskQueue taskQueue) {
     dartExecutor.getBinaryMessenger().setMessageHandler(channel, handler, taskQueue);
   }
+
+  @Override
+  public void enableBufferingIncomingMessages() {}
+
+  @Override
+  public void disableBufferingIncomingMessages() {}
 
   /*package*/ FlutterJNI getFlutterJNI() {
     return mFlutterJNI;
@@ -163,7 +179,7 @@ public class FlutterNativeView implements BinaryMessenger {
   }
 
   private final class EngineLifecycleListenerImpl implements EngineLifecycleListener {
-    // Called by native to notify when the engine is restarted (cold reload).
+    // Called by native to notify right before the engine is restarted (cold reload).
     @SuppressWarnings("unused")
     public void onPreEngineRestart() {
       if (mFlutterView != null) {

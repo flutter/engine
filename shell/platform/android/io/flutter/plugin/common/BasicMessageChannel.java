@@ -122,8 +122,16 @@ public final class BasicMessageChannel<T> {
    */
   @UiThread
   public void setMessageHandler(@Nullable final MessageHandler<T> handler) {
-    messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler));
+    }
   }
 
   /**
@@ -151,7 +159,7 @@ public final class BasicMessageChannel<T> {
      *
      * <p>Handler implementations must reply to all incoming messages, by submitting a single reply
      * message to the given {@link Reply}. Failure to do so will result in lingering Flutter reply
-     * handlers. The reply may be submitted asynchronously.
+     * handlers. The reply may be submitted asynchronously and invoked on any thread.
      *
      * <p>Any uncaught exception thrown by this method, or the preceding message decoding, will be
      * caught by the channel implementation and logged, and a null reply message will be sent back

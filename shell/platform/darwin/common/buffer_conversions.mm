@@ -10,13 +10,15 @@ namespace flutter {
 namespace {
 class NSDataMapping : public fml::Mapping {
  public:
-  NSDataMapping(NSData* data) : data_([data retain]) {}
+  explicit NSDataMapping(NSData* data) : data_([data retain]) {}
 
   size_t GetSize() const override { return [data_.get() length]; }
 
   const uint8_t* GetMapping() const override {
     return static_cast<const uint8_t*>([data_.get() bytes]);
   }
+
+  bool IsDontNeedSafe() const override { return false; }
 
  private:
   fml::scoped_nsobject<NSData> data_;

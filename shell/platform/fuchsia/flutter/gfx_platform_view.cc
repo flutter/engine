@@ -13,12 +13,12 @@ GfxPlatformView::GfxPlatformView(
     flutter::TaskRunners task_runners,
     fuchsia::ui::views::ViewRef view_ref,
     std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
-    fidl::InterfaceHandle<fuchsia::ui::input::ImeService> ime_service,
-    fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard,
-    fidl::InterfaceHandle<fuchsia::ui::pointer::TouchSource> touch_source,
-    fidl::InterfaceHandle<fuchsia::ui::pointer::MouseSource> mouse_source,
-    fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
-    fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> view_ref_focused,
+    fuchsia::ui::input::ImeServiceHandle ime_service,
+    fuchsia::ui::input3::KeyboardHandle keyboard,
+    fuchsia::ui::pointer::TouchSourceHandle touch_source,
+    fuchsia::ui::pointer::MouseSourceHandle mouse_source,
+    fuchsia::ui::views::FocuserHandle focuser,
+    fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused,
     fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
         session_listener_request,
     fit::closure on_session_listener_error_callback,
@@ -253,6 +253,9 @@ void GfxPlatformView::OnScenicEvent(
         0.0f,  // p_physical_system_gesture_inset_bottom
         0.0f,  // p_physical_system_gesture_inset_left,
         -1.0,  // p_physical_touch_slop,
+        {},    // p_physical_display_features_bounds
+        {},    // p_physical_display_features_type
+        {},    // p_physical_display_features_state
     });
   }
 }

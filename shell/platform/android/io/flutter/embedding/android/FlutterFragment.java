@@ -1044,7 +1044,9 @@ public class FlutterFragment extends Fragment
   // possible.
   @ActivityCallThrough
   public void onPostResume() {
-    delegate.onPostResume();
+    if (stillAttachedForEvent("onPostResume")) {
+      delegate.onPostResume();
+    }
   }
 
   @Override

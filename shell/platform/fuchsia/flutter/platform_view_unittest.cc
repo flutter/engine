@@ -102,10 +102,6 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
     pointer_packets_.push_back(std::move(packet));
   }
   // |flutter::PlatformView::Delegate|
-  void OnPlatformViewDispatchKeyDataPacket(
-      std::unique_ptr<flutter::KeyDataPacket> packet,
-      std::function<void(bool)> callback) {}
-  // |flutter::PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(int32_t id,
                                              flutter::SemanticsAction action,
                                              fml::MallocMapping args) {}
@@ -194,10 +190,9 @@ class MockKeyboard : public fuchsia::ui::input3::testing::Keyboard_TestBase {
       : keyboard_(this, std::move(keyboard)) {}
   ~MockKeyboard() = default;
 
-  void AddListener(
-      fuchsia::ui::views::ViewRef view_ref,
-      fidl::InterfaceHandle<fuchsia::ui::input3::KeyboardListener> listener,
-      AddListenerCallback callback) override {
+  void AddListener(fuchsia::ui::views::ViewRef view_ref,
+                   fuchsia::ui::input3::KeyboardListenerHandle listener,
+                   AddListenerCallback callback) override {
     FML_CHECK(!listener_.is_bound());
 
     listener_ = listener.Bind();
@@ -235,38 +230,36 @@ class PlatformViewBuilder {
   }
 
   PlatformViewBuilder& SetImeService(
-      fidl::InterfaceHandle<fuchsia::ui::input::ImeService> ime_service) {
+      fuchsia::ui::input::ImeServiceHandle ime_service) {
     ime_service_ = std::move(ime_service);
     return *this;
   }
 
   PlatformViewBuilder& SetKeyboard(
-      fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard) {
+      fuchsia::ui::input3::KeyboardHandle keyboard) {
     keyboard_ = std::move(keyboard);
     return *this;
   }
 
   PlatformViewBuilder& SetTouchSource(
-      fidl::InterfaceHandle<fuchsia::ui::pointer::TouchSource> touch_source) {
+      fuchsia::ui::pointer::TouchSourceHandle touch_source) {
     touch_source_ = std::move(touch_source);
     return *this;
   }
 
   PlatformViewBuilder& SetMouseSource(
-      fidl::InterfaceHandle<fuchsia::ui::pointer::MouseSource> mouse_source) {
+      fuchsia::ui::pointer::MouseSourceHandle mouse_source) {
     mouse_source_ = std::move(mouse_source);
     return *this;
   }
 
-  PlatformViewBuilder& SetFocuser(
-      fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser) {
+  PlatformViewBuilder& SetFocuser(fuchsia::ui::views::FocuserHandle focuser) {
     focuser_ = std::move(focuser);
     return *this;
   }
 
   PlatformViewBuilder& SetViewRefFocused(
-      fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused>
-          view_ref_focused) {
+      fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused) {
     view_ref_focused_ = std::move(view_ref_focused);
     return *this;
   }
@@ -337,12 +330,12 @@ class PlatformViewBuilder {
 
   std::shared_ptr<flutter::ExternalViewEmbedder>
       external_external_view_embedder_;
-  fidl::InterfaceHandle<fuchsia::ui::input::ImeService> ime_service_;
-  fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard_;
-  fidl::InterfaceHandle<fuchsia::ui::pointer::TouchSource> touch_source_;
-  fidl::InterfaceHandle<fuchsia::ui::pointer::MouseSource> mouse_source_;
-  fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> view_ref_focused_;
-  fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser_;
+  fuchsia::ui::input::ImeServiceHandle ime_service_;
+  fuchsia::ui::input3::KeyboardHandle keyboard_;
+  fuchsia::ui::pointer::TouchSourceHandle touch_source_;
+  fuchsia::ui::pointer::MouseSourceHandle mouse_source_;
+  fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused_;
+  fuchsia::ui::views::FocuserHandle focuser_;
   fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
       session_listener_request_;
   fit::closure on_session_listener_error_callback_;
@@ -1242,7 +1235,7 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
   flutter::TaskRunners task_runners =
       flutter::TaskRunners("test_runners", nullptr, nullptr, nullptr, nullptr);
 
-  fidl::InterfaceHandle<fuchsia::ui::input3::Keyboard> keyboard_service;
+  fuchsia::ui::input3::KeyboardHandle keyboard_service;
   MockKeyboard keyboard(keyboard_service.NewRequest());
 
   flutter_runner::GfxPlatformView platform_view =
@@ -1253,18 +1246,19 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
 
   std::vector<EventFlow> events;
   // Press A.  Get 'a'.
+  // The HID usage for the key A is 0x70004, or 458756.
   events.emplace_back(EventFlow{
       MakeEvent(fuchsia::ui::input3::KeyEventType::PRESSED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":4,"codePoint":97,"modifiers":0})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458756,"codePoint":97,"modifiers":0})",
   });
   // Release A. Get 'a' release.
   events.emplace_back(EventFlow{
       MakeEvent(fuchsia::ui::input3::KeyEventType::RELEASED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keyup","keymap":"fuchsia","hidUsage":4,"codePoint":97,"modifiers":0})",
+      R"({"type":"keyup","keymap":"fuchsia","hidUsage":458756,"codePoint":97,"modifiers":0})",
   });
   // Press CAPS_LOCK.  Modifier now active.
   events.emplace_back(EventFlow{
@@ -1272,14 +1266,14 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
                 fuchsia::ui::input3::Modifiers::CAPS_LOCK,
                 fuchsia::input::Key::CAPS_LOCK),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":57,"codePoint":0,"modifiers":1})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458809,"codePoint":0,"modifiers":1})",
   });
-  // Pres A.  Get 'A'.
+  // Press A.  Get 'A'.
   events.emplace_back(EventFlow{
       MakeEvent(fuchsia::ui::input3::KeyEventType::PRESSED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":4,"codePoint":65,"modifiers":1})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458756,"codePoint":65,"modifiers":1})",
   });
   // Release CAPS_LOCK.
   events.emplace_back(EventFlow{
@@ -1287,7 +1281,7 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
                 fuchsia::ui::input3::Modifiers::CAPS_LOCK,
                 fuchsia::input::Key::CAPS_LOCK),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keyup","keymap":"fuchsia","hidUsage":57,"codePoint":0,"modifiers":1})",
+      R"({"type":"keyup","keymap":"fuchsia","hidUsage":458809,"codePoint":0,"modifiers":1})",
   });
   // Press A again.  This time get 'A'.
   // CAPS_LOCK is latched active even if it was just released.
@@ -1295,7 +1289,7 @@ TEST_F(PlatformViewTests, OnKeyEvent) {
       MakeEvent(fuchsia::ui::input3::KeyEventType::PRESSED, std::nullopt,
                 fuchsia::input::Key::A),
       fuchsia::ui::input3::KeyEventStatus::HANDLED,
-      R"({"type":"keydown","keymap":"fuchsia","hidUsage":4,"codePoint":65,"modifiers":1})",
+      R"({"type":"keydown","keymap":"fuchsia","hidUsage":458756,"codePoint":65,"modifiers":1})",
   });
 
   for (const auto& event : events) {

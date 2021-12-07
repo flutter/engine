@@ -151,8 +151,14 @@ class Environment {
 
   /// Path to the clone of the flutter/goldens repository.
   io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
-        webUiDartToolDir.path,
+        webUiBuildDir.path,
         'goldens',
+      ));
+
+  /// Path to the base directory to be used by Skia Gold.
+  io.Directory get webUiSkiaGoldDirectory => io.Directory(pathlib.join(
+        webUiDartToolDir.path,
+        'skia_gold',
       ));
 
   /// Directory to add test results which would later be uploaded to a gcs

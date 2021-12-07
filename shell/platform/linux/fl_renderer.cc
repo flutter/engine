@@ -70,8 +70,9 @@ gboolean fl_renderer_start(FlRenderer* self, FlView* view, GError** error) {
     gdk_gl_context_realize(priv->resource_context, error);
   }
 
-  if (*error != nullptr)
+  if (*error != nullptr) {
     return FALSE;
+  }
   return TRUE;
 }
 
@@ -119,10 +120,6 @@ gboolean fl_renderer_clear_current(FlRenderer* self, GError** error) {
 guint32 fl_renderer_get_fbo(FlRenderer* self) {
   // There is only one frame buffer object - always return that.
   return 0;
-}
-
-gboolean fl_renderer_present(FlRenderer* self, GError** error) {
-  return TRUE;
 }
 
 gboolean fl_renderer_create_backing_store(

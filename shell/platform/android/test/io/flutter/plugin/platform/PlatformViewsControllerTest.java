@@ -699,7 +699,9 @@ public class PlatformViewsControllerTest {
         overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
 
     platformViewsController.detachFromView();
+
     platformViewsController.destroyOverlaySurfaces();
+    verify(overlayImageView, times(1)).closeImageReader();
   }
 
   @Test
@@ -985,7 +987,10 @@ public class PlatformViewsControllerTest {
         int systemGestureInsetRight,
         int systemGestureInsetBottom,
         int systemGestureInsetLeft,
-        int physicalTouchSlop) {}
+        int physicalTouchSlop,
+        int[] displayFeaturesBounds,
+        int[] displayFeaturesType,
+        int[] displayFeaturesState) {}
 
     @Implementation
     public void invokePlatformMessageResponseCallback(

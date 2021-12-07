@@ -13,6 +13,16 @@
 
 FLUTTER_ASSERT_ARC
 
+@interface FlutterAppDelegate ()
+- (void)application:(UIApplication*)application
+    didReceiveRemoteNotification:(NSDictionary*)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler;
+- (void)application:(UIApplication*)application
+    didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
+@end
+
 @interface FlutterAppDelegateTest : XCTestCase
 @property(strong) FlutterAppDelegate* appDelegate;
 
@@ -121,6 +131,22 @@ FLUTTER_ASSERT_ARC
                                            arguments:@"/custom/route#fragment"]);
 }
 
+- (void)testReleasesWindowOnDealloc {
+  __weak UIWindow* weakWindow;
+  @autoreleasepool {
+    id mockWindow = OCMClassMock([UIWindow class]);
+    FlutterAppDelegate* appDelegate = [[FlutterAppDelegate alloc] init];
+    appDelegate.window = mockWindow;
+    weakWindow = mockWindow;
+    XCTAssertNotNil(weakWindow);
+    [mockWindow stopMocking];
+    mockWindow = nil;
+    appDelegate = nil;
+  }
+  // App delegate has released the window.
+  XCTAssertNil(weakWindow);
+}
+
 #pragma mark - Deep linking
 
 - (void)testUniversalLinkPushRoute {
@@ -137,6 +163,61 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(result);
   OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
                                            arguments:@"/custom/route?query=test"]);
+}
+
+- (void)testDidReceiveRemoteNotificationTrue {
+  id delegate = OCMProtocolMock(@protocol(FlutterApplicationLifeCycleDelegate));
+  [self.appDelegate addApplicationLifeCycleDelegate:delegate];
+  XCTAssertTrue([self.appDelegate
+      respondsToSelector:@selector(application:
+                             didReceiveRemoteNotification:fetchCompletionHandler:)]);
+  NSDictionary* info = @{};
+  void (^handler)(UIBackgroundFetchResult) = ^(UIBackgroundFetchResult result) {
+  };
+  [self.appDelegate application:[UIApplication sharedApplication]
+      didReceiveRemoteNotification:info
+            fetchCompletionHandler:handler];
+  [(NSObject<FlutterApplicationLifeCycleDelegate>*)[delegate verify]
+                       application:[UIApplication sharedApplication]
+      didReceiveRemoteNotification:info
+            fetchCompletionHandler:handler];
+}
+
+- (void)testDidRegisterForRemoteNotificationsWithDeviceTokenTrue {
+  id delegate = OCMProtocolMock(@protocol(FlutterApplicationLifeCycleDelegate));
+  [self.appDelegate addApplicationLifeCycleDelegate:delegate];
+  XCTAssertTrue([self.appDelegate
+      respondsToSelector:@selector(application:didRegisterForRemoteNotificationsWithDeviceToken:)]);
+  NSData* token = [[NSData alloc] init];
+  [self.appDelegate application:[UIApplication sharedApplication]
+      didRegisterForRemoteNotificationsWithDeviceToken:token];
+  [(NSObject<FlutterApplicationLifeCycleDelegate>*)[delegate verify]
+                                           application:[UIApplication sharedApplication]
+      didRegisterForRemoteNotificationsWithDeviceToken:token];
+}
+
+- (void)testDidReceiveRemoteNotificationFalse {
+  XCTAssertFalse([self.appDelegate
+      respondsToSelector:@selector(application:
+                             didReceiveRemoteNotification:fetchCompletionHandler:)]);
+}
+
+- (void)testDidRegisterForRemoteNotificationsWithDeviceTokenFalse {
+  XCTAssertFalse([self.appDelegate
+      respondsToSelector:@selector(application:didRegisterForRemoteNotificationsWithDeviceToken:)]);
+}
+
+- (void)testDidFailToRegisterForRemoteNotificationsWithError {
+  id delegate = OCMProtocolMock(@protocol(FlutterApplicationLifeCycleDelegate));
+  [self.appDelegate addApplicationLifeCycleDelegate:delegate];
+  XCTAssertTrue([self.appDelegate
+      respondsToSelector:@selector(application:didFailToRegisterForRemoteNotificationsWithError:)]);
+  NSError* error = [[NSError alloc] init];
+  [self.appDelegate application:[UIApplication sharedApplication]
+      didFailToRegisterForRemoteNotificationsWithError:error];
+  [(NSObject<FlutterApplicationLifeCycleDelegate>*)[delegate verify]
+                                           application:[UIApplication sharedApplication]
+      didFailToRegisterForRemoteNotificationsWithError:error];
 }
 
 @end

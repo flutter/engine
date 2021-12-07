@@ -90,7 +90,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
-  // Called when the engine is restarted.
+  // Invoked by the engine right before the engine is restarted.
   //
   // This should reset necessary states to as if the view has just been
   // created. This is typically caused by a hot restart (Shift-R in CLI.)
@@ -160,6 +160,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // |WindowBindingHandlerDelegate|
   virtual void OnUpdateSemanticsEnabled(bool enabled) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
   // |TextInputPluginDelegate|
   void OnCursorRectUpdated(const Rect& rect) override;
@@ -316,7 +319,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<FlutterWindowsEngine> engine_;
 
   // Keeps track of pointer states in relation to the window.
-  std::map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
+  std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar_;
