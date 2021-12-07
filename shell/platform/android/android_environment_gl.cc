@@ -24,7 +24,7 @@ AndroidEnvironmentGL::AndroidEnvironmentGL()
   if (strstr(extensions, "EGL_ANDROID_presentation_time")) {
     presentation_time_proc_ =
         reinterpret_cast<PFNEGLPRESENTATIONTIMEANDROIDPROC>(
-            eglGetProcAddress("sEGL_ANDROID_presentation_time"));
+            eglGetProcAddress("eglPresentationTimeANDROID"));
   }
 
   valid_ = true;
