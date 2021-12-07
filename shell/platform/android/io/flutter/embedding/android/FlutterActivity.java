@@ -425,8 +425,8 @@ public class FlutterActivity extends Activity
 
   /**
    * Creates a {@link NewEngineInGroupIntentBuilder}, which can be used to configure an {@link
-   * Intent} to launch a {@code FlutterActivity} by internally creating a FlutterEngine from
-   * an existing {@link io.flutter.embedding.engine.FlutterEngineGroup} cached in a specified {@link
+   * Intent} to launch a {@code FlutterActivity} by internally creating a FlutterEngine from an
+   * existing {@link io.flutter.embedding.engine.FlutterEngineGroup} cached in a specified {@link
    * io.flutter.embedding.engine.FlutterEngineGroupCache}, and creates a new {@link
    * io.flutter.embedding.engine.FlutterEngine} by FlutterEngineGroup#createAndRunEngine
    *
@@ -500,9 +500,8 @@ public class FlutterActivity extends Activity
     }
 
     /**
-     * The Dart entrypoint that will be executed in the newly created FlutterEngine as soon as
-     * the Dart snapshot is loaded.
-     * Default to "main".
+     * The Dart entrypoint that will be executed in the newly created FlutterEngine as soon as the
+     * Dart snapshot is loaded. Default to "main".
      *
      * @param dartEntrypoint The dart entrypoint's name
      * @return The engine group intent builder

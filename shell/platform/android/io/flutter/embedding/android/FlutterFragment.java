@@ -706,8 +706,8 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Returns a {@link NewEngineInGroupFragmentBuilder} to create a {@code FlutterFragment} with a cached
-   * {@link io.flutter.embedding.engine.FlutterEngineGroup} in {@link
+   * Returns a {@link NewEngineInGroupFragmentBuilder} to create a {@code FlutterFragment} with a
+   * cached {@link io.flutter.embedding.engine.FlutterEngineGroup} in {@link
    * io.flutter.embedding.engine.FlutterEngineGroupCache}.
    *
    * <p>An {@code IllegalStateException} will be thrown during the lifecycle of the {@code
@@ -715,7 +715,7 @@ public class FlutterFragment extends Fragment
    * requested but does not exist in the {@link
    * io.flutter.embedding.engine.FlutterEngineGroupCache}.
    *
-   * <p> To create a {@code FlutterFragment} that uses a new {@link
+   * <p>To create a {@code FlutterFragment} that uses a new {@link
    * io.flutter.embedding.engine.FlutterEngine} that created by {@link
    * io.flutter.embedding.engine.FlutterEngineGroup#createAndRunEngine}
    */
