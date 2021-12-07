@@ -17,9 +17,7 @@ import java.util.Map;
  * <p>The ID of a given {@link io.flutter.embedding.engine.FlutterEngineGroup} can be whatever
  * {@code String} is desired.
  *
- * <p>{@code FlutterEngineGroupCache} is useful for storing pre-warmed {@link
- * io.flutter.embedding.engine.FlutterEngineGroup} instances. {@link
- * io.flutter.embedding.android.FlutterActivity} and {@link
+ * <p>{@link io.flutter.embedding.android.FlutterActivity} and {@link
  * io.flutter.embedding.android.FlutterFragment} use the {@code FlutterEngineGroupCache} singleton
  * internally when instructed to use a cached {@link io.flutter.embedding.engine.FlutterEngineGroup}
  * based on a given ID. See {@link
