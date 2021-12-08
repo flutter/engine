@@ -833,8 +833,6 @@ public class FlutterFragment extends Fragment
     // Redundant calls are ok.
     delegate.onDestroyView();
     delegate.onDetach();
-    delegate.release();
-    delegate = null;
   }
 
   @Override
@@ -1279,7 +1277,7 @@ public class FlutterFragment extends Fragment
 
   @Override
   public void updateSystemUiOverlays() {
-    if (delegate != null) {
+    if (delegate != null && delegate.isAttached()) {
       delegate.updateSystemUiOverlays();
     }
   }
@@ -1317,8 +1315,8 @@ public class FlutterFragment extends Fragment
   }
 
   private boolean stillAttachedForEvent(String event) {
-    if (delegate == null) {
-      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
+    if (delegate == null || !delegate.isAttached()) {
+      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after detach.");
       return false;
     }
     return true;

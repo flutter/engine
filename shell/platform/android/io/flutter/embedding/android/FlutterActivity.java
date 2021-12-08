@@ -662,7 +662,8 @@ public class FlutterActivity extends Activity
             + " connection to the engine "
             + getFlutterEngine()
             + " evicted by another attaching activity");
-    release();
+    delegate.onDestroyView();
+    delegate.onDetach();
   }
 
   @Override
@@ -1129,14 +1130,14 @@ public class FlutterActivity extends Activity
 
   @Override
   public void updateSystemUiOverlays() {
-    if (delegate != null) {
+    if (delegate != null && delegate.isAttached()) {
       delegate.updateSystemUiOverlays();
     }
   }
 
   private boolean stillAttachedForEvent(String event) {
-    if (delegate == null) {
-      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+    if (delegate == null || !delegate.isAttached()) {
+      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after detach.");
       return false;
     }
     return true;

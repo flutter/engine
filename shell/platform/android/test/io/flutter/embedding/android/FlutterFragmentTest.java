@@ -6,6 +6,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 @RunWith(RobolectricTestRunner.class)
 public class FlutterFragmentTest {
+  boolean isDelegateAttached;
+
   @Test
   public void itCreatesDefaultFragmentWithExpectedDefaults() {
     FlutterFragment fragment = FlutterFragment.createDefault();
@@ -118,6 +121,11 @@ public class FlutterFragmentTest {
         FlutterFragment.withCachedEngine("my_cached_engine")
             .destroyEngineWithFragment(true)
             .build();
+
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+
     fragment.setDelegate(mockDelegate);
     fragment.onStart();
     fragment.onResume();
@@ -174,6 +182,9 @@ public class FlutterFragmentTest {
 
     FlutterActivityAndFragmentDelegate mockDelegate =
         mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
     fragment.setDelegate(mockDelegate);
 
     activity.onBackPressed();
