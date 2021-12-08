@@ -103,7 +103,11 @@ void DisplayListCanvasDispatcher::drawPaint() {
   canvas_->drawPaint(sk_paint);
 }
 void DisplayListCanvasDispatcher::drawColor(SkColor color, SkBlendMode mode) {
-  canvas_->drawColor(color, mode);
+  // SkCanvas::drawColor(SkColor) does the following conversion anyway
+  // We do it here manually to increase precision on applying opacity
+  SkColor4f color4f = SkColor4f::FromColor(color);
+  color4f.fA *= opacity();
+  canvas_->drawColor(color4f, mode);
 }
 void DisplayListCanvasDispatcher::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
@@ -205,10 +209,7 @@ void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
 void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
   int save_count = canvas_->save();
-  {
-    DisplayListCanvasDispatcher dispatcher(canvas_, opacity());
-    display_list->Dispatch(dispatcher);
-  }
+  display_list->RenderTo(canvas_, opacity());
   canvas_->restoreToCount(save_count);
 }
 void DisplayListCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,

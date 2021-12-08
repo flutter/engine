@@ -552,7 +552,6 @@ class DisplayListFlags {
   // a default paint object can be constructed when rendering
   // the op to carry information imposed from outside the
   // DisplayList (for example, the opacity override).
-  static constexpr int kHasOptionalPaint_    = 1 << 29;
   static constexpr int kIgnoresPaint_        = 1 << 30;
   // clang-format on
 
@@ -636,7 +635,6 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   }
 
   bool ignores_paint() const { return has_any(kIgnoresPaint_); }
-  bool supports_optional_paint() const { return has_any(kHasOptionalPaint_); }
 
   bool applies_anti_alias() const { return has_any(kUsesAntiAlias_); }
   bool applies_dither() const { return has_any(kUsesDither_); }
@@ -1013,9 +1011,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
     bool cannot_inherit_opacity;
     bool has_compatible_op;
 
-    bool compatible_with_group_opacity() const {
-      return !cannot_inherit_opacity;
-    }
+    bool is_group_opacity_compatible() const { return !cannot_inherit_opacity; }
 
     void mark_incompatible() { cannot_inherit_opacity = true; }
 
@@ -1036,8 +1032,56 @@ class DisplayListBuilder final : public virtual Dispatcher,
   };
 
   std::vector<LayerInfo> layer_stack_;
+  LayerInfo* current_layer_;
 
-  void CheckOptimizations(const DisplayListAttributeFlags& flags);
+  // This flag indicates whether or not the current rendering attributes
+  // are compatible with rendering ops applying an inherited opacity.
+  bool current_opacity_compatibility_ = true;
+
+  // Returns the compatibility of a given blend mode for applying an
+  // inherited opacity value to modulate the visibility of the op.
+  // For now we only accept SrcOver blend modes but this could be expanded
+  // in the future to include other (rarely used) modes that also modulate
+  // the opacity of a rendering operation at the cost of a switch statement
+  // or lookup table.
+  static bool IsOpacityCompatible(SkBlendMode mode) {
+    return (mode == SkBlendMode::kSrcOver);
+  }
+
+  void UpdateCurrentOpacityCompatibility() {
+    current_opacity_compatibility_ =
+        current_color_filter_ == nullptr &&
+        !current_invert_colors_ &&
+        current_blender_ == nullptr &&
+        IsOpacityCompatible(current_blend_mode_);
+  }
+
+  // Update the opacity compatibility flags of the current layer for an op
+  // that has determined its compatibility as indicated by |compatible|.
+  void UpdateLayerOpacityCompatibility(bool compatible) {
+    if (compatible) {
+      current_layer_->add_compatible_op();
+    } else {
+      current_layer_->mark_incompatible();
+    }
+  }
+
+  // Check for opacity compatibility for an op that may or may not use the
+  // current rendering attributes as indicated by |uses_blend_attribute|.
+  // If the flag is false then the rendering op will be able to substitute
+  // a default Paint object with the opacity applied using the default SrcOver
+  // blend mode which is always compatible with applying an inherited opacity.
+  void CheckLayerOpacityCompatibility(bool uses_blend_attribute = true) {
+    UpdateLayerOpacityCompatibility(!uses_blend_attribute ||
+                                    current_opacity_compatibility_);
+  }
+
+  // Check for opacity compatibility for an op that ignores the current
+  // attributes and uses the indicated blend |mode| to render to the layer.
+  // This is only used by |drawColor| currently.
+  void CheckLayerOpacityCompatibility(SkBlendMode mode) {
+    UpdateLayerOpacityCompatibility(IsOpacityCompatible(mode));
+  }
 
   void onSetAntiAlias(bool aa);
   void onSetDither(bool dither);

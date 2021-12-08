@@ -4,6 +4,7 @@
 
 #include "flutter/flow/display_list_canvas.h"
 #include "flutter/flow/layers/physical_shape_layer.h"
+#include "flutter/testing/test_gl_surface.h"
 
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
@@ -247,9 +248,15 @@ class RenderSurface {
   explicit RenderSurface(sk_sp<SkSurface> surface) : surface_(surface) {}
   ~RenderSurface() { sk_free(addr_); }
 
-  SkCanvas* canvas() { return surface_->getCanvas(); }
+  SkCanvas* canvas() {
+    MakeCurrent();
+    return surface_->getCanvas();
+  }
+
+  virtual void MakeCurrent() {}
 
   const SkPixmap* pixmap() {
+    surface_->flushAndSubmit();
     if (!pixmap_.addr()) {
       SkImageInfo info = surface_->imageInfo();
       if (info.colorType() != kN32_SkColorType ||
@@ -257,16 +264,49 @@ class RenderSurface {
         info = SkImageInfo::MakeN32Premul(info.dimensions());
         addr_ = malloc(info.computeMinByteSize() * info.height());
         pixmap_.reset(info, addr_, info.minRowBytes());
-        EXPECT_TRUE(surface_->readPixels(pixmap_, 0, 0));
+        if (!surface_->readPixels(pixmap_, 0, 0)) {
+          MakeCurrent();
+          auto snapshot = surface_->makeImageSnapshot();
+          EXPECT_NE(snapshot, nullptr);
+          auto image = snapshot->makeRasterImage();
+          EXPECT_NE(image, nullptr);
+          EXPECT_TRUE(image->readPixels(pixmap_, 0, 0));
+        }
       }
     }
     return &pixmap_;
   }
 
+ protected:
+  void set_surface(sk_sp<SkSurface> surface) { surface_ = surface; }
+
  private:
   sk_sp<SkSurface> surface_;
   SkPixmap pixmap_;
   void* addr_ = nullptr;
+};
+
+class RenderGLSurface : public RenderSurface {
+ public:
+  explicit RenderGLSurface(int width, int height)
+      : RenderSurface(nullptr) {
+    SkISize size = SkISize::Make(width, height);
+    gl_surface_ = std::make_unique<TestGLSurface>(size);
+    gl_surface_->MakeCurrent();
+    context_ = gl_surface_->GetGrContext();
+    set_surface(SkSurface::MakeRenderTarget(context_.get(), SkBudgeted::kNo,
+                                            SkImageInfo::MakeN32Premul(size), 1,
+                                            kTopLeft_GrSurfaceOrigin, nullptr,
+                                            false));
+  }
+
+  virtual void MakeCurrent() override {
+    gl_surface_->MakeCurrent();
+  }
+
+ private:
+  std::unique_ptr<TestGLSurface> gl_surface_;
+  sk_sp<GrDirectContext> context_;
 };
 
 class RenderEnvironment {
@@ -289,6 +329,14 @@ class RenderEnvironment {
     return RenderSurface(surface);
   }
 
+  RenderSurface MakeGPUSurface(const SkColor bg = SK_ColorTRANSPARENT,
+                               int width = TestWidth,
+                               int height = TestHeight) const {
+    RenderGLSurface surface(width, height);
+    surface.canvas()->clear(bg);
+    return surface;
+  }
+
   void init_ref(CvRenderer& cv_renderer, SkColor bg = SK_ColorTRANSPARENT) {
     init_ref([=](SkCanvas*, SkPaint&) {}, cv_renderer, bg);
   }
@@ -304,6 +352,7 @@ class RenderEnvironment {
     ref_pixmap_ = ref_surface_.pixmap();
   }
 
+  const SkImageInfo& info() const { return info_; }
   SkCanvas* ref_canvas() { return ref_surface_.canvas(); }
   const SkPaint& ref_paint() const { return ref_paint_; }
   const SkMatrix& ref_matrix() const { return ref_matrix_; }
@@ -1733,6 +1782,10 @@ class CanvasCompareTester {
       compareToReference(dl_surface.pixmap(), sk_pixels,
                          info + " (DisplayList built directly -> surface)",
                          &dl_bounds, &tolerance, bg);
+
+      if (display_list->can_apply_group_opacity()) {
+        checkGroupOpacity(env, display_list, info + " with Group Opacity", bg);
+      }
     }
 
     // This test cannot work if the rendering is using shadows until
@@ -1790,6 +1843,39 @@ class CanvasCompareTester {
     }
   }
 
+  static void checkGroupOpacity(const RenderEnvironment& env,
+                                sk_sp<DisplayList> display_list,
+                                const std::string info,
+                                SkColor bg) {
+    DisplayListBuilder builder;
+    SkColor color = builder.getColor();
+    builder.setColor(SkColorSetARGB(128, 0, 0, 0));
+    builder.saveLayer(&TestBounds, true);
+    // Reset the state for the display list
+    builder.setColor(color);
+    builder.setAntiAlias(true);
+    display_list->Dispatch(builder);
+    builder.restore();
+    sk_sp<DisplayList> save_layer_display_list = builder.Build();
+
+    RenderSurface save_layer_surface = env.MakeGPUSurface(bg);
+    save_layer_display_list->RenderTo(save_layer_surface.canvas());
+    const SkPixmap* save_layer_pixmap = save_layer_surface.pixmap();
+
+    RenderSurface group_opacity_surface = env.MakeGPUSurface(bg);
+    SkCanvas* group_opacity_canvas = group_opacity_surface.canvas();
+    DisplayListCanvasDispatcher dispatcher(group_opacity_canvas, 128.0 / 255.0);
+    dispatcher.setAntiAlias(true);
+    display_list->Dispatch(dispatcher);
+    const SkPixmap* group_opacity_pixmap = group_opacity_surface.pixmap();
+
+    quickCompareToReference(save_layer_pixmap,
+                            group_opacity_pixmap,
+                            true, info,
+                            // For 565 surfaces off-by-1 is a jump of 8 or 9
+                            env.info().bytesPerPixel() < 4 ? 9 : 1);
+  }
+
   static void checkPixels(const SkPixmap* ref_pixels,
                           SkRect ref_bounds,
                           const std::string info,
@@ -1813,10 +1899,29 @@ class CanvasCompareTester {
     ASSERT_GT(pixels_touched, 0) << info;
   }
 
+  static bool fudgedCompare(uint32_t ref_pixel, uint32_t test_pixel,
+                            int fudge) {
+    if (ref_pixel == test_pixel) {
+      return true;
+    }
+    if (fudge == 0) {
+      return false;
+    }
+    for (int i = 0; i < 32; i += 8) {
+      int ref_comp = (ref_pixel >> i) & 0xff;
+      int test_comp = (test_pixel >> i) & 0xff;
+      if (std::abs(ref_comp - test_comp) > fudge) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   static void quickCompareToReference(const SkPixmap* ref_pixels,
                                       const SkPixmap* test_pixels,
                                       bool should_match,
-                                      const std::string info) {
+                                      const std::string info,
+                                      int fudge = 0) {
     ASSERT_EQ(test_pixels->width(), ref_pixels->width()) << info;
     ASSERT_EQ(test_pixels->height(), ref_pixels->height()) << info;
     ASSERT_EQ(test_pixels->info().bytesPerPixel(), 4) << info;
@@ -1826,7 +1931,10 @@ class CanvasCompareTester {
       const uint32_t* ref_row = ref_pixels->addr32(0, y);
       const uint32_t* test_row = test_pixels->addr32(0, y);
       for (int x = 0; x < test_pixels->width(); x++) {
-        if (ref_row[x] != test_row[x]) {
+        if (!fudgedCompare(ref_row[x], test_row[x], fudge)) {
+          if (fudge != 0) {
+            FML_LOG(ERROR) << "Pixels differ at " << x << ", " << y << " => " << std::hex << ref_row[x] << " != " << test_row[x];
+          }
           pixels_different++;
         }
       }
@@ -2844,7 +2952,7 @@ TEST_F(DisplayListCanvas, DrawPicture) {
 
 TEST_F(DisplayListCanvas, DrawPictureWithMatrix) {
   sk_sp<SkPicture> picture = makeTestPicture();
-  SkMatrix matrix = SkMatrix::Scale(0.95, 0.95);
+  SkMatrix matrix = SkMatrix::Scale(0.9, 0.9);
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //

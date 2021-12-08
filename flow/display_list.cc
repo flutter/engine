@@ -1079,7 +1079,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   used_ = allocated_ = op_count_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
-  bool compatible = layer_stack_.back().compatible_with_group_opacity();
+  bool compatible = layer_stack_.back().is_group_opacity_compatible();
   return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
                                             nested_bytes, nested_count,
                                             cull_rect_, compatible));
@@ -1088,6 +1088,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
     : cull_rect_(cull_rect) {
   layer_stack_.emplace_back();
+  current_layer_ = &layer_stack_.back();
 }
 
 DisplayListBuilder::~DisplayListBuilder() {
@@ -1105,6 +1106,7 @@ void DisplayListBuilder::onSetDither(bool dither) {
 }
 void DisplayListBuilder::onSetInvertColors(bool invert) {
   Push<SetInvertColorsOp>(0, 0, current_invert_colors_ = invert);
+  UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetStrokeCap(SkPaint::Cap cap) {
   Push<SetStrokeCapOp>(0, 0, current_stroke_cap_ = cap);
@@ -1127,6 +1129,7 @@ void DisplayListBuilder::onSetColor(SkColor color) {
 void DisplayListBuilder::onSetBlendMode(SkBlendMode mode) {
   current_blender_ = nullptr;
   Push<SetBlendModeOp>(0, 0, current_blend_mode_ = mode);
+  UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
   // setBlender(nullptr) should be redirected to setBlendMode(SrcOver)
@@ -1141,6 +1144,7 @@ void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
     (current_blender_ = blender)  //
         ? Push<SetBlenderOp>(0, 0, std::move(blender))
         : Push<ClearBlenderOp>(0, 0);
+    UpdateCurrentOpacityCompatibility();
   }
 }
 void DisplayListBuilder::onSetShader(sk_sp<SkShader> shader) {
@@ -1157,6 +1161,7 @@ void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
   (current_color_filter_ = filter)  //
       ? Push<SetColorFilterOp>(0, 0, std::move(filter))
       : Push<ClearColorFilterOp>(0, 0);
+  UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
   (current_path_effect_ = effect)  //
@@ -1242,41 +1247,10 @@ void DisplayListBuilder::setAttributesFromPaint(
   }
 }
 
-void DisplayListBuilder::CheckOptimizations(
-    const DisplayListAttributeFlags& flags) {
-  LayerInfo& info = layer_stack_.back();
-  if (flags.ignores_paint()) {
-    if (flags.supports_optional_paint()) {
-      info.add_compatible_op();
-    } else {
-      info.mark_incompatible();
-    }
-    return;
-  }
-  if (flags.applies_image_filter() && current_image_filter_) {
-    info.mark_incompatible();
-    return;
-  }
-  if (flags.applies_color_filter() &&
-      (current_color_filter_ || current_invert_colors_)) {
-    info.mark_incompatible();
-    return;
-  }
-  if (flags.applies_blend() &&
-      (current_blender_ || current_blend_mode_ != SkBlendMode::kSrcOver)) {
-    info.mark_incompatible();
-    return;
-  }
-  if (!flags.applies_alpha_or_color()) {
-    info.mark_incompatible();
-    return;
-  }
-  info.add_compatible_op();
-}
-
 void DisplayListBuilder::save() {
   Push<SaveOp>(0, 1);
   layer_stack_.emplace_back();
+  current_layer_ = &layer_stack_.back();
 }
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
@@ -1284,15 +1258,15 @@ void DisplayListBuilder::restore() {
     // on the stack.
     LayerInfo layer_info = layer_stack_.back();
     layer_stack_.pop_back();
+    current_layer_ = &layer_stack_.back();
     Push<RestoreOp>(0, 1);
     if (!layer_info.has_layer) {
       // For regular save() ops there was no protecting layer so we have to
       // accumulate the values into the enclosing layer.
-      LayerInfo& info = layer_stack_.back();
       if (layer_info.cannot_inherit_opacity) {
-        info.mark_incompatible();
+        current_layer_->mark_incompatible();
       } else if (layer_info.has_compatible_op) {
-        info.add_compatible_op();
+        current_layer_->add_compatible_op();
       }
     }
   }
@@ -1302,9 +1276,9 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
   bounds  //
       ? Push<SaveLayerBoundsOp>(0, 1, *bounds, restore_with_paint)
       : Push<SaveLayerOp>(0, 1, restore_with_paint);
-  CheckOptimizations(restore_with_paint ? kSaveLayerFlags
-                                        : kSaveLayerWithPaintFlags);
+  CheckLayerOpacityCompatibility(restore_with_paint);
   layer_stack_.emplace_back(true);
+  current_layer_ = &layer_stack_.back();
 }
 
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
@@ -1418,31 +1392,27 @@ void DisplayListBuilder::clipPath(const SkPath& path,
 
 void DisplayListBuilder::drawPaint() {
   Push<DrawPaintOp>(0, 1);
-  CheckOptimizations(kDrawPaintFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawColor(SkColor color, SkBlendMode mode) {
   Push<DrawColorOp>(0, 1, color, mode);
-  if (mode != SkBlendMode::kSrcOver) {
-    layer_stack_.back().mark_incompatible();
-  } else {
-    layer_stack_.back().add_compatible_op();
-  }
+  CheckLayerOpacityCompatibility(mode);
 }
 void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
   Push<DrawLineOp>(0, 1, p0, p1);
-  CheckOptimizations(kDrawLineFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawRect(const SkRect& rect) {
   Push<DrawRectOp>(0, 1, rect);
-  CheckOptimizations(kDrawRectFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawOval(const SkRect& bounds) {
   Push<DrawOvalOp>(0, 1, bounds);
-  CheckOptimizations(kDrawOvalFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
   Push<DrawCircleOp>(0, 1, center, radius);
-  CheckOptimizations(kDrawCircleFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   if (rrect.isRect()) {
@@ -1451,17 +1421,17 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
     drawOval(rrect.rect());
   } else {
     Push<DrawRRectOp>(0, 1, rrect);
-    CheckOptimizations(kDrawRRectFlags);
+    CheckLayerOpacityCompatibility();
   }
 }
 void DisplayListBuilder::drawDRRect(const SkRRect& outer,
                                     const SkRRect& inner) {
   Push<DrawDRRectOp>(0, 1, outer, inner);
-  CheckOptimizations(kDrawDRRectFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
   Push<DrawPathOp>(0, 1, path);
-  CheckOptimizations(kDrawPathFlags);
+  CheckLayerOpacityCompatibility();
 }
 
 void DisplayListBuilder::drawArc(const SkRect& bounds,
@@ -1469,8 +1439,7 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
                                  SkScalar sweep,
                                  bool useCenter) {
   Push<DrawArcOp>(0, 1, bounds, start, sweep, useCenter);
-  CheckOptimizations(useCenter ? kDrawArcWithCenterFlags
-                               : kDrawArcNoCenterFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
                                     uint32_t count,
@@ -1481,26 +1450,30 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
   switch (mode) {
     case SkCanvas::PointMode::kPoints_PointMode:
       data_ptr = Push<DrawPointsOp>(bytes, 1, count);
-      CheckOptimizations(kDrawPointsAsPointsFlags);
       break;
     case SkCanvas::PointMode::kLines_PointMode:
       data_ptr = Push<DrawLinesOp>(bytes, 1, count);
-      CheckOptimizations(kDrawPointsAsLinesFlags);
       break;
     case SkCanvas::PointMode::kPolygon_PointMode:
       data_ptr = Push<DrawPolygonOp>(bytes, 1, count);
-      CheckOptimizations(kDrawPointsAsPolygonFlags);
       break;
     default:
       FML_DCHECK(false);
       return;
   }
   CopyV(data_ptr, pts, count);
+  // drawPoints treats every point or line (or segment of a polygon)
+  // as a completely separate operation meaning we cannot ensure
+  // distribution of group opacity without analyzing the mode and the
+  // bounds of every sub-primitive.
+  UpdateLayerOpacityCompatibility(false);
 }
 void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
                                       SkBlendMode mode) {
   Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
-  CheckOptimizations(kDrawVerticesFlags);
+  // DrawVertices applies its colors to the paint so we have no way
+  // of controlling opacity using the current paint attributes.
+  UpdateLayerOpacityCompatibility(false);
 }
 
 void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
@@ -1510,8 +1483,7 @@ void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
   render_with_attributes
       ? Push<DrawImageWithAttrOp>(0, 1, std::move(image), point, sampling)
       : Push<DrawImageOp>(0, 1, std::move(image), point, sampling);
-  CheckOptimizations(render_with_attributes ? kDrawImageWithPaintFlags
-                                            : kDrawImageFlags);
+  CheckLayerOpacityCompatibility(render_with_attributes);
 }
 void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
                                        const SkRect& src,
@@ -1521,8 +1493,7 @@ void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
                                        SkCanvas::SrcRectConstraint constraint) {
   Push<DrawImageRectOp>(0, 1, std::move(image), src, dst, sampling,
                         render_with_attributes, constraint);
-  CheckOptimizations(render_with_attributes ? kDrawImageRectWithPaintFlags
-                                            : kDrawImageRectFlags);
+  CheckLayerOpacityCompatibility(render_with_attributes);
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
                                        const SkIRect& center,
@@ -1533,8 +1504,7 @@ void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
       ? Push<DrawImageNineWithAttrOp>(0, 1, std::move(image), center, dst,
                                       filter)
       : Push<DrawImageNineOp>(0, 1, std::move(image), center, dst, filter);
-  CheckOptimizations(render_with_attributes ? kDrawImageNineWithPaintFlags
-                                            : kDrawImageNineFlags);
+  CheckLayerOpacityCompatibility(render_with_attributes);
 }
 void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
                                           const SkCanvas::Lattice& lattice,
@@ -1556,8 +1526,7 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
       filter, render_with_attributes);
   CopyV(pod, lattice.fXDivs, xDivCount, lattice.fYDivs, yDivCount,
         lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
-  CheckOptimizations(render_with_attributes ? kDrawImageLatticeWithPaintFlags
-                                            : kDrawImageLatticeFlags);
+  CheckLayerOpacityCompatibility(render_with_attributes);
 }
 void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
                                    const SkRSXform xform[],
@@ -1592,8 +1561,10 @@ void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
     }
     CopyV(data_ptr, xform, count, tex, count);
   }
-  CheckOptimizations(render_with_attributes ? kDrawAtlasWithPaintFlags
-                                            : kDrawAtlasFlags);
+  // drawAtlas treats each image as a separate operation so we cannot rely
+  // on it to distribute the opacity without overlap without checking all
+  // of the transforms and texture rectangles.
+  UpdateLayerOpacityCompatibility(false);
 }
 
 void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
@@ -1611,8 +1582,7 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
   // This behavior is identical to the way SkPicture computes nested op counts.
   nested_op_count_ += picture->approximateOpCount(true) - 1;
   nested_bytes_ += picture->approximateBytesUsed();
-  CheckOptimizations(render_with_attributes ? kDrawPictureWithPaintFlags
-                                            : kDrawPictureFlags);
+  CheckLayerOpacityCompatibility(render_with_attributes);
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
@@ -1625,17 +1595,13 @@ void DisplayListBuilder::drawDisplayList(
   // This behavior is identical to the way SkPicture computes nested op counts.
   nested_op_count_ += display_list->op_count(true) - 1;
   nested_bytes_ += display_list->bytes(true);
-  if (display_list->can_apply_group_opacity()) {
-    layer_stack_.back().add_compatible_op();
-  } else {
-    layer_stack_.back().mark_incompatible();
-  }
+  UpdateLayerOpacityCompatibility(display_list->can_apply_group_opacity());
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
                                       SkScalar y) {
   Push<DrawTextBlobOp>(0, 1, std::move(blob), x, y);
-  CheckOptimizations(kDrawTextBlobFlags);
+  CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const SkColor color,
@@ -1645,7 +1611,7 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
   transparent_occluder  //
       ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation, dpr)
       : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
-  CheckOptimizations(kDrawShadowFlags);
+  UpdateLayerOpacityCompatibility(false);
 }
 
 // clang-format off
@@ -1680,7 +1646,7 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
 // clang-format on
 
 const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerWithPaintFlags =
     DisplayListAttributeFlags(kIsNonGeometric_ |   //
@@ -1753,14 +1719,14 @@ const DisplayListAttributeFlags DisplayListOpFlags::kDrawVerticesFlags =
                               kUsesImageFilter_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageWithPaintFlags =
     DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
                               kUsesAntiAlias_ | kUsesMaskFilter_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageRectFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags
     DisplayListOpFlags::kDrawImageRectWithPaintFlags =
@@ -1768,33 +1734,33 @@ const DisplayListAttributeFlags
                                   kUsesAntiAlias_ | kUsesMaskFilter_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageNineFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags
     DisplayListOpFlags::kDrawImageNineWithPaintFlags =
         DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageLatticeFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags
     DisplayListOpFlags::kDrawImageLatticeWithPaintFlags =
         DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasWithPaintFlags =
     DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureWithPaintFlags =
     kSaveLayerWithPaintFlags;
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawDisplayListFlags =
-    DisplayListAttributeFlags(kHasOptionalPaint_ | kIgnoresPaint_);
+    DisplayListAttributeFlags(kIgnoresPaint_);
 
 const DisplayListAttributeFlags DisplayListOpFlags::kDrawTextBlobFlags =
     DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
