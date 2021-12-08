@@ -513,7 +513,9 @@ import java.util.Arrays;
   void onResume() {
     Log.v(TAG, "onResume()");
     ensureAlive();
-    flutterEngine.getLifecycleChannel().appIsResumed();
+    if (host.shouldDispatchAppLifecycleState()) {
+      flutterEngine.getLifecycleChannel().appIsResumed();
+    }
   }
 
   /**
@@ -559,7 +561,9 @@ import java.util.Arrays;
   void onPause() {
     Log.v(TAG, "onPause()");
     ensureAlive();
-    flutterEngine.getLifecycleChannel().appIsInactive();
+    if (host.shouldDispatchAppLifecycleState()) {
+      flutterEngine.getLifecycleChannel().appIsInactive();
+    }
   }
 
   /**
@@ -579,7 +583,11 @@ import java.util.Arrays;
   void onStop() {
     Log.v(TAG, "onStop()");
     ensureAlive();
-    flutterEngine.getLifecycleChannel().appIsPaused();
+
+    if (host.shouldDispatchAppLifecycleState()) {
+      flutterEngine.getLifecycleChannel().appIsPaused();
+    }
+
     // This is a workaround for a bug on some OnePlus phones. The visibility of the application
     // window is still true after locking the screen on some OnePlus phones, and shows a black
     // screen when unlocked. We can work around this by changing the visibility of FlutterView in
@@ -681,7 +689,9 @@ import java.util.Arrays;
       platformPlugin = null;
     }
 
-    flutterEngine.getLifecycleChannel().appIsDetached();
+    if (host.shouldDispatchAppLifecycleState()) {
+      flutterEngine.getLifecycleChannel().appIsDetached();
+    }
 
     // Destroy our FlutterEngine if we're not set to retain it.
     if (host.shouldDestroyEngineWithHost()) {
@@ -1078,5 +1088,13 @@ import java.util.Arrays;
      * SplashScreenView#remove}.
      */
     void updateSystemUiOverlays();
+
+    /**
+     * Give the host application a chance to take control of the app lifecycle events.
+     *
+     * <p>Return {@code false} means the host application dispatches these app lifecycle events,
+     * while return {@code true} means the engine dispatches these events.
+     */
+    boolean shouldDispatchAppLifecycleState();
   }
 }
