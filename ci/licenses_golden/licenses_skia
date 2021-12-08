@@ -1,4 +1,4 @@
-Signature: bdccec8c16b5138d6355a0865a2386ae
+Signature: df927dbe8bd61265d73c48baace7a997
 
 UNUSED LICENSES:
 
@@ -837,6 +837,7 @@ FILE: ../../../third_party/skia/infra/bots/assets/android_ndk_windows/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/android_sdk_linux/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/armhf_sysroot/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bazel/VERSION
+FILE: ../../../third_party/skia/infra/bots/assets/bazelisk/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/bloaty/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/cast_toolchain/VERSION
 FILE: ../../../third_party/skia/infra/bots/assets/ccache_linux/VERSION
@@ -1100,6 +1101,7 @@ FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/canvas2dcontext.js
 FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/color.js
 FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/font.js
 FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/htmlcanvas.js
+FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/htmlimage.js
 FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/imagedata.js
 FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/lineargradient.js
 FILE: ../../../third_party/skia/modules/canvaskit/htmlcanvas/path2d.js
@@ -2447,6 +2449,8 @@ FILE: ../../../third_party/skia/experimental/bazel_test/hello_world.go
 FILE: ../../../third_party/skia/experimental/graphite/include/BackendTexture.h
 FILE: ../../../third_party/skia/experimental/graphite/include/Context.h
 FILE: ../../../third_party/skia/experimental/graphite/include/GraphiteTypes.h
+FILE: ../../../third_party/skia/experimental/graphite/include/Recorder.h
+FILE: ../../../third_party/skia/experimental/graphite/include/Recording.h
 FILE: ../../../third_party/skia/experimental/graphite/include/SkStuff.h
 FILE: ../../../third_party/skia/experimental/graphite/include/TextureInfo.h
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/MtlBackendContext.h
@@ -2488,9 +2492,7 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Image_Graphite.h
 FILE: ../../../third_party/skia/experimental/graphite/src/ProgramCache.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Recorder.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/Recorder.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Recording.cpp
-FILE: ../../../third_party/skia/experimental/graphite/src/Recording.h
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPassTask.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/RenderPassTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Renderer.h
@@ -2622,8 +2624,8 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLIsConstantExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.cpp
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramVisitor.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLSwitchCaseContainsExit.cpp
-FILE: ../../../third_party/skia/src/sksl/codegen/SkVMDebugInfo.cpp
-FILE: ../../../third_party/skia/src/sksl/codegen/SkVMDebugInfo.h
+FILE: ../../../third_party/skia/src/sksl/codegen/SkVMDebugTrace.cpp
+FILE: ../../../third_party/skia/src/sksl/codegen/SkVMDebugTrace.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBinaryExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLBlock.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLChildCall.cpp
@@ -6064,6 +6066,7 @@ FILE: ../../../third_party/skia/include/sksl/DSLLayout.h
 FILE: ../../../third_party/skia/include/sksl/DSLRuntimeEffects.h
 FILE: ../../../third_party/skia/include/sksl/DSLStatement.h
 FILE: ../../../third_party/skia/include/sksl/DSLWrapper.h
+FILE: ../../../third_party/skia/include/sksl/SkSLDebugTrace.h
 FILE: ../../../third_party/skia/include/sksl/SkSLErrorReporter.h
 FILE: ../../../third_party/skia/src/core/SkStringView.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.cpp
