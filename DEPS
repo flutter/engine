@@ -27,7 +27,7 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'f333f5614a9b55fa478222ec1994cea699460892',
+  'skia_revision': '00edeefab7f4d08e539d4e7b8c4913cfcb91b3b5',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -99,7 +99,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '35989defc105bf83e75dd7380ddc7bc123f1a194',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '430b57c643883e6090b5af09faddd8048efee57c',
 
    # Fuchsia compatibility
    #
@@ -405,7 +405,7 @@ deps = {
    Var('fuchsia_git') + '/third_party/Vulkan-Headers.git' + '@' + '0255987d2457576907f046c6d52b89bc6131981d',
 
    'src/third_party/swiftshader':
-   Var('swiftshader_git') + '/SwiftShader.git' + '@' + 'e6ab47075fb8120fd53c33143b1e666c7c609b33',
+   Var('swiftshader_git') + '/SwiftShader.git' + '@' + 'dc0f1319307ee723c6e8a09f2ac7efd9d7bf70c3',
 
    'src/third_party/angle':
    Var('github_git') + '/google/angle.git' + '@' + '06d194e2ae7b1d7e0eda0c0c911eff92dec7d3d1',
@@ -606,7 +606,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': 'EAlr46NQ8PScUGwWjQq09dwe-fiNWyxHIVcN59p1RkcC'
+        'version': 'zMg5gNi2EKAq1G3z5xX8w46zGQScpz3nEpCG5AE8DbIC'
        }
      ],
      'condition': 'host_os == "mac"',
@@ -616,7 +616,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'WGMjaVH60waKVufvuhfQon5WNdbltb-CJ0ZgxGAGfxcC'
+        'version': 's03VQc7lXZP6wjSa6E9qXgVwCRBTDzxS9-BXcd72nvMC'
        }
      ],
      'condition': 'host_os == "linux"',
