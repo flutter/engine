@@ -1005,3 +1005,7 @@ class OffScreenCanvas {
   static bool get supported => _supported ??=
       js_util.hasProperty(html.window, 'OffscreenCanvas');
 }
+
+void drawVideoFrame(html.CanvasRenderingContext2D ctx, VideoFrame videoFrame, int x, int y) {
+  js_util.callMethod<void>(ctx, 'drawImage', <Object?>[videoFrame, x, y]);
+}
