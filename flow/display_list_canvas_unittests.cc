@@ -288,21 +288,17 @@ class RenderSurface {
 
 class RenderGLSurface : public RenderSurface {
  public:
-  explicit RenderGLSurface(int width, int height)
-      : RenderSurface(nullptr) {
+  explicit RenderGLSurface(int width, int height) : RenderSurface(nullptr) {
     SkISize size = SkISize::Make(width, height);
     gl_surface_ = std::make_unique<TestGLSurface>(size);
     gl_surface_->MakeCurrent();
     context_ = gl_surface_->GetGrContext();
-    set_surface(SkSurface::MakeRenderTarget(context_.get(), SkBudgeted::kNo,
-                                            SkImageInfo::MakeN32Premul(size), 1,
-                                            kTopLeft_GrSurfaceOrigin, nullptr,
-                                            false));
+    set_surface(SkSurface::MakeRenderTarget(
+        context_.get(), SkBudgeted::kNo, SkImageInfo::MakeN32Premul(size), 1,
+        kTopLeft_GrSurfaceOrigin, nullptr, false));
   }
 
-  virtual void MakeCurrent() override {
-    gl_surface_->MakeCurrent();
-  }
+  virtual void MakeCurrent() override { gl_surface_->MakeCurrent(); }
 
  private:
   std::unique_ptr<TestGLSurface> gl_surface_;
@@ -1869,9 +1865,7 @@ class CanvasCompareTester {
     display_list->Dispatch(dispatcher);
     const SkPixmap* group_opacity_pixmap = group_opacity_surface.pixmap();
 
-    quickCompareToReference(save_layer_pixmap,
-                            group_opacity_pixmap,
-                            true, info,
+    quickCompareToReference(save_layer_pixmap, group_opacity_pixmap, true, info,
                             // For 565 surfaces off-by-1 is a jump of 8 or 9
                             env.info().bytesPerPixel() < 4 ? 9 : 1);
   }
@@ -1899,7 +1893,8 @@ class CanvasCompareTester {
     ASSERT_GT(pixels_touched, 0) << info;
   }
 
-  static bool fudgedCompare(uint32_t ref_pixel, uint32_t test_pixel,
+  static bool fudgedCompare(uint32_t ref_pixel,
+                            uint32_t test_pixel,
                             int fudge) {
     if (ref_pixel == test_pixel) {
       return true;
@@ -1933,7 +1928,8 @@ class CanvasCompareTester {
       for (int x = 0; x < test_pixels->width(); x++) {
         if (!fudgedCompare(ref_row[x], test_row[x], fudge)) {
           if (fudge != 0) {
-            FML_LOG(ERROR) << "Pixels differ at " << x << ", " << y << " => " << std::hex << ref_row[x] << " != " << test_row[x];
+            FML_LOG(ERROR) << "Pixels differ at " << x << ", " << y << " => "
+                           << std::hex << ref_row[x] << " != " << test_row[x];
           }
           pixels_different++;
         }

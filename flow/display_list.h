@@ -1049,10 +1049,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   void UpdateCurrentOpacityCompatibility() {
-    current_opacity_compatibility_ =
-        current_color_filter_ == nullptr &&
-        !current_invert_colors_ &&
-        current_blender_ == nullptr &&
+    current_opacity_compatibility_ =         //
+        current_color_filter_ == nullptr &&  //
+        !current_invert_colors_ &&           //
+        current_blender_ == nullptr &&       //
         IsOpacityCompatible(current_blend_mode_);
   }
 

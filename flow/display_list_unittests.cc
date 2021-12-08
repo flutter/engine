@@ -1403,8 +1403,7 @@ TEST(DisplayList, SetMaskFilterNullResetsMaskFilter) {
 TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
   auto run_tests = [](std::string name,
                       void build(DisplayListBuilder & builder),
-                      bool expect_for_op,
-                      bool expect_with_kSrc) {
+                      bool expect_for_op, bool expect_with_kSrc) {
     {
       // First test is the draw op, by itself
       // (usually supports group opacity)
@@ -1432,9 +1431,11 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
   };
 
 #define RUN_TESTS(body) \
-  run_tests(#body, [](DisplayListBuilder& builder) { body }, true, false)
+  run_tests(            \
+      #body, [](DisplayListBuilder& builder) { body }, true, false)
 #define RUN_TESTS2(body, expect) \
-  run_tests(#body, [](DisplayListBuilder& builder) { body }, expect, expect)
+  run_tests(                     \
+      #body, [](DisplayListBuilder& builder) { body }, expect, expect)
 
   RUN_TESTS(builder.drawPaint(););
   RUN_TESTS2(builder.drawColor(SK_ColorRED, SkBlendMode::kSrcOver);, true);
@@ -1446,36 +1447,47 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
   RUN_TESTS(builder.drawRRect(SkRRect::MakeRectXY({0, 0, 10, 10}, 2, 2)););
   RUN_TESTS(builder.drawDRRect(SkRRect::MakeRectXY({0, 0, 10, 10}, 2, 2),
                                SkRRect::MakeRectXY({2, 2, 8, 8}, 2, 2)););
-  RUN_TESTS(builder.drawPath(SkPath().addOval({0, 0, 10, 10})
-                                     .addOval({5, 5, 15, 15})););
+  RUN_TESTS(builder.drawPath(
+      SkPath().addOval({0, 0, 10, 10}).addOval({5, 5, 15, 15})););
   RUN_TESTS(builder.drawArc({0, 0, 10, 10}, 0, M_PI, true););
   RUN_TESTS2(builder.drawPoints(SkCanvas::kPoints_PointMode, TestPointCount,
-                                TestPoints);, false);
+                                TestPoints);
+             , false);
   RUN_TESTS2(builder.drawVertices(TestVertices1, SkBlendMode::kSrc);, false);
   RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, DisplayList::LinearSampling,
                               true););
-  RUN_TESTS2(builder.drawImage(TestImage1, {0, 0}, DisplayList::LinearSampling,
-                               false);, true);
+  RUN_TESTS2(
+      builder.drawImage(TestImage1, {0, 0}, DisplayList::LinearSampling, false);
+      , true);
   RUN_TESTS(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
                                   DisplayList::NearestSampling, true););
   RUN_TESTS2(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                   DisplayList::NearestSampling, false);, true);
+                                   DisplayList::NearestSampling, false);
+             , true);
   RUN_TESTS(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
                                   SkFilterMode::kLinear, true););
   RUN_TESTS2(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
-                                   SkFilterMode::kLinear, false);, true);
-  RUN_TESTS(builder.drawImageLattice(TestImage1,
-                                     {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
-                                     {10, 10, 40, 40}, SkFilterMode::kNearest, true););
-  RUN_TESTS2(builder.drawImageLattice(TestImage1,
-                                      {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
-                                      {10, 10, 40, 40}, SkFilterMode::kNearest, false);, true);
-  static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-  static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                               DisplayList::NearestSampling, nullptr, true);, false);
-  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2, SkBlendMode::kSrcIn,
-                               DisplayList::NearestSampling, nullptr, false);, false);
+                                   SkFilterMode::kLinear, false);
+             , true);
+  RUN_TESTS(builder.drawImageLattice(
+      TestImage1,
+      {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
+      {10, 10, 40, 40}, SkFilterMode::kNearest, true););
+  RUN_TESTS2(builder.drawImageLattice(
+      TestImage1,
+      {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
+      {10, 10, 40, 40}, SkFilterMode::kNearest, false);
+             , true);
+  static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
+  static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
+                               SkBlendMode::kSrcIn,
+                               DisplayList::NearestSampling, nullptr, true);
+             , false);
+  RUN_TESTS2(builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
+                               SkBlendMode::kSrcIn,
+                               DisplayList::NearestSampling, nullptr, false);
+             , false);
   RUN_TESTS(builder.drawPicture(TestPicture1, nullptr, true););
   RUN_TESTS2(builder.drawPicture(TestPicture1, nullptr, false);, true);
   EXPECT_TRUE(TestDisplayList1->can_apply_group_opacity());
@@ -1488,7 +1500,8 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
     RUN_TESTS2(builder.drawDisplayList(display_list);, false);
   }
   RUN_TESTS(builder.drawTextBlob(TestBlob1, 0, 0););
-  RUN_TESTS2(builder.drawShadow(TestPath1, SK_ColorBLACK, 1.0, false, 1.0);, false);
+  RUN_TESTS2(builder.drawShadow(TestPath1, SK_ColorBLACK, 1.0, false, 1.0);
+             , false);
 
 #undef RUN_TESTS2
 #undef RUN_TESTS
