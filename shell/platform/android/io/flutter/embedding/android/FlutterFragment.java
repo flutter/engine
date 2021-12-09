@@ -830,9 +830,11 @@ public class FlutterFragment extends Fragment
             + " connection to the engine "
             + getFlutterEngine()
             + " evicted by another attaching activity");
-    // Redundant calls are ok.
-    delegate.onDestroyView();
-    delegate.onDetach();
+    if (delegate != null) {
+      // Redundant calls are ok.
+      delegate.onDestroyView();
+      delegate.onDetach();
+    }
   }
 
   @Override
@@ -1277,7 +1279,7 @@ public class FlutterFragment extends Fragment
 
   @Override
   public void updateSystemUiOverlays() {
-    if (delegate != null && delegate.isAttached()) {
+    if (delegate != null) {
       delegate.updateSystemUiOverlays();
     }
   }
@@ -1316,7 +1318,8 @@ public class FlutterFragment extends Fragment
 
   private boolean stillAttachedForEvent(String event) {
     if (delegate == null || !delegate.isAttached()) {
-      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after detach.");
+      Log.w(
+          TAG, "FlutterFragment " + hashCode() + " " + event + " called after release or detach.");
       return false;
     }
     return true;
