@@ -1317,9 +1317,12 @@ public class FlutterFragment extends Fragment
   }
 
   private boolean stillAttachedForEvent(String event) {
-    if (delegate == null || !delegate.isAttached()) {
-      Log.w(
-          TAG, "FlutterFragment " + hashCode() + " " + event + " called after release or detach.");
+    if (delegate == null) {
+      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after release.");
+      return false;
+    }
+    if (!delegate.isAttached()) {
+      Log.w(TAG, "FlutterFragment " + hashCode() + " " + event + " called after detach.");
       return false;
     }
     return true;

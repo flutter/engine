@@ -1140,9 +1140,12 @@ public class FlutterActivity extends Activity
   }
 
   private boolean stillAttachedForEvent(String event) {
-    if (delegate == null || !delegate.isAttached()) {
-      Log.w(
-          TAG, "FlutterActivity " + hashCode() + " " + event + " called after release or detach.");
+    if (delegate == null) {
+      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+      return false;
+    }
+    if (!delegate.isAttached()) {
+      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after detach.");
       return false;
     }
     return true;
