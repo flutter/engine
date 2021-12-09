@@ -376,6 +376,31 @@ public class FlutterActivityTest {
   }
 
   @Test
+  public void itDoesNotReleaseEnginewhenDetachFromFlutterEngine() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+    FlutterEngine mockEngine = mock(FlutterEngine.class);
+    FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
+
+    Intent intent =
+        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    flutterActivity.setDelegate(mockDelegate);
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    flutterActivity.onPause();
+    flutterActivity.detachFromFlutterEngine();
+    assertNotNull(mockDelegate);
+    assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
   @Config(shadows = {SplashShadowResources.class})
   public void itLoadsSplashScreenDrawable() throws PackageManager.NameNotFoundException {
     TestUtils.setApiVersion(19);
