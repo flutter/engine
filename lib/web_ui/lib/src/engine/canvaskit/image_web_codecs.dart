@@ -99,7 +99,7 @@ class CkBrowserImageDecoder implements ui.Codec {
   @override
   late int repetitionCount;
 
-  /// Whether this decoded has been disposed of.
+  /// Whether this decoder has been disposed of.
   ///
   /// Once this turns true it stays true forever, and this decoder becomes
   /// unusable.
@@ -184,7 +184,7 @@ class CkBrowserImageDecoder implements ui.Codec {
 
       _cachedWebDecoder = webDecoder;
 
-      // Expire the decoder if it not used for several seconds. If the image is
+      // Expire the decoder if it's not used for several seconds. If the image is
       // not animated, it could mean that the framework has cached the frame and
       // therefore doesn't need the decoder any more, or it could mean that the
       // widget is gone and it's time to collect resources associated with it.

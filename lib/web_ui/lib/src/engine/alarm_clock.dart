@@ -35,7 +35,7 @@ class AlarmClock {
   /// The callback called when the alarm goes off.
   ///
   /// If this is null, the alarm goes off without calling the callback. Set the
-  /// callback to null of the callback is a closure holding onto expensive
+  /// callback to null if the callback is a closure holding onto expensive
   /// resources.
   ui.VoidCallback? callback;
 
