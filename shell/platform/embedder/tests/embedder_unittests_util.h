@@ -27,7 +27,10 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
 bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b);
 
 std::string ImagePrefix(EmbedderTestContextType backend,
-                          const std::string& name);
+                        const std::string& name);
+
+EmbedderTestBackingStoreProducer::RenderTargetType GetTargetFromBackend(
+    EmbedderTestContextType backend, bool opengl_framebuffer);
 
 bool WriteImageToDisk(const fml::UniqueFD& directory,
                       const std::string& name,

@@ -24,6 +24,7 @@ class EmbedderTestBackingStoreProducer {
     kOpenGLFramebuffer,
     kOpenGLTexture,
     kMetalTexture,
+    kVulkanImage,
   };
 
   EmbedderTestBackingStoreProducer(sk_sp<GrDirectContext> context,

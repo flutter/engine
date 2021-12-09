@@ -70,12 +70,32 @@ bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
 }
 
 std::string ImagePrefix(EmbedderTestContextType backend,
-                          const std::string& name) {
+                        const std::string& name) {
   switch (backend) {
     case EmbedderTestContextType::kVulkanContext:
       return "vk_" + name;
     default:
       return name;
+  }
+}
+
+EmbedderTestBackingStoreProducer::RenderTargetType GetTargetFromBackend(
+    EmbedderTestContextType backend,
+    bool opengl_framebuffer) {
+  switch (backend) {
+    case EmbedderTestContextType::kVulkanContext:
+      return EmbedderTestBackingStoreProducer::RenderTargetType::kVulkanImage;
+    case EmbedderTestContextType::kOpenGLContext:
+      if (opengl_framebuffer) {
+        return EmbedderTestBackingStoreProducer::RenderTargetType::
+            kOpenGLFramebuffer;
+      }
+      return EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture;
+    case EmbedderTestContextType::kMetalContext:
+      return EmbedderTestBackingStoreProducer::RenderTargetType::kMetalTexture;
+    case EmbedderTestContextType::kSoftwareContext:
+      return EmbedderTestBackingStoreProducer::RenderTargetType::
+          kSoftwareBuffer;
   }
 }
 
