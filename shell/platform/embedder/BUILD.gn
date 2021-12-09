@@ -259,6 +259,8 @@ if (enable_unittests) {
 
     if (test_enable_vulkan) {
       sources += [
+        "tests/embedder_test_compositor_vulkan.cc",
+        "tests/embedder_test_compositor_vulkan.h",
         "tests/embedder_test_context_vulkan.cc",
         "tests/embedder_test_context_vulkan.h",
       ]

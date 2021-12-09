@@ -44,6 +44,10 @@ bool EmbedderTestBackingStoreProducer::Create(
     case RenderTargetType::kMetalTexture:
       return CreateMTLTexture(config, renderer_out);
 #endif
+#ifdef SHELL_ENABLE_VULKAN
+    case RenderTargetType::kVulkanImage:
+      return CreateVulkanImage(config, renderer_out);
+#endif
     default:
       return false;
   }
@@ -222,6 +226,58 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
   backing_store_out->metal.texture.destruction_callback = [](void* user_data) {
     reinterpret_cast<SkSurface*>(user_data)->unref();
   };
+
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out) {
+#ifdef SHELL_ENABLE_VULKAN
+  const auto image_info =
+      SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
+
+  auto surface = SkSurface::MakeRenderTarget(
+      context_.get(),               // context
+      SkBudgeted::kNo,              // budgeted
+      image_info,                   // image info
+      1,                            // sample count
+      kBottomLeft_GrSurfaceOrigin,  // surface origin
+      nullptr,                      // surface properties
+      false                         // mipmaps
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not create render target for compositor layer.";
+    return false;
+  }
+
+  GrBackendRenderTarget render_target = surface->getBackendRenderTarget(
+      SkSurface::BackendHandleAccess::kDiscardWrite_BackendHandleAccess);
+
+  if (!render_target.isValid()) {
+    FML_LOG(ERROR) << "Backend render target was invalid.";
+    return false;
+  }
+
+  GrVkImageInfo vkimage_info = {};
+  if (!render_target.getVkImageInfo(&vkimage_info)) {
+    FML_LOG(ERROR) << "Could not access backend framebuffer info.";
+    return false;
+  }
+
+  backing_store_out->type = kFlutterBackingStoreTypeVulkan;
+  backing_store_out->user_data = surface.get();
+  backing_store_out->vulkan.user_data = surface.get();
+  backing_store_out->vulkan.image.image = vkimage_info.fImage;
+  backing_store_out->vulkan.destruction_callback = [](void* user_data) {
+    reinterpret_cast<SkSurface*>(user_data)->unref();
+  };
+  // The balancing unref is in the destruction callback.
+  surface->ref();
 
   return true;
 #else

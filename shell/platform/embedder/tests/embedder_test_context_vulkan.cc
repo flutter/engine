@@ -8,12 +8,11 @@
 
 #include "embedder.h"
 #include "flutter/fml/logging.h"
-// #include
-// "flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
+#include "flutter/testing/test_vulkan_context.h"
+#include "flutter/testing/test_vulkan_surface.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
-#include "testing/test_vulkan_context.h"
-#include "testing/test_vulkan_surface.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -53,12 +52,10 @@ EmbedderTestContextType EmbedderTestContextVulkan::GetContextType() const {
 
 void EmbedderTestContextVulkan::SetupCompositor() {
   FML_CHECK(!compositor_) << "Already set up a compositor in this context.";
-
-  assert(false);  // TODO(bdero)
-  // FML_CHECK(vulkan_surface_)
-  //     << "Set up the Vulkan surface before setting up a compositor.";
-  // compositor_ = std::make_unique<EmbedderTestCompositorVulkan>(
-  //     surface_size_, vulkan_surface_->GetGrContext());
+  FML_CHECK(surface_)
+      << "Set up the Vulkan surface before setting up a compositor.";
+  compositor_ = std::make_unique<EmbedderTestCompositorVulkan>(
+      surface_size_, context_->GetGrDirectContext());
 }
 
 }  // namespace testing
