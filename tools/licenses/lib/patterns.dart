@@ -43,7 +43,7 @@ final RegExp copyrightMentionOkPattern = RegExp(
      r'|This ICU code derived from:'
      r'|the contents of which are also included in zip.h' // seen in minizip's unzip.c, but the upshot of the crazy license situation there is that we don't have to do anything
      r'|hold font names, copyright info, notices, etc' // seen in a comment in freetype's src/include/ftsnames.h
-     r'|' // the following is from android_tools/ndk/sources/cxx-stl/gnu-libstdc++/4.9/include/ext/pb_ds/detail/splay_tree_/splay_tree_.hpp
+     r'|' // the following is from android_tools/sdk/ndk-bundle/sources/cxx-stl/gnu-libstdc++/4.9/include/ext/pb_ds/detail/splay_tree_/splay_tree_.hpp
      r'^ \* This implementation uses an idea from the SGI STL \(using a @a header node\n'
      r'^ \*    which is needed for efficient iteration\)\. Following is the SGI STL\n'
      r'^ \*    copyright\.\n'

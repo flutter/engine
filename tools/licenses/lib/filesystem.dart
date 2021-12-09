@@ -70,7 +70,7 @@ FileType identifyFile(String name, Reader reader) {
       (path.split(name).reversed.take(3).toList().reversed.join('/') == 'third_party/cares/cares.rc')) // This file has a copyright symbol in Latin1 in it
     return FileType.latin1Text;
   if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot' || // Not any particular format
-      path.split(name).reversed.take(8).toList().reversed.join('/') == 'third_party/android_tools/ndk/sources/cxx-stl/stlport/src/stlport.rc') // uses the word "copyright" but doesn't have a copyright header
+      path.split(name).reversed.take(8).toList().reversed.join('/') == 'third_party/android_tools/sdk/ndk-bundle/sources/cxx-stl/stlport/src/stlport.rc') // uses the word "copyright" but doesn't have a copyright header
     return FileType.binary;
   final String base = path.basename(name);
   if (base.startsWith('._')) {
