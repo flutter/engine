@@ -25,19 +25,20 @@ fi
 
 if [[ -z $RELEASE_BRANCH ]]
 then	
-# If this is not a release branch commit get latest commit's time for the engine repo.
-# Use date based on local time otherwise timezones might get mixed.
-LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%cd"`
-echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
+  # If this is not a release branch commit get latest commit's time for the engine repo.
+  # Use date based on local time otherwise timezones might get mixed.
+  LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%cd"`
+  echo "Latest commit time on engine found as $LATEST_COMMIT_TIME_ENGINE"
 
-# Get the time of the youngest commit older than engine commit.
-# Git log uses commit date not the author date.
-# Before makes the comparison considering the timezone as well.
-COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
+  # Get the time of the youngest commit older than engine commit.
+  # Git log uses commit date not the author date.
+  # Before makes the comparison considering the timezone as well.
+  COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
 else
-# If this is a release branch use the ToT commit of the same release branch as the engine.
-COMMIT_NO=`git rev-parse $RELEASE_BRANCH`
+  # If this is a release branch use the ToT commit of the same release branch as the engine.
+  COMMIT_NO=`git rev-parse $RELEASE_BRANCH`
 fi
+
 echo "Using the flutter/flutter commit $COMMIT_NO";
 git reset --hard $COMMIT_NO
 # Write the commit number to a file. This file will be read by the LUCI recipe.
