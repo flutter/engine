@@ -1215,7 +1215,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (previousTextSelectionBase != semanticsNode.textSelectionBase
         || previousTextSelectionExtent != semanticsNode.textSelectionExtent) {
       final String value = semanticsNode.value != null ? semanticsNode.value : "";
-      AccessibilityEvent selectionEvent =
+      final AccessibilityEvent selectionEvent =
           obtainAccessibilityEvent(
               semanticsNode.id, AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED);
       selectionEvent.getText().add(value);
