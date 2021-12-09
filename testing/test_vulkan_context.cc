@@ -36,8 +36,10 @@ TestVulkanContext::TestVulkanContext() {
     return;
   }
 
-  application_ = std::unique_ptr<vulkan::VulkanApplication>(
-      new vulkan::VulkanApplication(*vk_, "Flutter Unittests", {}));
+  application_ =
+      std::unique_ptr<vulkan::VulkanApplication>(new vulkan::VulkanApplication(
+          *vk_, "Flutter Unittests", {}, VK_MAKE_VERSION(1, 0, 0),
+          VK_MAKE_VERSION(1, 0, 0), true));
   if (!application_->IsValid()) {
     FML_DLOG(ERROR) << "Failed to initialize basic Vulkan state.";
     return;
