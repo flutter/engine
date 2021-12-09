@@ -1243,7 +1243,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetRenderConfig(backend, SkISize::Make(800, 600));
+  builder.SetRendererConfig(backend, SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -1277,7 +1277,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositorWithXform) {
   const auto surface_size = SkISize::Make(600, 800);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetRenderConfig(backend, surface_size);
+  builder.SetRendererConfig(backend, surface_size);
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -1298,16 +1298,16 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositorWithXform) {
                                   rendered_scene));
 }
 
-TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithCompositor) {
+  EmbedderTestContextType backend = GetParam();
+  auto& context = GetEmbedderContext(backend);
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetRendererConfig(backend, SkISize::Make(800, 600));
   builder.SetCompositor();
-  builder.SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+  builder.SetRenderTargetType(GetTargetFromBackend(backend, true));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -1323,7 +1323,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositor) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient.png", rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
+                                  rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {

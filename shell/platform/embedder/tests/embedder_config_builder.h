@@ -45,7 +45,7 @@ class EmbedderConfigBuilder {
 
   FlutterProjectArgs& GetProjectArgs();
 
-  void SetRenderConfig(EmbedderTestContextType type, SkISize surface_size);
+  void SetRendererConfig(EmbedderTestContextType type, SkISize surface_size);
 
   void SetSoftwareRendererConfig(SkISize surface_size = SkISize::Make(1, 1));
 

@@ -164,7 +164,7 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
 #endif
 }
 
-void EmbedderConfigBuilder::SetRenderConfig(EmbedderTestContextType type,
+void EmbedderConfigBuilder::SetRendererConfig(EmbedderTestContextType type,
                                             SkISize surface_size) {
   switch (type) {
     case EmbedderTestContextType::kOpenGLContext:
