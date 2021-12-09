@@ -48,7 +48,7 @@ class EmbedderTestBackingStoreProducer {
                         FlutterBackingStore* renderer_out);
 
   bool CreateVulkanImage(const FlutterBackingStoreConfig* config,
-                        FlutterBackingStore* renderer_out);
+                         FlutterBackingStore* renderer_out);
 
   sk_sp<GrDirectContext> context_;
   RenderTargetType type_;

@@ -30,7 +30,8 @@ std::string ImagePrefix(EmbedderTestContextType backend,
                         const std::string& name);
 
 EmbedderTestBackingStoreProducer::RenderTargetType GetTargetFromBackend(
-    EmbedderTestContextType backend, bool opengl_framebuffer);
+    EmbedderTestContextType backend,
+    bool opengl_framebuffer);
 
 bool WriteImageToDisk(const fml::UniqueFD& directory,
                       const std::string& name,

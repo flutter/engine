@@ -15,7 +15,7 @@ namespace testing {
 class EmbedderTestCompositorVulkan : public EmbedderTestCompositor {
  public:
   EmbedderTestCompositorVulkan(SkISize surface_size,
-                              sk_sp<GrDirectContext> context);
+                               sk_sp<GrDirectContext> context);
 
   ~EmbedderTestCompositorVulkan() override;
 
