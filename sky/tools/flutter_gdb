@@ -71,7 +71,7 @@ class GdbClient(object):
     SYSTEM_LIBS_PATH = '/tmp/flutter_gdb_device_libs'
 
     def _gdb_local_path(self):
-        GDB_LOCAL_PATH = ('third_party/android_tools/sdk/ndk-bundle/prebuilt/%s-x86_64/bin/gdb-orig')
+        GDB_LOCAL_PATH = ('third_party/android_tools/ndk/prebuilt/%s-x86_64/bin/gdb-orig')
         if sys.platform.startswith('darwin'):
             return GDB_LOCAL_PATH % 'darwin'
         else:
@@ -184,7 +184,7 @@ class GdbServer(object):
             return 1
 
         abi = _get_device_abi(adb_path)
-        gdb_server_local_path = 'third_party/android_tools/sdk/ndk-bundle/prebuilt/android-%s/gdbserver/gdbserver' % abi
+        gdb_server_local_path = 'third_party/android_tools/ndk/prebuilt/android-%s/gdbserver/gdbserver' % abi
 
         # Copy gdbserver to the package's data directory.
         subprocess.check_call([adb_path, 'push',

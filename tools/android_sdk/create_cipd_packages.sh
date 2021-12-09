@@ -80,6 +80,7 @@ for platform in "${platforms[@]}"; do
   echo "Creating temporary working directory for $platform: $sdk_root"
   mkdir $sdk_root
   mkdir $upload_dir
+  mkdir $upload_dir/sdk
   export REPO_OS_OVERRIDE=$platform
 
   # Download all the packages with sdkmanager.
@@ -93,12 +94,17 @@ for platform in "${platforms[@]}"; do
     # for upload. sdkmanager creates extra files that we don't need.
     array_length=${#split[@]}
     for (( i=1; i<${array_length}; i++ )); do
-      cp -r "$sdk_root/${split[$i]}" "$upload_dir"
+      cp -r "$sdk_root/${split[$i]}" "$upload_dir/sdk"
     done
   done
 
+  # Special treatment for NDK to move to expected directory.
+  mv $upload_dir/sdk/ndk-bundle $upload_dir
+  mv $upload_dir/ndk-bundle $upload_dir/ndk
+
+  # Accept all licenses to ensure they are generated and uploaded.
   yes "y" | $sdkmanager_path --licenses --sdk_root=$sdk_root
-  cp -r "$sdk_root/licenses" "$upload_dir"
+  cp -r "$sdk_root/licenses" "$upload_dir/sdk"
 
   # Mac uses a different sdkmanager name than the platform name used in gn.
   cipd_name="$platform-amd64"

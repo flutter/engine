@@ -492,11 +492,11 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/third_party/android_tools/sdk': {
+  'src/third_party/android_tools': {
      'packages': [
        {
         'package': 'flutter/android/sdk/all/${{platform}}',
-        'version': 'version:31v7'
+        'version': 'version:31v8'
        }
      ],
      'condition': 'download_android_deps',
