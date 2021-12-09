@@ -648,8 +648,6 @@ public class FlutterActivity extends Activity
    */
   private void release() {
     if (delegate != null) {
-      delegate.onDestroyView();
-      delegate.onDetach();
       delegate.release();
       delegate = null;
     }
@@ -674,8 +672,10 @@ public class FlutterActivity extends Activity
   protected void onDestroy() {
     super.onDestroy();
     if (stillAttachedForEvent("onDestroy")) {
-      release();
+      delegate.onDestroyView();
+      delegate.onDetach();
     }
+    release();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 

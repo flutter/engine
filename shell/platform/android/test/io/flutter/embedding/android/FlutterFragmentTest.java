@@ -176,8 +176,37 @@ public class FlutterFragmentTest {
     fragment.onResume();
     fragment.onPostResume();
     fragment.onPause();
+
+    assertTrue(mockDelegate.isAttached());
     fragment.detachFromFlutterEngine();
-    assertNotNull(mockDelegate);
+    verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, never()).release();
+    assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
+  public void itReleaseEngineWhenOnDetach() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+
+    FlutterFragment fragment =
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .destroyEngineWithFragment(true)
+            .build();
+
+    fragment.setDelegate(mockDelegate);
+    fragment.onStart();
+    fragment.onResume();
+    fragment.onPostResume();
+    fragment.onPause();
+
+    assertTrue(mockDelegate.isAttached());
+    fragment.onDetach();
+    verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, times(1)).release();
     assertFalse(mockDelegate.isAttached());
   }
 
