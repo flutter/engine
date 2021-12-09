@@ -159,6 +159,29 @@ public class FlutterFragmentTest {
   }
 
   @Test
+  public void itDoesNotReleaseEnginewhenDetachFromFlutterEngine() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+
+    FlutterFragment fragment =
+        FlutterFragment.withCachedEngine("my_cached_engine")
+            .destroyEngineWithFragment(true)
+            .build();
+
+    fragment.setDelegate(mockDelegate);
+    fragment.onStart();
+    fragment.onResume();
+    fragment.onPostResume();
+    fragment.onPause();
+    fragment.detachFromFlutterEngine();
+    assertNotNull(mockDelegate);
+    assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
   public void itDelegatesOnBackPressedAutomaticallyWhenEnabled() {
     // We need to mock FlutterJNI to avoid triggering native code.
     FlutterJNI flutterJNI = mock(FlutterJNI.class);
