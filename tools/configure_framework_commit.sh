@@ -13,7 +13,7 @@ cd $ENGINE_PATH/src/flutter
 
 ENGINE_COMMIT=`git rev-parse HEAD`
 echo "Using engine commit: $ENGINE_COMMIT"
-RELEASE_BRANCH=`git branch -a --contains $ENGINE_COMMIT | grep 'flutter-.*-candidate.*'`
+RELEASE_BRANCH=`git branch -a --contains $ENGINE_COMMIT | grep 'flutter-.*-candidate.*' || true`
 
 if [[ -z $FLUTTER_CLONE_REPO_PATH ]]
 then
@@ -24,7 +24,7 @@ else
 fi
 
 if [[ -z $RELEASE_BRANCH ]]
-then	
+then
   # If this is not a release branch commit get latest commit's time for the engine repo.
   # Use date based on local time otherwise timezones might get mixed.
   LATEST_COMMIT_TIME_ENGINE=`git log -1 --date=local --format="%cd"`
