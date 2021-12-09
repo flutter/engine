@@ -1237,12 +1237,13 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorWithTransformation) {
 }
 
 TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
-  auto& context = GetEmbedderContext(GetParam());
+  EmbedderTestContextType backend = GetParam();
+  auto& context = GetEmbedderContext(backend);
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetRenderConfig(GetParam(), SkISize::Make(800, 600));
+  builder.SetRenderConfig(backend, SkISize::Make(800, 600));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -1258,7 +1259,8 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient.png", rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
+                                  rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {

@@ -69,6 +69,16 @@ bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
   return normalized_a->equals(normalized_b.get());
 }
 
+std::string ImagePrefix(EmbedderTestContextType backend,
+                          const std::string& name) {
+  switch (backend) {
+    case EmbedderTestContextType::kVulkanContext:
+      return "vk_" + name;
+    default:
+      return name;
+  }
+}
+
 bool WriteImageToDisk(const fml::UniqueFD& directory,
                       const std::string& name,
                       sk_sp<SkImage> image) {
