@@ -14,6 +14,7 @@ EmbedderTaskRunner::EmbedderTaskRunner(DispatchTable table,
     : TaskRunner(nullptr /* loop implemenation*/),
       embedder_identifier_(embedder_identifier),
       dispatch_table_(std::move(table)),
+      last_baton_(0),
       placeholder_id_(
           fml::MessageLoopTaskQueues::GetInstance()->CreateTaskQueue()) {
   FML_DCHECK(dispatch_table_.post_task_callback);
