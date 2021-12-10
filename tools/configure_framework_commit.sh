@@ -8,12 +8,21 @@ then
   exit 1
 fi
 
+
 # Go to the engine git repo to get the date of the latest commit.
 cd $ENGINE_PATH/src/flutter
 
 ENGINE_COMMIT=`git rev-parse HEAD`
 echo "Using engine commit: $ENGINE_COMMIT"
-RELEASE_BRANCH=`git branch -a --contains $ENGINE_COMMIT | grep 'flutter-.*-candidate.*' || true`
+
+if [[ $GIT_BRANCH =~ ^flutter-.*-candidate.*$ ]]
+then
+  # $GIT_BRANCH exists this is comming from presubmit.
+  RELEASE_BRANCH="remotes/upstream/$GIT_BRANCH"
+else
+  # Try to get it from the checkout. 
+  RELEASE_BRANCH=`git branch -a --contains $ENGINE_COMMIT | grep 'flutter-.*-candidate.*' || true`
+fi
 
 if [[ -z $FLUTTER_CLONE_REPO_PATH ]]
 then
