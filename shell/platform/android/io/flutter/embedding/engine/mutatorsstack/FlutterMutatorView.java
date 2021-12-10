@@ -6,9 +6,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -146,9 +145,9 @@ public class FlutterMutatorView extends FrameLayout {
     }
 
     // Apply the final opacity value on the parent canvas.
-    Rect clipBounds = canvas.getClipBounds();
-    RectF rect = new RectF(clipBounds);
-    canvas.saveLayerAlpha(rect, (int) (mutatorsStack.getFinalOpacity() * 255));
+    Paint transparency = new Paint();
+    transparency.setAlpha((int) (mutatorsStack.getFinalOpacity() * 255));
+    this.setLayerType(LAYER_TYPE_HARDWARE, transparency);
 
     super.draw(canvas);
     canvas.restore();
