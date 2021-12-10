@@ -7,6 +7,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -142,6 +144,12 @@ public class FlutterMutatorView extends FrameLayout {
       pathCopy.offset(-left, -top);
       canvas.clipPath(pathCopy);
     }
+
+    // Apply the final opacity value on the parent canvas.
+    Rect clipBounds = canvas.getClipBounds();
+    RectF rect = new RectF(clipBounds);
+    canvas.saveLayerAlpha(rect, (int) (mutatorsStack.getFinalOpacity() * 255));
+
     super.draw(canvas);
     canvas.restore();
   }
