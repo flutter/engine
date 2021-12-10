@@ -1076,6 +1076,12 @@ class DisplayListBuilder final : public virtual Dispatcher,
                                     current_opacity_compatibility_);
   }
 
+  void CheckLayerOpacityHairlineCompatibility() {
+    UpdateLayerOpacityCompatibility(
+        current_opacity_compatibility_ &&
+        (current_style_ == SkPaint::kFill_Style || current_stroke_width_ > 0));
+  }
+
   // Check for opacity compatibility for an op that ignores the current
   // attributes and uses the indicated blend |mode| to render to the layer.
   // This is only used by |drawColor| currently.

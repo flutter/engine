@@ -1431,7 +1431,7 @@ void DisplayListBuilder::drawDRRect(const SkRRect& outer,
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
   Push<DrawPathOp>(0, 1, path);
-  CheckLayerOpacityCompatibility();
+  CheckLayerOpacityHairlineCompatibility();
 }
 
 void DisplayListBuilder::drawArc(const SkRect& bounds,
@@ -1439,7 +1439,11 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
                                  SkScalar sweep,
                                  bool useCenter) {
   Push<DrawArcOp>(0, 1, bounds, start, sweep, useCenter);
-  CheckLayerOpacityCompatibility();
+  if (useCenter) {
+    CheckLayerOpacityHairlineCompatibility();
+  } else {
+    CheckLayerOpacityCompatibility();
+  }
 }
 void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
                                     uint32_t count,

@@ -64,7 +64,7 @@ struct PrerollContext {
 
   // This value indicates that the entire subtree below the layer can inherit
   // an opacity value and modulate its own visibility accordingly.
-  // For Layers which cannot either apply such an inherited opacity or pass
+  // For Layers which cannot either apply such an inherited opacity nor pass
   // it along to their children, they can ignore this value as its default
   // behavior is "opt-in".
   // For Layers that support this condition, it can be recorded in their
