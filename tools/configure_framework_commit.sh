@@ -26,7 +26,7 @@ fi
 if [[ $GIT_BRANCH =~ ^flutter-.*-candidate.*$ ]]
 then
   # Coming from presubmit and assuming the correct branch has been already checked out.
-  COMMIT_NO==`git rev-parse HEAD`
+  COMMIT_NO=`git rev-parse HEAD`
 else
   # Try to get release branch from the checkout. 
   RELEASE_BRANCH=`git branch -a --contains $ENGINE_COMMIT | grep 'flutter-.*-candidate.*' || true`
