@@ -38,31 +38,6 @@ FlutterPlatformNodeDelegateWin32::GetNativeViewAccessible() {
 }
 
 // |FlutterPlatformNodeDelegate|
-gfx::NativeViewAccessible FlutterPlatformNodeDelegateWin32::GetParent() {
-  gfx::NativeViewAccessible parent = FlutterPlatformNodeDelegate::GetParent();
-  if (parent) {
-    return parent;
-  }
-  assert(engine_);
-  FlutterWindowsView* view = engine_->view();
-  if (!view) {
-    return nullptr;
-  }
-  HWND hwnd = view->GetPlatformWindow();
-  if (!hwnd) {
-    return nullptr;
-  }
-
-  IAccessible* iaccessible_parent;
-  if (SUCCEEDED(::AccessibleObjectFromWindow(
-          hwnd, OBJID_WINDOW, IID_IAccessible,
-          reinterpret_cast<void**>(&iaccessible_parent)))) {
-    return iaccessible_parent;
-  }
-  return nullptr;
-}
-
-// |FlutterPlatformNodeDelegate|
 gfx::Rect FlutterPlatformNodeDelegateWin32::GetBoundsRect(
     const ui::AXCoordinateSystem coordinate_system,
     const ui::AXClippingBehavior clipping_behavior,
@@ -75,6 +50,28 @@ gfx::Rect FlutterPlatformNodeDelegateWin32::GetBoundsRect(
   ClientToScreen(engine_->view()->GetPlatformWindow(), &extent);
   return gfx::Rect(origin.x, origin.y, extent.x - origin.x,
                    extent.y - origin.y);
+}
+
+void FlutterPlatformNodeDelegateWin32::DispatchWinAccessibilityEvent(
+    DWORD event_type) {
+  FlutterWindowsView* view = engine_->view();
+  if (!view) {
+    return;
+  }
+  HWND hwnd = view->GetPlatformWindow();
+  if (!hwnd) {
+    return;
+  }
+  assert(ax_platform_node_);
+  ::NotifyWinEvent(event_type, hwnd, OBJID_CLIENT,
+                   -ax_platform_node_->GetUniqueId());
+}
+
+void FlutterPlatformNodeDelegateWin32::SetFocus() {
+  VARIANT varchild{};
+  varchild.vt = VT_I4;
+  varchild.lVal = CHILDID_SELF;
+  GetNativeViewAccessible()->accSelect(SELFLAG_TAKEFOCUS, varchild);
 }
 
 }  // namespace flutter

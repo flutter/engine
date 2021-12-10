@@ -1,4 +1,4 @@
-Signature: db7e6b9a412e00f08db39761025347af
+Signature: 057c56d143da97acb13c5d9b9de89a04
 
 UNUSED LICENSES:
 
@@ -2235,6 +2235,8 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_inspect/lib/src/reader/reader.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic/lib/src/scenic_context.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/lib/src/focus_state.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_scenic_flutter/lib/src/fuchsia_views_service.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_services/lib/src/dart_vm.dart
+FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_vfs/lib/src/remote_dir.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/camera_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/virtual_camera.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/virtual_keyboard.fidl
@@ -2298,6 +2300,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.wlan.policy/types.fidl
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/inotify.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/include/lib/fidl/transformer.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/transformer.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/wire_format_metadata.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/barrier.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/bridge.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fit/promise.h
@@ -2559,7 +2562,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message.
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message_buffer.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message_builder.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/message_part.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/object_coding.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/string.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/traits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_base/include/lib/fidl/cpp/vector.h
@@ -2748,6 +2750,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/info-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/ioport-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/irq-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/mmio-resource.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/power-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/smc-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/vmex-resource.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.legacymetrics/event.fidl
@@ -3430,7 +3433,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/include/lib/fidl/cpp/internal
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_cpp_sync/internal/message_sender.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/barrier.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fpromise/barrier.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fit-promise/include/lib/fpromise/in_place_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/constructors_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/storage_internal.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/utility_internal.h
