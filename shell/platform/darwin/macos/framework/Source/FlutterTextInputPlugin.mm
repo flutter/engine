@@ -52,27 +52,34 @@ static NSString* const kTextKey = @"text";
 static NSString* const kTransformKey = @"transform";
 
 static NSString* const kDeleteCharacterIntent = @"TextInputClient.DeleteCharacterIntent";
-static NSString* const kDeleteToNextWordBoundaryIntent = @"TextInputClient.DeleteToNextWordBoundaryIntent";
+static NSString* const kDeleteToNextWordBoundaryIntent =
+    @"TextInputClient.DeleteToNextWordBoundaryIntent";
 static NSString* const kDeleteToLineBreakIntent = @"TextInputClient.DeleteToLineBreakIntent";
-static NSString* const kExtendSelectionByCharacterIntent = @"TextInputClient.ExtendSelectionByCharacterIntent";
-static NSString* const kExtendSelectionToNextWordBoundaryIntent = @"TextInputClient.ExtendSelectionToNextWordBoundaryIntent";
-static NSString* const kExtendSelectionToNextWordBoundaryOrCaretLocationIntent = @"TextInputClient.ExtendSelectionToNextWordBoundaryOrCaretLocationIntent";
-static NSString* const kExtendSelectionToLineBreakIntent = @"TextInputClient.ExtendSelectionToLineBreakIntent";
-static NSString* const kExtendSelectionVerticallyToAdjacentLineIntent = @"TextInputClient.ExtendSelectionVerticallyToAdjacentLineIntent";
-static NSString* const kExtendSelectionToDocumentBoundaryIntent = @"TextInputClient.ExtendSelectionToDocumentBoundaryIntent";
-static NSString* const kPerformPrivateCommandIntent = @"TextInputClient.PerformPrivateTextInputCommandIntent";
-
+static NSString* const kExtendSelectionByCharacterIntent =
+    @"TextInputClient.ExtendSelectionByCharacterIntent";
+static NSString* const kExtendSelectionToNextWordBoundaryIntent =
+    @"TextInputClient.ExtendSelectionToNextWordBoundaryIntent";
+static NSString* const kExtendSelectionToNextWordBoundaryOrCaretLocationIntent =
+    @"TextInputClient.ExtendSelectionToNextWordBoundaryOrCaretLocationIntent";
+static NSString* const kExtendSelectionToLineBreakIntent =
+    @"TextInputClient.ExtendSelectionToLineBreakIntent";
+static NSString* const kExtendSelectionVerticallyToAdjacentLineIntent =
+    @"TextInputClient.ExtendSelectionVerticallyToAdjacentLineIntent";
+static NSString* const kExtendSelectionToDocumentBoundaryIntent =
+    @"TextInputClient.ExtendSelectionToDocumentBoundaryIntent";
+static NSString* const kPerformPrivateCommandIntent =
+    @"TextInputClient.PerformPrivateTextInputCommandIntent";
 
 @interface SelectorIntent : NSObject
 @property(nonatomic, readonly) SEL selector;
 @property(nonatomic, readonly) NSArray* methodCall;
 
--(instancetype)initWithSel:(SEL)selector methodCall:(NSArray<NSObject*>*)methodCall;
+- (instancetype)initWithSel:(SEL)selector methodCall:(NSArray<NSObject*>*)methodCall;
 @end
 
 @implementation SelectorIntent
 
--(instancetype)initWithSel:(SEL)selector methodCall:(NSArray<NSObject*>*)methodCall {
+- (instancetype)initWithSel:(SEL)selector methodCall:(NSArray<NSObject*>*)methodCall {
   self = [super init];
   if (self) {
     _selector = selector;
@@ -81,12 +88,11 @@ static NSString* const kPerformPrivateCommandIntent = @"TextInputClient.PerformP
   return self;
 }
 
-+(instancetype)intentWith:(SEL)selector methodCall:(NSArray<NSObject*>*)methodCall {
++ (instancetype)intentWith:(SEL)selector methodCall:(NSArray<NSObject*>*)methodCall {
   return [[SelectorIntent alloc] initWithSel:selector methodCall:methodCall];
 }
 
 @end
-
 
 static NSArray<SelectorIntent*>* const kIntentLookUp = @[
   // Delete
@@ -108,8 +114,9 @@ static NSArray<SelectorIntent*>* const kIntentLookUp = @[
                   methodCall:@[ kExtendSelectionByCharacterIntent, @(false), @(true) ]],
   [SelectorIntent intentWith:@selector(moveForward:)
                   methodCall:@[ kExtendSelectionByCharacterIntent, @(true), @(true) ]],
-  [SelectorIntent intentWith:@selector(moveUp:)
-                  methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(false), @(true) ]],
+  [SelectorIntent
+      intentWith:@selector(moveUp:)
+      methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(false), @(true) ]],
   [SelectorIntent intentWith:@selector(moveDown:)
                   methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(true), @(true) ]],
   [SelectorIntent intentWith:@selector(moveWordBackward:)
@@ -125,16 +132,17 @@ static NSArray<SelectorIntent*>* const kIntentLookUp = @[
   [SelectorIntent intentWith:@selector(moveToEndOfDocument:)
                   methodCall:@[ kExtendSelectionToDocumentBoundaryIntent, @(true), @(true) ]],
 
-  
   // Expanding Selection
   [SelectorIntent intentWith:@selector(moveBackwardAndModifySelection:)
                   methodCall:@[ kExtendSelectionByCharacterIntent, @(false), @(false) ]],
   [SelectorIntent intentWith:@selector(moveForwardAndModifySelection:)
                   methodCall:@[ kExtendSelectionByCharacterIntent, @(true), @(false) ]],
-  [SelectorIntent intentWith:@selector(moveUpAndModifySelection:)
-                  methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(false), @(false) ]],
-  [SelectorIntent intentWith:@selector(moveDownAndModifySelection:)
-                  methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(true), @(false) ]],
+  [SelectorIntent
+      intentWith:@selector(moveUpAndModifySelection:)
+      methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(false), @(false) ]],
+  [SelectorIntent
+      intentWith:@selector(moveDownAndModifySelection:)
+      methodCall:@[ kExtendSelectionVerticallyToAdjacentLineIntent, @(true), @(false) ]],
   [SelectorIntent intentWith:@selector(moveWordBackwardAndModifySelection:)
                   methodCall:@[ kExtendSelectionToNextWordBoundaryIntent, @(false), @(false) ]],
   [SelectorIntent intentWith:@selector(moveWordForwardAndModifySelection:)
@@ -147,7 +155,7 @@ static NSArray<SelectorIntent*>* const kIntentLookUp = @[
                   methodCall:@[ kExtendSelectionToDocumentBoundaryIntent, @(false), @(false) ]],
   [SelectorIntent intentWith:@selector(moveToEndOfDocumentAndModifySelection:)
                   methodCall:@[ kExtendSelectionToDocumentBoundaryIntent, @(true), @(false) ]],
-  
+
   // TODO: https://github.com/flutter/flutter/issues/78660
   // These intents currently move the caret based on the logical
   // order of surrounding characters instead of their visual order.
@@ -165,21 +173,20 @@ static NSArray<SelectorIntent*>* const kIntentLookUp = @[
                   methodCall:@[ kExtendSelectionToLineBreakIntent, @(true), @(true) ]],
 
   [SelectorIntent intentWith:@selector(moveLeftAndModifySelection:)
-                methodCall:@[ kExtendSelectionByCharacterIntent, @(false), @(false) ]],
+                  methodCall:@[ kExtendSelectionByCharacterIntent, @(false), @(false) ]],
   [SelectorIntent intentWith:@selector(moveRightAndModifySelection:)
-                methodCall:@[ kExtendSelectionByCharacterIntent, @(true), @(false) ]],
+                  methodCall:@[ kExtendSelectionByCharacterIntent, @(true), @(false) ]],
   [SelectorIntent intentWith:@selector(moveWordLeftAndModifySelection:)
-                methodCall:@[ kExtendSelectionToNextWordBoundaryIntent, @(false), @(false) ]],
+                  methodCall:@[ kExtendSelectionToNextWordBoundaryIntent, @(false), @(false) ]],
   [SelectorIntent intentWith:@selector(moveWordRightAndModifySelection:)
-                methodCall:@[ kExtendSelectionToNextWordBoundaryIntent, @(true), @(false) ]],
+                  methodCall:@[ kExtendSelectionToNextWordBoundaryIntent, @(true), @(false) ]],
   [SelectorIntent intentWith:@selector(moveToLeftEndOfLineAndModifySelection:)
-                methodCall:@[ kExtendSelectionToLineBreakIntent, @(false), @(false) ]],
+                  methodCall:@[ kExtendSelectionToLineBreakIntent, @(false), @(false) ]],
   [SelectorIntent intentWith:@selector(moveToRightEndOfLineAndModifySelection:)
-                methodCall:@[ kExtendSelectionToLineBreakIntent, @(true), @(false) ]]
-  
+                  methodCall:@[ kExtendSelectionToLineBreakIntent, @(true), @(false) ]]
+
   // TODO: implement paragrah boundary intents in the framework.
 ];
-
 
 /**
  * The affinity of the current cursor position. If the cursor is at a position representing
@@ -690,24 +697,24 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 - (void)doCommandBySelector:(SEL)selector {
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wundeclared-selector"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
   // For key sequences that aren't mapped to anything, the
   // macOS keybinding manager will send us a "noop:" selector.
   if (sel_isEqual(selector, @selector(noop:))) {
     return;
   }
-  #pragma clang diagnostic pop
+#pragma clang diagnostic pop
 
   for (SelectorIntent* intent in kIntentLookUp) {
     if (sel_isEqual(intent.selector, selector)) {
-      NSMutableArray* arguments = [NSMutableArray arrayWithArray: intent.methodCall];
+      NSMutableArray* arguments = [NSMutableArray arrayWithArray:intent.methodCall];
       arguments[0] = self.clientID;
       [_channel invokeMethod:intent.methodCall[0] arguments:arguments];
       return;
     }
   }
-  
+
   if ([self respondsToSelector:selector]) {
     // Note: The more obvious [self performSelector...] doesn't give ARC enough information to
     // handle retain semantics properly. See https://stackoverflow.com/questions/7017281/ for more
@@ -721,9 +728,8 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   /// If the selector is not in the selector lookup table, and it's not
   /// implementd by this class, send the selector as a private command to the
   /// framework.
-  [_channel invokeMethod:kPerformPrivateCommandIntent arguments:@[
-    self.clientID, @{ @"method": NSStringFromSelector(selector) }
-  ]];
+  [_channel invokeMethod:kPerformPrivateCommandIntent
+               arguments:@[ self.clientID, @{@"method" : NSStringFromSelector(selector)} ]];
 }
 
 - (void)insertNewline:(id)sender {

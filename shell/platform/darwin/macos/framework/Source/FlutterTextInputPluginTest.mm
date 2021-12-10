@@ -91,7 +91,7 @@
                     }];
   // Insert an empty string to send the update to the framework.
   [plugin insertText:@"" replacementRange:NSMakeRange(NSNotFound, 0)];
-  
+
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
         [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
@@ -182,39 +182,38 @@
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-          [engineMock binaryMessenger])
-    .andReturn(binaryMessengerMock);
-  
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  
+
   FlutterTextInputPlugin* plugin =
-  [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
-  
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
   // Set a fake client.
   [plugin handleMethodCall:[FlutterMethodCall
-                            methodCallWithMethodName:@"TextInput.setClient"
-                            arguments:@[
-    @(1), @{
-      @"inputAction" : @"action",
-      @"enableDeltaModel" : @"true",
-      @"inputType" : @{@"name" : @"inputName"},
-    }
-  ]]
+                               methodCallWithMethodName:@"TextInput.setClient"
+                                              arguments:@[
+                                                @(1), @{
+                                                  @"inputAction" : @"action",
+                                                  @"enableDeltaModel" : @"true",
+                                                  @"inputType" : @{@"name" : @"inputName"},
+                                                }
+                                              ]]
                     result:^(id){
-  }];
-  
-  
+                    }];
+
   [plugin doCommandBySelector:@selector(deleteBackward:)];
-  
+
   NSData* updateCall = [[FlutterJSONMethodCodec sharedInstance]
-                        encodeMethodCall:[FlutterMethodCall
-                                          methodCallWithMethodName:@"TextInputClient.DeleteCharacterIntent"
+      encodeMethodCall:[FlutterMethodCall
+                           methodCallWithMethodName:@"TextInputClient.DeleteCharacterIntent"
                                           arguments:@[ @(1), @(false) ]]];
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-              [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
+        [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
   } @catch (...) {
     return false;
   }
@@ -225,41 +224,42 @@
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-          [engineMock binaryMessenger])
-    .andReturn(binaryMessengerMock);
-  
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  
+
   FlutterTextInputPlugin* plugin =
-  [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
-  
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
   // Set a fake client.
   [plugin handleMethodCall:[FlutterMethodCall
-                            methodCallWithMethodName:@"TextInput.setClient"
-                            arguments:@[
-    @(1), @{
-      @"inputAction" : @"action",
-      @"enableDeltaModel" : @"true",
-      @"inputType" : @{@"name" : @"inputName"},
-    }
-  ]]
+                               methodCallWithMethodName:@"TextInput.setClient"
+                                              arguments:@[
+                                                @(1), @{
+                                                  @"inputAction" : @"action",
+                                                  @"enableDeltaModel" : @"true",
+                                                  @"inputType" : @{@"name" : @"inputName"},
+                                                }
+                                              ]]
                     result:^(id){
-  }];
-  
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wundeclared-selector"
+                    }];
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
   [plugin doCommandBySelector:@selector(bogusSelector:)];
-  #pragma clang diagnostic pop
-  
+#pragma clang diagnostic pop
+
   NSData* updateCall = [[FlutterJSONMethodCodec sharedInstance]
-                        encodeMethodCall:[FlutterMethodCall
-                                          methodCallWithMethodName:@"TextInputClient.PerformPrivateTextInputCommandIntent"
-                                          arguments:@[ @(1), @{ @"method": @"bogusSelector:"} ]]];
+      encodeMethodCall:
+          [FlutterMethodCall
+              methodCallWithMethodName:@"TextInputClient.PerformPrivateTextInputCommandIntent"
+                             arguments:@[ @(1), @{@"method" : @"bogusSelector:"} ]]];
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-              [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
+        [binaryMessengerMock sendOnChannel:@"flutter/textinput" message:updateCall]);
   } @catch (...) {
     return false;
   }
@@ -270,29 +270,29 @@
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-          [engineMock binaryMessenger])
-    .andReturn(binaryMessengerMock);
-  
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  
+
   FlutterTextInputPlugin* plugin =
-  [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
-  
+      [[FlutterTextInputPlugin alloc] initWithViewController:viewController];
+
   // Set a fake client.
   [plugin handleMethodCall:[FlutterMethodCall
-                            methodCallWithMethodName:@"TextInput.setClient"
-                            arguments:@[
-    @(1), @{
-      @"inputAction" : @"action",
-      @"enableDeltaModel" : @"true",
-      @"inputType" : @{@"name" : @"inputName"},
-    }
-  ]]
+                               methodCallWithMethodName:@"TextInput.setClient"
+                                              arguments:@[
+                                                @(1), @{
+                                                  @"inputAction" : @"action",
+                                                  @"enableDeltaModel" : @"true",
+                                                  @"inputType" : @{@"name" : @"inputName"},
+                                                }
+                                              ]]
                     result:^(id){
-  }];
-  
+                    }];
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
   [plugin doCommandBySelector:@selector(noop:)];
@@ -509,7 +509,8 @@ TEST(FlutterTextInputPluginTest, TestKnownSelectorNamesAreSentToTheFramework) {
 }
 
 TEST(FlutterTextInputPluginTest, TestUnknownSelectorNamesAreSentToTheFrameworkAsPrivateCommands) {
-  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testUnknownSelectorCommandsAreSentToTheFrameworkAsPrivateCommands]);
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc]
+      testUnknownSelectorCommandsAreSentToTheFrameworkAsPrivateCommands]);
 }
 
 TEST(FlutterTextInputPluginTest, TestDoCommandBySelectoreIgnoresNoopSelectors) {
