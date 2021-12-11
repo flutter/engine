@@ -346,8 +346,7 @@ class HtmlViewEmbedder {
             final svg.ClipPathElement newClipPath = svg.ClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                svg.PathElement()
-                  ..setAttribute('d', path.toSvgString()!));
+                svg.PathElement()..setAttribute('d', path.toSvgString()!));
 
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
@@ -365,8 +364,7 @@ class HtmlViewEmbedder {
             final svg.ClipPathElement newClipPath = svg.ClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                svg.PathElement()
-                  ..setAttribute('d', path.toSvgString()!));
+                svg.PathElement()..setAttribute('d', path.toSvgString()!));
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it
@@ -651,7 +649,8 @@ class HtmlViewEmbedder {
         // them. Otherwise, we will need to release overlays from the unchanged
         // segment of view ids.
         if (diffResult.viewsToAdd.length > availableOverlays) {
-          int viewsToDispose = diffResult.viewsToAdd.length - availableOverlays;
+          int viewsToDispose = math.min(SurfaceFactory.instance.maximumOverlays,
+              diffResult.viewsToAdd.length - availableOverlays);
           // The first `maximumSurfaces` views in the previous composition order
           // had an overlay.
           int index = SurfaceFactory.instance.maximumOverlays -

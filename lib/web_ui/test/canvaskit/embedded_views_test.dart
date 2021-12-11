@@ -622,8 +622,8 @@ void testMain() {
           JsFlutterConfiguration()..canvasKitMaximumSurfaces = 2));
       SurfaceFactory.instance.debugClear();
 
-      expect(SurfaceFactory.instance.maximumOverlays, 2);
-      expect(SurfaceFactory.instance.maximumSurfaces, 0);
+      expect(SurfaceFactory.instance.maximumSurfaces, 2);
+      expect(SurfaceFactory.instance.maximumOverlays, 0);
 
       ui.platformViewRegistry.registerViewFactory(
         'test-platform-view',
@@ -659,6 +659,9 @@ void testMain() {
           flutterViewEmbedder.glassPaneShadow!
               .querySelectorAll('flt-platform-view-slot'),
           hasLength(2));
+
+      // Reset configuration
+      debugSetConfiguration(FlutterConfiguration(null));
     });
 
     test(
