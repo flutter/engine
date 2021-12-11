@@ -346,7 +346,8 @@ class HtmlViewEmbedder {
             final svg.ClipPathElement newClipPath = svg.ClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                svg.PathElement()..setAttribute('d', path.toSvgString()!));
+                svg.PathElement()
+                  ..setAttribute('d', path.toSvgString()!));
 
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
@@ -364,7 +365,8 @@ class HtmlViewEmbedder {
             final svg.ClipPathElement newClipPath = svg.ClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
-                svg.PathElement()..setAttribute('d', path.toSvgString()!));
+                svg.PathElement()
+                  ..setAttribute('d', path.toSvgString()!));
             pathDefs.append(newClipPath);
             // Store the id of the node instead of [newClipPath] directly. For
             // some reason, calling `newClipPath.remove()` doesn't remove it

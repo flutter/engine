@@ -35,8 +35,7 @@ import 'package:js/js.dart';
 const String _canvaskitVersion = '0.31.0';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration =>
-    _configuration ??= FlutterConfiguration(_jsConfiguration);
+FlutterConfiguration get configuration => _configuration ??= FlutterConfiguration(_jsConfiguration);
 FlutterConfiguration? _configuration;
 
 /// Sets the given configuration as the current one.
@@ -78,6 +77,7 @@ class FlutterConfiguration {
   static const bool useSkia =
       bool.fromEnvironment('FLUTTER_WEB_USE_SKIA', defaultValue: false);
 
+
   // Runtime parameters.
   //
   // These parameters can be supplied either as environment variables, or at
@@ -107,8 +107,7 @@ class FlutterConfiguration {
   ///   --web-renderer=canvaskit \
   ///   --dart-define=FLUTTER_WEB_CANVASKIT_URL=https://example.com/custom-canvaskit-build/
   /// ```
-  String get canvasKitBaseUrl =>
-      _js?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
+  String get canvasKitBaseUrl => _js?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
     defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
@@ -119,8 +118,7 @@ class FlutterConfiguration {
   ///
   /// This is mainly used for testing or for apps that want to ensure they
   /// run on devices which don't support WebGL.
-  bool get canvasKitForceCpuOnly =>
-      _js?.canvasKitForceCpuOnly ?? _defaultCanvasKitForceCpuOnly;
+  bool get canvasKitForceCpuOnly => _js?.canvasKitForceCpuOnly ?? _defaultCanvasKitForceCpuOnly;
   static const bool _defaultCanvasKitForceCpuOnly = bool.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
     defaultValue: false,
@@ -135,8 +133,7 @@ class FlutterConfiguration {
   ///
   /// This value can be specified using either the `FLUTTER_WEB_MAXIMUM_SURFACES`
   /// environment variable, or using the runtime configuration.
-  int get canvasKitMaximumSurfaces =>
-      _js?.canvasKitMaximumSurfaces ?? _defaultCanvasKitMaximumSurfaces;
+  int get canvasKitMaximumSurfaces => _js?.canvasKitMaximumSurfaces ?? _defaultCanvasKitMaximumSurfaces;
   static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
     'FLUTTER_WEB_MAXIMUM_SURFACES',
     defaultValue: 8,
@@ -153,8 +150,7 @@ class FlutterConfiguration {
   /// ```
   /// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
   /// ```
-  bool get debugShowSemanticsNodes =>
-      _js?.debugShowSemanticsNodes ?? _defaultDebugShowSemanticsNodes;
+  bool get debugShowSemanticsNodes => _js?.debugShowSemanticsNodes ?? _defaultDebugShowSemanticsNodes;
   static const bool _defaultDebugShowSemanticsNodes = bool.fromEnvironment(
     'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
     defaultValue: false,
