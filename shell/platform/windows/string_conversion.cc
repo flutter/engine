@@ -19,8 +19,9 @@ std::string Utf8FromUtf16(const std::wstring_view utf16_string) {
     return std::string();
   }
   std::string utf8_string;
-  utf8_string.resize(target_length);
-  if (utf8_string.length() != target_length) {
+  try {
+    utf8_string.resize(target_length);
+  } catch (...) {
     return std::string();
   }
   int converted_length = ::WideCharToMultiByte(
@@ -44,8 +45,9 @@ std::wstring Utf16FromUtf8(const std::string_view utf8_string) {
     return std::wstring();
   }
   std::wstring utf16_string;
-  utf16_string.resize(target_length);
-  if (utf16_string.length() != target_length) {
+  try {
+    utf16_string.resize(target_length);
+  } catch (...) {
     return std::wstring();
   }
   int converted_length =
