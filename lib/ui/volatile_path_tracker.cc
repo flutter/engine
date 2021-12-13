@@ -35,21 +35,21 @@ void VolatilePathTracker::OnFrame() {
   TRACE_EVENT0("flutter", "VolatilePathTracker::OnFrame");
 #endif
 
-  std::vector<std::weak_ptr<TrackedPath>> surviving_paths;
-  for (const std::weak_ptr<TrackedPath>& weak_path : paths_) {
-    auto path = weak_path.lock();
-    if (!path) {
-      continue;
-    }
-    path->frame_count++;
-    if (path->frame_count >= kFramesOfVolatility) {
-      path->path.setIsVolatile(false);
-      path->tracking_volatility = false;
-    } else {
-      surviving_paths.push_back(path);
-    }
-  }
-  paths_ = std::move(surviving_paths);
+  paths_.erase(std::remove_if(paths_.begin(), paths_.end(),
+                              [](std::weak_ptr<TrackedPath> weak_path) {
+                                auto path = weak_path.lock();
+                                if (!path) {
+                                  return true;
+                                }
+                                path->frame_count++;
+                                if (path->frame_count >= kFramesOfVolatility) {
+                                  path->path.setIsVolatile(false);
+                                  path->tracking_volatility = false;
+                                  return true;
+                                }
+                                return false;
+                              }),
+               paths_.end());
 
 #if !FLUTTER_RELEASE
   std::string post_removal_count = std::to_string(paths_.size());

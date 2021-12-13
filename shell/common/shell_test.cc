@@ -404,16 +404,11 @@ bool ShellTest::IsAnimatorRunning(Shell* shell) {
 
 size_t ShellTest::GetLiveTrackedPathCount(
     std::shared_ptr<VolatilePathTracker> tracker) {
-  size_t count = 0;
-  for (const std::weak_ptr<VolatilePathTracker::TrackedPath>& weak_path :
-       tracker->paths_) {
-    auto path = weak_path.lock();
-    if (!path) {
-      continue;
-    }
-    count += 1;
-  }
-  return count;
+  return std::count_if(
+      tracker->paths_.begin(), tracker->paths_.end(),
+      [](std::weak_ptr<VolatilePathTracker::TrackedPath> path) {
+        return path.lock();
+      });
 }
 
 }  // namespace testing
