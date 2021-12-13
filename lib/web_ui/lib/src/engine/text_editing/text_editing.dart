@@ -11,9 +11,10 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
+import '../embedder.dart';
 import '../host_node.dart';
 import '../platform_dispatcher.dart';
+import '../safe_browser_api.dart';
 import '../semantics.dart';
 import '../services.dart';
 import '../text/paragraph.dart';
@@ -46,7 +47,7 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
+HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -1180,7 +1181,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // On iOS, blur is trigerred in the following cases:
     //
     // 1. The browser app is sent to the background (or the tab is changed). In
-    //    this case, the window loses focus (see [domRenderer.windowHasFocus]),
+    //    this case, the window loses focus (see [windowHasFocus]),
     //    so we close the input connection with the framework.
     // 2. The user taps on another focusable element. In this case, we refocus
     //    the input field and wait for the framework to manage the focus change.
@@ -1189,7 +1190,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    okay because the virtual keyboard will hide, and as soon as the user
     //    taps the text field again, the virtual keyboard will come up.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (domRenderer.windowHasFocus) {
+      if (windowHasFocus) {
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
@@ -1301,11 +1302,11 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (domRenderer.windowHasFocus) {
+      if (windowHasFocus) {
         // Chrome on Android will hide the onscreen keyboard when you tap outside
         // the text box. Instead, we want the framework to tell us to hide the
         // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-        // refocus as long as [domRenderer.windowHasFocus] is true.
+        // refocus as long as [windowHasFocus] is true.
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();

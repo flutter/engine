@@ -166,6 +166,13 @@ external JsFlutterConfiguration? get _jsConfiguration;
 class JsFlutterConfiguration {
   external String? get canvasKitBaseUrl;
   external bool? get canvasKitForceCpuOnly;
-  external int? get canvasKitMaximumSurfaces;
   external bool? get debugShowSemanticsNodes;
+
+  external int? get canvasKitMaximumSurfaces;
+  external set canvasKitMaximumSurfaces(int? maxSurfaces);
 }
+
+/// A JavaScript entrypoint that allows developer to set rendering backend
+/// at runtime before launching the application.
+@JS('window.flutterWebRenderer')
+external String? get requestedRendererType;

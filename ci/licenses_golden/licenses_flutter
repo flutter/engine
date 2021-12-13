@@ -515,7 +515,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/viewport_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/configuration.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom_renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/embedder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/frame_reference.dart
@@ -528,7 +528,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/debug_canvas_reuse_overlay.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/dom_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/image_filter.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/offscreen_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/offset.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/opacity.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/painting.dart
@@ -555,11 +554,11 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shaders/normalized_gradien
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shaders/shader.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shaders/shader_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shaders/vertex_shaders.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shaders/webgl_context.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/surface_stats.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/transform.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html_image_codec.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/key_map.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/keyboard_binding.dart
@@ -580,6 +579,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/profiler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/rrect_renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/safe_browser_api.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/accessibility.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/semantics/checkable.dart
@@ -620,7 +620,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/ulps.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/web_experiments.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/window.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/annotations.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/canvas.dart
@@ -638,7 +637,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/ui/path_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/pointer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/semantics.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/ui/test_embedding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/ui/window.dart
@@ -1158,6 +1156,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/connection_col
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/connection_collection_test.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h
@@ -1189,9 +1189,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_surface_software.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.h
 FILE: ../../../flutter/shell/platform/darwin/ios/ios_switchable_gl_context.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/platform_message_handler_ios.h
-FILE: ../../../flutter/shell/platform/darwin/ios/platform_message_handler_ios.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/platform_message_handler_ios_test.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
@@ -1505,6 +1502,10 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_tzdata_unittest.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/runner_unittest.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface_producer.h
@@ -1693,6 +1694,11 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_texture_regi
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_value.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/flutter_linux.h
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_win32.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_win32.h
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_win32_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.cc
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/dart_project_unittests.cc
@@ -1717,6 +1723,10 @@ FILE: ../../../flutter/shell/platform/windows/dpi_utils_win32_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_gl.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_gl.h
 FILE: ../../../flutter/shell/platform/windows/flutter_key_map.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_platform_node_delegate_win32.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_platform_node_delegate_win32.h
+FILE: ../../../flutter/shell/platform/windows/flutter_platform_node_delegate_winuwp.cc
+FILE: ../../../flutter/shell/platform/windows/flutter_platform_node_delegate_winuwp.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle.h
 FILE: ../../../flutter/shell/platform/windows/flutter_project_bundle_unittests.cc
@@ -1752,6 +1762,7 @@ FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler.h
 FILE: ../../../flutter/shell/platform/windows/keyboard_key_handler_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/keyboard_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/keyboard_win32_common.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler.cc
 FILE: ../../../flutter/shell/platform/windows/platform_handler.h
 FILE: ../../../flutter/shell/platform/windows/platform_handler_unittests.cc
@@ -2382,6 +2393,9 @@ ORIGIN: ../../../flutter/third_party/accessibility/base/win/atl_module.h + ../..
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/base/auto_reset.h
 FILE: ../../../flutter/third_party/accessibility/base/win/atl_module.h
+FILE: ../../../flutter/third_party/accessibility/base/win/display.cc
+FILE: ../../../flutter/third_party/accessibility/base/win/display.h
+FILE: ../../../flutter/third_party/accessibility/base/win/display_unittest.cc
 FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant.cc
 FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant.h
 FILE: ../../../flutter/third_party/accessibility/base/win/enum_variant_unittest.cc

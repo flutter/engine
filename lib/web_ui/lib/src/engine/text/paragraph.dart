@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
+import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../util.dart';
 import 'layout_service.dart';
@@ -429,7 +429,7 @@ class EngineTextStyle implements ui.TextStyle {
       }
     }
     if (fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
+      return FlutterViewEmbedder.defaultFontFamily;
     }
     return fontFamily;
   }
@@ -453,7 +453,7 @@ class EngineTextStyle implements ui.TextStyle {
   TextHeightStyle _createHeightStyle() {
     return TextHeightStyle(
       fontFamily: effectiveFontFamily,
-      fontSize: fontSize ?? DomRenderer.defaultFontSize,
+      fontSize: fontSize ?? FlutterViewEmbedder.defaultFontSize,
       height: height,
       // TODO(mdebbar): Pass the actual value when font features become supported
       //                https://github.com/flutter/flutter/issues/64595
@@ -696,7 +696,21 @@ void applyTextStyleToElement({
   final html.CssStyleDeclaration cssStyle = element.style;
 
   final ui.Color? color = style.foreground?.color ?? style.color;
-  if (color != null) {
+  if (style.foreground?.style == ui.PaintingStyle.stroke) {
+    // When comparing the outputs of the Bitmap Canvas and the DOM
+    // implementation, we have found, that we need to set the background color
+    // of the text to transparent to achieve the same effect as in the Bitmap
+    // Canvas and the Skia Engine where only the text stroke is painted.
+    // If we don't set it here to transparent, the text will inherit the color
+    // of it's parent element.
+    cssStyle.color = 'transparent';
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double? strokeWidth = style.foreground?.strokeWidth;
+    final double adaptedWidth = strokeWidth != null && strokeWidth > 0
+        ? strokeWidth
+        : 1.0 / ui.window.devicePixelRatio;
+    cssStyle.textStroke = '${adaptedWidth}px ${colorToCssString(color)}';
+  } else if (color != null) {
     cssStyle.color = colorToCssString(color);
   }
   final ui.Color? background = style.background?.color;
@@ -744,7 +758,7 @@ void applyTextStyleToElement({
           _textDecorationToCssString(style.decoration, style.decorationStyle);
       if (textDecoration != null) {
         if (browserEngine == BrowserEngine.webkit) {
-          DomRenderer.setElementStyle(
+          setElementStyle(
               element, '-webkit-text-decoration', textDecoration);
         } else {
           cssStyle.textDecoration = textDecoration;
@@ -766,7 +780,7 @@ void applyTextStyleToElement({
 html.Element createPlaceholderElement({
   required ParagraphPlaceholder placeholder,
 }) {
-  final html.Element element = domRenderer.createElement('span');
+  final html.Element element = html.document.createElement('span');
   final html.CssStyleDeclaration style = element.style;
   style
     ..display = 'inline-block'
