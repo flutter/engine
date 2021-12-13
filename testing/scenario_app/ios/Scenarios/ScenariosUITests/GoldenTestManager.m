@@ -4,6 +4,7 @@
 
 #import "GoldenTestManager.h"
 #import <XCTest/XCTest.h>
+#import <os/log.h>
 
 @interface GoldenTestManager ()
 
@@ -70,6 +71,11 @@ NSDictionary* launchArgsMap;
     screenshotAttachment.name = [_goldenImage.goldenName stringByAppendingString:@"_actual"];
     screenshotAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [test addAttachment:screenshotAttachment];
+
+    NSData* rawData =
+        (__bridge NSData*)CGDataProviderCopyData(CGImageGetDataProvider(screenshot.image.CGImage));
+    NSString* imageData = [[NSString alloc] initWithData:rawData encoding:NSUTF8StringEncoding];
+    os_log_error(OS_LOG_DEFAULT, "Updated golden data: @\"%@\"", imageData);
 
     _XCTPrimitiveFail(test,
                       @"Goldens do not match. Follow the steps in the "
