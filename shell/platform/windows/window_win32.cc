@@ -542,16 +542,6 @@ LRESULT WindowWin32::Win32DefWindowProc(HWND hWnd,
   return ::DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
-UINT WindowWin32::Win32DispatchEvent(UINT cInputs,
-                                     LPINPUT pInputs,
-                                     int cbSize) {
-  return ::SendInput(cInputs, pInputs, cbSize);
-}
-
-SHORT WindowWin32::Win32GetKeyState(int nVirtKey) {
-  return ::GetKeyState(nVirtKey);
-}
-
 BOOL WindowWin32::Win32PeekMessage(LPMSG lpMsg,
                                    UINT wMsgFilterMin,
                                    UINT wMsgFilterMax,

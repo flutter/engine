@@ -30,12 +30,6 @@ class KeyboardManagerWin32 {
                        bool extended,
                        bool was_down) = 0;
 
-    virtual UINT Win32DispatchEvent(UINT cInputs,
-                                    LPINPUT pInputs,
-                                    int cbSize) = 0;
-
-    virtual SHORT Win32GetKeyState(int nVirtKey) = 0;
-
     // Win32's PeekMessage.
     //
     // Used to process key messages.
