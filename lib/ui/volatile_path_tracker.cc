@@ -11,26 +11,15 @@ VolatilePathTracker::VolatilePathTracker(
     bool enabled)
     : ui_task_runner_(ui_task_runner), enabled_(enabled) {}
 
-void VolatilePathTracker::Insert(std::shared_ptr<TrackedPath> path) {
+void VolatilePathTracker::Track(std::shared_ptr<TrackedPath> path) {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(path);
   FML_DCHECK(path->path.isVolatile());
-  FML_DCHECK(!path->erased);
   if (!enabled_) {
     path->path.setIsVolatile(false);
     return;
   }
   paths_.push_back(path);
-}
-
-void VolatilePathTracker::Erase(std::shared_ptr<TrackedPath> path) {
-  if (!enabled_) {
-    return;
-  }
-  FML_DCHECK(path);
-  std::scoped_lock lock(paths_mutex_);
-  path->erased = true;
-  path->path.reset();
 }
 
 void VolatilePathTracker::OnFrame() {
@@ -46,10 +35,10 @@ void VolatilePathTracker::OnFrame() {
   TRACE_EVENT0("flutter", "VolatilePathTracker::OnFrame");
 #endif
 
-  std::scoped_lock lock(paths_mutex_);
-  std::vector<std::shared_ptr<TrackedPath>> surviving_paths;
-  for (const std::shared_ptr<TrackedPath>& path : paths_) {
-    if (path->erased) {
+  std::vector<std::weak_ptr<TrackedPath>> surviving_paths;
+  for (const std::weak_ptr<TrackedPath>& weak_path : paths_) {
+    auto path = weak_path.lock();
+    if (!path) {
       continue;
     }
     path->frame_count++;

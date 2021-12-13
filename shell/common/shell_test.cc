@@ -402,5 +402,19 @@ bool ShellTest::IsAnimatorRunning(Shell* shell) {
   return running;
 }
 
+size_t ShellTest::GetLiveTrackedPathCount(
+    std::shared_ptr<VolatilePathTracker> tracker) {
+  size_t count = 0;
+  for (const std::weak_ptr<VolatilePathTracker::TrackedPath>& weak_path :
+       tracker->paths_) {
+    auto path = weak_path.lock();
+    if (!path) {
+      continue;
+    }
+    count += 1;
+  }
+  return count;
+}
+
 }  // namespace testing
 }  // namespace flutter
