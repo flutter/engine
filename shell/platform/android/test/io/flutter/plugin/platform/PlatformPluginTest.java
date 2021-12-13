@@ -313,7 +313,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 29)
+  @Config(minSdk = 29)
   @Test
   public void setSystemUiMode() {
     View fakeDecorView = mock(View.class);
@@ -323,71 +323,79 @@ public class PlatformPluginTest {
     when(fakeActivity.getWindow()).thenReturn(fakeWindow);
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
-    // WindowInsetsControllerCompat windowInsetsControllerCompat = spy(new
-    // WindowInsetsControllerCompat(fakeWindow, fakeDecorView));
-    WindowInsetsControllerCompat windowInsetsControllerCompat =
-        mock(WindowInsetsControllerCompat.class);
+    WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
+    when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
     if (Build.VERSION.SDK_INT >= 28) {
       platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.LEAN_BACK);
-      // verify(fakeDecorView)
-      //     .setSystemUiVisibility(
-      //         View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-      //             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_FULLSCREEN);
-      verify(windowInsetsControllerCompat)
-          .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
-      verify(windowInsetsControllerCompat).hide(WindowInsetsCompat.Type.systemBars());
 
-      // TODO: WindowCompat.setDecorFitsSystemWindows(window, false);
+      if (Build.VERSION.SDK_INT < 30) {
+        verify(fakeDecorView).setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+        verify(fakeDecorView).setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        verify(fakeDecorView)
+            .setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+      } else {
+        verify(fakeWindowInsetsController)
+            .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
+        verify(fakeWindowInsetsController).hide(WindowInsetsCompat.Type.systemBars());
+        verify(fakeWindow).setDecorFitsSystemWindows(false);
+      }
 
-      // platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-      //     PlatformChannel.SystemUiMode.IMMERSIVE);
-      // verify(fakeDecorView)
-      //     .setSystemUiVisibility(
-      //         View.SYSTEM_UI_FLAG_IMMERSIVE
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-      //             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_FULLSCREEN);
-      verify(windowInsetsControllerCompat)
-          .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
-      verify(windowInsetsControllerCompat).hide(WindowInsetsCompat.Type.systemBars());
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.IMMERSIVE);
+      if (Build.VERSION.SDK_INT < 30) {
+        verify(fakeDecorView).setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE);
+        verify(fakeDecorView, times(2)).setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+        verify(fakeDecorView, times(2)).setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        verify(fakeDecorView, times(2))
+            .setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+      } else {
+        verify(fakeWindowInsetsController)
+            .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
+        verify(fakeWindowInsetsController, times(2)).hide(WindowInsetsCompat.Type.systemBars());
+        verify(fakeWindow, times(2)).setDecorFitsSystemWindows(false);
+      }
 
-      // TODO: WindowCompat.setDecorFitsSystemWindows(window, false);
-
-      // platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-      //     PlatformChannel.SystemUiMode.IMMERSIVE_STICKY);
-      // verify(fakeDecorView)
-      //     .setSystemUiVisibility(
-      //         View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-      //             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_FULLSCREEN);
-      verify(windowInsetsControllerCompat)
-          .setSystemBarsBehavior(
-              WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-      verify(windowInsetsControllerCompat).hide(WindowInsetsCompat.Type.systemBars());
-
-      // TODO: WindowCompat.setDecorFitsSystemWindows(window, false);
-
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.IMMERSIVE_STICKY);
+      if (Build.VERSION.SDK_INT < 30) {
+        verify(fakeDecorView).setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        verify(fakeDecorView, times(3)).setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
+        verify(fakeDecorView, times(3)).setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        verify(fakeDecorView, times(3))
+            .setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+      } else {
+        verify(fakeWindowInsetsController)
+            .setSystemBarsBehavior(
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        verify(fakeWindowInsetsController, times(3)).hide(WindowInsetsCompat.Type.systemBars());
+        verify(fakeWindow, times(3)).setDecorFitsSystemWindows(false);
+      }
     }
 
     if (Build.VERSION.SDK_INT >= 29) {
       platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
-      // verify(fakeDecorView)
-      //     .setSystemUiVisibility(
-      //         View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-      //             | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-      // TODO: WindowCompat.setDecorFitsSystemWindows(window, false);
+
+      if (Build.VERSION.SDK_INT < 30) {
+        verify(fakeDecorView, times(4))
+            .setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+      } else {
+        verify(fakeWindow, times(4)).setDecorFitsSystemWindows(false);
+      }
     }
   }
 
