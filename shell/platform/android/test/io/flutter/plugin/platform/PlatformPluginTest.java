@@ -388,39 +388,35 @@ public class PlatformPluginTest {
       fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
-      if (Build.VERSION.SDK_INT >= 28) {
-        platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-            PlatformChannel.SystemUiMode.LEAN_BACK);
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.LEAN_BACK);
 
-        verify(fakeWindowInsetsController)
-            .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
-        verify(fakeWindowInsetsController).hide(WindowInsetsCompat.Type.systemBars());
-        verify(fakeWindow).setDecorFitsSystemWindows(false);
+      verify(fakeWindowInsetsController)
+          .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
+      verify(fakeWindowInsetsController).hide(WindowInsetsCompat.Type.systemBars());
+      verify(fakeWindow).setDecorFitsSystemWindows(false);
 
-        platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-            PlatformChannel.SystemUiMode.IMMERSIVE);
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.IMMERSIVE);
 
-        verify(fakeWindowInsetsController)
-            .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
-        verify(fakeWindowInsetsController, times(2)).hide(WindowInsetsCompat.Type.systemBars());
-        verify(fakeWindow, times(2)).setDecorFitsSystemWindows(false);
+      verify(fakeWindowInsetsController)
+          .setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
+      verify(fakeWindowInsetsController, times(2)).hide(WindowInsetsCompat.Type.systemBars());
+      verify(fakeWindow, times(2)).setDecorFitsSystemWindows(false);
 
-        platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-            PlatformChannel.SystemUiMode.IMMERSIVE_STICKY);
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.IMMERSIVE_STICKY);
 
-        verify(fakeWindowInsetsController)
-            .setSystemBarsBehavior(
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        verify(fakeWindowInsetsController, times(3)).hide(WindowInsetsCompat.Type.systemBars());
-        verify(fakeWindow, times(3)).setDecorFitsSystemWindows(false);
-      }
+      verify(fakeWindowInsetsController)
+          .setSystemBarsBehavior(
+              WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      verify(fakeWindowInsetsController, times(3)).hide(WindowInsetsCompat.Type.systemBars());
+      verify(fakeWindow, times(3)).setDecorFitsSystemWindows(false);
 
-      if (Build.VERSION.SDK_INT >= 29) {
-        platformPlugin.mPlatformMessageHandler.showSystemUiMode(
-            PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
+          PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
 
-        verify(fakeWindow, times(4)).setDecorFitsSystemWindows(false);
-      }
+      verify(fakeWindow, times(4)).setDecorFitsSystemWindows(false);
     }
   }
 
