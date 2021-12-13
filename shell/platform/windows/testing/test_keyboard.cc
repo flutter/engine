@@ -192,7 +192,6 @@ void MockMessageQueue::InjectMessageList(int count,
 }
 
 BOOL MockMessageQueue::Win32PeekMessage(LPMSG lpMsg,
-                                        HWND hWnd,
                                         UINT wMsgFilterMin,
                                         UINT wMsgFilterMax,
                                         UINT wRemoveMsg) {

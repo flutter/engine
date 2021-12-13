@@ -156,11 +156,10 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
 
  protected:
   virtual BOOL Win32PeekMessage(LPMSG lpMsg,
-                                HWND hWnd,
                                 UINT wMsgFilterMin,
                                 UINT wMsgFilterMax,
                                 UINT wRemoveMsg) override {
-    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin,
+    return MockMessageQueue::Win32PeekMessage(lpMsg, wMsgFilterMin,
                                               wMsgFilterMax, wRemoveMsg);
   }
 

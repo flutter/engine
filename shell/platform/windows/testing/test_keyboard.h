@@ -64,7 +64,6 @@ class MockMessageQueue {
   //
   // See Win32's |PeekMessage| for documentation.
   BOOL Win32PeekMessage(LPMSG lpMsg,
-                        HWND hWnd,
                         UINT wMsgFilterMin,
                         UINT wMsgFilterMax,
                         UINT wRemoveMsg);
