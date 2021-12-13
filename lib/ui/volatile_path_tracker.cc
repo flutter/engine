@@ -15,11 +15,12 @@ void VolatilePathTracker::Insert(std::shared_ptr<TrackedPath> path) {
   FML_DCHECK(ui_task_runner_->RunsTasksOnCurrentThread());
   FML_DCHECK(path);
   FML_DCHECK(path->path.isVolatile());
+  FML_DCHECK(!path->erased);
   if (!enabled_) {
     path->path.setIsVolatile(false);
     return;
   }
-  paths_.insert(path);
+  paths_.push_back(path);
 }
 
 void VolatilePathTracker::Erase(std::shared_ptr<TrackedPath> path) {
@@ -27,14 +28,9 @@ void VolatilePathTracker::Erase(std::shared_ptr<TrackedPath> path) {
     return;
   }
   FML_DCHECK(path);
-  if (ui_task_runner_->RunsTasksOnCurrentThread()) {
-    paths_.erase(path);
-    return;
-  }
-
-  std::scoped_lock lock(paths_to_remove_mutex_);
-  needs_drain_ = true;
-  paths_to_remove_.push_back(path);
+  std::scoped_lock lock(paths_mutex_);
+  path->erased = true;
+  path->path.reset();
 }
 
 void VolatilePathTracker::OnFrame() {
@@ -42,44 +38,35 @@ void VolatilePathTracker::OnFrame() {
   if (!enabled_) {
     return;
   }
+#if !FLUTTER_RELEASE
   std::string total_count = std::to_string(paths_.size());
   TRACE_EVENT1("flutter", "VolatilePathTracker::OnFrame", "total_count",
                total_count.c_str());
+#else
+  TRACE_EVENT0("flutter", "VolatilePathTracker::OnFrame");
+#endif
 
-  Drain();
-
-  std::set<std::shared_ptr<TrackedPath>> surviving_paths_;
+  std::scoped_lock lock(paths_mutex_);
+  std::vector<std::shared_ptr<TrackedPath>> surviving_paths;
   for (const std::shared_ptr<TrackedPath>& path : paths_) {
+    if (path->erased) {
+      continue;
+    }
     path->frame_count++;
     if (path->frame_count >= kFramesOfVolatility) {
       path->path.setIsVolatile(false);
       path->tracking_volatility = false;
     } else {
-      surviving_paths_.insert(path);
+      surviving_paths.push_back(path);
     }
   }
-  paths_.swap(surviving_paths_);
+  paths_ = std::move(surviving_paths);
+
+#if !FLUTTER_RELEASE
   std::string post_removal_count = std::to_string(paths_.size());
   TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::OnFrame",
                        "remaining_count", post_removal_count.c_str());
-}
-
-void VolatilePathTracker::Drain() {
-  if (needs_drain_) {
-    TRACE_EVENT0("flutter", "VolatilePathTracker::Drain");
-    std::deque<std::shared_ptr<TrackedPath>> paths_to_remove;
-    {
-      std::scoped_lock lock(paths_to_remove_mutex_);
-      paths_to_remove.swap(paths_to_remove_);
-      needs_drain_ = false;
-    }
-    std::string count = std::to_string(paths_to_remove.size());
-    TRACE_EVENT_INSTANT1("flutter", "VolatilePathTracker::Drain", "count",
-                         count.c_str());
-    for (auto& path : paths_to_remove) {
-      paths_.erase(path);
-    }
-  }
+#endif
 }
 
 }  // namespace flutter
