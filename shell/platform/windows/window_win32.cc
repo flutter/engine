@@ -542,7 +542,9 @@ LRESULT WindowWin32::Win32DefWindowProc(HWND hWnd,
   return ::DefWindowProc(hWnd, Msg, wParam, lParam);
 }
 
-UINT WindowWin32::Win32DispatchEvent(UINT cInputs, LPINPUT pInputs, int cbSize) {
+UINT WindowWin32::Win32DispatchEvent(UINT cInputs,
+                                     LPINPUT pInputs,
+                                     int cbSize) {
   return ::SendInput(cInputs, pInputs, cbSize);
 }
 
@@ -554,7 +556,8 @@ BOOL WindowWin32::Win32PeekMessage(LPMSG lpMsg,
                                    UINT wMsgFilterMin,
                                    UINT wMsgFilterMax,
                                    UINT wRemoveMsg) {
-  return ::PeekMessage(lpMsg, window_handle_, wMsgFilterMin, wMsgFilterMax, wRemoveMsg);
+  return ::PeekMessage(lpMsg, window_handle_, wMsgFilterMin, wMsgFilterMax,
+                       wRemoveMsg);
 }
 
 uint32_t WindowWin32::Win32MapVkToChar(uint32_t virtual_key) {

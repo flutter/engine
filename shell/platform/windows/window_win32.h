@@ -40,7 +40,9 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   HWND GetWindowHandle();
 
   // |KeyboardManagerWin32::WindowDelegate|
-  virtual UINT Win32DispatchEvent(UINT cInputs, LPINPUT pInputs, int cbSize) override;
+  virtual UINT Win32DispatchEvent(UINT cInputs,
+                                  LPINPUT pInputs,
+                                  int cbSize) override;
 
   // |KeyboardManagerWin32::WindowDelegate|
   virtual SHORT Win32GetKeyState(int nVirtKey) override;

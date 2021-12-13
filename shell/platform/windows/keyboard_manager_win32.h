@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_MANAGER_H_
 
-#include <map>
 #include <windows.h>
+#include <map>
 
 namespace flutter {
 
@@ -21,16 +21,18 @@ class KeyboardManagerWin32 {
 
     // Called when raw keyboard input occurs.
     //
-    // Returns true if the event was handled, indicating that DefWindowProc should
-    // not be called on the event by the main message loop.
+    // Returns true if the event was handled, indicating that DefWindowProc
+    // should not be called on the event by the main message loop.
     virtual bool OnKey(int key,
-                      int scancode,
-                      int action,
-                      char32_t character,
-                      bool extended,
-                      bool was_down) = 0;
+                       int scancode,
+                       int action,
+                       char32_t character,
+                       bool extended,
+                       bool was_down) = 0;
 
-    virtual UINT Win32DispatchEvent(UINT cInputs, LPINPUT pInputs, int cbSize) = 0;
+    virtual UINT Win32DispatchEvent(UINT cInputs,
+                                    LPINPUT pInputs,
+                                    int cbSize) = 0;
 
     virtual SHORT Win32GetKeyState(int nVirtKey) = 0;
 
@@ -52,7 +54,9 @@ class KeyboardManagerWin32 {
 
   // TODO
   // Returns true if handled.
-  bool HandleMessage(UINT const message, WPARAM const wparam, LPARAM const lparam);
+  bool HandleMessage(UINT const message,
+                     WPARAM const wparam,
+                     LPARAM const lparam);
 
  private:
   // Returns the type of the next WM message.

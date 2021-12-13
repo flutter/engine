@@ -41,13 +41,12 @@ static bool IsPrintable(uint32_t c) {
 }
 
 KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
-  : window_delegate_(delegate) {
-}
+    : window_delegate_(delegate) {}
 
 bool KeyboardManagerWin32::HandleMessage(UINT const message,
-                                            WPARAM const wparam,
-                                            LPARAM const lparam) {
-  switch(message) {
+                                         WPARAM const wparam,
+                                         LPARAM const lparam) {
+  switch (message) {
     case WM_DEADCHAR:
     case WM_SYSDEADCHAR:
     case WM_CHAR:
@@ -91,13 +90,15 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
           // rare cases the bit is *not* set (US INTL Shift-6 circumflex, see
           // https://github.com/flutter/flutter/issues/92654 .)
           event_character =
-              window_delegate_->Win32MapVkToChar(keycode_for_char_message_) | kDeadKeyCharMask;
+              window_delegate_->Win32MapVkToChar(keycode_for_char_message_) |
+              kDeadKeyCharMask;
         } else {
           event_character = IsPrintable(code_point) ? code_point : 0;
         }
-        bool handled = window_delegate_->OnKey(keycode_for_char_message_, scancode,
-                             message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN,
-                             event_character, extended, was_down);
+        bool handled = window_delegate_->OnKey(
+            keycode_for_char_message_, scancode,
+            message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN, event_character,
+            extended, was_down);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
@@ -176,7 +177,8 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
       const int action = is_keydown_message
                              ? (is_syskey ? WM_SYSKEYDOWN : WM_KEYDOWN)
                              : (is_syskey ? WM_SYSKEYUP : WM_KEYUP);
-      if (window_delegate_->OnKey(keyCode, scancode, action, 0, extended, was_down)) {
+      if (window_delegate_->OnKey(keyCode, scancode, action, 0, extended,
+                                  was_down)) {
         // For system keys, always pass them to the default WndProc so that keys
         // like the ALT-TAB or Kanji switches are processed correctly.
         if (is_syskey) {
@@ -192,10 +194,11 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
   return false;
 }
 
-UINT KeyboardManagerWin32::PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax) {
+UINT KeyboardManagerWin32::PeekNextMessageType(UINT wMsgFilterMin,
+                                               UINT wMsgFilterMax) {
   MSG next_message;
-  BOOL has_msg = window_delegate_->Win32PeekMessage(&next_message, wMsgFilterMin,
-                                  wMsgFilterMax, PM_NOREMOVE);
+  BOOL has_msg = window_delegate_->Win32PeekMessage(
+      &next_message, wMsgFilterMin, wMsgFilterMax, PM_NOREMOVE);
   if (!has_msg) {
     return 0;
   }
