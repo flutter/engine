@@ -80,6 +80,12 @@ class TextInputPlugin : public KeyboardHandlerBase {
   // The active model. nullptr if not set.
   std::unique_ptr<TextInputModel> active_model_;
 
+  // Whether to enable that the engine sends text input updates to the framework
+  // as TextEditingDeltas or as one TextEditingValue.
+  // For more information on the delta model, see:
+  // https://master-api.flutter.dev/flutter/services/TextInputConfiguration/enableDeltaModel.html
+  bool enable_delta_model;
+
   // Keyboard type of the client. See available options:
   // https://api.flutter.dev/flutter/services/TextInputType-class.html
   std::string input_type_;

@@ -25,6 +25,7 @@ static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 
+static constexpr char kEnableDeltaModel[] = "enableDeltaModel";
 static constexpr char kTextInputAction[] = "inputAction";
 static constexpr char kTextInputType[] = "inputType";
 static constexpr char kTextInputTypeName[] = "name";
@@ -170,6 +171,13 @@ void TextInputPlugin::HandleMethodCall(
       return;
     }
     client_id_ = client_id_json.GetInt();
+
+    auto enable_delta_model_json = client_config.FindMember(kEnableDeltaModel);
+    assert(enable_delta_model_json->value.IsBool());
+    if (enable_delta_model_json != client_config.MemberEnd() && enable_delta_model_json->value.IsBool()) {
+      enable_delta_model = enable_delta_model_json->value.GetBool();
+    }
+
     input_action_ = "";
     auto input_action_json = client_config.FindMember(kTextInputAction);
     if (input_action_json != client_config.MemberEnd() &&
