@@ -300,19 +300,22 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
+    Window window = activity.getWindow();
+    View view = window.getDecorView();
+    WindowInsetsControllerCompat windowInsetsControllerCompat =
+        new WindowInsetsControllerCompat(window, view);
+
     // Start by assuming we want to hide all system overlays (like an immersive
     // game).
-    int enabledOverlays =
-        DEFAULT_SYSTEM_UI
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+    WindowCompat.setDecorFitsSystemWindows(window, false);
 
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
     // apply it
     // if desired, and if the current Android version is 19 or greater.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+      windowInsetsControllerCompat.setSystemBarsBehavior(
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
 
     // Re-add any desired system overlays.
@@ -320,17 +323,13 @@ public class PlatformPlugin {
       PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
       switch (overlayToShow) {
         case TOP_OVERLAYS:
-          enabledOverlays &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
+          windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
           break;
         case BOTTOM_OVERLAYS:
-          enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-          enabledOverlays &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+          windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
           break;
       }
     }
-
-    mEnabledOverlays = enabledOverlays;
-    updateSystemUiOverlays();
   }
 
   /**
@@ -342,6 +341,7 @@ public class PlatformPlugin {
    * PlatformPlugin}.
    */
   public void updateSystemUiOverlays() {
+    //TODO: remove this call
     activity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
     if (currentTheme != null) {
       setSystemChromeSystemUIOverlayStyle(currentTheme);
