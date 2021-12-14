@@ -52,6 +52,14 @@ NSDictionary* launchArgsMap;
 }
 
 - (void)checkGoldenForTest:(XCTestCase*)test {
+  //  NSData* newScreenshotData = [[NSData alloc] initWithBase64EncodedString:@"" options:0];
+  //  UIImage* newScreenshot = [UIImage imageWithData:newScreenshotData];
+  //
+  //  XCTAttachment* newAttachment = [XCTAttachment attachmentWithImage:newScreenshot];
+  //  newAttachment.name = [_goldenImage.goldenName stringByAppendingString:@"_new"];
+  //  newAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
+  //  [newAttachment addAttachment:attachment];
+
   XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
   if (!_goldenImage.image) {
     XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
@@ -74,7 +82,7 @@ NSDictionary* launchArgsMap;
 
     NSData* rawData =
         (__bridge NSData*)CGDataProviderCopyData(CGImageGetDataProvider(screenshot.image.CGImage));
-    NSString* imageData = [[NSString alloc] initWithData:rawData encoding:NSUTF8StringEncoding];
+    NSString* imageData = [rawData base64EncodedStringWithOptions:0];
     os_log_error(OS_LOG_DEFAULT, "Updated golden data: @\"%@\"", imageData);
 
     _XCTPrimitiveFail(test,
