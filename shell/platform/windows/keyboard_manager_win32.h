@@ -5,13 +5,31 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_MANAGER_H_
 
-#include <windows.h>
 #include <map>
+#include <windows.h>
 
 namespace flutter {
 
+// Handles keyboard and text messages on Win32.
+//
+// |KeyboardManagerWin32| consumes raw Win32 messages related to key and chars,
+// and converts them to |OnKey| or |OnText| calls suitable for
+// |KeyboardKeyHandler|.
+//
+// |KeyboardManagerWin32| requires a |WindowDelegate| to define how to
+// access Win32 system calls (to allow mocking) and where to send the results
+// of |OnKey| and |OnText| to.
+//
+// Typically, |KeyboardManagerWin32| is owned by a |WindowWin32|, which also
+// implements the window delegate. The |OnKey| and |OnText| results are
+// passed to those of |WindowWin32|'s, and consequently, those of
+// |FlutterWindowsView|'s.
 class KeyboardManagerWin32 {
  public:
+  // Define how the keyboard manager accesses Win32 system calls (to allow
+  // mocking) and sends the results of |OnKey| and |OnText|.
+  //
+  // Typically implemented by |WindowWin32|.
   class WindowDelegate {
    public:
     virtual ~WindowDelegate() = default;
@@ -46,8 +64,18 @@ class KeyboardManagerWin32 {
 
   KeyboardManagerWin32(WindowDelegate* delegate);
 
-  // TODO
-  // Returns true if handled.
+  // Processes Win32 messages related to keyboard and text.
+  //
+  // All messages related to keyboard and text should be sent here without
+  // pre-processing, including WM_{SYS,}KEY{DOWN,UP} and WM_{SYS,}{DEAD,}CHAR.
+  // Other message types will trigger assertion error.
+  //
+  // |HandleMessage| returns true if Flutter keyboard system decides to handle
+  // this message synchronously. It doesn't mean that the Flutter framework
+  // handles it, which is reported asynchronously later. Not handling this
+  // message here usually means that this message is a redispatched message,
+  // but there are other rare cases too. |WindowWin32| should forward unhandled
+  // messages to |DefWindowProc|.
   bool HandleMessage(UINT const message,
                      WPARAM const wparam,
                      LPARAM const lparam);
