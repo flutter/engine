@@ -548,6 +548,7 @@ void _testCkAnimatedImage() {
 
   test('CkAnimatedImage toByteData(RGBA)', () async {
     final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+    // TODO(yjbanov): frame sequence is wrong (https://github.com/flutter/flutter/issues/95281)
     const List<List<int>> expectedColors = <List<int>>[
       <int>[0, 255, 0, 255],
       <int>[0, 0, 255, 255],
