@@ -174,7 +174,6 @@ if (enable_unittests) {
       ":flow_testing",
       "//flutter/common/graphics",
       "//flutter/fml",
-      "//flutter/testing:opengl",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
       "//third_party/dart/runtime:libdart_jit",  # for tracing
