@@ -80,9 +80,7 @@ class MockKeyboardManagerWin32Delegate
   }
 
   // |WindowWin32|
-  void OnText(const std::u16string& text) override {
-    view_->OnText(text);
-  }
+  void OnText(const std::u16string& text) override { view_->OnText(text); }
 
   void SetLayout(MapVkToCharHandler map_vk_to_char) {
     map_vk_to_char_ =
@@ -157,12 +155,9 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
   uint32_t redispatch_char;
 
-  void OnText(const std::u16string& text) override {
-    on_text_(text);
-  }
+  void OnText(const std::u16string& text) override { on_text_(text); }
 
-  int InjectPendingEvents(MockMessageQueue* queue,
-                          uint32_t redispatch_char) {
+  int InjectPendingEvents(MockMessageQueue* queue, uint32_t redispatch_char) {
     std::vector<Win32Message> messages;
     int num_pending_responds = pending_responds_.size();
     for (const SendInputInfo& input : pending_responds_) {
@@ -254,8 +249,7 @@ class KeyboardTester {
               .type = kKeyCallOnText,
               .text = text,
           });
-        }
-    );
+        });
     view_->SetEngine(std::move(GetTestEngine()));
     window_ = std::make_unique<MockKeyboardManagerWin32Delegate>(view_.get());
   }

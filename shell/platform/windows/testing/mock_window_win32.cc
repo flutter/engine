@@ -31,11 +31,11 @@ LRESULT MockWin32Window::InjectWindowMessage(UINT const message,
 }
 
 void MockWin32Window::InjectMessageList(int count,
-                                         const Win32Message* messages) {
+                                        const Win32Message* messages) {
   for (int message_id = 0; message_id < count; message_id += 1) {
     const Win32Message& message = messages[message_id];
-    LRESULT result = InjectWindowMessage(message.message,
-                                      message.wParam, message.lParam);
+    LRESULT result =
+        InjectWindowMessage(message.message, message.wParam, message.lParam);
     if (message.expected_result != kWmResultDontCheck) {
       EXPECT_EQ(result, message.expected_result);
     }
