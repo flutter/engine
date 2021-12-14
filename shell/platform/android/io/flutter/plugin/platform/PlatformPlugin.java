@@ -315,7 +315,7 @@ public class PlatformPlugin {
     // if desired, and if the current Android version is 19 or greater.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       windowInsetsControllerCompat.setSystemBarsBehavior(
-        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+          WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
 
     // Re-add any desired system overlays.
@@ -341,7 +341,7 @@ public class PlatformPlugin {
    * PlatformPlugin}.
    */
   public void updateSystemUiOverlays() {
-    //TODO: remove this call
+    // TODO: remove this call
     activity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
     if (currentTheme != null) {
       setSystemChromeSystemUIOverlayStyle(currentTheme);
