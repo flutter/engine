@@ -304,7 +304,7 @@ class DecodeOptions {
 ///  * https://www.w3.org/TR/webcodecs/#videoframe-interface
 @JS()
 @anonymous
-class VideoFrame {
+class VideoFrame implements html.CanvasImageSource {
   external int allocationSize();
   external JsPromise copyTo(Uint8List destination);
   external String? get format;
@@ -1004,8 +1004,4 @@ class OffScreenCanvas {
   /// Feature detects OffscreenCanvas.
   static bool get supported => _supported ??=
       js_util.hasProperty(html.window, 'OffscreenCanvas');
-}
-
-void drawVideoFrame(html.CanvasRenderingContext2D ctx, VideoFrame videoFrame, int x, int y) {
-  js_util.callMethod<void>(ctx, 'drawImage', <Object?>[videoFrame, x, y]);
 }

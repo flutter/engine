@@ -462,7 +462,7 @@ Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
     ..width = width
     ..height = height;
   final html.CanvasRenderingContext2D ctx = canvas.context2D;
-  drawVideoFrame(ctx, videoFrame, 0, 0);
+  ctx.drawImage(videoFrame, 0, 0);
   final String pngBase64 = canvas.toDataUrl().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);
 }
