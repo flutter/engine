@@ -175,6 +175,7 @@ test_fixtures("fixtures") {
     "fixtures/dpr_noxform.png",
     "fixtures/dpr_xform.png",
     "fixtures/gradient.png",
+    "fixtures/vk_dpr_noxform.png",
     "fixtures/vk_gradient.png",
     "fixtures/gradient_metal.png",
     "fixtures/external_texture_metal.png",

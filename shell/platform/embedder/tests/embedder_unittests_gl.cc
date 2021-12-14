@@ -1812,17 +1812,17 @@ TEST_P(EmbedderTestMultiBackend,
   }
 }
 
-TEST_F(EmbedderTest,
+TEST_P(EmbedderTestMultiBackend,
        CompositorMustBeAbleToRenderKnownScenePixelRatioOnSurface) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderTestContextType backend = GetParam();
+  auto& context = GetEmbedderContext(backend);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetRendererConfig(backend, SkISize::Make(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_display_platform_view_with_pixel_ratio");
 
-  builder.SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
+  builder.SetRenderTargetType(GetTargetFromBackend(backend, false));
 
   fml::CountDownLatch latch(1);
 
@@ -1835,9 +1835,8 @@ TEST_F(EmbedderTest,
         // Layer 0 (Root)
         {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
-          backing_store.type = kFlutterBackingStoreTypeOpenGL;
           backing_store.did_update = true;
-          backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
+          ConfigureBackingStore(backing_store, backend, false);
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -1868,9 +1867,8 @@ TEST_F(EmbedderTest,
         // Layer 2
         {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
-          backing_store.type = kFlutterBackingStoreTypeOpenGL;
           backing_store.did_update = true;
-          backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
+          ConfigureBackingStore(backing_store, backend, false);
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -1899,7 +1897,8 @@ TEST_F(EmbedderTest,
 
   latch.Wait();
 
-  ASSERT_TRUE(ImageMatchesFixture("dpr_noxform.png", rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "dpr_noxform.png"),
+                                  rendered_scene));
 }
 
 TEST_F(
