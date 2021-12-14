@@ -1737,7 +1737,7 @@ TEST_F(EmbedderTest, CanCreateEmbedderWithCustomRenderTaskRunner) {
 /// Asserts that the render task runner can be the same as the platform task
 /// runner.
 ///
-TEST_F(EmbedderTest,
+TEST_P(EmbedderTestMultiBackend,
        CanCreateEmbedderWithCustomRenderTaskRunnerTheSameAsPlatformTaskRunner) {
   // A new thread needs to be created for the platform thread because the test
   // can't wait for assertions to be completed on the same thread that services
@@ -1759,10 +1759,10 @@ TEST_F(EmbedderTest,
       });
 
   platform_task_runner->PostTask([&]() {
-    EmbedderConfigBuilder builder(
-        GetEmbedderContext(EmbedderTestContextType::kOpenGLContext));
+    EmbedderTestContextType backend = GetParam();
+    EmbedderConfigBuilder builder(GetEmbedderContext(backend));
     builder.SetDartEntrypoint("can_render_scene_without_custom_compositor");
-    builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+    builder.SetRendererConfig(backend, SkISize::Make(800, 600));
     builder.SetRenderTaskRunner(
         &common_task_runner.GetFlutterTaskRunnerDescription());
     builder.SetPlatformTaskRunner(
