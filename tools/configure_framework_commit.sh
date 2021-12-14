@@ -43,12 +43,9 @@ else
     COMMIT_NO=`git log --before="$LATEST_COMMIT_TIME_ENGINE" -n 1 | grep commit | cut -d ' ' -f2`
   else
     COMMIT_NO=`git rev-parse $RELEASE_BRANCH`
+    git checkout $RELEASE_BRANCH
   fi
 fi
-#else
-#  # If this is a release branch use the ToT commit of the same release branch as the engine.
-#  COMMIT_NO=`git rev-parse $RELEASE_BRANCH`
-#ifi
 
 echo "Using the flutter/flutter commit $COMMIT_NO";
 git reset --hard $COMMIT_NO
