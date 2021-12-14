@@ -1263,9 +1263,8 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
                                   rendered_scene));
 }
 
-TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositorWithXform) {
-  EmbedderTestContextType backend = GetParam();
-  auto& context = GetEmbedderContext(backend);
+TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
 
   const auto root_surface_transformation =
       SkMatrix().preTranslate(0, 800).preRotate(-90, 0, 0);
@@ -1277,7 +1276,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositorWithXform) {
   const auto surface_size = SkISize::Make(600, 800);
 
   builder.SetDartEntrypoint("render_gradient");
-  builder.SetRendererConfig(backend, surface_size);
+  builder.SetOpenGLRendererConfig(surface_size);
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -1294,8 +1293,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositorWithXform) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
-                                  rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
 }
 
 TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithCompositor) {
