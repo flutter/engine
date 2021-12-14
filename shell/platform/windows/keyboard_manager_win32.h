@@ -5,8 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_MANAGER_H_
 
-#include <map>
 #include <windows.h>
+#include <map>
 
 namespace flutter {
 
