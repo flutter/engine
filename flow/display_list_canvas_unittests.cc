@@ -1518,6 +1518,13 @@ class CanvasCompareTester {
                    [=](SkCanvas* c, SkPaint&) { c->skew(0.05, 0.05); },
                    [=](DisplayListBuilder& b) { b.skew(0.05, 0.05); }));
     {
+      // This rather odd transform can cause slight differences in
+      // computing in-bounds samples depending on which base rendering
+      // routine Skia uses. Making sure our matrix values are powers
+      // of 2 reduces, but does not eliminate, these slight differences
+      // in calculation when we are comparing rendering with an alpha
+      // to rendering opaque colors in the group opacity tests, for
+      // example.
       SkScalar tweak = 1.0 / 16.0;
       SkMatrix tx = SkMatrix::MakeAll(1.0 + tweak, tweak, 5,   //
                                       tweak, 1.0 + tweak, 10,  //
@@ -1824,6 +1831,14 @@ class CanvasCompareTester {
 
     int pixels_touched = 0;
     int pixels_different = 0;
+    // We need to allow some slight differences per component due to the
+    // fact that rearranging discrete calculations can compound round off
+    // errors. Off-by-2 is enough for 8 bit components, but for the 565
+    // tests we allow at least 9 which is the maximum distance between
+    // samples when converted to 8 bits. (You might think it would be a
+    // max step of 8 converting 5 bits to 8 bits, but it is really
+    // converting 31 steps to 255 steps with an average step size of
+    // 8.23 - 24 of the steps are by 8, but 7 of them are by 9.)
     int fudge = env.info().bytesPerPixel() < 4 ? 9 : 2;
     for (int y = 0; y < TestHeight; y++) {
       const uint32_t* ref_row = ref_pixmap->addr32(0, y);

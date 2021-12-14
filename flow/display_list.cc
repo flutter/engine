@@ -1470,6 +1470,7 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
   // as a completely separate operation meaning we cannot ensure
   // distribution of group opacity without analyzing the mode and the
   // bounds of every sub-primitive.
+  // See: https://fiddle.skia.org/c/228459001d2de8db117ce25ef5cedb0c
   UpdateLayerOpacityCompatibility(false);
 }
 void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
