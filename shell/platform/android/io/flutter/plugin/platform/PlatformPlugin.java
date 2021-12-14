@@ -310,7 +310,7 @@ public class PlatformPlugin {
     windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
     WindowCompat.setDecorFitsSystemWindows(window, false);
 
-    // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
+    // The sticky immersive mode was introduced in API 19, so we
     // apply it
     // if desired, and if the current Android version is 19 or greater.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
