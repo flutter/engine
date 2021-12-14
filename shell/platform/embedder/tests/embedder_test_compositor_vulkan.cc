@@ -25,7 +25,7 @@ bool EmbedderTestCompositorVulkan::UpdateOffscrenComposition(
 
   const auto image_info = SkImageInfo::MakeN32Premul(surface_size_);
 
-  auto surface =
+  sk_sp<SkSurface> surface =
       SkSurface::MakeRenderTarget(context_.get(),            // context
                                   SkBudgeted::kNo,           // budgeted
                                   image_info,                // image info

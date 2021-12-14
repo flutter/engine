@@ -10,8 +10,6 @@
 
 #include "vulkan/vulkan.h"
 
-#include "embedder.h"
-#include "embedder_engine.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -1362,16 +1360,17 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
   ASSERT_TRUE(ImageMatchesFixture("gradient_xform.png", rendered_scene));
 }
 
-TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+TEST_P(EmbedderTestMultiBackend,
+       CanRenderGradientWithCompositorOnNonRootLayer) {
+  EmbedderTestContextType backend = GetParam();
+  auto& context = GetEmbedderContext(backend);
 
   EmbedderConfigBuilder builder(context);
 
   builder.SetDartEntrypoint("render_gradient_on_non_root_backing_store");
-  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetRendererConfig(backend, SkISize::Make(800, 600));
   builder.SetCompositor();
-  builder.SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+  builder.SetRenderTargetType(GetTargetFromBackend(backend, true));
 
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
@@ -1380,9 +1379,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
         // Layer Root
         {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
-          backing_store.type = kFlutterBackingStoreTypeOpenGL;
           backing_store.did_update = true;
-          backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+          ConfigureBackingStore(backing_store, backend, true);
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -1413,9 +1411,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
         // Layer 2
         {
           FlutterBackingStore backing_store = *layers[2]->backing_store;
-          backing_store.type = kFlutterBackingStoreTypeOpenGL;
           backing_store.did_update = true;
-          backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+          ConfigureBackingStore(backing_store, backend, true);
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
@@ -1464,7 +1461,8 @@ TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayer) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture("gradient.png", rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
+                                  rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {

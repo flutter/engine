@@ -5,8 +5,8 @@
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 
 #include "flutter/fml/logging.h"
-#include "include/core/SkImageInfo.h"
-#include "include/core/SkSize.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 #include <memory>
@@ -22,6 +22,10 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
 #ifdef SHELL_ENABLE_METAL
       ,
       test_metal_context_(std::make_unique<TestMetalContext>())
+#endif
+#ifdef SHELL_ENABLE_VULKAN
+      ,
+      test_vulkan_context_(std::make_unique<TestVulkanContext>())
 #endif
 {
 }
@@ -237,42 +241,51 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
 #ifdef SHELL_ENABLE_VULKAN
-  const auto image_info =
-      SkImageInfo::MakeN32Premul(config->size.width, config->size.height);
+  auto surface_size = SkISize::Make(config->size.width, config->size.height);
+  TestVulkanImage* test_image = new TestVulkanImage(
+      std::move(test_vulkan_context_->CreateImage(surface_size).value()));
 
-  auto surface = SkSurface::MakeRenderTarget(
-      context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
-      image_info,                   // image info
-      1,                            // sample count
-      kBottomLeft_GrSurfaceOrigin,  // surface origin
-      nullptr,                      // surface properties
-      false                         // mipmaps
+  GrVkImageInfo image_info = {
+      .fImage = test_image->GetImage(),
+      .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
+      .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .fFormat = VK_FORMAT_R8G8B8A8_UNORM,
+      .fImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                          VK_IMAGE_USAGE_SAMPLED_BIT,
+      .fSampleCount = 1,
+      .fLevelCount = 1,
+  };
+  GrBackendTexture backend_texture(surface_size.width(), surface_size.height(),
+                                   image_info);
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  SkSurface::TextureReleaseProc release_vktexture = [](void* user_data) {
+    delete reinterpret_cast<TestVulkanImage*>(user_data);
+  };
+
+  sk_sp<SkSurface> surface = SkSurface::MakeFromBackendTexture(
+      context_.get(),            // context
+      backend_texture,           // back-end texture
+      kTopLeft_GrSurfaceOrigin,  // surface origin
+      1,                         // sample count
+      kRGBA_8888_SkColorType,    // color type
+      SkColorSpace::MakeSRGB(),  // color space
+      &surface_properties,       // surface properties
+      release_vktexture,         // texture release proc
+      test_image                 // release context
   );
 
   if (!surface) {
-    FML_LOG(ERROR) << "Could not create render target for compositor layer.";
+    FML_LOG(ERROR) << "Could not create Skia surface from Vulkan image.";
     return false;
   }
-
-  GrBackendRenderTarget render_target = surface->getBackendRenderTarget(
-      SkSurface::BackendHandleAccess::kDiscardWrite_BackendHandleAccess);
-
-  if (!render_target.isValid()) {
-    FML_LOG(ERROR) << "Backend render target was invalid.";
-    return false;
-  }
-
-  GrVkImageInfo vkimage_info = {};
-  if (!render_target.getVkImageInfo(&vkimage_info)) {
-    FML_LOG(ERROR) << "Could not access backend framebuffer info.";
-    return false;
-  }
-
   backing_store_out->type = kFlutterBackingStoreTypeVulkan;
   backing_store_out->user_data = surface.get();
   backing_store_out->vulkan.user_data = surface.get();
-  backing_store_out->vulkan.image.image = vkimage_info.fImage;
+  backing_store_out->vulkan.image.image = image_info.fImage;
   backing_store_out->vulkan.destruction_callback = [](void* user_data) {
     reinterpret_cast<SkSurface*>(user_data)->unref();
   };

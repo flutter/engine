@@ -14,6 +14,10 @@
 #include "flutter/testing/test_metal_context.h"
 #endif
 
+#ifdef SHELL_ENABLE_VULKAN
+#include "flutter/testing/test_vulkan_context.h"
+#endif
+
 namespace flutter {
 namespace testing {
 
@@ -55,6 +59,10 @@ class EmbedderTestBackingStoreProducer {
 
 #ifdef SHELL_ENABLE_METAL
   std::unique_ptr<TestMetalContext> test_metal_context_;
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+  std::unique_ptr<TestVulkanContext> test_vulkan_context_;
 #endif
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestBackingStoreProducer);

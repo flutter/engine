@@ -6,6 +6,7 @@
 
 #include <limits>
 
+#include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 #include "flutter/shell/platform/embedder/tests/embedder_unittests_util.h"
 
 namespace flutter {
@@ -96,6 +97,31 @@ EmbedderTestBackingStoreProducer::RenderTargetType GetTargetFromBackend(
     case EmbedderTestContextType::kSoftwareContext:
       return EmbedderTestBackingStoreProducer::RenderTargetType::
           kSoftwareBuffer;
+  }
+}
+
+void ConfigureBackingStore(FlutterBackingStore& backing_store,
+                           EmbedderTestContextType backend,
+                           bool opengl_framebuffer) {
+  switch (backend) {
+    case EmbedderTestContextType::kVulkanContext:
+      backing_store.type = kFlutterBackingStoreTypeVulkan;
+      break;
+    case EmbedderTestContextType::kOpenGLContext:
+      if (opengl_framebuffer) {
+        backing_store.type = kFlutterBackingStoreTypeOpenGL;
+        backing_store.open_gl.type = kFlutterOpenGLTargetTypeFramebuffer;
+      } else {
+        backing_store.type = kFlutterBackingStoreTypeOpenGL;
+        backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
+      }
+      break;
+    case EmbedderTestContextType::kMetalContext:
+      backing_store.type = kFlutterBackingStoreTypeMetal;
+      break;
+    case EmbedderTestContextType::kSoftwareContext:
+      backing_store.type = kFlutterBackingStoreTypeSoftware;
+      break;
   }
 }
 

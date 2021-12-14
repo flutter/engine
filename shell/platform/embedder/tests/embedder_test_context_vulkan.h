@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_VULKAN_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_VULKAN_H_
 
+#include <memory>
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 #include "flutter/testing/test_vulkan_context.h"
 #include "flutter/vulkan/vulkan_application.h"
@@ -33,7 +34,6 @@ class EmbedderTestContextVulkan : public EmbedderTestContext {
   bool PresentImage(VkImage image);
 
  private:
-  std::unique_ptr<TestVulkanContext> context_;
   std::unique_ptr<TestVulkanSurface> surface_;
 
   SkISize surface_size_ = SkISize::MakeEmpty();

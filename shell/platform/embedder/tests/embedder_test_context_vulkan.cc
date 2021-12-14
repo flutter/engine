@@ -6,7 +6,6 @@
 
 #include <memory>
 
-#include "embedder.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_vulkan.h"
 #include "flutter/testing/test_vulkan_context.h"
@@ -19,16 +18,16 @@ namespace flutter {
 namespace testing {
 
 EmbedderTestContextVulkan::EmbedderTestContextVulkan(std::string assets_path)
-    : EmbedderTestContext(assets_path),
-      context_(std::make_unique<TestVulkanContext>()),
-      surface_() {}
+    : EmbedderTestContext(assets_path), surface_() {
+  vulkan_context_ = std::make_unique<TestVulkanContext>();
+}
 
 EmbedderTestContextVulkan::~EmbedderTestContextVulkan() {}
 
 void EmbedderTestContextVulkan::SetupSurface(SkISize surface_size) {
   FML_CHECK(surface_size_.isEmpty());
   surface_size_ = surface_size;
-  surface_ = TestVulkanSurface::Create(*context_, surface_size_);
+  surface_ = TestVulkanSurface::Create(*vulkan_context_, surface_size_);
 }
 
 size_t EmbedderTestContextVulkan::GetSurfacePresentCount() const {
@@ -55,7 +54,7 @@ void EmbedderTestContextVulkan::SetupCompositor() {
   FML_CHECK(surface_)
       << "Set up the Vulkan surface before setting up a compositor.";
   compositor_ = std::make_unique<EmbedderTestCompositorVulkan>(
-      surface_size_, context_->GetGrDirectContext());
+      surface_size_, vulkan_context_->GetGrDirectContext());
 }
 
 }  // namespace testing

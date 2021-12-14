@@ -9,7 +9,6 @@
 
 #include <future>
 
-#include "embedder.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
@@ -32,6 +31,10 @@ std::string ImagePrefix(EmbedderTestContextType backend,
 EmbedderTestBackingStoreProducer::RenderTargetType GetTargetFromBackend(
     EmbedderTestContextType backend,
     bool opengl_framebuffer);
+
+void ConfigureBackingStore(FlutterBackingStore& backing_store,
+                           EmbedderTestContextType backend,
+                           bool opengl_framebuffer);
 
 bool WriteImageToDisk(const fml::UniqueFD& directory,
                       const std::string& name,

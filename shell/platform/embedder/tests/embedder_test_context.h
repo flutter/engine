@@ -106,6 +106,12 @@ class EmbedderTestContext {
 
   using NextSceneCallback = std::function<void(sk_sp<SkImage> image)>;
 
+  #ifdef SHELL_ENABLE_VULKAN
+  // The TestVulkanContext destructor must be called _after_ the compositor is
+  // freed.
+  std::unique_ptr<TestVulkanContext> vulkan_context_ = nullptr;
+  #endif
+
   std::string assets_path_;
   ELFAOTSymbols aot_symbols_;
   std::unique_ptr<fml::Mapping> vm_snapshot_data_;
