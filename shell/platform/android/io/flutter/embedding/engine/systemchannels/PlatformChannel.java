@@ -640,7 +640,10 @@ public class PlatformChannel {
     LEAN_BACK("SystemUiMode.leanBack"),
     IMMERSIVE("SystemUiMode.immersive"),
     IMMERSIVE_STICKY("SystemUiMode.immersiveSticky"),
-    EDGE_TO_EDGE("SystemUiMode.edgeToEdge");
+    EDGE_TO_EDGE("SystemUiMode.edgeToEdge"),
+    MANUAL_TOP("SystemUiMode.manualTop"),
+    MANUAL_BOTTOM("SystemUiMode.manualBottom"),
+    MANUAL_BOTH("SystemUiMode.manualBoth");
 
     /**
      * Returns the SystemUiMode for the provied encoded value. @throws NoSuchFieldException if any

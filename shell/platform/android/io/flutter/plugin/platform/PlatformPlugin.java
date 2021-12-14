@@ -30,14 +30,12 @@ import java.util.List;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
-  public static final int DEFAULT_SYSTEM_UI =
-      View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
   private final Activity activity;
   private final PlatformChannel platformChannel;
   private final PlatformPluginDelegate platformPluginDelegate;
   private PlatformChannel.SystemChromeStyle currentTheme;
-  private int mEnabledOverlays;
+  private PlatformChannel.SystemUiMode currentSystemUiMode;
   private static final String TAG = "PlatformPlugin";
 
   /**
@@ -143,7 +141,7 @@ public class PlatformPlugin {
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
     this.platformPluginDelegate = delegate;
 
-    mEnabledOverlays = DEFAULT_SYSTEM_UI;
+    currentSystemUiMode = PlatformChannel.SystemUiMode.EDGE_TO_EDGE;
   }
 
   /**
@@ -255,6 +253,7 @@ public class PlatformPlugin {
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
+      currentSystemUiMode = PlatformChannel.SystemUiMode.LEAN_BACK;
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
@@ -268,6 +267,7 @@ public class PlatformPlugin {
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
+      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE;
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
@@ -280,6 +280,7 @@ public class PlatformPlugin {
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
+      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
@@ -291,6 +292,7 @@ public class PlatformPlugin {
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
+      currentSystemUiMode = PlatformChannel.SystemUiMode.EDGE_TO_EDGE;
       WindowCompat.setDecorFitsSystemWindows(window, false);
     } else {
       // When none of the conditions are matched, return without updating the system UI overlays.
@@ -311,9 +313,11 @@ public class PlatformPlugin {
     WindowCompat.setDecorFitsSystemWindows(window, false);
 
     // The sticky immersive mode was introduced in API 19, so we
-    // apply it
-    // if desired, and if the current Android version is 19 or greater.
+    // apply it if desired, and if the current Android version is
+    // 19 or greater.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
+
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     }
@@ -323,9 +327,17 @@ public class PlatformPlugin {
       PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
       switch (overlayToShow) {
         case TOP_OVERLAYS:
+          currentSystemUiMode =
+              i == 0
+                  ? PlatformChannel.SystemUiMode.MANUAL_TOP
+                  : PlatformChannel.SystemUiMode.MANUAL_BOTH;
           windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
           break;
         case BOTTOM_OVERLAYS:
+          currentSystemUiMode =
+              i == 0
+                  ? PlatformChannel.SystemUiMode.MANUAL_BOTTOM
+                  : PlatformChannel.SystemUiMode.MANUAL_BOTH;
           windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
           break;
       }
@@ -341,8 +353,25 @@ public class PlatformPlugin {
    * PlatformPlugin}.
    */
   public void updateSystemUiOverlays() {
-    // TODO: remove this call
-    activity.getWindow().getDecorView().setSystemUiVisibility(mEnabledOverlays);
+    switch (currentSystemUiMode) {
+      case MANUAL_TOP:
+        setSystemChromeEnabledSystemUIOverlays(
+            new ArrayList<PlatformChannel.SystemUiOverlay>(
+                Arrays.asList(PlatformChannel.SystemUiOverlay.TOP_OVERLAYS)));
+      case MANUAL_BOTTOM:
+        setSystemChromeEnabledSystemUIOverlays(
+            new ArrayList<PlatformChannel.SystemUiOverlay>(
+                Arrays.asList(PlatformChannel.SystemUiOverlay.BOTTOM_OVERLAYS)));
+      case MANUAL_BOTH:
+        setSystemChromeEnabledSystemUIOverlays(
+            new ArrayList<PlatformChannel.SystemUiOverlay>(
+                Arrays.asList(
+                    PlatformChannel.SystemUiOverlay.TOP_OVERLAYS,
+                    PlatformChannel.SystemUiOverlay.TOP_OVERLAYS)));
+      default:
+        setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+    }
+
     if (currentTheme != null) {
       setSystemChromeSystemUIOverlayStyle(currentTheme);
     }
