@@ -69,8 +69,7 @@ class MockMessageQueue {
                         UINT wRemoveMsg);
 
  protected:
-  virtual LRESULT Win32SendMessage(HWND hWnd,
-                                   UINT const message,
+  virtual LRESULT Win32SendMessage(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) = 0;
 
