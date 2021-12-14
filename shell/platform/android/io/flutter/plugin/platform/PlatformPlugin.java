@@ -298,11 +298,6 @@ public class PlatformPlugin {
     }
   }
 
-  /**
-   * @deprecated This feature was deprecated after v2.3.0-17.0.pre. Use setEnabledSystemUIMode
-   *     instead.
-   */
-  @Deprecated
   private void setSystemChromeEnabledSystemUIOverlays(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
     // Start by assuming we want to hide all system overlays (like an immersive
