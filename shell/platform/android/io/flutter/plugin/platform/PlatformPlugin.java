@@ -26,6 +26,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /** Android implementation of the platform plugin. */
@@ -367,7 +369,7 @@ public class PlatformPlugin {
             new ArrayList<PlatformChannel.SystemUiOverlay>(
                 Arrays.asList(
                     PlatformChannel.SystemUiOverlay.TOP_OVERLAYS,
-                    PlatformChannel.SystemUiOverlay.TOP_OVERLAYS)));
+                    PlatformChannel.SystemUiOverlay.BOTTOM_OVERLAYS)));
       default:
         setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
     }
