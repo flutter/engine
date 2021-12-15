@@ -126,10 +126,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)goToApplicationLifecycle:(nonnull NSString*)state;
-- (void)keyboardWillChangeFrame:(NSNotification*)notification;
-- (void)startKeyBoardAnimation:(NSTimeInterval)duration;
-- (void)ensureViewportMetricsIsCorrect;
-- (void)invalidateDisplayLink;
 @end
 
 @interface FlutterViewControllerTest : XCTestCase
