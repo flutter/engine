@@ -72,7 +72,23 @@ Future<Image> _encodeToHtmlThenDecode(
   return (await (await descriptor.instantiateCodec()).getNextFrame()).image;
 }
 
-Future<bool> imageRawUsesCorrectBehavior(PixelFormat format) async {
+// This utility function detects how the current Web engine decodes pixel data.
+//
+// The HTML renderer uses the BMP format to display pixel data, but it used to
+// uses a wrong implementation. The bug has been fixed, but the fix breaks apps
+// that had to provide incorrect data to work around this issue. This function
+// is used in the migration guide to assist libraries that would like to run on
+// both pre- and post-patch engines by testing the current behavior on a single
+// pixel, making use the fact that the patch fixes the pixel order.
+//
+// The `format` argument is used for testing. In the actual code it should be
+// replaced by `PixelFormat.rgba8888`.
+//
+// See also:
+//
+//  * Patch: https://github.com/flutter/engine/pull/29448
+//  * Migration guide: (TODO)
+Future<bool> rawImageUsesCorrectBehavior(PixelFormat format) async {
   final ImageDescriptor descriptor = ImageDescriptor.raw(
     await ImmutableBuffer.fromUint8List(Uint8List.fromList(<int>[0xED, 0, 0, 0])),
     width: 1, height: 1, pixelFormat: format);
@@ -156,23 +172,8 @@ Future<void> testMain() async {
     expect(actualPixels, listEqual(benchmarkPixels, tolerance: 1));
   });
 
-  test('Correctly encodes an opaque image in bgra8888', () async {
-    // A 1x1 testing image without transparency.
-    final Image sourceImage = await _encodeToHtmlThenDecode(
-      _pixelsToBytes(<int>[0xFE0000FF]), 1, 1, pixelFormat: PixelFormat.rgba8888,
-    );
-    final Uint8List actualPixels  = Uint8List.sublistView(
-        (await sourceImage.toByteData(format: ImageByteFormat.rawStraightRgba))!);
-    // The `benchmarkPixels` is the same as `sourceImage` except that the R and
-    // G channels are swapped and the fully transparent last pixel is turned 0.
-    final Uint8List benchmarkPixels = _pixelsToBytes(
-      <int>[0x0201FFFF, 0x05FE04FF, 0xFD0807FF, 0x00000000],
-    );
-    expect(actualPixels, listEqual(benchmarkPixels));
-  });
-
-  test('The check detector is correct', () async {
-    expect(await imageRawUsesCorrectBehavior(PixelFormat.rgba8888), true);
-    expect(await imageRawUsesCorrectBehavior(PixelFormat.bgra8888), false);
+  test('The behavior detector works correctly', () async {
+    expect(await rawImageUsesCorrectBehavior(PixelFormat.rgba8888), true);
+    expect(await rawImageUsesCorrectBehavior(PixelFormat.bgra8888), false);
   });
 }
