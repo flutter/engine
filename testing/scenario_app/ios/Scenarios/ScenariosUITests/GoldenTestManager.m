@@ -80,8 +80,7 @@ NSDictionary* launchArgsMap;
     screenshotAttachment.lifetime = XCTAttachmentLifetimeKeepAlways;
     [test addAttachment:screenshotAttachment];
 
-    NSData* rawData =
-        (__bridge NSData*)CGDataProviderCopyData(CGImageGetDataProvider(screenshot.image.CGImage));
+    NSData* rawData = UIImagePNGRepresentation(screenshot.image);
     NSString* imageData = [rawData base64EncodedStringWithOptions:0];
     os_log_error(OS_LOG_DEFAULT, "Updated golden data: @\"%@\"", imageData);
 
