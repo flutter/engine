@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/platform/common/text_editing_delta.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 
 #include <windows.h>
@@ -23,8 +24,15 @@ static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
 static constexpr char kUpdateEditingStateMethod[] =
     "TextInputClient.updateEditingState";
+static constexpr char kUpdateEditingStateWithDeltasMethod[] =
+    "TextInputClient.updateEditingStateWithDeltas";
 static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 
+static constexpr char kDeltaOldTextKey[] = "oldText";
+static constexpr char kDeltaTextKey[] = "deltaText";
+static constexpr char kDeltaStartKey[] = "deltaStart";
+static constexpr char kDeltaEndKey[] = "deltaStart";
+static constexpr char kDeltasKey[] = "deltas";
 static constexpr char kEnableDeltaModel[] = "enableDeltaModel";
 static constexpr char kTextInputAction[] = "inputAction";
 static constexpr char kTextInputType[] = "inputType";
@@ -171,13 +179,11 @@ void TextInputPlugin::HandleMethodCall(
       return;
     }
     client_id_ = client_id_json.GetInt();
-
     auto enable_delta_model_json = client_config.FindMember(kEnableDeltaModel);
     assert(enable_delta_model_json->value.IsBool());
     if (enable_delta_model_json != client_config.MemberEnd() && enable_delta_model_json->value.IsBool()) {
       enable_delta_model = enable_delta_model_json->value.GetBool();
     }
-
     input_action_ = "";
     auto input_action_json = client_config.FindMember(kTextInputAction);
     if (input_action_json != client_config.MemberEnd() &&
@@ -341,6 +347,40 @@ void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
   args->PushBack(editing_state, allocator);
 
   channel_->InvokeMethod(kUpdateEditingStateMethod, std::move(args));
+}
+
+void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model, TextEditingDelta* delta) {
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack(client_id_, allocator);
+
+  rapidjson::Value object(rapidjson::kObjectType);
+  rapidjson::Value deltas(rapidjson::kArrayType);
+  rapidjson::Value deltaJson(rapidjson::kObjectType);
+
+  deltaJson.AddMember(kDeltaOldTextKey, delta->old_text(), allocator);
+  deltaJson.AddMember(kDeltaTextKey, delta->delta_text(), allocator);
+  deltaJson.AddMember(kDeltaStartKey, delta->delta_start(), allocator);
+  deltaJson.AddMember(kDeltaEndKey, delta->delta_end(), allocator);
+
+  TextRange selection = model.selection();
+  deltaJson.AddMember(kSelectionAffinityKey, kAffinityDownstream,
+                          allocator);
+  deltaJson.AddMember(kSelectionBaseKey, selection.base(), allocator);
+  deltaJson.AddMember(kSelectionExtentKey, selection.extent(), allocator);
+  deltaJson.AddMember(kSelectionIsDirectionalKey, false, allocator);
+
+  int composing_base = model.composing() ? model.composing_range().base() : -1;
+  int composing_extent =
+      model.composing() ? model.composing_range().extent() : -1;
+  deltaJson.AddMember(kComposingBaseKey, composing_base, allocator);
+  deltaJson.AddMember(kComposingExtentKey, composing_extent, allocator);
+
+  deltas.PushBack(deltaJson, allocator);
+  object.AddMember(kDeltasKey, deltas, allocator);
+  args->PushBack(object, allocator);
+
+  channel_->InvokeMethod(kUpdateEditingStateWithDeltasMethod, std::move(args));
 }
 
 void TextInputPlugin::EnterPressed(TextInputModel* model) {

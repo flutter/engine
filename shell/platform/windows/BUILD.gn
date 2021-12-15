@@ -157,9 +157,13 @@ source_set("flutter_windows_source") {
     defines = [
       "_SILENCE_CLANG_COROUTINE_MESSAGE",
       "FLUTTER_ENGINE_NO_PROTOTYPES",
+      "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
     ]
   } else {
-    defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+    defines = [
+      "FLUTTER_ENGINE_NO_PROTOTYPES",
+      "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+    ]
   }
 
   public_deps = [
@@ -298,6 +302,8 @@ executable("flutter_windows_unittests") {
   if (target_os == "winuwp") {
     deps += [ ":uwptool_utils" ]
   }
+
+  defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
 }
 
 shared_library("flutter_windows_glfw") {

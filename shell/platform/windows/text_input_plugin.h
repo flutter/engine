@@ -13,6 +13,7 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
+#include "flutter/shell/platform/common/text_editing_delta.h"
 #include "flutter/shell/platform/common/text_input_model.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
@@ -55,6 +56,9 @@ class TextInputPlugin : public KeyboardHandlerBase {
  private:
   // Sends the current state of the given model to the Flutter engine.
   void SendStateUpdate(const TextInputModel& model);
+
+  // Sends the current state of the given model to the Flutter engine.
+  void SendStateUpdateWithDelta(const TextInputModel& model, TextEditingDelta*);
 
   // Sends an action triggered by the Enter key to the Flutter engine.
   void EnterPressed(TextInputModel* model);
