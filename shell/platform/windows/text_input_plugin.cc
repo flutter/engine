@@ -31,7 +31,7 @@ static constexpr char kPerformActionMethod[] = "TextInputClient.performAction";
 static constexpr char kDeltaOldTextKey[] = "oldText";
 static constexpr char kDeltaTextKey[] = "deltaText";
 static constexpr char kDeltaStartKey[] = "deltaStart";
-static constexpr char kDeltaEndKey[] = "deltaStart";
+static constexpr char kDeltaEndKey[] = "deltaEnd";
 static constexpr char kDeltasKey[] = "deltas";
 static constexpr char kEnableDeltaModel[] = "enableDeltaModel";
 static constexpr char kTextInputAction[] = "inputAction";
@@ -59,12 +59,27 @@ static constexpr char kInternalConsistencyError[] =
 
 namespace flutter {
 
+static std::u16string Utf8ToUtf16(const std::string& string) {
+  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>
+      utf16_converter;
+  return utf16_converter.from_bytes(string);
+}
+
 void TextInputPlugin::TextHook(const std::u16string& text) {
   if (active_model_ == nullptr) {
     return;
   }
+  std::u16string text_before_change = Utf8ToUtf16(active_model_->GetText());
+  TextRange selection_before_change = active_model_->selection();
   active_model_->AddText(text);
-  SendStateUpdate(*active_model_);
+
+  if (enable_delta_model) {
+    TextEditingDelta delta = TextEditingDelta(
+        text_before_change, selection_before_change, text);
+    SendStateUpdateWithDelta(*active_model_, &delta);
+  } else {
+    SendStateUpdate(*active_model_);
+  }
 }
 
 bool TextInputPlugin::KeyboardHook(int key,
