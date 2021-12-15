@@ -18,7 +18,7 @@
 namespace flutter {
 namespace testing {
 
-class TestVulkanContext {
+class TestVulkanContext : public fml::RefCountedThreadSafe<TestVulkanContext> {
  public:
   TestVulkanContext();
 
@@ -36,6 +36,8 @@ class TestVulkanContext {
   friend class EmbedderTestContextVulkan;
   friend class EmbedderConfigBuilder;
 
+  FML_FRIEND_MAKE_REF_COUNTED(TestVulkanContext);
+  FML_FRIEND_REF_COUNTED_THREAD_SAFE(TestVulkanContext);
   FML_DISALLOW_COPY_AND_ASSIGN(TestVulkanContext);
 };
 

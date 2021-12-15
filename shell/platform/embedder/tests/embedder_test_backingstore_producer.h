@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_ptr_internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -62,7 +63,7 @@ class EmbedderTestBackingStoreProducer {
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN
-  std::unique_ptr<TestVulkanContext> test_vulkan_context_;
+  fml::RefPtr<TestVulkanContext> test_vulkan_context_;
 #endif
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestBackingStoreProducer);

@@ -2082,16 +2082,16 @@ TEST_F(EmbedderTest,
   FlutterEngineShutdown(engine.release());
 }
 
-TEST_F(EmbedderTest, PlatformViewMutatorsAreValid) {
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+TEST_P(EmbedderTestMultiBackend, PlatformViewMutatorsAreValid) {
+  EmbedderTestContextType backend = GetParam();
+  auto& context = GetEmbedderContext(backend);
 
   EmbedderConfigBuilder builder(context);
-  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetRendererConfig(backend, SkISize::Make(800, 600));
   builder.SetCompositor();
   builder.SetDartEntrypoint("platform_view_mutators");
 
-  builder.SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLTexture);
+  builder.SetRenderTargetType(GetTargetFromBackend(backend, false));
 
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
@@ -2101,9 +2101,8 @@ TEST_F(EmbedderTest, PlatformViewMutatorsAreValid) {
         // Layer 0 (Root)
         {
           FlutterBackingStore backing_store = *layers[0]->backing_store;
-          backing_store.type = kFlutterBackingStoreTypeOpenGL;
           backing_store.did_update = true;
-          backing_store.open_gl.type = kFlutterOpenGLTargetTypeTexture;
+          ConfigureBackingStore(backing_store, backend, false);
 
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);

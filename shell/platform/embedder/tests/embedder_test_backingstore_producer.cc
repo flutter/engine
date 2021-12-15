@@ -25,7 +25,7 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
 #endif
 #ifdef SHELL_ENABLE_VULKAN
       ,
-      test_vulkan_context_(std::make_unique<TestVulkanContext>())
+      test_vulkan_context_(fml::MakeRefCounted<TestVulkanContext>())
 #endif
 {
 }

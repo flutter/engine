@@ -9,6 +9,7 @@
 #include "flutter/shell/common/context_options.h"
 #include "flutter/testing/test_vulkan_context.h"
 
+#include "fml/memory/ref_ptr.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
@@ -153,6 +154,9 @@ std::optional<TestVulkanImage> TestVulkanContext::CreateImage(
           device_->GetHandle(), result.image_, result.memory_, 0)))) {
     return std::nullopt;
   }
+
+  result.context_ =
+      fml::RefPtr<TestVulkanContext>(const_cast<TestVulkanContext*>(this));
 
   return result;
 }

@@ -19,7 +19,7 @@ namespace testing {
 
 EmbedderTestContextVulkan::EmbedderTestContextVulkan(std::string assets_path)
     : EmbedderTestContext(assets_path), surface_() {
-  vulkan_context_ = std::make_unique<TestVulkanContext>();
+  vulkan_context_ = fml::MakeRefCounted<TestVulkanContext>();
 }
 
 EmbedderTestContextVulkan::~EmbedderTestContextVulkan() {}

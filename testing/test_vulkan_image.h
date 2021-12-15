@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_TESTING_TEST_VULKAN_IMAGE_H_
+#define FLUTTER_TESTING_TEST_VULKAN_IMAGE_H_
+
 #include "flutter/fml/macros.h"
 #include "flutter/vulkan/vulkan_handle.h"
 
+#include "flutter/fml/memory/ref_ptr.h"
 #include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
@@ -25,6 +29,9 @@ class TestVulkanImage {
  private:
   TestVulkanImage();
 
+  // The lifetime of the Vulkan state must exceed memory/image handles.
+  fml::RefPtr<TestVulkanContext> context_;
+
   vulkan::VulkanHandle<VkImage> image_;
   vulkan::VulkanHandle<VkDeviceMemory> memory_;
 
@@ -35,3 +42,5 @@ class TestVulkanImage {
 
 }  // namespace testing
 }  // namespace flutter
+
+#endif  // FLUTTER_TESTING_TEST_VULKAN_IMAGE_H_

@@ -4,6 +4,8 @@
 
 #include "flutter/testing/test_vulkan_image.h"
 
+#include "flutter/testing/test_vulkan_context.h"
+
 namespace flutter {
 namespace testing {
 
