@@ -371,6 +371,11 @@ class DartIsolate : public UIDartState {
                                     std::optional<std::string> entrypoint,
                                     const std::vector<std::string>& args);
 
+  [[nodiscard]] bool InvokeEntryPointInSharedIsolate(
+      std::unique_ptr<PlatformConfiguration> platform_configuration,
+      std::optional<std::string> library_name,
+      std::optional<std::string> entrypoint,
+      const std::vector<std::string>& args);
   //----------------------------------------------------------------------------
   /// @brief      Transition the isolate to the `Phase::Shutdown` phase. The
   ///             only thing left to do is to collect the isolate.

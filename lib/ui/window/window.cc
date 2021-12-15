@@ -11,8 +11,12 @@
 
 namespace flutter {
 
-Window::Window(int64_t window_id, ViewportMetrics metrics)
-    : window_id_(window_id), viewport_metrics_(metrics) {
+Window::Window(int64_t window_id,
+               int64_t application_id,
+               ViewportMetrics metrics)
+    : window_id_(window_id),
+      application_id_(application_id),
+      viewport_metrics_(metrics) {
   library_.Set(tonic::DartState::Current(),
                Dart_LookupLibrary(tonic::ToDart("dart:ui")));
 }
@@ -32,8 +36,9 @@ void Window::DispatchPointerDataPacket(const PointerDataPacket& packet) {
   if (Dart_IsError(data_handle)) {
     return;
   }
-  tonic::LogIfError(tonic::DartInvokeField(
-      library_.value(), "_dispatchPointerDataPacket", {data_handle}));
+  tonic::LogIfError(
+      tonic::DartInvokeField(library_.value(), "_dispatchPointerDataPacket",
+                             {tonic::ToDart(application_id_), data_handle}));
 }
 
 void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
@@ -47,6 +52,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
   tonic::LogIfError(tonic::DartInvokeField(
       library_.value(), "_updateWindowMetrics",
       {
+          tonic::ToDart(application_id_),
           tonic::ToDart(window_id_),
           tonic::ToDart(metrics.device_pixel_ratio),
           tonic::ToDart(metrics.physical_width),

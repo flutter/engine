@@ -205,37 +205,50 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 #endif
 
   UpdateAssetManager(configuration.GetAssetManager());
-
-  if (runtime_controller_->IsRootIsolateRunning()) {
+  bool is_root_isolate_running = runtime_controller_->IsRootIsolateRunning();
+  if (is_root_isolate_running && !IsSharedIsolateMode()) {
     return RunStatus::FailureAlreadyRunning;
   }
 
-  // If the embedding prefetched the default font manager, then set up the
-  // font manager later in the engine launch process.  This makes it less
-  // likely that the setup will need to wait for the prefetch to complete.
-  auto root_isolate_create_callback = [&]() {
-    if (settings_.prefetched_default_font_manager) {
-      SetupDefaultFontManager();
+  if (!is_root_isolate_running) {
+    // If the embedding prefetched the default font manager, then set up the
+    // font manager later in the engine launch process.  This makes it less
+    // likely that the setup will need to wait for the prefetch to complete.
+    auto root_isolate_create_callback = [&]() {
+      if (settings_.prefetched_default_font_manager) {
+        SetupDefaultFontManager();
+      }
+    };
+
+    if (!runtime_controller_->LaunchRootIsolate(
+            settings_,                                 //
+            root_isolate_create_callback,              //
+            configuration.GetEntrypoint(),             //
+            configuration.GetEntrypointLibrary(),      //
+            configuration.GetEntrypointArgs(),         //
+            configuration.TakeIsolateConfiguration())  //
+    ) {
+      return RunStatus::Failure;
     }
-  };
 
-  if (!runtime_controller_->LaunchRootIsolate(
-          settings_,                                 //
-          root_isolate_create_callback,              //
-          configuration.GetEntrypoint(),             //
-          configuration.GetEntrypointLibrary(),      //
-          configuration.GetEntrypointArgs(),         //
-          configuration.TakeIsolateConfiguration())  //
-  ) {
-    return RunStatus::Failure;
-  }
-
-  auto service_id = runtime_controller_->GetRootIsolateServiceID();
-  if (service_id.has_value()) {
-    std::unique_ptr<PlatformMessage> service_id_message =
-        std::make_unique<flutter::PlatformMessage>(
-            kIsolateChannel, MakeMapping(service_id.value()), nullptr);
-    HandlePlatformMessage(std::move(service_id_message));
+    auto service_id = runtime_controller_->GetRootIsolateServiceID();
+    if (service_id.has_value()) {
+      std::unique_ptr<PlatformMessage> service_id_message =
+          std::make_unique<flutter::PlatformMessage>(
+              kIsolateChannel, MakeMapping(service_id.value()), nullptr);
+      HandlePlatformMessage(std::move(service_id_message));
+    }
+  } else {
+    // in shared isolate mode
+    if (!runtime_controller_->RunInSharedRootIsolate(
+            settings_,                                 //
+            configuration.GetEntrypoint(),             //
+            configuration.GetEntrypointLibrary(),      //
+            configuration.GetEntrypointArgs(),         //
+            configuration.TakeIsolateConfiguration())  //
+    ) {
+      return RunStatus::Failure;
+    }
   }
 
   return Engine::RunStatus::Success;
@@ -597,6 +610,10 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
     runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,
                                                       error_message, transient);
   }
+}
+
+bool Engine::IsSharedIsolateMode() const {
+  return true;
 }
 
 }  // namespace flutter

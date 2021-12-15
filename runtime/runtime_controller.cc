@@ -61,13 +61,17 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           context_);                     //
   result->spawning_isolate_ = root_isolate_;
   result->platform_data_.viewport_metrics = ViewportMetrics();
+  //   if (shared_isolate_mode) {
+  result->root_isolate_ = root_isolate_;
+  result->application_id_ = next_application_id_++;
+  //   }
   return result;
 }
 
 RuntimeController::~RuntimeController() {
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  if (root_isolate) {
+  if (root_isolate && application_id_ == kDefaultApplicationId) {
     root_isolate->SetReturnCodeCallback(nullptr);
     auto result = root_isolate->Shutdown();
     if (!result) {
@@ -256,7 +260,8 @@ bool RuntimeController::DispatchSemanticsAction(int32_t id,
 PlatformConfiguration*
 RuntimeController::GetPlatformConfigurationIfAvailable() {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  return root_isolate ? root_isolate->platform_configuration() : nullptr;
+  return root_isolate ? root_isolate->platform_configuration(application_id_)
+                      : nullptr;
 }
 
 // |PlatformConfigurationClient|
@@ -382,6 +387,43 @@ bool RuntimeController::LaunchRootIsolate(
   // it will be collected before this object.
   strong_root_isolate->SetReturnCodeCallback(
       [this](uint32_t code) { root_isolate_return_code_ = code; });
+
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    tonic::DartState::Scope scope(strong_root_isolate);
+    platform_configuration->DidCreateIsolate();
+    if (!FlushRuntimeStateToIsolate()) {
+      FML_DLOG(ERROR) << "Could not set up initial isolate state.";
+    }
+  } else {
+    FML_DCHECK(false) << "RuntimeController created without window binding.";
+  }
+
+  FML_DCHECK(Dart_CurrentIsolate() == nullptr);
+
+  client_.OnRootIsolateCreated();
+
+  return true;
+}
+
+bool RuntimeController::RunInSharedRootIsolate(
+    const Settings& settings,
+    std::optional<std::string> dart_entrypoint,
+    std::optional<std::string> dart_entrypoint_library,
+    const std::vector<std::string>& dart_entrypoint_args,
+    std::unique_ptr<IsolateConfiguration> isolate_configuration) {
+  auto platform_configuration =
+      std::make_unique<PlatformConfiguration>(this, application_id_);
+  auto strong_root_isolate = spawning_isolate_.lock();
+  bool result = strong_root_isolate->InvokeEntryPointInSharedIsolate(
+      std::make_unique<PlatformConfiguration>(this, application_id_),
+      dart_entrypoint_library, dart_entrypoint, dart_entrypoint_args);
+  if (!result) {
+    FML_LOG(ERROR) << "Could not run in shared root isolate.";
+    return false;
+  }
+
+  // The root isolate ivar is weak.
+  root_isolate_ = strong_root_isolate;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     tonic::DartState::Scope scope(strong_root_isolate);

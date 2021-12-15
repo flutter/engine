@@ -27,24 +27,26 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
 DART_BIND_ALL(Scene, FOR_EACH_BINDING)
 
-void Scene::create(Dart_Handle scene_handle,
+void Scene::create(int64_t application_id,
+                   Dart_Handle scene_handle,
                    std::shared_ptr<flutter::Layer> rootLayer,
                    uint32_t rasterizerTracingThreshold,
                    bool checkerboardRasterCacheImages,
                    bool checkerboardOffscreenLayers) {
   auto scene = fml::MakeRefCounted<Scene>(
-      std::move(rootLayer), rasterizerTracingThreshold,
+      application_id, std::move(rootLayer), rasterizerTracingThreshold,
       checkerboardRasterCacheImages, checkerboardOffscreenLayers);
   scene->AssociateWithDartWrapper(scene_handle);
 }
 
-Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
+Scene::Scene(int64_t application_id,
+             std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
   // Currently only supports a single window.
   auto viewport_metrics = UIDartState::Current()
-                              ->platform_configuration()
+                              ->platform_configuration(application_id)
                               ->get_window(0)
                               ->viewport_metrics();
 

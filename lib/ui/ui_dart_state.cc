@@ -101,9 +101,9 @@ void UIDartState::ThrowIfUIOperationsProhibited() {
 
 void UIDartState::SetDebugName(const std::string debug_name) {
   debug_name_ = debug_name;
-  if (platform_configuration_) {
-    platform_configuration_->client()->UpdateIsolateDescription(debug_name_,
-                                                                main_port_);
+  if (platform_configuration()) {
+    platform_configuration()->client()->UpdateIsolateDescription(debug_name_,
+                                                                 main_port_);
   }
 }
 
@@ -111,12 +111,28 @@ UIDartState* UIDartState::Current() {
   return static_cast<UIDartState*>(DartState::Current());
 }
 
+PlatformConfiguration* UIDartState::platform_configuration(
+    int64_t application_id) const {
+  auto it = platform_configurations_.find(application_id);
+  if (it != platform_configurations_.end()) {
+    return it->second.get();
+  }
+  return nullptr;
+}
+
 void UIDartState::SetPlatformConfiguration(
     std::unique_ptr<PlatformConfiguration> platform_configuration) {
-  platform_configuration_ = std::move(platform_configuration);
-  if (platform_configuration_) {
-    platform_configuration_->client()->UpdateIsolateDescription(debug_name_,
-                                                                main_port_);
+  if (!platform_configuration) {
+    return;
+  }
+  int64_t application_id = platform_configuration->application_id();
+  platform_configurations_.insert(
+      std::make_pair(application_id, std::move(platform_configuration)));
+
+  if (application_id == kDefaultApplicationId) {
+    platform_configurations_[application_id]
+        ->client()
+        ->UpdateIsolateDescription(debug_name_, main_port_);
   }
 }
 

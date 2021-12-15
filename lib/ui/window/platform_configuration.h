@@ -23,6 +23,8 @@ class FontCollection;
 class PlatformMessage;
 class Scene;
 
+constexpr int64_t kDefaultApplicationId = 0;
+
 //--------------------------------------------------------------------------
 /// @brief An enum for defining the different kinds of accessibility features
 ///        that can be enabled by the platform.
@@ -222,7 +224,9 @@ class PlatformConfiguration final {
   ///                   the PlatformConfiguration. This client is used to
   ///                   forward requests to the RuntimeController.
   ///
-  explicit PlatformConfiguration(PlatformConfigurationClient* client);
+  explicit PlatformConfiguration(
+      PlatformConfigurationClient* client,
+      int64_t application_id = kDefaultApplicationId);
 
   // PlatformConfiguration is not copyable.
   PlatformConfiguration(const PlatformConfiguration&) = delete;
@@ -238,6 +242,8 @@ class PlatformConfiguration final {
   /// PlatformConfiguration.
   ///
   PlatformConfigurationClient* client() const { return client_; }
+
+  int64_t application_id() const { return application_id_; };
 
   //----------------------------------------------------------------------------
   /// @brief      Called by the RuntimeController once it has created the root
@@ -421,6 +427,7 @@ class PlatformConfiguration final {
 
  private:
   PlatformConfigurationClient* client_;
+  int64_t application_id_;
   tonic::DartPersistentValue update_locales_;
   tonic::DartPersistentValue update_user_settings_data_;
   tonic::DartPersistentValue update_lifecycle_state_;

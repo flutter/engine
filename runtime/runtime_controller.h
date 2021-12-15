@@ -147,6 +147,13 @@ class RuntimeController : public PlatformConfigurationClient {
       const std::vector<std::string>& dart_entrypoint_args,
       std::unique_ptr<IsolateConfiguration> isolate_configuration);
 
+  [[nodiscard]] bool RunInSharedRootIsolate(
+      const Settings& settings,
+      std::optional<std::string> dart_entrypoint,
+      std::optional<std::string> dart_entrypoint_library,
+      const std::vector<std::string>& dart_entrypoint_args,
+      std::unique_ptr<IsolateConfiguration> isolate_configuration);
+
   //----------------------------------------------------------------------------
   /// @brief      Clone the runtime controller. Launching an isolate with a
   ///             cloned runtime controller will use the same snapshots and
@@ -581,7 +588,8 @@ class RuntimeController : public PlatformConfigurationClient {
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
   UIDartState::Context context_;
-
+  int64_t application_id_ = kDefaultApplicationId;
+  mutable int64_t next_application_id_ = kDefaultApplicationId + 1;
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();

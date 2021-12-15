@@ -264,8 +264,8 @@ abstract class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene, this);
-  void _render(Scene scene, FlutterView view) native 'PlatformConfiguration_render';
+  void render(Scene scene) => _render(Application.current.id, scene, this);
+  void _render(Object applicationId, Scene scene, FlutterView view) native 'PlatformConfiguration_render';
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a
@@ -868,7 +868,7 @@ enum Brightness {
 /// * [PlatformDispatcher.views], contains the current list of Flutter windows
 ///   belonging to the application, including top level application windows like
 ///   this one.
-final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);
+SingletonFlutterWindow get window => Application.current.get(SingletonFlutterWindow, () => SingletonFlutterWindow._(0, PlatformDispatcher.instance));
 
 /// Additional data available on each flutter frame.
 class FrameData {

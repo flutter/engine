@@ -102,9 +102,8 @@ class UIDartState : public tonic::DartState {
 
   const std::string& logger_prefix() const { return logger_prefix_; }
 
-  PlatformConfiguration* platform_configuration() const {
-    return platform_configuration_.get();
-  }
+  PlatformConfiguration* platform_configuration(
+      int64_t application_id = 0) const;
 
   const TaskRunners& GetTaskRunners() const;
 
@@ -186,7 +185,8 @@ class UIDartState : public tonic::DartState {
   Dart_Port main_port_ = ILLEGAL_PORT;
   const bool is_root_isolate_;
   std::string debug_name_;
-  std::unique_ptr<PlatformConfiguration> platform_configuration_;
+  std::unordered_map<int64_t, std::unique_ptr<PlatformConfiguration>>
+      platform_configurations_;
   tonic::DartMicrotaskQueue microtask_queue_;
   UnhandledExceptionCallback unhandled_exception_callback_;
   LogMessageCallback log_message_callback_;

@@ -4,6 +4,7 @@
 
 dart_ui_files = [
   "//flutter/lib/ui/annotations.dart",
+  "//flutter/lib/ui/application.dart",
   "//flutter/lib/ui/channel_buffers.dart",
   "//flutter/lib/ui/compositing.dart",
   "//flutter/lib/ui/geometry.dart",

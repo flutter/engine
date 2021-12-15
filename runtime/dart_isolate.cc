@@ -715,7 +715,8 @@ bool DartIsolate::MarkIsolateRunnable() {
 
 [[nodiscard]] static bool InvokeMainEntrypoint(
     Dart_Handle user_entrypoint_function,
-    Dart_Handle args) {
+    Dart_Handle args,
+    int64_t application_id = kDefaultApplicationId) {
   if (tonic::LogIfError(user_entrypoint_function)) {
     FML_LOG(ERROR) << "Could not resolve main entrypoint function.";
     return false;
@@ -732,7 +733,8 @@ bool DartIsolate::MarkIsolateRunnable() {
 
   if (tonic::LogIfError(tonic::DartInvokeField(
           Dart_LookupLibrary(tonic::ToDart("dart:ui")), "_runMainZoned",
-          {start_main_isolate_function, user_entrypoint_function, args}))) {
+          {tonic::ToDart(application_id), start_main_isolate_function,
+           user_entrypoint_function, args}))) {
     FML_LOG(ERROR) << "Could not invoke the main entrypoint.";
     return false;
   }
@@ -792,6 +794,36 @@ bool DartIsolate::RunFromLibrary(std::optional<std::string> library_name,
   }
 
   phase_ = Phase::Running;
+
+  return true;
+}
+
+bool DartIsolate::InvokeEntryPointInSharedIsolate(
+    std::unique_ptr<PlatformConfiguration> platform_configuration,
+    std::optional<std::string> library_name,
+    std::optional<std::string> entrypoint,
+    const std::vector<std::string>& args) {
+  tonic::DartState::Scope scope(this);
+  int64_t application_id = platform_configuration->application_id();
+  SetPlatformConfiguration(std::move(platform_configuration));
+
+  auto library_handle =
+      library_name.has_value() && !library_name.value().empty()
+          ? ::Dart_LookupLibrary(tonic::ToDart(library_name.value().c_str()))
+          : ::Dart_RootLibrary();
+  auto entrypoint_handle = entrypoint.has_value() && !entrypoint.value().empty()
+                               ? tonic::ToDart(entrypoint.value().c_str())
+                               : tonic::ToDart("main");
+
+  auto user_entrypoint_function =
+      ::Dart_GetField(library_handle, entrypoint_handle);
+
+  auto entrypoint_args = tonic::ToDart(args);
+
+  if (!InvokeMainEntrypoint(user_entrypoint_function, entrypoint_args,
+                            application_id)) {
+    return false;
+  }
 
   return true;
 }

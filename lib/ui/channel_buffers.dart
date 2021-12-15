@@ -554,4 +554,4 @@ class ChannelBuffers {
 /// See also:
 ///
 /// * [BinaryMessenger], where [ChannelBuffers] are typically read.
-final ChannelBuffers channelBuffers = ChannelBuffers();
+ChannelBuffers get channelBuffers => Application.current.get(ChannelBuffers, () => ChannelBuffers());

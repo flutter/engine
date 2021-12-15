@@ -319,6 +319,7 @@ FILE: ../../../flutter/lib/spirv/lib/src/constants.dart
 FILE: ../../../flutter/lib/spirv/lib/src/transpiler.dart
 FILE: ../../../flutter/lib/spirv/lib/src/types.dart
 FILE: ../../../flutter/lib/ui/annotations.dart
+FILE: ../../../flutter/lib/ui/application.dart
 FILE: ../../../flutter/lib/ui/channel_buffers.dart
 FILE: ../../../flutter/lib/ui/compositing.dart
 FILE: ../../../flutter/lib/ui/compositing/scene.cc

@@ -24,6 +24,7 @@ import 'dart:nativewrappers'; // ignore: unused_import
 import 'dart:typed_data';
 
 part 'annotations.dart';
+part 'application.dart';
 part 'channel_buffers.dart';
 part 'compositing.dart';
 part 'geometry.dart';

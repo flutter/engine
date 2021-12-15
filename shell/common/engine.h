@@ -948,6 +948,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 
+  bool IsSharedIsolateMode() const;
+
   friend class testing::ShellTest;
 
   Engine::Delegate& delegate_;

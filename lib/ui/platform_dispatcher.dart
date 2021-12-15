@@ -84,7 +84,7 @@ class PlatformDispatcher {
   /// Private constructor, since only dart:ui is supposed to create one of
   /// these. Use [instance] to access the singleton.
   PlatformDispatcher._() {
-    _setNeedsReportTimings = _nativeSetNeedsReportTimings;
+    _setNeedsReportTimings = _setNeedsReportTimingsInternal;
   }
 
   /// The [PlatformDispatcher] singleton.
@@ -106,8 +106,7 @@ class PlatformDispatcher {
   /// `WidgetsFlutterBinding.instance.ensureInitialized()`. In that case, it is
   /// necessary (though unfortunate) to use the [PlatformDispatcher.instance]
   /// object statically.
-  static PlatformDispatcher get instance => _instance;
-  static final PlatformDispatcher _instance = PlatformDispatcher._();
+  static PlatformDispatcher get instance => Application.current.get(PlatformDispatcher, () => PlatformDispatcher._());
 
   /// The current platform configuration.
   ///
@@ -481,7 +480,8 @@ class PlatformDispatcher {
   }
 
   late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
-  void _nativeSetNeedsReportTimings(bool value)
+  void _setNeedsReportTimingsInternal(bool value) => _nativeSetNeedsReportTimings(Application.current.id, value);
+  void _nativeSetNeedsReportTimings(Object applicationId, bool value)
       native 'PlatformConfiguration_setNeedsReportTimings';
 
   // Called from the engine, via hooks.dart
@@ -505,12 +505,12 @@ class PlatformDispatcher {
   /// called.
   void sendPlatformMessage(String name, ByteData? data, PlatformMessageResponseCallback? callback) {
     final String? error =
-        _sendPlatformMessage(name, _zonedPlatformMessageResponseCallback(callback), data);
+        _sendPlatformMessage(Application.current.id, name, _zonedPlatformMessageResponseCallback(callback), data);
     if (error != null)
       throw Exception(error);
   }
 
-  String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data)
+  String? _sendPlatformMessage(Object applicationId, String name, PlatformMessageResponseCallback? callback, ByteData? data)
       native 'PlatformConfiguration_sendPlatformMessage';
 
   /// Called whenever this platform dispatcher receives a message from a
@@ -537,7 +537,7 @@ class PlatformDispatcher {
   }
 
   /// Called by [_dispatchPlatformMessage].
-  void _respondToPlatformMessage(int responseId, ByteData? data)
+  void _respondToPlatformMessage(Object applicationId, int responseId, ByteData? data)
       native 'PlatformConfiguration_respondToPlatformMessage';
 
   /// Wraps the given [callback] in another callback that ensures that the
@@ -567,7 +567,7 @@ class PlatformDispatcher {
       try {
         channelBuffers.handleMessage(data!);
       } finally {
-        _respondToPlatformMessage(responseId, null);
+        _respondToPlatformMessage(Application.current.id, responseId, null);
       }
     } else if (onPlatformMessage != null) {
       _invoke3<String, ByteData?, PlatformMessageResponseCallback>(
@@ -576,12 +576,12 @@ class PlatformDispatcher {
         name,
         data,
         (ByteData? responseData) {
-          _respondToPlatformMessage(responseId, responseData);
+          _respondToPlatformMessage(Application.current.id, responseId, responseData);
         },
       );
     } else {
       channelBuffers.push(name, data, (ByteData? responseData) {
-        _respondToPlatformMessage(responseId, responseData);
+        _respondToPlatformMessage(Application.current.id, responseId, responseData);
       });
     }
   }
@@ -606,7 +606,9 @@ class PlatformDispatcher {
   ///
   /// For asynchronous communication between the embedder and isolate, a
   /// platform channel may be used.
-  ByteData? getPersistentIsolateData() native 'PlatformConfiguration_getPersistentIsolateData';
+  ByteData? getPersistentIsolateData() => _getPersistentIsolateData(Application.current.id);
+
+  ByteData? _getPersistentIsolateData(Object applicationId) native 'PlatformConfiguration_getPersistentIsolateData';
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
   /// [onDrawFrame] callbacks be invoked.
@@ -615,7 +617,9 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  void scheduleFrame() native 'PlatformConfiguration_scheduleFrame';
+  void scheduleFrame() => _scheduleFrame(Application.current.id);
+
+  void _scheduleFrame(Object applicationId) native 'PlatformConfiguration_scheduleFrame';
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
@@ -655,7 +659,9 @@ class PlatformDispatcher {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) native 'PlatformConfiguration_updateSemantics';
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(Application.current.id, update);
+
+  void _updateSemantics(Object applicationId, SemanticsUpdate update) native 'PlatformConfiguration_updateSemantics';
 
   /// The system-reported default locale of the device.
   ///
@@ -703,7 +709,7 @@ class PlatformDispatcher {
       supportedLocalesData.add(locale.scriptCode);
     }
 
-    final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
+    final List<String> result = _computePlatformResolvedLocale(Application.current.id, supportedLocalesData);
 
     if (result.isNotEmpty) {
       return Locale.fromSubtags(
@@ -713,7 +719,7 @@ class PlatformDispatcher {
     }
     return null;
   }
-  List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) native 'PlatformConfiguration_computePlatformResolvedLocale';
+  List<String> _computePlatformResolvedLocale(Object applicationId, List<String?> supportedLocalesData) native 'PlatformConfiguration_computePlatformResolvedLocale';
 
   /// A callback that is invoked whenever [locale] changes value.
   ///
@@ -994,8 +1000,8 @@ class PlatformDispatcher {
   ///  * [Navigator], a widget that handles routing.
   ///  * [SystemChannels.navigation], which handles subsequent navigation
   ///    requests from the embedder.
-  String get defaultRouteName => _defaultRouteName();
-  String _defaultRouteName() native 'PlatformConfiguration_defaultRouteName';
+  String get defaultRouteName => _defaultRouteName(Application.current.id);
+  String _defaultRouteName(Object applicationId) native 'PlatformConfiguration_defaultRouteName';
 }
 
 /// Configuration of the platform.

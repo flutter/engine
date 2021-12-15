@@ -20,7 +20,7 @@
 namespace flutter {
 class Window final {
  public:
-  Window(int64_t window_id, ViewportMetrics metrics);
+  Window(int64_t window_id, int64_t application_id, ViewportMetrics metrics);
 
   ~Window();
 
@@ -36,6 +36,7 @@ class Window final {
  private:
   tonic::DartPersistentValue library_;
   int64_t window_id_;
+  int64_t application_id_;
   ViewportMetrics viewport_metrics_;
 };
 

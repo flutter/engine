@@ -24,7 +24,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
  public:
   ~Scene() override;
-  static void create(Dart_Handle scene_handle,
+  static void create(int64_t application_id,
+                     Dart_Handle scene_handle,
                      std::shared_ptr<flutter::Layer> rootLayer,
                      uint32_t rasterizerTracingThreshold,
                      bool checkerboardRasterCacheImages,
@@ -41,7 +42,8 @@ class Scene : public RefCountedDartWrappable<Scene> {
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
-  explicit Scene(std::shared_ptr<flutter::Layer> rootLayer,
+  explicit Scene(int64_t application_id,
+                 std::shared_ptr<flutter::Layer> rootLayer,
                  uint32_t rasterizerTracingThreshold,
                  bool checkerboardRasterCacheImages,
                  bool checkerboardOffscreenLayers);

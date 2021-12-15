@@ -9,6 +9,7 @@ part of dart.ui;
 @pragma('vm:entry-point')
 // ignore: unused_element
 void _updateWindowMetrics(
+  Object applicationId,
   Object id,
   double devicePixelRatio,
   double width,
@@ -30,99 +31,126 @@ void _updateWindowMetrics(
   List<int> displayFeaturesType,
   List<int> displayFeaturesState,
 ) {
-  PlatformDispatcher.instance._updateWindowMetrics(
-    id,
-    devicePixelRatio,
-    width,
-    height,
-    viewPaddingTop,
-    viewPaddingRight,
-    viewPaddingBottom,
-    viewPaddingLeft,
-    viewInsetTop,
-    viewInsetRight,
-    viewInsetBottom,
-    viewInsetLeft,
-    systemGestureInsetTop,
-    systemGestureInsetRight,
-    systemGestureInsetBottom,
-    systemGestureInsetLeft,
-    physicalTouchSlop,
-    displayFeaturesBounds,
-    displayFeaturesType,
-    displayFeaturesState,
-  );
+  _invoke(() {
+    PlatformDispatcher.instance._updateWindowMetrics(
+      id,
+      devicePixelRatio,
+      width,
+      height,
+      viewPaddingTop,
+      viewPaddingRight,
+      viewPaddingBottom,
+      viewPaddingLeft,
+      viewInsetTop,
+      viewInsetRight,
+      viewInsetBottom,
+      viewInsetLeft,
+      systemGestureInsetTop,
+      systemGestureInsetRight,
+      systemGestureInsetBottom,
+      systemGestureInsetLeft,
+      physicalTouchSlop,
+      displayFeaturesBounds,
+      displayFeaturesType,
+      displayFeaturesState,
+    );
+  }, Application.fromId(applicationId).zone);
 }
 
 typedef _LocaleClosure = String Function();
 
 @pragma('vm:entry-point')
-_LocaleClosure? _getLocaleClosure() => PlatformDispatcher.instance._localeClosure;
-
-@pragma('vm:entry-point')
-void _updateLocales(List<String> locales) {
-  PlatformDispatcher.instance._updateLocales(locales);
+_LocaleClosure? _getLocaleClosure() {
+  return Application.fromId(kDefaultApplicationId).zone.run<_LocaleClosure?>(() => PlatformDispatcher.instance._localeClosure as _LocaleClosure?);
 }
 
 @pragma('vm:entry-point')
-void _updateUserSettingsData(String jsonData) {
-  PlatformDispatcher.instance._updateUserSettingsData(jsonData);
+void _updateLocales(Object applicationId, List<String> locales) {
+  _invoke(() {
+    PlatformDispatcher.instance._updateLocales(locales);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _updateLifecycleState(String state) {
-  PlatformDispatcher.instance._updateLifecycleState(state);
+void _updateUserSettingsData(Object applicationId, String jsonData) {
+  _invoke(() {
+    PlatformDispatcher.instance._updateUserSettingsData(jsonData);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _updateSemanticsEnabled(bool enabled) {
-  PlatformDispatcher.instance._updateSemanticsEnabled(enabled);
+void _updateLifecycleState(Object applicationId, String state) {
+  _invoke(() {
+    PlatformDispatcher.instance._updateLifecycleState(state);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _updateAccessibilityFeatures(int values) {
-  PlatformDispatcher.instance._updateAccessibilityFeatures(values);
+void _updateSemanticsEnabled(Object applicationId, bool enabled) {
+  _invoke(() {
+    PlatformDispatcher.instance._updateSemanticsEnabled(enabled);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
-  PlatformDispatcher.instance._dispatchPlatformMessage(name, data, responseId);
+void _updateAccessibilityFeatures(Object applicationId, int values) {
+  _invoke(() {
+    PlatformDispatcher.instance._updateAccessibilityFeatures(values);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _dispatchPointerDataPacket(ByteData packet) {
-  PlatformDispatcher.instance._dispatchPointerDataPacket(packet);
+void _dispatchPlatformMessage(Object applicationId, String name, ByteData? data, int responseId) {
+  _invoke(() {
+    PlatformDispatcher.instance._dispatchPlatformMessage(name, data, responseId);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _dispatchSemanticsAction(int id, int action, ByteData? args) {
-  PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
+void _dispatchPointerDataPacket(Object applicationId, ByteData packet) {
+  _invoke(() {
+    PlatformDispatcher.instance._dispatchPointerDataPacket(packet);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _beginFrame(int microseconds, int frameNumber) {
-  PlatformDispatcher.instance._beginFrame(microseconds);
-  PlatformDispatcher.instance._updateFrameData(frameNumber);
+void _dispatchSemanticsAction(Object applicationId, int id, int action, ByteData? args) {
+  _invoke(() {
+    PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _reportTimings(List<int> timings) {
-  PlatformDispatcher.instance._reportTimings(timings);
+void _beginFrame(Object applicationId, int microseconds, int frameNumber) {
+  _invoke(() {
+    PlatformDispatcher.instance._beginFrame(microseconds);
+    PlatformDispatcher.instance._updateFrameData(frameNumber);
+  }, Application.fromId(applicationId).zone);
 }
 
 @pragma('vm:entry-point')
-void _drawFrame() {
-  PlatformDispatcher.instance._drawFrame();
+void _reportTimings(Object applicationId, List<int> timings) {
+  _invoke(() {
+    PlatformDispatcher.instance._reportTimings(timings);
+  }, Application.fromId(applicationId).zone);
+}
+
+@pragma('vm:entry-point')
+void _drawFrame(Object applicationId) {
+  _invoke(() {
+    PlatformDispatcher.instance._drawFrame();
+  }, Application.fromId(applicationId).zone);
 }
 
 // ignore: always_declare_return_types, prefer_generic_function_type_aliases
 typedef _ListStringArgFunction(List<String> args);
 
 @pragma('vm:entry-point')
-void _runMainZoned(Function startMainIsolateFunction,
+void _runMainZoned(Object applicationId,
+                   Function startMainIsolateFunction,
                    Function userMainFunction,
                    List<String> args) {
-  startMainIsolateFunction(() {
+  final Function runMainZoned = () {
     runZonedGuarded<void>(() {
       if (userMainFunction is _ListStringArgFunction) {
         (userMainFunction as dynamic)(args);
@@ -130,12 +158,20 @@ void _runMainZoned(Function startMainIsolateFunction,
         userMainFunction();
       }
     }, (Object error, StackTrace stackTrace) {
-      _reportUnhandledException(error.toString(), stackTrace.toString());
+      _reportUnhandledException(applicationId, error.toString(), stackTrace.toString());
+    }, zoneValues: <Object, Object>{kApplicationId: applicationId});
+  };
+  if (applicationId == kDefaultApplicationId) {
+    startMainIsolateFunction(runMainZoned, null);
+  } else {
+    Timer.run(() {
+      runMainZoned();
     });
-  }, null);
+  }
 }
 
-void _reportUnhandledException(String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
+
+void _reportUnhandledException(Object applicationId, String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
 
 /// Invokes [callback] inside the given [zone].
 void _invoke(void Function()? callback, Zone zone) {

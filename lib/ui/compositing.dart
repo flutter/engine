@@ -824,9 +824,9 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// cannot be used further.
   Scene build() {
     final Scene scene = Scene._();
-    _build(scene);
+    _build(Application.current.id, scene);
     return scene;
   }
 
-  void _build(Scene outScene) native 'SceneBuilder_build';
+  void _build(Object applicationId, Scene outScene) native 'SceneBuilder_build';
 }
