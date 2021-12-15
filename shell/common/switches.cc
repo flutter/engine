@@ -451,6 +451,10 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                 &old_gen_heap_size);
     settings.old_gen_heap_size = std::stoi(old_gen_heap_size);
   }
+
+  settings.shared_isolate_mode =
+      command_line.HasOption(FlagForSwitch(Switch::SharedIsolateMode));
+
   return settings;
 }
 

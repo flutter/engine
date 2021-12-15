@@ -132,7 +132,8 @@ std::unique_ptr<Engine> Engine::Spawn(
       settings_.idle_notification_callback,  // idle notification callback
       settings_.isolate_create_callback,     // isolate create callback
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
-      settings_.persistent_isolate_data      // persistent isolate data
+      settings_.persistent_isolate_data,     // persistent isolate data
+      settings_.shared_isolate_mode          // shared isolate mode
   );
   result->initial_route_ = initial_route;
   return result;
@@ -613,7 +614,7 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
 }
 
 bool Engine::IsSharedIsolateMode() const {
-  return true;
+  return settings_.shared_isolate_mode;
 }
 
 }  // namespace flutter

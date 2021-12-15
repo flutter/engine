@@ -49,6 +49,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
  **/
 - (void)setPersistentIsolateData:(NSData*)data;
 
+- (void)setSharedIsolateMode:(BOOL)sharedIsolateMode;
+
 @end
 
 NS_ASSUME_NONNULL_END

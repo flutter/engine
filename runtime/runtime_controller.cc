@@ -48,7 +48,8 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data) const {
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    bool shared_isolate_mode) const {
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -61,10 +62,10 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           context_);                     //
   result->spawning_isolate_ = root_isolate_;
   result->platform_data_.viewport_metrics = ViewportMetrics();
-  //   if (shared_isolate_mode) {
-  result->root_isolate_ = root_isolate_;
-  result->application_id_ = next_application_id_++;
-  //   }
+  if (shared_isolate_mode) {
+    result->root_isolate_ = root_isolate_;
+    result->application_id_ = next_application_id_++;
+  }
   return result;
 }
 
@@ -78,6 +79,12 @@ RuntimeController::~RuntimeController() {
       FML_DLOG(ERROR) << "Could not shutdown the root isolate.";
     }
     root_isolate_ = {};
+  } else {
+    auto result = root_isolate->ExitApplication(application_id_);
+    if (!result) {
+      FML_DLOG(ERROR) << "Could not exit the application which id is "
+                      << application_id_ << " .";
+    }
   }
 }
 

@@ -15,6 +15,9 @@ const Object kDefaultApplicationId = 0;
 Map<Object, Application> _applications = <Object, Application>{};
 
 ///
+Set<Object> _exitedApplicationIds = <Object>{};
+
+///
 class Application {
 
   ///
@@ -27,9 +30,12 @@ class Application {
   ///
   static Application fromId(Object applicationId) {
     assert(applicationId != null);
+    assert(!_exitedApplicationIds.contains(applicationId));
     final Application result = _applications[applicationId] ??= Application._(applicationId);
     return result;
   }
+
+
 
   Application._(Object id):
                _id = id,
@@ -58,5 +64,14 @@ class Application {
   T get<T extends Object>(Object key, T Function() ifAbsent) {
     _values[key] ??= ifAbsent();
     return _values[key] as T;
+  }
+
+  ///
+  bool exit() {
+    assert(!_exitedApplicationIds.contains(_id));
+    _values.clear();
+    _applications.remove(_id);
+    _exitedApplicationIds.add(_id);
+    return true;
   }
 }

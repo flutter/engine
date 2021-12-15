@@ -259,6 +259,10 @@ struct Settings {
   std::string icu_data_path;
   MappingCallback icu_mapper;
 
+  /// Used to specify whether the lightweight engines are running in the
+  /// shared root isolate
+  bool shared_isolate_mode = false;
+
   // Assets settings
   fml::UniqueFD::element_type assets_dir =
       fml::UniqueFD::traits_type::InvalidValue();

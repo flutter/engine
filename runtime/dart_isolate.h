@@ -376,6 +376,8 @@ class DartIsolate : public UIDartState {
       std::optional<std::string> library_name,
       std::optional<std::string> entrypoint,
       const std::vector<std::string>& args);
+  [[nodiscard]] bool ExitApplication(int64_t application_id);
+
   //----------------------------------------------------------------------------
   /// @brief      Transition the isolate to the `Phase::Shutdown` phase. The
   ///             only thing left to do is to collect the isolate.

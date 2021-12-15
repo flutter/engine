@@ -56,6 +56,8 @@ public class FlutterShellArgs {
   public static final String ARG_OBSERVATORY_PORT = "--observatory-port=";
   public static final String ARG_KEY_DART_FLAGS = "dart-flags";
   public static final String ARG_DART_FLAGS = "--dart-flags";
+  public static final String ARG_KEY_SHARED_ISOLATE_MODE = "shared-isolate-mode";
+  public static final String ARG_SHARED_ISOLATE_MODE = "--shared-isolate-mode";
 
   @NonNull
   public static FlutterShellArgs fromIntent(@NonNull Intent intent) {
@@ -122,6 +124,10 @@ public class FlutterShellArgs {
     // flag provided is not allowed, the process will immediately terminate.
     if (intent.hasExtra(ARG_KEY_DART_FLAGS)) {
       args.add(ARG_DART_FLAGS + "=" + intent.getStringExtra(ARG_KEY_DART_FLAGS));
+    }
+
+    if (intent.getBooleanExtra(ARG_KEY_SHARED_ISOLATE_MODE, false)) {
+      args.add(ARG_SHARED_ISOLATE_MODE);
     }
 
     return new FlutterShellArgs(args);

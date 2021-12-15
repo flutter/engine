@@ -828,6 +828,19 @@ bool DartIsolate::InvokeEntryPointInSharedIsolate(
   return true;
 }
 
+bool DartIsolate::ExitApplication(int64_t application_id) {
+  tonic::DartState::Scope scope(this);
+
+  if (tonic::LogIfError(tonic::DartInvokeField(
+          Dart_LookupLibrary(tonic::ToDart("dart:ui")), "_exitApplication",
+          {tonic::ToDart(application_id)}))) {
+    FML_LOG(ERROR) << "Could not exit the application.";
+    return false;
+  }
+
+  return true;
+}
+
 bool DartIsolate::Shutdown() {
   TRACE_EVENT0("flutter", "DartIsolate::Shutdown");
   // This call may be re-entrant since Dart_ShutdownIsolate can invoke the

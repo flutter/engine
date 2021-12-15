@@ -61,8 +61,21 @@ FLUTTER_DARWIN_EXPORT
  * @param project The `FlutterDartProject` that all FlutterEngines in this group
  * will be executing.
  */
+- (instancetype)initWithName:(NSString*)name project:(nullable FlutterDartProject*)project;
+
+/**
+ * Initialize a new FlutterEngineGroup.
+ *
+ * @param name The name that will present in the threads shared across the
+ * engines in this group.
+ * @param project The `FlutterDartProject` that all FlutterEngines in this group
+ * will be executing.
+ * @param sharedIsolateMode specify whether the lightweight engines are running
+ * in the shared root isolate.
+ */
 - (instancetype)initWithName:(NSString*)name
-                     project:(nullable FlutterDartProject*)project NS_DESIGNATED_INITIALIZER;
+                     project:(nullable FlutterDartProject*)project
+           sharedIsolateMode:(BOOL)sharedIsolateMode NS_DESIGNATED_INITIALIZER;
 
 /**
  * Creates a running `FlutterEngine` that shares components with this group.

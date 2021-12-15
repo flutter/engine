@@ -56,10 +56,25 @@ public class FlutterEngineGroup {
    * the individual Android component's context to minimize the chances of leaks.
    */
   public FlutterEngineGroup(@NonNull Context context, @Nullable String[] dartVmArgs) {
+    this(context, dartVmArgs, false);
+  }
+
+  /**
+   * Create a FlutterEngineGroup whose child engines will share resources. Use {@code dartVmArgs} to
+   * pass flags to the Dart VM during initialization. Use {@code sharedIsolateMode} to specify
+   * whether the lightweight engines are running in the shared root isolate.
+   *
+   * <p>Since the FlutterEngineGroup is likely to have a longer lifecycle than any individual
+   * Android component, it's more semantically correct to pass in an application context rather than
+   * the individual Android component's context to minimize the chances of leaks.
+   */
+  public FlutterEngineGroup(
+      @NonNull Context context, @Nullable String[] dartVmArgs, boolean sharedIsolateMode) {
     FlutterLoader loader = FlutterInjector.instance().flutterLoader();
     if (!loader.initialized()) {
+      FlutterShellArgs shellArgs = createFlutterShellArgs(dartVmArgs, sharedIsolateMode);
       loader.startInitialization(context.getApplicationContext());
-      loader.ensureInitializationComplete(context.getApplicationContext(), dartVmArgs);
+      loader.ensureInitializationComplete(context.getApplicationContext(), shellArgs.toArray());
     }
   }
 
@@ -180,6 +195,18 @@ public class FlutterEngineGroup {
   @VisibleForTesting
   /* package */ FlutterEngine createEngine(Context context) {
     return new FlutterEngine(context);
+  }
+
+  private FlutterShellArgs createFlutterShellArgs(
+      @Nullable String[] dartVmArgs, boolean sharedIsolateMode) {
+    FlutterShellArgs shellArgs =
+        new FlutterShellArgs(dartVmArgs != null ? dartVmArgs : new String[] {});
+    if (sharedIsolateMode) {
+      shellArgs.add(FlutterShellArgs.ARG_SHARED_ISOLATE_MODE);
+    } else {
+      shellArgs.remove(FlutterShellArgs.ARG_SHARED_ISOLATE_MODE);
+    }
+    return shellArgs;
   }
 
   /** Options that control how a FlutterEngine should be created. */

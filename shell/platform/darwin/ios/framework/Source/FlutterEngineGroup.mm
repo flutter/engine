@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngineGroup.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 
 @implementation FlutterEngineGroupOptions
@@ -28,11 +29,18 @@
 }
 
 - (instancetype)initWithName:(NSString*)name project:(nullable FlutterDartProject*)project {
+  return [self initWithName:name project:project sharedIsolateMode:NO];
+}
+
+- (instancetype)initWithName:(NSString*)name
+                     project:(nullable FlutterDartProject*)project
+           sharedIsolateMode:(BOOL)sharedIsolateMode {
   self = [super init];
   if (self) {
     _name = [name copy];
     _engines = [[NSMutableArray<NSValue*> alloc] init];
-    _project = [project retain];
+    _project = project ? [project retain] : [[FlutterDartProject alloc] init];
+    [_project setSharedIsolateMode:sharedIsolateMode];
   }
   return self;
 }

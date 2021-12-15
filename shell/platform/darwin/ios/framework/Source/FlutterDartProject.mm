@@ -355,6 +355,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   );
 }
 
+- (void)setSharedIsolateMode:(BOOL)sharedIsolateMode {
+  _settings.shared_isolate_mode = sharedIsolateMode;
+}
+
 #pragma mark - PlatformData utilities
 
 @end

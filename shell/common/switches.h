@@ -215,6 +215,11 @@ DEF_SWITCH(EnableSkParagraph,
            "enable-skparagraph",
            "Selects the SkParagraph implementation of the text layout engine.")
 
+DEF_SWITCH(SharedIsolateMode,
+           "shared-isolate-mode",
+           " Used to specify whether the lightweight engines are running in "
+           "the shared root isolate.")
+
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

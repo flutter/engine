@@ -173,6 +173,11 @@ void _runMainZoned(Object applicationId,
 
 void _reportUnhandledException(Object applicationId, String error, String stackTrace) native 'PlatformConfiguration_reportUnhandledException';
 
+@pragma('vm:entry-point')
+void _exitApplication(Object applicationId) {
+  Application.fromId(applicationId).exit();
+}
+
 /// Invokes [callback] inside the given [zone].
 void _invoke(void Function()? callback, Zone zone) {
   if (callback == null) {
