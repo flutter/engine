@@ -72,6 +72,16 @@ Future<Image> _encodeToHtmlThenDecode(
   return (await (await descriptor.instantiateCodec()).getNextFrame()).image;
 }
 
+Future<bool> imageRawUsesCorrectBehavior(PixelFormat format) async {
+  final ImageDescriptor descriptor = ImageDescriptor.raw(
+    await ImmutableBuffer.fromUint8List(Uint8List.fromList(<int>[0xED, 0, 0, 0])),
+    width: 1, height: 1, pixelFormat: format);
+  final Image image = (await (await descriptor.instantiateCodec()).getNextFrame()).image;
+  final Uint8List resultPixels = Uint8List.sublistView(
+    (await image.toByteData(format: ImageByteFormat.rawStraightRgba))!);
+  return resultPixels[0] == 0xED;
+}
+
 Future<void> testMain() async {
   test('Correctly encodes an opaque image', () async {
     // A 2x2 testing image without transparency.
@@ -144,5 +154,25 @@ Future<void> testMain() async {
       <int>[0x0603F9FF, 0x80407FFF, 0xC0603FFF, 0xFF8000FF],
     );
     expect(actualPixels, listEqual(benchmarkPixels, tolerance: 1));
+  });
+
+  test('Correctly encodes an opaque image in bgra8888', () async {
+    // A 1x1 testing image without transparency.
+    final Image sourceImage = await _encodeToHtmlThenDecode(
+      _pixelsToBytes(<int>[0xFE0000FF]), 1, 1, pixelFormat: PixelFormat.rgba8888,
+    );
+    final Uint8List actualPixels  = Uint8List.sublistView(
+        (await sourceImage.toByteData(format: ImageByteFormat.rawStraightRgba))!);
+    // The `benchmarkPixels` is the same as `sourceImage` except that the R and
+    // G channels are swapped and the fully transparent last pixel is turned 0.
+    final Uint8List benchmarkPixels = _pixelsToBytes(
+      <int>[0x0201FFFF, 0x05FE04FF, 0xFD0807FF, 0x00000000],
+    );
+    expect(actualPixels, listEqual(benchmarkPixels));
+  });
+
+  test('The check detector is correct', () async {
+    expect(await imageRawUsesCorrectBehavior(PixelFormat.rgba8888), true);
+    expect(await imageRawUsesCorrectBehavior(PixelFormat.bgra8888), false);
   });
 }
