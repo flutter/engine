@@ -74,6 +74,9 @@ dependencies {
     def leakcanary_version = '2.7'
     implementation "com.squareup.leakcanary:leakcanary-android:$leakcanary_version"
     androidTestImplementation "com.squareup.leakcanary:leakcanary-android-instrumentation:$leakcanary_version"
+
+    def multidex_version = "2.0.1"
+    implementation "androidx.multidex:multidex:$multidex_version"
 }
 
 // Configure the embedding dependencies.
