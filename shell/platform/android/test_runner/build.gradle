@@ -49,8 +49,8 @@ android {
   }
 
   // Configure the embedding dependencies.
-  apply from: new File(rootDir, '../../../tools/androidx/configure.gradle').absolutePath;
-  configureDependencies(new File(rootDir, '../../..')) { dependency ->
+  apply from: new File(rootDir, '../../../../tools/androidx/configure.gradle').absolutePath;
+  configureDependencies(new File(rootDir, '../../../..')) { dependency ->
     dependencies {
       testImplementation "$dependency"
     }
