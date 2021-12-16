@@ -17,7 +17,7 @@ public final class PathUtils {
   }
 
   public static String getCacheDirectory(Context applicationContext) {
-    if (Build.VERSION.SDK_INT >= 21) {
+    if (Build.VERSION.SDK_INT >= 21 && applicationContext.getCodeCacheDir() != null) {
       return applicationContext.getCodeCacheDir().getPath();
     } else {
       return applicationContext.getCacheDir().getPath();
