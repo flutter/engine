@@ -5,29 +5,27 @@
 // @dart = 2.12
 part of dart.ui;
 
-///
+/// Key of the flutter application id.
 const Symbol kApplicationId = #flutter.io.application_id;
 
-///
+/// The default id of the flutter application.
 const Object kDefaultApplicationId = 0;
 
-///
 Map<Object, Application> _applications = <Object, Application>{};
 
-///
 Set<Object> _exitedApplicationIds = <Object>{};
 
-///
+/// The 'Application' represents a flutter application, each flutter application will have its own 'ui.window', 'ui.PlatformDispatcher' and so on. Each application will have its own element tree, render object tree, and layer tree. In the engine side, each application will have a corresponding 'flutte::Shell'. There can be multiple flutter applications in the root isolate.
 class Application {
 
-  ///
+  /// Get the current 'Application' according to the application id in the zone.
   static Application get current {
     final Object applicationId = Zone.current[kApplicationId] ?? kDefaultApplicationId;
     assert(applicationId != null);
     return Application.fromId(applicationId);
   }
 
-  ///
+  /// Get the 'Application' according to the specified application id.
   static Application fromId(Object applicationId) {
     assert(applicationId != null);
     assert(!_exitedApplicationIds.contains(applicationId));
@@ -41,33 +39,33 @@ class Application {
                _id = id,
                _zone = Zone.current.fork(zoneValues:{kApplicationId:id});
 
-  ///
+  /// The id of the flutter application.
   Object get id => _id;
   Object _id;
 
-  ///
+  /// The id of the flutter application. The logic of the 'Application' should run in there.
   Zone get zone => _zone;
   Zone _zone;
 
   Map<Object, Object?> _values = <Object, Object?>{};
 
-  ///
+  /// Whether the default flutter application.
   bool isDefaultApplication() => _id == kDefaultApplicationId;
 
-  ///
+  /// Put the object for the key.
   void put(Object key, Object? value) => _values[key] = value;
 
-  ///
+  /// find the object for the key, return null if not found.
   T? find<T>(Object key) => _values[key] as T?;
 
-  ///
+  /// Get the object according to the key. If the object does not exist, it will be created by 'ifAbsent'.
   T get<T extends Object>(Object key, T Function() ifAbsent) {
     _values[key] ??= ifAbsent();
     return _values[key] as T;
   }
 
-  ///
-  bool exit() {
+  // called when the application exits.
+  bool _exit() {
     assert(!_exitedApplicationIds.contains(_id));
     _values.clear();
     _applications.remove(_id);

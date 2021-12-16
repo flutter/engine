@@ -175,7 +175,7 @@ void _reportUnhandledException(Object applicationId, String error, String stackT
 
 @pragma('vm:entry-point')
 void _exitApplication(Object applicationId) {
-  Application.fromId(applicationId).exit();
+  Application.fromId(applicationId)._exit();
 }
 
 /// Invokes [callback] inside the given [zone].
