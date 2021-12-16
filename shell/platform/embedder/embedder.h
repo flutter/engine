@@ -555,7 +555,7 @@ typedef void* FlutterVulkanDeviceHandle;
 typedef void* FlutterVulkanQueueHandle;
 
 /// Alias for VkImage.
-typedef void* FlutterVulkanImageHandle;
+typedef uint64_t FlutterVulkanImageHandle;
 
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanImage).

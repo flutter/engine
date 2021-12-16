@@ -503,7 +503,7 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
              static_cast<int>(frame_info->size.height)});
     return {
         .struct_size = sizeof(FlutterVulkanImage),
-        .image = image,
+        .image = reinterpret_cast<uint64_t>(image),
     };
   };
   vulkan_renderer_config_.present_image_callback =

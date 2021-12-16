@@ -440,7 +440,7 @@ InferVulkanPlatformViewCreationCallback(
     };
 
     FlutterVulkanImage vulkan_image = ptr(user_data, &frame_info);
-    return static_cast<VkImage>(vulkan_image.image);
+    return reinterpret_cast<VkImage>(vulkan_image.image);
   };
 
   auto vulkan_present_image_callback =
@@ -448,7 +448,7 @@ InferVulkanPlatformViewCreationCallback(
        user_data](VkImage image) -> bool {
     FlutterVulkanImage image_desc = {
         .struct_size = sizeof(FlutterVulkanImage),
-        .image = image,
+        .image = reinterpret_cast<uint64_t>(image),
     };
     return ptr(user_data, &image_desc);
   };
@@ -742,7 +742,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
 
   GrVkImageInfo image_info = {
-      .fImage = static_cast<VkImage>(vulkan->image.image),
+      .fImage = reinterpret_cast<VkImage>(vulkan->image.image),
       .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
       .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
       .fFormat = VK_FORMAT_R8G8B8A8_UNORM,

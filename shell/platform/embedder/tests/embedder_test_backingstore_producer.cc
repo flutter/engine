@@ -285,7 +285,8 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
   backing_store_out->type = kFlutterBackingStoreTypeVulkan;
   backing_store_out->user_data = surface.get();
   backing_store_out->vulkan.user_data = surface.get();
-  backing_store_out->vulkan.image.image = image_info.fImage;
+  backing_store_out->vulkan.image.image =
+      reinterpret_cast<uint64_t>(image_info.fImage);
   backing_store_out->vulkan.destruction_callback = [](void* user_data) {
     reinterpret_cast<SkSurface*>(user_data)->unref();
   };
