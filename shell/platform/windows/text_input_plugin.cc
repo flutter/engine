@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/common/text_editing_delta.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/shell/platform/common/text_editing_delta.h"
 
 #include <windows.h>
 
@@ -74,8 +74,8 @@ void TextInputPlugin::TextHook(const std::u16string& text) {
   active_model_->AddText(text);
 
   if (enable_delta_model) {
-    TextEditingDelta delta = TextEditingDelta(
-        text_before_change, selection_before_change, text);
+    TextEditingDelta delta =
+        TextEditingDelta(text_before_change, selection_before_change, text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -196,7 +196,8 @@ void TextInputPlugin::HandleMethodCall(
     client_id_ = client_id_json.GetInt();
     auto enable_delta_model_json = client_config.FindMember(kEnableDeltaModel);
     assert(enable_delta_model_json->value.IsBool());
-    if (enable_delta_model_json != client_config.MemberEnd() && enable_delta_model_json->value.IsBool()) {
+    if (enable_delta_model_json != client_config.MemberEnd() &&
+        enable_delta_model_json->value.IsBool()) {
       enable_delta_model = enable_delta_model_json->value.GetBool();
     }
     input_action_ = "";
@@ -364,7 +365,8 @@ void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
   channel_->InvokeMethod(kUpdateEditingStateMethod, std::move(args));
 }
 
-void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model, TextEditingDelta* delta) {
+void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
+                                               TextEditingDelta* delta) {
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();
   args->PushBack(client_id_, allocator);
@@ -379,8 +381,7 @@ void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model, Text
   deltaJson.AddMember(kDeltaEndKey, delta->delta_end(), allocator);
 
   TextRange selection = model.selection();
-  deltaJson.AddMember(kSelectionAffinityKey, kAffinityDownstream,
-                          allocator);
+  deltaJson.AddMember(kSelectionAffinityKey, kAffinityDownstream, allocator);
   deltaJson.AddMember(kSelectionBaseKey, selection.base(), allocator);
   deltaJson.AddMember(kSelectionExtentKey, selection.extent(), allocator);
   deltaJson.AddMember(kSelectionIsDirectionalKey, false, allocator);
