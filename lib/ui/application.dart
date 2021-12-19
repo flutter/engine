@@ -35,9 +35,13 @@ class Application {
 
 
 
-  Application._(Object id):
-               _id = id,
-               _zone = Zone.current.fork(zoneValues:{kApplicationId:id});
+  Application._(Object id) :
+    _id = id,
+    _zone = Zone.current.fork(zoneValues:{kApplicationId:id}),
+    _platformDispatcher = PlatformDispatcher._(applicationId: id),
+    _channelBuffers = ChannelBuffers() {
+    _window = SingletonFlutterWindow._(0, _platformDispatcher);
+  }
 
   /// The id of the flutter application.
   Object get id => _id;
@@ -46,6 +50,18 @@ class Application {
   /// The id of the flutter application. The logic of the 'Application' should run in there.
   Zone get zone => _zone;
   Zone _zone;
+
+  ///
+  PlatformDispatcher get platformDispatcher => _platformDispatcher;
+  PlatformDispatcher _platformDispatcher;
+
+  ///
+  SingletonFlutterWindow get window => _window;
+  late SingletonFlutterWindow _window;
+
+  ///
+  ChannelBuffers get channelBuffers => _channelBuffers;
+  ChannelBuffers _channelBuffers;
 
   Map<Object, Object?> _values = <Object, Object?>{};
 
