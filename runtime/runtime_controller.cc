@@ -80,19 +80,21 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
 RuntimeController::~RuntimeController() {
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
-  if (root_isolate && application_id_ == kDefaultApplicationId) {
-    root_isolate->SetReturnCodeCallback(nullptr);
-    auto result = root_isolate->Shutdown();
-    if (!result) {
-      FML_DLOG(ERROR) << "Could not shutdown the root isolate.";
+  if (root_isolate) {
+    if (application_id_ == kDefaultApplicationId) {
+      root_isolate->SetReturnCodeCallback(nullptr);
+      auto result = root_isolate->Shutdown();
+      if (!result) {
+        FML_DLOG(ERROR) << "Could not shutdown the root isolate.";
+      }
+    } else {
+      auto result = root_isolate->ExitApplication(application_id_);
+      if (!result) {
+        FML_DLOG(ERROR) << "Could not exit the application which id is "
+                        << application_id_ << " .";
+      }
     }
     root_isolate_ = {};
-  } else {
-    auto result = root_isolate->ExitApplication(application_id_);
-    if (!result) {
-      FML_DLOG(ERROR) << "Could not exit the application which id is "
-                      << application_id_ << " .";
-    }
   }
 }
 
