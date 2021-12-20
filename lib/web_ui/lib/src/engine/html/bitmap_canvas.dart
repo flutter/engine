@@ -12,7 +12,6 @@ import '../browser_detection.dart';
 import '../canvas_pool.dart';
 import '../canvaskit/color_filter.dart';
 import '../color_filter.dart';
-import '../dom_renderer.dart';
 import '../engine_canvas.dart';
 import '../frame_reference.dart';
 import '../html_image_codec.dart';
@@ -910,7 +909,7 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// The text is drawn starting at coordinates ([x], [y]). It uses the current
   /// font set by the most recent call to [setCssFont].
-  void fillText(String text, double x, double y, {List<ui.Shadow>? shadows}) {
+  void drawText(String text, double x, double y, {ui.PaintingStyle? style, List<ui.Shadow>? shadows}) {
     final html.CanvasRenderingContext2D ctx = _canvasPool.context;
     if (shadows != null) {
       ctx.save();
@@ -920,11 +919,20 @@ class BitmapCanvas extends EngineCanvas {
         ctx.shadowOffsetX = shadow.offset.dx;
         ctx.shadowOffsetY = shadow.offset.dy;
 
-        ctx.fillText(text, x, y);
+        if (style == ui.PaintingStyle.stroke) {
+          ctx.strokeText(text, x, y);
+        } else {
+          ctx.fillText(text, x, y);
+        }
       }
       ctx.restore();
     }
-    ctx.fillText(text, x, y);
+
+    if (style == ui.PaintingStyle.stroke) {
+      ctx.strokeText(text, x, y);
+    } else {
+      ctx.fillText(text, x, y);
+    }
   }
 
   @override
@@ -1354,7 +1362,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
     if (root == null) {
       root = newElement;
     } else {
-      domRenderer.append(curElement!, newElement);
+      curElement!.append(newElement);
     }
     curElement = newElement;
     final ui.Rect? rect = entry.rect;
@@ -1434,7 +1442,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
   }
 
   root!.style.position = 'absolute';
-  domRenderer.append(curElement!, content);
+  curElement!.append(content);
   setElementTransform(
     content,
     transformWithOffset(currentTransform, offset).storage,

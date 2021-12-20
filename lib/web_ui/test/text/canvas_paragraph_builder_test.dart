@@ -33,11 +33,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await webOnlyInitializeTestDomRenderer();
-
-  setUpAll(() {
-    WebExperiments.ensureInitialized();
-  });
+  await initializeTestFlutterViewEmbedder();
 
   test('Builds a text-only canvas paragraph', () {
     final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);
@@ -408,8 +404,8 @@ Future<void> testMain() async {
 
 TextStyle styleWithDefaults({
   Color color = const Color(0xFFFF0000),
-  String fontFamily = DomRenderer.defaultFontFamily,
-  double fontSize = DomRenderer.defaultFontSize,
+  String fontFamily = FlutterViewEmbedder.defaultFontFamily,
+  double fontSize = FlutterViewEmbedder.defaultFontSize,
   FontWeight? fontWeight,
   FontStyle? fontStyle,
   double? height,

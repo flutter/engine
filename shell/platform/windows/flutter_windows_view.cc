@@ -6,6 +6,7 @@
 
 #include <chrono>
 
+#include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
@@ -252,6 +253,10 @@ void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
   engine_->UpdateSemanticsEnabled(enabled);
 }
 
+gfx::NativeViewAccessible FlutterWindowsView::GetNativeViewAccessible() {
+  return engine_->GetNativeAccessibleFromId(AccessibilityBridge::kRootNodeId);
+}
+
 void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {
   binding_handler_->OnCursorRectUpdated(rect);
 }
@@ -377,7 +382,7 @@ void FlutterWindowsView::SendPointerLeave(PointerState* state) {
 
 void FlutterWindowsView::SendText(const std::u16string& text) {
   for (const auto& handler : keyboard_handlers_) {
-    handler->TextHook(this, text);
+    handler->TextHook(text);
   }
 }
 
@@ -388,7 +393,7 @@ bool FlutterWindowsView::SendKey(int key,
                                  bool extended,
                                  bool was_down) {
   for (const auto& handler : keyboard_handlers_) {
-    if (handler->KeyboardHook(this, key, scancode, action, character, extended,
+    if (handler->KeyboardHook(key, scancode, action, character, extended,
                               was_down)) {
       // key event was handled, so don't send to other handlers.
       return true;

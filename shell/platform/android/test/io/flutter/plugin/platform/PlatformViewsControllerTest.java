@@ -2,7 +2,7 @@ package io.flutter.plugin.platform;
 
 import static io.flutter.embedding.engine.systemchannels.PlatformViewsChannel.PlatformViewTouch;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import android.content.Context;
@@ -699,7 +699,9 @@ public class PlatformViewsControllerTest {
         overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
 
     platformViewsController.detachFromView();
+
     platformViewsController.destroyOverlaySurfaces();
+    verify(overlayImageView, times(1)).closeImageReader();
   }
 
   @Test

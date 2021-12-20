@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 
 import 'package:ui/ui.dart' as ui;
 
@@ -16,30 +15,34 @@ import 'host_node.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding.dart';
+import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
 import 'util.dart';
 import 'window.dart';
 
-class DomRenderer {
-  DomRenderer() {
-    if (assertionsEnabled) {
-      _debugFrameStatistics = DebugDomRendererFrameStatistics();
-    }
-
+/// Controls the placement and lifecycle of a Flutter view on the web page.
+///
+/// Manages several top-level elements that host Flutter-generated content,
+/// including:
+///
+/// - [glassPaneElement], the root element of a Flutter view.
+/// - [glassPaneShadow], the shadow root used to isolate Flutter-rendered
+///   content from the surrounding page content, including from the platform
+///   views.
+/// - [sceneElement], the element that hosts Flutter layers and pictures, and
+///   projects platform views.
+/// - [sceneHostElement], the anchor that provides a stable location in the DOM
+///   tree for the [sceneElement].
+/// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
+class FlutterViewEmbedder {
+  FlutterViewEmbedder() {
     reset();
-
     assert(() {
       _setupHotRestart();
       return true;
     }());
   }
-
-  static const int vibrateLongPress = 50;
-  static const int vibrateLightImpact = 10;
-  static const int vibrateMediumImpact = 20;
-  static const int vibrateHeavyImpact = 30;
-  static const int vibrateSelectionClick = 10;
 
   // The tag name for the root view of the flutter app (glass-pane)
   static const String _glassPaneTagName = 'flt-glass-pane';
@@ -101,26 +104,12 @@ class DomRenderer {
   static const String _staleHotRestartStore = '__flutter_state';
   List<html.Element?>? _staleHotRestartState;
 
-  /// Used to decide if the browser tab still has the focus.
-  ///
-  /// This information is useful for deciding on the blur behavior.
-  /// See [DefaultTextEditingStrategy].
-  ///
-  /// This getter calls the `hasFocus` method of the `Document` interface.
-  /// See for more details:
-  /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-  bool get windowHasFocus =>
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(html.document, 'hasFocus', <dynamic>[]) as bool;
-
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
-    _staleHotRestartState =
-        // ignore: implicit_dynamic_function
-        js_util.getProperty(html.window, _staleHotRestartStore) as List<html.Element?>?;
+    _staleHotRestartState = getJsProperty<List<html.Element?>?>(html.window, _staleHotRestartStore);
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <html.Element?>[];
-      js_util.setProperty(
+      setJsProperty(
           html.window, _staleHotRestartStore, _staleHotRestartState);
     }
 
@@ -152,7 +141,7 @@ class DomRenderer {
     if (sceneElement != _sceneElement) {
       _sceneElement?.remove();
       _sceneElement = sceneElement;
-      append(_sceneHostElement!, sceneElement!);
+      _sceneHostElement!.append(sceneElement!);
     }
     assert(() {
       _clearOnHotRestart();
@@ -174,99 +163,6 @@ class DomRenderer {
   HostNode? _glassPaneShadow;
 
   final html.Element rootElement = html.document.body!;
-
-  void addElementClass(html.Element element, String className) {
-    element.classes.add(className);
-  }
-
-  html.Element createElement(String tagName, {html.Element? parent}) {
-    final html.Element element = html.document.createElement(tagName);
-    parent?.append(element);
-    return element;
-  }
-
-  void append(html.Element parent, html.Element child) {
-    parent.append(child);
-  }
-
-  void appendText(html.Element parent, String text) {
-    parent.appendText(text);
-  }
-
-  void detachElement(html.Element element) {
-    element.remove();
-  }
-
-  void removeElementClass(html.Element element, String className) {
-    element.classes.remove(className);
-  }
-
-  void setElementAttribute(html.Element element, String name, String value) {
-    element.setAttribute(name, value);
-  }
-
-  void setElementProperty(html.Element element, String name, Object value) {
-    js_util.setProperty(element, name, value);
-  }
-
-  static void setElementStyle(
-      html.Element element, String name, String? value) {
-    if (value == null) {
-      element.style.removeProperty(name);
-    } else {
-      element.style.setProperty(name, value);
-    }
-  }
-
-  static void setClipPath(html.Element element, String? value) {
-    if (browserEngine == BrowserEngine.webkit) {
-      if (value == null) {
-        element.style.removeProperty('-webkit-clip-path');
-      } else {
-        element.style.setProperty('-webkit-clip-path', value);
-      }
-    }
-    if (value == null) {
-      element.style.removeProperty('clip-path');
-    } else {
-      element.style.setProperty('clip-path', value);
-    }
-  }
-
-  static void setElementTransform(html.Element element, String transformValue) {
-    js_util.setProperty(
-      // ignore: implicit_dynamic_function
-      js_util.getProperty(element, 'style') as Object,
-      'transform',
-      transformValue,
-    );
-  }
-
-  void setText(html.Element element, String text) {
-    element.text = text;
-  }
-
-  void removeAllChildren(html.Element element) {
-    element.children.clear();
-  }
-
-  html.Element? getParent(html.Element element) => element.parent;
-
-  void setTitle(String title) {
-    html.document.title = title;
-  }
-
-  void setThemeColor(ui.Color color) {
-    html.MetaElement? theme =
-        html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
-    if (theme == null) {
-      theme = html.MetaElement()
-        ..id = 'flutterweb-theme'
-        ..name = 'theme-color';
-      html.document.head!.append(theme);
-    }
-    theme.content = colorToCssString(color)!;
-  }
 
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
@@ -292,12 +188,11 @@ class DomRenderer {
 
     final html.BodyElement bodyElement = html.document.body!;
 
-    setElementAttribute(
-      bodyElement,
+    bodyElement.setAttribute(
       'flt-renderer',
       '${useCanvasKit ? 'canvaskit' : 'html'} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
-    setElementAttribute(bodyElement, 'flt-build-mode', buildMode);
+    bodyElement.setAttribute('flt-build-mode', buildMode);
 
     setElementStyle(bodyElement, 'position', 'fixed');
     setElementStyle(bodyElement, 'top', '0');
@@ -361,7 +256,7 @@ class DomRenderer {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final html.Element glassPaneElement = createElement(_glassPaneTagName);
+    final html.Element glassPaneElement = html.document.createElement(_glassPaneTagName);
     _glassPaneElement = glassPaneElement;
     glassPaneElement.style
       ..position = 'absolute'
@@ -379,11 +274,11 @@ class DomRenderer {
     _glassPaneShadow = glassPaneElementHostNode;
 
     // Don't allow the scene to receive pointer events.
-    _sceneHostElement = createElement('flt-scene-host')
+    _sceneHostElement = html.document.createElement('flt-scene-host')
       ..style.pointerEvents = 'none';
 
     final html.Element semanticsHostElement =
-        createElement('flt-semantics-host');
+        html.document.createElement('flt-semantics-host');
     semanticsHostElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
@@ -412,7 +307,7 @@ class DomRenderer {
     // Hide the DOM nodes used to render the scene from accessibility, because
     // the accessibility tree is built from the SemanticsNode tree as a parallel
     // DOM tree.
-    setElementAttribute(_sceneHostElement!, 'aria-hidden', 'true');
+    _sceneHostElement!.setAttribute('aria-hidden', 'true');
 
     if (html.window.visualViewport == null && isWebKit) {
       // Older Safari versions sometimes give us bogus innerWidth/innerHeight
@@ -457,8 +352,7 @@ class DomRenderer {
 
   // Creates a [HostNode] into a `root` [html.Element].
   HostNode _createHostNode(html.Element root) {
-    // ignore: implicit_dynamic_function
-    if (js_util.getProperty(root, 'attachShadow') != null) {
+    if (getJsProperty<Object?>(root, 'attachShadow') != null) {
       return ShadowDomHostNode(root);
     } else {
       // attachShadow not available, fall back to ElementHostNode.
@@ -501,45 +395,6 @@ class DomRenderer {
     EnginePlatformDispatcher.instance.updateLocales();
     if (ui.window.onLocaleChanged != null) {
       ui.window.onLocaleChanged!();
-    }
-  }
-
-  void focus(html.Element element) {
-    element.focus();
-  }
-
-  /// Removes all children of a DOM node.
-  void clearDom(html.Node node) {
-    while (node.lastChild != null) {
-      node.lastChild!.remove();
-    }
-  }
-
-  static bool? _ellipseFeatureDetected;
-
-  /// Draws CanvasElement ellipse with fallback.
-  static void ellipse(
-      html.CanvasRenderingContext2D context,
-      double centerX,
-      double centerY,
-      double radiusX,
-      double radiusY,
-      double rotation,
-      double startAngle,
-      double endAngle,
-      bool antiClockwise) {
-    // ignore: implicit_dynamic_function
-    _ellipseFeatureDetected ??= js_util.getProperty(context, 'ellipse') != null;
-    if (_ellipseFeatureDetected!) {
-      context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
-          endAngle, antiClockwise);
-    } else {
-      context.save();
-      context.translate(centerX, centerY);
-      context.rotate(rotation);
-      context.scale(radiusX, radiusY);
-      context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
-      context.restore();
     }
   }
 
@@ -648,36 +503,14 @@ class DomRenderer {
 
   /// Removes a global resource element.
   void removeResource(html.Element? element) {
-    element?.remove();
-  }
-
-  /// Provides haptic feedback.
-  void vibrate(int durationMs) {
-    final html.Navigator navigator = html.window.navigator;
-    if (js_util.hasProperty(navigator, 'vibrate')) {
-      // ignore: implicit_dynamic_function
-      js_util.callMethod(navigator, 'vibrate', <num>[durationMs]);
+    if (element == null) {
+      return;
     }
+    assert(element.parent == _resourcesHost);
+    element.remove();
   }
 
   String get currentHtml => _rootApplicationElement?.outerHtml ?? '';
-
-  DebugDomRendererFrameStatistics? _debugFrameStatistics;
-
-  DebugDomRendererFrameStatistics? debugFlushFrameStatistics() {
-    if (!assertionsEnabled) {
-      throw Exception('This code should not be reachable in production.');
-    }
-    final DebugDomRendererFrameStatistics? current = _debugFrameStatistics;
-    _debugFrameStatistics = DebugDomRendererFrameStatistics();
-    return current;
-  }
-
-  void debugRulerCacheHit() => _debugFrameStatistics!.paragraphRulerCacheHits++;
-  void debugRulerCacheMiss() =>
-      _debugFrameStatistics!.paragraphRulerCacheMisses++;
-  void debugRichTextLayout() => _debugFrameStatistics!.richTextLayouts++;
-  void debugPlainTextLayout() => _debugFrameStatistics!.plainTextLayouts++;
 }
 
 // Applies the required global CSS to an incoming [html.CssStyleSheet] `sheet`.
@@ -685,7 +518,7 @@ void applyGlobalCssRulesToSheet(
   html.CssStyleSheet sheet, {
   required BrowserEngine browserEngine,
   required bool hasAutofillOverlay,
-  String glassPaneTagName = DomRenderer._glassPaneTagName,
+  String glassPaneTagName = FlutterViewEmbedder._glassPaneTagName,
 }) {
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
   final bool isFirefox = browserEngine == BrowserEngine.firefox;
@@ -804,48 +637,9 @@ void applyGlobalCssRulesToSheet(
   }
 }
 
-/// Miscellaneous statistics collecting during a single frame's execution.
-///
-/// This is useful when profiling the app. This class should only be used when
-/// assertions are enabled and therefore is not suitable for collecting any
-/// time measurements. It is mostly useful for counting certain events.
-class DebugDomRendererFrameStatistics {
-  /// The number of times we reused a previously initialized paragraph ruler to
-  /// measure a paragraph of text.
-  int paragraphRulerCacheHits = 0;
+/// The embedder singleton.
+FlutterViewEmbedder get flutterViewEmbedder => ensureFlutterViewEmbedderInitialized();
 
-  /// The number of times we had to create a new paragraph ruler to measure a
-  /// paragraph of text.
-  int paragraphRulerCacheMisses = 0;
-
-  /// The number of times we used a paragraph ruler to measure a paragraph of
-  /// text.
-  int get totalParagraphRulerAccesses =>
-      paragraphRulerCacheHits + paragraphRulerCacheMisses;
-
-  /// The number of times a paragraph of rich text was laid out this frame.
-  int richTextLayouts = 0;
-
-  /// The number of times a paragraph of plain text was laid out this frame.
-  int plainTextLayouts = 0;
-
-  @override
-  String toString() {
-    return '''
-Frame statistics:
-  Paragraph ruler cache hits: $paragraphRulerCacheHits
-  Paragraph ruler cache misses: $paragraphRulerCacheMisses
-  Paragraph ruler accesses: $totalParagraphRulerAccesses
-  Rich text layouts: $richTextLayouts
-  Plain text layouts: $plainTextLayouts
-'''
-        .trim();
-  }
-}
-
-/// Singleton DOM renderer.
-DomRenderer get domRenderer => ensureDomRendererInitialized();
-
-/// Initializes the [DomRenderer], if it's not already initialized.
-DomRenderer ensureDomRendererInitialized() => _domRenderer ??= DomRenderer();
-DomRenderer? _domRenderer;
+/// Initializes the [FlutterViewEmbedder], if it's not already initialized.
+FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() => _flutterViewEmbedder ??= FlutterViewEmbedder();
+FlutterViewEmbedder? _flutterViewEmbedder;

@@ -5,10 +5,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.notNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -230,7 +230,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onCreateView(null, null, null, 0, true);
 
     // Verify that the host was asked to configure a FlutterSurfaceView.
-    verify(mockHost, times(1)).onFlutterSurfaceViewCreated(notNull(FlutterSurfaceView.class));
+    verify(mockHost, times(1)).onFlutterSurfaceViewCreated(isNotNull());
   }
 
   @Test
@@ -259,7 +259,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onCreateView(null, null, null, 0, false);
 
     // Verify that the host was asked to configure a FlutterTextureView.
-    verify(customMockHost, times(1)).onFlutterTextureViewCreated(notNull(FlutterTextureView.class));
+    verify(customMockHost, times(1)).onFlutterTextureViewCreated(isNotNull());
   }
 
   @Test
@@ -596,6 +596,28 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Verify that the navigation channel was given the push route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
         .pushRoute("/custom/route?query=test");
+  }
+
+  @Test
+  public void itDoesNotSendPushRouteMessageWhenOnNewIntentIsNonHierarchicalUri() {
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(RuntimeEnvironment.application);
+
+    Intent mockIntent = mock(Intent.class);
+
+    // mailto: URIs are non-hierarchical
+    when(mockIntent.getData()).thenReturn(Uri.parse("mailto:test@test.com"));
+
+    // Emulate the host and call the method
+    delegate.onNewIntent(mockIntent);
+
+    // Verify that the navigation channel was not given a push route message.
+    verify(mockFlutterEngine.getNavigationChannel(), times(0)).pushRoute("mailto:test@test.com");
   }
 
   @Test

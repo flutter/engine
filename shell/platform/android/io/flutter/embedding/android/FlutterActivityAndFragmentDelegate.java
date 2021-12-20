@@ -80,6 +80,7 @@ import java.util.Arrays;
   private boolean isFlutterEngineFromHost;
   private boolean isFlutterUiDisplayed;
   private boolean isFirstFrameRendered;
+  private boolean isAttached;
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -139,6 +140,14 @@ import java.util.Arrays;
   }
 
   /**
+   * Whether or not this {@code FlutterActivityAndFragmentDelegate} is attached to a {@code
+   * FlutterEngine}.
+   */
+  /* package */ boolean isAttached() {
+    return isAttached;
+  }
+
+  /**
    * Invoke this method from {@code Activity#onCreate(Bundle)} or {@code
    * Fragment#onAttach(Context)}.
    *
@@ -188,6 +197,7 @@ import java.util.Arrays;
     platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
 
     host.configureFlutterEngine(flutterEngine);
+    isAttached = true;
   }
 
   @Override
@@ -433,15 +443,17 @@ import java.util.Arrays;
   private String maybeGetInitialRouteFromIntent(Intent intent) {
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
-      if (data != null && !data.getPath().isEmpty()) {
+      if (data != null) {
         String fullRoute = data.getPath();
-        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-          fullRoute += "?" + data.getQuery();
+        if (fullRoute != null && !fullRoute.isEmpty()) {
+          if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+            fullRoute += "?" + data.getQuery();
+          }
+          if (data.getFragment() != null && !data.getFragment().isEmpty()) {
+            fullRoute += "#" + data.getFragment();
+          }
+          return fullRoute;
         }
-        if (data.getFragment() != null && !data.getFragment().isEmpty()) {
-          fullRoute += "#" + data.getFragment();
-        }
-        return fullRoute;
       }
     }
     return null;
@@ -662,6 +674,8 @@ import java.util.Arrays;
 
       flutterEngine = null;
     }
+
+    isAttached = false;
   }
 
   /**

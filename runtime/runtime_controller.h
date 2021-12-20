@@ -103,6 +103,8 @@ class RuntimeController : public PlatformConfigurationClient {
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
       std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      fml::WeakPtr<IOManager> io_manager,
+      fml::WeakPtr<ImageDecoder> image_decoder,
       bool shared_isolate_mode) const;
 
   // |PlatformConfigurationClient|

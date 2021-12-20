@@ -46,11 +46,12 @@ FLUTTER_ASSERT_ARC
   }
 }
 
-- (void)paint:(SkCanvas&)canvas
-       bounds:(const SkRect&)bounds
-       freeze:(BOOL)freeze
-    grContext:(nonnull GrDirectContext*)grContext
-     sampling:(const SkSamplingOptions&)sampling {
+- (void)canvas:(SkCanvas&)canvas
+        bounds:(const SkRect&)bounds
+        freeze:(BOOL)freeze
+     grContext:(nonnull GrDirectContext*)grContext
+      sampling:(const SkSamplingOptions&)sampling
+         paint:(nullable const SkPaint*)paint {
   const bool needsUpdatedTexture = (!freeze && _textureFrameAvailable) || !_externalImage;
 
   if (needsUpdatedTexture) {
@@ -62,7 +63,7 @@ FLUTTER_ASSERT_ARC
                          SkRect::Make(_externalImage->bounds()),               // source rect
                          bounds,                                               // destination rect
                          sampling,                                             // sampling
-                         nullptr,                                              // paint
+                         paint,                                                // paint
                          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint  // constraint
     );
   }
@@ -230,7 +231,7 @@ FLUTTER_ASSERT_ARC
                             width:(size_t)width
                            height:(size_t)height {
   GrMtlTextureInfo ySkiaTextureInfo;
-  ySkiaTextureInfo.fTexture = sk_cf_obj<const void*>{(__bridge_retained const void*)yTex};
+  ySkiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)yTex};
 
   GrBackendTexture skiaBackendTextures[2];
   skiaBackendTextures[0] = GrBackendTexture(/*width=*/width,
@@ -239,7 +240,7 @@ FLUTTER_ASSERT_ARC
                                             /*textureInfo=*/ySkiaTextureInfo);
 
   GrMtlTextureInfo uvSkiaTextureInfo;
-  uvSkiaTextureInfo.fTexture = sk_cf_obj<const void*>{(__bridge_retained const void*)uvTex};
+  uvSkiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)uvTex};
 
   skiaBackendTextures[1] = GrBackendTexture(/*width=*/width,
                                             /*height=*/height,
@@ -259,7 +260,7 @@ FLUTTER_ASSERT_ARC
                             width:(size_t)width
                            height:(size_t)height {
   GrMtlTextureInfo skiaTextureInfo;
-  skiaTextureInfo.fTexture = sk_cf_obj<const void*>{(__bridge_retained const void*)rgbaTex};
+  skiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)rgbaTex};
 
   GrBackendTexture skiaBackendTexture(/*width=*/width,
                                       /*height=*/height,

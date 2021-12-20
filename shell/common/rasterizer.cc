@@ -147,7 +147,15 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !surface_) {
     return;
   }
-  DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
+  RasterStatus raster_status =
+      DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
+
+  // EndFrame should perform cleanups for the external_view_embedder.
+  if (external_view_embedder_) {
+    bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
+    external_view_embedder_->EndFrame(should_resubmit_frame,
+                                      raster_thread_merger_);
+  }
 }
 
 RasterStatus Rasterizer::Draw(
@@ -184,8 +192,7 @@ RasterStatus Rasterizer::Draw(
   // if the raster status is to resubmit the frame, we push the frame to the
   // front of the queue and also change the consume status to more available.
 
-  auto should_resubmit_frame = raster_status == RasterStatus::kResubmit ||
-                               raster_status == RasterStatus::kSkipAndRetry;
+  bool should_resubmit_frame = ShouldResubmitFrame(raster_status);
   if (should_resubmit_frame) {
     auto front_continuation = pipeline->ProduceIfEmpty();
     bool result =
@@ -224,6 +231,11 @@ RasterStatus Rasterizer::Draw(
   }
 
   return raster_status;
+}
+
+bool Rasterizer::ShouldResubmitFrame(const RasterStatus& raster_status) {
+  return raster_status == RasterStatus::kResubmit ||
+         raster_status == RasterStatus::kSkipAndRetry;
 }
 
 namespace {
@@ -387,8 +399,7 @@ RasterStatus Rasterizer::DoDraw(
       DrawToSurface(*frame_timings_recorder, *layer_tree);
   if (raster_status == RasterStatus::kSuccess) {
     last_layer_tree_ = std::move(layer_tree);
-  } else if (raster_status == RasterStatus::kResubmit ||
-             raster_status == RasterStatus::kSkipAndRetry) {
+  } else if (ShouldResubmitFrame(raster_status)) {
     resubmitted_layer_tree_ = std::move(layer_tree);
     return raster_status;
   } else if (raster_status == RasterStatus::kDiscarded) {
@@ -537,60 +548,60 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
           .supports_readback,  // surface supports pixel reads
       raster_thread_merger_    // thread merger
   );
-  if (!compositor_frame) {
-    return RasterStatus::kFailed;
-  }
+  if (compositor_frame) {
+    compositor_context_->raster_cache().PrepareNewFrame();
+    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
-  compositor_context_->raster_cache().PrepareNewFrame();
-  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+    // Disable partial repaint if external_view_embedder_ SubmitFrame is
+    // involved - ExternalViewEmbedder unconditionally clears the entire
+    // surface and also partial repaint with platform view present is something
+    // that still need to be figured out.
+    bool disable_partial_repaint =
+        external_view_embedder_ &&
+        (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
-  // Disable partial repaint if external_view_embedder_ SubmitFrame is
-  // involved - ExternalViewEmbedder unconditionally clears the entire
-  // surface and also partial repaint with platform view present is something
-  // that still need to be figured out.
-  bool disable_partial_repaint =
-      external_view_embedder_ &&
-      (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
+    FrameDamage damage;
+    if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
+      damage.SetPreviousLayerTree(last_layer_tree_.get());
+      damage.AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
+    }
 
-  FrameDamage damage;
-  if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
-    damage.SetPreviousLayerTree(last_layer_tree_.get());
-    damage.AddAdditonalDamage(*frame->framebuffer_info().existing_damage);
-  }
+    RasterStatus raster_status =
+        compositor_frame->Raster(layer_tree, false, &damage);
+    if (raster_status == RasterStatus::kFailed ||
+        raster_status == RasterStatus::kSkipAndRetry) {
+      return raster_status;
+    }
 
-  RasterStatus raster_status =
-      compositor_frame->Raster(layer_tree, false, &damage);
-  if (raster_status == RasterStatus::kFailed ||
-      raster_status == RasterStatus::kSkipAndRetry) {
+    SurfaceFrame::SubmitInfo submit_info;
+    submit_info.frame_damage = damage.GetFrameDamage();
+    submit_info.buffer_damage = damage.GetBufferDamage();
+
+    frame->set_submit_info(submit_info);
+
+    if (external_view_embedder_ &&
+        (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
+      FML_DCHECK(!frame->IsSubmitted());
+      external_view_embedder_->SubmitFrame(surface_->GetContext(),
+                                           std::move(frame));
+    } else {
+      frame->Submit();
+    }
+
+    compositor_context_->raster_cache().CleanupAfterFrame();
+    frame_timings_recorder.RecordRasterEnd(
+        &compositor_context_->raster_cache());
+    FireNextFrameCallbackIfPresent();
+
+    if (surface_->GetContext()) {
+      TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
+      surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
+    }
+
     return raster_status;
   }
 
-  SurfaceFrame::SubmitInfo submit_info;
-  submit_info.frame_damage = damage.GetFrameDamage();
-  submit_info.buffer_damage = damage.GetBufferDamage();
-  submit_info.target_time = frame_timings_recorder.GetVsyncTargetTime();
-
-  frame->set_submit_info(submit_info);
-
-  if (external_view_embedder_ &&
-      (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
-    FML_DCHECK(!frame->IsSubmitted());
-    external_view_embedder_->SubmitFrame(surface_->GetContext(),
-                                         std::move(frame));
-  } else {
-    frame->Submit();
-  }
-
-  compositor_context_->raster_cache().CleanupAfterFrame();
-  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
-  FireNextFrameCallbackIfPresent();
-
-  if (surface_->GetContext()) {
-    TRACE_EVENT0("flutter", "PerformDeferredSkiaCleanup");
-    surface_->GetContext()->performDeferredCleanup(kSkiaCleanupExpiration);
-  }
-
-  return raster_status;
+  return RasterStatus::kFailed;
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(

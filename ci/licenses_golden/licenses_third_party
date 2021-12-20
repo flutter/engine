@@ -1,4 +1,4 @@
-Signature: c7d4cfcb5abfddf29a5b0d82d33283fc
+Signature: 7e09e40b0c31a271ca7710a9ff04432d
 
 UNUSED LICENSES:
 
@@ -4967,6 +4967,7 @@ FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha512-armv
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/bsaes-armv7.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha256-armv4.S
 FILE: ../../../third_party/boringssl/linux-arm/crypto/fipsmodule/sha512-armv4.S
+FILE: ../../../third_party/boringssl/src/crypto/asn1/charmap.h
 FILE: ../../../third_party/boringssl/src/crypto/err/asn1.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/bio.errordata
 FILE: ../../../third_party/boringssl/src/crypto/err/bn.errordata
@@ -5002,6 +5003,31 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/fips_shared.lds
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/intcheck1.png
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/intcheck2.png
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/intcheck3.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/[Content_Types].xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/_rels/.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/customXml/_rels/item1.xml.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/customXml/item1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/customXml/itemProps1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/docProps/app.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/docProps/core.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/_rels/document.xml.rels
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/document.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/endnotes.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/fontTable.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/footer1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/footer2.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/footer3.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/footnotes.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/header1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/header2.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/header3.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/media/image1.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/media/image2.png
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/numbering.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/settings.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/styles.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/theme/theme1.xml
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Android-Security-Policy-20191020.docx!/word/webSettings.xml
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20170615.docx!/[Content_Types].xml
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20170615.docx!/_rels/.rels
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/policydocs/BoringCrypto-Security-Policy-20170615.docx!/customXml/_rels/item1.xml.rels
@@ -5073,7 +5099,6 @@ FILE: ../../../third_party/boringssl/src/crypto/hpke/test-vectors.json
 FILE: ../../../third_party/boringssl/src/crypto/obj/obj_mac.num
 FILE: ../../../third_party/boringssl/src/crypto/poly1305/poly1305_arm_asm.S
 FILE: ../../../third_party/boringssl/src/crypto/rsa_extra/rsa_print.c
-FILE: ../../../third_party/boringssl/src/crypto/x509/charmap.h
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_time_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/x509v3/v3_ocsp.c
 FILE: ../../../third_party/boringssl/src/go.mod
@@ -5082,20 +5107,18 @@ FILE: ../../../third_party/boringssl/src/ssl/bio_ssl.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_c_test.c
 FILE: ../../../third_party/boringssl/src/util/all_tests.json
 FILE: ../../../third_party/boringssl/src/util/bot/UPDATING
-FILE: ../../../third_party/boringssl/src/util/bot/cmake-linux64.tar.gz.sha1
-FILE: ../../../third_party/boringssl/src/util/bot/cmake-mac.tar.gz.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/cmake-win32.zip.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/nasm-win32.exe.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/perl-win32.zip.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/sde-linux64.tar.bz2.sha1
 FILE: ../../../third_party/boringssl/src/util/bot/sde-win32.tar.bz2.sha1
-FILE: ../../../third_party/boringssl/src/util/bot/yasm-win32.exe.sha1
 FILE: ../../../third_party/boringssl/src/util/doc.config
 FILE: ../../../third_party/boringssl/src/util/doc.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/parser.peg.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/testmodulewrapper/testmodulewrapper.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/cavp/run_cavp.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/delocate/delocate.peg.go
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/sha256-armv8.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/sha512-armv8.S
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/bigint_patch.dart
 ----------------------------------------------------------------------------------------------------
 OpenSSL License
@@ -5292,6 +5315,8 @@ FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/sha256-armv8.
 FILE: ../../../third_party/boringssl/ios-aarch64/crypto/fipsmodule/sha512-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha256-armv8.S
 FILE: ../../../third_party/boringssl/linux-aarch64/crypto/fipsmodule/sha512-armv8.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/sha256-armv8.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/sha512-armv8.S
 ----------------------------------------------------------------------------------------------------
 Copyright 2014-2016 The OpenSSL Project Authors. All Rights Reserved.
 
@@ -5349,6 +5374,7 @@ FILE: ../../../third_party/boringssl/src/crypto/asn1/a_mbstr.c
 FILE: ../../../third_party/boringssl/src/crypto/asn1/a_object.c
 FILE: ../../../third_party/boringssl/src/crypto/asn1/a_octet.c
 FILE: ../../../third_party/boringssl/src/crypto/asn1/a_print.c
+FILE: ../../../third_party/boringssl/src/crypto/asn1/a_strex.c
 FILE: ../../../third_party/boringssl/src/crypto/asn1/a_strnid.c
 FILE: ../../../third_party/boringssl/src/crypto/asn1/a_time.c
 FILE: ../../../third_party/boringssl/src/crypto/asn1/a_type.c
@@ -5387,9 +5413,7 @@ FILE: ../../../third_party/boringssl/src/crypto/cipher_extra/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/conf/conf.c
 FILE: ../../../third_party/boringssl/src/crypto/conf/conf_def.h
 FILE: ../../../third_party/boringssl/src/crypto/cpu-intel.c
-FILE: ../../../third_party/boringssl/src/crypto/dh/check.c
-FILE: ../../../third_party/boringssl/src/crypto/dh/dh.c
-FILE: ../../../third_party/boringssl/src/crypto/dh/dh_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/dh_extra/dh_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/digest_extra/digest_extra.c
 FILE: ../../../third_party/boringssl/src/crypto/dsa/dsa.c
 FILE: ../../../third_party/boringssl/src/crypto/dsa/dsa_test.cc
@@ -5419,6 +5443,8 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/cipher/e_des.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/cipher/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/des/des.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/des/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/dh/check.c
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/dh/dh.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/digest/digest.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/digest/digests.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/digest/internal.h
@@ -5435,6 +5461,7 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/sha/sha256.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/sha/sha512.c
 FILE: ../../../third_party/boringssl/src/crypto/hmac_extra/hmac_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/lhash/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/lhash/lhash.c
 FILE: ../../../third_party/boringssl/src/crypto/mem.c
 FILE: ../../../third_party/boringssl/src/crypto/obj/obj.c
@@ -5451,13 +5478,13 @@ FILE: ../../../third_party/boringssl/src/crypto/stack/stack.c
 FILE: ../../../third_party/boringssl/src/crypto/thread.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/a_digest.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/a_sign.c
-FILE: ../../../third_party/boringssl/src/crypto/x509/a_strex.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/a_verify.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/algorithm.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/asn1_gen.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/by_dir.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/by_file.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/i2d_pr.c
+FILE: ../../../third_party/boringssl/src/crypto/x509/name_print.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/t_crl.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/t_req.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/t_x509.c
@@ -5470,7 +5497,6 @@ FILE: ../../../third_party/boringssl/src/crypto/x509/x509_def.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_ext.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_lu.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_obj.c
-FILE: ../../../third_party/boringssl/src/crypto/x509/x509_r2x.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_req.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_set.c
 FILE: ../../../third_party/boringssl/src/crypto/x509/x509_txt.c
@@ -5499,7 +5525,6 @@ FILE: ../../../third_party/boringssl/src/decrepit/cast/internal.h
 FILE: ../../../third_party/boringssl/src/decrepit/des/cfb64ede.c
 FILE: ../../../third_party/boringssl/src/decrepit/macros.h
 FILE: ../../../third_party/boringssl/src/decrepit/rc4/rc4_decrepit.c
-FILE: ../../../third_party/boringssl/src/decrepit/ripemd/internal.h
 FILE: ../../../third_party/boringssl/src/decrepit/ripemd/ripemd.c
 FILE: ../../../third_party/boringssl/src/decrepit/rsa/rsa_decrepit.c
 FILE: ../../../third_party/boringssl/src/decrepit/ssl/ssl_decrepit.c
@@ -5518,6 +5543,7 @@ FILE: ../../../third_party/boringssl/src/include/openssl/digest.h
 FILE: ../../../third_party/boringssl/src/include/openssl/dsa.h
 FILE: ../../../third_party/boringssl/src/include/openssl/err.h
 FILE: ../../../third_party/boringssl/src/include/openssl/evp.h
+FILE: ../../../third_party/boringssl/src/include/openssl/evp_errors.h
 FILE: ../../../third_party/boringssl/src/include/openssl/ex_data.h
 FILE: ../../../third_party/boringssl/src/include/openssl/hmac.h
 FILE: ../../../third_party/boringssl/src/include/openssl/lhash.h
@@ -5541,6 +5567,7 @@ FILE: ../../../third_party/boringssl/src/ssl/d1_both.cc
 FILE: ../../../third_party/boringssl/src/ssl/d1_pkt.cc
 FILE: ../../../third_party/boringssl/src/ssl/d1_srtp.cc
 FILE: ../../../third_party/boringssl/src/ssl/dtls_record.cc
+FILE: ../../../third_party/boringssl/src/ssl/extensions.cc
 FILE: ../../../third_party/boringssl/src/ssl/handshake.cc
 FILE: ../../../third_party/boringssl/src/ssl/handshake_client.cc
 FILE: ../../../third_party/boringssl/src/ssl/handshake_server.cc
@@ -5559,7 +5586,6 @@ FILE: ../../../third_party/boringssl/src/ssl/ssl_stat.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_transcript.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_x509.cc
 FILE: ../../../third_party/boringssl/src/ssl/t1_enc.cc
-FILE: ../../../third_party/boringssl/src/ssl/t1_lib.cc
 FILE: ../../../third_party/boringssl/src/ssl/tls_method.cc
 FILE: ../../../third_party/boringssl/src/ssl/tls_record.cc
 ----------------------------------------------------------------------------------------------------
@@ -5622,9 +5648,64 @@ copied and put under another distribution licence
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/asn1/asn1_locl.h
+ORIGIN: ../../../third_party/boringssl/src/crypto/asn1/asn1_test.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/asn1/asn1_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/bytestring/asn1_compat.c
+FILE: ../../../third_party/boringssl/src/crypto/chacha/chacha_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/cpu-aarch64-linux.c
+FILE: ../../../third_party/boringssl/src/crypto/cpu-arm-linux.c
+FILE: ../../../third_party/boringssl/src/crypto/cpu-ppc64le.c
+FILE: ../../../third_party/boringssl/src/crypto/curve25519/spake25519.c
+FILE: ../../../third_party/boringssl/src/crypto/curve25519/spake25519_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/ecdh_extra/ecdh_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/check_bn_tests.go
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/polyval.c
+FILE: ../../../third_party/boringssl/src/crypto/obj/obj_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/obj/objects.go
+FILE: ../../../third_party/boringssl/src/crypto/poly1305/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/pool/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/pool/pool.c
+FILE: ../../../third_party/boringssl/src/crypto/pool/pool_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/rand_extra/deterministic.c
+FILE: ../../../third_party/boringssl/src/crypto/x509/x509_test.cc
+FILE: ../../../third_party/boringssl/src/decrepit/evp/dss1.c
+FILE: ../../../third_party/boringssl/src/decrepit/evp/evp_do_all.c
+FILE: ../../../third_party/boringssl/src/decrepit/obj/obj_decrepit.c
+FILE: ../../../third_party/boringssl/src/decrepit/ripemd/ripemd_test.cc
+FILE: ../../../third_party/boringssl/src/decrepit/x509/x509_decrepit.c
+FILE: ../../../third_party/boringssl/src/include/openssl/asn1_mac.h
+FILE: ../../../third_party/boringssl/src/include/openssl/obj_mac.h
+FILE: ../../../third_party/boringssl/src/include/openssl/pool.h
+FILE: ../../../third_party/boringssl/src/ssl/tls13_both.cc
+FILE: ../../../third_party/boringssl/src/ssl/tls13_client.cc
+FILE: ../../../third_party/boringssl/src/ssl/tls13_enc.cc
+FILE: ../../../third_party/boringssl/src/ssl/tls13_server.cc
+FILE: ../../../third_party/boringssl/src/util/BUILD.toplevel
+FILE: ../../../third_party/boringssl/src/util/diff_asm.go
+FILE: ../../../third_party/boringssl/src/util/run_android_tests.go
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2016, Google Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/asn1/internal.h
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/crypto/asn1/asn1_locl.h
+FILE: ../../../third_party/boringssl/src/crypto/asn1/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/evp/p_dsa_asn1.c
 FILE: ../../../third_party/boringssl/src/crypto/evp/p_ec.c
 FILE: ../../../third_party/boringssl/src/crypto/evp/p_ec_asn1.c
@@ -5678,62 +5759,6 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/asn1/asn1_test.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/boringssl/src/crypto/asn1/asn1_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/bytestring/asn1_compat.c
-FILE: ../../../third_party/boringssl/src/crypto/chacha/chacha_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/cpu-aarch64-linux.c
-FILE: ../../../third_party/boringssl/src/crypto/cpu-arm-linux.c
-FILE: ../../../third_party/boringssl/src/crypto/cpu-ppc64le.c
-FILE: ../../../third_party/boringssl/src/crypto/curve25519/spake25519.c
-FILE: ../../../third_party/boringssl/src/crypto/curve25519/spake25519_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/ecdh_extra/ecdh_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/check_bn_tests.go
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-x86_64_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/modes/polyval.c
-FILE: ../../../third_party/boringssl/src/crypto/obj/obj_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/obj/objects.go
-FILE: ../../../third_party/boringssl/src/crypto/poly1305/internal.h
-FILE: ../../../third_party/boringssl/src/crypto/pool/internal.h
-FILE: ../../../third_party/boringssl/src/crypto/pool/pool.c
-FILE: ../../../third_party/boringssl/src/crypto/pool/pool_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/rand_extra/deterministic.c
-FILE: ../../../third_party/boringssl/src/crypto/x509/internal.h
-FILE: ../../../third_party/boringssl/src/crypto/x509/x509_test.cc
-FILE: ../../../third_party/boringssl/src/decrepit/evp/dss1.c
-FILE: ../../../third_party/boringssl/src/decrepit/evp/evp_do_all.c
-FILE: ../../../third_party/boringssl/src/decrepit/obj/obj_decrepit.c
-FILE: ../../../third_party/boringssl/src/decrepit/ripemd/ripemd_test.cc
-FILE: ../../../third_party/boringssl/src/decrepit/x509/x509_decrepit.c
-FILE: ../../../third_party/boringssl/src/include/openssl/asn1_mac.h
-FILE: ../../../third_party/boringssl/src/include/openssl/obj_mac.h
-FILE: ../../../third_party/boringssl/src/include/openssl/pool.h
-FILE: ../../../third_party/boringssl/src/ssl/tls13_both.cc
-FILE: ../../../third_party/boringssl/src/ssl/tls13_client.cc
-FILE: ../../../third_party/boringssl/src/ssl/tls13_enc.cc
-FILE: ../../../third_party/boringssl/src/ssl/tls13_server.cc
-FILE: ../../../third_party/boringssl/src/util/BUILD.toplevel
-FILE: ../../../third_party/boringssl/src/util/diff_asm.go
-FILE: ../../../third_party/boringssl/src/util/run_android_tests.go
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2016, Google Inc.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
-OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
-CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
@@ -5927,6 +5952,43 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/blake2/blake2.c
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/blake2/blake2.c
+FILE: ../../../third_party/boringssl/src/crypto/blake2/blake2_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/conf/conf_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/ecdsa/internal.h
+FILE: ../../../third_party/boringssl/src/decrepit/evp/evp_test.cc
+FILE: ../../../third_party/boringssl/src/include/openssl/blake2.h
+FILE: ../../../third_party/boringssl/src/ssl/encrypted_client_hello.cc
+FILE: ../../../third_party/boringssl/src/tool/generate_ech.cc
+FILE: ../../../third_party/boringssl/src/util/fetch_ech_config_list.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/hkdf.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/xts.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/testmodulewrapper/cts_test.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/testmodulewrapper/hmac_drbg.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/testmodulewrapper/hmac_drbg_test.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/testmodulewrapper/testmodulewrapper.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/modulewrapper/main.cc
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/modulewrapper/modulewrapper.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2021, Google Inc.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/crypto/bn_extra/bn_asn1.c
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/boringssl/err_data.c
@@ -5998,9 +6060,9 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/aes/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bcm.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/bn/bn_test_to_fuzzer.go
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/delocate.h
-FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/is_fips.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/ctrdrbg.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/ctrdrbg_test.cc
+FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/self_check/fips.c
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/self_check/self_check.c
 FILE: ../../../third_party/boringssl/src/crypto/pkcs7/internal.h
 FILE: ../../../third_party/boringssl/src/crypto/pkcs7/pkcs7_x509.c
@@ -6385,6 +6447,28 @@ copied and put under another distribution licence
 
 ====================================================================================================
 LIBRARY: boringssl
+ORIGIN: ../../../third_party/boringssl/src/crypto/cpu-aarch64-win.c
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/boringssl/src/crypto/cpu-aarch64-win.c
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2018, Google Inc.
+Copyright (c) 2020, Arm Ltd.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: boringssl
 ORIGIN: ../../../third_party/boringssl/src/crypto/curve25519/curve25519.c
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/boringssl/src/crypto/crypto_test.cc
@@ -6403,19 +6487,22 @@ FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/fork_detect_test
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/rand/getrandom_fillin.h
 FILE: ../../../third_party/boringssl/src/crypto/hpke/hpke.c
 FILE: ../../../third_party/boringssl/src/crypto/hpke/hpke_test.cc
-FILE: ../../../third_party/boringssl/src/crypto/hpke/internal.h
+FILE: ../../../third_party/boringssl/src/crypto/rand_extra/passive.c
 FILE: ../../../third_party/boringssl/src/crypto/trust_token/pmbtoken.c
 FILE: ../../../third_party/boringssl/src/crypto/trust_token/trust_token_test.cc
 FILE: ../../../third_party/boringssl/src/crypto/trust_token/voprf.c
 FILE: ../../../third_party/boringssl/src/decrepit/xts/xts_test.cc
+FILE: ../../../third_party/boringssl/src/include/openssl/hpke.h
 FILE: ../../../third_party/boringssl/src/include/openssl/trust_token.h
 FILE: ../../../third_party/boringssl/src/tool/fd.cc
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/nointeractive.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/aead.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/kas.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/kasdh.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/kdf.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/keyedMac.go
 FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/rsa.go
-FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/subprocess_test.go
+FILE: ../../../third_party/boringssl/src/util/fipstools/acvp/acvptool/subprocess/tlskdf.go
 FILE: ../../../third_party/boringssl/src/util/testconfig/testconfig.go
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2020, Google Inc.
@@ -6435,9 +6522,9 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/dh/dh_asn1.c
+ORIGIN: ../../../third_party/boringssl/src/crypto/dh_extra/dh_asn1.c
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/crypto/dh/dh_asn1.c
+FILE: ../../../third_party/boringssl/src/crypto/dh_extra/dh_asn1.c
 FILE: ../../../third_party/boringssl/src/crypto/dsa/dsa_asn1.c
 FILE: ../../../third_party/boringssl/src/crypto/rsa_extra/rsa_asn1.c
 FILE: ../../../third_party/boringssl/src/include/openssl/asn1t.h
@@ -6491,9 +6578,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/dh/params.c
+ORIGIN: ../../../third_party/boringssl/src/crypto/dh_extra/params.c
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/crypto/dh/params.c
+FILE: ../../../third_party/boringssl/src/crypto/dh_extra/params.c
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2011 The OpenSSL Project.  All rights reserved.
 
@@ -7657,6 +7744,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/boringssl/src/crypto/fipsmodule/tls/kdf.c
 FILE: ../../../third_party/boringssl/src/decrepit/ssl/ssl_decrepit.c
 FILE: ../../../third_party/boringssl/src/include/openssl/ssl.h
+FILE: ../../../third_party/boringssl/src/ssl/extensions.cc
 FILE: ../../../third_party/boringssl/src/ssl/handshake_client.cc
 FILE: ../../../third_party/boringssl/src/ssl/handshake_server.cc
 FILE: ../../../third_party/boringssl/src/ssl/internal.h
@@ -7668,7 +7756,6 @@ FILE: ../../../third_party/boringssl/src/ssl/ssl_lib.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_transcript.cc
 FILE: ../../../third_party/boringssl/src/ssl/ssl_x509.cc
 FILE: ../../../third_party/boringssl/src/ssl/t1_enc.cc
-FILE: ../../../third_party/boringssl/src/ssl/t1_lib.cc
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 1998-2007 The OpenSSL Project.  All rights reserved.
 
@@ -7814,9 +7901,9 @@ https://www.openssl.org/source/license.html
 
 ====================================================================================================
 LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/crypto/x509/vpm_int.h
+ORIGIN: ../../../third_party/boringssl/src/crypto/x509/internal.h
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/crypto/x509/vpm_int.h
+FILE: ../../../third_party/boringssl/src/crypto/x509/internal.h
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2013 The OpenSSL Project.  All rights reserved.
 
@@ -8570,87 +8657,15 @@ FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/Config.cma
 FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/gtest.pc.in
 FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/gtest_main.pc.in
 FILE: ../../../third_party/boringssl/src/third_party/googletest/cmake/libgtest.la.in
-FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest.cbproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest.groupproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_main.cbproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_unittest.cbproj
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-param-test.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-test-part.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-filepath.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest-md.sln
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest-md.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest-md.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest.sln
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_main-md.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_main-md.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_main.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_main.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_prod_test-md.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_prod_test-md.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_prod_test.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_prod_test.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_unittest-md.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_unittest-md.vcxproj.filters
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_unittest.vcxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/msvc/2010/gtest_unittest.vcxproj.filters
 FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-all.cc
 FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-filepath.cc
 FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-port.cc
 FILE: ../../../third_party/boringssl/src/third_party/googletest/src/gtest-test-part.cc
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Config/DebugProject.xcconfig
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Config/FrameworkTarget.xcconfig
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Config/General.xcconfig
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Config/ReleaseProject.xcconfig
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Config/StaticLibraryTarget.xcconfig
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Config/TestTarget.xcconfig
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Resources/Info.plist
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Samples/FrameworkSample/Info.plist
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Samples/FrameworkSample/WidgetFramework.xcodeproj/project.pbxproj
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Samples/FrameworkSample/widget.cc
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Samples/FrameworkSample/widget.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/Samples/FrameworkSample/widget_test.cc
-FILE: ../../../third_party/boringssl/src/third_party/googletest/xcode/gtest.xcodeproj/project.pbxproj
 ----------------------------------------------------------------------------------------------------
 Copyright 2008, Google Inc.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-    * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: boringssl
-ORIGIN: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_all.cc
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_all.cc
-FILE: ../../../third_party/boringssl/src/third_party/googletest/codegear/gtest_link.cc
-----------------------------------------------------------------------------------------------------
-Copyright 2009, Google Inc.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -8861,7 +8876,6 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/gtest-typed-test.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-param-util.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-type-util.h
-FILE: ../../../third_party/boringssl/src/third_party/googletest/include/gtest/internal/gtest-type-util.h.pump
 FILE: ../../../third_party/boringssl/src/third_party/googletest/samples/prime_tables.h
 FILE: ../../../third_party/boringssl/src/third_party/googletest/samples/sample6_unittest.cc
 FILE: ../../../third_party/boringssl/src/third_party/googletest/samples/sample7_unittest.cc
@@ -9049,6 +9063,13 @@ FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/sha512-x86_64.
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/vpaes-x86_64.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/x86_64-mont.S
 FILE: ../../../third_party/boringssl/mac-x86_64/crypto/fipsmodule/x86_64-mont5.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/chacha/chacha-armv8.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/aesv8-armx64.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/armv8-mont.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/ghash-neon-armv8.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/ghashv8-armx64.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/sha1-armv8.S
+FILE: ../../../third_party/boringssl/win-aarch64/crypto/fipsmodule/vpaes-armv8.S
 FILE: ../../../third_party/boringssl/win-x86/crypto/chacha/chacha-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/aesni-x86.asm
 FILE: ../../../third_party/boringssl/win-x86/crypto/fipsmodule/bn-586.asm
@@ -9200,9 +9221,6 @@ FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/netext_3_10k.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/rutext_2_10k.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/sktext_10k.dart
 FILE: ../../../third_party/dart/benchmarks/Utf8Encode/dart2/zhtext_10k.dart
-FILE: ../../../third_party/dart/client/idea/.idea/.name
-FILE: ../../../third_party/dart/client/idea/.idea/inspectionProfiles/Project_Default.xml
-FILE: ../../../third_party/dart/client/idea/.idea/vcs.xml
 FILE: ../../../third_party/dart/runtime/.clang-tidy
 FILE: ../../../third_party/dart/runtime/CPPLINT.cfg
 FILE: ../../../third_party/dart/runtime/bin/ffi_test/clobber_arm.S
@@ -9782,6 +9800,8 @@ FILE: ../../../third_party/dart/benchmarks/DartCLIStartup/dart2/DartCLIStartup.d
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart/EventLoopLatencyRegexp.dart
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart/regexp_benchmark.dart
 FILE: ../../../third_party/dart/benchmarks/EventLoopLatencyRegexp/dart2/regexp_benchmark.dart
+FILE: ../../../third_party/dart/benchmarks/FfiAsTypedList/dart/FfiAsTypedList.dart
+FILE: ../../../third_party/dart/benchmarks/FfiAsTypedList/dart2/FfiAsTypedList.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart/IsolateFibonacci.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart2/IsolateFibonacci.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/MapLookup.dart
@@ -9837,6 +9857,8 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_runtime
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/late_helper.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/core/enum.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/abi.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/abi_specific.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/allocation.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/union.dart
 ----------------------------------------------------------------------------------------------------
@@ -10046,10 +10068,145 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../third_party/dart/client/dart.js + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/bin/address_sanitizer.cc + ../../../third_party/dart/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/dart/runtime/bin/address_sanitizer.cc
+FILE: ../../../third_party/dart/runtime/bin/dart_io_api_impl.cc
+FILE: ../../../third_party/dart/runtime/bin/observatory_assets_empty.cc
+FILE: ../../../third_party/dart/runtime/include/bin/dart_io_api.h
+FILE: ../../../third_party/dart/runtime/lib/developer.cc
+FILE: ../../../third_party/dart/runtime/lib/timeline.cc
+FILE: ../../../third_party/dart/runtime/lib/vmservice.cc
+FILE: ../../../third_party/dart/runtime/observatory/lib/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/cli.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/allocation_profile/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/cli/command.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger_location.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/logging.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/logging_list.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/megamorphiccache_view.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/objectpool_view.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/persistent_handles.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/ports.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/timeline_page.dart
+FILE: ../../../third_party/dart/runtime/observatory/lib/src/sample_profile/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory/web/timeline.js
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/cli.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/allocation_profile/allocation_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/cli/command.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger_location.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/heap_snapshot.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/logging.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/logging_list.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/megamorphiccache_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectpool_view.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/persistent_handles.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/ports.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/timeline_page.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/sample_profile/sample_profile.dart
+FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline.js
+FILE: ../../../third_party/dart/runtime/vm/atomic_test.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.h
+FILE: ../../../third_party/dart/runtime/vm/log.cc
+FILE: ../../../third_party/dart/runtime/vm/log.h
+FILE: ../../../third_party/dart/runtime/vm/log_test.cc
+FILE: ../../../third_party/dart/runtime/vm/os_thread.cc
+FILE: ../../../third_party/dart/runtime/vm/profiler_service.cc
+FILE: ../../../third_party/dart/runtime/vm/profiler_service.h
+FILE: ../../../third_party/dart/runtime/vm/program_visitor.cc
+FILE: ../../../third_party/dart/runtime/vm/program_visitor.h
+FILE: ../../../third_party/dart/runtime/vm/regexp_assembler_bytecode.cc
+FILE: ../../../third_party/dart/runtime/vm/regexp_assembler_bytecode.h
+FILE: ../../../third_party/dart/runtime/vm/regexp_assembler_bytecode_inl.h
+FILE: ../../../third_party/dart/runtime/vm/regexp_bytecodes.h
+FILE: ../../../third_party/dart/runtime/vm/regexp_interpreter.cc
+FILE: ../../../third_party/dart/runtime/vm/regexp_interpreter.h
+FILE: ../../../third_party/dart/runtime/vm/scope_timer.h
+FILE: ../../../third_party/dart/runtime/vm/service_event.cc
+FILE: ../../../third_party/dart/runtime/vm/service_event.h
+FILE: ../../../third_party/dart/runtime/vm/service_isolate.cc
+FILE: ../../../third_party/dart/runtime/vm/source_report.cc
+FILE: ../../../third_party/dart/runtime/vm/source_report.h
+FILE: ../../../third_party/dart/runtime/vm/source_report_test.cc
+FILE: ../../../third_party/dart/runtime/vm/thread.cc
+FILE: ../../../third_party/dart/runtime/vm/thread.h
+FILE: ../../../third_party/dart/runtime/vm/thread_barrier.h
+FILE: ../../../third_party/dart/runtime/vm/thread_barrier_test.cc
+FILE: ../../../third_party/dart/runtime/vm/thread_registry.cc
+FILE: ../../../third_party/dart/runtime/vm/thread_registry.h
+FILE: ../../../third_party/dart/runtime/vm/timeline.cc
+FILE: ../../../third_party/dart/runtime/vm/timeline.h
+FILE: ../../../third_party/dart/runtime/vm/timeline_test.cc
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/developer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/rtti.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/runtime.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/types.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/utils.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/debugger.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/developer_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/d8.js
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/jsshell.js
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/async_await_error_codes.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/async_patch.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/compact_hash.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/developer.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/timeline.dart
+FILE: ../../../third_party/dart/sdk/lib/convert/base64.dart
+FILE: ../../../third_party/dart/sdk/lib/developer/developer.dart
+FILE: ../../../third_party/dart/sdk/lib/developer/extension.dart
+FILE: ../../../third_party/dart/sdk/lib/developer/timeline.dart
+FILE: ../../../third_party/dart/sdk/lib/io/io_resource_info.dart
+FILE: ../../../third_party/dart/sdk/lib/io/security_context.dart
+FILE: ../../../third_party/dart/sdk/lib/js/_js_annotations.dart
+FILE: ../../../third_party/dart/sdk/lib/vmservice/asset.dart
+FILE: ../../../third_party/dart/sdk/lib/vmservice/vmservice.dart
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+for details. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of Google LLC nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: dart
+ORIGIN: ../../../third_party/dart/runtime/bin/builtin.cc + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/DEPS
-FILE: ../../../third_party/dart/client/dart.js
 FILE: ../../../third_party/dart/runtime/bin/builtin.cc
 FILE: ../../../third_party/dart/runtime/bin/builtin.h
 FILE: ../../../third_party/dart/runtime/bin/builtin_gen_snapshot.cc
@@ -10470,142 +10627,6 @@ FILE: ../../../third_party/dart/sdk/lib/web_gl/dart2js/web_gl_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_sql/dart2js/web_sql_dart2js.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google LLC nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: dart
-ORIGIN: ../../../third_party/dart/runtime/bin/address_sanitizer.cc + ../../../third_party/dart/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/bin/address_sanitizer.cc
-FILE: ../../../third_party/dart/runtime/bin/dart_io_api_impl.cc
-FILE: ../../../third_party/dart/runtime/bin/observatory_assets_empty.cc
-FILE: ../../../third_party/dart/runtime/include/bin/dart_io_api.h
-FILE: ../../../third_party/dart/runtime/lib/developer.cc
-FILE: ../../../third_party/dart/runtime/lib/timeline.cc
-FILE: ../../../third_party/dart/runtime/lib/vmservice.cc
-FILE: ../../../third_party/dart/runtime/observatory/lib/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/cli.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/debugger.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/sample_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/allocation_profile/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/cli/command.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/debugger/debugger_location.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/heap_snapshot.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/logging.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/logging_list.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/megamorphiccache_view.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/objectpool_view.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/persistent_handles.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/ports.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/elements/timeline_page.dart
-FILE: ../../../third_party/dart/runtime/observatory/lib/src/sample_profile/sample_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory/web/timeline.js
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/cli.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/debugger.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/sample_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/allocation_profile/allocation_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/cli/command.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/debugger/debugger_location.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/heap_snapshot.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/logging.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/logging_list.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/megamorphiccache_view.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/objectpool_view.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/persistent_handles.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/ports.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/elements/timeline_page.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/lib/src/sample_profile/sample_profile.dart
-FILE: ../../../third_party/dart/runtime/observatory_2/web/timeline.js
-FILE: ../../../third_party/dart/runtime/vm/atomic_test.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.cc
-FILE: ../../../third_party/dart/runtime/vm/compiler/aot/precompiler.h
-FILE: ../../../third_party/dart/runtime/vm/log.cc
-FILE: ../../../third_party/dart/runtime/vm/log.h
-FILE: ../../../third_party/dart/runtime/vm/log_test.cc
-FILE: ../../../third_party/dart/runtime/vm/os_thread.cc
-FILE: ../../../third_party/dart/runtime/vm/profiler_service.cc
-FILE: ../../../third_party/dart/runtime/vm/profiler_service.h
-FILE: ../../../third_party/dart/runtime/vm/program_visitor.cc
-FILE: ../../../third_party/dart/runtime/vm/program_visitor.h
-FILE: ../../../third_party/dart/runtime/vm/regexp_assembler_bytecode.cc
-FILE: ../../../third_party/dart/runtime/vm/regexp_assembler_bytecode.h
-FILE: ../../../third_party/dart/runtime/vm/regexp_assembler_bytecode_inl.h
-FILE: ../../../third_party/dart/runtime/vm/regexp_bytecodes.h
-FILE: ../../../third_party/dart/runtime/vm/regexp_interpreter.cc
-FILE: ../../../third_party/dart/runtime/vm/regexp_interpreter.h
-FILE: ../../../third_party/dart/runtime/vm/scope_timer.h
-FILE: ../../../third_party/dart/runtime/vm/service_event.cc
-FILE: ../../../third_party/dart/runtime/vm/service_event.h
-FILE: ../../../third_party/dart/runtime/vm/service_isolate.cc
-FILE: ../../../third_party/dart/runtime/vm/source_report.cc
-FILE: ../../../third_party/dart/runtime/vm/source_report.h
-FILE: ../../../third_party/dart/runtime/vm/source_report_test.cc
-FILE: ../../../third_party/dart/runtime/vm/thread.cc
-FILE: ../../../third_party/dart/runtime/vm/thread.h
-FILE: ../../../third_party/dart/runtime/vm/thread_barrier.h
-FILE: ../../../third_party/dart/runtime/vm/thread_barrier_test.cc
-FILE: ../../../third_party/dart/runtime/vm/thread_registry.cc
-FILE: ../../../third_party/dart/runtime/vm/thread_registry.h
-FILE: ../../../third_party/dart/runtime/vm/timeline.cc
-FILE: ../../../third_party/dart/runtime/vm/timeline.h
-FILE: ../../../third_party/dart/runtime/vm/timeline_test.cc
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/patch/developer_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/classes.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/rtti.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/runtime.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/types.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/utils.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/debugger.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/developer_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/d8.js
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/jsshell.js
-FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/shared/async_await_error_codes.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/async_patch.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/compact_hash.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/developer.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/timeline.dart
-FILE: ../../../third_party/dart/sdk/lib/convert/base64.dart
-FILE: ../../../third_party/dart/sdk/lib/developer/developer.dart
-FILE: ../../../third_party/dart/sdk/lib/developer/extension.dart
-FILE: ../../../third_party/dart/sdk/lib/developer/timeline.dart
-FILE: ../../../third_party/dart/sdk/lib/io/io_resource_info.dart
-FILE: ../../../third_party/dart/sdk/lib/io/security_context.dart
-FILE: ../../../third_party/dart/sdk/lib/js/_js_annotations.dart
-FILE: ../../../third_party/dart/sdk/lib/vmservice/asset.dart
-FILE: ../../../third_party/dart/sdk/lib/vmservice/vmservice.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -14813,8 +14834,6 @@ FILE: ../../../third_party/harfbuzz/docs/usermanual-utilities.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-what-is-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/version.xml.in
 FILE: ../../../third_party/harfbuzz/harfbuzz.doap
-FILE: ../../../third_party/harfbuzz/meson-cc-tests/intel-atomic-primitives-test.c
-FILE: ../../../third_party/harfbuzz/meson-cc-tests/solaris-atomic-operations.c
 FILE: ../../../third_party/harfbuzz/meson.build
 FILE: ../../../third_party/harfbuzz/perf/fonts/Amiri-Regular.ttf
 FILE: ../../../third_party/harfbuzz/perf/fonts/NotoNastaliqUrdu-Regular.ttf
@@ -14835,7 +14854,7 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-joining-list.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-tag-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ucd-table.hh
@@ -14843,17 +14862,12 @@ FILE: ../../../third_party/harfbuzz/src/hb-unicode-emoji-table.hh
 FILE: ../../../third_party/harfbuzz/src/meson.build
 FILE: ../../../third_party/harfbuzz/src/update-unicode-tables.make
 FILE: ../../../third_party/harfbuzz/subprojects/cairo.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/expat.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/fontconfig.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/freetype2.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/glib.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/google-benchmark.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/libffi.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/libpng.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/pixman.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/proxy-libintl.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/packagefiles/ragel/meson.build
+FILE: ../../../third_party/harfbuzz/subprojects/ragel.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/ttf-parser.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/zlib.wrap
 ----------------------------------------------------------------------------------------------------
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
@@ -14868,72 +14882,12 @@ Copyright © 2008,2010  Nokia Corporation and/or its subsidiary(-ies)
 Copyright © 2009  Keith Stribley
 Copyright © 2009  Martin Hosken and SIL International
 Copyright © 2007  Chris Wilson
-Copyright © 2006  Behdad Esfahbod
+Copyright © 2005,2006,2020,2021  Behdad Esfahbod
 Copyright © 2005  David Turner
 Copyright © 2004,2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 1998-2004  David Turner and Werner Lemberg
 
 For full copyright notices consult the individual files in the package.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/dump-indic-data.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/dump-indic-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-khmer-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-myanmar-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-use-data.cc
-FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
-FILE: ../../../third_party/harfbuzz/src/hb-array.hh
-FILE: ../../../third_party/harfbuzz/src/hb-map.cc
-FILE: ../../../third_party/harfbuzz/src/hb-map.h
-FILE: ../../../third_party/harfbuzz/src/hb-map.hh
-FILE: ../../../third_party/harfbuzz/src/hb-meta.hh
-FILE: ../../../third_party/harfbuzz/src/hb-null.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-deprecated.h
-FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language-static.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
-FILE: ../../../third_party/harfbuzz/src/hb-static.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
-FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
-FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset.h
-FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
-FILE: ../../../third_party/harfbuzz/src/test-iter.cc
-FILE: ../../../third_party/harfbuzz/src/test-ot-name.cc
-FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2018  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
 
 Permission is hereby granted, without written agreement and without
 license or royalty fees, to use, copy, modify, and distribute this
@@ -15202,6 +15156,62 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-map.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-array.hh
+FILE: ../../../third_party/harfbuzz/src/hb-map.cc
+FILE: ../../../third_party/harfbuzz/src/hb-map.h
+FILE: ../../../third_party/harfbuzz/src/hb-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-meta.hh
+FILE: ../../../third_party/harfbuzz/src/hb-null.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-deprecated.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language-static.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
+FILE: ../../../third_party/harfbuzz/src/hb-static.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset.h
+FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
+FILE: ../../../third_party/harfbuzz/src/test-iter.cc
+FILE: ../../../third_party/harfbuzz/src/test-ot-name.cc
+FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-algs.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-algs.hh
@@ -15270,6 +15280,39 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-bimap.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2019 Adobe Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-bit-page.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-bit-page.hh
+FILE: ../../../third_party/harfbuzz/src/hb-bit-set-invertible.hh
+FILE: ../../../third_party/harfbuzz/src/hb-bit-set.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2012,2017  Google, Inc.
+Copyright © 2021 Behdad Esfahbod
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -15667,7 +15710,6 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-config.hh
 FILE: ../../../third_party/harfbuzz/src/hb-pool.hh
 FILE: ../../../third_party/harfbuzz/src/test-algs.cc
-FILE: ../../../third_party/harfbuzz/src/test-meta.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2019  Facebook, Inc.
 
@@ -16189,6 +16231,37 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2011,2012,2013  Google, Inc.
+Copyright © 2021  Khaled Hosny
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-open-file.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-open-file.hh
@@ -16344,6 +16417,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colrv1-closure.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
@@ -16990,6 +17064,36 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-post-table-v2subset.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-post-table-v2subset.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-common.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.cc
@@ -17028,7 +17132,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2015  Mozilla Foundation.
 Copyright © 2015  Google, Inc.
@@ -17062,6 +17165,36 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.cc
 FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012,2013  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Behdad Esfahbod.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17233,13 +17366,15 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-priority-queue.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
+FILE: ../../../third_party/harfbuzz/src/hb-priority-queue.hh
+FILE: ../../../third_party/harfbuzz/src/hb-repacker.hh
+FILE: ../../../third_party/harfbuzz/src/test-array.cc
+FILE: ../../../third_party/harfbuzz/src/test-priority-queue.cc
+FILE: ../../../third_party/harfbuzz/src/test-repacker.cc
 ----------------------------------------------------------------------------------------------------
-Copyright © 2007,2008,2009,2010  Red Hat, Inc.
-Copyright © 2012,2018  Google, Inc.
-Copyright © 2019  Facebook, Inc.
+Copyright © 2020  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17264,11 +17399,13 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-set.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-set.hh
+FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
 ----------------------------------------------------------------------------------------------------
-Copyright © 2012,2017  Google, Inc.
+Copyright © 2007,2008,2009,2010  Red Hat, Inc.
+Copyright © 2012,2018  Google, Inc.
+Copyright © 2019  Facebook, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17495,35 +17632,6 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/test-array.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/test-array.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2020  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
@@ -17560,6 +17668,37 @@ FILE: ../../../third_party/harfbuzz/src/test-gsub-would-substitute.cc
 FILE: ../../../third_party/harfbuzz/src/test.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010,2011  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-map.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-map.cc
+FILE: ../../../third_party/harfbuzz/src/test-set.cc
+FILE: ../../../third_party/harfbuzz/src/test-vector.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Behdad Esfahbod
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -25526,4 +25665,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 402
+Total license count: 407
