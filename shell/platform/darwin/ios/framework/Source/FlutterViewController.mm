@@ -752,7 +752,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
       pointer_data.Clear();
 
       // Use current time.
-      pointer_data.time_stamp = [[NSDate date] timeIntervalSince1970] * kMicrosecondsPerSecond;
+      pointer_data.time_stamp = CACurrentMediaTime() * kMicrosecondsPerSecond;
 
       pointer_data.change = flutter::PointerData::Change::kCancel;
       pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
