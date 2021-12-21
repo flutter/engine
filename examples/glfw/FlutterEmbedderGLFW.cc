@@ -116,7 +116,10 @@ bool RunFlutter(GLFWwindow* window,
   FlutterEngineResult result =
       FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config,  // renderer
                        &args, window, &engine);
-  assert(result == kSuccess && engine != nullptr);
+  if (result != kSuccess || engine == nullptr) {
+    std::cout << "Could not run the Flutter Engine." << std::endl;
+    return false;
+  }
 
   glfwSetWindowUserPointer(window, engine);
   GLFWwindowSizeCallback(window, kInitialWindowWidth, kInitialWindowHeight);
@@ -145,18 +148,27 @@ int main(int argc, const char* argv[]) {
   glfwSetErrorCallback(GLFW_ErrorCallback);
 
   int result = glfwInit();
-  assert(result == GLFW_TRUE);
+  if (result != GLFW_TRUE) {
+    std::cout << "Could not initialize GLFW." << std::endl;
+    return EXIT_FAILURE;
+  }
 
   GLFWwindow* window = glfwCreateWindow(
       kInitialWindowWidth, kInitialWindowHeight, "Flutter", NULL, NULL);
-  assert(window != nullptr);
+  if (window == nullptr) {
+    std::cout << "Could not create GLFW window." << std::endl;
+    return EXIT_FAILURE;
+  }
 
   int framebuffer_width, framebuffer_height;
   glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
   g_pixelRatio = framebuffer_width / kInitialWindowWidth;
 
   bool runResult = RunFlutter(window, project_path, icudtl_path);
-  assert(runResult);
+  if (!runResult) {
+    std::cout << "Could not run the Flutter engine." << std::endl;
+    return EXIT_FAILURE;
+  }
 
   glfwSetKeyCallback(window, GLFWKeyCallback);
   glfwSetWindowSizeCallback(window, GLFWwindowSizeCallback);
