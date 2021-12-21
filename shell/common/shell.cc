@@ -1060,12 +1060,11 @@ void Shell::OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetRasterTaskRunner()->PostTask(
-      fml::MakeCopyable([rasterizer = rasterizer_->GetWeakPtr(),
-                         closure = std::move(closure)]() mutable {
+      [rasterizer = rasterizer_->GetWeakPtr(), closure = closure]() {
         if (rasterizer) {
           rasterizer->SetNextFrameCallback(std::move(closure));
         }
-      }));
+      });
 }
 
 // |Animator::Delegate|
