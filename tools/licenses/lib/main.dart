@@ -1851,7 +1851,6 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'spirv_cross' // only used on hosts for tests
         && entry.name != 'ocmock' // only used for tests
         && entry.name != 'java' // only used for Android builds
-        && entry.name != 'java' // only used for Android builds
         && entry.name != 'inja' // only used on hosts for builds
         && super.shouldRecurse(entry);
   }
