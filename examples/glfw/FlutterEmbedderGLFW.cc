@@ -89,7 +89,7 @@ bool RunFlutter(GLFWwindow* window,
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* userdata) -> bool {
-    glfwMakeContextCurrent((GLFWwindow*)userdata);
+    glfwMakeContextCurrent(static_cast<GLFWwindow*>(userdata));
     return true;
   };
   config.open_gl.clear_current = [](void*) -> bool {
@@ -97,7 +97,7 @@ bool RunFlutter(GLFWwindow* window,
     return true;
   };
   config.open_gl.present = [](void* userdata) -> bool {
-    glfwSwapBuffers((GLFWwindow*)userdata);
+    glfwSwapBuffers(static_cast<GLFWwindow*>(userdata));
     return true;
   };
   config.open_gl.fbo_callback = [](void*) -> uint32_t {
@@ -125,7 +125,7 @@ bool RunFlutter(GLFWwindow* window,
 }
 
 void printUsage() {
-  std::cout << "usage: flutter_glfw <path to project> <path to icudtl.dat>"
+  std::cout << "usage: embedder_example <path to project> <path to icudtl.dat>"
             << std::endl;
 }
 
@@ -163,7 +163,6 @@ int main(int argc, const char* argv[]) {
   glfwSetMouseButtonCallback(window, GLFWmouseButtonCallback);
 
   while (!glfwWindowShouldClose(window)) {
-    std::cout << "Looping..." << std::endl;
     glfwWaitEvents();
   }
 
