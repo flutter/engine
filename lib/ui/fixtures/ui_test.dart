@@ -339,7 +339,8 @@ void hooksTests() {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
+      kDefaultApplicationId, // application Id
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -369,7 +370,7 @@ void hooksTests() {
   });
 
   test('updateUserSettings can handle an empty object', () {
-    _callHook('_updateUserSettingsData', 1, '{}');
+    _callHook('_updateUserSettingsData', 2, kDefaultApplicationId, '{}');
   });
 
   test('PlatformDispatcher.locale returns unknown locale when locales is set to empty list', () {
@@ -383,14 +384,14 @@ void hooksTests() {
     });
 
     const Locale fakeLocale = Locale.fromSubtags(languageCode: '1', countryCode: '2', scriptCode: '3');
-    _callHook('_updateLocales', 1, <String>[fakeLocale.languageCode, fakeLocale.countryCode!, fakeLocale.scriptCode!, '']);
+    _callHook('_updateLocales', 2, kDefaultApplicationId, <String>[fakeLocale.languageCode, fakeLocale.countryCode!, fakeLocale.scriptCode!, '']);
     if (callCount != 1) {
       throw 'Expected 1 call, have $callCount';
     }
     if (locale != fakeLocale) {
       throw 'Expected $locale to match $fakeLocale';
     }
-    _callHook('_updateLocales', 1, <String>[]);
+    _callHook('_updateLocales', 2, kDefaultApplicationId, <String>[]);
     if (callCount != 2) {
       throw 'Expected 2 calls, have $callCount';
     }
@@ -406,7 +407,8 @@ void hooksTests() {
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
+      kDefaultApplicationId, // application Id
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -436,7 +438,8 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
+      kDefaultApplicationId, // application Id
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -468,7 +471,8 @@ void hooksTests() {
    test('Window physical touch slop', () {
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
+      kDefaultApplicationId, // application Id
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -496,7 +500,8 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
+      kDefaultApplicationId, // application Id
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -524,7 +529,8 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      20,
+      21,
+      kDefaultApplicationId, // application Id
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -564,7 +570,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_updateLocales', 1, <String>['en', 'US', '', '']);
+    _callHook('_updateLocales', 2, kDefaultApplicationId, <String>['en', 'US', '', '']);
     expectIdentical(runZone, innerZone);
     expectEquals(locale, const Locale('en', 'US'));
   });
@@ -582,7 +588,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_beginFrame', 2, 1234, 1);
+    _callHook('_beginFrame', 3, kDefaultApplicationId, 1234, 1);
     expectIdentical(runZone, innerZone);
     expectEquals(start, const Duration(microseconds: 1234));
   });
@@ -598,7 +604,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_drawFrame');
+    _callHook('_drawFrame', 1, kDefaultApplicationId);
     expectIdentical(runZone, innerZone);
   });
 
@@ -613,7 +619,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_reportTimings', 1, <int>[]);
+    _callHook('_reportTimings', 2, kDefaultApplicationId, <int>[]);
     expectIdentical(runZone, innerZone);
   });
 
@@ -631,7 +637,7 @@ void hooksTests() {
     });
 
     final ByteData testData = ByteData.view(Uint8List(0).buffer);
-    _callHook('_dispatchPointerDataPacket', 1, testData);
+    _callHook('_dispatchPointerDataPacket', 2, kDefaultApplicationId, testData);
     expectIdentical(runZone, innerZone);
     expectEquals(data.data.length, 0);
   });
@@ -650,7 +656,7 @@ void hooksTests() {
     });
 
     final bool newValue = !window.semanticsEnabled; // needed?
-    _callHook('_updateSemanticsEnabled', 1, newValue);
+    _callHook('_updateSemanticsEnabled', 2, kDefaultApplicationId, newValue);
     expectIdentical(runZone, innerZone);
     expectEquals(enabled, newValue);
   });
@@ -670,7 +676,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_dispatchSemanticsAction', 3, 1234, 4, null);
+    _callHook('_dispatchSemanticsAction', 4, kDefaultApplicationId, 1234, 4, null);
     expectIdentical(runZone, innerZone);
     expectEquals(id, 1234);
     expectEquals(action, 4);
@@ -689,7 +695,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_dispatchPlatformMessage', 3, 'testName', null, 123456789);
+    _callHook('_dispatchPlatformMessage', 4, kDefaultApplicationId, 'testName', null, 123456789);
     expectIdentical(runZone, innerZone);
     expectEquals(name, 'testName');
   });
@@ -715,7 +721,7 @@ void hooksTests() {
 
     window.onTextScaleFactorChanged!();
 
-    _callHook('_updateUserSettingsData', 1, '{"textScaleFactor": 0.5, "platformBrightness": "light", "alwaysUse24HourFormat": true}');
+    _callHook('_updateUserSettingsData', 2, kDefaultApplicationId, '{"textScaleFactor": 0.5, "platformBrightness": "light", "alwaysUse24HourFormat": true}');
     expectIdentical(runZoneTextScaleFactor, innerZone);
     expectEquals(textScaleFactor, 0.5);
 
@@ -723,7 +729,7 @@ void hooksTests() {
     platformBrightness = null;
 
     window.onPlatformBrightnessChanged!();
-    _callHook('_updateUserSettingsData', 1, '{"textScaleFactor": 0.5, "platformBrightness": "dark", "alwaysUse24HourFormat": true}');
+    _callHook('_updateUserSettingsData', 2, kDefaultApplicationId, '{"textScaleFactor": 0.5, "platformBrightness": "dark", "alwaysUse24HourFormat": true}');
     expectIdentical(runZonePlatformBrightness, innerZone);
     expectEquals(platformBrightness, Brightness.dark);
   });
@@ -741,7 +747,7 @@ void hooksTests() {
       };
     });
 
-    _callHook('_beginFrame', 2, 0, 2);
+    _callHook('_beginFrame', 3, kDefaultApplicationId, 0, 2);
     expectNotEquals(runZone, null);
     expectIdentical(runZone, innerZone);
     expectEquals(frameNumber, 2);
@@ -773,4 +779,5 @@ void _callHook(
   Object? arg18,
   Object? arg19,
   Object? arg20,
+  Object? arg21,
 ]) native 'CallHook';
