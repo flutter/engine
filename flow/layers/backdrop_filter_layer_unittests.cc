@@ -348,7 +348,7 @@ TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
       std::make_shared<BackdropFilterLayer>(filter, SkBlendMode::kSrcOver));
 
   auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(5, 5));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(15, 15));
 }
 
 }  // namespace testing

@@ -25,30 +25,12 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->AddLayerBounds(paint_bounds);
 
   if (filter_) {
-    // convert paint bounds and filter to screen coordinates
-    auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
-    if (filter) {
-      context->GetTransform().mapRect(&paint_bounds);
-      auto input_filter_bounds = paint_bounds.roundOut();
-      auto filter_bounds =  // in screen coordinates
-          filter->filterBounds(input_filter_bounds, SkMatrix::I(),
-                               SkImageFilter::kReverse_MapDirection);
-
-      context->AddReadbackRegion(filter_bounds);
-    } else {
-      // Slightly less precise alternative that works even if filter can not be
-      // transformed. It might cover larger area than the branch before, because
-      // filterBounds() first rounds out to integer and and then we transform
-      // the bounds, as opposed to transforming first and rounding second.
-      // See https://github.com/flutter/flutter/issues/95211
-      auto input_filter_bounds = paint_bounds.roundOut();
-      auto filter_bounds =  // in local coordinates
-          filter_->filterBounds(input_filter_bounds, SkMatrix::I(),
-                                SkImageFilter::kReverse_MapDirection);
-      auto screen_bounds = SkRect::Make(filter_bounds);
-      context->GetTransform().mapRect(&screen_bounds);
-      context->AddReadbackRegion(screen_bounds.roundOut());
-    }
+    context->GetTransform().mapRect(&paint_bounds);
+    auto input_filter_bounds = paint_bounds.roundOut();
+    auto filter_bounds =  // in screen coordinates
+        filter_->filterBounds(input_filter_bounds, context->GetTransform(),
+                              SkImageFilter::kReverse_MapDirection);
+    context->AddReadbackRegion(filter_bounds);
   }
 
   DiffChildren(context, prev);
