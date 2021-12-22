@@ -36,8 +36,7 @@ class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
  public:
   SpyKeyboardKeyHandler(flutter::BinaryMessenger* messenger,
                         KeyboardKeyHandler::EventDispatcher dispatch_event) {
-    real_implementation_ =
-        std::make_unique<KeyboardKeyHandler>(dispatch_event);
+    real_implementation_ = std::make_unique<KeyboardKeyHandler>(dispatch_event);
     real_implementation_->AddDelegate(
         std::make_unique<KeyboardKeyChannelHandler>(messenger));
     ON_CALL(*this, KeyboardHook(_, _, _, _, _, _))

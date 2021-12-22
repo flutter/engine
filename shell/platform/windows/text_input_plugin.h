@@ -30,11 +30,11 @@ class TextInputPlugin {
   virtual ~TextInputPlugin();
 
   virtual void KeyboardHook(int key,
-                    int scancode,
-                    int action,
-                    char32_t character,
-                    bool extended,
-                    bool was_down);
+                            int scancode,
+                            int action,
+                            char32_t character,
+                            bool extended,
+                            bool was_down);
 
   virtual void TextHook(const std::u16string& text);
 

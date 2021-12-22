@@ -58,8 +58,8 @@ void FlutterWindowsView::SetEngine(
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   InitializeKeyboard();
   platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
-  cursor_handler_ = std::make_unique<CursorHandler>(
-      internal_plugin_messenger, binding_handler_.get());
+  cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
+                                                    binding_handler_.get());
 
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
@@ -80,7 +80,8 @@ FlutterWindowsView::CreateKeyboardKeyHandler(
   // of the event. In order to allow the same real event in the future, the
   // handler is "toggled" when events pass through, therefore the redispatching
   // algorithm does not allow more than 1 handler that takes |SendInput|.
-  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>(dispatch_event);
+  auto keyboard_key_handler =
+      std::make_unique<KeyboardKeyHandler>(dispatch_event);
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyEmbedderHandler>(
           [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
@@ -267,12 +268,10 @@ void FlutterWindowsView::InitializeKeyboard() {
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
 #ifdef WINUWP
   KeyboardKeyHandler::EventDispatcher dispatch_event = nullptr;
-  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state =
-      nullptr;
+  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = nullptr;
 #else
   KeyboardKeyHandler::EventDispatcher dispatch_event = SendInput;
-  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state =
-      GetKeyState;
+  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
 #endif
   keyboard_key_handler_ = std::move(CreateKeyboardKeyHandler(
       internal_plugin_messenger, dispatch_event, get_key_state));
