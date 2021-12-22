@@ -575,9 +575,10 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     }
 
     SurfaceFrame::SubmitInfo submit_info;
-    submit_info.frame_damage = damage ? damage->GetFrameDamage() : std::nullopt;
-    submit_info.buffer_damage =
-        damage ? damage->GetBufferDamage() : std::nullopt;
+    if (damage) {
+      submit_info.frame_damage = damage->GetFrameDamage();
+      submit_info.buffer_damage = damage->GetBufferDamage();
+    }
 
     frame->set_submit_info(submit_info);
 
