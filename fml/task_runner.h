@@ -16,6 +16,10 @@ namespace fml {
 
 class MessageLoopImpl;
 
+/// To avoid data races between the platform thread posting sync tasks to the
+/// raster thread and the raster thread merging.
+extern std::mutex gThreadMergingLock;
+
 /// An interface over the ability to schedule tasks on a \p TaskRunner.
 class BasicTaskRunner {
  public:
@@ -61,6 +65,11 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner>,
   /// TaskRunner associated with the current executing thread.
   static void RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
                                const fml::closure& task);
+
+  /// Similar to |RunNowOrPostTask|, but it needs to synchronize with thread
+  /// merging operation.
+  static void RunNowOrPostSyncTask(fml::RefPtr<fml::TaskRunner> runner,
+                                   const fml::closure& task);
 
  protected:
   explicit TaskRunner(fml::RefPtr<MessageLoopImpl> loop);

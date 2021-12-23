@@ -98,7 +98,7 @@ void PlatformViewAndroid::NotifyCreated(
     InstallFirstFrameCallback();
 
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
+    fml::TaskRunner::RunNowOrPostSyncTask(
         task_runners_.GetRasterTaskRunner(),
         [&latch, surface = android_surface_.get(),
          native_window = std::move(native_window)]() {
@@ -115,7 +115,7 @@ void PlatformViewAndroid::NotifySurfaceWindowChanged(
     fml::RefPtr<AndroidNativeWindow> native_window) {
   if (android_surface_) {
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
+    fml::TaskRunner::RunNowOrPostSyncTask(
         task_runners_.GetRasterTaskRunner(),
         [&latch, surface = android_surface_.get(),
          native_window = std::move(native_window)]() {
@@ -132,7 +132,7 @@ void PlatformViewAndroid::NotifyDestroyed() {
 
   if (android_surface_) {
     fml::AutoResetWaitableEvent latch;
-    fml::TaskRunner::RunNowOrPostTask(
+    fml::TaskRunner::RunNowOrPostSyncTask(
         task_runners_.GetRasterTaskRunner(),
         [&latch, surface = android_surface_.get()]() {
           surface->TeardownOnScreenContext();
@@ -147,7 +147,7 @@ void PlatformViewAndroid::NotifyChanged(const SkISize& size) {
     return;
   }
   fml::AutoResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
+  fml::TaskRunner::RunNowOrPostSyncTask(
       task_runners_.GetRasterTaskRunner(),  //
       [&latch, surface = android_surface_.get(), size]() {
         surface->OnScreenSurfaceResize(size);

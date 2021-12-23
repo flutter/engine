@@ -50,20 +50,36 @@ RasterThreadMerger::CreateOrShareThreadMerger(
 }
 
 void RasterThreadMerger::MergeWithLease(size_t lease_term) {
-  std::scoped_lock lock(mutex_);
   if (TaskQueuesAreSame()) {
     return;
   }
-  if (!IsEnabledUnSafe()) {
+  if (!IsEnabled()) {
     return;
   }
+
   FML_DCHECK(lease_term > 0) << "lease_term should be positive.";
-
-  if (IsMergedUnSafe()) {
-    merged_condition_.notify_one();
-    return;
+  {
+    std::scoped_lock lock(mutex_);
+    if (IsMergedUnSafe()) {
+      merged_condition_.notify_one();
+      return;
+    }
   }
 
+  // Here we flush all expired tasks in the raster task queue before thread
+  // merging to ensure these sync tasks the platform thread post has been
+  // executed.
+  // TODO(0xZOne): Maybe we should only flush expired sync tasks posted by the
+  // platform thread.
+  if (MessageLoop::IsInitializedForCurrentThread()) {
+    if (!IsOnPlatformThread()) {
+      MessageLoop::GetCurrent().RunExpiredTasksNow();
+    }
+  }
+
+  // To avoid data races between the platform thread posting sync tasks to the
+  // raster thread and the raster thread merging, we add a lock here.
+  std::scoped_lock lock{mutex_, gThreadMergingLock};
   bool success = shared_merger_->MergeWithLease(this, lease_term);
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();
