@@ -505,9 +505,11 @@ void BM_DrawPath(benchmark::State& state,
 }
 
 // Returns a set of vertices that describe a circle that has a
-// radius of `radius` and total vertex count of approximately
-// `vertex_count`. The final number of vertices may differ as
-// we always return an even number of vertices from this method.
+// radius of `radius` and outer vertex count of approximately
+// `vertex_count`. The final number of vertices will differ as we
+// need to ensure the correct usage of vertices to ensure we do not
+// request degenerate triangles be drawn. This final count is output
+// through `final_vertex_count`.
 //
 // The resulting vertices will describe a disc consisting of a series
 // of triangles with two vertices on the circumference of the disc,
@@ -528,6 +530,9 @@ sk_sp<SkVertices> GetTestVertices(SkPoint center,
 
   switch (mode) {
     case SkVertices::VertexMode::kTriangleFan_VertexMode:
+      // Calling the points on the outer circle O_0, O_1, O_2, ..., and
+      // the center point C, this should create a triangle fan with vertices
+      // C, O_0, O_1, O_2, O_3, ...
       vertices.push_back(center);
       colors.push_back(SK_ColorCYAN);
       for (size_t i = 0; i <= outer_points.size(); i++) {
@@ -541,12 +546,29 @@ sk_sp<SkVertices> GetTestVertices(SkPoint center,
       }
       break;
     case SkVertices::VertexMode::kTriangles_VertexMode:
+      // Calling the points on the outer circle O_0, O_1, O_2, ..., and
+      // the center point C, this should create a series of triangles with
+      // vertices O_0, O_1, C, O_1, O_2, C, O_2, O_3, C, ...
+      for (size_t i = 0; i < outer_vertex_count; i++) {
+        vertices.push_back(outer_points[i % outer_points.size()]);
+        colors.push_back(SK_ColorRED);
+        vertices.push_back(outer_points[(i + 1) % outer_points.size()]);
+        colors.push_back(SK_ColorGREEN);
+        vertices.push_back(center);
+        colors.push_back(SK_ColorBLUE);
+      }
+      break;
     case SkVertices::VertexMode::kTriangleStrip_VertexMode:
+      // Calling the points on the outer circle O_0, O_1, O_2, ..., and
+      // the center point C, this should create a strip with vertices
+      // O_0, O_1, C, O_2, O_3, C, O_4, O_5, C, ...
       for (size_t i = 0; i <= outer_vertex_count; i++) {
         vertices.push_back(outer_points[i % outer_points.size()]);
         colors.push_back(i % 2 ? SK_ColorRED : SK_ColorGREEN);
-        vertices.push_back(center);
-        colors.push_back(i % 2 ? SK_ColorBLUE : SK_ColorCYAN);
+        if (i % 2 == 1) {
+          vertices.push_back(center);
+          colors.push_back(SK_ColorBLUE);
+        }
       }
       break;
     default:
@@ -591,9 +613,10 @@ void BM_DrawVertices(benchmark::State& state,
   float radius = length / 4.0f;
 
   size_t vertex_count, total_vertex_count = 0;
+  size_t disc_count = state.range(0);
 
   std::vector<SkPoint> center_points =
-      GetPolygonPoints(state.range(0), center, radius / 4.0f);
+      GetPolygonPoints(disc_count, center, radius / 4.0f);
 
   for (SkPoint p : center_points) {
     sk_sp<SkVertices> vertices =
@@ -614,7 +637,8 @@ void BM_DrawVertices(benchmark::State& state,
   }
 
   auto filename = canvas_provider->BackendName() + "-DrawVertices-" +
-                  VertexModeToString(mode) + ".png";
+                  std::to_string(disc_count) + "-" + VertexModeToString(mode) +
+                  ".png";
   canvas_provider->Snapshot(filename);
 }
 
