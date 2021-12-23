@@ -333,7 +333,7 @@ void DisplayListBoundsCalculator::restore() {
       // We do not use AccumulateOpBounds because the layer info already
       // applied all bounds modifications based on the attributes that
       // were in place when it was created. Modifying the bounds further
-      // base on the current attributes would mix attribute states.
+      // based on the current attributes would mix attribute states.
       // The bounds are still transformed and clipped by this method.
       AccumulateBounds(layer_bounds);
     }
