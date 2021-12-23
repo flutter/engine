@@ -94,6 +94,9 @@ void BM_DrawShadow(benchmark::State& state,
 
 #define RUN_DISPLAYLIST_BENCHMARKS(BACKEND)                             \
                                                                         \
+  /*                                                                    \
+   *  DrawLine                                                          \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawLine, BACKEND,                               \
                     std::make_unique<BACKEND##CanvasProvider>())        \
       ->RangeMultiplier(2)                                              \
@@ -101,6 +104,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawRect                                                          \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawRect, BACKEND,                               \
                     std::make_unique<BACKEND##CanvasProvider>())        \
       ->RangeMultiplier(2)                                              \
@@ -108,6 +114,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawOval                                                          \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawOval, BACKEND,                               \
                     std::make_unique<BACKEND##CanvasProvider>())        \
       ->RangeMultiplier(2)                                              \
@@ -115,6 +124,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawCircle                                                        \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawCircle, BACKEND,                             \
                     std::make_unique<BACKEND##CanvasProvider>())        \
       ->RangeMultiplier(2)                                              \
@@ -122,6 +134,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawArc                                                           \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawArc, BACKEND,                                \
                     std::make_unique<BACKEND##CanvasProvider>())        \
       ->RangeMultiplier(2)                                              \
@@ -129,6 +144,52 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawPath                                                          \
+   */                                                                   \
+  BENCHMARK_CAPTURE(BM_DrawPath,                                        \
+                    Lines/BACKEND,                                      \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkPath::Verb::kLine_Verb)                           \
+      ->RangeMultiplier(2)                                              \
+      ->Range(8, 1024)                                                  \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  BENCHMARK_CAPTURE(BM_DrawPath,                                        \
+                    Quads/BACKEND,                                      \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkPath::Verb::kQuad_Verb)                           \
+      ->RangeMultiplier(2)                                              \
+      ->Range(8, 1024)                                                  \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  BENCHMARK_CAPTURE(BM_DrawPath,                                        \
+                    Conics/BACKEND,                                     \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkPath::Verb::kConic_Verb)                          \
+      ->RangeMultiplier(2)                                              \
+      ->Range(8, 1024)                                                  \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  BENCHMARK_CAPTURE(BM_DrawPath,                                        \
+                    Cubics/BACKEND,                                     \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkPath::Verb::kCubic_Verb)                          \
+      ->RangeMultiplier(2)                                              \
+      ->Range(8, 1024)                                                  \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  /*                                                                    \
+   *  DrawPoints                                                        \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawPoints, Points/BACKEND,                      \
                     std::make_unique<BACKEND##CanvasProvider>(),        \
                     SkCanvas::kPoints_PointMode)                        \
@@ -153,6 +214,42 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawVertices                                                      \
+   */                                                                   \
+  BENCHMARK_CAPTURE(BM_DrawVertices,                                    \
+                    TriangleStrip/BACKEND,                              \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkVertices::VertexMode::kTriangleStrip_VertexMode)  \
+      ->RangeMultiplier(2)                                              \
+      ->Range(16, 2048)                                                 \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  BENCHMARK_CAPTURE(BM_DrawVertices,                                    \
+                    TriangleFan/BACKEND,                                \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkVertices::VertexMode::kTriangleFan_VertexMode)    \
+      ->RangeMultiplier(2)                                              \
+      ->Range(16, 2048)                                                 \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  BENCHMARK_CAPTURE(BM_DrawVertices,                                    \
+                    Triangles/BACKEND,                                  \
+                    std::make_unique<BACKEND##CanvasProvider>(),        \
+                    SkVertices::VertexMode::kTriangles_VertexMode)      \
+      ->RangeMultiplier(2)                                              \
+      ->Range(16, 2048)                                                 \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond)                                   \
+      ->Complexity();                                                   \
+                                                                        \
+  /*                                                                    \
+   *  DrawRRect                                                         \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawRRect, Symmetric/BACKEND,                    \
                     std::make_unique<BACKEND##CanvasProvider>(),        \
                     SkRRect::Type::kSimple_Type)                        \
@@ -177,6 +274,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawImage                                                         \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawImage, Texture/BACKEND,                      \
                     std::make_unique<BACKEND##CanvasProvider>(),        \
                     SkSamplingOptions(), false)                         \
@@ -193,10 +293,31 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawImageRect                                                     \
+   */                                                                   \
   BENCHMARK_CAPTURE(                                                    \
       BM_DrawImageRect, Texture/Strict/BACKEND,                         \
       std::make_unique<BACKEND##CanvasProvider>(), SkSamplingOptions(), \
       SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint, false)    \
+      ->RangeMultiplier(2)                                              \
+      ->Range(32, 256)                                                  \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond);                                  \
+                                                                        \
+  BENCHMARK_CAPTURE(                                                    \
+      BM_DrawImageRect, Texture/Fast/BACKEND,                           \
+      std::make_unique<BACKEND##CanvasProvider>(), SkSamplingOptions(), \
+      SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint, false)      \
+      ->RangeMultiplier(2)                                              \
+      ->Range(32, 256)                                                  \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond);                                  \
+                                                                        \
+  BENCHMARK_CAPTURE(                                                    \
+      BM_DrawImageRect, Upload/Strict/BACKEND,                          \
+      std::make_unique<BACKEND##CanvasProvider>(), SkSamplingOptions(), \
+      SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint, true)     \
       ->RangeMultiplier(2)                                              \
       ->Range(32, 256)                                                  \
       ->UseRealTime()                                                   \
@@ -211,6 +332,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawImageNine                                                     \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawImageNine, Texture/Nearest/BACKEND,          \
                     std::make_unique<BACKEND##CanvasProvider>(),        \
                     SkFilterMode::kNearest, false)                      \
@@ -243,6 +367,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);                                  \
                                                                         \
+  /*                                                                    \
+   *  DrawTextBlob                                                      \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawTextBlob, BACKEND,                           \
                     std::make_unique<BACKEND##CanvasProvider>())        \
       ->RangeMultiplier(2)                                              \
@@ -251,6 +378,9 @@ void BM_DrawShadow(benchmark::State& state,
       ->Unit(benchmark::kMillisecond)                                   \
       ->Complexity();                                                   \
                                                                         \
+  /*                                                                    \
+   *  DrawShadow                                                        \
+   */                                                                   \
   BENCHMARK_CAPTURE(BM_DrawShadow, Lines/Transparent/BACKEND,           \
                     std::make_unique<BACKEND##CanvasProvider>(), true,  \
                     SkPath::Verb::kLine_Verb)                           \
