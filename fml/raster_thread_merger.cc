@@ -79,7 +79,7 @@ void RasterThreadMerger::MergeWithLease(size_t lease_term) {
 
   // To avoid data races between the platform thread posting sync tasks to the
   // raster thread and the raster thread merging, we add a lock here.
-  std::scoped_lock lock{mutex_, gThreadMergingLock};
+  std::scoped_lock lock{mutex_, g_thread_merging_lock};
   bool success = shared_merger_->MergeWithLease(this, lease_term);
   if (success && merge_unmerge_callback_ != nullptr) {
     merge_unmerge_callback_();

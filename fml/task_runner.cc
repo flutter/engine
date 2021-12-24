@@ -16,7 +16,7 @@
 
 namespace fml {
 
-std::mutex gThreadMergingLock;
+std::mutex g_thread_merging_lock;
 
 TaskRunner::TaskRunner(fml::RefPtr<MessageLoopImpl> loop)
     : loop_(std::move(loop)) {}
@@ -66,7 +66,7 @@ void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
 
 void TaskRunner::RunNowOrPostSyncTask(fml::RefPtr<fml::TaskRunner> runner,
                                       const fml::closure& task) {
-  std::scoped_lock lock(gThreadMergingLock);
+  std::scoped_lock lock(g_thread_merging_lock);
   RunNowOrPostTask(runner, task);
 }
 }  // namespace fml

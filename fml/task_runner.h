@@ -18,7 +18,7 @@ class MessageLoopImpl;
 
 /// To avoid data races between the platform thread posting sync tasks to the
 /// raster thread and the raster thread merging.
-extern std::mutex gThreadMergingLock;
+extern std::mutex g_thread_merging_lock;
 
 /// An interface over the ability to schedule tasks on a \p TaskRunner.
 class BasicTaskRunner {
