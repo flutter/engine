@@ -17,6 +17,7 @@ import 'dart:typed_data';
 import 'src/engine.dart' as engine;
 
 part 'src/ui/annotations.dart';
+part 'src/ui/application.dart';
 part 'src/ui/canvas.dart';
 part 'src/ui/channel_buffers.dart';
 part 'src/ui/compositing.dart';

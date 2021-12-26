@@ -208,7 +208,7 @@ class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
 class SceneBuilder extends NativeFieldWrapperClass1 {
   /// Creates an empty [SceneBuilder] object.
   @pragma('vm:entry-point')
-  SceneBuilder({Object? applicationId}) : _applicationId = applicationId ?? Application.current.id {
+  SceneBuilder([Object? applicationId]) : _applicationId = applicationId ?? Application.current.id {
     _constructor();
   }
 

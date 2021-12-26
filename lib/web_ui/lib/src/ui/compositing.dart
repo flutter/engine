@@ -32,7 +32,8 @@ abstract class ShaderMaskEngineLayer implements EngineLayer {}
 abstract class PhysicalShapeEngineLayer implements EngineLayer {}
 
 abstract class SceneBuilder {
-  factory SceneBuilder() {
+  // ignore: avoid_unused_constructor_parameters
+  factory SceneBuilder([Object? applicationId]) {
     if (engine.useCanvasKit) {
       return engine.LayerSceneBuilder();
     } else {

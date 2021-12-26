@@ -88,8 +88,6 @@ class PlatformDispatcher {
     _setNeedsReportTimings = _setNeedsReportTimingsInternal;
   }
 
-  ///
-  Object get applicationId => _applicationId;
   Object _applicationId;
 
   /// The [PlatformDispatcher] singleton.
