@@ -136,6 +136,14 @@ void UIDartState::SetPlatformConfiguration(
   }
 }
 
+void UIDartState::RemovePlatformConfiguration(int64_t application_id) {
+  auto it = platform_configurations_.find(application_id);
+  if (it == platform_configurations_.end()) {
+    return;
+  }
+  platform_configurations_.erase(it);
+}
+
 const TaskRunners& UIDartState::GetTaskRunners() const {
   return context_.task_runners;
 }

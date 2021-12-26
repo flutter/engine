@@ -172,6 +172,8 @@ class UIDartState : public tonic::DartState {
   void SetPlatformConfiguration(
       std::unique_ptr<PlatformConfiguration> platform_configuration);
 
+  void RemovePlatformConfiguration(int64_t application_id);
+
   const std::string& GetAdvisoryScriptURI() const;
 
   const std::string& GetAdvisoryScriptEntrypoint() const;

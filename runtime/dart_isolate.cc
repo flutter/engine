@@ -837,6 +837,8 @@ bool DartIsolate::ExitApplication(int64_t application_id) {
     return false;
   }
 
+  RemovePlatformConfiguration(application_id);
+
   return true;
 }
 
