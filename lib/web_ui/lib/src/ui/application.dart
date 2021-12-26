@@ -28,7 +28,7 @@ class Application {
     PlatformDispatcher platformDispatcher,
     SingletonFlutterWindow window,
     ChannelBuffers channelBuffers):
-    _zone = Zone.current.fork(zoneValues:{kApplicationId:kDefaultApplicationId}),
+    _zone = Zone.current.fork(zoneValues: <Object, Object>{kApplicationId:kDefaultApplicationId}),
     _platformDispatcher = platformDispatcher,
     _window = window,
     _channelBuffers = channelBuffers;
@@ -65,8 +65,12 @@ class Application {
 
   /// Get the object according to the key. If the object does not exist, it will be created by 'ifAbsent'.
   T get<T extends Object>(Object key, T Function() ifAbsent) {
-    _values[key] ??= ifAbsent();
-    return _values[key] as T;
+    T? result = find(key);
+    if (result == null) {
+      result = ifAbsent();
+      put(key, result);
+    }
+    return result;
   }
 }
 

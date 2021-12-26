@@ -150,7 +150,7 @@ void _runMainZoned(Object applicationId,
                    Function startMainIsolateFunction,
                    Function userMainFunction,
                    List<String> args) {
-  final Function runMainZoned = () {
+  void runMainZoned() {
     runZonedGuarded<void>(() {
       if (userMainFunction is _ListStringArgFunction) {
         (userMainFunction as dynamic)(args);
@@ -160,7 +160,7 @@ void _runMainZoned(Object applicationId,
     }, (Object error, StackTrace stackTrace) {
       _reportUnhandledException(applicationId, error.toString(), stackTrace.toString());
     }, zoneValues: <Object, Object>{kApplicationId: applicationId});
-  };
+  }
   if (applicationId == kDefaultApplicationId) {
     startMainIsolateFunction(runMainZoned, null);
   } else {

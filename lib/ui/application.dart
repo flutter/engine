@@ -20,24 +20,20 @@ class Application {
 
   /// Get the current 'Application' according to the application id in the zone.
   static Application get current {
-    final Object applicationId = Zone.current[kApplicationId] ?? kDefaultApplicationId;
-    assert(applicationId != null);
-    return Application.fromId(applicationId);
+    final Object? applicationId = Zone.current[kApplicationId] ?? kDefaultApplicationId;
+    return Application.fromId(applicationId!);
   }
 
   /// Get the 'Application' according to the specified application id.
   static Application fromId(Object applicationId) {
-    assert(applicationId != null);
     assert(!_exitedApplicationIds.contains(applicationId));
     final Application result = _applications[applicationId] ??= Application._(applicationId);
     return result;
   }
 
-
-
   Application._(Object id) :
     _id = id,
-    _zone = Zone.current.fork(zoneValues:{kApplicationId:id}),
+    _zone = Zone.current.fork(zoneValues: <Object, Object>{kApplicationId:id}),
     _platformDispatcher = PlatformDispatcher._(applicationId: id),
     _channelBuffers = ChannelBuffers() {
     _window = SingletonFlutterWindow._(0, _platformDispatcher);
@@ -76,8 +72,12 @@ class Application {
 
   /// Get the object according to the key. If the object does not exist, it will be created by 'ifAbsent'.
   T get<T extends Object>(Object key, T Function() ifAbsent) {
-    _values[key] ??= ifAbsent();
-    return _values[key] as T;
+    T? result = find(key);
+    if (result == null) {
+      result = ifAbsent();
+      put(key, result);
+    }
+    return result;
   }
 
   // called when the application exits.
