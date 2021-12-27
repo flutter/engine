@@ -40,6 +40,12 @@ public class FlutterLoader {
   private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
       "io.flutter.embedding.android.EnableSkParagraph";
 
+  /**
+   * Set whether leave or clean up the VM after the last shell shuts down. It's true by default, set
+   * it to false to destroy VM.
+   */
+  private static final String LEAK_VM_META_DATA_KEY = "io.flutter.embedding.android.LeakVM";
+
   // Must match values in flutter::switches
   static final String AOT_SHARED_LIBRARY_NAME = "aot-shared-library-name";
   static final String AOT_VMSERVICE_SHARED_LIBRARY_NAME = "aot-vmservice-shared-library-name";
@@ -299,6 +305,9 @@ public class FlutterLoader {
         shellArgs.add("--enable-skparagraph");
       }
 
+      final String leakVM = isLeakVM(metaData) ? "true" : "false";
+      shellArgs.add("--leak-vm=" + leakVM);
+
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
       flutterJNI.init(
@@ -316,6 +325,14 @@ public class FlutterLoader {
     } finally {
       Trace.endSection();
     }
+  }
+
+  private static boolean isLeakVM(Bundle metaData) {
+    final boolean leakVMDefaultValue = true;
+    if (metaData == null) {
+      return leakVMDefaultValue;
+    }
+    return metaData.getBoolean(LEAK_VM_META_DATA_KEY, leakVMDefaultValue);
   }
 
   /**
