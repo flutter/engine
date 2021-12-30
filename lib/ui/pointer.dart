@@ -36,6 +36,15 @@ enum PointerChange {
 
   /// The pointer has stopped making contact with the device.
   up,
+
+  /// A pan/zoom has started on this pointer
+  panZoomStart,
+
+  /// The pan/zoom on this pointer has updated
+  panZoomUpdate,
+
+  /// The pan/zoom on this pointer has ended
+  panZoomEnd,
 }
 
 /// The kind of pointer device.
@@ -101,6 +110,12 @@ class PointerData {
     this.platformData = 0,
     this.scrollDeltaX = 0.0,
     this.scrollDeltaY = 0.0,
+    this.panX = 0.0,
+    this.panY = 0.0,
+    this.panDeltaX = 0.0,
+    this.panDeltaY = 0.0,
+    this.scale = 0.0,
+    this.rotation = 0.0,
   });
 
   /// Unique identifier that ties the [PointerEvent] to embedder event created it.
@@ -265,6 +280,36 @@ class PointerData {
   /// The amount to scroll in the y direction, in physical pixels.
   final double scrollDeltaY;
 
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The current panning magnitude of the pan/zoom in the x direction, in physical pixels.
+  final double panX;
+
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The current panning magnitude of the pan/zoom in the x direction, in physical pixels.
+  final double panY;
+
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The difference in panning of the pan/zoom in the x direction since the latest panZoomUpdate event, in physical pixels.
+  final double panDeltaX;
+
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The difference in panning of the pan/zoom in the y direction since the last panZoomUpdate event, in physical pixels.
+  final double panDeltaY;
+
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The current scale of the pan/zoom (unitless), with 1.0 as the initial scale.
+  final double scale;
+
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The current angle of the pan/zoom in radians, with 0.0 as the initial angle.
+  final double rotation;
+
   @override
   String toString() => 'PointerData(x: $physicalX, y: $physicalY)';
 
@@ -298,7 +343,13 @@ class PointerData {
              'tilt: $tilt, '
              'platformData: $platformData, '
              'scrollDeltaX: $scrollDeltaX, '
-             'scrollDeltaY: $scrollDeltaY'
+             'scrollDeltaY: $scrollDeltaY, '
+             'panX: $panX, '
+             'panY: $panY, '
+             'panDeltaX: $panDeltaX, '
+             'panDeltaY: $panDeltaY, '
+             'scale: $scale, '
+             'rotation: $rotation'
            ')';
   }
 }

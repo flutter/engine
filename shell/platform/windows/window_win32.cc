@@ -95,6 +95,17 @@ void WindowWin32::InitializeChild(const char* title,
     OutputDebugString(message);
     LocalFree(message);
   }
+  DEVMODE dmi;
+  ZeroMemory(&dmi, sizeof(dmi));
+  dmi.dmSize = sizeof(dmi);
+  if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmi)) {
+    framerate_ = dmi.dmDisplayFrequency;
+    SetTimer(result, kVsyncTimer, 1000 / framerate_, nullptr);
+  } else {
+    OutputDebugString(L"Failed to get framerate");
+  }
+  direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
+  direct_manipulation_owner_->Init(width, height);
 }
 
 std::wstring WindowWin32::NarrowToWide(const char* source) {
@@ -437,6 +448,24 @@ WindowWin32::HandleMessage(UINT const message,
       }
       break;
     }
+    case WM_TIMER:
+      if (wparam == kVsyncTimer) {
+        direct_manipulation_owner_->Update();
+        SetTimer(window_handle_, kVsyncTimer, 1000 / framerate_, nullptr);
+        return 0;
+      }
+      break;
+    case DM_POINTERHITTEST: {
+      if (direct_manipulation_owner_) {
+        UINT contactId = GET_POINTERID_WPARAM(wparam);
+        POINTER_INPUT_TYPE pointerType;
+        if (GetPointerType(contactId, &pointerType) &&
+            pointerType == PT_TOUCHPAD) {
+          direct_manipulation_owner_->SetContact(contactId);
+        }
+      }
+      break;
+    }
     case WM_INPUTLANGCHANGE:
       // TODO(cbracken): pass this to TextInputManager to aid with
       // language-specific issues.
@@ -524,6 +553,9 @@ void WindowWin32::Destroy() {
 void WindowWin32::HandleResize(UINT width, UINT height) {
   current_width_ = width;
   current_height_ = height;
+  if (direct_manipulation_owner_) {
+    direct_manipulation_owner_->ResizeViewport(width, height);
+  }
   OnResize(width, height);
 }
 

@@ -67,6 +67,8 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
                               size_t row_bytes,
                               size_t height) override;
 
+  PointerLocation GetPrimaryPointerLocation() override;
+
  private:
   // Undoes the scale transform applied by the Windows compositor in order to
   // render at native scale and produce smooth results on high DPI screens.

@@ -115,6 +115,8 @@ source_set("flutter_windows_source") {
     sources += [
       "accessibility_bridge_delegate_win32.cc",
       "accessibility_bridge_delegate_win32.h",
+      "direct_manipulation.cc",
+      "direct_manipulation.h",
       "dpi_utils_win32.cc",
       "dpi_utils_win32.h",
       "flutter_platform_node_delegate_win32.cc",
@@ -155,14 +157,10 @@ source_set("flutter_windows_source") {
 
   public_configs = [ ":relative_angle_headers" ]
 
-  if (target_os == "winuwp") {
-    defines = [
-      "_SILENCE_CLANG_COROUTINE_MESSAGE",
-      "FLUTTER_ENGINE_NO_PROTOTYPES",
-    ]
-  } else {
-    defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
-  }
+  defines = [
+    "_SILENCE_CLANG_COROUTINE_MESSAGE",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
 
   public_deps = [
     ":string_conversion",
@@ -171,6 +169,7 @@ source_set("flutter_windows_source") {
 
   deps = [
     ":flutter_windows_headers",
+    "//flutter/fml:fml",
     "//flutter/shell/platform/common:common_cpp",
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/common:common_cpp_switches",
@@ -254,6 +253,7 @@ executable("flutter_windows_unittests") {
     sources += [
       # TODO move first two tests to common once above TODO's unblocked.
       "accessibility_bridge_delegate_win32_unittests.cc",
+      "direct_manipulation_unittests.cc",
       "dpi_utils_win32_unittests.cc",
       "flutter_project_bundle_unittests.cc",
       "flutter_window_win32_unittests.cc",
@@ -285,6 +285,8 @@ executable("flutter_windows_unittests") {
   }
 
   public_configs = [ "//flutter:config" ]
+
+  defines = [ "_SILENCE_CLANG_COROUTINE_MESSAGE" ]
 
   deps = [
     ":flutter_windows_fixtures",

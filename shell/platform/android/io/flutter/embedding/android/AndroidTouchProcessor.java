@@ -9,6 +9,8 @@ import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Sends touch information from Android to Flutter in a format that Flutter understands. */
 public class AndroidTouchProcessor {
@@ -21,7 +23,10 @@ public class AndroidTouchProcessor {
     PointerChange.HOVER,
     PointerChange.DOWN,
     PointerChange.MOVE,
-    PointerChange.UP
+    PointerChange.UP,
+    PointerChange.PAN_ZOOM_START,
+    PointerChange.PAN_ZOOM_UPDATE,
+    PointerChange.PAN_ZOOM_END
   })
   private @interface PointerChange {
     int CANCEL = 0;
@@ -31,6 +36,9 @@ public class AndroidTouchProcessor {
     int DOWN = 4;
     int MOVE = 5;
     int UP = 6;
+    int PAN_ZOOM_START = 7;
+    int PAN_ZOOM_UPDATE = 8;
+    int PAN_ZOOM_END = 9;
   }
 
   // Must match the PointerDeviceKind enum in pointer.dart.
@@ -58,7 +66,7 @@ public class AndroidTouchProcessor {
   }
 
   // Must match the unpacking code in hooks.dart.
-  private static final int POINTER_DATA_FIELD_COUNT = 29;
+  private static final int POINTER_DATA_FIELD_COUNT = 35;
   private static final int BYTES_PER_FIELD = 8;
 
   // This value must match the value in framework's platform_view.dart.
@@ -73,6 +81,8 @@ public class AndroidTouchProcessor {
   private static final Matrix IDENTITY_TRANSFORM = new Matrix();
 
   private final boolean trackMotionEvents;
+
+  private final Map<Integer, float[]> ongoingPans = new HashMap<>();
 
   /**
    * Constructs an {@code AndroidTouchProcessor} that will send touch event data to the Flutter
@@ -212,6 +222,23 @@ public class AndroidTouchProcessor {
     }
 
     int pointerKind = getPointerDeviceTypeForToolType(event.getToolType(pointerIndex));
+    // We use this in lieu of using event.getRawX and event.getRawY as we wish to support
+    // earlier versions than API level 29.
+    float viewToScreenCoords[] = {event.getX(pointerIndex), event.getY(pointerIndex)};
+    transformMatrix.mapPoints(viewToScreenCoords);
+    long buttons;
+    if (pointerKind == PointerDeviceKind.MOUSE) {
+      buttons = event.getButtonState() & 0x1F;
+      if (buttons == 0
+          && event.getSource() == InputDevice.SOURCE_MOUSE
+          && pointerChange == PointerChange.DOWN) {
+        ongoingPans.put(event.getPointerId(pointerIndex), viewToScreenCoords);
+      }
+    } else if (pointerKind == PointerDeviceKind.STYLUS) {
+      buttons = (event.getButtonState() >> 4) & 0xF;
+    } else {
+      buttons = 0;
+    }
 
     int signalKind =
         event.getActionMasked() == MotionEvent.ACTION_SCROLL
@@ -222,39 +249,31 @@ public class AndroidTouchProcessor {
 
     packet.putLong(motionEventId); // motionEventId
     packet.putLong(timeStamp); // time_stamp
-    packet.putLong(pointerChange); // change
-    packet.putLong(pointerKind); // kind
+    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))) {
+      packet.putLong(getPointerChangeForPanZoom(pointerChange)); // change
+      packet.putLong(PointerDeviceKind.TOUCH); // kind
+    } else {
+      packet.putLong(pointerChange); // change
+      packet.putLong(pointerKind); // kind
+    }
     packet.putLong(signalKind); // signal_kind
     packet.putLong(event.getPointerId(pointerIndex)); // device
     packet.putLong(0); // pointer_identifier, will be generated in pointer_data_packet_converter.cc.
 
-    // We use this in lieu of using event.getRawX and event.getRawY as we wish to support
-    // earlier versions than API level 29.
-    float viewToScreenCoords[] = {event.getX(pointerIndex), event.getY(pointerIndex)};
-    transformMatrix.mapPoints(viewToScreenCoords);
-    packet.putDouble(viewToScreenCoords[0]); // physical_x
-    packet.putDouble(viewToScreenCoords[1]); // physical_y
+    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))) {
+      float[] panStart = ongoingPans.get(event.getPointerId(pointerIndex));
+      packet.putDouble(panStart[0]);
+      packet.putDouble(panStart[1]);
+    } else {
+      packet.putDouble(viewToScreenCoords[0]); // physical_x
+      packet.putDouble(viewToScreenCoords[1]); // physical_y
+    }
 
     packet.putDouble(
         0.0); // physical_delta_x, will be generated in pointer_data_packet_converter.cc.
     packet.putDouble(
         0.0); // physical_delta_y, will be generated in pointer_data_packet_converter.cc.
 
-    long buttons;
-    if (pointerKind == PointerDeviceKind.MOUSE) {
-      buttons = event.getButtonState() & 0x1F;
-      // TODO(dkwingsmt): Remove this fix after implementing touchpad gestures
-      // https://github.com/flutter/flutter/issues/23604#issuecomment-524471152
-      if (buttons == 0
-          && event.getSource() == InputDevice.SOURCE_MOUSE
-          && (pointerChange == PointerChange.DOWN || pointerChange == PointerChange.MOVE)) {
-        buttons = _POINTER_BUTTON_PRIMARY;
-      }
-    } else if (pointerKind == PointerDeviceKind.STYLUS) {
-      buttons = (event.getButtonState() >> 4) & 0xF;
-    } else {
-      buttons = 0;
-    }
     packet.putLong(buttons); // buttons
 
     packet.putLong(0); // obscured
@@ -308,6 +327,24 @@ public class AndroidTouchProcessor {
       packet.putDouble(0.0); // scroll_delta_x
       packet.putDouble(0.0); // scroll_delta_x
     }
+
+    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))) {
+      float[] panStart = ongoingPans.get(event.getPointerId(pointerIndex));
+      packet.putDouble(viewToScreenCoords[0] - panStart[0]);
+      packet.putDouble(viewToScreenCoords[1] - panStart[1]);
+    } else {
+      packet.putDouble(0.0); // pan_x
+      packet.putDouble(0.0); // pan_y
+    }
+    packet.putDouble(0.0); // pan_delta_x
+    packet.putDouble(0.0); // pan_delta_y
+    packet.putDouble(1.0); // scale
+    packet.putDouble(0.0); // rotation
+
+    if (ongoingPans.containsKey(event.getPointerId(pointerIndex))
+        && getPointerChangeForPanZoom(pointerChange) == PointerChange.PAN_ZOOM_END) {
+      ongoingPans.remove(event.getPointerId(pointerIndex));
+    }
   }
 
   @PointerChange
@@ -338,6 +375,18 @@ public class AndroidTouchProcessor {
     }
     if (maskedAction == MotionEvent.ACTION_SCROLL) {
       return PointerChange.HOVER;
+    }
+    return -1;
+  }
+
+  @PointerChange
+  private int getPointerChangeForPanZoom(int pointerChange) {
+    if (pointerChange == PointerChange.DOWN) {
+      return PointerChange.PAN_ZOOM_START;
+    } else if (pointerChange == PointerChange.MOVE) {
+      return PointerChange.PAN_ZOOM_UPDATE;
+    } else if (pointerChange == PointerChange.UP || pointerChange == PointerChange.CANCEL) {
+      return PointerChange.PAN_ZOOM_END;
     }
     return -1;
   }

@@ -396,4 +396,11 @@ bool FlutterWindowWinUWP::OnBitmapSurfaceUpdated(const void* allocation,
   return false;
 }
 
+PointerLocation FlutterWindowWinUWP::GetPrimaryPointerLocation() {
+  auto point = window_.PointerPosition();
+  auto bounds = window_.Bounds();
+  return {static_cast<size_t>(point.X - bounds.X),
+          static_cast<size_t>(point.Y - bounds.Y)};
+}
+
 }  // namespace flutter

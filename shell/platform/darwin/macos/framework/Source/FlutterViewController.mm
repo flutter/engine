@@ -32,6 +32,11 @@ static NSString* const EnhancedUserInterfaceNotification =
     @"NSApplicationDidChangeAccessibilityEnhancedUserInterfaceNotification";
 static NSString* const EnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
+// Use different device ID for mouse and pan/zoom events, since we can't differentiate the actual
+// device (mouse v.s. trackpad)
+static constexpr int32_t kMousePointerDeviceId = 0;
+static constexpr int32_t kPointerPanZoomDeviceId = 1;
+
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
  * events that the embedding API expects.
@@ -64,6 +69,47 @@ struct MouseState {
   int64_t buttons = 0;
 
   /**
+   * Pan gesture is currently sending us events.
+   */
+  bool pan_gesture_active = false;
+
+  /**
+   * The accumulated gesture pan
+   */
+  CGFloat deltaX = 0;
+  CGFloat deltaY = 0;
+
+  /**
+   * Scale gesture is currently sending us events.
+   */
+  bool scale_gesture_active = false;
+
+  /**
+   * The accumulated gesture zoom scale
+   */
+  CGFloat scale = 0;
+
+  /**
+   * Rotate gesture is currently sending use events.
+   */
+  bool rotate_gesture_active = false;
+
+  /**
+   * The accumulated gesture rotation
+   */
+  CGFloat rotation = 0;
+
+  /**
+   * Resets all gesture state to default values.
+   */
+  void GestureReset() {
+    deltaX = 0;
+    deltaY = 0;
+    scale = 0;
+    rotation = 0;
+  }
+
+  /**
    * Resets all state to default values.
    */
   void Reset() {
@@ -71,6 +117,7 @@ struct MouseState {
     flutter_state_is_down = false;
     has_pending_exit = false;
     buttons = 0;
+    GestureReset();
   }
 };
 
@@ -149,6 +196,11 @@ struct MouseState {
  * mouseState.buttons should be updated before calling this method.
  */
 - (void)dispatchMouseEvent:(nonnull NSEvent*)event;
+
+/**
+ * Calls dispatchMouseEvent:phase: with a phase determined by event.phase.
+ */
+- (void)dispatchGestureEvent:(nonnull NSEvent*)event;
 
 /**
  * Converts |event| to a FlutterPointerEvent with the given phase, and sends it to the engine.
@@ -491,6 +543,18 @@ static void CommonInit(FlutterViewController* controller) {
   [self dispatchMouseEvent:event phase:phase];
 }
 
+- (void)dispatchGestureEvent:(nonnull NSEvent*)event {
+  if (event.phase == NSEventPhaseBegan || event.phase == NSEventPhaseMayBegin) {
+    [self dispatchMouseEvent:event phase:kPanZoomStart];
+  } else if (event.phase == NSEventPhaseChanged) {
+    [self dispatchMouseEvent:event phase:kPanZoomUpdate];
+  } else if (event.phase == NSEventPhaseEnded || event.phase == NSEventPhaseCancelled) {
+    [self dispatchMouseEvent:event phase:kPanZoomEnd];
+  } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
+    [self dispatchMouseEvent:event phase:kHover];
+  }
+}
+
 - (void)dispatchMouseEvent:(NSEvent*)event phase:(FlutterPointerPhase)phase {
   NSAssert(self.viewLoaded, @"View must be loaded before it handles the mouse event");
   // There are edge cases where the system will deliver enter out of order relative to other
@@ -498,6 +562,36 @@ static void CommonInit(FlutterViewController* controller) {
   // mouseEntered:). Discard those events, since the add will already have been synthesized.
   if (_mouseState.flutter_state_is_added && phase == kAdd) {
     return;
+  }
+
+  // Multiple gesture recognizers could be active at once, we can't send multiple kPanZoomStart
+  // For example, rotation and magnification
+  if (phase == kPanZoomStart) {
+    bool gestureAlreadyDown = _mouseState.pan_gesture_active || _mouseState.scale_gesture_active ||
+                              _mouseState.rotate_gesture_active;
+    if (event.type == NSEventTypeScrollWheel) {
+      _mouseState.pan_gesture_active = true;
+    } else if (event.type == NSEventTypeMagnify) {
+      _mouseState.scale_gesture_active = true;
+    } else if (event.type == NSEventTypeRotate) {
+      _mouseState.rotate_gesture_active = true;
+    }
+    if (gestureAlreadyDown) {
+      return;
+    }
+  }
+  if (phase == kPanZoomEnd) {
+    if (event.type == NSEventTypeScrollWheel) {
+      _mouseState.pan_gesture_active = false;
+    } else if (event.type == NSEventTypeMagnify) {
+      _mouseState.scale_gesture_active = false;
+    } else if (event.type == NSEventTypeRotate) {
+      _mouseState.rotate_gesture_active = false;
+    }
+    if (_mouseState.pan_gesture_active || _mouseState.scale_gesture_active ||
+        _mouseState.rotate_gesture_active) {
+      return;
+    }
   }
 
   // If a pointer added event hasn't been sent, synthesize one using this event for the basic
@@ -524,12 +618,36 @@ static void CommonInit(FlutterViewController* controller) {
       .timestamp = static_cast<size_t>(event.timestamp * USEC_PER_SEC),
       .x = locationInBackingCoordinates.x,
       .y = -locationInBackingCoordinates.y,  // convertPointToBacking makes this negative.
+      .device = kMousePointerDeviceId,
       .device_kind = kFlutterPointerDeviceKindMouse,
       // If a click triggered a synthesized kAdd, don't pass the buttons in that event.
       .buttons = phase == kAdd ? 0 : _mouseState.buttons,
   };
 
-  if (event.type == NSEventTypeScrollWheel) {
+  if (phase == kPanZoomStart) {
+    flutterEvent.device_kind = kFlutterPointerDeviceKindTouch;
+    flutterEvent.device = kPointerPanZoomDeviceId;
+  } else if (phase == kPanZoomUpdate) {
+    flutterEvent.device_kind = kFlutterPointerDeviceKindTouch;
+    flutterEvent.device = kPointerPanZoomDeviceId;
+    if (event.type == NSEventTypeScrollWheel) {
+      _mouseState.deltaX += event.scrollingDeltaX * self.flutterView.layer.contentsScale;
+      _mouseState.deltaY += event.scrollingDeltaY * self.flutterView.layer.contentsScale;
+    } else if (event.type == NSEventTypeMagnify) {
+      _mouseState.scale += event.magnification;
+    } else if (event.type == NSEventTypeRotate) {
+      _mouseState.rotation += event.rotation * (M_PI / 180.0);
+    }
+    flutterEvent.pan_x = _mouseState.deltaX;
+    flutterEvent.pan_y = _mouseState.deltaY;
+    // Scale value needs to be normalized to range 0->infinity
+    flutterEvent.scale = pow(2.0, _mouseState.scale);
+    flutterEvent.rotation = _mouseState.rotation;
+  } else if (phase == kPanZoomEnd) {
+    flutterEvent.device_kind = kFlutterPointerDeviceKindTouch;
+    flutterEvent.device = kPointerPanZoomDeviceId;
+    _mouseState.GestureReset();
+  } else if (event.type == NSEventTypeScrollWheel) {
     flutterEvent.signal_kind = kFlutterPointerSignalKindScroll;
 
     double pixelsPerLine = 1.0;
@@ -779,9 +897,19 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 - (void)scrollWheel:(NSEvent*)event {
-  // TODO: Add gesture-based (trackpad) scroll support once it's supported by the engine rather
-  // than always using kHover.
-  [self dispatchMouseEvent:event phase:kHover];
+  [self dispatchGestureEvent:event];
+}
+
+- (void)magnifyWithEvent:(NSEvent*)event {
+  [self dispatchGestureEvent:event];
+}
+
+- (void)rotateWithEvent:(NSEvent*)event {
+  [self dispatchGestureEvent:event];
+}
+
+- (void)swipeWithEvent:(NSEvent*)event {
+  // Not needed, it's handled by scrollWheel
 }
 
 @end
