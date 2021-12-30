@@ -12,6 +12,13 @@
 
 namespace flutter {
 
+/// The Configurer is used for setting thread perorities
+class ThreadConfigurer {
+ public:
+  virtual void SetThreadPriority(fml::ThreadPriority) {}
+  virtual ~ThreadConfigurer() = default;
+};
+
 /// The collection of all the threads used by the engine.
 struct ThreadHost {
   enum Type {
@@ -28,6 +35,8 @@ struct ThreadHost {
   std::unique_ptr<fml::Thread> raster_thread;
   std::unique_ptr<fml::Thread> io_thread;
   std::unique_ptr<fml::Thread> profiler_thread;
+  /// ThreadConfigurer is used for setting thread configure some like `priority`
+  std::unique_ptr<ThreadConfigurer> thread_configurer;
 
   ThreadHost();
 
@@ -35,7 +44,9 @@ struct ThreadHost {
 
   ThreadHost& operator=(ThreadHost&&) = default;
 
-  ThreadHost(std::string name_prefix, uint64_t type_mask);
+  ThreadHost(std::string name_prefix,
+             uint64_t type_mask,
+             std::unique_ptr<ThreadConfigurer> thread_configurer = nullptr);
 
   ~ThreadHost();
 };

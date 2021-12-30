@@ -32,6 +32,43 @@
 
 namespace flutter {
 
+/// Inheriting ThreadConfigurer and use Android platform thread API to configure
+/// the thread priorities
+class PlatformAndroidThreadConfigurer : public flutter::ThreadConfigurer {
+ public:
+  void SetThreadPriority(fml::ThreadPriority priority) {
+    switch (priority) {
+      case fml::ThreadPriority::BACKGROUND:
+        if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
+          FML_LOG(ERROR) << "Failed to set IO task runner priority";
+        }
+        break;
+      case fml::ThreadPriority::DISPLAY: {
+        if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
+          FML_LOG(ERROR) << "Failed to set UI task runner priority";
+        }
+        break;
+      }
+      case fml::ThreadPriority::RASTER: {
+        // Android describes -8 as "most important display threads, for
+        // compositing the screen and retrieving input events". Conservatively
+        // set the raster thread to slightly lower priority than it.
+        if (::setpriority(PRIO_PROCESS, 0, -5) != 0) {
+          // Defensive fallback. Depending on the OEM, it may not be possible
+          // to set priority to -5.
+          if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
+            FML_LOG(ERROR) << "Failed to set raster task runner priority";
+          }
+        }
+      }
+      default:
+        if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
+          FML_LOG(ERROR) << "Failed to set priority";
+        }
+    }
+  }
+};
+
 static PlatformData GetDefaultPlatformData() {
   PlatformData platform_data;
   platform_data.lifecycle_state = "AppLifecycleState.detached";
@@ -45,10 +82,10 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
-  thread_host_ = std::make_shared<ThreadHost>();
-  *thread_host_ = {thread_label, ThreadHost::Type::UI |
-                                     ThreadHost::Type::RASTER |
-                                     ThreadHost::Type::IO};
+  thread_host_ = std::make_shared<ThreadHost>(
+      thread_label,
+      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO,
+      std::make_unique<PlatformAndroidThreadConfigurer>());
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
@@ -91,28 +128,6 @@ AndroidShellHolder::AndroidShellHolder(
                                     ui_runner,        // ui
                                     io_runner         // io
   );
-  task_runners.GetRasterTaskRunner()->PostTask([]() {
-    // Android describes -8 as "most important display threads, for
-    // compositing the screen and retrieving input events". Conservatively
-    // set the raster thread to slightly lower priority than it.
-    if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
-      // Defensive fallback. Depending on the OEM, it may not be possible
-      // to set priority to -5.
-      if (::setpriority(PRIO_PROCESS, gettid(), -2) != 0) {
-        FML_LOG(ERROR) << "Failed to set raster task runner priority";
-      }
-    }
-  });
-  task_runners.GetUITaskRunner()->PostTask([]() {
-    if (::setpriority(PRIO_PROCESS, gettid(), -1) != 0) {
-      FML_LOG(ERROR) << "Failed to set UI task runner priority";
-    }
-  });
-  task_runners.GetIOTaskRunner()->PostTask([]() {
-    if (::setpriority(PRIO_PROCESS, gettid(), 1) != 0) {
-      FML_LOG(ERROR) << "Failed to set IO task runner priority";
-    }
-  });
 
   shell_ =
       Shell::Create(GetDefaultPlatformData(),  // window data

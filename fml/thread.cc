@@ -23,17 +23,23 @@
 
 namespace fml {
 
-Thread::Thread(const std::string& name) : joined_(false) {
+Thread::Thread(const std::string& name) : Thread(name, []() {}) {}
+
+Thread::Thread(const std::string& name,
+               const fml::closure& ThreadConfigureOperation)
+    : joined_(false) {
   fml::AutoResetWaitableEvent latch;
   fml::RefPtr<fml::TaskRunner> runner;
-  thread_ = std::make_unique<std::thread>([&latch, &runner, name]() -> void {
-    SetCurrentThreadName(name);
-    fml::MessageLoop::EnsureInitializedForCurrentThread();
-    auto& loop = MessageLoop::GetCurrent();
-    runner = loop.GetTaskRunner();
-    latch.Signal();
-    loop.Run();
-  });
+  thread_ = std::make_unique<std::thread>(
+      [&latch, &runner, name, &ThreadConfigureOperation]() -> void {
+        SetCurrentThreadName(name);
+        ThreadConfigureOperation();
+        fml::MessageLoop::EnsureInitializedForCurrentThread();
+        auto& loop = MessageLoop::GetCurrent();
+        runner = loop.GetTaskRunner();
+        latch.Signal();
+        loop.Run();
+      });
   latch.Wait();
   task_runner_ = runner;
 }

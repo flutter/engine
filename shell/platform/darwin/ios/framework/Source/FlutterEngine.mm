@@ -33,6 +33,34 @@
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+/// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
+class PlatformIOSThreadConfigurer : public flutter::ThreadConfigurer {
+ public:
+  /// Using iOS platform thread API to configure thread priority
+  void SetThreadPriority(fml::ThreadPriority priority) override {
+    switch (priority) {
+      case fml::ThreadPriority::BACKGROUND:
+        [[NSThread currentThread] setThreadPriority:0];
+        break;
+      case fml::ThreadPriority::NORMAL:
+        [[NSThread currentThread] setThreadPriority:0.5];
+        break;
+      case fml::ThreadPriority::RASTER:
+      case fml::ThreadPriority::DISPLAY: {
+        [[NSThread currentThread] setThreadPriority:1.0];
+        sched_param param;
+        int policy;
+        pthread_t thread = pthread_self();
+        if (!pthread_getschedparam(thread, &policy, &param)) {
+          param.sched_priority = 50;
+          pthread_setschedparam(thread, policy, &param);
+        }
+        break;
+      }
+    }
+  }
+};
+
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
 NSString* const FlutterEngineWillDealloc = @"FlutterEngineWillDealloc";
@@ -605,7 +633,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [NSString stringWithFormat:@"%@.%zu", labelPrefix, ++s_shellCount];
 }
 
-+ (flutter::ThreadHost)makeThreadHost:(NSString*)threadLabel {
++ (std::shared_ptr<flutter::ThreadHost>)makeThreadHost:(NSString*)threadLabel {
   // The current thread will be used as the platform thread. Ensure that the message loop is
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -615,8 +643,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if ([FlutterEngine isProfilerEnabled]) {
     threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
   }
-  return {threadLabel.UTF8String,  // label
-          threadHostType};
+  return std::make_shared<flutter::ThreadHost>(threadLabel.UTF8String, threadHostType,
+                                               std::make_unique<PlatformIOSThreadConfigurer>());
 }
 
 static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {
@@ -651,8 +679,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   SetEntryPoint(&settings, entrypoint, libraryURI);
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
-  _threadHost = std::make_shared<flutter::ThreadHost>();
-  *_threadHost = [FlutterEngine makeThreadHost:threadLabel];
+  _threadHost = [FlutterEngine makeThreadHost:threadLabel];
 
   // Lambda captures by pointers to ObjC objects are fine here because the
   // create call is synchronous.

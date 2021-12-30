@@ -14,9 +14,21 @@
 
 namespace fml {
 
+// Valid values for priority of Thread
+enum class ThreadPriority : int {
+  // Suitable for threads that shouldn't disrupt high priority work.
+  BACKGROUND,
+  // Default priority level.
+  NORMAL,
+  // Suitable for threads which generate data for the display.
+  DISPLAY,
+  // Suitable for thread which raster data
+  RASTER,
+};
 class Thread {
  public:
   explicit Thread(const std::string& name = "");
+  Thread(const std::string& name, const fml::closure&);
 
   ~Thread();
 
