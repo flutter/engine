@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
@@ -89,6 +90,15 @@ public class FlutterFragmentActivityTest {
           }
         };
     assertEquals(activity.createFlutterFragment().getRenderMode(), RenderMode.texture);
+  }
+
+  @Test
+  public void hasRootLayoutId() {
+    FlutterFragmentActivityWithRootLayout activity =
+        Robolectric.buildActivity(FlutterFragmentActivityWithRootLayout.class).get();
+    activity.onCreate(null);
+    assertNotNull(activity.getFragmentContainerId());
+    assertTrue(activity.getFragmentContainerId() != View.NO_ID);
   }
 
   @Test

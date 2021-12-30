@@ -240,6 +240,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   @Nullable private FlutterFragment flutterFragment;
+  @NonNull private View rootFrameLayout;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -252,7 +253,8 @@ public class FlutterFragmentActivity extends FragmentActivity
     super.onCreate(savedInstanceState);
 
     configureWindowForTransparency();
-    setContentView(createFragmentContainer());
+    rootFrameLayout = createFragmentContainer();
+    setContentView(rootFrameLayout);
     configureStatusBarForFullscreenFlutterExperience();
     ensureFlutterFragmentCreated();
   }
@@ -782,5 +784,11 @@ public class FlutterFragmentActivity extends FragmentActivity
   @NonNull
   protected FrameLayout provideRootLayout(Context context) {
     return new FrameLayout(context);
+  }
+
+  /** Returns the {@code #FRAGMENT_CONTAINER_ID} of the activity's content view. */
+  @NonNull
+  public int getFragmentContainerId() {
+    return rootFrameLayout.getId();
   }
 }
