@@ -783,4 +783,10 @@ public class FlutterFragmentActivity extends FragmentActivity
   protected FrameLayout provideRootLayout(Context context) {
     return new FrameLayout(context);
   }
+  
+  /** Returns the {@code #FRAGMENT_CONTAINER_ID} of the activity's content view. */
+  @NonNull
+  public int getFragmentContainerId() {
+    return FRAGMENT_CONTAINER_ID;
+  }
 }
