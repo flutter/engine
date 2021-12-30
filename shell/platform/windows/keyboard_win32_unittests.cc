@@ -242,6 +242,8 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine();
 
 class KeyboardTester {
  public:
+  using KeyEventHandler = std::function<void(bool)>;
+
   explicit KeyboardTester() {
     view_ = std::make_unique<TestFlutterWindowsView>(
         [](const std::u16string& text) {
@@ -259,6 +261,8 @@ class KeyboardTester {
   }
 
   void Responding(bool response) { test_response = response; }
+
+  void LateRespond(bool response) { test_response = response; }
 
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
@@ -307,9 +311,10 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
 
   EngineModifier modifier(engine.get());
 
-  MockEmbedderApiForKeyboard(
-      modifier, [] { return KeyboardTester::test_response; },
-      [](const FlutterKeyEvent* event) {
+  auto key_response_controller = std::make_shared<MockKeyResponseController>();
+  key_response_controller->SetEmbedderResponse(
+      [](const FlutterKeyEvent* event,
+         MockKeyResponseController::ResponseCallback callback) {
         FlutterKeyEvent clone_event = *event;
         clone_event.character = event->character == nullptr
                                     ? nullptr
@@ -318,8 +323,10 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
             .type = kKeyCallOnKey,
             .key_event = clone_event,
         });
-        return KeyboardTester::test_response;
+        callback(KeyboardTester::test_response);
       });
+
+  MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
   engine->RunWithEntrypoint(nullptr);
   return engine;

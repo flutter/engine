@@ -315,9 +315,13 @@ std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
   auto engine = std::make_unique<FlutterWindowsEngine>(project);
 
   EngineModifier modifier(engine.get());
-  MockEmbedderApiForKeyboard(
-      modifier, [] { return test_response; },
-      [](const FlutterKeyEvent* event) { return false; });
+  auto key_response_controller =
+      std::make_shared<MockKeyResponseController>();
+  key_response_controller->SetChannelResponse(
+      [](MockKeyResponseController::ResponseCallback callback) {
+        callback(test_response);
+      });
+  MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
   return engine;
 }
