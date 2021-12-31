@@ -352,7 +352,7 @@ constexpr uint64_t kScanCodeDigit6 = 0x07;
 constexpr uint64_t kScanCodeControl = 0x1d;
 constexpr uint64_t kScanCodeAlt = 0x38;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
-// constexpr uint64_t kScanCodeShiftRight = 0x36;
+constexpr uint64_t kScanCodeShiftRight = 0x36;
 constexpr uint64_t kScanCodeBracketLeft = 0x1a;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
@@ -1093,6 +1093,30 @@ TEST(KeyboardTest, MultibyteCharacter) {
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 }
+
+// A key down event for shift right must not be redispatched even if
+// the framework returns unhandled.
+//
+// The reason for this test is documented in |IsKeyDownShiftRight|.
+TEST(KeyboardTest, NeverRedispatchShiftRightKeyDown) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // Press ShiftRight and the delegate responds false.
+  tester.SetKeyState(VK_RSHIFT, true, true);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  clear_key_calls();
+
+  // Try to dispatch events. There should be nothing.
+  tester.InjectPendingEvents();
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
 
 TEST(KeyboardTest, DisorderlyRespondedEvents) {
   KeyboardTester tester;
