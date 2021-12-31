@@ -238,13 +238,16 @@ void clear_key_calls() {
   key_calls.clear();
 }
 
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine();
-
 class KeyboardTester {
  public:
-  using KeyEventHandler = std::function<void(bool)>;
+  using ResponseHandler = std::function<void(MockKeyResponseController::ResponseCallback)>;
 
   explicit KeyboardTester() {
+    callback_handler_ =
+        [](const FlutterKeyEvent* event,
+           MockKeyResponseController::ResponseCallback callback) {
+          callback(false);
+        };
     view_ = std::make_unique<TestFlutterWindowsView>(
         [](const std::u16string& text) {
           key_calls.push_back(KeyCall{
@@ -252,7 +255,20 @@ class KeyboardTester {
               .text = text,
           });
         });
-    view_->SetEngine(std::move(GetTestEngine()));
+    view_->SetEngine(GetTestEngine(
+        [&callback_handler = callback_handler_](
+            const FlutterKeyEvent* event,
+            MockKeyResponseController::ResponseCallback callback) {
+          FlutterKeyEvent clone_event = *event;
+          clone_event.character = event->character == nullptr
+                                      ? nullptr
+                                      : clone_string(event->character);
+          key_calls.push_back(KeyCall{
+              .type = kKeyCallOnKey,
+              .key_event = clone_event,
+          });
+          callback_handler(event, callback);
+        }));
     window_ = std::make_unique<MockKeyboardManagerWin32Delegate>(view_.get());
   }
 
@@ -260,9 +276,17 @@ class KeyboardTester {
     view_->SetKeyState(key, pressed, toggled_on);
   }
 
-  void Responding(bool response) { test_response = response; }
+  void Responding(bool response) {
+    callback_handler_ =
+        [response](const FlutterKeyEvent* event,
+           MockKeyResponseController::ResponseCallback callback) {
+          callback(response);
+        };
+  }
 
-  void LateRespond(bool response) { test_response = response; }
+  void LateResponding(MockKeyResponseController::EmbedderCallbackHandler handler) {
+    callback_handler_ = std::move(handler);
+  }
 
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
@@ -289,48 +313,36 @@ class KeyboardTester {
     return view_->InjectPendingEvents(window_.get(), redispatch_char);
   }
 
-  static bool test_response;
-
  private:
   std::unique_ptr<TestFlutterWindowsView> view_;
   std::unique_ptr<MockKeyboardManagerWin32Delegate> window_;
+  MockKeyResponseController::EmbedderCallbackHandler callback_handler_;
+
+  // Returns an engine instance configured with dummy project path values, and
+  // overridden methods for sending platform messages, so that the engine can
+  // respond as if the framework were connected.
+  static std::unique_ptr<FlutterWindowsEngine> GetTestEngine(
+      MockKeyResponseController::EmbedderCallbackHandler
+          embedder_callback_handler) {
+    FlutterDesktopEngineProperties properties = {};
+    properties.assets_path = L"C:\\foo\\flutter_assets";
+    properties.icu_data_path = L"C:\\foo\\icudtl.dat";
+    properties.aot_library_path = L"C:\\foo\\aot.so";
+    FlutterProjectBundle project(properties);
+    auto engine = std::make_unique<FlutterWindowsEngine>(project);
+
+    EngineModifier modifier(engine.get());
+
+    auto key_response_controller = std::make_shared<MockKeyResponseController>();
+    key_response_controller->SetEmbedderResponse(std::move(embedder_callback_handler));
+
+    MockEmbedderApiForKeyboard(modifier, key_response_controller);
+
+    engine->RunWithEntrypoint(nullptr);
+    return engine;
+  }
 };
 
-bool KeyboardTester::test_response = false;
-
-// Returns an engine instance configured with dummy project path values, and
-// overridden methods for sending platform messages, so that the engine can
-// respond as if the framework were connected.
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = L"C:\\foo\\flutter_assets";
-  properties.icu_data_path = L"C:\\foo\\icudtl.dat";
-  properties.aot_library_path = L"C:\\foo\\aot.so";
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
-
-  EngineModifier modifier(engine.get());
-
-  auto key_response_controller = std::make_shared<MockKeyResponseController>();
-  key_response_controller->SetEmbedderResponse(
-      [](const FlutterKeyEvent* event,
-         MockKeyResponseController::ResponseCallback callback) {
-        FlutterKeyEvent clone_event = *event;
-        clone_event.character = event->character == nullptr
-                                    ? nullptr
-                                    : clone_string(event->character);
-        key_calls.push_back(KeyCall{
-            .type = kKeyCallOnKey,
-            .key_event = clone_event,
-        });
-        callback(KeyboardTester::test_response);
-      });
-
-  MockEmbedderApiForKeyboard(modifier, key_response_controller);
-
-  engine->RunWithEntrypoint(nullptr);
-  return engine;
-}
 
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeKeyE = 0x12;
