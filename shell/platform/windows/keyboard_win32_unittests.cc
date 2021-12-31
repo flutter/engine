@@ -242,12 +242,7 @@ class KeyboardTester {
  public:
   using ResponseHandler = std::function<void(MockKeyResponseController::ResponseCallback)>;
 
-  explicit KeyboardTester() {
-    callback_handler_ =
-        [](const FlutterKeyEvent* event,
-           MockKeyResponseController::ResponseCallback callback) {
-          callback(false);
-        };
+  explicit KeyboardTester() : callback_handler_(RespondValue(false)) {
     view_ = std::make_unique<TestFlutterWindowsView>(
         [](const std::u16string& text) {
           key_calls.push_back(KeyCall{
@@ -276,13 +271,7 @@ class KeyboardTester {
     view_->SetKeyState(key, pressed, toggled_on);
   }
 
-  void Responding(bool response) {
-    callback_handler_ =
-        [response](const FlutterKeyEvent* event,
-           MockKeyResponseController::ResponseCallback callback) {
-          callback(response);
-        };
-  }
+  void Responding(bool response) { callback_handler_ = RespondValue(response); }
 
   void LateResponding(MockKeyResponseController::EmbedderCallbackHandler handler) {
     callback_handler_ = std::move(handler);
@@ -340,6 +329,13 @@ class KeyboardTester {
 
     engine->RunWithEntrypoint(nullptr);
     return engine;
+  }
+
+  static MockKeyResponseController::EmbedderCallbackHandler RespondValue(bool value) {
+    return [value](const FlutterKeyEvent* event,
+              MockKeyResponseController::ResponseCallback callback) {
+      callback(value);
+    };
   }
 };
 
