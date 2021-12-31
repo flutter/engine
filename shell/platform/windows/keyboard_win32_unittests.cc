@@ -341,6 +341,7 @@ class KeyboardTester {
 
 
 constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeKeyB = 0x30;
 constexpr uint64_t kScanCodeKeyE = 0x12;
 constexpr uint64_t kScanCodeKeyQ = 0x10;
 constexpr uint64_t kScanCodeKeyW = 0x11;
@@ -356,6 +357,7 @@ constexpr uint64_t kScanCodeBracketLeft = 0x1a;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
+constexpr uint64_t kVirtualKeyB = 0x42;
 constexpr uint64_t kVirtualKeyE = 0x45;
 constexpr uint64_t kVirtualKeyQ = 0x51;
 constexpr uint64_t kVirtualKeyW = 0x57;
@@ -1089,6 +1091,56 @@ TEST(KeyboardTest, MultibyteCharacter) {
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, DisorderlyRepliedEvents) {
+  KeyboardTester tester;
+
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
+
+  // Store callbacks to manually call them.
+  tester.LateResponding(
+      [&recorded_callbacks](
+          const FlutterKeyEvent* event,
+          MockKeyResponseController::ResponseCallback callback) {
+        recorded_callbacks.push_back(callback);
+      });
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  // Press B
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyB, kScanCodeKeyB, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'b', kScanCodeKeyB, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  clear_key_calls();
+
+  // Resolve the second event first to test disordered responses.
+  recorded_callbacks.back()(false);
+
+  tester.InjectPendingEvents('b');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"b");
+  clear_key_calls();
+
+  // Resolve the first event.
+  recorded_callbacks.front()(false);
+
+  tester.InjectPendingEvents('a');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
 }
 

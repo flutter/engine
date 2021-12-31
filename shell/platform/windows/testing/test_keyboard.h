@@ -45,7 +45,7 @@ LPARAM CreateKeyEventLparam(USHORT scancode,
 class MockKeyResponseController {
  public:
   using ResponseCallback = std::function<void(bool)>;
-  using EmbedderCallbackHandler = std::function<void(const FlutterKeyEvent* event, ResponseCallback)>;
+  using EmbedderCallbackHandler = std::function<void(const FlutterKeyEvent*, ResponseCallback)>;
   using ChannelCallbackHandler = std::function<void(ResponseCallback)>;
 
   MockKeyResponseController()
