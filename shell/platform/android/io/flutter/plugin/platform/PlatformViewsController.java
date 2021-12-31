@@ -149,7 +149,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
 
           final PlatformView platformView = factory.create(context, request.viewId, createParams);
-          platformView.setLayoutDirection(request.direction);
+          platformView.getView().setLayoutDirection(request.direction);
           platformViews.put(request.viewId, platformView);
         }
 
@@ -334,7 +334,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView != null) {
-            platformView.setLayoutDirection(direction);
+            platformView.getView().setLayoutDirection(direction);
             return;
           }
           View view = vdControllers.get(viewId).getView();
