@@ -1094,7 +1094,7 @@ TEST(KeyboardTest, MultibyteCharacter) {
   clear_key_calls();
 }
 
-TEST(KeyboardTest, DisorderlyRepliedEvents) {
+TEST(KeyboardTest, DisorderlyRespondedEvents) {
   KeyboardTester tester;
 
   std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
@@ -1137,6 +1137,62 @@ TEST(KeyboardTest, DisorderlyRepliedEvents) {
 
   // Resolve the first event.
   recorded_callbacks.front()(false);
+
+  tester.InjectPendingEvents('a');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
+}
+
+// Regression test for a crash in an earlier implementation.
+//
+// In real life, the framework responds slowly. The next real event might
+// arrive earlier than the framework response, and if the 2nd event has an
+// identical hash as the one waiting for response, an earlier implementation
+// will crash upon the response.
+TEST(KeyboardTest, SlowFrameworkResponse) {
+  KeyboardTester tester;
+
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
+
+  // Store callbacks to manually call them.
+  tester.LateResponding(
+      [&recorded_callbacks](
+          const FlutterKeyEvent* event,
+          MockKeyResponseController::ResponseCallback callback) {
+        recorded_callbacks.push_back(callback);
+      });
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  // Hold A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasDown}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasDown}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  clear_key_calls();
+
+  // The first response.
+  recorded_callbacks.front()(false);
+
+  tester.InjectPendingEvents('a');
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
+
+  // The second response.
+  recorded_callbacks.back()(false);
 
   tester.InjectPendingEvents('a');
   EXPECT_EQ(key_calls.size(), 1);
