@@ -111,5 +111,58 @@ void testMain() {
       root.style.fontSize = null;
       expect(findBrowserTextScaleFactor(), 1.0);
     });
+
+    test(
+        'calls onTextScaleFactorChanged when the <html> element\'s font-size changes',
+        () async {
+      final html.Element root = html.document.documentElement!;
+      final String oldFontSize = root.style.fontSize;
+      final String oldBackgroundColor = root.style.backgroundColor;
+      final String oldContentEditable = root.contentEditable;
+
+      addTearDown(() {
+        root.style.fontSize = oldFontSize;
+        root.style.backgroundColor = oldBackgroundColor;
+        root.contentEditable = oldContentEditable;
+      });
+
+      root.style.fontSize = '16px';
+      root.style.backgroundColor = 'white';
+      root.contentEditable = 'false';
+
+      bool callsCallback = false;
+      ui.PlatformDispatcher.instance.onTextScaleFactorChanged = () {
+        callsCallback = true;
+      };
+
+      Future<void> waitUntilCalled() {
+        final Completer completer = Completer();
+
+        void check() {
+          if (callsCallback == true) {
+            completer.complete();
+          } else {
+            Timer(Duration.zero, check);
+          }
+        }
+
+        check();
+        return completer.future;
+      }
+
+      root.style.fontSize = '20px';
+      await waitUntilCalled();
+      expect(callsCallback, true);
+      expect(ui.PlatformDispatcher.instance.textScaleFactor,
+          findBrowserTextScaleFactor());
+
+      callsCallback = false;
+
+      root.style.fontSize = '16px';
+      await waitUntilCalled();
+      expect(callsCallback, true);
+      expect(ui.PlatformDispatcher.instance.textScaleFactor,
+          findBrowserTextScaleFactor());
+    });
   });
 }
