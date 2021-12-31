@@ -337,16 +337,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformView.getView().setLayoutDirection(direction);
             return;
           }
-          View view = vdControllers.get(viewId).getView();
-          if (view == null) {
+          VirtualDisplayController controller = vdControllers.get(viewId);
+          if (controller == null) {
             throw new IllegalStateException(
                 "Trying to set direction: "
                     + direction
-                    + " to an unknown view with id: "
+                    + " to an unknown platform view with id: "
                     + viewId);
           }
 
-          view.setLayoutDirection(direction);
+          controller.getView().setLayoutDirection(direction);
         }
 
         @Override
