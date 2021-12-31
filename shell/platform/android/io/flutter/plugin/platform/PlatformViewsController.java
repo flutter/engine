@@ -345,7 +345,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + " to an unknown platform view with id: "
                     + viewId);
           }
-
           controller.getView().setLayoutDirection(direction);
         }
 
