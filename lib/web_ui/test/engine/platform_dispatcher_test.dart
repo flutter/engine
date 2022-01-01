@@ -117,18 +117,12 @@ void testMain() {
         () async {
       final html.Element root = html.document.documentElement!;
       final String oldFontSize = root.style.fontSize;
-      final String oldBackgroundColor = root.style.backgroundColor;
-      final String oldContentEditable = root.contentEditable;
 
       addTearDown(() {
         root.style.fontSize = oldFontSize;
-        root.style.backgroundColor = oldBackgroundColor;
-        root.contentEditable = oldContentEditable;
       });
 
       root.style.fontSize = '16px';
-      root.style.backgroundColor = 'white';
-      root.contentEditable = 'false';
 
       bool callsCallback = false;
       ui.PlatformDispatcher.instance.onTextScaleFactorChanged = () {
