@@ -130,7 +130,7 @@ void testMain() {
       };
 
       Future<void> waitUntilCalled() {
-        final Completer completer = Completer();
+        final Completer<void> completer = Completer<void>();
 
         void check() {
           if (callsCallback == true) {
