@@ -409,7 +409,7 @@ public class PlatformViewsControllerTest {
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
-    
+
     // Simulate set direction call from the framework.
     setLayoutDirection(jni, platformViewsController, platformViewId, 1);
     // The limit value of reply message will be equal to 2 if the layout direction is set
