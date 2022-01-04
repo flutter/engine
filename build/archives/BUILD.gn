@@ -25,19 +25,15 @@ zip_bundle("artifacts") {
     },
   ]
   deps = [
-    "//flutter/shell/testing:testing",
-    "//flutter/lib/snapshot:generate_snapshot_bin",
     "//flutter/flutter_frontend_server:frontend_server",
+    "//flutter/lib/snapshot:generate_snapshot_bin",
+    "//flutter/shell/testing:testing",
   ]
 }
-
 
 group("embedder") {
-  deps = [
-    "//flutter/shell/platform/embedder:archive",
-  ]
+  deps = [ "//flutter/shell/platform/embedder:archive" ]
 }
-
 
 zip_bundle("flutter_patched_sdk") {
   output = "flutter_patched_sdk.zip"
@@ -51,8 +47,5 @@ zip_bundle("flutter_patched_sdk") {
       destination = "platform_strong.dill"
     },
   ]
-  deps = [
-    "//flutter/lib/snapshot:strong_platform",
-  ]
+  deps = [ "//flutter/lib/snapshot:strong_platform" ]
 }
-
