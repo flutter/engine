@@ -711,8 +711,8 @@ static BOOL IsScribbleAvailable() {
 @end
 
 @interface FlutterTextInputPlugin ()
-- (id<FlutterTextInputDelegate>)textInputDelegate;
-- (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr;
+@property(nonatomic, readonly) fml::WeakPtr<FlutterTextInputPlugin> weakPtr;
+@property(nonatomic, readonly) id<FlutterTextInputDelegate> textInputDelegate;
 @end
 
 @interface FlutterTextInputView ()
@@ -750,7 +750,7 @@ static BOOL IsScribbleAvailable() {
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin {
   self = [super initWithFrame:CGRectZero];
   if (self) {
-    _textInputPlugin = [textInputPlugin getWeakPtr];
+    _textInputPlugin = textInputPlugin.weakPtr;
     _textInputClient = 0;
     _selectionAffinity = _kTextAffinityUpstream;
 
@@ -2000,6 +2000,7 @@ static BOOL IsScribbleAvailable() {
   self = [super init];
 
   if (self) {
+    // `_textInputDelegate` is a weak reference because it should retain FlutterTextInputPlugin.
     _textInputDelegate = textInputDelegate;
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterTextInputPlugin>>(self);
     _autofillContext = [[NSMutableDictionary alloc] init];
@@ -2036,7 +2037,7 @@ static BOOL IsScribbleAvailable() {
   return _textInputDelegate;
 }
 
-- (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr {
+- (fml::WeakPtr<FlutterTextInputPlugin>)weakPtr {
   return _weakFactory->GetWeakPtr();
 }
 

@@ -7,8 +7,8 @@
 
 #import <UIKit/UIKit.h>
 
-#include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/platform/common/text_editing_delta.h"
+#import "flutter/fml/memory/weak_ptr.h"
+#import "flutter/shell/platform/common/text_editing_delta.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
