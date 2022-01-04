@@ -412,8 +412,9 @@ public class PlatformViewsControllerTest {
     
     // Simulate set direction call from the framework.
     setLayoutDirection(jni, platformViewsController, platformViewId, 1);
-    // This limit value will be equal to 2 if the layout direction is set successfully, 
-    // otherwise it will be much more than 2 due to an error message returned.
+    // The limit value of reply message will be equal to 2 if the layout direction is set
+    // successfully, otherwise it will be much more than 2 due to the reply message contains
+    // an error message wrapped with exception detail information.
     assertEquals(ShadowFlutterJNI.getResponses().get(0).limit(), 2);
   }
 
