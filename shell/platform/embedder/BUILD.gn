@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/toolchain/clang.gni")
+import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
@@ -409,4 +410,22 @@ group("flutter_engine") {
       deps += [ ":flutter_embedder_framework" ]
     }
   }
+}
+
+zip_bundle("archive") {
+  output = "${host_os}-${target_cpu}-embedder"
+  files = [
+    {
+      source = "$root_out_dir/flutter_embedder.h"
+      destination = "flutter_embedder.h"
+    },
+    {
+      source = "$root_out_dir/libflutter_engine.so"
+      destination = "libflutter_engine.so"
+    },
+  ]
+  deps = [
+    "//flutter/shell/platform/embedder:copy_headers",
+    "//flutter/shell/platform/embedder:flutter_engine_library",
+  ]
 }
