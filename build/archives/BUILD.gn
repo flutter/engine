@@ -31,7 +31,6 @@ zip_bundle("artifacts") {
   ]
 }
 
-
 if (host_os == "linux") {
   group("linux-embedder") {
     deps = [ "//flutter/shell/platform/embedder:linux-embedder-archive" ]
