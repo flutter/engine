@@ -129,9 +129,9 @@ void KeyboardKeyHandler::DispatchEvent(const PendingEvent& event) {
 #else
   char32_t character = event.character;
 
-  if (event.action == WM_SYSKEYDOWN || event.action == WM_SYSKEYUP) {
-    return;
-  }
+  // Sys key events can't be synthesized. Their dispatching should be prevented
+  // in earlier code.
+  assert(event.action != WM_SYSKEYDOWN && event.action != WM_SYSKEYUP);
 
   INPUT input_event{
       .type = INPUT_KEYBOARD,
@@ -277,8 +277,11 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
         // Redispatching dead keys events makes Win32 ignore the dead key state
         // and redispatches a normal character without combining it with the
         // next letter key.
-        const bool should_redispatch =
-            !event_ptr->any_handled && !_IsDeadKey(event_ptr->character);
+        const bool is_syskey =
+            event.action == WM_SYSKEYDOWN || event.action == WM_SYSKEYUP;
+        const bool should_redispatch = !event_ptr->any_handled &&
+                                       !_IsDeadKey(event_ptr->character) &&
+                                       !is_syskey;
         if (should_redispatch) {
           RedispatchEvent(std::move(event_ptr));
         }

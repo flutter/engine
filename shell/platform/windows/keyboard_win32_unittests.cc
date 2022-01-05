@@ -150,18 +150,14 @@ class TestFlutterWindowsView : public FlutterWindowsView {
       // affect keyboard.
       : FlutterWindowsView(
             std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
-        on_text_(std::move(on_text)),
-        redispatch_char(0) {}
-
-  uint32_t redispatch_char;
+        on_text_(std::move(on_text)) {}
 
   void OnText(const std::u16string& text) override { on_text_(text); }
 
   int InjectPendingEvents(MockMessageQueue* queue, uint32_t redispatch_char) {
     std::vector<Win32Message> messages;
     int num_pending_responds = pending_responds_.size();
-    for (const SendInputInfo& input : pending_responds_) {
-      const KEYBDINPUT kbdinput = input.kbdinput;
+    for (const KEYBDINPUT& kbdinput : pending_responds_) {
       const UINT message =
           (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
       const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
@@ -180,8 +176,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
       }
     }
 
-    queue->InjectMessageList(messages.size(), messages.data());
     pending_responds_.clear();
+    queue->InjectMessageList(messages.size(), messages.data());
     return num_pending_responds;
   }
 
@@ -204,12 +200,14 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
  private:
   UINT SendInput(UINT cInputs, LPINPUT pInputs, int cbSize) {
-    pending_responds_.push_back({cInputs, pInputs->ki, cbSize});
+    for (UINT input_idx = 0; input_idx < cInputs; input_idx += 1) {
+      pending_responds_.push_back(pInputs[input_idx].ki);
+    }
     return 1;
   }
 
   U16StringHandler on_text_;
-  std::vector<SendInputInfo> pending_responds_;
+  std::vector<KEYBDINPUT> pending_responds_;
   TestKeystate key_state_;
 };
 
@@ -240,7 +238,8 @@ void clear_key_calls() {
 
 class KeyboardTester {
  public:
-  using ResponseHandler = std::function<void(MockKeyResponseController::ResponseCallback)>;
+  using ResponseHandler =
+      std::function<void(MockKeyResponseController::ResponseCallback)>;
 
   explicit KeyboardTester() : callback_handler_(RespondValue(false)) {
     view_ = std::make_unique<TestFlutterWindowsView>(
@@ -273,7 +272,14 @@ class KeyboardTester {
 
   void Responding(bool response) { callback_handler_ = RespondValue(response); }
 
-  void LateResponding(MockKeyResponseController::EmbedderCallbackHandler handler) {
+  // Manually handle event callback of the onKeyData embedder API.
+  //
+  // On every onKeyData call, the |handler| will be invoked with the target
+  // key data and the result callback. Immediately calling the callback with
+  // a boolean is equivalent to setting |Responding| with the boolean. However,
+  // |LateResponding| allows storing the callback to call later.
+  void LateResponding(
+      MockKeyResponseController::EmbedderCallbackHandler handler) {
     callback_handler_ = std::move(handler);
   }
 
@@ -322,8 +328,10 @@ class KeyboardTester {
 
     EngineModifier modifier(engine.get());
 
-    auto key_response_controller = std::make_shared<MockKeyResponseController>();
-    key_response_controller->SetEmbedderResponse(std::move(embedder_callback_handler));
+    auto key_response_controller =
+        std::make_shared<MockKeyResponseController>();
+    key_response_controller->SetEmbedderResponse(
+        std::move(embedder_callback_handler));
 
     MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
@@ -331,9 +339,10 @@ class KeyboardTester {
     return engine;
   }
 
-  static MockKeyResponseController::EmbedderCallbackHandler RespondValue(bool value) {
+  static MockKeyResponseController::EmbedderCallbackHandler RespondValue(
+      bool value) {
     return [value](const FlutterKeyEvent* event,
-              MockKeyResponseController::ResponseCallback callback) {
+                   MockKeyResponseController::ResponseCallback callback) {
       callback(value);
     };
   }
@@ -729,7 +738,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kNotSynthesized);
   clear_key_calls();
 
-  tester.InjectPendingEvents();
+  EXPECT_EQ(tester.InjectPendingEvents(), 2);
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
@@ -746,7 +755,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalKeyQ, "@", kNotSynthesized);
   clear_key_calls();
 
-  tester.InjectPendingEvents('@');
+  EXPECT_EQ(tester.InjectPendingEvents('@'), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"@");
   clear_key_calls();
@@ -761,12 +770,12 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalKeyQ, "", kNotSynthesized);
   clear_key_calls();
 
-  tester.InjectPendingEvents();
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
   EXPECT_EQ(key_calls.size(), 0);
 
   // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead Flutter will
-  // dispatch one. The AltGr is a system key, so will be handled by Win32's
-  // default WndProc.
+  // dispatch one. The AltGr is a system key, therefore will be handled by
+  // Win32's default WndProc.
   tester.InjectMessages(
       1,
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
@@ -776,12 +785,130 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
-  tester.SetKeyState(VK_LCONTROL, false, false);
-  tester.InjectPendingEvents();
+  // Dispatch the ControlLeft up event appended by Flutter.
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
+  clear_key_calls();
+}
+
+// Test the following two key sequences at the same time:
+//
+// 1. Tap AltGr, then tap AltGr.
+// 2. Tap AltGr, hold CtrlLeft, tap AltGr, release CtrlLeft.
+//
+// The two sequences are indistinguishable until the very end when a CtrlLeft
+// up event might or might not follow.
+//
+//   Sequence 1: CtrlLeft down, AltRight down, AltRight up
+//   Sequence 2: CtrlLeft down, AltRight down, AltRight up, CtrlLeft up
+//
+// This is because pressing AltGr alone causes Win32 to send a fake "CtrlLeft
+// down" event first (see |IsKeyDownAltRight| for detailed explanation).
+TEST(KeyboardTest, AltGrTwice) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // 1. AltGr down.
+
+  // The key down event causes a ControlLeft down and a AltRight (extended
+  // AltLeft) down.
+  tester.SetKeyState(VK_LCONTROL, true, true);
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 2);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // 2. AltGr up.
+
+  // The key up event only causes a AltRight (extended AltLeft) up.
+  tester.SetKeyState(VK_RMENU, false, true);
+  tester.InjectMessages(
+      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Dispatch the ControlLeft up event appended by Flutter.
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Redispatch the ControlLeft up event.
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // 3. AltGr down (or: ControlLeft down then AltRight down.)
+
+  tester.SetKeyState(VK_LCONTROL, true, false);
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 2);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // 4. AltGr up.
+
+  // The key up event only causes a AltRight (extended AltLeft) up.
+  tester.SetKeyState(VK_RMENU, false, false);
+  tester.InjectMessages(
+      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Dispatch a ControlLeft up event from Flutter.
+  tester.SetKeyState(VK_LCONTROL, false, false);
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // 5. For key sequence 2: a real ControlLeft up.
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(kWmResultDefault));
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 }
 
@@ -1113,17 +1240,15 @@ TEST(KeyboardTest, NeverRedispatchShiftRightKeyDown) {
   clear_key_calls();
 
   // Try to dispatch events. There should be nothing.
-  tester.InjectPendingEvents();
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
   EXPECT_EQ(key_calls.size(), 0);
 }
-
 
 TEST(KeyboardTest, DisorderlyRespondedEvents) {
   KeyboardTester tester;
 
-  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
-
   // Store callbacks to manually call them.
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
   tester.LateResponding(
       [&recorded_callbacks](
           const FlutterKeyEvent* event,
@@ -1154,7 +1279,7 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the second event first to test disordered responses.
   recorded_callbacks.back()(false);
 
-  tester.InjectPendingEvents('b');
+  EXPECT_EQ(tester.InjectPendingEvents('b'), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"b");
   clear_key_calls();
@@ -1162,7 +1287,7 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the first event.
   recorded_callbacks.front()(false);
 
-  tester.InjectPendingEvents('a');
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
@@ -1210,7 +1335,7 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
   // The first response.
   recorded_callbacks.front()(false);
 
-  tester.InjectPendingEvents('a');
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
@@ -1218,7 +1343,7 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
   // The second response.
   recorded_callbacks.back()(false);
 
-  tester.InjectPendingEvents('a');
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();

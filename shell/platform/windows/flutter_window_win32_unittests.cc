@@ -269,8 +269,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     // "SendInput" directly to the window.
     const KEYBDINPUT kbdinput = pInputs->ki;
     const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
-    const UINT message = is_key_up ? (is_syskey_ ? WM_SYSKEYUP : WM_KEYUP)
-                                   : (is_syskey_ ? WM_SYSKEYDOWN : WM_KEYDOWN);
+    const UINT message = is_key_up ? WM_KEYUP : WM_KEYDOWN;
 
     const LPARAM lparam = CreateKeyEventLparam(
         kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
@@ -410,9 +409,11 @@ TEST(FlutterWindowWin32Test, SystemKeyDownPropagation) {
                              false /* extended */, _))
         .Times(2)
         .RetiresOnSaturation();
+    // Syskey events are not redispatched, so TextInputPlugin, which relies on
+    // them to receive events, no longer works.
     EXPECT_CALL(*flutter_windows_view.text_input_plugin,
                 KeyboardHook(_, _, _, _, _, _))
-        .Times(1)
+        .Times(0)
         .RetiresOnSaturation();
     EXPECT_CALL(*flutter_windows_view.key_event_handler, TextHook(_)).Times(0);
     EXPECT_CALL(*flutter_windows_view.text_input_plugin, TextHook(_)).Times(0);
