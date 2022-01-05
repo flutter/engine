@@ -133,12 +133,6 @@ class TestKeystate {
   std::map<uint32_t, SHORT> state_;
 };
 
-typedef struct {
-  UINT cInputs;
-  KEYBDINPUT kbdinput;
-  int cbSize;
-} SendInputInfo;
-
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
 // to register the keyboard hook handlers that can be spied upon.
 class TestFlutterWindowsView : public FlutterWindowsView {
