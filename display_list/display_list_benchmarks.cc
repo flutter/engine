@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_benchmarks.h"
-#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_builder.h"
 
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
