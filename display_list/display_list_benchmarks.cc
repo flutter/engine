@@ -1060,5 +1060,44 @@ void BM_DrawShadow(benchmark::State& state,
   canvas_provider->Snapshot(filename);
 }
 
+// Calls saveLayer N times from the root canvas layer, and optionally calls saveLayer
+// a further M times nested inside that top saveLayer call.
+//
+// The total number of saveLayer calls will be N * (M+1).
+//
+// In each saveLayer call, simply draw the colour red with no clip rect.
+void BM_SaveLayer(benchmark::State& state,
+                  BackendType backend_type,
+                  size_t save_depth) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
+  DisplayListBuilder builder;
+  size_t length = kFixedCanvasSize;
+  canvas_provider->InitializeSurface(length, length);
+  auto canvas = canvas_provider->GetSurface()->getCanvas();
+
+  size_t save_layer_calls = state.range(0);
+
+  for (size_t i = 0; i < save_layer_calls; i++) {
+    for (size_t j = 0; j < save_depth; j++) {
+      builder.saveLayer(nullptr, false);
+      builder.drawColor(SK_ColorRED, SkBlendMode::kSrc);
+    }
+    for (size_t j = 0; j < save_depth; j++) {
+      builder.restore();
+    }
+  }
+  auto display_list = builder.Build();
+
+  // We only want to time the actual rasterization.
+  for (auto _ : state) {
+    display_list->RenderTo(canvas);
+    canvas_provider->GetSurface()->flushAndSubmit(true);
+  }
+
+  auto filename = canvas_provider->BackendName() + "-SaveLayer-" +
+                  std::to_string(save_depth) + "-" + std::to_string(save_layer_calls)  + ".png";
+  canvas_provider->Snapshot(filename);
+}
+
 }  // namespace testing
 }  // namespace flutter

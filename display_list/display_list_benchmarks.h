@@ -67,7 +67,9 @@ void BM_DrawShadow(benchmark::State& state,
                    BackendType backend_type,
                    bool transparent_occluder,
                    SkPath::Verb type);
-
+void BM_SaveLayer(benchmark::State& state,
+                  BackendType backend_type,
+                  size_t save_depth);
 // clang-format off
 
 #define RUN_DISPLAYLIST_BENCHMARKS(BACKEND)                             \
@@ -420,6 +422,25 @@ void BM_DrawShadow(benchmark::State& state,
                     SkPath::Verb::kCubic_Verb)                          \
       ->RangeMultiplier(2)                                              \
       ->Range(1, 32)                                                    \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond);                                  \
+                                                                        \
+  /*                                                                    \
+   *  SaveLayer                                                         \
+   */                                                                   \
+  BENCHMARK_CAPTURE(BM_SaveLayer, BACKEND/Depth 1,                      \
+                    BackendType::k##BACKEND##_Backend,                  \
+                    1)                                                  \
+      ->RangeMultiplier(2)                                              \
+      ->Range(1, 128)                                                   \
+      ->UseRealTime()                                                   \
+      ->Unit(benchmark::kMillisecond);                                  \
+                                                                        \
+  BENCHMARK_CAPTURE(BM_SaveLayer, BACKEND/Depth 8,                      \
+                    BackendType::k##BACKEND##_Backend,                  \
+                    8)                                                  \
+      ->RangeMultiplier(2)                                              \
+      ->Range(1, 128)                                                   \
       ->UseRealTime()                                                   \
       ->Unit(benchmark::kMillisecond);
 
