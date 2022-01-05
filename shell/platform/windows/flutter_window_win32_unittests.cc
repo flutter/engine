@@ -247,19 +247,20 @@ class TestFlutterWindowsView : public FlutterWindowsView {
       flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,
       flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state)
       override {
-    auto spy_key_event_handler = new SpyKeyboardKeyHandler(
+    auto spy_key_event_handler = std::make_unique<SpyKeyboardKeyHandler>(
         messenger, [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
           return this->SendInput(cInputs, pInputs, cbSize);
         });
-    key_event_handler = spy_key_event_handler;
-    return std::unique_ptr<KeyboardHandlerBase>(spy_key_event_handler);
+    key_event_handler = spy_key_event_handler.get();
+    return spy_key_event_handler;
   }
 
   std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       flutter::BinaryMessenger* messenger) override {
-    auto spy_key_event_handler = new SpyTextInputPlugin(messenger);
-    text_input_plugin = spy_key_event_handler;
-    return std::unique_ptr<TextInputPlugin>(spy_key_event_handler);
+    auto spy_key_event_handler =
+        std::make_unique<SpyTextInputPlugin>(messenger);
+    text_input_plugin = spy_key_event_handler.get();
+    return spy_key_event_handler;
   }
 
  private:
