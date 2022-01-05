@@ -93,8 +93,9 @@ static std::shared_ptr<MockKeyResponseController> stored_response_controller;
 //
 // The |channel_handler| and |embedder_handler| should return a boolean
 // indicating whether the framework decides to handle the event.
-void MockEmbedderApiForKeyboard(EngineModifier& modifier,
-                                std::shared_ptr<MockKeyResponseController> response_controller) {
+void MockEmbedderApiForKeyboard(
+    EngineModifier& modifier,
+    std::shared_ptr<MockKeyResponseController> response_controller) {
   stored_response_controller = response_controller;
   // This mock handles channel messages.
   modifier.embedder_api().SendPlatformMessage =
@@ -104,16 +105,17 @@ void MockEmbedderApiForKeyboard(EngineModifier& modifier,
           return kSuccess;
         }
         if (std::string(message->channel) == std::string("flutter/keyevent")) {
-          stored_response_controller->HandleChannelMessage([message](bool handled) {
-            auto response = _keyHandlingResponse(handled);
-            const TestResponseHandle* response_handle =
-                reinterpret_cast<const TestResponseHandle*>(
-                    message->response_handle);
-            if (response_handle->callback != nullptr) {
-              response_handle->callback(response->data(), response->size(),
-                                        response_handle->user_data);
-            }
-          });
+          stored_response_controller->HandleChannelMessage(
+              [message](bool handled) {
+                auto response = _keyHandlingResponse(handled);
+                const TestResponseHandle* response_handle =
+                    reinterpret_cast<const TestResponseHandle*>(
+                        message->response_handle);
+                if (response_handle->callback != nullptr) {
+                  response_handle->callback(response->data(), response->size(),
+                                            response_handle->user_data);
+                }
+              });
           return kSuccess;
         }
         return kSuccess;

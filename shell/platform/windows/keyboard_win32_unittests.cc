@@ -342,7 +342,6 @@ class KeyboardTester {
   }
 };
 
-
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeKeyB = 0x30;
 constexpr uint64_t kScanCodeKeyE = 0x12;
@@ -816,7 +815,7 @@ TEST(KeyboardTest, AltGrTwice) {
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
-             kWmResultZero));
+          kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
@@ -835,11 +834,11 @@ TEST(KeyboardTest, AltGrTwice) {
   // The key up event only causes a AltRight (extended AltLeft) up.
   tester.SetKeyState(VK_RMENU, false, true);
   tester.InjectMessages(
-      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
+      1,
+      WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalAltRight, kLogicalAltRight, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
   // Dispatch the ControlLeft up event appended by Flutter.
@@ -864,7 +863,7 @@ TEST(KeyboardTest, AltGrTwice) {
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
-             kWmResultZero));
+          kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
@@ -883,11 +882,11 @@ TEST(KeyboardTest, AltGrTwice) {
   // The key up event only causes a AltRight (extended AltLeft) up.
   tester.SetKeyState(VK_RMENU, false, false);
   tester.InjectMessages(
-      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
+      1,
+      WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalAltRight, kLogicalAltRight, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
   // Dispatch a ControlLeft up event from Flutter.
@@ -901,7 +900,8 @@ TEST(KeyboardTest, AltGrTwice) {
 
   // 5. For key sequence 2: a real ControlLeft up.
   tester.InjectMessages(
-      1, WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(kWmResultDefault));
+      1, WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(
+             kWmResultDefault));
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 }

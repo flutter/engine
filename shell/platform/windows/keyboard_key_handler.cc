@@ -129,9 +129,9 @@ void KeyboardKeyHandler::DispatchEvent(const PendingEvent& event) {
 #else
   char32_t character = event.character;
 
-  // Sys key events can't be synthesized. Their dispatching should be prevented
-  // in earlier code.
-  assert(event.action != WM_SYSKEYDOWN && event.action != WM_SYSKEYUP);
+  assert(event.action != WM_SYSKEYDOWN && event.action != WM_SYSKEYUP &&
+         "Unexpectedly dispatching a SYS event. SYS events can't be dispatched "
+         "and should have been prevented in earlier code.");
 
   INPUT input_event{
       .type = INPUT_KEYBOARD,
