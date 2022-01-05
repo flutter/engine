@@ -412,8 +412,9 @@ group("flutter_engine") {
   }
 }
 
-zip_bundle("archive") {
-  output = "${host_os}-${target_cpu}-embedder"
+
+zip_bundle("linux-embedder-archive") {
+  output = "${host_os}-${target_cpu}/${host_os}-${target_cpu}-embedder"
   files = [
     {
       source = "$root_out_dir/flutter_embedder.h"
