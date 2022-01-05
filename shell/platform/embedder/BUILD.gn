@@ -412,20 +412,22 @@ group("flutter_engine") {
   }
 }
 
-zip_bundle("linux-embedder-archive") {
-  output = "${host_os}-${target_cpu}/${host_os}-${target_cpu}-embedder"
-  files = [
-    {
-      source = "$root_out_dir/flutter_embedder.h"
-      destination = "flutter_embedder.h"
-    },
-    {
-      source = "$root_out_dir/libflutter_engine.so"
-      destination = "libflutter_engine.so"
-    },
-  ]
-  deps = [
-    "//flutter/shell/platform/embedder:copy_headers",
-    "//flutter/shell/platform/embedder:flutter_engine_library",
-  ]
+if (host_os == "linux") {
+  zip_bundle("linux-embedder-archive") {
+    output = "${host_os}-${target_cpu}/${host_os}-${target_cpu}-embedder"
+    files = [
+      {
+        source = "$root_out_dir/flutter_embedder.h"
+        destination = "flutter_embedder.h"
+      },
+      {
+        source = "$root_out_dir/libflutter_engine.so"
+        destination = "libflutter_engine.so"
+      },
+    ]
+    deps = [
+      "//flutter/shell/platform/embedder:copy_headers",
+      "//flutter/shell/platform/embedder:flutter_engine_library",
+    ]
+  }
 }
