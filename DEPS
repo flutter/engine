@@ -27,11 +27,11 @@ vars = {
   'skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '48432e133ef9dcfb9ae69039e5cdcce216343817',
+  'skia_revision': 'd7771857e9e24b3b8e67e25215d62ec78ff344c3',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-  'canvaskit_cipd_instance': 'NcwvqeeKK7urddCbEdDvHytdaCiCA_8-4oS_T_ouGfgC',
+  'canvaskit_cipd_instance': 'CQJGaIvKwSuYCIi4hxn3jdY-Pcrdkcnnu65ZVt18oW8C',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -61,9 +61,6 @@ vars = {
   'dart_yaml_edit_rev': 'df1452bfe1653286277a1a8f34dddf3e4fbedd9e',
 
   'ocmock_tag': 'v3.7.1',
-
-  # Build bot tooling for iOS
-  'ios_tools_revision': '69b7c1b160e7107a6a98d948363772dc9caea46f',
 
   # Download a prebuilt Dart SDK by default
   'download_dart_sdk': True,
@@ -147,9 +144,6 @@ deps = {
    #
    # As part of integrating with Fuchsia, we should eventually remove all these
    # Chromium-style dependencies.
-
-  'src/ios_tools':
-   Var('chromium_git') + '/chromium/src/ios.git' + '@' + Var('ios_tools_revision'),
 
   'src/third_party/icu':
    Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '2b50fa94b07b601293d7c1f791e853bba8ffbb84',
@@ -601,7 +595,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/mac-amd64',
-        'version': '_DFR_z58WzLoc5pXFm8MvqFvzv8JoYxF18SrOMiqcHMC'
+        'version': 'Al-HXHXyQVCjZ7E8T5OTAiUkJDpm05j9NH9Ytr90RyYC'
        }
      ],
      'condition': 'host_os == "mac"',
