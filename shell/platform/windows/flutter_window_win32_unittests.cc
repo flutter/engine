@@ -229,12 +229,10 @@ class TestFlutterWindowsView : public FlutterWindowsView {
  public:
   TestFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding,
                          WPARAM virtual_key,
-                         bool is_printable = true,
-                         bool is_syskey = false)
+                         bool is_printable = true)
       : FlutterWindowsView(std::move(window_binding)),
         virtual_key_(virtual_key),
-        is_printable_(is_printable),
-        is_syskey_(is_syskey) {}
+        is_printable_(is_printable) {}
 
   SpyKeyboardKeyHandler* key_event_handler;
   SpyTextInputPlugin* text_input_plugin;
@@ -294,7 +292,6 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   std::vector<Win32Message> pending_responds_;
   WPARAM virtual_key_;
   bool is_printable_;
-  bool is_syskey_;
 };
 
 // The static value to return as the "handled" value from the framework for key
@@ -395,8 +392,7 @@ TEST(FlutterWindowWin32Test, SystemKeyDownPropagation) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   TestFlutterWindowsView flutter_windows_view(
-      std::move(window_binding_handler), virtual_key, false /* is_printable */,
-      true /* is_syskey */);
+      std::move(window_binding_handler), virtual_key, false /* is_printable */);
   win32window.SetView(&flutter_windows_view);
   LPARAM lparam = CreateKeyEventLparam(scan_code, false, false);
 
