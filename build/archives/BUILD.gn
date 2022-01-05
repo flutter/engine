@@ -2,6 +2,11 @@ import("//flutter/build/zip_bundle.gni")
 
 zip_bundle("artifacts") {
   output = "$host_os-$target_cpu/artifacts.zip"
+  deps = [
+    "//flutter/flutter_frontend_server:frontend_server",
+    "//flutter/lib/snapshot:generate_snapshot_bin",
+    "//flutter/shell/testing:testing",
+  ]
   files = [
     {
       source = "//third_party/icu/flutter/icudtl.dat"
@@ -35,11 +40,6 @@ zip_bundle("artifacts") {
       },
     ]
   }
-  deps = [
-    "//flutter/flutter_frontend_server:frontend_server",
-    "//flutter/lib/snapshot:generate_snapshot_bin",
-    "//flutter/shell/testing:testing",
-  ]
 }
 
 if (host_os == "linux") {
@@ -50,6 +50,7 @@ if (host_os == "linux") {
 
 zip_bundle("flutter_patched_sdk") {
   output = "flutter_patched_sdk.zip"
+  deps = [ "//flutter/lib/snapshot:strong_platform" ]
   files = [
     {
       source = "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill"
@@ -60,5 +61,4 @@ zip_bundle("flutter_patched_sdk") {
       destination = "platform_strong.dill"
     },
   ]
-  deps = [ "//flutter/lib/snapshot:strong_platform" ]
 }

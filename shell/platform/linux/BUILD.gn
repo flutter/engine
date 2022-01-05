@@ -248,6 +248,10 @@ copy("publish_headers_linux") {
 
 zip_bundle("flutter_gtk") {
   output = "$host_os-$target_cpu-flutter-gtk.zip"
+  deps = [
+    ":flutter_linux_gtk",
+    ":publish_headers_linux",
+  ]
   sources = get_target_outputs(":publish_headers_linux")
   tmp_files = []
   foreach(source, sources) {
@@ -265,8 +269,4 @@ zip_bundle("flutter_gtk") {
     },
   ]
   files = tmp_files
-  deps = [
-    ":flutter_linux_gtk",
-    ":publish_headers_linux",
-  ]
 }
