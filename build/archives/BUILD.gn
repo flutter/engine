@@ -1,15 +1,11 @@
 import("//flutter/build/zip_bundle.gni")
 
 zip_bundle("artifacts") {
-  output = "artifacts.zip"
+  output = "$host_os-$target_cpu/artifacts.zip"
   files = [
     {
       source = "//third_party/icu/flutter/icudtl.dat"
       destination = "icudtl.dat"
-    },
-    {
-      source = "$root_out_dir/flutter_tester"
-      destination = "flutter_tester"
     },
     {
       source = "$root_out_dir/gen/flutter/lib/snapshot/isolate_snapshot.bin"
@@ -24,6 +20,21 @@ zip_bundle("artifacts") {
       destination = "frontend_server.dart.snapshot"
     },
   ]
+  if (host_os == "win") {
+    files += [
+      {
+        source = "$root_out_dir/flutter_tester.exe"
+        destination = "flutter_tester"
+      },
+    ]
+  } else {
+    files += [
+      {
+        source = "$root_out_dir/flutter_tester"
+        destination = "flutter_tester"
+      },
+    ]
+  }
   deps = [
     "//flutter/flutter_frontend_server:frontend_server",
     "//flutter/lib/snapshot:generate_snapshot_bin",
