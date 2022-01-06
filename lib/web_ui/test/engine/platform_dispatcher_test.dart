@@ -117,23 +117,25 @@ void testMain() {
         () async {
       final html.Element root = html.document.documentElement!;
       final String oldFontSize = root.style.fontSize;
+      final ui.VoidCallback? oldCallback = ui.PlatformDispatcher.instance.onTextScaleFactorChanged;
 
       addTearDown(() {
         root.style.fontSize = oldFontSize;
+        ui.PlatformDispatcher.instance.onTextScaleFactorChanged = oldCallback;
       });
 
       root.style.fontSize = '16px';
 
-      bool callsCallback = false;
+      bool isCalled = false;
       ui.PlatformDispatcher.instance.onTextScaleFactorChanged = () {
-        callsCallback = true;
+        isCalled = true;
       };
 
       Future<void> waitUntilCalled() {
         final Completer<void> completer = Completer<void>();
 
         void check() {
-          if (callsCallback == true) {
+          if (isCalled == true) {
             completer.complete();
           } else {
             Timer(Duration.zero, check);
@@ -146,15 +148,15 @@ void testMain() {
 
       root.style.fontSize = '20px';
       await waitUntilCalled();
-      expect(callsCallback, true);
+      expect(isCalled, true);
       expect(ui.PlatformDispatcher.instance.textScaleFactor,
           findBrowserTextScaleFactor());
 
-      callsCallback = false;
+      isCalled = false;
 
       root.style.fontSize = '16px';
       await waitUntilCalled();
-      expect(callsCallback, true);
+      expect(isCalled, true);
       expect(ui.PlatformDispatcher.instance.textScaleFactor,
           findBrowserTextScaleFactor());
     });
