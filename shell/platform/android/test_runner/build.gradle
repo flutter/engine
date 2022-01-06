@@ -17,7 +17,6 @@ apply plugin: "com.android.library"
 
 rootProject.buildDir = project.property("build_dir")
 
-
 android {
   compileSdkVersion 31
   defaultConfig {
@@ -32,6 +31,17 @@ android {
   testOptions {
     unitTests {
       includeAndroidResources = true
+    }
+
+    unitTests.all {
+      jvmArgs "-Xmx8g" // Max JVM heap size is 8G/30G available in the CI bot.
+      maxHeapSize "8g"
+      maxParallelForks Runtime.runtime.availableProcessors().intdiv(2) ?: 1 // The CI bot has 8 CPUs.
+      testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        showStackTraces true
+      }
     }
   }
 
@@ -68,16 +78,6 @@ android {
           srcDirs = ["../test"]
        }
       }
-    }
-  }
-
-  testOptions.unitTests.all {
-    jvmArgs "-Xmx4g" // Max JVM heap size is 4G.
-
-    testLogging {
-      events "passed", "skipped", "failed", "standardOut", "standardError"
-      exceptionFormat "full"
-      showStackTraces true
     }
   }
 }

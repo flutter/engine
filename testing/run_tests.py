@@ -348,7 +348,7 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
     '--gradle-user-home=%s' % gradle_cache_dir,
   ]
 
-  env = dict(os.environ, ANDROID_HOME=android_home, JAVA_HOME=JavaHome())
+  env = dict(os.environ, ANDROID_HOME=android_home, JAVA_HOME=JavaHome(), GRADLE_MAX_PARALLEL_FORKS='8')
   RunCmd(command, cwd=test_runner_dir, env=env)
 
 
