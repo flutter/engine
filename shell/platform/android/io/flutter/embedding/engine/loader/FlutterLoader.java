@@ -327,7 +327,7 @@ public class FlutterLoader {
     }
   }
 
-  private static boolean isLeakVM(Bundle metaData) {
+  private static boolean isLeakVM(@Nullable Bundle metaData) {
     final boolean leakVMDefaultValue = true;
     if (metaData == null) {
       return leakVMDefaultValue;
