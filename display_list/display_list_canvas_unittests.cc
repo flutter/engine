@@ -2,27 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/flow/display_list_canvas.h"
-#include "flutter/flow/layers/physical_shape_layer.h"
-
-#include "third_party/skia/include/core/SkColor.h"
-#include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/include/core/SkPath.h"
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
+#include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_flags.h"
+#include "flutter/fml/math.h"
+#include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkRRect.h"
-#include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/core/SkTextBlob.h"
-#include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/skia/include/effects/SkBlenders.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkDiscretePathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
-
-#include <cmath>
-
-#include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
@@ -1043,7 +1035,7 @@ class CanvasCompareTester {
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
-                       "ImageFilter == Blender Arithmetic 0.25-false",
+                       "Blender == Arithmetic 0.25-false",
                        [=](SkCanvas*, SkPaint& p) { p.setBlender(blender); },
                        [=](DisplayListBuilder& b) { b.setBlender(blender); }));
       }
@@ -1052,7 +1044,7 @@ class CanvasCompareTester {
       {
         RenderWith(testP, env, tolerance,
                    CaseParameters(
-                       "ImageFilter == Blender Arithmetic 0.25-true",
+                       "Blender == Arithmetic 0.25-true",
                        [=](SkCanvas*, SkPaint& p) { p.setBlender(blender); },
                        [=](DisplayListBuilder& b) { b.setBlender(blender); }));
       }
@@ -1543,8 +1535,10 @@ class CanvasCompareTester {
                         0, 1, 0, RenderCenterY,  //
                         0, 0, 1, 0,              //
                         0, 0, .001, 1);
-      m44.preConcat(SkM44::Rotate({1, 0, 0}, M_PI / 60));  // 3 degrees around X
-      m44.preConcat(SkM44::Rotate({0, 1, 0}, M_PI / 45));  // 4 degrees around Y
+      m44.preConcat(
+          SkM44::Rotate({1, 0, 0}, math::kPi / 60));  // 3 degrees around X
+      m44.preConcat(
+          SkM44::Rotate({0, 1, 0}, math::kPi / 45));  // 4 degrees around Y
       m44.preTranslate(-RenderCenterX, -RenderCenterY);
       RenderWith(
           testP, env, skewed_tolerance,
@@ -3021,8 +3015,8 @@ TEST_F(DisplayListCanvas, DrawShadow) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            PhysicalShapeLayer::DrawShadow(canvas, path, color, elevation,
-                                           false, 1.0);
+            DisplayListCanvasDispatcher::DrawShadow(canvas, path, color,
+                                                    elevation, false, 1.0);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawShadow(path, color, elevation, false, 1.0);
@@ -3048,8 +3042,8 @@ TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            PhysicalShapeLayer::DrawShadow(canvas, path, color, elevation, true,
-                                           1.0);
+            DisplayListCanvasDispatcher::DrawShadow(canvas, path, color,
+                                                    elevation, true, 1.0);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawShadow(path, color, elevation, true, 1.0);
@@ -3075,8 +3069,8 @@ TEST_F(DisplayListCanvas, DrawShadowDpr) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            PhysicalShapeLayer::DrawShadow(canvas, path, color, elevation,
-                                           false, 1.5);
+            DisplayListCanvasDispatcher::DrawShadow(canvas, path, color,
+                                                    elevation, false, 1.5);
           },
           [=](DisplayListBuilder& builder) {  //
             builder.drawShadow(path, color, elevation, false, 1.5);

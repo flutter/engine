@@ -1,4 +1,4 @@
-Signature: 78b5f08d90b8a637136bad277dec2ef3
+Signature: 49a681051f210ef77fe2c686e6a67701
 
 UNUSED LICENSES:
 
@@ -150,38 +150,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
-====================================================================================================
-
-====================================================================================================
-ORIGIN: ../../../third_party/pkg/when/LICENSE
-TYPE: LicenseType.bsd
-----------------------------------------------------------------------------------------------------
-Copyright 2015, the Dart project authors. All rights reserved.
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 USED LICENSES:
@@ -9858,6 +9826,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/late_helper.dar
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/ffi_allocation_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/core/enum.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/abi.dart
+FILE: ../../../third_party/dart/sdk/lib/ffi/abi_specific.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/allocation.dart
 FILE: ../../../third_party/dart/sdk/lib/ffi/union.dart
 ----------------------------------------------------------------------------------------------------
@@ -14510,7 +14479,7 @@ THE SOFTWARE.
 
 ====================================================================================================
 LIBRARY: glfw
-ORIGIN: ../../../third_party/glfw/COPYING.txt
+ORIGIN: ../../../third_party/glfw/LICENSE.md
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/.appveyor.yml
 FILE: ../../../third_party/glfw/CMake/MacOSXBundleInfo.plist.in
@@ -14550,10 +14519,10 @@ FILE: ../../../third_party/glfw/src/input.c
 FILE: ../../../third_party/glfw/src/internal.h
 FILE: ../../../third_party/glfw/src/linux_joystick.c
 FILE: ../../../third_party/glfw/src/monitor.c
+FILE: ../../../third_party/glfw/src/posix_thread.c
+FILE: ../../../third_party/glfw/src/posix_thread.h
 FILE: ../../../third_party/glfw/src/posix_time.c
 FILE: ../../../third_party/glfw/src/posix_time.h
-FILE: ../../../third_party/glfw/src/posix_tls.c
-FILE: ../../../third_party/glfw/src/posix_tls.h
 FILE: ../../../third_party/glfw/src/vulkan.c
 FILE: ../../../third_party/glfw/src/wgl_context.c
 FILE: ../../../third_party/glfw/src/wgl_context.h
@@ -14561,8 +14530,8 @@ FILE: ../../../third_party/glfw/src/win32_init.c
 FILE: ../../../third_party/glfw/src/win32_joystick.c
 FILE: ../../../third_party/glfw/src/win32_monitor.c
 FILE: ../../../third_party/glfw/src/win32_platform.h
+FILE: ../../../third_party/glfw/src/win32_thread.c
 FILE: ../../../third_party/glfw/src/win32_time.c
-FILE: ../../../third_party/glfw/src/win32_tls.c
 FILE: ../../../third_party/glfw/src/win32_window.c
 FILE: ../../../third_party/glfw/src/x11_init.c
 FILE: ../../../third_party/glfw/src/x11_monitor.c
@@ -14571,7 +14540,7 @@ FILE: ../../../third_party/glfw/src/x11_window.c
 FILE: ../../../third_party/glfw/src/xkb_unicode.c
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2002-2006 Marcus Geelnard
-Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14604,7 +14573,7 @@ FILE: ../../../third_party/glfw/src/cocoa_window.m
 FILE: ../../../third_party/glfw/src/nsgl_context.h
 FILE: ../../../third_party/glfw/src/nsgl_context.m
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2009-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2009-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14631,9 +14600,13 @@ LIBRARY: glfw
 ORIGIN: ../../../third_party/glfw/src/cocoa_joystick.h
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/cocoa_joystick.h
+FILE: ../../../third_party/glfw/src/mappings.h
+FILE: ../../../third_party/glfw/src/mappings.h.in
+FILE: ../../../third_party/glfw/src/null_joystick.c
+FILE: ../../../third_party/glfw/src/null_joystick.h
 FILE: ../../../third_party/glfw/src/win32_joystick.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14661,7 +14634,7 @@ ORIGIN: ../../../third_party/glfw/src/cocoa_joystick.m
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/cocoa_joystick.m
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2009-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2009-2016 Camilla Löwy <elmindreda@glfw.org>
 Copyright (c) 2012 Torsten Walluhn <tw@mad-cad.net>
 
 This software is provided 'as-is', without any express or implied
@@ -14690,7 +14663,7 @@ ORIGIN: ../../../third_party/glfw/src/glfw_config.h.in
 TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/glfw_config.h.in
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2010-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2010-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14747,14 +14720,17 @@ freely, subject to the following restrictions:
 
 ====================================================================================================
 LIBRARY: glfw
-ORIGIN: ../../../third_party/glfw/src/mir_init.c
+ORIGIN: ../../../third_party/glfw/src/null_init.c
 TYPE: LicenseType.zlib
-FILE: ../../../third_party/glfw/src/mir_init.c
-FILE: ../../../third_party/glfw/src/mir_monitor.c
-FILE: ../../../third_party/glfw/src/mir_platform.h
-FILE: ../../../third_party/glfw/src/mir_window.c
+FILE: ../../../third_party/glfw/src/null_init.c
+FILE: ../../../third_party/glfw/src/null_monitor.c
+FILE: ../../../third_party/glfw/src/null_platform.h
+FILE: ../../../third_party/glfw/src/null_window.c
+FILE: ../../../third_party/glfw/src/osmesa_context.c
+FILE: ../../../third_party/glfw/src/osmesa_context.h
 ----------------------------------------------------------------------------------------------------
-Copyright (c) 2014-2015 Brandon Schaefer <brandon.schaefer@canonical.com>
+Copyright (c) 2016 Google Inc.
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -14783,7 +14759,7 @@ TYPE: LicenseType.zlib
 FILE: ../../../third_party/glfw/src/window.c
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2002-2006 Marcus Geelnard
-Copyright (c) 2006-2016 Camilla Berglund <elmindreda@glfw.org>
+Copyright (c) 2006-2016 Camilla Löwy <elmindreda@glfw.org>
 Copyright (c) 2012 Torsten Walluhn <tw@mad-cad.net>
 
 This software is provided 'as-is', without any express or implied
@@ -14833,8 +14809,6 @@ FILE: ../../../third_party/harfbuzz/docs/usermanual-utilities.xml
 FILE: ../../../third_party/harfbuzz/docs/usermanual-what-is-harfbuzz.xml
 FILE: ../../../third_party/harfbuzz/docs/version.xml.in
 FILE: ../../../third_party/harfbuzz/harfbuzz.doap
-FILE: ../../../third_party/harfbuzz/meson-cc-tests/intel-atomic-primitives-test.c
-FILE: ../../../third_party/harfbuzz/meson-cc-tests/solaris-atomic-operations.c
 FILE: ../../../third_party/harfbuzz/meson.build
 FILE: ../../../third_party/harfbuzz/perf/fonts/Amiri-Regular.ttf
 FILE: ../../../third_party/harfbuzz/perf/fonts/NotoNastaliqUrdu-Regular.ttf
@@ -14855,7 +14829,7 @@ FILE: ../../../third_party/harfbuzz/src/harfbuzz.pc.in
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-joining-list.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-indic-table.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.cc
 FILE: ../../../third_party/harfbuzz/src/hb-ot-tag-table.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ucd-table.hh
@@ -14863,17 +14837,12 @@ FILE: ../../../third_party/harfbuzz/src/hb-unicode-emoji-table.hh
 FILE: ../../../third_party/harfbuzz/src/meson.build
 FILE: ../../../third_party/harfbuzz/src/update-unicode-tables.make
 FILE: ../../../third_party/harfbuzz/subprojects/cairo.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/expat.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/fontconfig.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/freetype2.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/glib.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/google-benchmark.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/libffi.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/libpng.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/pixman.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/proxy-libintl.wrap
+FILE: ../../../third_party/harfbuzz/subprojects/packagefiles/ragel/meson.build
+FILE: ../../../third_party/harfbuzz/subprojects/ragel.wrap
 FILE: ../../../third_party/harfbuzz/subprojects/ttf-parser.wrap
-FILE: ../../../third_party/harfbuzz/subprojects/zlib.wrap
 ----------------------------------------------------------------------------------------------------
 HarfBuzz is licensed under the so-called "Old MIT" license.  Details follow.
 For parts of HarfBuzz that are licensed under different licenses see individual
@@ -14888,72 +14857,12 @@ Copyright © 2008,2010  Nokia Corporation and/or its subsidiary(-ies)
 Copyright © 2009  Keith Stribley
 Copyright © 2009  Martin Hosken and SIL International
 Copyright © 2007  Chris Wilson
-Copyright © 2006  Behdad Esfahbod
+Copyright © 2005,2006,2020,2021  Behdad Esfahbod
 Copyright © 2005  David Turner
 Copyright © 2004,2007,2008,2009,2010  Red Hat, Inc.
 Copyright © 1998-2004  David Turner and Werner Lemberg
 
 For full copyright notices consult the individual files in the package.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/dump-indic-data.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/dump-indic-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-khmer-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-myanmar-data.cc
-FILE: ../../../third_party/harfbuzz/src/dump-use-data.cc
-FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
-FILE: ../../../third_party/harfbuzz/src/hb-array.hh
-FILE: ../../../third_party/harfbuzz/src/hb-map.cc
-FILE: ../../../third_party/harfbuzz/src/hb-map.h
-FILE: ../../../third_party/harfbuzz/src/hb-map.hh
-FILE: ../../../third_party/harfbuzz/src/hb-meta.hh
-FILE: ../../../third_party/harfbuzz/src/hb-null.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-deprecated.h
-FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language-static.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
-FILE: ../../../third_party/harfbuzz/src/hb-static.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
-FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
-FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
-FILE: ../../../third_party/harfbuzz/src/hb-subset.h
-FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
-FILE: ../../../third_party/harfbuzz/src/test-iter.cc
-FILE: ../../../third_party/harfbuzz/src/test-ot-name.cc
-FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2018  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
 
 Permission is hereby granted, without written agreement and without
 license or royalty fees, to use, copy, modify, and distribute this
@@ -15222,6 +15131,62 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-aat-map.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-aat-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-array.hh
+FILE: ../../../third_party/harfbuzz/src/hb-map.cc
+FILE: ../../../third_party/harfbuzz/src/hb-map.h
+FILE: ../../../third_party/harfbuzz/src/hb-map.hh
+FILE: ../../../third_party/harfbuzz/src/hb-meta.hh
+FILE: ../../../third_party/harfbuzz/src/hb-null.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-deprecated.h
+FILE: ../../../third_party/harfbuzz/src/hb-ot-face.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-hdmx-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language-static.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name-language.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-name.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-os2-unicode-ranges.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-khmer.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-vowel-constraints.hh
+FILE: ../../../third_party/harfbuzz/src/hb-static.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-input.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset-plan.hh
+FILE: ../../../third_party/harfbuzz/src/hb-subset.cc
+FILE: ../../../third_party/harfbuzz/src/hb-subset.h
+FILE: ../../../third_party/harfbuzz/src/hb-subset.hh
+FILE: ../../../third_party/harfbuzz/src/test-iter.cc
+FILE: ../../../third_party/harfbuzz/src/test-ot-name.cc
+FILE: ../../../third_party/harfbuzz/src/test-unicode-ranges.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2018  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-algs.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-algs.hh
@@ -15290,6 +15255,39 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-bimap.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2019 Adobe Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-bit-page.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-bit-page.hh
+FILE: ../../../third_party/harfbuzz/src/hb-bit-set-invertible.hh
+FILE: ../../../third_party/harfbuzz/src/hb-bit-set.hh
+FILE: ../../../third_party/harfbuzz/src/hb-set.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2012,2017  Google, Inc.
+Copyright © 2021 Behdad Esfahbod
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -15687,7 +15685,6 @@ TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-config.hh
 FILE: ../../../third_party/harfbuzz/src/hb-pool.hh
 FILE: ../../../third_party/harfbuzz/src/test-algs.cc
-FILE: ../../../third_party/harfbuzz/src/test-meta.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2019  Facebook, Inc.
 
@@ -16209,6 +16206,37 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ms-feature-ranges.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2011,2012,2013  Google, Inc.
+Copyright © 2021  Khaled Hosny
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-open-file.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-open-file.hh
@@ -16364,6 +16392,7 @@ LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colr-table.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-color-colrv1-closure.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-color-sbix-table.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2018  Ebrahim Byagowi
@@ -17010,6 +17039,36 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-post-table-v2subset.hh
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-post-table-v2subset.hh
+FILE: ../../../third_party/harfbuzz/src/hb-ot-var-common.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.cc
@@ -17048,7 +17107,6 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-arabic.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.hh
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use-machine.rl
 FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.cc
-FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-use.hh
 ----------------------------------------------------------------------------------------------------
 Copyright © 2015  Mozilla Foundation.
 Copyright © 2015  Google, Inc.
@@ -17082,6 +17140,36 @@ FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-myanmar.cc
 FILE: ../../../third_party/harfbuzz/src/hb-uniscribe.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2011,2012,2013  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.cc
+FILE: ../../../third_party/harfbuzz/src/hb-ot-shape-complex-syllabic.hh
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Behdad Esfahbod.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17253,13 +17341,15 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-priority-queue.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
+FILE: ../../../third_party/harfbuzz/src/hb-priority-queue.hh
+FILE: ../../../third_party/harfbuzz/src/hb-repacker.hh
+FILE: ../../../third_party/harfbuzz/src/test-array.cc
+FILE: ../../../third_party/harfbuzz/src/test-priority-queue.cc
+FILE: ../../../third_party/harfbuzz/src/test-repacker.cc
 ----------------------------------------------------------------------------------------------------
-Copyright © 2007,2008,2009,2010  Red Hat, Inc.
-Copyright © 2012,2018  Google, Inc.
-Copyright © 2019  Facebook, Inc.
+Copyright © 2020  Google, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17284,11 +17374,13 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/hb-set.hh
+ORIGIN: ../../../third_party/harfbuzz/src/hb-serialize.hh
 TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/hb-set.hh
+FILE: ../../../third_party/harfbuzz/src/hb-serialize.hh
 ----------------------------------------------------------------------------------------------------
-Copyright © 2012,2017  Google, Inc.
+Copyright © 2007,2008,2009,2010  Red Hat, Inc.
+Copyright © 2012,2018  Google, Inc.
+Copyright © 2019  Facebook, Inc.
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -17515,35 +17607,6 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: harfbuzz
-ORIGIN: ../../../third_party/harfbuzz/src/test-array.cc
-TYPE: LicenseType.unknown
-FILE: ../../../third_party/harfbuzz/src/test-array.cc
-----------------------------------------------------------------------------------------------------
-Copyright © 2020  Google, Inc.
-
- This is part of HarfBuzz, a text shaping library.
-
-Permission is hereby granted, without written agreement and without
-license or royalty fees, to use, copy, modify, and distribute this
-software and its documentation for any purpose, provided that the
-above copyright notice and the following two paragraphs appear in
-all copies of this software.
-
-IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
-DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
-ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
-IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGE.
-
-THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
-ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
-PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: harfbuzz
 ORIGIN: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
 TYPE: LicenseType.unknown
 FILE: ../../../third_party/harfbuzz/src/test-buffer-serialize.cc
@@ -17580,6 +17643,37 @@ FILE: ../../../third_party/harfbuzz/src/test-gsub-would-substitute.cc
 FILE: ../../../third_party/harfbuzz/src/test.cc
 ----------------------------------------------------------------------------------------------------
 Copyright © 2010,2011  Google, Inc.
+
+ This is part of HarfBuzz, a text shaping library.
+
+Permission is hereby granted, without written agreement and without
+license or royalty fees, to use, copy, modify, and distribute this
+software and its documentation for any purpose, provided that the
+above copyright notice and the following two paragraphs appear in
+all copies of this software.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES
+ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN
+IF THE COPYRIGHT HOLDER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+
+THE COPYRIGHT HOLDER SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE SOFTWARE PROVIDED HEREUNDER IS
+ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
+PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: harfbuzz
+ORIGIN: ../../../third_party/harfbuzz/src/test-map.cc
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/harfbuzz/src/test-map.cc
+FILE: ../../../third_party/harfbuzz/src/test-set.cc
+FILE: ../../../third_party/harfbuzz/src/test-vector.cc
+----------------------------------------------------------------------------------------------------
+Copyright © 2021  Behdad Esfahbod
 
  This is part of HarfBuzz, a text shaping library.
 
@@ -23149,6 +23243,111 @@ FILE: ../../../third_party/libpng/pngwutil.c
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../third_party/libtess2/Contrib/nanosvg.c
+TYPE: LicenseType.zlib
+FILE: ../../../third_party/libtess2/Contrib/nanosvg.c
+FILE: ../../../third_party/libtess2/Contrib/nanosvg.h
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2009 Mikko Mononen memon@inside.org
+
+This software is provided 'as-is', without any express or implied
+warranty.  In no event will the authors be held liable for any damages
+arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../third_party/libtess2/Include/tesselator.h
+TYPE: LicenseType.mit
+FILE: ../../../third_party/libtess2/Include/tesselator.h
+FILE: ../../../third_party/libtess2/Source/bucketalloc.c
+FILE: ../../../third_party/libtess2/Source/bucketalloc.h
+FILE: ../../../third_party/libtess2/Source/dict.c
+FILE: ../../../third_party/libtess2/Source/dict.h
+FILE: ../../../third_party/libtess2/Source/geom.c
+FILE: ../../../third_party/libtess2/Source/geom.h
+FILE: ../../../third_party/libtess2/Source/mesh.c
+FILE: ../../../third_party/libtess2/Source/mesh.h
+FILE: ../../../third_party/libtess2/Source/priorityq.c
+FILE: ../../../third_party/libtess2/Source/priorityq.h
+FILE: ../../../third_party/libtess2/Source/sweep.c
+FILE: ../../../third_party/libtess2/Source/sweep.h
+FILE: ../../../third_party/libtess2/Source/tess.c
+FILE: ../../../third_party/libtess2/Source/tess.h
+----------------------------------------------------------------------------------------------------
+Copyright (C) [dates of first publication] Silicon Graphics, Inc.
+All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice including the dates of first publication and either this
+permission notice or a reference to http://oss.sgi.com/projects/FreeB/ shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SILICON GRAPHICS, INC.
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Silicon Graphics, Inc. shall not
+be used in advertising or otherwise to promote the sale, use or other dealings in
+this Software without prior written authorization from Silicon Graphics, Inc.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: libtess2
+ORIGIN: ../../../third_party/libtess2/LICENSE.txt
+TYPE: LicenseType.mit
+FILE: ../../../third_party/libtess2/Bin/bg.svg
+FILE: ../../../third_party/libtess2/Bin/fg.svg
+FILE: ../../../third_party/libtess2/premake4.lua
+----------------------------------------------------------------------------------------------------
+SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
+Copyright (C) [dates of first publication] Silicon Graphics, Inc.
+All Rights Reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice including the dates of first publication and either this
+permission notice or a reference to http://oss.sgi.com/projects/FreeB/ shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SILICON GRAPHICS, INC.
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.
+
+Except as contained in this notice, the name of Silicon Graphics, Inc. shall not
+be used in advertising or otherwise to promote the sale, use or other dealings in
+this Software without prior written authorization from Silicon Graphics, Inc.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: libwebp
 ORIGIN: ../../../third_party/libwebp/COPYING
 TYPE: LicenseType.bsd
@@ -23705,42 +23904,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
 HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: pkg
-ORIGIN: ../../../third_party/pkg/when/lib/when.dart + ../../../third_party/pkg/when/LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/pkg/when/lib/when.dart
-----------------------------------------------------------------------------------------------------
-Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
-for details. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
 LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
 DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
@@ -24641,6 +24804,41 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: sqlite
+ORIGIN: ../../../third_party/sqlite/LICENSE
+TYPE: LicenseType.unknown
+FILE: ../../../third_party/sqlite/GIT_REVISION
+FILE: ../../../third_party/sqlite/LAST_UPDATE
+FILE: ../../../third_party/sqlite/VERSION
+FILE: ../../../third_party/sqlite/sqlite3.c
+FILE: ../../../third_party/sqlite/sqlite3.h
+----------------------------------------------------------------------------------------------------
+The source code for SQLite is in the public domain. No claim of
+copyright is made on any part of the core source code. (The
+documentation and test code is a different matter - some sections of
+documentation and test logic are governed by open-source licenses.)
+All contributors to the SQLite core software have signed affidavits
+specifically disavowing any copyright interest in the code. This means
+that anybody is able to legally do anything they want with the SQLite
+source code.
+
+There are other SQL database engines with liberal licenses that allow
+the code to be broadly and freely used. But those other engines are
+still governed by copyright law. SQLite is different in that copyright
+law simply does not apply.
+
+The source code files for other SQL database engines typically begin
+with a comment describing your legal rights to view and copy that
+file. The SQLite source code contains no license since it is not
+governed by copyright. Instead of a license, the SQLite source code
+offers a blessing:
+
+May you do good and not evil
+May you find forgiveness for yourself and forgive others
+May you share freely, never taking more than you give.
 ====================================================================================================
 
 ====================================================================================================
@@ -25546,4 +25744,4 @@ freely, subject to the following restrictions:
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 ====================================================================================================
-Total license count: 403
+Total license count: 409
