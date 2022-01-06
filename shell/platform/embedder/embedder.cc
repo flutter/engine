@@ -432,23 +432,23 @@ InferVulkanPlatformViewCreationCallback(
 
   auto vulkan_get_next_image =
       [ptr = config->vulkan.get_next_image_callback,
-       user_data](const SkISize& frame_size) -> VkImage {
+       user_data](const SkISize& frame_size) -> FlutterVulkanImage {
     FlutterFrameInfo frame_info = {
         .struct_size = sizeof(FlutterFrameInfo),
         .size = {static_cast<uint32_t>(frame_size.width()),
                  static_cast<uint32_t>(frame_size.height())},
     };
 
-    FlutterVulkanImage vulkan_image = ptr(user_data, &frame_info);
-    return reinterpret_cast<VkImage>(vulkan_image.image);
+    return ptr(user_data, &frame_info);
   };
 
   auto vulkan_present_image_callback =
-      [ptr = config->vulkan.present_image_callback,
-       user_data](VkImage image) -> bool {
+      [ptr = config->vulkan.present_image_callback, user_data](
+          VkImage image, VkFormat format) -> bool {
     FlutterVulkanImage image_desc = {
         .struct_size = sizeof(FlutterVulkanImage),
         .image = reinterpret_cast<uint64_t>(image),
+        .format = format,
     };
     return ptr(user_data, &image_desc);
   };
@@ -740,12 +740,11 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     FML_LOG(ERROR) << "Embedder supplied null Vulkan image.";
     return nullptr;
   }
-
   GrVkImageInfo image_info = {
       .fImage = reinterpret_cast<VkImage>(vulkan->image.image),
       .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
       .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .fFormat = VK_FORMAT_R8G8B8A8_UNORM,
+      .fFormat = static_cast<VkFormat>(vulkan->image.format),
       .fImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                           VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -765,9 +764,10 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
       1,                         // sample count
-      kRGBA_8888_SkColorType,    // color type
-      SkColorSpace::MakeSRGB(),  // color space
-      &surface_properties,       // surface properties
+      flutter::GPUSurfaceVulkan::ColorTypeFromFormat(
+          static_cast<VkFormat>(vulkan->image.format)),  // color type
+      SkColorSpace::MakeSRGB(),                          // color space
+      &surface_properties,                               // surface properties
       static_cast<SkSurface::TextureReleaseProc>(
           vulkan->destruction_callback),  // release proc
       vulkan->user_data                   // release context

@@ -46,6 +46,8 @@ class GPUSurfaceVulkan : public Surface {
   // |Surface|
   GrDirectContext* GetContext() override;
 
+  static SkColorType ColorTypeFromFormat(const VkFormat format);
+
  private:
   GPUSurfaceVulkanDelegate* delegate_;
   sk_sp<GrDirectContext> skia_context_;
@@ -53,7 +55,8 @@ class GPUSurfaceVulkan : public Surface {
 
   fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
 
-  sk_sp<SkSurface> CreateSurfaceFromVulkanImage(VkImage image,
+  sk_sp<SkSurface> CreateSurfaceFromVulkanImage(const VkImage image,
+                                                const VkFormat format,
                                                 const SkISize& size);
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceVulkan);

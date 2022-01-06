@@ -563,6 +563,8 @@ typedef struct {
   /// Handle to the VkImage that is owned by the embedder. The engine will
   /// bind this image for writing the frame.
   FlutterVulkanImageHandle image;
+  /// The VkFormat of the image (for example: VK_FORMAT_R8G8B8A8_UNORM).
+  uint32_t format;
 } FlutterVulkanImage;
 
 /// Callback to fetch a Vulkan function pointer for a given instance. Normally,

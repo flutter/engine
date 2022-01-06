@@ -72,7 +72,7 @@ inline bool operator==(const FlutterMetalTexture& a,
 
 inline bool operator==(const FlutterVulkanImage& a,
                        const FlutterVulkanImage& b) {
-  return a.image == b.image;
+  return a.image == b.image && a.format == b.format;
 }
 
 inline bool operator==(const FlutterVulkanBackingStore& a,
@@ -274,7 +274,7 @@ inline std::ostream& operator<<(std::ostream& out,
 inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterVulkanImage& item) {
   return out << "(FlutterVulkanTexture) Image Handle: " << std::hex
-             << item.image;
+             << item.image << std::dec << " Format: " << item.format;
 }
 
 inline std::string FlutterPlatformViewMutationTypeToString(

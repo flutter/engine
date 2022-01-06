@@ -22,9 +22,10 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
   struct VulkanDispatchTable {
     std::function<void*(VkInstance, const char*)>
         get_instance_proc_address;  // required
-    std::function<VkImage(const SkISize& frame_size)>
-        get_next_image;                                // required
-    std::function<bool(VkImage image)> present_image;  // required
+    std::function<FlutterVulkanImage(const SkISize& frame_size)>
+        get_next_image;  // required
+    std::function<bool(VkImage image, VkFormat format)>
+        present_image;  // required
   };
 
   EmbedderSurfaceVulkan(
@@ -42,10 +43,10 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
   const vulkan::VulkanProcTable& vk() override;
 
   // |GPUSurfaceVulkanDelegate|
-  VkImage AcquireImage(const SkISize& size) override;
+  FlutterVulkanImage AcquireImage(const SkISize& size) override;
 
   // |GPUSurfaceVulkanDelegate|
-  bool PresentImage(VkImage image) override;
+  bool PresentImage(VkImage image, VkFormat format) override;
 
  private:
   bool valid_ = false;

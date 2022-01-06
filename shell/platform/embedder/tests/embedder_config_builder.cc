@@ -8,6 +8,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
@@ -504,6 +505,7 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
     return {
         .struct_size = sizeof(FlutterVulkanImage),
         .image = reinterpret_cast<uint64_t>(image),
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
     };
   };
   vulkan_renderer_config_.present_image_callback =

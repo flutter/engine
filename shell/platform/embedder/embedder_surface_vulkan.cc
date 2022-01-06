@@ -63,13 +63,13 @@ const vulkan::VulkanProcTable& EmbedderSurfaceVulkan::vk() {
 }
 
 // |GPUSurfaceVulkanDelegate|
-VkImage EmbedderSurfaceVulkan::AcquireImage(const SkISize& size) {
+FlutterVulkanImage EmbedderSurfaceVulkan::AcquireImage(const SkISize& size) {
   return vulkan_dispatch_table_.get_next_image(size);
 }
 
 // |GPUSurfaceVulkanDelegate|
-bool EmbedderSurfaceVulkan::PresentImage(VkImage image) {
-  return vulkan_dispatch_table_.present_image(image);
+bool EmbedderSurfaceVulkan::PresentImage(VkImage image, VkFormat format) {
+  return vulkan_dispatch_table_.present_image(image, format);
 }
 
 // |EmbedderSurface|

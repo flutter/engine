@@ -287,6 +287,7 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
   backing_store_out->vulkan.user_data = surface.get();
   backing_store_out->vulkan.image.image =
       reinterpret_cast<uint64_t>(image_info.fImage);
+  backing_store_out->vulkan.image.format = VK_FORMAT_R8G8B8A8_UNORM;
   backing_store_out->vulkan.destruction_callback = [](void* user_data) {
     reinterpret_cast<SkSurface*>(user_data)->unref();
   };
