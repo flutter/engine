@@ -7,10 +7,10 @@
 
 #include <optional>
 
-#include "flutter/flow/display_list.h"
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_builder.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-
 #include "third_party/skia/include/core/SkMaskFilter.h"
 
 // This file contains various utility classes to ease implementing
@@ -96,6 +96,13 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
 // which can be accessed at any time via paint().
 class SkPaintDispatchHelper : public virtual Dispatcher {
  public:
+  SkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
+      : current_color_(SK_ColorBLACK), opacity_(opacity) {
+    if (opacity < SK_Scalar1) {
+      paint_.setAlphaf(opacity);
+    }
+  }
+
   void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;
   void setStyle(SkPaint::Style style) override;
@@ -115,6 +122,12 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
+  SkScalar opacity() { return opacity_; }
+  bool has_opacity() { return opacity_ < SK_Scalar1; }
+
+ protected:
+  void save_opacity(bool reset_and_restore);
+  void restore_opacity();
 
  private:
   SkPaint paint_;
@@ -122,6 +135,18 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   sk_sp<SkColorFilter> color_filter_;
 
   sk_sp<SkColorFilter> makeColorFilter();
+
+  struct SaveInfo {
+    SaveInfo(SkScalar opacity, bool restore_opacity)
+        : opacity(opacity), restore_opacity(restore_opacity) {}
+
+    SkScalar opacity;
+    bool restore_opacity;
+  };
+  std::vector<SaveInfo> save_stack_;
+
+  SkColor current_color_;
+  SkScalar opacity_;
 };
 
 class SkMatrixSource {
@@ -554,15 +579,33 @@ class DisplayListBoundsCalculator final
 
   bool paint_nops_on_transparency();
 
-  static bool ComputeFilteredBounds(SkRect& rect, SkImageFilter* filter);
+  // Computes the bounds of an operation adjusted for a given ImageFilter
+  static bool ComputeFilteredBounds(SkRect& bounds, SkImageFilter* filter);
+
+  // Adjusts the indicated bounds for the given flags and returns true if
+  // the calculation was possible, or false if it could not be estimated.
   bool AdjustBoundsForPaint(SkRect& bounds, DisplayListAttributeFlags flags);
 
+  // Records the fact that we encountered an op that either could not
+  // estimate its bounds or that fills all of the destination space.
   void AccumulateUnbounded();
-  void AccumulateRect(const SkRect& rect, DisplayListAttributeFlags flags) {
-    SkRect bounds = rect;
-    AccumulateRect(bounds, flags);
+
+  // Records the bounds for an op after modifying them according to the
+  // supplied attribute flags and transforming by the current matrix.
+  void AccumulateOpBounds(const SkRect& bounds,
+                          DisplayListAttributeFlags flags) {
+    SkRect safe_bounds = bounds;
+    AccumulateOpBounds(safe_bounds, flags);
   }
-  void AccumulateRect(SkRect& rect, DisplayListAttributeFlags flags);
+
+  // Records the bounds for an op after modifying them according to the
+  // supplied attribute flags and transforming by the current matrix
+  // and clipping against the current clip.
+  void AccumulateOpBounds(SkRect& bounds, DisplayListAttributeFlags flags);
+
+  // Records the given bounds after transforming by the current matrix
+  // and clipping against the current clip.
+  void AccumulateBounds(SkRect& bounds);
 };
 
 }  // namespace flutter

@@ -5,11 +5,12 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_handler.h"
+#include "flutter/shell/platform/windows/keyboard_manager_win32.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
-#include "flutter/shell/platform/windows/testing/flutter_window_win32_test.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 
@@ -58,54 +59,28 @@ uint32_t LayoutFrench(uint32_t virtual_key) {
   }
 }
 
-class MockFlutterWindowWin32 : public FlutterWindowWin32,
-                               public MockMessageQueue {
+class MockKeyboardManagerWin32Delegate
+    : public KeyboardManagerWin32::WindowDelegate,
+      public MockMessageQueue {
  public:
-  typedef std::function<void(const std::u16string& text)> U16StringHandler;
-
-  MockFlutterWindowWin32(U16StringHandler on_text)
-      : FlutterWindowWin32(800, 600),
-        on_text_(std::move(on_text)),
-        map_vk_to_char_(LayoutDefault) {
-    ON_CALL(*this, GetDpiScale())
-        .WillByDefault(Return(this->FlutterWindowWin32::GetDpiScale()));
+  MockKeyboardManagerWin32Delegate(WindowBindingHandlerDelegate* view)
+      : view_(view), map_vk_to_char_(LayoutDefault) {
+    keyboard_manager_ = std::make_unique<KeyboardManagerWin32>(this);
   }
-  virtual ~MockFlutterWindowWin32() {}
+  virtual ~MockKeyboardManagerWin32Delegate() {}
 
-  // Prevent copying.
-  MockFlutterWindowWin32(MockFlutterWindowWin32 const&) = delete;
-  MockFlutterWindowWin32& operator=(MockFlutterWindowWin32 const&) = delete;
-
-  // Wrapper for GetCurrentDPI() which is a protected method.
-  UINT GetDpi() { return GetCurrentDPI(); }
-
-  LRESULT Win32DefWindowProc(HWND hWnd,
-                             UINT Msg,
-                             WPARAM wParam,
-                             LPARAM lParam) override {
-    return kWmResultDefault;
+  // |WindowWin32|
+  bool OnKey(int key,
+             int scancode,
+             int action,
+             char32_t character,
+             bool extended,
+             bool was_down) override {
+    return view_->OnKey(key, scancode, action, character, extended, was_down);
   }
 
-  // Simulates a WindowProc message from the OS.
-  LRESULT InjectWindowMessage(UINT const message,
-                              WPARAM const wparam,
-                              LPARAM const lparam) {
-    return Win32SendMessage(NULL, message, wparam, lparam);
-  }
-
-  void OnText(const std::u16string& text) override { on_text_(text); }
-
-  MOCK_METHOD1(OnDpiScale, void(unsigned int));
-  MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
-  MOCK_METHOD2(OnPointerMove, void(double, double));
-  MOCK_METHOD3(OnPointerDown, void(double, double, UINT));
-  MOCK_METHOD3(OnPointerUp, void(double, double, UINT));
-  MOCK_METHOD0(OnPointerLeave, void());
-  MOCK_METHOD0(OnSetCursor, void());
-  MOCK_METHOD2(OnScroll, void(double, double));
-  MOCK_METHOD0(GetDpiScale, float());
-  MOCK_METHOD0(IsVisible, bool());
-  MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
+  // |WindowWin32|
+  void OnText(const std::u16string& text) override { view_->OnText(text); }
 
   void SetLayout(MapVkToCharHandler map_vk_to_char) {
     map_vk_to_char_ =
@@ -114,11 +89,10 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
 
  protected:
   virtual BOOL Win32PeekMessage(LPMSG lpMsg,
-                                HWND hWnd,
                                 UINT wMsgFilterMin,
                                 UINT wMsgFilterMax,
                                 UINT wRemoveMsg) override {
-    return MockMessageQueue::Win32PeekMessage(lpMsg, hWnd, wMsgFilterMin,
+    return MockMessageQueue::Win32PeekMessage(lpMsg, wMsgFilterMin,
                                               wMsgFilterMax, wRemoveMsg);
   }
 
@@ -126,17 +100,20 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32,
     return map_vk_to_char_(virtual_key);
   }
 
+  virtual LRESULT Win32SendMessage(UINT const message,
+                                   WPARAM const wparam,
+                                   LPARAM const lparam) override {
+    return keyboard_manager_->HandleMessage(message, wparam, lparam)
+               ? 0
+               : kWmResultDefault;
+  }
+
  private:
-  U16StringHandler on_text_;
+  WindowBindingHandlerDelegate* view_;
+
+  std::unique_ptr<KeyboardManagerWin32> keyboard_manager_;
 
   MapVkToCharHandler map_vk_to_char_;
-
-  LRESULT Win32SendMessage(HWND hWnd,
-                           UINT const message,
-                           WPARAM const wparam,
-                           LPARAM const lparam) override {
-    return HandleMessage(message, wparam, lparam);
-  }
 };
 
 class TestKeystate {
@@ -156,31 +133,25 @@ class TestKeystate {
   std::map<uint32_t, SHORT> state_;
 };
 
-typedef struct {
-  UINT cInputs;
-  KEYBDINPUT kbdinput;
-  int cbSize;
-} SendInputInfo;
-
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
 // to register the keyboard hook handlers that can be spied upon.
 class TestFlutterWindowsView : public FlutterWindowsView {
  public:
-  TestFlutterWindowsView()
+  typedef std::function<void(const std::u16string& text)> U16StringHandler;
+
+  TestFlutterWindowsView(U16StringHandler on_text)
       // The WindowBindingHandler is used for window size and such, and doesn't
       // affect keyboard.
       : FlutterWindowsView(
             std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
-        redispatch_char(0) {}
+        on_text_(std::move(on_text)) {}
 
-  uint32_t redispatch_char;
+  void OnText(const std::u16string& text) override { on_text_(text); }
 
-  int InjectPendingEvents(MockFlutterWindowWin32* win32window,
-                          uint32_t redispatch_char) {
+  int InjectPendingEvents(MockMessageQueue* queue, uint32_t redispatch_char) {
     std::vector<Win32Message> messages;
     int num_pending_responds = pending_responds_.size();
-    for (const SendInputInfo& input : pending_responds_) {
-      const KEYBDINPUT kbdinput = input.kbdinput;
+    for (const KEYBDINPUT& kbdinput : pending_responds_) {
       const UINT message =
           (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
       const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
@@ -199,8 +170,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
       }
     }
 
-    win32window->InjectMessageList(messages.size(), messages.data());
     pending_responds_.clear();
+    queue->InjectMessageList(messages.size(), messages.data());
     return num_pending_responds;
   }
 
@@ -209,11 +180,11 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   }
 
  protected:
-  void RegisterKeyboardHandlers(
+  std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
       KeyboardKeyHandler::EventDispatcher dispatch_event,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
-    FlutterWindowsView::RegisterKeyboardHandlers(
+    return FlutterWindowsView::CreateKeyboardKeyHandler(
         messenger,
         [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
           return this->SendInput(cInputs, pInputs, cbSize);
@@ -223,11 +194,14 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
  private:
   UINT SendInput(UINT cInputs, LPINPUT pInputs, int cbSize) {
-    pending_responds_.push_back({cInputs, pInputs->ki, cbSize});
+    for (UINT input_idx = 0; input_idx < cInputs; input_idx += 1) {
+      pending_responds_.push_back(pInputs[input_idx].ki);
+    }
     return 1;
   }
 
-  std::vector<SendInputInfo> pending_responds_;
+  U16StringHandler on_text_;
+  std::vector<KEYBDINPUT> pending_responds_;
   TestKeystate key_state_;
 };
 
@@ -256,28 +230,52 @@ void clear_key_calls() {
   key_calls.clear();
 }
 
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine();
-
 class KeyboardTester {
  public:
-  explicit KeyboardTester() {
-    view_ = std::make_unique<TestFlutterWindowsView>();
-    view_->SetEngine(std::move(GetTestEngine()));
-    window_ = std::make_unique<MockFlutterWindowWin32>(
+  using ResponseHandler =
+      std::function<void(MockKeyResponseController::ResponseCallback)>;
+
+  explicit KeyboardTester() : callback_handler_(RespondValue(false)) {
+    view_ = std::make_unique<TestFlutterWindowsView>(
         [](const std::u16string& text) {
           key_calls.push_back(KeyCall{
               .type = kKeyCallOnText,
               .text = text,
           });
         });
-    window_->SetView(view_.get());
+    view_->SetEngine(GetTestEngine(
+        [&callback_handler = callback_handler_](
+            const FlutterKeyEvent* event,
+            MockKeyResponseController::ResponseCallback callback) {
+          FlutterKeyEvent clone_event = *event;
+          clone_event.character = event->character == nullptr
+                                      ? nullptr
+                                      : clone_string(event->character);
+          key_calls.push_back(KeyCall{
+              .type = kKeyCallOnKey,
+              .key_event = clone_event,
+          });
+          callback_handler(event, callback);
+        }));
+    window_ = std::make_unique<MockKeyboardManagerWin32Delegate>(view_.get());
   }
 
   void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
     view_->SetKeyState(key, pressed, toggled_on);
   }
 
-  void Responding(bool response) { test_response = response; }
+  void Responding(bool response) { callback_handler_ = RespondValue(response); }
+
+  // Manually handle event callback of the onKeyData embedder API.
+  //
+  // On every onKeyData call, the |handler| will be invoked with the target
+  // key data and the result callback. Immediately calling the callback with
+  // a boolean is equivalent to setting |Responding| with the boolean. However,
+  // |LateResponding| allows storing the callback to call later.
+  void LateResponding(
+      MockKeyResponseController::EmbedderCallbackHandler handler) {
+    callback_handler_ = std::move(handler);
+  }
 
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
@@ -304,47 +302,48 @@ class KeyboardTester {
     return view_->InjectPendingEvents(window_.get(), redispatch_char);
   }
 
-  static bool test_response;
-
  private:
   std::unique_ptr<TestFlutterWindowsView> view_;
-  std::unique_ptr<MockFlutterWindowWin32> window_;
+  std::unique_ptr<MockKeyboardManagerWin32Delegate> window_;
+  MockKeyResponseController::EmbedderCallbackHandler callback_handler_;
+
+  // Returns an engine instance configured with dummy project path values, and
+  // overridden methods for sending platform messages, so that the engine can
+  // respond as if the framework were connected.
+  static std::unique_ptr<FlutterWindowsEngine> GetTestEngine(
+      MockKeyResponseController::EmbedderCallbackHandler
+          embedder_callback_handler) {
+    FlutterDesktopEngineProperties properties = {};
+    properties.assets_path = L"C:\\foo\\flutter_assets";
+    properties.icu_data_path = L"C:\\foo\\icudtl.dat";
+    properties.aot_library_path = L"C:\\foo\\aot.so";
+    FlutterProjectBundle project(properties);
+    auto engine = std::make_unique<FlutterWindowsEngine>(project);
+
+    EngineModifier modifier(engine.get());
+
+    auto key_response_controller =
+        std::make_shared<MockKeyResponseController>();
+    key_response_controller->SetEmbedderResponse(
+        std::move(embedder_callback_handler));
+
+    MockEmbedderApiForKeyboard(modifier, key_response_controller);
+
+    engine->RunWithEntrypoint(nullptr);
+    return engine;
+  }
+
+  static MockKeyResponseController::EmbedderCallbackHandler RespondValue(
+      bool value) {
+    return [value](const FlutterKeyEvent* event,
+                   MockKeyResponseController::ResponseCallback callback) {
+      callback(value);
+    };
+  }
 };
 
-bool KeyboardTester::test_response = false;
-
-// Returns an engine instance configured with dummy project path values, and
-// overridden methods for sending platform messages, so that the engine can
-// respond as if the framework were connected.
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = L"C:\\foo\\flutter_assets";
-  properties.icu_data_path = L"C:\\foo\\icudtl.dat";
-  properties.aot_library_path = L"C:\\foo\\aot.so";
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
-
-  EngineModifier modifier(engine.get());
-
-  MockEmbedderApiForKeyboard(
-      modifier, [] { return KeyboardTester::test_response; },
-      [](const FlutterKeyEvent* event) {
-        FlutterKeyEvent clone_event = *event;
-        clone_event.character = event->character == nullptr
-                                    ? nullptr
-                                    : clone_string(event->character);
-        key_calls.push_back(KeyCall{
-            .type = kKeyCallOnKey,
-            .key_event = clone_event,
-        });
-        return KeyboardTester::test_response;
-      });
-
-  engine->RunWithEntrypoint(nullptr);
-  return engine;
-}
-
 constexpr uint64_t kScanCodeKeyA = 0x1e;
+constexpr uint64_t kScanCodeKeyB = 0x30;
 constexpr uint64_t kScanCodeKeyE = 0x12;
 constexpr uint64_t kScanCodeKeyQ = 0x10;
 constexpr uint64_t kScanCodeKeyW = 0x11;
@@ -355,11 +354,12 @@ constexpr uint64_t kScanCodeDigit6 = 0x07;
 constexpr uint64_t kScanCodeControl = 0x1d;
 constexpr uint64_t kScanCodeAlt = 0x38;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
-// constexpr uint64_t kScanCodeShiftRight = 0x36;
+constexpr uint64_t kScanCodeShiftRight = 0x36;
 constexpr uint64_t kScanCodeBracketLeft = 0x1a;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
+constexpr uint64_t kVirtualKeyB = 0x42;
 constexpr uint64_t kVirtualKeyE = 0x45;
 constexpr uint64_t kVirtualKeyQ = 0x51;
 constexpr uint64_t kVirtualKeyW = 0x57;
@@ -731,7 +731,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kNotSynthesized);
   clear_key_calls();
 
-  tester.InjectPendingEvents();
+  EXPECT_EQ(tester.InjectPendingEvents(), 2);
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
@@ -748,7 +748,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalKeyQ, "@", kNotSynthesized);
   clear_key_calls();
 
-  tester.InjectPendingEvents('@');
+  EXPECT_EQ(tester.InjectPendingEvents('@'), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"@");
   clear_key_calls();
@@ -763,12 +763,12 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalKeyQ, "", kNotSynthesized);
   clear_key_calls();
 
-  tester.InjectPendingEvents();
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
   EXPECT_EQ(key_calls.size(), 0);
 
   // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead Flutter will
-  // dispatch one. The AltGr is a system key, so will be handled by Win32's
-  // default WndProc.
+  // dispatch one. The AltGr is a system key, therefore will be handled by
+  // Win32's default WndProc.
   tester.InjectMessages(
       1,
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
@@ -778,12 +778,131 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
-  tester.SetKeyState(VK_LCONTROL, false, false);
-  tester.InjectPendingEvents();
+  // Dispatch the ControlLeft up event appended by Flutter.
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
+  clear_key_calls();
+}
+
+// Test the following two key sequences at the same time:
+//
+// 1. Tap AltGr, then tap AltGr.
+// 2. Tap AltGr, hold CtrlLeft, tap AltGr, release CtrlLeft.
+//
+// The two sequences are indistinguishable until the very end when a CtrlLeft
+// up event might or might not follow.
+//
+//   Sequence 1: CtrlLeft down, AltRight down, AltRight up
+//   Sequence 2: CtrlLeft down, AltRight down, AltRight up, CtrlLeft up
+//
+// This is because pressing AltGr alone causes Win32 to send a fake "CtrlLeft
+// down" event first (see |IsKeyDownAltRight| for detailed explanation).
+TEST(KeyboardTest, AltGrTwice) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // 1. AltGr down.
+
+  // The key down event causes a ControlLeft down and a AltRight (extended
+  // AltLeft) down.
+  tester.SetKeyState(VK_LCONTROL, true, true);
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 2);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // 2. AltGr up.
+
+  // The key up event only causes a AltRight (extended AltLeft) up.
+  tester.SetKeyState(VK_RMENU, false, true);
+  tester.InjectMessages(
+      1,
+      WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Dispatch the ControlLeft up event appended by Flutter.
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Redispatch the ControlLeft up event.
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // 3. AltGr down (or: ControlLeft down then AltRight down.)
+
+  tester.SetKeyState(VK_LCONTROL, true, false);
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeDown,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 2);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // 4. AltGr up.
+
+  // The key up event only causes a AltRight (extended AltLeft) up.
+  tester.SetKeyState(VK_RMENU, false, false);
+  tester.InjectMessages(
+      1,
+      WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Dispatch a ControlLeft up event from Flutter.
+  tester.SetKeyState(VK_LCONTROL, false, false);
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // 5. For key sequence 2: a real ControlLeft up.
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(
+             kWmResultDefault));
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 }
 
@@ -1093,6 +1212,134 @@ TEST(KeyboardTest, MultibyteCharacter) {
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+// A key down event for shift right must not be redispatched even if
+// the framework returns unhandled.
+//
+// The reason for this test is documented in |IsKeyDownShiftRight|.
+TEST(KeyboardTest, NeverRedispatchShiftRightKeyDown) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // Press ShiftRight and the delegate responds false.
+  tester.SetKeyState(VK_RSHIFT, true, true);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  clear_key_calls();
+
+  // Try to dispatch events. There should be nothing.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, DisorderlyRespondedEvents) {
+  KeyboardTester tester;
+
+  // Store callbacks to manually call them.
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
+  tester.LateResponding(
+      [&recorded_callbacks](
+          const FlutterKeyEvent* event,
+          MockKeyResponseController::ResponseCallback callback) {
+        recorded_callbacks.push_back(callback);
+      });
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  // Press B
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyB, kScanCodeKeyB, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'b', kScanCodeKeyB, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  clear_key_calls();
+
+  // Resolve the second event first to test disordered responses.
+  recorded_callbacks.back()(false);
+
+  EXPECT_EQ(tester.InjectPendingEvents('b'), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"b");
+  clear_key_calls();
+
+  // Resolve the first event.
+  recorded_callbacks.front()(false);
+
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
+}
+
+// Regression test for a crash in an earlier implementation.
+//
+// In real life, the framework responds slowly. The next real event might
+// arrive earlier than the framework response, and if the 2nd event has an
+// identical hash as the one waiting for response, an earlier implementation
+// will crash upon the response.
+TEST(KeyboardTest, SlowFrameworkResponse) {
+  KeyboardTester tester;
+
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
+
+  // Store callbacks to manually call them.
+  tester.LateResponding(
+      [&recorded_callbacks](
+          const FlutterKeyEvent* event,
+          MockKeyResponseController::ResponseCallback callback) {
+        recorded_callbacks.push_back(callback);
+      });
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  // Hold A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasDown}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasDown}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  clear_key_calls();
+
+  // The first response.
+  recorded_callbacks.front()(false);
+
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
+
+  // The second response.
+  recorded_callbacks.back()(false);
+
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
 }
 
