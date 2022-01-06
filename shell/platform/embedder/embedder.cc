@@ -448,7 +448,7 @@ InferVulkanPlatformViewCreationCallback(
     FlutterVulkanImage image_desc = {
         .struct_size = sizeof(FlutterVulkanImage),
         .image = reinterpret_cast<uint64_t>(image),
-        .format = format,
+        .format = static_cast<VkFormat>(format),
     };
     return ptr(user_data, &image_desc);
   };
