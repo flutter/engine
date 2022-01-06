@@ -44,7 +44,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// these.
   EnginePlatformDispatcher._() {
     _addBrightnessMediaQueryListener();
-    _observeFontSize();
+    _addFontSizeObserver();
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -784,8 +784,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
 
-  /// Updates [textScaleFactor] and invokes [onTextScaleFactorChanged]
-  /// callback if [textScaleFactor] changed.
+  /// Updates [textScaleFactor] and invokes [onTextScaleFactorChanged] and
+  /// [onPlatformConfigurationChanged] callbacks if [textScaleFactor] changed.
   void _updateTextScaleFactor(double value) {
     if (configuration.textScaleFactor != value) {
       _configuration = configuration.copyWith(textScaleFactor: value);
@@ -802,7 +802,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Set the callback function for updating [textScaleFactor] based on
   /// font-size changes in the browser's <html> element.
-  void _observeFontSize() {
+  void _addFontSizeObserver() {
     const String styleAttribute = 'style';
 
     _fontSizeObserver = html.MutationObserver(
