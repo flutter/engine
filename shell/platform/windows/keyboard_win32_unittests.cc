@@ -70,13 +70,14 @@ class MockKeyboardManagerWin32Delegate
   virtual ~MockKeyboardManagerWin32Delegate() {}
 
   // |WindowWin32|
-  bool OnKey(int key,
+  void OnKey(int key,
              int scancode,
              int action,
              char32_t character,
              bool extended,
-             bool was_down) override {
-    return view_->OnKey(key, scancode, action, character, extended, was_down);
+             bool was_down,
+             KeyEventCallback callback) override {
+    view_->OnKey(key, scancode, action, character, extended, was_down, callback);
   }
 
   // |WindowWin32|
@@ -87,8 +88,35 @@ class MockKeyboardManagerWin32Delegate
         map_vk_to_char == nullptr ? LayoutDefault : map_vk_to_char;
   }
 
+  int InjectPendingEvents(uint32_t redispatch_char) {
+    std::vector<Win32Message> messages;
+    int num_pending_responds = pending_responds_.size();
+    for (const KEYBDINPUT& kbdinput : pending_responds_) {
+      const UINT message =
+          (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
+      const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
+      const LPARAM lparam = CreateKeyEventLparam(
+          kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
+      // TODO(dkwingsmt): Don't check the message results for redispatched
+      // messages for now, because making them work takes non-trivial rework
+      // to our current structure.
+      // https://github.com/flutter/flutter/issues/87843 If this is resolved,
+      // change them to kWmResultDefault.
+      messages.push_back(
+          Win32Message{message, kbdinput.wVk, lparam, kWmResultDontCheck});
+      if (redispatch_char != 0 && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
+        messages.push_back(
+            Win32Message{WM_CHAR, redispatch_char, lparam, kWmResultDontCheck});
+      }
+    }
+
+    pending_responds_.clear();
+    InjectMessageList(messages.size(), messages.data());
+    return num_pending_responds;
+  }
+
  protected:
-  virtual BOOL Win32PeekMessage(LPMSG lpMsg,
+  BOOL Win32PeekMessage(LPMSG lpMsg,
                                 UINT wMsgFilterMin,
                                 UINT wMsgFilterMax,
                                 UINT wRemoveMsg) override {
@@ -96,11 +124,11 @@ class MockKeyboardManagerWin32Delegate
                                               wMsgFilterMax, wRemoveMsg);
   }
 
-  virtual uint32_t Win32MapVkToChar(uint32_t virtual_key) override {
+  uint32_t Win32MapVkToChar(uint32_t virtual_key) override {
     return map_vk_to_char_(virtual_key);
   }
 
-  virtual LRESULT Win32SendMessage(UINT const message,
+  LRESULT Win32SendMessage(UINT const message,
                                    WPARAM const wparam,
                                    LPARAM const lparam) override {
     return keyboard_manager_->HandleMessage(message, wparam, lparam)
@@ -108,12 +136,18 @@ class MockKeyboardManagerWin32Delegate
                : kWmResultDefault;
   }
 
+  UINT Win32DispatchEvent(UINT cInputs, LPINPUT pInputs, int cbSize) override {
+    for (UINT input_idx = 0; input_idx < cInputs; input_idx += 1) {
+      pending_responds_.push_back(pInputs[input_idx].ki);
+    }
+    return 1;
+  }
+
  private:
   WindowBindingHandlerDelegate* view_;
-
   std::unique_ptr<KeyboardManagerWin32> keyboard_manager_;
-
   MapVkToCharHandler map_vk_to_char_;
+  std::vector<KEYBDINPUT> pending_responds_;
 };
 
 class TestKeystate {
@@ -148,33 +182,6 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
   void OnText(const std::u16string& text) override { on_text_(text); }
 
-  int InjectPendingEvents(MockMessageQueue* queue, uint32_t redispatch_char) {
-    std::vector<Win32Message> messages;
-    int num_pending_responds = pending_responds_.size();
-    for (const KEYBDINPUT& kbdinput : pending_responds_) {
-      const UINT message =
-          (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
-      const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
-      const LPARAM lparam = CreateKeyEventLparam(
-          kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
-      // TODO(dkwingsmt): Don't check the message results for redispatched
-      // messages for now, because making them work takes non-trivial rework
-      // to our current structure.
-      // https://github.com/flutter/flutter/issues/87843 If this is resolved,
-      // change them to kWmResultDefault.
-      messages.push_back(
-          Win32Message{message, kbdinput.wVk, lparam, kWmResultDontCheck});
-      if (redispatch_char != 0 && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-        messages.push_back(
-            Win32Message{WM_CHAR, redispatch_char, lparam, kWmResultDontCheck});
-      }
-    }
-
-    pending_responds_.clear();
-    queue->InjectMessageList(messages.size(), messages.data());
-    return num_pending_responds;
-  }
-
   void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
     key_state_.Set(key, pressed, toggled_on);
   }
@@ -182,26 +189,14 @@ class TestFlutterWindowsView : public FlutterWindowsView {
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
-      KeyboardKeyHandler::EventDispatcher dispatch_event,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
     return FlutterWindowsView::CreateKeyboardKeyHandler(
         messenger,
-        [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
-          return this->SendInput(cInputs, pInputs, cbSize);
-        },
         key_state_.Getter());
   }
 
  private:
-  UINT SendInput(UINT cInputs, LPINPUT pInputs, int cbSize) {
-    for (UINT input_idx = 0; input_idx < cInputs; input_idx += 1) {
-      pending_responds_.push_back(pInputs[input_idx].ki);
-    }
-    return 1;
-  }
-
   U16StringHandler on_text_;
-  std::vector<KEYBDINPUT> pending_responds_;
   TestKeystate key_state_;
 };
 
@@ -299,7 +294,7 @@ class KeyboardTester {
   // If |redispatch_char| is not 0, then WM_KEYDOWN events will
   // also redispatch a WM_CHAR event with that value as lparam.
   int InjectPendingEvents(uint32_t redispatch_char = 0) {
-    return view_->InjectPendingEvents(window_.get(), redispatch_char);
+    return window_->InjectPendingEvents(redispatch_char);
   }
 
  private:

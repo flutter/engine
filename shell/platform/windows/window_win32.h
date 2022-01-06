@@ -48,6 +48,11 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // |KeyboardManagerWin32::WindowDelegate|
   virtual uint32_t Win32MapVkToChar(uint32_t virtual_key) override;
 
+  // |KeyboardManagerWin32::WindowDelegate|
+  virtual UINT Win32DispatchEvent(UINT cInputs,
+                                  LPINPUT pInputs,
+                                  int cbSize) override;
+
  protected:
   // Converts a c string to a wide unicode string.
   std::wstring NarrowToWide(const char* source);
