@@ -58,7 +58,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   /// was disposed.
   bool debugCheckNotDisposed(String mainErrorMessage) {
     if (_isDisposed) {
-      throw AssertionError(
+      throw StateError(
         '$mainErrorMessage\n'
         'The picture has been disposed. When the picture was disposed the '
         'stack trace was:\n'

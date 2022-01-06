@@ -8,7 +8,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../matchers.dart';
 import 'common.dart';
 
 void main() {
@@ -34,19 +33,19 @@ void testMain() {
         expect(picture.rawSkiaObject, isNull);
         expect(picture.debugIsDisposed, isTrue);
 
-        AssertionError? actualError;
+        StateError? actualError;
         try {
           picture.debugCheckNotDisposed('Test.');
-        } on AssertionError catch (error) {
+        } on StateError catch (error) {
           actualError = error;
         }
 
         expect(actualError, isNotNull);
         expect('$actualError', startsWith(
-          r'Assertion failed: "Test.\n'
+          'Bad state: Test.\n'
           'The picture has been disposed. '
-          r'When the picture was disposed the stack trace was:\n'
-          r'Error\n'
+          'When the picture was disposed the stack trace was:\n'
+          'Error\n'
           '    at Object.StackTrace_current'
         ));
 
@@ -56,9 +55,9 @@ void testMain() {
         expect(picture.rawSkiaObject, isNull);
 
         // A Picture that's been disposed of can no longer be resurrected
-        expect(() => picture.resurrect(), throwsAssertionError);
-        expect(() => picture.toImage(10, 10), throwsAssertionError);
-        expect(() => picture.dispose(), throwsAssertionError);
+        expect(() => picture.resurrect(), throwsStateError);
+        expect(() => picture.toImage(10, 10), throwsStateError);
+        expect(() => picture.dispose(), throwsStateError);
       });
 
       test('can be deleted by SkiaObjectCache', () {
