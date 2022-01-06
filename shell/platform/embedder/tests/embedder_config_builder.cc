@@ -473,6 +473,9 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
   }
 
   vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
+  vulkan_renderer_config_.version =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->application_->GetAPIVersion();
   vulkan_renderer_config_.instance =
       static_cast<EmbedderTestContextVulkan&>(context_)
           .vulkan_context_->application_->GetInstance();

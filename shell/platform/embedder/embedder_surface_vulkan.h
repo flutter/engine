@@ -29,6 +29,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
   };
 
   EmbedderSurfaceVulkan(
+      uint32_t version,
       VkInstance instance,
       VkPhysicalDevice physical_device,
       VkDevice device,
@@ -67,6 +68,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   sk_sp<GrDirectContext> CreateGrContext(VkInstance instance,
+                                         uint32_t version,
                                          ContextType context_type) const;
 
   void* GetInstanceProcAddress(VkInstance instance, const char* proc_name);

@@ -464,6 +464,7 @@ InferVulkanPlatformViewCreationCallback(
 
   std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
       std::make_unique<flutter::EmbedderSurfaceVulkan>(
+          config->vulkan.version,
           static_cast<VkInstance>(config->vulkan.instance),
           static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
           static_cast<VkDevice>(config->vulkan.device),

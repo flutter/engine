@@ -588,23 +588,30 @@ typedef bool (*FlutterVulkanPresentCallback)(
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanRendererConfig).
   size_t struct_size;
-  // VkInstance handle.
+
+  /// The Vulkan API version. This should match the value set in
+  /// VkApplicationInfo::apiVersion when the VkInstance was created.
+  uint32_t version;
+  /// VkInstance handle.
   FlutterVulkanInstanceHandle instance;
-  // VkPhysicalDevice handle.
+  /// VkPhysicalDevice handle.
   FlutterVulkanPhysicalDeviceHandle physical_device;
-  // VkDevice handle.
+  /// VkDevice handle.
   FlutterVulkanDeviceHandle device;
+  /// The queue family index of the VkQueue supplied in the next field.
   uint32_t queue_family_index;
-  // VkQueue handle.
+  /// VkQueue handle.
   FlutterVulkanQueueHandle queue;
   FlutterVulkanInstanceProcAddressCallback get_instance_proc_address_callback;
   /// The callback invoked when the engine requests a VkImage from the embedder
   /// for rendering the next frame.
+  /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterVulkanImageCallback get_next_image_callback;
   /// The callback invoked when a VkImage has been written to and is ready for
   /// use by the embedder. Prior to calling this callback, the engine performs
   /// a host sync, and so the VkImage can be used in a pipeline by the embedder
   /// without any additional synchronization.
+  /// Not used if a FlutterCompositor is supplied in FlutterProjectArgs.
   FlutterVulkanPresentCallback present_image_callback;
 
 } FlutterVulkanRendererConfig;

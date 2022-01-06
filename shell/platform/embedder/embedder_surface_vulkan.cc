@@ -14,6 +14,7 @@
 namespace flutter {
 
 EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
+    uint32_t version,
     VkInstance instance,
     VkPhysicalDevice physical_device,
     VkDevice device,
@@ -44,13 +45,14 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  main_context_ = CreateGrContext(instance, ContextType::kRender);
+  main_context_ = CreateGrContext(instance, version, ContextType::kRender);
   // TODO(bdero): Add a second (optional) queue+family index to the Embedder API
   //             to allow embedders to specify a dedicated transfer queue for
   //             use by the resource context. Queue families with graphics
   //             capability can always be used for memory transferring, but it
   //             would be adventageous to use a dedicated transter queue here.
-  resource_context_ = CreateGrContext(instance, ContextType::kResource);
+  resource_context_ =
+      CreateGrContext(instance, version, ContextType::kResource);
 
   valid_ = main_context_ && resource_context_;
 }
@@ -91,6 +93,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateResourceContext() const {
 
 sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     VkInstance instance,
+    uint32_t version,
     ContextType context_type) const {
   uint32_t skia_features = 0;
   if (!device_.GetPhysicalDeviceFeaturesSkia(&skia_features)) {
@@ -113,8 +116,8 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fDevice = device_.GetHandle();
   backend_context.fQueue = device_.GetQueueHandle();
   backend_context.fGraphicsQueueIndex = device_.GetGraphicsQueueIndex();
-  backend_context.fMinAPIVersion = VK_MAKE_VERSION(1, 0, 0);
-  backend_context.fMaxAPIVersion = VK_MAKE_VERSION(1, 0, 0);
+  backend_context.fMinAPIVersion = version;
+  backend_context.fMaxAPIVersion = version;
   backend_context.fFeatures = skia_features;
   backend_context.fVkExtensions = &extensions;
   backend_context.fGetProc = get_proc;
