@@ -47,12 +47,30 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   ///
   /// Returns null if [dispose] has not been called. Returns null in non-debug
   /// modes.
-  StackTrace? get debugDisposalStackTrace => _debugDisposalStackTrace;
   StackTrace? _debugDisposalStackTrace;
+
+  /// Throws an [AssertionError] if this picture was disposed.
+  ///
+  /// The [mainErrorMessage] is used as the first line in the error message. It
+  /// is expected to end with a period, e.g. "Failed to draw picture." The full
+  /// message will also explain that the error is due to the fact that the
+  /// picture was disposed and include the stack trace taken when the picture
+  /// was disposed.
+  bool debugCheckNotDisposed(String mainErrorMessage) {
+    if (_isDisposed) {
+      throw AssertionError(
+        '$mainErrorMessage\n'
+        'The picture has been disposed. When the picture was disposed the '
+        'stack trace was:\n'
+        '$_debugDisposalStackTrace',
+      );
+    }
+    return true;
+  }
 
   @override
   void dispose() {
-    assert(!_isDisposed, 'Object has been disposed.');
+    assert(debugCheckNotDisposed('Cannot dispose picture.'));
     assert(() {
       _debugDisposalStackTrace = StackTrace.current;
       return true;
@@ -70,7 +88,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) async {
-    assert(!_isDisposed);
+    assert(debugCheckNotDisposed('Cannot convert picture to image.'));
     final SkSurface skSurface = canvasKit.MakeSurface(width, height);
     final SkCanvas skCanvas = skSurface.getCanvas();
     skCanvas.drawPicture(skiaObject);
@@ -93,7 +111,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     // If a picture has been explicitly disposed of, it can no longer be
     // resurrected. An attempt to resurrect after the framework told the
     // engine to dispose of the picture likely indicates a bug in the engine.
-    assert(!_isDisposed);
+    assert(debugCheckNotDisposed('Cannot resurrect picture.'));
     return _snapshot!.toPicture();
   }
 

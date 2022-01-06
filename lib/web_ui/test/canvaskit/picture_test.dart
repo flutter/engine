@@ -29,11 +29,26 @@ void testMain() {
         final CkPicture picture = recorder.endRecording() as CkPicture;
         expect(picture.rawSkiaObject, isNotNull);
         expect(picture.debugIsDisposed, isFalse);
-        expect(picture.debugDisposalStackTrace, isNull);
+        picture.debugCheckNotDisposed('Test.'); // must not throw
         picture.dispose();
         expect(picture.rawSkiaObject, isNull);
         expect(picture.debugIsDisposed, isTrue);
-        expect(picture.debugDisposalStackTrace, isNotNull);
+
+        AssertionError? actualError;
+        try {
+          picture.debugCheckNotDisposed('Test.');
+        } on AssertionError catch (error) {
+          actualError = error;
+        }
+
+        expect(actualError, isNotNull);
+        expect('$actualError', startsWith(
+          r'Assertion failed: "Test.\n'
+          'The picture has been disposed. '
+          r'When the picture was disposed the stack trace was:\n'
+          r'Error\n'
+          '    at Object.StackTrace_current'
+        ));
 
         // Emulate SkiaObjectCache deleting the picture
         picture.delete();
