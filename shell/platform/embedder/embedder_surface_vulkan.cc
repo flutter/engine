@@ -123,17 +123,16 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fGetProc = get_proc;
   backend_context.fOwnsInstanceAndDevice = false;
 
-  // TODO(bdero): Activate MEMORY_REQUIREMENTS_2 if available because VMA (the
-  //              allocator used by Skia) knows how to take advantage of these
-  //              features.
-  /*
+  // Activate MEMORY_REQUIREMENTS_2 (available in Vulkan >= 1.1) because VMA
+  // knows how to take advantage of these features.
+  if (version >= VK_MAKE_VERSION(1, 1, 0)) {
     const char* device_extensions[] = {
         VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
     };
     extensions.init(backend_context.fGetProc, backend_context.fInstance,
-                       backend_context.fPhysicalDevice, 0, nullptr,
-                       countof(device_extensions), device_extensions);
-  */
+                    backend_context.fPhysicalDevice, 0, nullptr, 1,
+                    device_extensions);
+  }
 
   GrContextOptions options =
       MakeDefaultContextOptions(context_type, GrBackendApi::kVulkan);
