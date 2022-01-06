@@ -218,6 +218,12 @@ class CkCanvas {
   }
 
   void drawPicture(CkPicture picture) {
+    assert(
+      !picture.debugIsDisposed,
+      'Unable to draw the specified picture because it has been disposed. '
+      'When the picture was disposed the stack trace was:\n'
+      '${picture.debugDisposalStackTrace}',
+    );
     skCanvas.drawPicture(picture.skiaObject);
   }
 

@@ -29,9 +29,11 @@ void testMain() {
         final CkPicture picture = recorder.endRecording() as CkPicture;
         expect(picture.rawSkiaObject, isNotNull);
         expect(picture.debugIsDisposed, isFalse);
+        expect(picture.debugDisposalStackTrace, isNull);
         picture.dispose();
         expect(picture.rawSkiaObject, isNull);
         expect(picture.debugIsDisposed, isTrue);
+        expect(picture.debugDisposalStackTrace, isNotNull);
 
         // Emulate SkiaObjectCache deleting the picture
         picture.delete();

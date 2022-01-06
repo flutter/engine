@@ -43,9 +43,20 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   /// similar flag [SkiaObjectBox.isDeletedPermanently].
   bool _isDisposed = false;
 
+  /// The stack trace taken when [dispose] was called.
+  ///
+  /// Returns null if [dispose] has not been called. Returns null in non-debug
+  /// modes.
+  StackTrace? get debugDisposalStackTrace => _debugDisposalStackTrace;
+  StackTrace? _debugDisposalStackTrace;
+
   @override
   void dispose() {
     assert(!_isDisposed, 'Object has been disposed.');
+    assert(() {
+      _debugDisposalStackTrace = StackTrace.current;
+      return true;
+    }());
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('Picture disposed');
     }
