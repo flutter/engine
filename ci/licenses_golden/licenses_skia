@@ -1,4 +1,4 @@
-Signature: 3ef76d017bd8be5d68f3d42808ea723e
+Signature: 062435f7f42a6bcd6def16d304b5091a
 
 UNUSED LICENSES:
 
@@ -1294,7 +1294,6 @@ FILE: ../../../third_party/skia/src/sksl/sksl_gpu.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_public.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_rt_shader.sksl
 FILE: ../../../third_party/skia/src/sksl/sksl_vert.sksl
-FILE: ../../../third_party/skia/src/sksl/tracing/BUILD.bazel
 FILE: ../../../third_party/skia/src/sksl/transform/BUILD.bazel
 FILE: ../../../third_party/skia/src/svg/BUILD.bazel
 FILE: ../../../third_party/skia/src/utils/BUILD.bazel
@@ -2973,8 +2972,6 @@ FILE: ../../../third_party/skia/src/gpu/ops/DashLinePathRenderer.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/DashLinePathRenderer.h
 FILE: ../../../third_party/skia/src/gpu/ops/DrawAtlasOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/DrawAtlasOp.h
-FILE: ../../../third_party/skia/src/gpu/ops/DrawVerticesOp.cpp
-FILE: ../../../third_party/skia/src/gpu/ops/DrawVerticesOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrDrawOp.h
 FILE: ../../../third_party/skia/src/gpu/ops/GrMeshDrawOp.cpp
 FILE: ../../../third_party/skia/src/gpu/ops/GrMeshDrawOp.h
@@ -4119,6 +4116,7 @@ FILE: ../../../third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLInlineMarker.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLPrefixExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLStructDefinition.h
+FILE: ../../../third_party/skia/src/sksl/ir/SkSLSymbolAlias.h
 FILE: ../../../third_party/skia/src/utils/SkCustomTypeface.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2020 Google LLC
