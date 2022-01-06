@@ -1540,7 +1540,23 @@ class TextStyle {
   }
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(_encoded), _leadingDistribution, _fontFamily, _fontFamilyFallback, _fontSize, _letterSpacing, _wordSpacing, _height, _locale, _background, _foreground, Object.hashAll(_shadows ?? const <Object?>[]), _decorationThickness, Object.hashAll(_fontFeatures ?? const <Object?>[]), Object.hashAll(_fontVariations ?? const <Object?>[]));
+  int get hashCode => Object.hash(
+    Object.hashAll(_encoded),
+    _leadingDistribution,
+    _fontFamily,
+    _fontFamilyFallback,
+    _fontSize,
+    _letterSpacing,
+    _wordSpacing,
+    _height,
+    _locale,
+    _background,
+    _foreground,
+    Object.hashAll(_shadows ?? const <Object?>[]),
+    _decorationThickness,
+    Object.hashAll(_fontFeatures ?? const <Object?>[]),
+    Object.hashAll(_fontVariations ?? const <Object?>[]),
+  );
 
   @override
   String toString() {

@@ -41,7 +41,7 @@ class _Jenkins {
 /// int hashCode => hashValues(foo, bar, hashList(quux), baz);
 /// ```
 @Deprecated(
-  'Use Object.hash() instead '
+  'Use Object.hash() instead. '
   'This feature was deprecated in v2.9.0-0.1.pre'
 )
 int hashValues(
@@ -117,7 +117,7 @@ int hashValues(
 /// an [Iterable] into one value. This function will return the same value if
 /// given null as if given an empty list.
 @Deprecated(
-  'Use Object.hashAll() or Object.hashAllUnordered() instead '
+  'Use Object.hashAll() or Object.hashAllUnordered() instead. '
   'This feature was deprecated in v2.9.0-0.1.pre'
 )
 int hashList(Iterable<Object?>? arguments) {
