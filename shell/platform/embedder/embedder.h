@@ -602,6 +602,20 @@ typedef struct {
   uint32_t queue_family_index;
   /// VkQueue handle.
   FlutterVulkanQueueHandle queue;
+  /// The number of instance extensions available for enumerating in the next
+  /// field.
+  size_t instance_extension_count;
+  /// Array of enabled instance extension names.
+  /// This field is optional; `nullptr` may be specified.
+  /// For example:
+  const char** instance_extensions;
+  /// The number of device extensions available for enumerating in the next
+  /// field.
+  size_t device_extension_count;
+  /// Array of enabled device extension names.
+  /// This field is optional; `nullptr` may be specified.
+  /// For example: VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
+  const char** device_extensions;
   FlutterVulkanInstanceProcAddressCallback get_instance_proc_address_callback;
   /// The callback invoked when the engine requests a VkImage from the embedder
   /// for rendering the next frame.

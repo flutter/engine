@@ -31,6 +31,10 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
   EmbedderSurfaceVulkan(
       uint32_t version,
       VkInstance instance,
+      size_t instance_extension_count,
+      const char** instance_extensions,
+      size_t device_extension_count,
+      const char** device_extensions,
       VkPhysicalDevice physical_device,
       VkDevice device,
       uint32_t queue_family_index,
@@ -69,6 +73,10 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
 
   sk_sp<GrDirectContext> CreateGrContext(VkInstance instance,
                                          uint32_t version,
+                                         size_t instance_extension_count,
+                                         const char** instance_extensions,
+                                         size_t device_extension_count,
+                                         const char** device_extensions,
                                          ContextType context_type) const;
 
   void* GetInstanceProcAddress(VkInstance instance, const char* proc_name);

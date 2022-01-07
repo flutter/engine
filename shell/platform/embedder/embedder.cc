@@ -466,6 +466,10 @@ InferVulkanPlatformViewCreationCallback(
       std::make_unique<flutter::EmbedderSurfaceVulkan>(
           config->vulkan.version,
           static_cast<VkInstance>(config->vulkan.instance),
+          config->vulkan.instance_extension_count,
+          config->vulkan.instance_extensions,
+          config->vulkan.device_extension_count,
+          config->vulkan.device_extensions,
           static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
           static_cast<VkDevice>(config->vulkan.device),
           config->vulkan.queue_family_index,

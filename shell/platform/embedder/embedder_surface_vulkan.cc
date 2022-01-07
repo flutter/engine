@@ -16,6 +16,10 @@ namespace flutter {
 EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     uint32_t version,
     VkInstance instance,
+    size_t instance_extension_count,
+    const char** instance_extensions,
+    size_t device_extension_count,
+    const char** device_extensions,
     VkPhysicalDevice physical_device,
     VkDevice device,
     uint32_t queue_family_index,
@@ -45,14 +49,17 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     return;
   }
 
-  main_context_ = CreateGrContext(instance, version, ContextType::kRender);
+  main_context_ = CreateGrContext(instance, version, instance_extension_count,
+                                  instance_extensions, device_extension_count,
+                                  device_extensions, ContextType::kRender);
   // TODO(bdero): Add a second (optional) queue+family index to the Embedder API
   //             to allow embedders to specify a dedicated transfer queue for
   //             use by the resource context. Queue families with graphics
   //             capability can always be used for memory transferring, but it
   //             would be adventageous to use a dedicated transter queue here.
-  resource_context_ =
-      CreateGrContext(instance, version, ContextType::kResource);
+  resource_context_ = CreateGrContext(
+      instance, version, instance_extension_count, instance_extensions,
+      device_extension_count, device_extensions, ContextType::kResource);
 
   valid_ = main_context_ && resource_context_;
 }
@@ -94,6 +101,10 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateResourceContext() const {
 sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     VkInstance instance,
     uint32_t version,
+    size_t instance_extension_count,
+    const char** instance_extensions,
+    size_t device_extension_count,
+    const char** device_extensions,
     ContextType context_type) const {
   uint32_t skia_features = 0;
   if (!device_.GetPhysicalDeviceFeaturesSkia(&skia_features)) {
@@ -123,16 +134,10 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fGetProc = get_proc;
   backend_context.fOwnsInstanceAndDevice = false;
 
-  // Activate MEMORY_REQUIREMENTS_2 (available in Vulkan >= 1.1) because VMA
-  // knows how to take advantage of these features.
-  if (version >= VK_MAKE_VERSION(1, 1, 0)) {
-    const char* device_extensions[] = {
-        VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-    };
-    extensions.init(backend_context.fGetProc, backend_context.fInstance,
-                    backend_context.fPhysicalDevice, 0, nullptr, 1,
-                    device_extensions);
-  }
+  extensions.init(backend_context.fGetProc, backend_context.fInstance,
+                  backend_context.fPhysicalDevice, instance_extension_count,
+                  instance_extensions, device_extension_count,
+                  device_extensions);
 
   GrContextOptions options =
       MakeDefaultContextOptions(context_type, GrBackendApi::kVulkan);
