@@ -10,14 +10,14 @@ import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.view.Display;
 import android.view.inputmethod.InputMethodManager;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @TargetApi(28)
 public class SingleViewPresentationTest {
   @Test
