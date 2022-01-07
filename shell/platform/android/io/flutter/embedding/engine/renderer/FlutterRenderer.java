@@ -225,7 +225,7 @@ public class FlutterRenderer implements TextureRegistry {
    * if the Engine expects to reuse this surface later. For example, this is true when platform
    * views are displayed in a frame, and then removed in the next frame.
    *
-   * <p>To avoid releasing of current surface resources, set {@code keepCurrentSurface} to true.
+   * <p>To avoid releasing the current surface resources, set {@code keepCurrentSurface} to true.
    *
    * <p>See {@link android.view.SurfaceHolder.Callback} and {@link
    * android.view.TextureView.SurfaceTextureListener}
