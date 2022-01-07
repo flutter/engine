@@ -118,7 +118,8 @@ typedef enum UIAccessibilityContrast : NSInteger {
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
   if (engine == nil) {
-    FML_LOG(ERROR) << "The supplied FlutterEngine is nil to FlutterViewControler "
+    FML_LOG(ERROR) << "The supplied FlutterEngine must not be nil "
+                   << "to the FlutterViewController instance "
                    << [[engine.viewController description] UTF8String];
   }
   self = [super initWithNibName:nibName bundle:nibBundle];
