@@ -112,7 +112,7 @@ public class FlutterRendererTest {
   }
 
   @Test
-  public void iStopsRenderingToSurfaceWhenPossible() {
+  public void iStopsRenderingToSurfaceWhenSurfaceAlreadySet() {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
