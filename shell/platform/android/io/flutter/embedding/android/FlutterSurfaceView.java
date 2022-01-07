@@ -37,6 +37,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
 
   private final boolean renderTransparently;
   private boolean isSurfaceAvailableForRendering = false;
+  private boolean isPaused = false;
   private boolean isAttachedToFlutterRenderer = false;
   @Nullable private FlutterRenderer flutterRenderer;
 
@@ -200,6 +201,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
           "Surface is available for rendering. Connecting FlutterRenderer to Android surface.");
       connectSurfaceToRenderer();
     }
+    isPaused = false;
   }
 
   /**
@@ -241,6 +243,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
       // Don't remove the `flutterUiDisplayListener` as `onFlutterUiDisplayed()` will make
       // the `FlutterSurfaceView` visible.
       flutterRenderer = null;
+      isPaused = true;
       isAttachedToFlutterRenderer = false;
     } else {
       Log.w(TAG, "pause() invoked when no FlutterRenderer was attached.");
@@ -253,8 +256,17 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
       throw new IllegalStateException(
           "connectSurfaceToRenderer() should only be called when flutterRenderer and getHolder() are non-null.");
     }
-
-    flutterRenderer.startRenderingToSurface(getHolder().getSurface());
+    // When connecting the surface to the renderer, it's possible that the surface is currently
+    // paused. For instance, when a platform view is displayed, the current FlutterSurfaceView
+    // is paused, and rendering continues in a FlutterImageView buffer while the platform view
+    // is displayed.
+    //
+    // startRenderingToSurface may stop rendering to this surface if it believes it already started
+    // renderering to it.
+    //
+    // However, the flutter renderer isn't aware of this surface being paused.
+    // Therefore, the associated native resources should not be released.
+    flutterRenderer.startRenderingToSurface(getHolder().getSurface(), isPaused);
   }
 
   // FlutterRenderer must be non-null.
