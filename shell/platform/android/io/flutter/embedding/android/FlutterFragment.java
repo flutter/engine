@@ -105,6 +105,8 @@ public class FlutterFragment extends Fragment
 
   /** The Dart entrypoint method name that is executed upon initialization. */
   protected static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
+  /** */
+  protected static final String ARG_DART_ENTRYPOINT_URI = "dart_entrypoint_uri";
   /** Initial Flutter route that is rendered in a Navigator widget. */
   protected static final String ARG_INITIAL_ROUTE = "initial_route";
   /** Whether the activity delegate should handle the deeplinking request. */
@@ -223,6 +225,7 @@ public class FlutterFragment extends Fragment
   public static class NewEngineFragmentBuilder {
     private final Class<? extends FlutterFragment> fragmentClass;
     private String dartEntrypoint = "main";
+    private String dartLibraryUri = null;
     private String initialRoute = "/";
     private boolean handleDeeplinking = false;
     private String appBundlePath = null;
@@ -253,6 +256,12 @@ public class FlutterFragment extends Fragment
     @NonNull
     public NewEngineFragmentBuilder dartEntrypoint(@NonNull String dartEntrypoint) {
       this.dartEntrypoint = dartEntrypoint;
+      return this;
+    }
+
+    @NonNull
+    public NewEngineFragmentBuilder dartLibraryUri(@NonNull String dartLibraryUri) {
+      this.dartLibraryUri = dartLibraryUri;
       return this;
     }
 
@@ -410,6 +419,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_HANDLE_DEEPLINKING, handleDeeplinking);
       args.putString(ARG_APP_BUNDLE_PATH, appBundlePath);
       args.putString(ARG_DART_ENTRYPOINT, dartEntrypoint);
+      args.putString(ARG_DART_ENTRYPOINT_URI, dartLibraryUri);
       // TODO(mattcarroll): determine if we should have an explicit FlutterTestFragment instead of
       // conflating.
       if (null != shellArgs) {
@@ -1024,6 +1034,12 @@ public class FlutterFragment extends Fragment
   @NonNull
   public String getDartEntrypointFunctionName() {
     return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
+  }
+
+  @Override
+  @Nullable
+  public String getDartEntrypointLibraryUri() {
+    return getArguments().getString(ARG_DART_ENTRYPOINT_URI);
   }
 
   /**
