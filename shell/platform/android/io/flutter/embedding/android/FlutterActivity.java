@@ -825,6 +825,20 @@ public class FlutterActivity extends Activity
     }
   }
 
+  /**
+   * The Dart library uri for the entrypoint that will be executed as soon as the Dart snapshot is
+   * loaded.
+   *
+   * <p>Example value: "package:foo/bar.dart"
+   *
+   * <p>This preference can be controlled by setting a {@code <meta-data>} called {@link
+   * FlutterActivityLaunchConfigs#DART_ENTRYPOINT_URI_META_DATA_KEY} within the Android manifest
+   * definition for this {@code FlutterActivity}.
+   *
+   * <p>A value of null means use the default root library.
+   *
+   * <p>Subclasses may override this method to directly control the Dart entrypoint uri.
+   */
   @Nullable
   public String getDartEntrypointLibraryUri() {
     try {

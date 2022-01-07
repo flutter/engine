@@ -1036,6 +1036,14 @@ public class FlutterFragment extends Fragment
     return getArguments().getString(ARG_DART_ENTRYPOINT, "main");
   }
 
+  /**
+   * Returns the library uri of the Dart method that this {@code FlutterFragment} should execute to
+   * start a Flutter app.
+   *
+   * <p>Defaults to null (example value: "package:foo/bar.dart").
+   *
+   * <p>Used by this {@code FlutterFragment}'s {@link FlutterActivityAndFragmentDelegate.Host}
+   */
   @Override
   @Nullable
   public String getDartEntrypointLibraryUri() {
