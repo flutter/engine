@@ -117,7 +117,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
-  NSAssert(engine != nil, @"Engine is required");
+  if (engine == nil) {
+    FML_LOG(ERROR) << "The supplied FlutterEngine is nil to FlutterViewControler "
+                   << [[engine.viewController description] UTF8String];
+  }
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
