@@ -1,4 +1,4 @@
-Signature: f95112c821af609d343be9a450f625c4
+Signature: 146e6c0613423c9212176cf1408d3653
 
 UNUSED LICENSES:
 
@@ -6068,6 +6068,9 @@ ORIGIN: ../../../third_party/skia/experimental/graphite/src/Resource.cpp + ../..
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.h
+FILE: ../../../third_party/skia/experimental/graphite/src/ShaderCodeDictionary.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ShaderCodeDictionary.h
+FILE: ../../../third_party/skia/experimental/graphite/src/UniquePaintParamsID.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google LLC
 
