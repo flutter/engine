@@ -578,7 +578,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     return nullptr;
   }
   if (surface) {
-    captures.release(); // Skia has assumed ownership of the struct.
+    captures.release();  // Skia has assumed ownership of the struct.
   }
   return surface;
 }
