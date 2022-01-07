@@ -41,12 +41,15 @@ void testMain() {
         }
 
         expect(actualError, isNotNull);
-        expect('$actualError', startsWith(
-          'Bad state: Test.\n'
-          'The picture has been disposed. '
-          'When the picture was disposed the stack trace was:\n'
-          'Error\n'
-          '    at Object.StackTrace_current'
+
+        // TODO(yjbanov): cannot test precise message due to https://github.com/flutter/flutter/issues/96298
+        expect('$actualError', allOf(
+          startsWith(
+            'Bad state: Test.\n'
+            'The picture has been disposed. '
+            'When the picture was disposed the stack trace was:\n'
+          ),
+          contains('StackTrace_current'),
         ));
 
         // Emulate SkiaObjectCache deleting the picture
