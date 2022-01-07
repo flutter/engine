@@ -566,7 +566,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       const_cast<void*>(software->allocation),  // pixels
       software->row_bytes,                      // row bytes
       release_proc,                             // release proc
-      captures.get()                        // release context
+      captures.get()                            // get context
   );
 
   if (!surface) {
