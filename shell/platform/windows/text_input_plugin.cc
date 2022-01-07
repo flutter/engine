@@ -151,12 +151,9 @@ void TextInputPlugin::ComposeCommitHook() {
   active_model_->CommitComposing();
   if (enable_delta_model) {
     std::string text = active_model_->GetText();
-    printf("justin composing_text_before_change %s\n", composing_text_before_change.c_str());
     TextEditingDelta delta =
-        //TextEditingDelta(text_before_change, selection_before_change, text);
-        //TextEditingDelta(text);
-        TextEditingDelta(text_before_change, composing_before_change, "你");//composing_text_before_change);
-    printf("justin commit composing %s => %s, %llu - %llu\n", text_before_change.c_str(), text.c_str(), selection_before_change.base(), selection_before_change.extent());
+        TextEditingDelta(text);
+    //printf("justin commit composing %s => %s, %llu - %llu\n", text_before_change.c_str(), text.c_str(), selection_before_change.base(), selection_before_change.extent());
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -171,12 +168,11 @@ void TextInputPlugin::ComposeEndHook() {
   TextRange selection_before_change = active_model_->selection();
   active_model_->CommitComposing();
   active_model_->EndComposing();
-  if (enable_delta_model && false) {
+  if (enable_delta_model) {
     std::string text = active_model_->GetText();
     TextEditingDelta delta =
-        //TextEditingDelta(text_before_change, selection_before_change, text);
         TextEditingDelta(text);
-    printf("justin end composing %s => %s, %llu - %llu\n", text_before_change.c_str(), text.c_str(), selection_before_change.base(), selection_before_change.extent());
+    //printf("justin end composing %s => %s, %llu - %llu\n", text_before_change.c_str(), text.c_str(), selection_before_change.base(), selection_before_change.extent());
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -188,13 +184,22 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   if (active_model_ == nullptr) {
     return;
   }
+  std::string text_before_change = active_model_->GetText();
+  TextRange selection_before_change = active_model_->selection();
   active_model_->AddText(text);
   cursor_pos += active_model_->composing_range().base();
   active_model_->UpdateComposingText(text);
   active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
-  // TODO(justinmc): You are missing this!  Should be updating composing region
-  // via delta too.
-  SendStateUpdate(*active_model_);
+  std::string text_after_change = active_model_->GetText();
+  //printf("justin ComposeChangeHook %s => %s\n", text_before_change.c_str(), text_after_change.c_str());
+  if (enable_delta_model) {
+    // TODO(justinmc): The range selection_before_change may result in an off-by-one composing range.
+    TextEditingDelta delta =
+        TextEditingDelta(Utf8ToUtf16(text_before_change), selection_before_change, text);
+    SendStateUpdateWithDelta(*active_model_, &delta);
+  } else {
+    SendStateUpdate(*active_model_);
+  }
 }
 
 void TextInputPlugin::HandleMethodCall(
@@ -432,6 +437,8 @@ void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
   deltas.PushBack(deltaJson, allocator);
   object.AddMember(kDeltasKey, deltas, allocator);
   args->PushBack(object, allocator);
+
+  printf("justin SendStateUpdateWithDelta %s => %s, selection: %llu - %llu, composing: %i - %i\n", delta->old_text().c_str(), delta->delta_text().c_str(), selection.base(), selection.extent(), composing_base, composing_extent);
 
   channel_->InvokeMethod(kUpdateEditingStateWithDeltasMethod, std::move(args));
 }
