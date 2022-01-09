@@ -208,7 +208,7 @@ public class InputConnectionAdaptorTest {
             .send(
                     channelCaptor.capture(),
                     bufferCaptor.capture(),
-                    any(BinaryMessenger.BinaryReply.class));
+                    isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
             bufferCaptor.getValue(),
