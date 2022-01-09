@@ -4,15 +4,10 @@
 
 package io.flutter.plugin.editing;
 
-import java.io.FileNotFoundException;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.HashMap;
-
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.DynamicLayout;
@@ -28,17 +23,19 @@ import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
-import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputContentInfo;
-import android.net.Uri;
-
-import androidx.core.view.inputmethod.InputConnectionCompat;
+import android.view.inputmethod.InputMethodManager;
 import androidx.core.os.BuildCompat;
-
+import androidx.core.view.inputmethod.InputConnectionCompat;
 import io.flutter.Log;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 class InputConnectionAdaptor extends BaseInputConnection
     implements ListenableEditingState.EditingStateWatcher {
@@ -488,7 +485,8 @@ class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public boolean commitContent(InputContentInfo inputContentInfo, int flags, Bundle opts) {
     // Ensure permission is granted
-    if (BuildCompat.isAtLeastNMR1() && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
+    if (BuildCompat.isAtLeastNMR1()
+        && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
       try {
         inputContentInfo.requestPermission();
       } catch (Exception e) {
@@ -537,7 +535,8 @@ class InputConnectionAdaptor extends BaseInputConnection
         baos.write(buffer, 0, len);
       }
       return baos.toByteArray();
-    } catch (Exception e) {}
+    } catch (Exception e) {
+    }
 
     return new byte[0];
   }

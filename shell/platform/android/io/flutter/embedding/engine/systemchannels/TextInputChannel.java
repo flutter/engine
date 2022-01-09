@@ -321,7 +321,8 @@ public class TextInputChannel {
   public void commitContent(int inputClientId, Map<String, Object> content) {
     Log.v(TAG, "Sending 'commitContent' message.");
     channel.invokeMethod(
-        "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
+        "TextInputClient.performAction",
+        Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
   }
 
   /** Instructs Flutter to execute an "unspecified" action. */

@@ -340,15 +340,16 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     }
     outAttrs.imeOptions |= enterAction;
 
-    String[] imgTypeString = new String[] {
-      "image/png",
-      "image/bmp",
-      "image/jpg",
-      "image/tiff",
-      "image/gif",
-      "image/jpeg",
-      "image/webp"
-    };
+    String[] imgTypeString =
+        new String[] {
+          "image/png",
+          "image/bmp",
+          "image/jpg",
+          "image/tiff",
+          "image/gif",
+          "image/jpeg",
+          "image/webp"
+        };
     EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
 
     InputConnectionAdaptor connection =
