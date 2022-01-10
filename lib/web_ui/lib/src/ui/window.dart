@@ -47,6 +47,9 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   String get initialLifecycleState => platformDispatcher.initialLifecycleState;
 
   double get textScaleFactor => platformDispatcher.textScaleFactor;
+
+  bool get textShowPassword => platformDispatcher.textShowPassword;
+
   bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
 
   VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
