@@ -121,7 +121,7 @@ typedef enum UIAccessibilityContrast : NSInteger {
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
-    if !(engine.running) {
+    if (!engine.running) {
       FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String]
                      << " has not been run with [engine run]"
     }
