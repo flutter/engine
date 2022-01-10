@@ -105,7 +105,7 @@ public class FlutterFragment extends Fragment
 
   /** The Dart entrypoint method name that is executed upon initialization. */
   protected static final String ARG_DART_ENTRYPOINT = "dart_entrypoint";
-  /** */
+  /** The Dart entrypoint method's URI that is executed upon initialization. */
   protected static final String ARG_DART_ENTRYPOINT_URI = "dart_entrypoint_uri";
   /** Initial Flutter route that is rendered in a Navigator widget. */
   protected static final String ARG_INITIAL_ROUTE = "initial_route";
@@ -1037,7 +1037,7 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Returns the library uri of the Dart method that this {@code FlutterFragment} should execute to
+   * Returns the library URI of the Dart method that this {@code FlutterFragment} should execute to
    * start a Flutter app.
    *
    * <p>Defaults to null (example value: "package:foo/bar.dart").

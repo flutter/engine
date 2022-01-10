@@ -826,7 +826,7 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * The Dart library uri for the entrypoint that will be executed as soon as the Dart snapshot is
+   * The Dart library URI for the entrypoint that will be executed as soon as the Dart snapshot is
    * loaded.
    *
    * <p>Example value: "package:foo/bar.dart"
