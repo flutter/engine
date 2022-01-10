@@ -604,18 +604,26 @@ typedef struct {
   FlutterVulkanQueueHandle queue;
   /// The number of instance extensions available for enumerating in the next
   /// field.
-  size_t instance_extension_count;
-  /// Array of enabled instance extension names.
+  size_t enabled_instance_extension_count;
+  /// Array of enabled instance extension names. This should match the names
+  /// passed to `VkInstanceCreateInfo.ppEnabledExtensionNames` when the instance
+  /// was created, but any subset of enabled instance extensions may be
+  /// specified.
   /// This field is optional; `nullptr` may be specified.
-  /// For example:
-  const char** instance_extensions;
+  /// This memory is only accessed during the call to FlutterEngineInitialize.
+  const char** enabled_instance_extensions;
   /// The number of device extensions available for enumerating in the next
   /// field.
-  size_t device_extension_count;
-  /// Array of enabled device extension names.
+  size_t enabled_device_extension_count;
+  /// Array of enabled logical device extension names. This should match the
+  /// names passed to `VkDeviceCreateInfo.ppEnabledExtensionNames` when the
+  /// logical device was created, but any subset of enabled logical device
+  /// extensions may be specified.
   /// This field is optional; `nullptr` may be specified.
+  /// This memory is only accessed during the call to FlutterEngineInitialize.
   /// For example: VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME
-  const char** device_extensions;
+  const char** enabled_device_extensions;
+  /// The callback invoked when resolving Vulkan function pointers.
   FlutterVulkanInstanceProcAddressCallback get_instance_proc_address_callback;
   /// The callback invoked when the engine requests a VkImage from the embedder
   /// for rendering the next frame.
