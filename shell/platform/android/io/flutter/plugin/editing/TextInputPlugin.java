@@ -23,6 +23,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.textservice.SpellCheckerSession;
+import android.view.textservice.SpellCheckerSession.SpellCheckerSessionListener;
+import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -855,4 +857,50 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
   // -------- End: Autofill -------
+
+  // -------- Start: Spell Check -------
+  // Responsible for calling the Android spell checker API to retrieve spell
+  // checking results.
+  public void performSpellCheck() {
+    // Define TextInfo[] object (textInfos) based on the current input to be
+    // spell checked.
+    TextInfo[] textInfos = new String[]{TextInfo(mEditable.toString())};
+
+    // Make API call. Maximum suggestions requested set to 3 for now.
+    mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
+}
+
+  // Responsible for decomposing spell checker results into an object that can
+  // then be sent to the framework.
+  @Override
+  public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
+    ArrayList<HashMap<String, String>> spellCheckerSuggestionSpans =
+      new ArrayList<HashMap<String, String>>();
+
+    for (int i = 0; i < results[0].getSuggestionsCount(); i++) {
+      SuggestionsInfo suggestionsInfo = results[0].getSuggestionsInfoAt(i);
+      int suggestionsCount = suggestionsInfo.getSuggestionsCount();
+
+      if (suggestionsCount > 0) {
+        HashMap<String, String> spellCheckerSuggestionSpan = new HashMap<>();
+        int start = results[0].getOffsetAt(i);
+        int length = results[0].getLengthAt(i);
+
+        spellCheckerSuggestionSpan.put("start", String.valueOf(start));
+        spellCheckerSuggestionSpan.put("end", String.valueOf(start + (length - 1)));
+
+        for (int j = 0; j < suggestionsCount; j++) {
+          String key = "suggestion_" + String.valueOf(j);
+          spellCheckerSuggestionSpan.put(key, suggestionsInfo.getSuggestionAt(j));
+        }
+
+        spellCheckerSuggestionSpans.put(spellCheckerSuggestionSpan);
+      }
+    }
+
+    // Make call to update the spell checker results in the framework.
+    updateSpellCheckerResults(spellCheckerSuggestionSpans);
+  }
+
+// -------- End: Spell Check -------
 }
