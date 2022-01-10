@@ -62,6 +62,7 @@ TEST(AndroidContextGl, CreateSingleThread) {
   context.reset();
   EXPECT_TRUE(main_context->abandoned());
 }
+
 }  // namespace android
 }  // namespace testing
 }  // namespace flutter

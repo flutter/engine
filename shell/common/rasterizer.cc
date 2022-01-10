@@ -560,6 +560,9 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
         external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged());
 
+    // FML_LOG(ERROR) << (disable_partial_repaint ? "drm disabled"
+    //                                            : "drm enabled");
+
     FrameDamage damage;
     if (!disable_partial_repaint && frame->framebuffer_info().existing_damage) {
       damage.SetPreviousLayerTree(last_layer_tree_.get());

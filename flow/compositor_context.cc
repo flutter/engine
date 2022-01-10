@@ -12,6 +12,7 @@ namespace flutter {
 
 std::optional<SkRect> FrameDamage::ComputeClipRect(
     flutter::LayerTree& layer_tree) {
+  TRACE_EVENT0("flutter", "CompositorContext::ComputeClipRect");
   if (layer_tree.root_layer()) {
     PaintRegionMap empty_paint_region_map;
     DiffContext context(layer_tree.frame_size(),
