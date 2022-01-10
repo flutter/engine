@@ -9,17 +9,17 @@ namespace flutter {
 
 VariableRefreshRateDisplay::VariableRefreshRateDisplay(
     DisplayId display_id,
-    std::shared_ptr<VariableRefreshRateReporter> refresh_rate_reporter)
-    : Display(display_id, refresh_rate_reporter->GetRefreshRate()),
+    const VariableRefreshRateReporter& refresh_rate_reporter)
+    : Display(display_id, refresh_rate_reporter.GetRefreshRate()),
       refresh_rate_reporter_(refresh_rate_reporter) {}
 
 VariableRefreshRateDisplay::VariableRefreshRateDisplay(
-    std::shared_ptr<VariableRefreshRateReporter> refresh_rate_reporter)
-    : Display(refresh_rate_reporter->GetRefreshRate()),
+    const VariableRefreshRateReporter& refresh_rate_reporter)
+    : Display(refresh_rate_reporter.GetRefreshRate()),
       refresh_rate_reporter_(refresh_rate_reporter) {}
 
 double VariableRefreshRateDisplay::GetRefreshRate() const {
-  return refresh_rate_reporter_->GetRefreshRate();
+  return refresh_rate_reporter_.GetRefreshRate();
 }
 
 }  // namespace flutter

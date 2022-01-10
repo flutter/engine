@@ -903,7 +903,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     return runtime_controller_.get();
   }
 
-  const std::shared_ptr<VsyncWaiter> GetVsyncWaiter() const;
+  const VsyncWaiter& GetVsyncWaiter() const;
 
  private:
   // |RuntimeDelegate|

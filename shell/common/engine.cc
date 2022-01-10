@@ -600,7 +600,7 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
   }
 }
 
-const std::shared_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
+const VsyncWaiter& Engine::GetVsyncWaiter() const {
   return animator_->GetVsyncWaiter();
 }
 

@@ -40,7 +40,7 @@ void VsyncWaiterIOS::AwaitVSync() {
 }
 
 // |VariableRefreshRateReporter|
-double VsyncWaiterIOS::GetRefreshRate() {
+double VsyncWaiterIOS::GetRefreshRate() const {
   return [client_.get() getRefreshRate];
 }
 

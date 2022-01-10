@@ -401,7 +401,7 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
       const;
 
-  const std::shared_ptr<VsyncWaiter> GetVsyncWaiter() const;
+  const VsyncWaiter& GetVsyncWaiter() const;
 
  private:
   using ServiceProtocolHandler =
