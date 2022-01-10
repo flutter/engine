@@ -741,15 +741,15 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     const FlutterBackingStoreConfig& config,
     const FlutterVulkanBackingStore* vulkan) {
 #ifdef SHELL_ENABLE_VULKAN
-  if (!vulkan->image.image) {
+  if (!vulkan->image) {
     FML_LOG(ERROR) << "Embedder supplied null Vulkan image.";
     return nullptr;
   }
   GrVkImageInfo image_info = {
-      .fImage = reinterpret_cast<VkImage>(vulkan->image.image),
+      .fImage = reinterpret_cast<VkImage>(vulkan->image),
       .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
       .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .fFormat = static_cast<VkFormat>(vulkan->image.format),
+      .fFormat = static_cast<VkFormat>(vulkan->format),
       .fImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                           VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -770,9 +770,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       kTopLeft_GrSurfaceOrigin,  // surface origin
       1,                         // sample count
       flutter::GPUSurfaceVulkan::ColorTypeFromFormat(
-          static_cast<VkFormat>(vulkan->image.format)),  // color type
-      SkColorSpace::MakeSRGB(),                          // color space
-      &surface_properties,                               // surface properties
+          static_cast<VkFormat>(vulkan->format)),  // color type
+      SkColorSpace::MakeSRGB(),                    // color space
+      &surface_properties,                         // surface properties
       static_cast<SkSurface::TextureReleaseProc>(
           vulkan->destruction_callback),  // release proc
       vulkan->user_data                   // release context

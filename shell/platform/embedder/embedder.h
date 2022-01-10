@@ -1090,13 +1090,15 @@ typedef struct {
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterVulkanBackingStore).
   size_t struct_size;
-  /// The Vulkan image that the layer will be rendered to. This image must
+  /// The VkImage handle that the layer will be rendered to. This image must
   /// already be available for the engine to bind for writing when it's given to
   /// the engine via the backing store creation callback. The engine will
   /// perform a host sync for all layers prior to calling the compositor present
   /// callback, and so the written layer images can be freely bound by the
   /// embedder without any additional synchronization.
-  FlutterVulkanImage image;
+  FlutterVulkanImageHandle image;
+  /// The VkFormat of the image (for example: VK_FORMAT_R8G8B8A8_UNORM).
+  uint32_t format;
   /// A baton that is not interpreted by the engine in any way. It will be given
   /// back to the embedder in the destruction callback below. Embedder resources
   /// may be associated with this baton.
