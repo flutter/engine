@@ -118,13 +118,13 @@ typedef enum UIAccessibilityContrast : NSInteger {
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
+  if (!engine.shell.IsSetup()) {
+    FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String]
+                   << " has not been run with [engine run]";
+  }
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
     _viewOpaque = YES;
-    if (!engine.running) {
-      FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String]
-                     << " has not been run with [engine run]"
-    }
     if (engine.viewController) {
       FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String]
                      << " is already used with FlutterViewController instance "
