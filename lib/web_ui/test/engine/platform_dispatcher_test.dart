@@ -131,34 +131,23 @@ void testMain() {
         isCalled = true;
       };
 
-      Future<void> waitUntilCalled() {
-        final Completer<void> completer = Completer<void>();
-
-        void check() {
-          if (isCalled == true) {
-            completer.complete();
-          } else {
-            Timer(Duration.zero, check);
-          }
-        }
-
-        check();
-        return completer.future;
-      }
-
       root.style.fontSize = '20px';
-      await waitUntilCalled();
-      expect(isCalled, true);
-      expect(ui.PlatformDispatcher.instance.textScaleFactor,
-          findBrowserTextScaleFactor());
+      await Future(() {
+        expect(isCalled, true);
+      }).then((_) {
+        expect(ui.PlatformDispatcher.instance.textScaleFactor,
+            findBrowserTextScaleFactor());
+      });
 
       isCalled = false;
 
       root.style.fontSize = '16px';
-      await waitUntilCalled();
-      expect(isCalled, true);
-      expect(ui.PlatformDispatcher.instance.textScaleFactor,
-          findBrowserTextScaleFactor());
+      await Future(() {
+        expect(isCalled, true);
+      }).then((_) {
+        expect(ui.PlatformDispatcher.instance.textScaleFactor,
+            findBrowserTextScaleFactor());
+      });
     });
   });
 }
