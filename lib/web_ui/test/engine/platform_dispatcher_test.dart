@@ -132,7 +132,7 @@ void testMain() {
       };
 
       root.style.fontSize = '20px';
-      await Future(() {
+      await Future<void>(() {
         expect(isCalled, true);
       }).then((_) {
         expect(ui.PlatformDispatcher.instance.textScaleFactor,
@@ -142,7 +142,7 @@ void testMain() {
       isCalled = false;
 
       root.style.fontSize = '16px';
-      await Future(() {
+      await Future<void>(() {
         expect(isCalled, true);
       }).then((_) {
         expect(ui.PlatformDispatcher.instance.textScaleFactor,
