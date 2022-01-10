@@ -8,6 +8,7 @@
 #include <lib/ui/scenic/cpp/commands.h>
 #include <zircon/status.h>
 #include <zircon/types.h>
+#include <zx/cpp/fidl.h>
 
 #include <cmath>
 
@@ -19,7 +20,6 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 
 #include "../runtime/dart/utils/inlines.h"
-#include "zx/cpp/fidl.h"
 
 namespace flutter_runner {
 
