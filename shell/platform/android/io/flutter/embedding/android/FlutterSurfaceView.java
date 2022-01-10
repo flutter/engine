@@ -261,11 +261,7 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
     // is paused, and rendering continues in a FlutterImageView buffer while the platform view
     // is displayed.
     //
-    // startRenderingToSurface may stop rendering to this surface if it believes it already started
-    // renderering to it.
-    //
-    // However, the flutter renderer isn't aware of this surface being paused.
-    // Therefore, the associated native resources should not be released.
+    // startRenderingToSurface stops rendering to an active surface if it isn't paused.
     flutterRenderer.startRenderingToSurface(getHolder().getSurface(), isPaused);
   }
 
