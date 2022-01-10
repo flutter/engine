@@ -22,6 +22,8 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.textservice.SpellCheckerSession;
+import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -40,6 +42,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @NonNull private final View mView;
   @NonNull private final InputMethodManager mImm;
   @NonNull private final AutofillManager afm;
+  @NonNull private final TextServicesManager tsm;
   @NonNull private final TextInputChannel textInputChannel;
   @NonNull private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
   @Nullable private TextInputChannel.Configuration configuration;
@@ -50,6 +53,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @NonNull private PlatformViewsController platformViewsController;
   @Nullable private Rect lastClientRect;
   private ImeSyncDeferringInsetsCallback imeSyncCallback;
+  private SpellCheckerSession mSpellCheckerSession;
 
   // Initialize the "last seen" text editing values to a non-null value.
   private TextEditState mLastKnownFrameworkTextEditingState;
@@ -165,6 +169,10 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
+
+    // Retrieve manager for text services
+    tsm = (TextServicesManager) view.getContext().
+      getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
   }
 
   @NonNull
@@ -224,6 +232,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (imeSyncCallback != null) {
       imeSyncCallback.remove();
     }
+    if (mSpellCheckerSession != null) {
+      mSpellCheckerSession.close();
+   }
   }
 
   private static int inputTypeFromTextInputType(
@@ -427,6 +438,16 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     unlockPlatformViewInputConnection();
     lastClientRect = null;
     mEditable.addEditingStateListener(this);
+
+    // Open a new spell checker session when a new text input client is set.
+    // Closes spell checker session if one previously in use.
+    if (mSpellCheckerSession != null) {
+      mSpellCheckerSession.close();
+      mSpellCheckerSession = textServicesManager.newSpellCheckerSession(...)
+    }
+    else {
+      mSpellCheckerSession = textServicesManager.newSpellCheckerSession(...);
+    }
   }
 
   private void setPlatformViewTextInputClient(int platformViewId, boolean usesVirtualDisplay) {
@@ -563,6 +584,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
     unlockPlatformViewInputConnection();
     lastClientRect = null;
+    if (mSpellCheckerSession != null) {
+      mSpellCheckerSession.close();
+    }
   }
 
   private static class InputTarget {
