@@ -5,8 +5,8 @@
 #include <iostream>
 #include <vector>
 
+#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"  // GLFW header from the GLFW repository's include path.
-#include "vulkan/vulkan.h"  // Vulkan header, as supplied by the Vulkan SDK.
 
 #include "embedder.h"  // Flutter's Embedder ABI.
 
@@ -20,9 +20,11 @@ static_assert(FLUTTER_ENGINE_VERSION == 1,
               "API. Please read the ChangeLog and take appropriate action "
               "before updating this assertion");
 
-/// Global struct for holding Vulkan state.
+/// Global struct for holding the Window+Vulkan state.
 struct {
+  GLFWwindow* window;
   VkInstance instance;
+  VkSurfaceKHR surface;
 } g_state;
 
 void GLFW_ErrorCallback(int error, const char* description) {
@@ -53,9 +55,9 @@ int main(int argc, char** argv) {
   assert(result == GLFW_TRUE);
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow* window = glfwCreateWindow(
-      kInitialWindowWidth, kInitialWindowHeight, "Flutter", nullptr, nullptr);
-  assert(window != nullptr);
+  g_state.window = glfwCreateWindow(kInitialWindowWidth, kInitialWindowHeight,
+                                    "Flutter", nullptr, nullptr);
+  assert(g_state.window != nullptr);
 
   /// --------------------------------------------------------------------------
   /// Create a Vulkan instance.
@@ -65,14 +67,20 @@ int main(int argc, char** argv) {
     const char** instance_extensions =
         glfwGetRequiredInstanceExtensions(&instance_extensions_count);
 
+    std::cout << "GLFW requires " << instance_extensions_count
+              << " Vulkan extensions:\n";
+    for (int i = 0; i < instance_extensions_count; i++) {
+      std::cout << " - " << instance_extensions[i] << "\n";
+    }
+
     VkApplicationInfo app_info = {
         .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
         .pNext = nullptr,
         .pApplicationName = "Flutter",
-        .applicationVersion = VK_MAKE_VERSION(1, 1, 0),
+        .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
         .pEngineName = "No Engine",
         .engineVersion = VK_MAKE_VERSION(1, 0, 0),
-        .apiVersion = VK_API_VERSION_1_1,
+        .apiVersion = VK_MAKE_VERSION(1, 1, 0),
     };
     VkInstanceCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -97,9 +105,21 @@ int main(int argc, char** argv) {
     }
 
     assert(vkCreateInstance(&info, nullptr, &g_state.instance) == VK_SUCCESS);
-
-    std::cout << "Instance created.\n";
   }
 
+  /// --------------------------------------------------------------------------
+  /// Create surface.
+  /// --------------------------------------------------------------------------
+  assert(glfwCreateWindowSurface(g_state.instance, g_state.window, NULL,
+                                 &g_state.surface) == VK_SUCCESS);
+
+  std::cout << "Success.\n";
+
+  while (!glfwWindowShouldClose(g_state.window)) {
+    glfwPollEvents();
+  }
+
+  glfwDestroyWindow(g_state.window);
+  glfwTerminate();
   return 0;
 }

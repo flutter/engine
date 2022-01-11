@@ -11,7 +11,15 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cc" "src/*.h")
 add_executable(${EXE_NAME} ${SOURCE_FILES})
 
 
-# Dependency: LunarG Vulkan SDK Loader
+# Dependency: Vulkan SDK Loader
+
+# Override the SDK location and ICD list by using environment variables.
+# MacOS MoltenVK example:
+#  export VULKAN_SDK=~/VulkanSDK/1.2.198.1/macOS
+#  export VK_LOADER_DEBUG=all
+#  export VK_ICD_FILENAMES=$VULKAN_SDK/share/vulkan/icd.d/MoltenVK_icd.json
+#  export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
+#  export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
 
 find_package(Vulkan REQUIRED)
 target_include_directories(${EXE_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
