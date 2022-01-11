@@ -105,6 +105,7 @@ class MockKeyboardManagerWin32Delegate
       messages.push_back(
           Win32Message{message, kbdinput.wVk, lparam, kWmResultDontCheck});
       if (redispatch_char != 0 && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
+        num_pending_responds += 1;
         messages.push_back(
             Win32Message{WM_CHAR, redispatch_char, lparam, kWmResultDontCheck});
       }
@@ -744,7 +745,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
   EXPECT_CALL_IS_TEXT(key_calls[1], u"@");
   clear_key_calls();
 
-  EXPECT_EQ(tester.InjectPendingEvents('@'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('@'), 2);
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
@@ -1182,11 +1183,15 @@ TEST(KeyboardTest, MultibyteCharacter) {
   clear_key_calls();
 
   // Inject the redispatched high surrogate.
-  tester.InjectPendingEvents(0xd800);
+  EXPECT_EQ(tester.InjectPendingEvents(0xd800), 2);
   // Manually inject the redispatched low surrogate.
+  //
+  // TODO(dkwingsmt): The following message should return kWmResultZero.
+  // For now this is impossible since KeyboardManagerWin32 isn't passing the
+  // high surrogate messages to redispatching logic.
   tester.InjectMessages(
       1, WmCharInfo{0xdf45, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
-             kWmResultZero));
+             kWmResultDontCheck));
 
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
@@ -1264,7 +1269,7 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the second event first to test disordered responses.
   recorded_callbacks.back()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('b'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('b'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"b");
   clear_key_calls();
@@ -1272,7 +1277,7 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the first event.
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
@@ -1320,7 +1325,7 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
   // The first response.
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
@@ -1328,7 +1333,7 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
   // The second response.
   recorded_callbacks.back()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();

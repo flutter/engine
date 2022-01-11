@@ -184,7 +184,7 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   delegate_handler = respond_true;
   handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false, false,
                        OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kNoResponse);
+  EXPECT_EQ(key_event_response, kHandled);
   EXPECT_EQ(hook_history.size(), 1);
   EXPECT_EQ(hook_history.back().delegate_id, 1);
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
@@ -197,7 +197,7 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   delegate_handler = respond_false;
   handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false, false,
                        OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kHandled);
+  EXPECT_EQ(key_event_response, kUnhandled);
   EXPECT_EQ(hook_history.size(), 1);
   EXPECT_EQ(hook_history.back().delegate_id, 1);
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
@@ -205,146 +205,6 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
 
   hook_history.clear();
   key_event_response = kUnhandled;
-}
-
-TEST(KeyboardKeyHandlerTest, WithTwoAsyncDelegates) {
-  std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
-
-  TestKeyboardKeyHandler handler;
-
-  auto delegate1 = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
-  CallbackHandler& delegate1_handler = delegate1->callback_handler;
-  handler.AddDelegate(std::move(delegate1));
-
-  auto delegate2 = std::make_unique<MockKeyHandlerDelegate>(2, &hook_history);
-  CallbackHandler& delegate2_handler = delegate2->callback_handler;
-  handler.AddDelegate(std::move(delegate2));
-
-  /// Test 1: One delegate responds true, the other false
-
-  handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false, false,
-                       OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kNoResponse);
-  EXPECT_EQ(hook_history.size(), 2);
-  EXPECT_EQ(hook_history.front().delegate_id, 1);
-  EXPECT_EQ(hook_history.front().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.front().was_down, false);
-  EXPECT_EQ(hook_history.back().delegate_id, 2);
-  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.back().was_down, false);
-
-  hook_history.back().callback(true);
-  EXPECT_EQ(key_event_response, kHandled);
-
-  hook_history.front().callback(false);
-  EXPECT_EQ(key_event_response, kUnhandled);
-
-  hook_history.clear();
-
-  /// Test 2: All delegates respond false
-
-  handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN,
-                                          L'a', false, false, OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kNoResponse);
-  EXPECT_EQ(hook_history.size(), 2);
-  EXPECT_EQ(hook_history.front().delegate_id, 1);
-  EXPECT_EQ(hook_history.front().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.front().was_down, false);
-  EXPECT_EQ(hook_history.back().delegate_id, 2);
-  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.back().was_down, false);
-
-  hook_history.front().callback(false);
-  EXPECT_EQ(key_event_response, kNoResponse);
-
-  hook_history.back().callback(false);
-  EXPECT_EQ(key_event_response, kUnhandled);
-
-  hook_history.clear();
-  key_event_response = kNoResponse;
-
-  /// Test 3: All delegates responds true
-
-  handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN,
-                                          L'a', false, false, OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kNoResponse);
-  EXPECT_EQ(hook_history.size(), 2);
-  EXPECT_EQ(hook_history.front().delegate_id, 1);
-  EXPECT_EQ(hook_history.front().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.front().was_down, false);
-  EXPECT_EQ(hook_history.back().delegate_id, 2);
-  EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
-  EXPECT_EQ(hook_history.back().was_down, false);
-
-  hook_history.back().callback(true);
-  EXPECT_EQ(key_event_response, kNoResponse);
-
-  hook_history.front().callback(true);
-  EXPECT_EQ(key_event_response, kHandled);
-
-  key_event_response = kNoResponse;
-  hook_history.clear();
-}
-
-// Regression test for a crash in an earlier implementation.
-//
-// In real life, the framework responds slowly. The next real event might
-// arrive earlier than the framework response, and if the 2nd event is identical
-// to the one waiting for response, an earlier implementation will crash upon
-// the response.
-TEST(KeyboardKeyHandlerTest, WithSlowFrameworkResponse) {
-  std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
-
-  TestKeyboardKeyHandler handler;
-
-  auto delegate1 = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
-  CallbackHandler& delegate1_handler = delegate1->callback_handler;
-  handler.AddDelegate(std::move(delegate1));
-
-  // The first native event.
-  handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false, true, OnKeyEventResult);
-
-  // The second identical native event, received between the first and its
-  // framework response.
-  handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false, true, OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kNoResponse);
-  EXPECT_EQ(hook_history.size(), 2);
-
-  // The first response.
-  hook_history.front().callback(false);
-  EXPECT_EQ(key_event_response, kUnhandled);
-
-  key_event_response = kNoResponse;
-
-  // The second response.
-  hook_history.back().callback(false);
-  EXPECT_EQ(key_event_response, kUnhandled);
-
-  key_event_response = kNoResponse;
-  hook_history.clear();
-}
-
-// A key down event for shift right must not be redispatched even if
-// the framework returns unhandled.
-//
-// The reason for this test is documented in |IsKeyDownShiftRight|.
-TEST(KeyboardKeyHandlerTest, NeverRedispatchShiftRightKeyDown) {
-  std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
-
-  TestKeyboardKeyHandler handler;
-
-  auto delegate = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
-  delegate->callback_handler = respond_false;
-  handler.AddDelegate(std::move(delegate));
-
-  // Press ShiftRight and the delegate responds false.
-
-  handler.KeyboardHook(VK_RSHIFT, kScanCodeShiftRight, WM_KEYDOWN, 0, false,
-                       false, OnKeyEventResult);
-  EXPECT_EQ(key_event_response, kHandled);
-  EXPECT_EQ(hook_history.size(), 1);
-
-  hook_history.clear();
 }
 
 }  // namespace testing
