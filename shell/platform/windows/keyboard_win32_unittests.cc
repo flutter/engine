@@ -425,14 +425,14 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "a", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
   clear_key_calls();
 
   tester.InjectPendingEvents('a');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release A
@@ -482,14 +482,14 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
       WmCharInfo{'A', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "A", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"A");
   clear_key_calls();
 
   tester.InjectPendingEvents('A');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"A");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release ShiftLeft
@@ -677,14 +677,14 @@ TEST(KeyboardTest, Digit1OnFrenchLayout) {
       WmCharInfo{'&', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
                        kLogicalDigit1, "&", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"&");
   clear_key_calls();
 
   tester.InjectPendingEvents('&');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"&");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release 1
@@ -738,14 +738,14 @@ TEST(KeyboardTest, AltGrModifiedKey) {
       WmCharInfo{'@', kScanCodeKeyQ, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyQ,
                        kLogicalKeyQ, "@", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"@");
   clear_key_calls();
 
   EXPECT_EQ(tester.InjectPendingEvents('@'), 1);
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"@");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release Q
@@ -950,15 +950,15 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
       WmCharInfo{0xEA, kScanCodeKeyE, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyE,
                        kLogicalKeyE, "ê", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"ê");
   clear_key_calls();
 
   tester.InjectPendingEvents(
       0xEA);  // The redispatched event uses unmodified 'e'
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"ê");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release E
@@ -1054,15 +1054,15 @@ TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
       WmCharInfo{0xEA, kScanCodeKeyE, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyE,
                        kLogicalKeyE, "ê", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"ê");
   clear_key_calls();
 
   tester.InjectPendingEvents(
       0xEA);  // The redispatched event uses unmodified 'e'
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"ê");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release E
@@ -1130,18 +1130,14 @@ TEST(KeyboardTest, DeadKeyThatDoesNotCombine) {
       WmCharInfo{'&', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(key_calls.size(), 3);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
                        kLogicalDigit1, "^", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"^");
+  EXPECT_CALL_IS_TEXT(key_calls[2], u"&");
   clear_key_calls();
 
   tester.InjectPendingEvents('&');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"&");
-  clear_key_calls();
-
-  tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
@@ -1179,9 +1175,10 @@ TEST(KeyboardTest, MultibyteCharacter) {
 
   const char* st = key_calls[0].key_event.character;
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyW,
                        kLogicalKeyW, "𐍅", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"𐍅");
   clear_key_calls();
 
   // Inject the redispatched high surrogate.
@@ -1191,8 +1188,7 @@ TEST(KeyboardTest, MultibyteCharacter) {
       1, WmCharInfo{0xdf45, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
              kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"𐍅");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release W

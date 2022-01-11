@@ -199,7 +199,8 @@ bool KeyboardManagerWin32::OnKey(int key,
                     int action,
                     char32_t character,
                     bool extended,
-                    bool was_down) {
+                    bool was_down,
+                    OnKeyCallback callback) {
   std::unique_ptr<PendingEvent> incoming =
       std::make_unique<PendingEvent>(PendingEvent{
           .key = static_cast<uint32_t>(key),
@@ -242,25 +243,49 @@ bool KeyboardManagerWin32::OnKey(int key,
 
   window_delegate_->OnKey(
       key, scancode, action, character, extended, was_down,
-      [this, event = incoming.release()](bool handled) {
-        // Always consider some key events as handled.
-        //
-        // Redispatching dead keys events makes Win32 ignore the dead key state
-        // and redispatches a normal character without combining it with the
-        // next letter key.
-        //
-        // Redispatching sys events is impossible due to the limitation of
-        // |SendInput|.
-        const bool is_syskey =
-            event->action == WM_SYSKEYDOWN || event->action == WM_SYSKEYUP;
-        const bool real_handled =
-            handled || _IsDeadKey(event->character) || is_syskey
-            || IsKeyDownShiftRight(event->key, event->was_down);
-        if (!real_handled) {
-          RedispatchEvent(std::unique_ptr<PendingEvent>(event));
-        }
+      [this, event = incoming.release(), callback = std::move(callback)](bool handled) {
+        callback(std::unique_ptr<PendingEvent>(event), handled);
       });
   return true;
+}
+
+void KeyboardManagerWin32::HandleOnKeyResult(
+    std::unique_ptr<PendingEvent> event,
+    bool handled,
+    int char_action,
+    std::u16string text) {
+  // First, patch |handled|, because some key events must always be treated as
+  // handled.
+  //
+  // Redispatching dead keys events makes Win32 ignore the dead key state
+  // and redispatches a normal character without combining it with the
+  // next letter key.
+  //
+  // Redispatching sys events is impossible due to the limitation of
+  // |SendInput|.
+  const bool is_syskey =
+      event->action == WM_SYSKEYDOWN || event->action == WM_SYSKEYUP;
+  const bool real_handled =
+      handled || _IsDeadKey(event->character) || is_syskey
+      || IsKeyDownShiftRight(event->key, event->was_down);
+
+  // For handled events, that's all.
+  if (real_handled) {
+    return;
+  }
+
+  // For unhandled events, dispatch them to OnText.
+
+  // Of the messages handled here, only WM_CHAR should be treated as
+  // characters. WM_SYS*CHAR are not part of text input, and WM_DEADCHAR
+  // will be incorporated into a later WM_CHAR with the full character.
+  // Non-printable event characters have been filtered out before being passed
+  // to OnKey.
+  if (char_action == WM_CHAR && event->character != 0) {
+    window_delegate_->OnText(text);
+  }
+
+  RedispatchEvent(std::move(event));
 }
 
 bool KeyboardManagerWin32::HandleMessage(UINT const message,
@@ -274,17 +299,22 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
       static wchar_t s_pending_high_surrogate = 0;
 
       wchar_t character = static_cast<wchar_t>(wparam);
-      std::u16string text({character});
-      char32_t code_point = character;
+      std::u16string text;
+      char32_t code_point;
       if (IS_HIGH_SURROGATE(character)) {
         // Save to send later with the trailing surrogate.
         s_pending_high_surrogate = character;
+        return true;
       } else if (IS_LOW_SURROGATE(character) && s_pending_high_surrogate != 0) {
-        text.insert(text.begin(), s_pending_high_surrogate);
+        text.push_back(s_pending_high_surrogate);
+        text.push_back(character);
         // Merge the surrogate pairs for the key event.
         code_point =
             CodePointFromSurrogatePair(s_pending_high_surrogate, character);
         s_pending_high_surrogate = 0;
+      } else {
+        text.push_back(character);
+        code_point = character;
       }
 
       const unsigned int scancode = (lparam >> 16) & 0xff;
@@ -318,24 +348,14 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
         bool is_new_event = OnKey(
             keycode_for_char_message_, scancode,
             message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN, event_character,
-            extended, was_down);
+            extended, was_down,
+            [this, message, text](std::unique_ptr<PendingEvent> event, bool handled) {
+              HandleOnKeyResult(std::move(event), handled, message, text);
+            });
         if (!is_new_event) {
           break;
         }
         keycode_for_char_message_ = 0;
-        // If the OnKey handler handles the message, then return so we don't
-        // pass it to OnText, because handling the message indicates that
-        // OnKey either just sent it to the framework to be processed.
-        //
-        // This message will be redispatched if not handled by the framework,
-        // during which the OnText (below) might be reached. However, if the
-        // original message was preceded by dead chars (such as ^ and e
-        // yielding ê), then since the redispatched message is no longer
-        // preceded by the dead char, the text will be wrong. Therefore we
-        // record the text here for the redispached event to use.
-        if (message == WM_CHAR) {
-          text_for_scancode_on_redispatch_[scancode] = text;
-        }
 
         // For system characters, always pass them to the default WndProc so
         // that system keys like the ALT-TAB are processed correctly.
@@ -395,7 +415,12 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
       keyCode = ResolveKeyCode(keyCode, extended, scancode);
       const bool was_down = lparam & 0x40000000;
       bool is_syskey = message == WM_SYSKEYDOWN || message == WM_SYSKEYUP;
-      bool is_new_event = OnKey(keyCode, scancode, message, 0, extended, was_down);
+      bool is_new_event =
+          OnKey(keyCode, scancode, message, 0, extended, was_down,
+                [this](std::unique_ptr<PendingEvent> event,
+                                      bool handled) {
+                  HandleOnKeyResult(std::move(event), handled, 0, std::u16string());
+                });
       if (!is_new_event) {
         break;
       }

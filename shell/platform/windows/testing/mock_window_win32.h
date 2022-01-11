@@ -47,13 +47,7 @@ class MockWin32Window : public WindowWin32 {
   MOCK_METHOD0(OnSetCursor, void());
   MOCK_METHOD1(OnText, void(const std::u16string&));
   MOCK_METHOD7(OnKey,
-               void(int,
-                    int,
-                    int,
-                    char32_t,
-                    bool,
-                    bool,
-                    KeyboardManagerWin32::KeyEventCallback));
+               void(int, int, int, char32_t, bool, bool, KeyEventCallback));
   MOCK_METHOD1(OnUpdateSemanticsEnabled, void(bool));
   MOCK_METHOD0(GetNativeViewAccessible, gfx::NativeViewAccessible());
   MOCK_METHOD4(OnScroll,

@@ -83,7 +83,7 @@ void KeyboardKeyHandler::ResolvePendingEvent(uint64_t sequence_id,
       if (event.unreplied == 0) {
         std::unique_ptr<PendingEvent> event_ptr = std::move(*iter);
         pending_responds_.erase(iter);
-        event.callback(handled);
+        event.callback(event.any_handled);
       }
       // Return here; |iter| can't do ++ after erase.
       return;

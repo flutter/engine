@@ -380,12 +380,13 @@ void FlutterWindowsView::SendKey(int key,
                                  bool was_down,
                                  KeyEventCallback callback) {
   keyboard_key_handler_->KeyboardHook(
-      key, scancode, action, character, extended, was_down, [&](bool handled) {
+      key, scancode, action, character, extended, was_down,
+      [&, callback = std::move(callback)](bool handled) {
         if (!handled) {
           text_input_plugin_->KeyboardHook(key, scancode, action, character,
                                            extended, was_down);
         }
-        return handled;
+        callback(handled);
       });
 }
 

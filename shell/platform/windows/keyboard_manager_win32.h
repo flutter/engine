@@ -110,13 +110,21 @@ class KeyboardManagerWin32 {
     uint64_t hash;
   };
 
+  using OnKeyCallback = std::function<void(std::unique_ptr<PendingEvent>, bool)>;
+
   // Returns true if it's a new event, or false if it's a redispatched event.
   bool OnKey(int key,
              int scancode,
              int action,
              char32_t character,
              bool extended,
-             bool was_down);
+             bool was_down,
+             OnKeyCallback callback);
+
+  void HandleOnKeyResult(std::unique_ptr<PendingEvent> event,
+                         bool handled,
+                         int char_action,
+                         std::u16string text);
 
   // Returns the type of the next WM message.
   //

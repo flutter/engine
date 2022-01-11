@@ -246,13 +246,7 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
   MOCK_METHOD2(OnPointerLeave, void(FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD1(OnText, void(const std::u16string&));
   MOCK_METHOD7(OnKey,
-               void(int,
-                    int,
-                    int,
-                    char32_t,
-                    bool,
-                    bool,
-                    KeyboardManagerWin32::KeyEventCallback));
+               void(int, int, int, char32_t, bool, bool, KeyEventCallback));
   MOCK_METHOD0(OnComposeBegin, void());
   MOCK_METHOD0(OnComposeCommit, void());
   MOCK_METHOD0(OnComposeEnd, void());
