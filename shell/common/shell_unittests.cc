@@ -2339,11 +2339,13 @@ TEST_F(ShellTest, DiscardLayerTreeOnResize) {
   PumpOneFrame(shell.get(), static_cast<double>(wrong_size.width()),
                static_cast<double>(wrong_size.height()));
   end_frame_latch.Wait();
+  // Wrong size, no frames are submitted.
   ASSERT_EQ(0, external_view_embedder->GetSubmittedFrameCount());
 
   PumpOneFrame(shell.get(), static_cast<double>(expected_size.width()),
                static_cast<double>(expected_size.height()));
   end_frame_latch.Wait();
+  // Expected size, 1 frame submitted.
   ASSERT_EQ(1, external_view_embedder->GetSubmittedFrameCount());
   ASSERT_EQ(expected_size, external_view_embedder->GetLastSubmittedFrameSize());
 
