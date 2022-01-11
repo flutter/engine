@@ -29,6 +29,15 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(project.settings.old_gen_heap_size, old_gen_heap_size);
 }
 
+- (void)testLeakDartVMSetting {
+  FlutterDartProject* project = [[FlutterDartProject alloc] init];
+  [project setLeakDartVM:YES];
+  XCTAssertEqual(project.settings.leak_vm, YES);
+
+  [project setLeakDartVM:NO];
+  XCTAssertEqual(project.settings.leak_vm, NO);
+}
+
 - (void)testMainBundleSettingsAreCorrectlyParsed {
   NSBundle* mainBundle = [NSBundle mainBundle];
   NSDictionary* appTransportSecurity =

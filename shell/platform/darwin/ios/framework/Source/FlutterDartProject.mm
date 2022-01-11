@@ -337,4 +337,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   return @"io.flutter.flutter.app";
 }
 
+- (void)setLeakDartVM:(BOOL)enabled {
+  _settings.leak_vm = enabled;
+}
+
 @end
