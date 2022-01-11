@@ -144,22 +144,23 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         }
       };
 
-  private final ContentObserver systemSettingsObserver = new ContentObserver(new Handler(Looper.getMainLooper())) {
-      @Override
-      public void onChange(boolean selfChange) {
-        super.onChange(selfChange);
-        if (flutterEngine == null) {
-          return;
+  private final ContentObserver systemSettingsObserver =
+      new ContentObserver(new Handler(Looper.getMainLooper())) {
+        @Override
+        public void onChange(boolean selfChange) {
+          super.onChange(selfChange);
+          if (flutterEngine == null) {
+            return;
+          }
+          Log.v(TAG, "! System settings changed. Sending user settings to Flutter.");
+          sendUserSettingsToFlutter();
         }
-        Log.v(TAG, "! System settings changed. Sending user settings to Flutter.");
-        sendUserSettingsToFlutter();
-      }
 
-      @Override
-      public boolean deliverSelfNotifications() {
-        return true;
-      }
-    };
+        @Override
+        public boolean deliverSelfNotifications() {
+          return true;
+        }
+      };
 
   private final FlutterUiDisplayListener flutterUiDisplayListener =
       new FlutterUiDisplayListener() {
@@ -1170,7 +1171,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
-    getContext().getContentResolver().registerContentObserver(Settings.System.getUriFor(Settings.System.TEXT_SHOW_PASSWORD), false, systemSettingsObserver);
+    getContext()
+        .getContentResolver()
+        .registerContentObserver(
+            Settings.System.getUriFor(Settings.System.TEXT_SHOW_PASSWORD),
+            false,
+            systemSettingsObserver);
 
     localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
@@ -1415,7 +1421,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
-        .setTextShowPassword(Settings.System.getInt(getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1) == 1)
+        .setTextShowPassword(
+            Settings.System.getInt(
+                    getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)
+                == 1)
         .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
         .setPlatformBrightness(brightness)
         .send();
