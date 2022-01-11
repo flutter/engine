@@ -255,7 +255,6 @@ public class PlatformPlugin {
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      currentSystemUiMode = PlatformChannel.SystemUiMode.LEAN_BACK;
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
@@ -269,7 +268,6 @@ public class PlatformPlugin {
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE;
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
@@ -282,7 +280,6 @@ public class PlatformPlugin {
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
-      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
       windowInsetsControllerCompat.setSystemBarsBehavior(
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
@@ -294,12 +291,12 @@ public class PlatformPlugin {
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
-      currentSystemUiMode = PlatformChannel.SystemUiMode.EDGE_TO_EDGE;
       WindowCompat.setDecorFitsSystemWindows(window, false);
     } else {
       // When none of the conditions are matched, return without updating the system UI overlays.
       return;
     }
+    currentSystemUiMode = systemUiMode;
   }
 
   private void setSystemChromeEnabledSystemUIOverlays(
@@ -360,16 +357,19 @@ public class PlatformPlugin {
         setSystemChromeEnabledSystemUIOverlays(
             new ArrayList<PlatformChannel.SystemUiOverlay>(
                 Arrays.asList(PlatformChannel.SystemUiOverlay.TOP_OVERLAYS)));
+        break;
       case MANUAL_BOTTOM:
         setSystemChromeEnabledSystemUIOverlays(
             new ArrayList<PlatformChannel.SystemUiOverlay>(
                 Arrays.asList(PlatformChannel.SystemUiOverlay.BOTTOM_OVERLAYS)));
+        break;
       case MANUAL_BOTH:
         setSystemChromeEnabledSystemUIOverlays(
             new ArrayList<PlatformChannel.SystemUiOverlay>(
                 Arrays.asList(
                     PlatformChannel.SystemUiOverlay.TOP_OVERLAYS,
                     PlatformChannel.SystemUiOverlay.BOTTOM_OVERLAYS)));
+        break;
       default:
         setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
     }

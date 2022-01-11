@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -375,7 +376,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(minSdk = 30)
+  @TargetApi(30)
   @Test
   public void setSystemUiMode() {
     View fakeDecorView = mock(View.class);
@@ -473,7 +474,7 @@ public class PlatformPluginTest {
         .setSystemUiVisibility(fakeSetFlags &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
   }
 
-  @Config(minSdk = 30)
+  @TargetApi(30)
   @Test
   public void showSystemOverlays() {
     View fakeDecorView = mock(View.class);
