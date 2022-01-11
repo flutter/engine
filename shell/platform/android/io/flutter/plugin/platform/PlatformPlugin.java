@@ -20,6 +20,7 @@ import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
@@ -237,18 +238,14 @@ public class PlatformPlugin {
   }
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
-    int enabledOverlays =
-        DEFAULT_SYSTEM_UI
-            | View.SYSTEM_UI_FLAG_FULLSCREEN
-            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+    int enabledOverlays;
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       // LEAN BACK
       // Available starting at SDK 16
       // Should not show overlays, tap to reveal overlays, needs onChange callback
-      // When the overlays come in on tap, the app does not recieve the gesture and does not know
+      // When the overlays come in on tap, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
       // support will allow users to restore the system ui and dismiss the overlays.
       // Not compatible with top/bottom overlays enabled.
@@ -290,17 +287,19 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+        && Build.VERSION.SDK_INT >= 29) {
       // EDGE TO EDGE
-      // Available starting at 16
+      // Available starting at 29
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
-      // to ensure contrast with buttons on the nav bar.
-      // SDK 28 and lower will support a transparent 2/3 button navigation bar.
-      // Overlays should be included and not removed.
+      // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
+      // enforced in the overlay styling.
       enabledOverlays =
           View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+    } else {
+      // When none of the conditions are matched, return without updating the system UI overlays.
+      return;
     }
 
     mEnabledOverlays = enabledOverlays;
@@ -365,7 +364,8 @@ public class PlatformPlugin {
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
     View view = window.getDecorView();
-    int flags = view.getSystemUiVisibility();
+    WindowInsetsControllerCompat windowInsetsControllerCompat =
+        new WindowInsetsControllerCompat(window, view);
 
     // SYSTEM STATUS BAR -------------------------------------------------------------------
     // You can't change the color of the system status bar until SDK 21, and you can't change the
@@ -378,11 +378,14 @@ public class PlatformPlugin {
       if (systemChromeStyle.statusBarIconBrightness != null) {
         switch (systemChromeStyle.statusBarIconBrightness) {
           case DARK:
-            // View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            flags |= 0x2000;
+            // Dark status bar icon brightness.
+            // Light status bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(true);
             break;
           case LIGHT:
-            flags &= ~0x2000;
+            // Light status bar icon brightness.
+            // Dark status bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightStatusBars(false);
             break;
         }
       }
@@ -394,7 +397,7 @@ public class PlatformPlugin {
     // You can't override the enforced contrast for a transparent status bar until SDK 29.
     // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
     // contrast is appropriate when using full screen layout modes like Edge to Edge.
-    if (!systemChromeStyle.systemStatusBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
+    if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
       window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
     }
 
@@ -409,11 +412,14 @@ public class PlatformPlugin {
       if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
         switch (systemChromeStyle.systemNavigationBarIconBrightness) {
           case DARK:
-            // View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-            flags |= 0x10;
+            // Dark navigation bar icon brightness.
+            // Light navigation bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightNavigationBars(true);
             break;
           case LIGHT:
-            flags &= ~0x10;
+            // Light navigation bar icon brightness.
+            // Dark navigation bar appearance.
+            windowInsetsControllerCompat.setAppearanceLightNavigationBars(false);
             break;
         }
       }
@@ -433,12 +439,12 @@ public class PlatformPlugin {
     // This overrides the translucent scrim that may be placed behind 2/3 button navigation bars on
     // SDK 29+ to ensure contrast is appropriate when using full screen layout modes like
     // Edge to Edge.
-    if (!systemChromeStyle.systemNavigationBarContrastEnforced && Build.VERSION.SDK_INT >= 29) {
+    if (systemChromeStyle.systemNavigationBarContrastEnforced != null
+        && Build.VERSION.SDK_INT >= 29) {
       window.setNavigationBarContrastEnforced(
           systemChromeStyle.systemNavigationBarContrastEnforced);
     }
 
-    view.setSystemUiVisibility(flags);
     currentTheme = systemChromeStyle;
   }
 

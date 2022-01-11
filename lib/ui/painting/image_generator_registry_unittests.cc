@@ -48,7 +48,7 @@ TEST_F(ShellTest, CreateCompatibleReturnsNullptrForInvalidImage) {
 
 class FakeImageGenerator : public ImageGenerator {
  public:
-  FakeImageGenerator(int identifiableFakeWidth)
+  explicit FakeImageGenerator(int identifiableFakeWidth)
       : info_(SkImageInfo::Make(identifiableFakeWidth,
                                 identifiableFakeWidth,
                                 SkColorType::kRGBA_8888_SkColorType,
@@ -109,6 +109,43 @@ TEST_F(ShellTest, DefaultGeneratorsTakePrecedentOverNegativePriority) {
   // If the real width of the image pops out, then the default generator was
   // returned rather than the fake one.
   ASSERT_EQ(result->GetInfo().width(), 3024);
+}
+
+TEST_F(ShellTest, DefaultGeneratorsTakePrecedentOverZeroPriority) {
+  ImageGeneratorRegistry registry;
+
+  registry.AddFactory(
+      [](sk_sp<SkData> buffer) {
+        return std::make_unique<FakeImageGenerator>(1337);
+      },
+      0);
+
+  // Fetch the generator and query for basic info.
+  auto result = registry.CreateCompatibleGenerator(LoadValidImageFixture());
+  // If the real width of the image pops out, then the default generator was
+  // returned rather than the fake one.
+  ASSERT_EQ(result->GetInfo().width(), 3024);
+}
+
+TEST_F(ShellTest, ImageGeneratorsWithSamePriorityCascadeChronologically) {
+  ImageGeneratorRegistry registry;
+
+  // Add 2 factories with the same high priority.
+  registry.AddFactory(
+      [](sk_sp<SkData> buffer) {
+        return std::make_unique<FakeImageGenerator>(1337);
+      },
+      5);
+  registry.AddFactory(
+      [](sk_sp<SkData> buffer) {
+        return std::make_unique<FakeImageGenerator>(7777);
+      },
+      5);
+
+  // Feed empty data so that Skia's image generators will reject it, but ours
+  // won't.
+  auto result = registry.CreateCompatibleGenerator(SkData::MakeEmpty());
+  ASSERT_EQ(result->GetInfo().width(), 1337);
 }
 
 }  // namespace testing

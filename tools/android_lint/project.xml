@@ -6,6 +6,7 @@
   <manifest file="../../../flutter/shell/platform/android/AndroidManifest.xml" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/TestUtils.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/SmokeTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/util/PathUtilsTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/ViewUtilsTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/PreconditionsTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/FakeKeyEvent.java" />
@@ -52,9 +53,11 @@
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/common/StandardMethodCodecTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/ListenableEditingStateTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/TextInputPluginTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/TextEditingDeltaTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/editing/InputConnectionAdaptorTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/localization/LocalizationPluginTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/view/AccessibilityBridgeTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/view/VsyncWaiterTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/FlutterInjectorTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/external/FlutterLaunchTests.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/app/FlutterPluginRegistry.java" />
@@ -70,6 +73,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/KeyboardManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/AndroidTouchProcessor.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/RenderMode.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragmentActivity.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterActivity.java" />
@@ -81,6 +85,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterTextureView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/MotionEventTracker.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/SplashScreenProvider.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/WindowInfoRepositoryCallbackAdapterWrapper.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/TransparencyMode.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterEngineProvider.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterFragment.java" />
@@ -114,6 +119,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/broadcastreceiver/BroadcastReceiverAware.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/broadcastreceiver/BroadcastReceiverControlSurface.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/plugins/broadcastreceiver/BroadcastReceiverPluginBinding.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformTaskQueue.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartExecutor.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/PlatformMessageHandler.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/dart/DartMessenger.java" />
@@ -172,6 +178,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/common/MethodCall.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/common/EventChannel.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/common/MethodChannel.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextEditingDelta.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInputPlugin.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/editing/ListenableEditingState.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/editing/InputConnectionAdaptor.java" />

@@ -10,6 +10,7 @@
 #include <optional>
 #include <vector>
 
+#include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
@@ -93,6 +94,10 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
+  std::weak_ptr<AccessibilityBridge> accessibility_bridge() {
+    return accessibility_bridge_;
+  }
+
 #ifndef WINUWP
   WindowProcDelegateManagerWin32* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
@@ -131,6 +136,9 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
+  // Informs the engine that the platform brightness has changed.
+  void ReloadPlatformBrightness();
+
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -140,6 +148,20 @@ class FlutterWindowsEngine {
   // Notifies the engine about a new frame being available for the
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
+  // Dispatches a semantics action to the specified semantics node.
+  bool DispatchSemanticsAction(uint64_t id,
+                               FlutterSemanticsAction action,
+                               fml::MallocMapping data);
+
+  // Informs the engine that the semantics enabled state has changed.
+  void UpdateSemanticsEnabled(bool enabled);
+
+  // Returns true if the semantics tree is enabled.
+  bool semantics_enabled() const { return semantics_enabled_; }
+
+  // Returns the native accessibility node with the given id.
+  gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -182,6 +204,9 @@ class FlutterWindowsEngine {
   // The texture registrar.
   std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;
 
+  // Resolved OpenGL functions used by external texture implementations.
+  GlProcs gl_procs_ = {};
+
   // An object used for intializing Angle and creating / destroying render
   // surfaces. Surface creation functionality requires a valid render_target.
   // May be nullptr if ANGLE failed to initialize.
@@ -194,6 +219,10 @@ class FlutterWindowsEngine {
   // is being destroyed.
   FlutterDesktopOnPluginRegistrarDestroyed
       plugin_registrar_destruction_callback_ = nullptr;
+
+  bool semantics_enabled_ = false;
+
+  std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
 
 #ifndef WINUWP
   // The manager for WindowProc delegate registration and callbacks.

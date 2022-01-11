@@ -15,12 +15,13 @@ import 'canvaskit/initialization.dart';
 import 'canvaskit/layer_scene_builder.dart';
 import 'canvaskit/rasterizer.dart';
 import 'clipboard.dart';
-import 'dom_renderer.dart';
+import 'embedder.dart';
 import 'html/scene.dart';
 import 'mouse_cursor.dart';
 import 'platform_views/message_handler.dart';
 import 'plugins.dart';
 import 'profiler.dart';
+import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'services.dart';
 import 'text_editing/text_editing.dart';
@@ -53,8 +54,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The current platform configuration.
   @override
   ui.PlatformConfiguration get configuration => _configuration;
-  ui.PlatformConfiguration _configuration =
-      ui.PlatformConfiguration(locales: parseBrowserLanguages());
+  ui.PlatformConfiguration _configuration = ui.PlatformConfiguration(
+    locales: parseBrowserLanguages(),
+    textScaleFactor: findBrowserTextScaleFactor(),
+  );
 
   /// Receives all events related to platform configuration changes.
   @override
@@ -417,7 +420,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             return;
           case 'HapticFeedback.vibrate':
             final String? type = decoded.arguments as String?;
-            domRenderer.vibrate(_getHapticFeedbackDuration(type));
+            vibrate(_getHapticFeedbackDuration(type));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
@@ -425,13 +428,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(ferhat): Find more appropriate defaults? Or noop when values are null?
             final String label = arguments['label'] as String? ?? '';
             final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
-            domRenderer.setTitle(label);
-            domRenderer.setThemeColor(ui.Color(primaryColor));
+            html.document.title = label;
+            setThemeColor(ui.Color(primaryColor));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':
             final List<dynamic> arguments = decoded.arguments as List<dynamic>;
-            domRenderer.setPreferredOrientation(arguments).then((bool success) {
+            flutterViewEmbedder.setPreferredOrientation(arguments).then((bool success) {
               replyToPlatformMessage(
                   callback, codec.encodeSuccessEnvelope(success));
             });
@@ -480,7 +483,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (html.Element content) {
-            domRenderer.glassPaneElement!.append(content);
+            flutterViewEmbedder.glassPaneElement!.append(content);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
@@ -527,17 +530,23 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   int _getHapticFeedbackDuration(String? type) {
+    const int vibrateLongPress = 50;
+    const int vibrateLightImpact = 10;
+    const int vibrateMediumImpact = 20;
+    const int vibrateHeavyImpact = 30;
+    const int vibrateSelectionClick = 10;
+
     switch (type) {
       case 'HapticFeedbackType.lightImpact':
-        return DomRenderer.vibrateLightImpact;
+        return vibrateLightImpact;
       case 'HapticFeedbackType.mediumImpact':
-        return DomRenderer.vibrateMediumImpact;
+        return vibrateMediumImpact;
       case 'HapticFeedbackType.heavyImpact':
-        return DomRenderer.vibrateHeavyImpact;
+        return vibrateHeavyImpact;
       case 'HapticFeedbackType.selectionClick':
-        return DomRenderer.vibrateSelectionClick;
+        return vibrateSelectionClick;
       default:
-        return DomRenderer.vibrateLongPress;
+        return vibrateLongPress;
     }
   }
 
@@ -597,7 +606,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       rasterizer!.draw(layerScene.layerTree);
     } else {
       final SurfaceScene surfaceScene = scene as SurfaceScene;
-      domRenderer.renderScene(surfaceScene.webOnlyRootElement);
+      flutterViewEmbedder.renderScene(surfaceScene.webOnlyRootElement);
     }
     frameTimingsOnRasterFinish();
   }
@@ -718,7 +727,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
-  // Called by DomRenderer when browser languages change.
+  // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
     _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
   }
@@ -1075,4 +1084,13 @@ void invoke3<A1, A2, A3>(void Function(A1 a1, A2 a2, A3 a3)? callback,
       callback(arg1, arg2, arg3);
     });
   }
+}
+
+const double _defaultRootFontSize = 16.0;
+
+/// Finds the text scale factor of the browser by looking at the computed style
+/// of the browser's <html> element.
+double findBrowserTextScaleFactor() {
+  final num fontSize = parseFontSize(html.document.documentElement!) ?? _defaultRootFontSize;
+  return fontSize / _defaultRootFontSize;
 }

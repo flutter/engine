@@ -204,10 +204,17 @@ class FlutterHtmlKeyboardEvent {
 // [dispatchKeyData] as given in the constructor. Some key data might be
 // dispatched asynchronously.
 class KeyboardConverter {
-  KeyboardConverter(this.dispatchKeyData, {this.onMacOs = false});
+  KeyboardConverter(this.performDispatchKeyData, {this.onMacOs = false});
 
-  final DispatchKeyData dispatchKeyData;
+  final DispatchKeyData performDispatchKeyData;
   final bool onMacOs;
+
+  // The `performDispatchKeyData` wrapped with tracking logic.
+  //
+  // It is non-null only during `handleEvent`. All events during `handleEvent`
+  // should be dispatched with `_dispatchKeyData`, others with
+  // `performDispatchKeyData`.
+  DispatchKeyData? _dispatchKeyData;
 
   bool _disposed = false;
   void dispose() {
@@ -294,7 +301,9 @@ class KeyboardConverter {
     Future<void>.delayed(duration).then<void>((_) {
       if (!canceled && !_disposed) {
         callback();
-        dispatchKeyData(getData());
+        // This dispatch is performed asynchronously, therefore should not use
+        // `_dispatchKeyData`.
+        performDispatchKeyData(getData());
       }
     });
     return () { canceled = true; };
@@ -335,17 +344,7 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
   }
 
-  // Parse the HTML event, update states, and dispatch Flutter key data through
-  // [dispatchKeyData].
-  //
-  //  * The method might dispatch some synthesized key data first to update states,
-  //    results discarded.
-  //  * Then it dispatches exactly one non-synthesized key data that corresponds
-  //    to the `event`, i.e. the primary key data. If this dispatching returns
-  //    true, then this event will be invoked `preventDefault`.
-  //  * Some key data might be synthesized to update states after the main key
-  //    data. They are always scheduled asynchronously with results discarded.
-  void handleEvent(FlutterHtmlKeyboardEvent event) {
+  void _handleEvent(FlutterHtmlKeyboardEvent event) {
     final Duration timeStamp = _eventTimeStampToDuration(event.timeStamp!);
 
     final String eventKey = event.key!;
@@ -372,9 +371,7 @@ class KeyboardConverter {
       // followed by an immediate cancel event.
       (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock);
 
-    final int? lastLogicalRecord = _pressingRecords[physicalKey];
-
-    ui.KeyEventType type;
+    final ui.KeyEventType type;
 
     if (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock) {
       // Case 1: Handle CapsLock on macOS
@@ -400,38 +397,57 @@ class KeyboardConverter {
 
     } else if (isPhysicalDown) {
       // Case 2: Handle key down of normal keys
-      type = ui.KeyEventType.down;
-      if (lastLogicalRecord != null) {
+      if (_pressingRecords[physicalKey] != null) {
         // This physical key is being pressed according to the record.
         if (event.repeat ?? false) {
           // A normal repeated key.
           type = ui.KeyEventType.repeat;
         } else {
           // A non-repeated key has been pressed that has the exact physical key as
-          // a currently pressed one, usually indicating multiple keyboards are
-          // pressing keys with the same physical key, or the up event was lost
-          // during a loss of focus. The down event is ignored.
-          dispatchKeyData(_emptyKeyData);
-          event.preventDefault();
-          return;
+          // a currently pressed one. This can mean one of the following cases:
+          //
+          //  * Multiple keyboards are pressing keys with the same physical key.
+          //  * The up event was lost during a loss of focus.
+          //  * The previous down event was a system shortcut and its release
+          //    was skipped (see `_startGuardingKey`,) such as holding Ctrl and
+          //    pressing V then V, within the "guard window".
+          //
+          // The three cases can't be distinguished, and in the 3rd case, the
+          // latter event must be dispatched as down events for the framework to
+          // correctly recognize and choose to not to handle. Therefore, an up
+          // event is synthesized before it.
+          _dispatchKeyData!(ui.KeyData(
+            timeStamp: timeStamp,
+            type: ui.KeyEventType.up,
+            physical: physicalKey,
+            logical: logicalKey,
+            character: null,
+            synthesized: true,
+          ));
+          _pressingRecords.remove(physicalKey);
+          type = ui.KeyEventType.down;
         }
       } else {
         // This physical key is not being pressed according to the record. It's a
         // normal down event, whether the system event is a repeat or not.
+        type = ui.KeyEventType.down;
       }
 
     } else { // isPhysicalDown is false and not CapsLock
       // Case 2: Handle key up of normal keys
-      if (lastLogicalRecord == null) {
+      if (_pressingRecords[physicalKey] == null) {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
-        dispatchKeyData(_emptyKeyData);
         event.preventDefault();
         return;
       }
 
       type = ui.KeyEventType.up;
     }
+
+    // The _pressingRecords[physicalKey] might have been changed during the last
+    // `if` clause.
+    final int? lastLogicalRecord = _pressingRecords[physicalKey];
 
     final int? nextLogicalRecord;
     switch (type) {
@@ -465,7 +481,7 @@ class KeyboardConverter {
           if (logicalRecord != logicalKey)
             return false;
 
-          dispatchKeyData(ui.KeyData(
+          _dispatchKeyData!(ui.KeyData(
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
             physical: physicalKey,
@@ -497,9 +513,36 @@ class KeyboardConverter {
       synthesized: false,
     );
 
-    final bool primaryHandled = dispatchKeyData(keyData);
+    final bool primaryHandled = _dispatchKeyData!(keyData);
     if (primaryHandled) {
       event.preventDefault();
+    }
+  }
+
+  // Parse the HTML event, update states, and dispatch Flutter key data through
+  // [performDispatchKeyData].
+  //
+  //  * The method might dispatch some synthesized key data first to update states,
+  //    results discarded.
+  //  * Then it dispatches exactly one non-synthesized key data that corresponds
+  //    to the `event`, i.e. the primary key data. If this dispatching returns
+  //    true, then this event will be invoked `preventDefault`.
+  //  * Some key data might be synthesized to update states after the main key
+  //    data. They are always scheduled asynchronously with results discarded.
+  void handleEvent(FlutterHtmlKeyboardEvent event) {
+    assert(_dispatchKeyData == null);
+    bool sentAnyEvents = false;
+    _dispatchKeyData = (ui.KeyData data) {
+      sentAnyEvents = true;
+      return performDispatchKeyData(data);
+    };
+    try {
+      _handleEvent(event);
+    } finally {
+      if (!sentAnyEvents) {
+        _dispatchKeyData!(_emptyKeyData);
+      }
+      _dispatchKeyData = null;
     }
   }
 }

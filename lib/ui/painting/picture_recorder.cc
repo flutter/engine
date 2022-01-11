@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/painting/picture_recorder.h"
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -56,7 +57,9 @@ fml::RefPtr<Picture> PictureRecorder::endRecording(Dart_Handle dart_picture) {
   fml::RefPtr<Picture> picture;
 
   if (display_list_recorder_) {
-    picture = Picture::Create(dart_picture, display_list_recorder_->Build());
+    picture = Picture::Create(
+        dart_picture,
+        UIDartState::CreateGPUObject(display_list_recorder_->Build()));
     display_list_recorder_ = nullptr;
   } else {
     picture = Picture::Create(

@@ -4,19 +4,19 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'safe_browser_api.dart';
 import 'util.dart';
 
-Object? get _jsImageDecodeFunction => js_util.getProperty(
-  js_util.getProperty(
-    js_util.getProperty(html.window, 'Image') as Object,
+Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
+  getJsProperty<Object>(
+    getJsProperty<Object>(html.window, 'Image'),
     'prototype',
-  ) as Object,
+  ),
   'decode',
 );
 final bool _supportsDecode = _jsImageDecodeFunction != null;
@@ -46,7 +46,7 @@ class HtmlCodec implements ui.Codec {
     if (_supportsDecode) {
       final html.ImageElement imgElement = html.ImageElement();
       imgElement.src = src;
-      js_util.setProperty(imgElement, 'decoding', 'async');
+      setJsProperty<String>(imgElement, 'decoding', 'async');
       imgElement.decode().then((dynamic _) {
         chunkCallback?.call(100, 100);
         int naturalWidth = imgElement.naturalWidth;
@@ -172,24 +172,25 @@ class HtmlImage implements ui.Image {
 
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    if (format == ui.ImageByteFormat.rawRgba) {
-      final html.CanvasElement canvas = html.CanvasElement()
-        ..width = width
-        ..height = height;
-      final html.CanvasRenderingContext2D ctx = canvas.context2D;
-      ctx.drawImage(imgElement, 0, 0);
-      final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
-      return Future<ByteData?>.value(imageData.data.buffer.asByteData());
-    } else if (format == ui.ImageByteFormat.rawStraightRgba) {
-      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89094
-      throw UnsupportedError(
-        'Image.toByteData(format: ui.ImageByteFormat.rawStraightRgba) not yet implemented for HTML');
-    }
-    if (imgElement.src?.startsWith('data:') == true) {
-      final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
-      return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
-    } else {
-      return Future<ByteData?>.value(null);
+    switch (format) {
+      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
+      // The format rawRgba always returns straight rather than premul currently.
+      case ui.ImageByteFormat.rawRgba:
+      case ui.ImageByteFormat.rawStraightRgba:
+        final html.CanvasElement canvas = html.CanvasElement()
+          ..width = width
+          ..height = height;
+        final html.CanvasRenderingContext2D ctx = canvas.context2D;
+        ctx.drawImage(imgElement, 0, 0);
+        final html.ImageData imageData = ctx.getImageData(0, 0, width, height);
+        return Future<ByteData?>.value(imageData.data.buffer.asByteData());
+      default:
+        if (imgElement.src?.startsWith('data:') == true) {
+          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
+          return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+        } else {
+          return Future<ByteData?>.value(null);
+        }
     }
   }
 

@@ -22,9 +22,9 @@
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
-#include "flutter/shell/platform/windows/keyboard_key_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
@@ -90,6 +90,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
+  // Invoked by the engine right before the engine is restarted.
+  //
+  // This should reset necessary states to as if the view has just been
+  // created. This is typically caused by a hot restart (Shift-R in CLI.)
+  void OnPreEngineRestart();
+
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) override;
 
@@ -149,24 +155,36 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                 FlutterPointerDeviceKind device_kind,
                 int32_t device_id) override;
 
+  // |WindowBindingHandlerDelegate|
+  void OnPlatformBrightnessChanged() override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnUpdateSemanticsEnabled(bool enabled) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible() override;
+
   // |TextInputPluginDelegate|
   void OnCursorRectUpdated(const Rect& rect) override;
 
+  // |TextInputPluginDelegate|
+  void OnResetImeComposing() override;
+
  protected:
-  // Called to create the keyboard hook handlers.
+  // Called to create keyboard key handler.
   //
   // The provided |dispatch_event| is where to inject events into the system,
   // while |get_key_state| is where to acquire keyboard states. They will be
   // the system APIs in production classes, but might be replaced with mock
   // functions in unit tests.
-  virtual void RegisterKeyboardHandlers(
-      flutter::BinaryMessenger* messenger,
-      flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,
-      flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state);
+  virtual std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
+      BinaryMessenger* messenger,
+      KeyboardKeyHandler::EventDispatcher dispatch_event,
+      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state);
 
-  // Used by RegisterKeyboardHandlers to add a new keyboard hook handler.
-  void AddKeyboardHandler(
-      std::unique_ptr<flutter::KeyboardHandlerBase> handler);
+  // Called to create text input plugin.
+  virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
+      BinaryMessenger* messenger);
 
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep
@@ -203,6 +221,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
     // and the buffers have been swapped.
     kDone,
   };
+
+  // Initialize states related to keyboard.
+  //
+  // This is called when the view is first created, or restarted.
+  void InitializeKeyboard();
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
@@ -284,6 +307,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void SendPointerEventWithData(const FlutterPointerEvent& event_data,
                                 PointerState* state);
 
+  // Reports platform brightness change to Flutter engine.
+  void SendPlatformBrightnessChanged();
+
   // Currently configured WindowsRenderTarget for this view used by
   // surface_manager for creation of render surfaces and bound to the physical
   // os window.
@@ -293,22 +319,25 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<FlutterWindowsEngine> engine_;
 
   // Keeps track of pointer states in relation to the window.
-  std::map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
+  std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
 
   // The plugin registrar managing internal plugins.
-  std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar_;
+  std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
 
   // Handlers for keyboard events from Windows.
-  std::vector<std::unique_ptr<flutter::KeyboardHandlerBase>> keyboard_handlers_;
+  std::unique_ptr<KeyboardHandlerBase> keyboard_key_handler_;
+
+  // Handlers for text events from Windows.
+  std::unique_ptr<TextInputPlugin> text_input_plugin_;
 
   // Handler for the flutter/platform channel.
-  std::unique_ptr<flutter::PlatformHandler> platform_handler_;
+  std::unique_ptr<PlatformHandler> platform_handler_;
 
   // Handler for cursor events.
-  std::unique_ptr<flutter::CursorHandler> cursor_handler_;
+  std::unique_ptr<CursorHandler> cursor_handler_;
 
   // Currently configured WindowBindingHandler for view.
-  std::unique_ptr<flutter::WindowBindingHandler> binding_handler_;
+  std::unique_ptr<WindowBindingHandler> binding_handler_;
 
   // Resize events are synchronized using this mutex and the corresponding
   // condition variable.
@@ -326,6 +355,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Target for the window width. Valid when resize_pending_ is set. Guarded by
   // resize_mutex_.
   size_t resize_target_height_ = 0;
+
+  // True when flutter's semantics tree is enabled.
+  bool semantics_enabled_ = false;
 };
 
 }  // namespace flutter

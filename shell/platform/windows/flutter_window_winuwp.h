@@ -17,6 +17,7 @@
 #include "flutter/shell/platform/windows/display_helper_winuwp.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/game_pad_cursor_winuwp.h"
+#include "flutter/shell/platform/windows/sequential_id_generator.h"
 
 namespace flutter {
 
@@ -54,6 +55,9 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
 
   // |WindowBindingHandler|
   void OnCursorRectUpdated(const Rect& rect) override;
+
+  // |FlutterWindowBindingHandler|
+  void OnResetImeComposing() override;
 
   // |WindowBindingHandler|
   void OnWindowResized() override;
@@ -114,6 +118,11 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
       winrt::Windows::Foundation::IInspectable const&,
       winrt::Windows::UI::Core::CharacterReceivedEventArgs const& args);
 
+  // Notifies current |WindowBindingHandlerDelegate| of color values changed
+  // events.
+  void OnColorValuesChanged(winrt::Windows::Foundation::IInspectable const&,
+                            winrt::Windows::Foundation::IInspectable const&);
+
   // Converts from logical point to physical X value.
   double GetPosX(winrt::Windows::UI::Core::PointerEventArgs const& args);
 
@@ -123,6 +132,12 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // Gets the pointer kind.
   FlutterPointerDeviceKind GetPointerDeviceKind(
       winrt::Windows::UI::Core::PointerEventArgs const& args);
+
+  // Gets the pointer ID.
+  uint32_t GetPointerId(winrt::Windows::UI::Core::PointerEventArgs const& args);
+
+  // Releases the pointer from the ID generator.
+  void ReleasePointer(winrt::Windows::UI::Core::PointerEventArgs const& args);
 
   // Gets the mouse button.
   FlutterPointerMouseButtons GetPointerMouseButton(
@@ -153,12 +168,18 @@ class FlutterWindowWinUWP : public WindowBindingHandler {
   // SwapChain to the CoreWindow.
   winrt::Windows::UI::Composition::SpriteVisual render_target_{nullptr};
 
+  // UISettings for observing the color change.
+  winrt::Windows::UI::ViewManagement::UISettings ui_settings_;
+
   // GamepadCursorWinUWP object used to manage an emulated cursor visual driven
   // by gamepad.
   std::unique_ptr<GamepadCursorWinUWP> game_pad_cursor_{nullptr};
 
   // DisplayHelper object used to determine window bounds, DPI etc.
   std::unique_ptr<DisplayHelperWinUWP> display_helper_ = {nullptr};
+
+  // Generates pointer IDs for pointer events.
+  SequentialIdGenerator pointer_id_generator_;
 };
 
 }  // namespace flutter

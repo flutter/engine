@@ -79,6 +79,8 @@ import java.util.Arrays;
   @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
   private boolean isFlutterUiDisplayed;
+  private boolean isFirstFrameRendered;
+  private boolean isAttached;
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -87,6 +89,7 @@ import java.util.Arrays;
         public void onFlutterUiDisplayed() {
           host.onFlutterUiDisplayed();
           isFlutterUiDisplayed = true;
+          isFirstFrameRendered = true;
         }
 
         @Override
@@ -98,6 +101,7 @@ import java.util.Arrays;
 
   FlutterActivityAndFragmentDelegate(@NonNull Host host) {
     this.host = host;
+    this.isFirstFrameRendered = false;
   }
 
   /**
@@ -133,6 +137,14 @@ import java.util.Arrays;
    */
   /* package */ boolean isFlutterEngineFromHost() {
     return isFlutterEngineFromHost;
+  }
+
+  /**
+   * Whether or not this {@code FlutterActivityAndFragmentDelegate} is attached to a {@code
+   * FlutterEngine}.
+   */
+  /* package */ boolean isAttached() {
+    return isAttached;
   }
 
   /**
@@ -185,6 +197,7 @@ import java.util.Arrays;
     platformPlugin = host.providePlatformPlugin(host.getActivity(), flutterEngine);
 
     host.configureFlutterEngine(flutterEngine);
+    isAttached = true;
   }
 
   @Override
@@ -404,12 +417,16 @@ import java.util.Arrays;
         initialRoute = DEFAULT_INITIAL_ROUTE;
       }
     }
+    @Nullable String libraryUri = host.getDartEntrypointLibraryUri();
     Log.v(
         TAG,
         "Executing Dart entrypoint: "
-            + host.getDartEntrypointFunctionName()
-            + ", and sending initial route: "
-            + initialRoute);
+                    + host.getDartEntrypointFunctionName()
+                    + ", library uri: "
+                    + libraryUri
+                == null
+            ? "\"\""
+            : libraryUri + ", and sending initial route: " + initialRoute);
 
     // The engine needs to receive the Flutter app's initial route before executing any
     // Dart code to ensure that the initial route arrives in time to be applied.
@@ -422,23 +439,28 @@ import java.util.Arrays;
 
     // Configure the Dart entrypoint and execute it.
     DartExecutor.DartEntrypoint entrypoint =
-        new DartExecutor.DartEntrypoint(
-            appBundlePathOverride, host.getDartEntrypointFunctionName());
+        libraryUri == null
+            ? new DartExecutor.DartEntrypoint(
+                appBundlePathOverride, host.getDartEntrypointFunctionName())
+            : new DartExecutor.DartEntrypoint(
+                appBundlePathOverride, libraryUri, host.getDartEntrypointFunctionName());
     flutterEngine.getDartExecutor().executeDartEntrypoint(entrypoint);
   }
 
   private String maybeGetInitialRouteFromIntent(Intent intent) {
     if (host.shouldHandleDeeplinking()) {
       Uri data = intent.getData();
-      if (data != null && !data.getPath().isEmpty()) {
+      if (data != null) {
         String fullRoute = data.getPath();
-        if (data.getQuery() != null && !data.getQuery().isEmpty()) {
-          fullRoute += "?" + data.getQuery();
+        if (fullRoute != null && !fullRoute.isEmpty()) {
+          if (data.getQuery() != null && !data.getQuery().isEmpty()) {
+            fullRoute += "?" + data.getQuery();
+          }
+          if (data.getFragment() != null && !data.getFragment().isEmpty()) {
+            fullRoute += "#" + data.getFragment();
+          }
+          return fullRoute;
         }
-        if (data.getFragment() != null && !data.getFragment().isEmpty()) {
-          fullRoute += "#" + data.getFragment();
-        }
-        return fullRoute;
       }
     }
     return null;
@@ -503,16 +525,22 @@ import java.util.Arrays;
     Log.v(TAG, "onPostResume()");
     ensureAlive();
     if (flutterEngine != null) {
-      if (platformPlugin != null) {
-        // TODO(mattcarroll): find a better way to handle the update of UI overlays than calling
-        // through
-        //                    to platformPlugin. We're implicitly entangling the Window, Activity,
-        // Fragment,
-        //                    and engine all with this one call.
-        platformPlugin.updateSystemUiOverlays();
-      }
+      updateSystemUiOverlays();
     } else {
       Log.w(TAG, "onPostResume() invoked before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Refreshes Android's window system UI (AKA system chrome) to match Flutter's desired system
+   * chrome style.
+   */
+  void updateSystemUiOverlays() {
+    if (platformPlugin != null) {
+      // TODO(mattcarroll): find a better way to handle the update of UI overlays than calling
+      // through to platformPlugin. We're implicitly entangling the Window, Activity,
+      // Fragment, and engine all with this one call.
+      platformPlugin.updateSystemUiOverlays();
     }
   }
 
@@ -653,6 +681,8 @@ import java.util.Arrays;
 
       flutterEngine = null;
     }
+
+    isAttached = false;
   }
 
   /**
@@ -781,17 +811,16 @@ import java.util.Arrays;
   void onTrimMemory(int level) {
     ensureAlive();
     if (flutterEngine != null) {
-      // This is always an indication that the Dart VM should collect memory
-      // and free any unneeded resources.
-      flutterEngine.getDartExecutor().notifyLowMemoryWarning();
       // Use a trim level delivered while the application is running so the
       // framework has a chance to react to the notification.
-      if (level == TRIM_MEMORY_RUNNING_LOW) {
-        Log.v(TAG, "Forwarding onTrimMemory() to FlutterEngine. Level: " + level);
+      // Avoid being too aggressive before the first frame is rendered. If it is
+      // not at least running critical, we should avoid delaying the frame for
+      // an overly aggressive GC.
+      boolean trim = isFirstFrameRendered && level >= TRIM_MEMORY_RUNNING_LOW;
+      if (trim) {
+        flutterEngine.getDartExecutor().notifyLowMemoryWarning();
         flutterEngine.getSystemChannel().sendMemoryPressureWarning();
       }
-    } else {
-      Log.w(TAG, "onTrimMemory() invoked before FlutterFragment was attached to an Activity.");
     }
   }
 
@@ -893,6 +922,14 @@ import java.util.Arrays;
      */
     @NonNull
     String getDartEntrypointFunctionName();
+
+    /**
+     * Returns the URI of the Dart library which contains the entrypoint method (example
+     * "package:foo_package/main.dart"). If null, this will default to the same library as the
+     * `main()` function in the Dart program.
+     */
+    @Nullable
+    String getDartEntrypointLibraryUri();
 
     /** Returns the path to the app bundle where the Dart code exists. */
     @NonNull
@@ -1003,5 +1040,17 @@ import java.util.Arrays;
      * <p>This defaults to true, unless a cached engine is used.
      */
     boolean shouldRestoreAndSaveState();
+
+    /**
+     * Refreshes Android's window system UI (AKA system chrome) to match Flutter's desired system
+     * chrome style.
+     *
+     * <p>This is useful when using the splash screen API available in Android 12. {@code
+     * SplashScreenView#remove} resets the system UI colors to the values set prior to the execution
+     * of the Dart entrypoint. As a result, the values set from Dart are reverted by this API. To
+     * workaround this issue, call this method after removing the splash screen with {@code
+     * SplashScreenView#remove}.
+     */
+    void updateSystemUiOverlays();
   }
 }

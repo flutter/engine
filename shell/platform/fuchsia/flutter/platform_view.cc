@@ -40,84 +40,110 @@ template <class T>
 void SetInterfaceErrorHandler(fidl::InterfacePtr<T>& interface,
                               std::string name) {
   interface.set_error_handler([name](zx_status_t status) {
-    FML_LOG(ERROR) << "Interface error on: " << name << "status: " << status;
+    FML_LOG(ERROR) << "Interface error on: " << name << ", status: " << status;
   });
 }
 template <class T>
 void SetInterfaceErrorHandler(fidl::Binding<T>& binding, std::string name) {
   binding.set_error_handler([name](zx_status_t status) {
-    FML_LOG(ERROR) << "Interface error on: " << name << ", status: " << status;
+    FML_LOG(ERROR) << "Binding error on: " << name << ", status: " << status;
   });
 }
 
 PlatformView::PlatformView(
     flutter::PlatformView::Delegate& delegate,
-    std::string debug_label,
-    fuchsia::ui::views::ViewRef view_ref,
     flutter::TaskRunners task_runners,
-    std::shared_ptr<sys::ServiceDirectory> runner_services,
-    fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
-        parent_environment_service_provider_handle,
-    fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> vrf,
-    fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
-    fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
-        keyboard_listener_request,
+    fuchsia::ui::views::ViewRef view_ref,
+    std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
+    fuchsia::ui::input::ImeServiceHandle ime_service,
+    fuchsia::ui::input3::KeyboardHandle keyboard,
+    fuchsia::ui::pointer::TouchSourceHandle touch_source,
+    fuchsia::ui::pointer::MouseSourceHandle mouse_source,
+    fuchsia::ui::views::FocuserHandle focuser,
+    fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused,
     OnEnableWireframe wireframe_enabled_callback,
-    OnCreateView on_create_view_callback,
     OnUpdateView on_update_view_callback,
-    OnDestroyView on_destroy_view_callback,
     OnCreateSurface on_create_surface_callback,
     OnSemanticsNodeUpdate on_semantics_node_update_callback,
     OnRequestAnnounce on_request_announce_callback,
     OnShaderWarmup on_shader_warmup,
-    std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
     AwaitVsyncCallback await_vsync_callback,
     AwaitVsyncForSecondaryCallbackCallback
         await_vsync_for_secondary_callback_callback)
     : flutter::PlatformView(delegate, std::move(task_runners)),
-      debug_label_(std::move(debug_label)),
-      view_ref_(std::move(view_ref)),
+      external_view_embedder_(external_view_embedder),
       focus_delegate_(
-          std::make_shared<FocusDelegate>(std::move(vrf), std::move(focuser))),
+          std::make_shared<FocusDelegate>(std::move(view_ref_focused),
+                                          std::move(focuser))),
+      pointer_delegate_(
+          std::make_shared<PointerDelegate>(std::move(touch_source),
+                                            std::move(mouse_source))),
+      ime_client_(this),
+      text_sync_service_(ime_service.Bind()),
+      keyboard_listener_binding_(this),
+      keyboard_(keyboard.Bind()),
       wireframe_enabled_callback_(std::move(wireframe_enabled_callback)),
-      on_create_view_callback_(std::move(on_create_view_callback)),
       on_update_view_callback_(std::move(on_update_view_callback)),
-      on_destroy_view_callback_(std::move(on_destroy_view_callback)),
       on_create_surface_callback_(std::move(on_create_surface_callback)),
       on_semantics_node_update_callback_(
           std::move(on_semantics_node_update_callback)),
       on_request_announce_callback_(std::move(on_request_announce_callback)),
       on_shader_warmup_(std::move(on_shader_warmup)),
-      external_view_embedder_(external_view_embedder),
-      ime_client_(this),
-      keyboard_listener_binding_(this, std::move(keyboard_listener_request)),
       await_vsync_callback_(await_vsync_callback),
       await_vsync_for_secondary_callback_callback_(
           await_vsync_for_secondary_callback_callback),
       weak_factory_(this) {
   // Register all error handlers.
   SetInterfaceErrorHandler(ime_, "Input Method Editor");
+  SetInterfaceErrorHandler(ime_client_, "IME Client");
   SetInterfaceErrorHandler(text_sync_service_, "Text Sync Service");
-  SetInterfaceErrorHandler(parent_environment_service_provider_,
-                           "Parent Environment Service Provider");
-  SetInterfaceErrorHandler(keyboard_listener_binding_,
-                           "KeyboardListener Service");
-  // Access the IME service.
-  parent_environment_service_provider_ =
-      parent_environment_service_provider_handle.Bind();
+  SetInterfaceErrorHandler(keyboard_listener_binding_, "Keyboard Listener");
+  SetInterfaceErrorHandler(keyboard_, "Keyboard");
 
-  parent_environment_service_provider_.get()->ConnectToService(
-      fuchsia::ui::input::ImeService::Name_,
-      text_sync_service_.NewRequest().TakeChannel());
+  // Configure keyboard listener.
+  keyboard_->AddListener(std::move(view_ref),
+                         keyboard_listener_binding_.NewBinding(), [] {});
 
-  focus_delegate_->WatchLoop([&](bool focused) {
+  // Begin watching for focus changes.
+  focus_delegate_->WatchLoop([weak = weak_factory_.GetWeakPtr()](bool focused) {
+    if (!weak) {
+      FML_LOG(WARNING) << "PlatformView use-after-free attempted. Ignoring.";
+      return;
+    }
+
     // Ensure last_text_state_ is set to make sure Flutter actually wants
     // an IME.
-    if (focused && last_text_state_ != nullptr) {
-      ActivateIme();
+    if (focused && weak->last_text_state_) {
+      weak->ActivateIme();
     } else if (!focused) {
-      DeactivateIme();
+      weak->DeactivateIme();
     }
+  });
+
+  // Begin watching for pointer events.
+  pointer_delegate_->WatchLoop([weak = weak_factory_.GetWeakPtr()](
+                                   std::vector<flutter::PointerData> events) {
+    if (!weak) {
+      FML_LOG(WARNING) << "PlatformView use-after-free attempted. Ignoring.";
+      return;
+    }
+
+    if (events.size() == 0) {
+      return;  // No work, bounce out.
+    }
+
+    // If pixel ratio hasn't been set, use a default value of 1.
+    const float pixel_ratio = weak->view_pixel_ratio_.value_or(1.f);
+    auto packet = std::make_unique<flutter::PointerDataPacket>(events.size());
+    for (size_t i = 0; i < events.size(); ++i) {
+      auto& event = events[i];
+      // Translate logical to physical coordinates, as per flutter::PointerData
+      // contract. Done here because pixel ratio comes from the graphics API.
+      event.physical_x = event.physical_x * pixel_ratio;
+      event.physical_y = event.physical_y * pixel_ratio;
+      packet->SetPointerData(i, event);
+    }
+    weak->DispatchPointerDataPacket(std::move(packet));
   });
 
   // Finally! Register the native platform message handlers.
@@ -220,82 +246,6 @@ void PlatformView::OnAction(fuchsia::ui::input::InputMethodAction action) {
       fml::MallocMapping::Copy(data, buffer.GetSize()),  // message
       nullptr)                                           // response
   );
-}
-
-bool PlatformView::OnChildViewConnected(scenic::ResourceId view_holder_id) {
-  auto view_id_mapping = child_view_ids_.find(view_holder_id);
-  if (view_id_mapping == child_view_ids_.end()) {
-    return false;
-  }
-
-  std::ostringstream out;
-  out << "{"
-      << "\"method\":\"View.viewConnected\","
-      << "\"args\":{"
-      << "  \"viewId\":" << view_id_mapping->second  // ViewHolderToken handle
-      << "  }"
-      << "}";
-  auto call = out.str();
-
-  std::unique_ptr<flutter::PlatformMessage> message =
-      std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(call.c_str(), call.size()), nullptr);
-  DispatchPlatformMessage(std::move(message));
-
-  return true;
-}
-
-bool PlatformView::OnChildViewDisconnected(scenic::ResourceId view_holder_id) {
-  auto view_id_mapping = child_view_ids_.find(view_holder_id);
-  if (view_id_mapping == child_view_ids_.end()) {
-    return false;
-  }
-
-  std::ostringstream out;
-  out << "{"
-      << "\"method\":\"View.viewDisconnected\","
-      << "\"args\":{"
-      << "  \"viewId\":" << view_id_mapping->second  // ViewHolderToken handle
-      << "  }"
-      << "}";
-  auto call = out.str();
-
-  std::unique_ptr<flutter::PlatformMessage> message =
-      std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(call.c_str(), call.size()), nullptr);
-  DispatchPlatformMessage(std::move(message));
-
-  return true;
-}
-
-bool PlatformView::OnChildViewStateChanged(scenic::ResourceId view_holder_id,
-                                           bool is_rendering) {
-  auto view_id_mapping = child_view_ids_.find(view_holder_id);
-  if (view_id_mapping == child_view_ids_.end()) {
-    return false;
-  }
-
-  const std::string is_rendering_str = is_rendering ? "true" : "false";
-  std::ostringstream out;
-  out << "{"
-      << "\"method\":\"View.viewStateChanged\","
-      << "\"args\":{"
-      << "  \"viewId\":" << view_id_mapping->second << ","  // ViewHolderToken
-      << "  \"is_rendering\":" << is_rendering_str << ","   // IsViewRendering
-      << "  \"state\":" << is_rendering_str                 // IsViewRendering
-      << "  }"
-      << "}";
-  auto call = out.str();
-
-  std::unique_ptr<flutter::PlatformMessage> message =
-      std::make_unique<flutter::PlatformMessage>(
-          "flutter/platform_views",
-          fml::MallocMapping::Copy(call.c_str(), call.size()), nullptr);
-  DispatchPlatformMessage(std::move(message));
-
-  return true;
 }
 
 static flutter::PointerData::Change GetChangeFromPointerEventPhase(
@@ -460,16 +410,18 @@ void PlatformView::OnKeyEvent(
     callback(fuchsia::ui::input3::KeyEventStatus::NOT_HANDLED);
     return;
   }
-  keyboard_.ConsumeEvent(std::move(key_event));
+  keyboard_translator_.ConsumeEvent(std::move(key_event));
 
   rapidjson::Document document;
   auto& allocator = document.GetAllocator();
   document.SetObject();
   document.AddMember("type", rapidjson::Value(type, strlen(type)), allocator);
   document.AddMember("keymap", rapidjson::Value("fuchsia"), allocator);
-  document.AddMember("hidUsage", keyboard_.LastHIDUsage(), allocator);
-  document.AddMember("codePoint", keyboard_.LastCodePoint(), allocator);
-  document.AddMember("modifiers", keyboard_.Modifiers(), allocator);
+  document.AddMember("hidUsage", keyboard_translator_.LastHIDUsage(),
+                     allocator);
+  document.AddMember("codePoint", keyboard_translator_.LastCodePoint(),
+                     allocator);
+  document.AddMember("modifiers", keyboard_translator_.Modifiers(), allocator);
   rapidjson::StringBuffer buffer;
   rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
   document.Accept(writer);
@@ -484,7 +436,7 @@ void PlatformView::OnKeyEvent(
 }
 
 void PlatformView::ActivateIme() {
-  DEBUG_CHECK(last_text_state_ != nullptr, LOG_TAG, "");
+  DEBUG_CHECK(last_text_state_, LOG_TAG, "");
 
   text_sync_service_->GetInputMethodEditor(
       fuchsia::ui::input::KeyboardType::TEXT,       // keyboard type
@@ -767,10 +719,8 @@ bool PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
       return false;
     }
 
-    const int64_t view_id_raw = view_id->value.GetUint64();
     auto on_view_created = fml::MakeCopyable(
-        [weak = weak_factory_.GetWeakPtr(),
-         platform_task_runner = task_runners_.GetPlatformTaskRunner(),
+        [platform_task_runner = task_runners_.GetPlatformTaskRunner(),
          message = std::move(message)]() {
           // The client is waiting for view creation. Send an empty response
           // back to signal the view was created.
@@ -779,25 +729,8 @@ bool PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
                 std::vector<uint8_t>({'[', '0', ']'})));
           }
         });
-    auto on_view_bound =
-        [weak = weak_factory_.GetWeakPtr(),
-         platform_task_runner = task_runners_.GetPlatformTaskRunner(),
-         view_id = view_id_raw](scenic::ResourceId resource_id) {
-          platform_task_runner->PostTask([weak, view_id, resource_id]() {
-            if (!weak) {
-              FML_LOG(WARNING)
-                  << "ViewHolder bound to PlatformView after PlatformView was "
-                     "destroyed; ignoring.";
-              return;
-            }
-
-            FML_DCHECK(weak->child_view_ids_.count(resource_id) == 0);
-            weak->child_view_ids_[resource_id] = view_id;
-          });
-        };
-    on_create_view_callback_(
-        view_id_raw, std::move(on_view_created), std::move(on_view_bound),
-        hit_testable->value.GetBool(), focusable->value.GetBool());
+    OnCreateView(std::move(on_view_created), view_id->value.GetUint64(),
+                 hit_testable->value.GetBool(), focusable->value.GetBool());
     return true;
   } else if (method == "View.update") {
     auto args_it = root.FindMember("args");
@@ -885,24 +818,7 @@ bool PlatformView::HandleFlutterPlatformViewsChannelPlatformMessage(
       return false;
     }
 
-    const int64_t view_id_raw = view_id->value.GetUint64();
-    auto on_view_unbound =
-        [weak = weak_factory_.GetWeakPtr(),
-         platform_task_runner = task_runners_.GetPlatformTaskRunner()](
-            scenic::ResourceId resource_id) {
-          platform_task_runner->PostTask([weak, resource_id]() {
-            if (!weak) {
-              FML_LOG(WARNING)
-                  << "ViewHolder unbound from PlatformView after PlatformView"
-                     "was destroyed; ignoring.";
-              return;
-            }
-
-            FML_DCHECK(weak->child_view_ids_.count(resource_id) == 1);
-            weak->child_view_ids_.erase(resource_id);
-          });
-        };
-    on_destroy_view_callback_(view_id_raw, std::move(on_view_unbound));
+    OnDisposeView(view_id->value.GetUint64());
     if (message->response()) {
       message->response()->Complete(std::make_unique<fml::DataMapping>(
           std::vector<uint8_t>({'[', '0', ']'})));

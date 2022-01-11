@@ -26,15 +26,6 @@ part of dart.ui;
 /// platform API supports decoding the image Flutter will be able to render it.
 /// {@endtemplate}
 
-// TODO(gspencergoog): remove this template block once the framework templates
-// are renamed to not reference it.
-/// {@template flutter.dart:ui.imageFormats}
-/// JPEG, PNG, GIF, Animated GIF, WebP, Animated WebP, BMP, and WBMP. Additional
-/// formats may be supported by the underlying platform. Flutter will
-/// attempt to call platform API to decode unrecognized formats, and if the
-/// platform API supports decoding the image Flutter will be able to render it.
-/// {@endtemplate}
-
 bool _rectIsValid(Rect rect) {
   assert(rect != null, 'Rect argument was null.');
   assert(!rect.hasNaN, 'Rect argument contained a NaN value.');
@@ -1574,6 +1565,10 @@ class Paint {
 
 /// The format in which image bytes should be returned when using
 /// [Image.toByteData].
+// We do not expect to add more encoding formats to the ImageByteFormat enum,
+// considering the binary size of the engine after LTO optimization. You can
+// use the third-party pure dart image library to encode other formats.
+// See: https://github.com/flutter/flutter/issues/16635 for more details.
 enum ImageByteFormat {
   /// Raw RGBA format.
   ///
@@ -1715,6 +1710,10 @@ class Image {
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
+  // We do not expect to add more encoding formats to the ImageByteFormat enum,
+  // considering the binary size of the engine after LTO optimization. You can
+  // use the third-party pure dart image library to encode other formats.
+  // See: https://github.com/flutter/flutter/issues/16635 for more details.
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     assert(!_disposed && !_image._disposed);
     return _image.toByteData(format: format);
@@ -2387,7 +2386,7 @@ class Path extends NativeFieldWrapperClass1 {
               double startAngle, double sweepAngle, bool forceMoveTo) native 'Path_arcTo';
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
-  /// and rotated by `rotation`.
+  /// and rotated by `rotation` (measured in degrees and clockwise).
   ///
   /// The first curve begins from the last point in the path and the last ends
   /// at `arcEnd`. The curves follow a path in a direction determined by
@@ -2415,7 +2414,7 @@ class Path extends NativeFieldWrapperClass1 {
 
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
-  /// and rotated by `rotation`.
+  /// and rotated by `rotation` (measured in degrees and clockwise).
   ///
   /// The last path point is described by (px, py).
   ///
@@ -2496,7 +2495,7 @@ class Path extends NativeFieldWrapperClass1 {
   /// argument.
   void addRRect(RRect rrect) {
     assert(_rrectIsValid(rrect));
-    _addRRect(rrect._value32);
+    _addRRect(rrect._getValue32());
   }
   void _addRRect(Float32List rrect) native 'Path_addRRect';
 
@@ -3751,108 +3750,162 @@ class ImageShader extends Shader {
   void _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4) native 'ImageShader_initWithImage';
 }
 
-/// A shader (as used by [Paint.shader]) that runs provided SPIR-V code.
+/// An instance of [FragmentProgram] creates [Shader] objects (as used by [Paint.shader]) that run SPIR-V code.
 ///
 /// This API is in beta and does not yet work on web.
 /// See https://github.com/flutter/flutter/projects/207 for roadmap.
 ///
-/// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
+/// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/main/lib/spirv/README.md)
 ///
-/// When initializing or updating the `floatUniforms`, the length of float
-/// uniforms must match the total number of floats defined as uniforms in
-/// the shader. They will be updated in the order that they are defined.
-///
-/// For example, if there are 3 uniforms: 1 of type float, 1 type float2/vec2,
-/// and 1 of type vec3/float3, and 1 mat2x2 then the length of `floatUniforms`
-/// must be 10.
-///
-/// The uniforms could be updated as follows:
-///
-/// Consider the following snippit of GLSL code.
-///
-/// ```
-/// layout (location = 0) uniform float a;
-/// layout (location = 1) uniform vec2 b;
-/// layout (location = 2) uniform vec3 c;
-/// layout (location = 3) uniform mat2x2 d;
-/// ```
-///
-/// After being compiled to SPIR-V using [shaderc](https://github.com/google/shaderc)
-/// and provided to the constructor, `floatUniforms` must always have a length
-/// of 10. One per float-component of each uniform.
-///
-/// Dart code to update uniforms.
-///
-/// `shader.update(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
-///
-/// Results of shader uniforms.
-///
-/// a: 1
-/// b: [2, 3]
-/// c: [4, 5, 6]
-/// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
-///
-class FragmentShader extends Shader {
+class FragmentProgram extends NativeFieldWrapperClass1 {
 
-  // TODO(chriscraws): Add `List<Shader>? children` as a parameter to the
-  // constructor and to [update].
-  // https://github.com/flutter/flutter/issues/85240
-
-  /// Creates a fragment shader from SPIR-V byte data as an input.
+  /// Creates a fragment program from SPIR-V byte data as an input.
+  ///
+  /// One instance should be created per SPIR-V input. The constructed object
+  /// should then be reused via the [shader] method to create [Shader] objects
+  /// that can be used by [Shader.paint].
   ///
   /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/master/lib/spirv/README.md)
   /// SPIR-V not meeting this specification will throw an exception.
-  ///
-  /// `floatUniforms` can be passed optionally to initialize the shader's
-  /// uniforms. If they are not initially set, they will default
-  /// to 0. They can later be updated by invoking the [update] method.
-  ///
-  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShader] docs for details.
-  ///
-  /// The compilation of a shader gets more expensive the more complicated the source is.
-  /// Because of this, it is reccommended to construct a FragmentShader asynchrounously,
-  /// outside of a widget's `build` method, to minimize the chance of UI jank.
-  @pragma('vm:entry-point')
-  FragmentShader({
+  static Future<FragmentProgram> compile({
     required ByteBuffer spirv,
-    Float32List? floatUniforms,
     bool debugPrint = false,
-  }) : super._() {
+  }) {
+    return Future<FragmentProgram>(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
+  }
+
+  @pragma('vm:entry-point')
+  FragmentProgram._({
+    required ByteBuffer spirv,
+    bool debugPrint = false,
+  }) {
     _constructor();
     final spv.TranspileResult result = spv.transpile(
       spirv,
       spv.TargetLanguage.sksl,
     );
-    _uniformFloatCount = result.uniformFloatCount;
     _init(result.src, debugPrint);
-    update(floatUniforms: floatUniforms ?? Float32List(_uniformFloatCount));
+    _uniformFloatCount = result.uniformFloatCount;
+    _samplerCount = result.samplerCount;
   }
 
   late final int _uniformFloatCount;
+  late final int _samplerCount;
 
-  void _constructor() native 'FragmentShader_constructor';
-  void _init(String sksl, bool debugPrint) native 'FragmentShader_init';
+  void _constructor() native 'FragmentProgram_constructor';
+  void _init(String sksl, bool debugPrint) native 'FragmentProgram_init';
 
-  /// Updates the uniform values that are supplied to the [FragmentShader]
-  /// and refreshes the shader.
+  /// Constructs a [Shader] object suitable for use by [Paint.shader] with
+  /// the given uniforms.
   ///
-  /// `floatUniforms` must be sized correctly, or an [ArgumentError] will
-  /// be thrown. See [FragmentShader] docs for details.
+  /// This method is suitable to be called synchronously within a widget's
+  /// `build` method or from [CustomPainter.paint].
   ///
-  /// This method will aquire additional fields as [FragmentShader] is
-  /// implemented further.
-  void update({
-    required Float32List floatUniforms,
+  /// `floatUniforms` can be passed optionally to initialize the shader's
+  /// uniforms. If they are not set they will each default to 0.
+  ///
+  /// When initializing `floatUniforms`, the length of float uniforms must match
+  /// the total number of floats defined as uniforms in the shader, or an
+  /// [ArgumentError] will be thrown. Details are below.
+  ///
+  /// Consider the following snippit of GLSL code.
+  ///
+  /// ```
+  /// layout (location = 0) uniform float a;
+  /// layout (location = 1) uniform vec2 b;
+  /// layout (location = 2) uniform vec3 c;
+  /// layout (location = 3) uniform mat2x2 d;
+  /// ```
+  ///
+  /// When compiled to SPIR-V and provided to the constructor, `floatUniforms`
+  /// must have a length of 10. One per float-component of each uniform.
+  ///
+  /// `program.shader(floatUniforms: Float32List.fromList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));`
+  ///
+  /// The uniforms will be set as follows:
+  ///
+  /// a: 1
+  /// b: [2, 3]
+  /// c: [4, 5, 6]
+  /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
+  ///
+  /// `imageSamplers` must also be sized correctly, matching the number of UniformConstant
+  /// variables of type SampledImage specified in the SPIR-V code.
+  ///
+  /// Consider the following snippit of GLSL code.
+  ///
+  /// ```
+  /// layout (location = 0) uniform sampler2D a;
+  /// layout (location = 1) uniform sampler2D b;
+  /// ```
+  ///
+  /// After being compiled to SPIR-V  `imageSamplers` must have a length
+  /// of 2.
+  ///
+  /// Once a [Shader] is built, uniform values cannot be changed. Instead,
+  /// [shader] must be called again with new uniform values.
+  Shader shader({
+    Float32List? floatUniforms,
+    List<ImageShader>? samplerUniforms,
   }) {
+    if (floatUniforms == null) {
+      floatUniforms = Float32List(_uniformFloatCount);
+    }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
-        'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
+        'floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
-    _update(floatUniforms);
+    if (_samplerCount > 0 && (samplerUniforms == null || samplerUniforms.length != _samplerCount)) {
+      throw ArgumentError('samplerUniforms must have length $_samplerCount');
+    }
+    if (samplerUniforms == null) {
+      samplerUniforms = <ImageShader>[];
+    } else {
+      samplerUniforms = <ImageShader>[...samplerUniforms];
+    }
+    final _FragmentShader shader = _FragmentShader(
+        this, Float32List.fromList(floatUniforms), samplerUniforms);
+    _shader(shader, floatUniforms, samplerUniforms);
+    return shader;
   }
 
-  void _update(Float32List floatUniforms) native 'FragmentShader_update';
+  void _shader(
+    _FragmentShader shader,
+    Float32List floatUniforms,
+    List<ImageShader> samplerUniforms,
+  ) native 'FragmentProgram_shader';
+}
+
+@pragma('vm:entry-point')
+class _FragmentShader extends Shader {
+  /// This class is created by the engine and should not be instantiated
+  /// or extended directly.
+  ///
+  /// To create a [_FragmentShader], use a [FragmentProgram].
+  _FragmentShader(
+    this._builder,
+    this._floatUniforms,
+    this._samplerUniforms,
+  ) : super._();
+
+  final FragmentProgram _builder;
+  final Float32List _floatUniforms;
+  final List<ImageShader> _samplerUniforms;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is _FragmentShader
+        && other._builder == _builder
+        && _listEquals<double>(other._floatUniforms, _floatUniforms)
+        && _listEquals<ImageShader>(other._samplerUniforms, _samplerUniforms);
+  }
+
+  @override
+  int get hashCode => hashValues(_builder, hashList(_floatUniforms), hashList(_samplerUniforms));
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
@@ -3875,12 +3928,20 @@ class Vertices extends NativeFieldWrapperClass1 {
   /// Creates a set of vertex data for use with [Canvas.drawVertices].
   ///
   /// The [mode] and [positions] parameters must not be null.
+  /// The [positions] parameter is a list of triangular mesh vertices(xy).
   ///
   /// If the [textureCoordinates] or [colors] parameters are provided, they must
   /// be the same length as [positions].
   ///
+  /// The [textureCoordinates] parameter is used to cutout
+  /// the image set in the image shader.
+  /// The cut part is applied to the triangular mesh.
+  /// Note that the [textureCoordinates] are the coordinates on the image.
+  ///
   /// If the [indices] parameter is provided, all values in the list must be
   /// valid index values for [positions].
+  ///
+  /// e.g. The [indices] parameter for a simple triangle is [0,1,2].
   Vertices(
     VertexMode mode,
     List<Offset> positions, {
@@ -4272,7 +4333,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void clipRRect(RRect rrect, {bool doAntiAlias = true}) {
     assert(_rrectIsValid(rrect));
     assert(doAntiAlias != null);
-    _clipRRect(rrect._value32, doAntiAlias);
+    _clipRRect(rrect._getValue32(), doAntiAlias);
   }
   void _clipRRect(Float32List rrect, bool doAntiAlias) native 'Canvas_clipRRect';
 
@@ -4282,7 +4343,6 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// If [doAntiAlias] is true, then the clip will be anti-aliased.
   ///
   /// If multiple draw commands intersect with the clip boundary, this can result
-  /// multiple draw commands intersect with the clip boundary, this can result
   /// in incorrect blending at the clip boundary. See [saveLayer] for a
   /// discussion of how to address that.
   void clipPath(Path path, {bool doAntiAlias = true}) {
@@ -4349,7 +4409,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawRRect(RRect rrect, Paint paint) {
     assert(_rrectIsValid(rrect));
     assert(paint != null);
-    _drawRRect(rrect._value32, paint._objects, paint._data);
+    _drawRRect(rrect._getValue32(), paint._objects, paint._data);
   }
   void _drawRRect(Float32List rrect,
                   List<dynamic>? paintObjects,
@@ -4364,7 +4424,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(_rrectIsValid(outer));
     assert(_rrectIsValid(inner));
     assert(paint != null);
-    _drawDRRect(outer._value32, inner._value32, paint._objects, paint._data);
+    _drawDRRect(outer._getValue32(), inner._getValue32(), paint._objects, paint._data);
   }
   void _drawDRRect(Float32List outer,
                    Float32List inner,
@@ -4622,6 +4682,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///   * [new Vertices], which creates a set of vertices to draw on the canvas.
   ///   * [Vertices.raw], which creates the vertices using typed data lists
   ///     rather than unencoded lists.
+  ///   * [paint], Image shaders can be used to draw images on a triangular mesh.
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
 
     assert(vertices != null); // vertices is checked on the engine side
@@ -4802,7 +4863,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
 
     final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
-    final Float32List? cullRectBuffer = cullRect?._value32;
+    final Float32List? cullRectBuffer = cullRect?._getValue32();
     final int qualityIndex = paint.filterQuality.index;
 
     _drawAtlas(
@@ -4976,7 +5037,7 @@ class Canvas extends NativeFieldWrapperClass1 {
 
     _drawAtlas(
       paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms, rects,
-      colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
+      colors, (blendMode ?? BlendMode.src).index, cullRect?._getValue32()
     );
   }
 

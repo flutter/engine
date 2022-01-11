@@ -269,8 +269,6 @@ TEST_F(BackdropFilterLayerTest, Readback) {
   EXPECT_FALSE(preroll_context()->surface_needs_readback);
 }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 using BackdropLayerDiffTest = DiffContextTest;
 
 TEST_F(BackdropLayerDiffTest, BackdropLayer) {
@@ -329,7 +327,29 @@ TEST_F(BackdropLayerDiffTest, BackdropLayer) {
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(0, 0, 190, 190));
 }
 
-#endif
+TEST_F(BackdropLayerDiffTest, BackdropLayerInvalidTransform) {
+  auto filter = SkImageFilters::Blur(10, 10, SkTileMode::kClamp, nullptr);
+
+  {
+    // tests later assume 30px readback area, fail early if that's not the case
+    auto readback = filter->filterBounds(SkIRect::MakeWH(10, 10), SkMatrix::I(),
+                                         SkImageFilter::kReverse_MapDirection);
+    EXPECT_EQ(readback, SkIRect::MakeLTRB(-30, -30, 40, 40));
+  }
+
+  MockLayerTree l1(SkISize::Make(100, 100));
+  SkMatrix transform;
+  transform.setPerspX(0.1);
+  transform.setPerspY(0.1);
+
+  auto transform_layer = std::make_shared<TransformLayer>(transform);
+  l1.root()->Add(transform_layer);
+  transform_layer->Add(
+      std::make_shared<BackdropFilterLayer>(filter, SkBlendMode::kSrcOver));
+
+  auto damage = DiffLayerTree(l1, MockLayerTree(SkISize::Make(100, 100)));
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeWH(15, 15));
+}
 
 }  // namespace testing
 }  // namespace flutter

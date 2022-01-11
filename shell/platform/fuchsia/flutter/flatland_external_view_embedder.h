@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLATLAND_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include <fuchsia/ui/composition/cpp/fidl.h>
+#include <fuchsia/ui/views/cpp/fidl.h>
 #include <lib/ui/scenic/cpp/view_ref_pair.h>
 
 #include <cstdint>  // For uint32_t & uint64_t
@@ -25,15 +26,15 @@
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
-#include "flutter/flow/embedded_views.h"
-#include "flutter/fml/macros.h"
-
 #include "flatland_connection.h"
-#include "vulkan_surface_producer.h"
+#include "surface_producer.h"
 
 namespace flutter_runner {
 
-using FlatlandViewCallback = std::function<void()>;
+using ViewCallback = std::function<void()>;
+using FlatlandViewCreatedCallback = std::function<void(
+    fuchsia::ui::composition::ContentId,
+    fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher)>;
 using FlatlandViewIdCallback =
     std::function<void(fuchsia::ui::composition::ContentId)>;
 
@@ -43,14 +44,16 @@ using FlatlandViewIdCallback =
 class FlatlandExternalViewEmbedder final
     : public flutter::ExternalViewEmbedder {
  public:
+  constexpr static uint32_t kFlatlandDefaultViewportSize = 32;
+
   FlatlandExternalViewEmbedder(
-      std::string debug_label,
       fuchsia::ui::views::ViewCreationToken view_creation_token,
-      scenic::ViewRefPair view_ref_pair,
+      fuchsia::ui::views::ViewIdentityOnCreation view_identity,
+      fuchsia::ui::composition::ViewBoundProtocols endpoints,
       fidl::InterfaceRequest<fuchsia::ui::composition::ParentViewportWatcher>
           parent_viewport_watcher_request,
-      FlatlandConnection& flatland,
-      VulkanSurfaceProducer& surface_producer,
+      std::shared_ptr<FlatlandConnection> flatland,
+      std::shared_ptr<SurfaceProducer> surface_producer,
       bool intercept_all_input = false);
   ~FlatlandExternalViewEmbedder();
 
@@ -98,8 +101,8 @@ class FlatlandExternalViewEmbedder final
   // |SetViewProperties| doesn't manipulate the view directly -- it sets pending
   // properties for the next |UpdateView| call.
   void CreateView(int64_t view_id,
-                  FlatlandViewCallback on_view_created,
-                  FlatlandViewIdCallback on_view_bound);
+                  ViewCallback on_view_created,
+                  FlatlandViewCreatedCallback on_view_bound);
   void DestroyView(int64_t view_id, FlatlandViewIdCallback on_view_unbound);
   void SetViewProperties(int64_t view_id,
                          const SkRect& occlusion_hint,
@@ -156,18 +159,18 @@ class FlatlandExternalViewEmbedder final
   struct FlatlandView {
     fuchsia::ui::composition::TransformId transform_id;
     fuchsia::ui::composition::ContentId viewport_id;
-    fuchsia::ui::composition::ChildViewWatcherPtr content_link;
     ViewMutators mutators;
     SkSize size = SkSize::MakeEmpty();
   };
 
   struct FlatlandLayer {
+    // Transform on which Images are set.
     fuchsia::ui::composition::TransformId transform_id;
-    fuchsia::ui::composition::ContentId image_id;
   };
 
-  FlatlandConnection& flatland_;
-  VulkanSurfaceProducer& surface_producer_;
+  std::shared_ptr<FlatlandConnection> flatland_;
+  std::shared_ptr<SurfaceProducer> surface_producer_;
+
   fuchsia::ui::composition::ParentViewportWatcherPtr parent_viewport_watcher_;
 
   fuchsia::ui::composition::TransformId root_transform_id_;
@@ -177,6 +180,7 @@ class FlatlandExternalViewEmbedder final
 
   std::unordered_map<EmbedderLayerId, EmbedderLayer> frame_layers_;
   std::vector<EmbedderLayerId> frame_composition_order_;
+  std::vector<fuchsia::ui::composition::TransformId> child_transforms_;
   SkISize frame_size_ = SkISize::Make(0, 0);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlatlandExternalViewEmbedder);

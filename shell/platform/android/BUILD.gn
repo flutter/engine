@@ -35,15 +35,37 @@ source_set("image_generator") {
   ]
 }
 
-shared_library("flutter_shell_native") {
-  visibility = [ ":*" ]
+executable("flutter_shell_native_unittests") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "android_context_gl_unittests.cc",
+    "android_shell_holder_unittests.cc",
+    "flutter_shell_native_unittests.cc",
+  ]
+  public_configs = [ "//flutter:config" ]
+  deps = [
+    ":flutter_shell_native_src",
+    "//third_party/googletest:gmock",
+    "//third_party/googletest:gtest",
+  ]
+}
 
+shared_library("flutter_shell_native") {
   output_name = "flutter"
+  deps = [ ":flutter_shell_native_src" ]
+  ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
+}
+
+source_set("flutter_shell_native_src") {
+  visibility = [ ":*" ]
 
   sources = [
     "$root_build_dir/flutter_icu/icudtl.o",
     "android_context_gl.cc",
     "android_context_gl.h",
+    "android_display.cc",
+    "android_display.h",
     "android_environment_gl.cc",
     "android_environment_gl.h",
     "android_external_texture_gl.cc",
@@ -59,6 +81,8 @@ shared_library("flutter_shell_native") {
     "flutter_main.cc",
     "flutter_main.h",
     "library_loader.cc",
+    "platform_message_handler_android.cc",
+    "platform_message_handler_android.h",
     "platform_message_response_android.cc",
     "platform_message_response_android.h",
     "platform_view_android.cc",
@@ -69,7 +93,7 @@ shared_library("flutter_shell_native") {
     "vsync_waiter_android.h",
   ]
 
-  deps = [
+  public_deps = [
     ":android_gpu_configuration",
     ":icudtl_object",
     ":image_generator",
@@ -100,8 +124,6 @@ shared_library("flutter_shell_native") {
     "EGL",
     "GLESv2",
   ]
-
-  ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
 }
 
 action("gen_android_build_config_java") {
@@ -147,6 +169,7 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterFragment.java",
   "io/flutter/embedding/android/FlutterFragmentActivity.java",
   "io/flutter/embedding/android/FlutterImageView.java",
+  "io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java",
   "io/flutter/embedding/android/FlutterSplashView.java",
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
@@ -158,6 +181,7 @@ android_java_sources = [
   "io/flutter/embedding/android/SplashScreen.java",
   "io/flutter/embedding/android/SplashScreenProvider.java",
   "io/flutter/embedding/android/TransparencyMode.java",
+  "io/flutter/embedding/android/WindowInfoRepositoryCallbackAdapterWrapper.java",
   "io/flutter/embedding/engine/FlutterEngine.java",
   "io/flutter/embedding/engine/FlutterEngineCache.java",
   "io/flutter/embedding/engine/FlutterEngineConnectionRegistry.java",
@@ -168,6 +192,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/dart/DartExecutor.java",
   "io/flutter/embedding/engine/dart/DartMessenger.java",
   "io/flutter/embedding/engine/dart/PlatformMessageHandler.java",
+  "io/flutter/embedding/engine/dart/PlatformTaskQueue.java",
   "io/flutter/embedding/engine/deferredcomponents/DeferredComponentManager.java",
   "io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManager.java",
   "io/flutter/embedding/engine/loader/ApplicationInfoLoader.java",
@@ -233,6 +258,7 @@ android_java_sources = [
   "io/flutter/plugin/editing/ImeSyncDeferringInsetsCallback.java",
   "io/flutter/plugin/editing/InputConnectionAdaptor.java",
   "io/flutter/plugin/editing/ListenableEditingState.java",
+  "io/flutter/plugin/editing/TextEditingDelta.java",
   "io/flutter/plugin/editing/TextInputPlugin.java",
   "io/flutter/plugin/localization/LocalizationPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
@@ -421,6 +447,17 @@ action("android_jar") {
     ":pom_embedding",
     ":pom_libflutter",
   ]
+
+  if (flutter_runtime_mode == "profile") {
+    deps += [ "//flutter/shell/vmservice:vmservice_snapshot" ]
+    args += [
+      "--native_lib",
+      rebase_path(
+          "$root_gen_dir/flutter/shell/vmservice/android/libs/$android_app_abi/libvmservice_snapshot.so",
+          root_build_dir,
+          root_build_dir),
+    ]
+  }
 }
 
 action("pom_libflutter") {
@@ -497,20 +534,10 @@ zip_bundle("flutter_jar_zip") {
   ]
 
   deps = [ ":android_jar" ]
-
-  if (current_cpu == "x86" || current_cpu == "x64") {
-    files += [
-      {
-        source = "$root_build_dir/lib.stripped/libflutter.so"
-        destination = "libflutter.so"
-      },
-    ]
-    deps += [ ":flutter_shell_native" ]
-  }
 }
 
 action("gen_android_javadoc") {
-  script = "//flutter/tools/gen_javadoc.py"
+  script = "//flutter/tools/javadoc/gen_javadoc.py"
   sources = android_java_sources + embedding_dependencies_jars
 
   outputs = [ "$target_gen_dir/javadocs" ]

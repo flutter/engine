@@ -4,6 +4,7 @@
 
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
+#include "flutter/flow/layers/opacity_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/testing/skia_gpu_object_layer_test.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -11,8 +12,6 @@
 
 namespace flutter {
 namespace testing {
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 class MockLayerTree {
  public:
@@ -65,13 +64,16 @@ class DiffContextTest : public ThreadTest {
     return CreateContainerLayer({l});
   }
 
+  std::shared_ptr<OpacityLayer> CreateOpacityLater(
+      std::initializer_list<std::shared_ptr<Layer>> layers,
+      SkAlpha alpha,
+      const SkPoint& offset = SkPoint::Make(0, 0));
+
   fml::RefPtr<SkiaUnrefQueue> unref_queue() { return unref_queue_; }
 
  private:
   fml::RefPtr<SkiaUnrefQueue> unref_queue_;
 };
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 }  // namespace testing
 }  // namespace flutter

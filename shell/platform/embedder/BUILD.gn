@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//build/toolchain/clang.gni")
+import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/embedder/embedder.gni")
@@ -23,6 +24,10 @@ shell_gpu_configuration("embedder_gpu_configuration") {
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
+
+config("embedder_header_config") {
+  include_dirs = [ "." ]
+}
 
 # Template for the embedder build. Used to allow building it multiple times with
 # different flags.
@@ -108,6 +113,7 @@ template("embedder_source_set") {
 
     public_configs += [
       ":embedder_gpu_configuration_config",
+      ":embedder_header_config",
       "//flutter:config",
     ]
   }
@@ -242,6 +248,13 @@ if (enable_unittests) {
 
       deps += [ "//flutter/testing:metal" ]
     }
+
+    if (test_enable_vulkan) {
+      deps += [
+        "//flutter/testing:vulkan",
+        "//flutter/vulkan",
+      ]
+    }
   }
 
   # Tests the build in FLUTTER_ENGINE_NO_PROTOTYPES mode.
@@ -320,10 +333,14 @@ if (is_mac && !embedder_for_target) {
     outputs =
         [ "$_flutter_embedder_framework_dir/Versions/A/Resources/Info.plist" ]
     args = [
+      "--source",
       rebase_path(sources[0]),
+      "--destination",
       rebase_path(outputs[0]),
-      "--bitcode=$enable_bitcode",
     ]
+    if (enable_bitcode) {
+      args += [ "--bitcode" ]
+    }
   }
 
   copy("copy_module_map") {
@@ -392,5 +409,25 @@ group("flutter_engine") {
     if (is_mac && !embedder_for_target) {
       deps += [ ":flutter_embedder_framework" ]
     }
+  }
+}
+
+if (host_os == "linux") {
+  zip_bundle("linux-embedder-archive") {
+    output = "${host_os}-${target_cpu}/${host_os}-${target_cpu}-embedder"
+    deps = [
+      "//flutter/shell/platform/embedder:copy_headers",
+      "//flutter/shell/platform/embedder:flutter_engine_library",
+    ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_embedder.h"
+        destination = "flutter_embedder.h"
+      },
+      {
+        source = "$root_out_dir/libflutter_engine.so"
+        destination = "libflutter_engine.so"
+      },
+    ]
   }
 }

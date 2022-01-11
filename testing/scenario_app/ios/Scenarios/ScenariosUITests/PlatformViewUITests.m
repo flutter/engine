@@ -170,6 +170,42 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @end
 
+@interface PlatformViewWithOtherBackdropFilterTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewWithOtherBackdropFilterTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-with-other-backdrop-filter"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewsWithOtherBackDropFilterTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewsWithOtherBackDropFilterTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--two-platform-views-with-other-backdrop-filter"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
 @interface PlatformViewRotation : GoldenPlatformViewTests
 @end
 
@@ -218,6 +254,43 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   }
 
   XCTAssertNotNil(platformView);
+}
+
+@end
+
+@interface PlatformViewScrollingUnderWidget : XCTestCase
+
+@end
+
+@implementation PlatformViewScrollingUnderWidget
+
+- (void)setUp {
+  [super setUp];
+  self.continueAfterFailure = NO;
+}
+
+- (void)testPlatformViewScrollingUnderWidget {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments =
+      @[ @"--platform-view-scrolling-under-widget", @"--with-continuous-texture" ];
+  [app launch];
+
+  XCUIElement* platformView = app.textViews.firstMatch;
+  BOOL exists = [platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView];
+  if (!exists) {
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  // Wait and let the scenario app scroll a bit.
+  XCTWaiterResult waitResult = [XCTWaiter
+      waitForExpectations:@[ [[XCTestExpectation alloc] initWithDescription:@"Wait for 5 seconds"] ]
+                  timeout:5];
+  // If the waiter is not interrupted, we know the app is in a valid state after timeout, thus the
+  // test passes.
+  XCTAssert(waitResult != XCTWaiterResultInterrupted);
 }
 
 @end

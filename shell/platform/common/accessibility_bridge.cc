@@ -253,6 +253,14 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(ui::AXNodeData& node_data,
     node_data.role = ax::mojom::Role::kCheckBox;
     return;
   }
+  if (flags & kFlutterSemanticsFlagHasToggledState) {
+    node_data.role = ax::mojom::Role::kToggleButton;
+    return;
+  }
+  if (flags & kFlutterSemanticsFlagIsSlider) {
+    node_data.role = ax::mojom::Role::kSlider;
+    return;
+  }
   // If the state cannot be derived from the flutter flags, we fallback to group
   // or static text.
   if (node.children_in_traversal_order.size() == 0) {

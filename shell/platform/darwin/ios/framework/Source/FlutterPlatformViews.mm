@@ -422,7 +422,6 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
 SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
-
   // Do nothing if the view doesn't need to be composited.
   if (views_to_recomposite_.count(view_id) == 0) {
     return picture_recorders_[view_id]->getRecordingCanvas();
@@ -576,15 +575,19 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 
     if (platform_view_root.superview != flutter_view) {
       [flutter_view addSubview:platform_view_root];
-    } else {
-      platform_view_root.layer.zPosition = zIndex++;
     }
+    // Make sure the platform_view_root is higher than the last platform_view_root in
+    // composition_order_.
+    platform_view_root.layer.zPosition = zIndex++;
+
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
-      if ([layer->overlay_view_wrapper superview] != flutter_view) {
+      if ([layer->overlay_view_wrapper.get() superview] != flutter_view) {
         [flutter_view addSubview:layer->overlay_view_wrapper];
-      } else {
-        layer->overlay_view_wrapper.get().layer.zPosition = zIndex++;
       }
+      // Make sure all the overlays are higher than the platform view.
+      layer->overlay_view_wrapper.get().layer.zPosition = zIndex++;
+      FML_DCHECK(layer->overlay_view_wrapper.get().layer.zPosition >
+                 platform_view_root.layer.zPosition);
     }
     active_composition_order_.push_back(platform_view_id);
   }
@@ -612,7 +615,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
 
   UIView* overlay_view = layer->overlay_view.get();
   // Set the size of the overlay view.
-  // This size is equal to the the device screen size.
+  // This size is equal to the device screen size.
   overlay_view.frame = flutter_view_.get().bounds;
 
   std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);

@@ -12,12 +12,6 @@ source_set("flow") {
     "compositor_context.h",
     "diff_context.cc",
     "diff_context.h",
-    "display_list.cc",
-    "display_list.h",
-    "display_list_canvas.cc",
-    "display_list_canvas.h",
-    "display_list_utils.cc",
-    "display_list_utils.h",
     "embedded_views.cc",
     "embedded_views.h",
     "frame_timings.cc",
@@ -60,8 +54,6 @@ source_set("flow") {
     "layers/texture_layer.h",
     "layers/transform_layer.cc",
     "layers/transform_layer.h",
-    "matrix_decomposition.cc",
-    "matrix_decomposition.h",
     "paint_region.cc",
     "paint_region.h",
     "paint_utils.cc",
@@ -80,7 +72,10 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [ "//flutter:config" ]
+  public_configs = [
+    "//flutter:config",
+    "//flutter/vulkan:vulkan_config",
+  ]
 
   deps = [
     "//flutter/common",
@@ -88,6 +83,8 @@ source_set("flow") {
     "//flutter/fml",
     "//third_party/skia",
   ]
+
+  public_deps = [ "//flutter/display_list" ]
 }
 
 if (enable_unittests) {
@@ -124,6 +121,7 @@ if (enable_unittests) {
     deps = [
       ":flow",
       "//flutter/common/graphics",
+      "//flutter/display_list:unittests",
     ]
   }
 
@@ -131,8 +129,6 @@ if (enable_unittests) {
     testonly = true
 
     sources = [
-      "display_list_canvas_unittests.cc",
-      "display_list_unittests.cc",
       "embedded_view_params_unittests.cc",
       "flow_run_all_unittests.cc",
       "flow_test_utils.cc",
@@ -157,11 +153,11 @@ if (enable_unittests) {
       "layers/shader_mask_layer_unittests.cc",
       "layers/texture_layer_unittests.cc",
       "layers/transform_layer_unittests.cc",
-      "matrix_decomposition_unittests.cc",
       "mutators_stack_unittests.cc",
       "raster_cache_unittests.cc",
       "rtree_unittests.cc",
       "skia_gpu_object_unittests.cc",
+      "testing/auto_save_layer_unittests.cc",
       "testing/mock_layer_unittests.cc",
       "testing/mock_texture_unittests.cc",
       "texture_unittests.cc",

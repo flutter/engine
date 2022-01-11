@@ -108,7 +108,6 @@ def DownloadDartSDK(channel, version, os_name, arch, verbose):
     url,
   ]
   if verbose:
-    curl_command.append('--verbose')
     print('Running: "%s"' % (' '.join(curl_command)))
   curl_result = subprocess.run(
     curl_command,
@@ -143,16 +142,34 @@ class ZipFileWithPermissions(zipfile.ZipFile):
     return targetpath
 
 
+def OnErrorRmTree(func, path, exc_info):
+  """
+  Error handler for ``shutil.rmtree``.
+
+  If the error is due to an access error (read only file)
+  it attempts to add write permission and then retries.
+  If the error is for another reason it re-raises the error.
+
+  Usage : ``shutil.rmtree(path, onerror=onerror)``
+  """
+  import stat
+  # Is the error an access error?
+  if not os.access(path, os.W_OK):
+    os.chmod(path, stat.S_IWUSR)
+    func(path)
+  else:
+    raise
+
 # Extracts a Dart SDK in //fluter/prebuilts
 def ExtractDartSDK(archive, os_name, arch, verbose):
   os_arch = '{}-{}'.format(os_name, arch)
   dart_sdk = os.path.join(FLUTTER_PREBUILTS_DIR, os_arch, 'dart-sdk')
   if os.path.isdir(dart_sdk):
-    shutil.rmtree(dart_sdk)
+    shutil.rmtree(dart_sdk, onerror=OnErrorRmTree)
 
   extract_dest = os.path.join(FLUTTER_PREBUILTS_DIR, os_arch, 'temp')
   if os.path.isdir(extract_dest):
-    shutil.rmtree(extract_dest)
+    shutil.rmtree(extract_dest, onerror=OnErrorRmTree)
   os.makedirs(extract_dest, exist_ok=True)
 
   if verbose:
@@ -247,8 +264,21 @@ def Main():
   if architectures == None:
     return fail_loudly
 
+  # Work around a bug in Python.
+  #
+  # The multiprocessing package relies on the win32 WaitForMultipleObjects()
+  # call, which supports waiting on a maximum of MAXIMUM_WAIT_OBJECTS (defined
+  # by Windows to be 64) handles, processes in this case. To avoid hitting
+  # this, we limit ourselves to 60 handles (since there are a couple extra
+  # processes launched for the queue reader and thread wakeup reader).
+  #
+  # See: https://bugs.python.org/issue26903
+  max_processes = os.cpu_count()
+  if sys.platform.startswith(('cygwin', 'win')) and max_processes > 60:
+    max_processes = 60
+
   # Download and extract variants in parallel
-  pool = multiprocessing.Pool()
+  pool = multiprocessing.Pool(processes=max_processes)
   tasks = [(channel, semantic_version, os_name, arch, verbose) for arch in architectures]
   async_results = [pool.apply_async(DownloadAndExtract, t) for t in tasks]
   success = True

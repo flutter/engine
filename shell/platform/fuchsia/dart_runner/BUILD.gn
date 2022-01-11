@@ -10,14 +10,6 @@ import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 
-# Loaded via FFI
-_common_runner_libs = common_libs + [
-                        {
-                          name = "libzircon_ffi.so"
-                          path = rebase_path("$root_out_dir")
-                        },
-                      ]
-
 template("runner") {
   assert(defined(invoker.product), "The parameter 'product' must be defined")
   assert(defined(invoker.output_name),
@@ -38,6 +30,8 @@ template("runner") {
       "builtin_libraries.h",
       "dart_component_controller.cc",
       "dart_component_controller.h",
+      "dart_component_controller_v2.cc",
+      "dart_component_controller_v2.h",
       "dart_runner.cc",
       "dart_runner.h",
       "logging.h",
@@ -47,9 +41,6 @@ template("runner") {
     ]
 
     defines = extra_defines
-
-    # For `libzircon_ffi` see _common_runner_libs.
-    public_deps = [ "../dart-pkg/zircon_ffi:zircon_ffi" ]
 
     dart_deps = []
     if (!invoker.product) {
@@ -69,6 +60,7 @@ template("runner") {
              "//flutter/fml",
              "//flutter/shell/platform/fuchsia/dart-pkg/fuchsia",
              "//flutter/shell/platform/fuchsia/dart-pkg/zircon",
+             "$fuchsia_sdk_root/fidl:fuchsia.component.runner",
              "$fuchsia_sdk_root/pkg:async",
              "$fuchsia_sdk_root/pkg:async-cpp",
              "$fuchsia_sdk_root/pkg:async-default",
@@ -152,7 +144,7 @@ template("aot_runner_package") {
         "//flutter/shell/platform/fuchsia/runtime/dart/profiler_symbols:dart_aot_runner",
 
         # TODO(kaushikiska): Figure out how to get the profiler symbols for `libdart_precompiled_runtime`
-        # "//topaz/runtime/dart/profiler_symbols:libdart_precompiled_runtime",
+        # "//third_party/dart/runtime:libdart_precompiled_runtime",
         observatory_target,
       ]
     }
@@ -160,8 +152,9 @@ template("aot_runner_package") {
     binary = "dart_aot${product_suffix}_runner"
 
     cmx_file = rebase_path("meta/dart_aot${product_suffix}_runner.cmx")
+    cml_file = rebase_path("meta/dart_aot${product_suffix}_runner.cml")
 
-    libraries = _common_runner_libs
+    libraries = common_libs
 
     resources = []
     if (!invoker.product) {
@@ -220,8 +213,9 @@ template("jit_runner_package") {
     binary = "dart_jit${product_suffix}_runner"
 
     cmx_file = rebase_path("meta/dart_jit${product_suffix}_runner.cmx")
+    cml_file = rebase_path("meta/dart_jit${product_suffix}_runner.cml")
 
-    libraries = _common_runner_libs
+    libraries = common_libs
 
     resources = [
       {

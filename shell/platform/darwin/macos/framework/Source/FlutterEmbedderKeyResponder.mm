@@ -29,23 +29,15 @@ static NSUInteger lowestSetBit(NSUInteger bitmask) {
 /**
  * Whether a string represents a control character.
  */
-static bool IsControlCharacter(NSUInteger length, NSString* label) {
-  if (length > 1) {
-    return false;
-  }
-  unichar codeUnit = [label characterAtIndex:0];
-  return (codeUnit <= 0x1f && codeUnit >= 0x00) || (codeUnit >= 0x7f && codeUnit <= 0x9f);
+static bool IsControlCharacter(uint64_t character) {
+  return (character <= 0x1f && character >= 0x00) || (character >= 0x7f && character <= 0x9f);
 }
 
 /**
  * Whether a string represents an unprintable key.
  */
-static bool IsUnprintableKey(NSUInteger length, NSString* label) {
-  if (length > 1) {
-    return false;
-  }
-  unichar codeUnit = [label characterAtIndex:0];
-  return codeUnit >= 0xF700 && codeUnit <= 0xF8FF;
+static bool IsUnprintableKey(uint64_t character) {
+  return character >= 0xF700 && character <= 0xF8FF;
 }
 
 /**
@@ -78,8 +70,9 @@ static uint64_t GetPhysicalKeyForKeyCode(unsigned short keyCode) {
  */
 static uint64_t GetLogicalKeyForModifier(unsigned short keyCode, uint64_t hidCode) {
   NSNumber* fromKeyCode = [keyCodeToLogicalKey objectForKey:@(keyCode)];
-  if (fromKeyCode != nil)
+  if (fromKeyCode != nil) {
     return fromKeyCode.unsignedLongLongValue;
+  }
   return KeyOfPlane(hidCode, kMacosPlane);
 }
 
@@ -112,6 +105,40 @@ static uint64_t toLower(uint64_t n) {
   return n;
 }
 
+// Decode a UTF-16 sequence to an array of char32 (UTF-32).
+//
+// See https://en.wikipedia.org/wiki/UTF-16#Description for the algorithm.
+//
+// The returned character array must be deallocated with delete[]. The length of
+// the result is stored in `out_length`.
+//
+// Although NSString has a dataUsingEncoding method, we implement our own
+// because dataUsingEncoding outputs redundant characters for unknown reasons.
+static uint32_t* DecodeUtf16(NSString* target, size_t* out_length) {
+  // The result always has a length less or equal to target.
+  size_t result_pos = 0;
+  uint32_t* result = new uint32_t[target.length];
+  uint16_t high_surrogate = 0;
+  for (NSUInteger target_pos = 0; target_pos < target.length; target_pos += 1) {
+    uint16_t codeUnit = [target characterAtIndex:target_pos];
+    // BMP
+    if (codeUnit <= 0xD7FF || codeUnit >= 0xE000) {
+      result[result_pos] = codeUnit;
+      result_pos += 1;
+      // High surrogates
+    } else if (codeUnit <= 0xDBFF) {
+      high_surrogate = codeUnit - 0xD800;
+      // Low surrogates
+    } else {
+      uint16_t low_surrogate = codeUnit - 0xDC00;
+      result[result_pos] = (high_surrogate << 10) + low_surrogate + 0x10000;
+      result_pos += 1;
+    }
+  }
+  *out_length = result_pos;
+  return result;
+}
+
 /**
  * Returns the logical key of a KeyUp or KeyDown event.
  *
@@ -120,33 +147,38 @@ static uint64_t toLower(uint64_t n) {
 static uint64_t GetLogicalKeyForEvent(NSEvent* event, uint64_t physicalKey) {
   // Look to see if the keyCode can be mapped from keycode.
   NSNumber* fromKeyCode = [keyCodeToLogicalKey objectForKey:@(event.keyCode)];
-  if (fromKeyCode != nil)
+  if (fromKeyCode != nil) {
     return fromKeyCode.unsignedLongLongValue;
-
-  NSString* keyLabel = event.charactersIgnoringModifiers;
-  NSUInteger keyLabelLength = [keyLabel length];
-  // If this key is printable, generate the logical key from its Unicode
-  // value. Control keys such as ESC, CTRL, and SHIFT are not printable. HOME,
-  // DEL, arrow keys, and function keys are considered modifier function keys,
-  // which generate invalid Unicode scalar values.
-  if (keyLabelLength != 0 && !IsControlCharacter(keyLabelLength, keyLabel) &&
-      !IsUnprintableKey(keyLabelLength, keyLabel)) {
-    // Given that charactersIgnoringModifiers can contain a string of arbitrary
-    // length, limit to a maximum of two Unicode scalar values. It is unlikely
-    // that a keyboard would produce a code point bigger than 32 bits, but it is
-    // still worth defending against this case.
-    NSCAssert((keyLabelLength < 2), @"Unexpected long key label: |%@|.", keyLabel);
-
-    uint64_t codeUnit = (uint64_t)[keyLabel characterAtIndex:0];
-    if (keyLabelLength == 2) {
-      uint64_t secondCode = (uint64_t)[keyLabel characterAtIndex:1];
-      codeUnit = (codeUnit << 16) | secondCode;
-    }
-    return KeyOfPlane(toLower(codeUnit), kUnicodePlane);
   }
 
-  // This is a non-printable key that is unrecognized, so a new code is minted
-  // to the macOS plane.
+  // Convert `charactersIgnoringModifiers` to UTF32.
+  NSString* keyLabelUtf16 = event.charactersIgnoringModifiers;
+
+  // Check if this key is a single character, which will be used to generate the
+  // logical key from its Unicode value.
+  //
+  // Multi-char keys will be minted onto the macOS plane because there are no
+  // meaningful values for them. Control keys and unprintable keys have been
+  // converted by `keyCodeToLogicalKey` earlier.
+  uint32_t character = 0;
+  if (keyLabelUtf16.length != 0) {
+    size_t keyLabelLength;
+    uint32_t* keyLabel = DecodeUtf16(keyLabelUtf16, &keyLabelLength);
+    if (keyLabelLength == 1) {
+      uint32_t keyLabelChar = *keyLabel;
+      delete[] keyLabel;
+      NSCAssert(!IsControlCharacter(keyLabelChar) && !IsUnprintableKey(keyLabelChar),
+                @"Unexpected control or unprintable keylabel 0x%x", keyLabelChar);
+      NSCAssert(keyLabelChar <= 0x10FFFF, @"Out of range keylabel 0x%x", keyLabelChar);
+      character = keyLabelChar;
+    }
+  }
+  if (character != 0) {
+    return KeyOfPlane(toLower(character), kUnicodePlane);
+  }
+
+  // We can't represent this key with a single printable unicode, so a new code
+  // is minted to the macOS plane.
   return KeyOfPlane(event.keyCode, kMacosPlane);
 }
 
@@ -274,6 +306,7 @@ const char* getEventString(NSString* characters) {
 - (void)resolveTo:(BOOL)handled;
 
 @property(nonatomic) BOOL handled;
+@property(nonatomic) BOOL sentAnyEvents;
 /**
  * A string indicating how the callback is handled.
  *
@@ -293,6 +326,7 @@ const char* getEventString(NSString* characters) {
   if (self != nil) {
     _callback = callback;
     _handled = FALSE;
+    _sentAnyEvents = FALSE;
   }
   return self;
 }
@@ -384,10 +418,14 @@ const char* getEventString(NSString* characters) {
  *
  * The flags compared are all flags after masking with
  * |modifierFlagOfInterestMask| and excluding |ignoringFlags|.
+ *
+ * The |guard| is basically a regular guarded callback, but instead of being
+ * called, it is only used to record whether an event is sent.
  */
 - (void)synchronizeModifiers:(NSUInteger)currentFlags
                ignoringFlags:(NSUInteger)ignoringFlags
-                   timestamp:(NSTimeInterval)timestamp;
+                   timestamp:(NSTimeInterval)timestamp
+                       guard:(nonnull FlutterKeyCallbackGuard*)guard;
 
 /**
  * Update the pressing state.
@@ -404,33 +442,33 @@ const char* getEventString(NSString* characters) {
                        callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
+ * Send a synthesized key event, never expecting its event result.
+ *
+ * The |guard| is basically a regular guarded callback, but instead of being
+ * called, it is only used to record whether an event is sent.
+ */
+- (void)sendSynthesizedFlutterEvent:(const FlutterKeyEvent&)event
+                              guard:(FlutterKeyCallbackGuard*)guard;
+
+/**
  * Send a CapsLock down event, then a CapsLock up event.
  *
- * If downCallback is nil, then both events will be synthesized. Otherwise, the
- * downCallback will be used as the callback for the down event, which is not
- * synthesized.
+ * If synthesizeDown is TRUE, then both events will be synthesized. Otherwise,
+ * the callback will be used as the callback for the down event, which is not
+ * synthesized, while the up event will always be synthesized.
  */
 - (void)sendCapsLockTapWithTimestamp:(NSTimeInterval)timestamp
-                            callback:(nullable FlutterKeyCallbackGuard*)downCallback;
+                      synthesizeDown:(bool)synthesizeDown
+                            callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
  * Send a key event for a modifier key.
- *
- * If callback is nil, then the event is synthesized.
  */
 - (void)sendModifierEventOfType:(BOOL)isDownEvent
                       timestamp:(NSTimeInterval)timestamp
                         keyCode:(unsigned short)keyCode
-                       callback:(nullable FlutterKeyCallbackGuard*)callback;
-
-/**
- * Send an empty key event.
- *
- * The event is never synthesized, and never expects an event result. An empty
- * event is sent when no other events should be sent, such as upon back-to-back
- * keydown events of the same key.
- */
-- (void)sendEmptyEvent;
+                    synthesized:(bool)synthesized
+                       callback:(nonnull FlutterKeyCallbackGuard*)callback;
 
 /**
  * Processes a down event from the system.
@@ -495,6 +533,18 @@ const char* getEventString(NSString* characters) {
       NSAssert(false, @"Unexpected key event type: |%@|.", @(event.type));
   }
   NSAssert(guardedCallback.handled, @"The callback is returned without being handled.");
+  if (!guardedCallback.sentAnyEvents) {
+    FlutterKeyEvent flutterEvent = {
+        .struct_size = sizeof(FlutterKeyEvent),
+        .timestamp = 0,
+        .type = kFlutterKeyEventTypeDown,
+        .physical = 0,
+        .logical = 0,
+        .character = nil,
+        .synthesized = false,
+    };
+    _sendEvent(flutterEvent, nullptr, nullptr);
+  }
   NSAssert(_lastModifierFlagsOfInterest == (event.modifierFlags & _modifierFlagOfInterestMask),
            @"The modifier flags are not properly updated: recorded 0x%lx, event with mask 0x%lx",
            _lastModifierFlagsOfInterest, event.modifierFlags & _modifierFlagOfInterestMask);
@@ -504,13 +554,14 @@ const char* getEventString(NSString* characters) {
 
 - (void)synchronizeModifiers:(NSUInteger)currentFlags
                ignoringFlags:(NSUInteger)ignoringFlags
-                   timestamp:(NSTimeInterval)timestamp {
+                   timestamp:(NSTimeInterval)timestamp
+                       guard:(FlutterKeyCallbackGuard*)guard {
   const NSUInteger updatingMask = _modifierFlagOfInterestMask & ~ignoringFlags;
   const NSUInteger currentFlagsOfInterest = currentFlags & updatingMask;
   const NSUInteger lastFlagsOfInterest = _lastModifierFlagsOfInterest & updatingMask;
   NSUInteger flagDifference = currentFlagsOfInterest ^ lastFlagsOfInterest;
   if (flagDifference & NSEventModifierFlagCapsLock) {
-    [self sendCapsLockTapWithTimestamp:timestamp callback:nil];
+    [self sendCapsLockTapWithTimestamp:timestamp synthesizeDown:true callback:guard];
     flagDifference = flagDifference & ~NSEventModifierFlagCapsLock;
   }
   while (true) {
@@ -528,7 +579,8 @@ const char* getEventString(NSString* characters) {
     [self sendModifierEventOfType:isDownEvent
                         timestamp:timestamp
                           keyCode:[keyCode unsignedShortValue]
-                         callback:nil];
+                      synthesized:true
+                         callback:guard];
   }
   _lastModifierFlagsOfInterest =
       (_lastModifierFlagsOfInterest & ~updatingMask) | currentFlagsOfInterest;
@@ -551,10 +603,18 @@ const char* getEventString(NSString* characters) {
   [callback pendTo:_pendingResponses withId:responseId];
   // The `__bridge_retained` here is matched by `__bridge_transfer` in HandleResponse.
   _sendEvent(event, HandleResponse, (__bridge_retained void*)pending);
+  callback.sentAnyEvents = TRUE;
+}
+
+- (void)sendSynthesizedFlutterEvent:(const FlutterKeyEvent&)event
+                              guard:(FlutterKeyCallbackGuard*)guard {
+  _sendEvent(event, nullptr, nullptr);
+  guard.sentAnyEvents = TRUE;
 }
 
 - (void)sendCapsLockTapWithTimestamp:(NSTimeInterval)timestamp
-                            callback:(FlutterKeyCallbackGuard*)downCallback {
+                      synthesizeDown:(bool)synthesizeDown
+                            callback:(FlutterKeyCallbackGuard*)callback {
   // MacOS sends a down *or* an up when CapsLock is tapped, alternatively on
   // even taps and odd taps. A CapsLock down or CapsLock up should always be
   // converted to a down *and* an up, and the up should always be a synthesized
@@ -567,28 +627,28 @@ const char* getEventString(NSString* characters) {
       .physical = kCapsLockPhysicalKey,
       .logical = kCapsLockLogicalKey,
       .character = nil,
-      .synthesized = downCallback == nil,
+      .synthesized = synthesizeDown,
   };
-  if (downCallback != nil) {
-    [self sendPrimaryFlutterEvent:flutterEvent callback:downCallback];
+  if (!synthesizeDown) {
+    [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
   } else {
-    _sendEvent(flutterEvent, nullptr, nullptr);
+    [self sendSynthesizedFlutterEvent:flutterEvent guard:callback];
   }
 
   flutterEvent.type = kFlutterKeyEventTypeUp;
   flutterEvent.synthesized = true;
-  _sendEvent(flutterEvent, nullptr, nullptr);
+  [self sendSynthesizedFlutterEvent:flutterEvent guard:callback];
 }
 
 - (void)sendModifierEventOfType:(BOOL)isDownEvent
                       timestamp:(NSTimeInterval)timestamp
                         keyCode:(unsigned short)keyCode
+                    synthesized:(bool)synthesized
                        callback:(FlutterKeyCallbackGuard*)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(keyCode);
   uint64_t logicalKey = GetLogicalKeyForModifier(keyCode, physicalKey);
   if (physicalKey == 0 || logicalKey == 0) {
     NSLog(@"Unrecognized modifier key: keyCode 0x%hx, physical key 0x%llx", keyCode, physicalKey);
-    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
     return;
   }
@@ -599,33 +659,23 @@ const char* getEventString(NSString* characters) {
       .physical = physicalKey,
       .logical = logicalKey,
       .character = nil,
-      .synthesized = callback == nil,
+      .synthesized = synthesized,
   };
   [self updateKey:physicalKey asPressed:isDownEvent ? logicalKey : 0];
-  if (callback != nil) {
+  if (!synthesized) {
     [self sendPrimaryFlutterEvent:flutterEvent callback:callback];
   } else {
-    _sendEvent(flutterEvent, nullptr, nullptr);
+    [self sendSynthesizedFlutterEvent:flutterEvent guard:callback];
   }
-}
-
-- (void)sendEmptyEvent {
-  FlutterKeyEvent flutterEvent = {
-      .struct_size = sizeof(FlutterKeyEvent),
-      .timestamp = 0,
-      .type = kFlutterKeyEventTypeDown,
-      .physical = 0,
-      .logical = 0,
-      .character = nil,
-      .synthesized = false,
-  };
-  _sendEvent(flutterEvent, nullptr, nullptr);
 }
 
 - (void)handleDownEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   uint64_t logicalKey = GetLogicalKeyForEvent(event, physicalKey);
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp];
+  [self synchronizeModifiers:event.modifierFlags
+               ignoringFlags:0
+                   timestamp:event.timestamp
+                       guard:callback];
 
   bool isARepeat = event.isARepeat;
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -634,7 +684,6 @@ const char* getEventString(NSString* characters) {
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
-    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
     return;
   }
@@ -658,7 +707,10 @@ const char* getEventString(NSString* characters) {
 - (void)handleUpEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   NSAssert(!event.isARepeat, @"Unexpected repeated Up event: keyCode %d, char %@, charIM %@",
            event.keyCode, event.characters, event.charactersIgnoringModifiers);
-  [self synchronizeModifiers:event.modifierFlags ignoringFlags:0 timestamp:event.timestamp];
+  [self synchronizeModifiers:event.modifierFlags
+               ignoringFlags:0
+                   timestamp:event.timestamp
+                       guard:callback];
 
   uint64_t physicalKey = GetPhysicalKeyForKeyCode(event.keyCode);
   NSNumber* pressedLogicalKey = _pressingRecords[@(physicalKey)];
@@ -667,7 +719,6 @@ const char* getEventString(NSString* characters) {
     // key up event to the window where the corresponding key down occurred.
     // However this might happen in add-to-app scenarios if the focus is changed
     // from the native view to the Flutter view amid the key tap.
-    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
     return;
   }
@@ -688,13 +739,13 @@ const char* getEventString(NSString* characters) {
 - (void)handleCapsLockEvent:(NSEvent*)event callback:(FlutterKeyCallbackGuard*)callback {
   [self synchronizeModifiers:event.modifierFlags
                ignoringFlags:NSEventModifierFlagCapsLock
-                   timestamp:event.timestamp];
+                   timestamp:event.timestamp
+                       guard:callback];
   if ((_lastModifierFlagsOfInterest & NSEventModifierFlagCapsLock) !=
       (event.modifierFlags & NSEventModifierFlagCapsLock)) {
-    [self sendCapsLockTapWithTimestamp:event.timestamp callback:callback];
+    [self sendCapsLockTapWithTimestamp:event.timestamp synthesizeDown:false callback:callback];
     _lastModifierFlagsOfInterest = _lastModifierFlagsOfInterest ^ NSEventModifierFlagCapsLock;
   } else {
-    [self sendEmptyEvent];
     [callback resolveTo:TRUE];
   }
 }
@@ -710,7 +761,8 @@ const char* getEventString(NSString* characters) {
 
   [self synchronizeModifiers:event.modifierFlags
                ignoringFlags:targetModifierFlag
-                   timestamp:event.timestamp];
+                   timestamp:event.timestamp
+                       guard:callback];
 
   NSNumber* pressedLogicalKey = [_pressingRecords objectForKey:@(targetKey)];
   BOOL lastTargetPressed = pressedLogicalKey != nil;
@@ -732,6 +784,7 @@ const char* getEventString(NSString* characters) {
   [self sendModifierEventOfType:shouldBePressed
                       timestamp:event.timestamp
                         keyCode:event.keyCode
+                    synthesized:false
                        callback:callback];
 }
 

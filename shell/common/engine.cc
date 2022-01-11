@@ -11,12 +11,8 @@
 #include <vector>
 
 #include "flutter/common/settings.h"
-#include "flutter/fml/eintr_wrapper.h"
-#include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/fml/unique_fd.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/shell/common/animator.h"
@@ -24,8 +20,6 @@
 #include "flutter/shell/common/shell.h"
 #include "rapidjson/document.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 
@@ -112,7 +106,9 @@ std::unique_ptr<Engine> Engine::Spawn(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
     Settings settings,
-    std::unique_ptr<Animator> animator) const {
+    std::unique_ptr<Animator> animator,
+    const std::string& initial_route,
+    fml::WeakPtr<IOManager> io_manager) const {
   auto result = std::make_unique<Engine>(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
@@ -121,7 +117,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*task_runners=*/task_runners_,
       /*settings=*/settings,
       /*animator=*/std::move(animator),
-      /*io_manager=*/runtime_controller_->GetIOManager(),
+      /*io_manager=*/io_manager,
       /*font_collection=*/font_collection_,
       /*runtime_controller=*/nullptr);
   result->runtime_controller_ = runtime_controller_->Spawn(
@@ -131,8 +127,11 @@ std::unique_ptr<Engine> Engine::Spawn(
       settings_.idle_notification_callback,  // idle notification callback
       settings_.isolate_create_callback,     // isolate create callback
       settings_.isolate_shutdown_callback,   // isolate shutdown callback
-      settings_.persistent_isolate_data      // persistent isolate data
+      settings_.persistent_isolate_data,     // persistent isolate data
+      io_manager,                            // io_manager
+      result->GetImageDecoderWeakPtr()       // imageDecoder
   );
+  result->initial_route_ = initial_route;
   return result;
 }
 
@@ -144,11 +143,15 @@ fml::WeakPtr<Engine> Engine::GetWeakPtr() const {
 
 void Engine::SetupDefaultFontManager() {
   TRACE_EVENT0("flutter", "Engine::SetupDefaultFontManager");
-  font_collection_->SetupDefaultFontManager();
+  font_collection_->SetupDefaultFontManager(settings_.font_initialization_data);
 }
 
 std::shared_ptr<AssetManager> Engine::GetAssetManager() {
   return asset_manager_;
+}
+
+fml::WeakPtr<ImageDecoder> Engine::GetImageDecoderWeakPtr() {
+  return image_decoder_.GetWeakPtr();
 }
 
 fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
@@ -197,6 +200,10 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
 
   last_entry_point_ = configuration.GetEntrypoint();
   last_entry_point_library_ = configuration.GetEntrypointLibrary();
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  // This is only used to support restart.
+  last_entry_point_args_ = configuration.GetEntrypointArgs();
+#endif
 
   UpdateAssetManager(configuration.GetAssetManager());
 
@@ -204,10 +211,21 @@ Engine::RunStatus Engine::Run(RunConfiguration configuration) {
     return RunStatus::FailureAlreadyRunning;
   }
 
+  // If the embedding prefetched the default font manager, then set up the
+  // font manager later in the engine launch process.  This makes it less
+  // likely that the setup will need to wait for the prefetch to complete.
+  auto root_isolate_create_callback = [&]() {
+    if (settings_.prefetched_default_font_manager) {
+      SetupDefaultFontManager();
+    }
+  };
+
   if (!runtime_controller_->LaunchRootIsolate(
           settings_,                                 //
+          root_isolate_create_callback,              //
           configuration.GetEntrypoint(),             //
           configuration.GetEntrypointLibrary(),      //
+          configuration.GetEntrypointArgs(),         //
           configuration.TakeIsolateConfiguration())  //
   ) {
     return RunStatus::Failure;
@@ -263,7 +281,6 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 
 void Engine::OnOutputSurfaceCreated() {
   have_surface_ = true;
-  StartAnimatorIfPossible();
   ScheduleFrame();
 }
 
@@ -423,14 +440,6 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
-void Engine::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                                   KeyDataResponse callback) {
-  TRACE_EVENT0("flutter", "Engine::DispatchKeyDataPacket");
-  if (runtime_controller_) {
-    runtime_controller_->DispatchKeyDataPacket(*packet, std::move(callback));
-  }
-}
-
 void Engine::DispatchSemanticsAction(int id,
                                      SemanticsAction action,
                                      fml::MallocMapping args) {
@@ -463,6 +472,7 @@ std::string Engine::DefaultRouteName() {
 }
 
 void Engine::ScheduleFrame(bool regenerate_layer_tree) {
+  StartAnimatorIfPossible();
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
@@ -558,6 +568,10 @@ const std::string& Engine::GetLastEntrypointLibrary() const {
   return last_entry_point_library_;
 }
 
+const std::vector<std::string>& Engine::GetLastEntrypointArgs() const {
+  return last_entry_point_args_;
+}
+
 // |RuntimeDelegate|
 void Engine::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
   return delegate_.RequestDartDeferredLibrary(loading_unit_id);
@@ -584,6 +598,10 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
     runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,
                                                       error_message, transient);
   }
+}
+
+const VsyncWaiter& Engine::GetVsyncWaiter() const {
+  return animator_->GetVsyncWaiter();
 }
 
 }  // namespace flutter

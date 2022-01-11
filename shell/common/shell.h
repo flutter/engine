@@ -194,6 +194,7 @@ class Shell final : public PlatformView::Delegate,
   /// @see        http://flutter.dev/go/multiple-engines
   std::unique_ptr<Shell> Spawn(
       RunConfiguration run_configuration,
+      const std::string& initial_route,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer) const;
 
@@ -372,7 +373,7 @@ class Shell final : public PlatformView::Delegate,
   /// @brief      Notifies the display manager of the updates.
   ///
   void OnDisplayUpdates(DisplayUpdateType update_type,
-                        std::vector<Display> displays);
+                        std::vector<std::unique_ptr<Display>> displays);
 
   //----------------------------------------------------------------------------
   /// @brief Queries the `DisplayManager` for the main display refresh rate.
@@ -394,6 +395,14 @@ class Shell final : public PlatformView::Delegate,
   /// @see        `CreateCompatibleGenerator`
   void RegisterImageDecoder(ImageGeneratorFactory factory, int32_t priority);
 
+  //----------------------------------------------------------------------------
+  /// @brief Returns the delegate object that handles PlatformMessage's from
+  ///        Flutter to the host platform (and its responses).
+  const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
+      const;
+
+  const VsyncWaiter& GetVsyncWaiter() const;
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -408,9 +417,10 @@ class Shell final : public PlatformView::Delegate,
   std::unique_ptr<PlatformView> platform_view_;  // on platform task runner
   std::unique_ptr<Engine> engine_;               // on UI task runner
   std::unique_ptr<Rasterizer> rasterizer_;       // on raster task runner
-  std::unique_ptr<ShellIOManager> io_manager_;   // on IO task runner
+  std::shared_ptr<ShellIOManager> io_manager_;   // on IO task runner
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
   std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
+  std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
   fml::TaskRunnerAffineWeakPtr<Rasterizer>
@@ -472,6 +482,7 @@ class Shell final : public PlatformView::Delegate,
   static std::unique_ptr<Shell> CreateShellOnPlatformThread(
       DartVMRef vm,
       fml::RefPtr<fml::RasterThreadMerger> parent_merger,
+      std::shared_ptr<ShellIOManager> parent_io_manager,
       TaskRunners task_runners,
       const PlatformData& platform_data,
       Settings settings,
@@ -484,6 +495,7 @@ class Shell final : public PlatformView::Delegate,
       const PlatformData& platform_data,
       TaskRunners task_runners,
       fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
+      std::shared_ptr<ShellIOManager> parent_io_manager,
       Settings settings,
       DartVMRef vm,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -495,7 +507,7 @@ class Shell final : public PlatformView::Delegate,
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
-             std::unique_ptr<ShellIOManager> io_manager);
+             std::shared_ptr<ShellIOManager> io_manager);
 
   void ReportTimings();
 
@@ -516,11 +528,6 @@ class Shell final : public PlatformView::Delegate,
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchPointerDataPacket(
       std::unique_ptr<PointerDataPacket> packet) override;
-
-  // |PlatformView::Delegate|
-  void OnPlatformViewDispatchKeyDataPacket(
-      std::unique_ptr<KeyDataPacket> packet,
-      std::function<void(bool /* handled */)> callback) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDispatchSemanticsAction(int32_t id,

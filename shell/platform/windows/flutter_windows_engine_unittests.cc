@@ -231,5 +231,29 @@ TEST(FlutterWindowsEngine, SendPlatformMessageWithResponse) {
   EXPECT_TRUE(send_message_called);
 }
 
+TEST(FlutterWindowsEngine, DispatchSemanticsAction) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  bool called = false;
+  std::string message = "Hello";
+  modifier.embedder_api().DispatchSemanticsAction = MOCK_ENGINE_PROC(
+      DispatchSemanticsAction,
+      ([&called, &message](auto engine, auto target, auto action, auto data,
+                           auto data_length) {
+        called = true;
+        EXPECT_EQ(target, 42);
+        EXPECT_EQ(action, kFlutterSemanticsActionDismiss);
+        EXPECT_EQ(memcmp(data, message.c_str(), message.size()), 0);
+        EXPECT_EQ(data_length, message.size());
+        return kSuccess;
+      }));
+
+  auto data = fml::MallocMapping::Copy(message.c_str(), message.size());
+  engine->DispatchSemanticsAction(42, kFlutterSemanticsActionDismiss,
+                                  std::move(data));
+  EXPECT_TRUE(called);
+}
+
 }  // namespace testing
 }  // namespace flutter

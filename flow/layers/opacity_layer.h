@@ -27,19 +27,28 @@ class OpacityLayer : public MergedContainerLayer {
   // the propagation as repainting the OpacityLayer is expensive.
   OpacityLayer(SkAlpha alpha, const SkPoint& offset);
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
   void Diff(DiffContext* context, const Layer* old_layer) override;
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
   void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
 
   void Paint(PaintContext& context) const override;
 
+  // Returns whether the children are capable of inheriting an opacity value
+  // and modifying their rendering accordingly. This value is only guaranteed
+  // to be valid after the local |Preroll| method is called.
+  bool children_can_accept_opacity() const {
+    return children_can_accept_opacity_;
+  }
+  void set_children_can_accept_opacity(bool value) {
+    children_can_accept_opacity_ = value;
+  }
+
+  SkScalar opacity() const { return alpha_ * 1.0 / SK_AlphaOPAQUE; }
+
  private:
   SkAlpha alpha_;
   SkPoint offset_;
+  bool children_can_accept_opacity_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityLayer);
 };

@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_META_DATA_KEY;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_URI_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_BACKGROUND_MODE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_DART_ENTRYPOINT;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
@@ -647,10 +648,10 @@ public class FlutterActivity extends Activity
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
   private void release() {
-    delegate.onDestroyView();
-    delegate.onDetach();
-    delegate.release();
-    delegate = null;
+    if (delegate != null) {
+      delegate.release();
+      delegate = null;
+    }
   }
 
   @Override
@@ -662,15 +663,20 @@ public class FlutterActivity extends Activity
             + " connection to the engine "
             + getFlutterEngine()
             + " evicted by another attaching activity");
-    release();
+    if (delegate != null) {
+      delegate.onDestroyView();
+      delegate.onDetach();
+    }
   }
 
   @Override
   protected void onDestroy() {
     super.onDestroy();
     if (stillAttachedForEvent("onDestroy")) {
-      release();
+      delegate.onDestroyView();
+      delegate.onDetach();
     }
+    release();
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
   }
 
@@ -816,6 +822,32 @@ public class FlutterActivity extends Activity
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
     } catch (PackageManager.NameNotFoundException e) {
       return DEFAULT_DART_ENTRYPOINT;
+    }
+  }
+
+  /**
+   * The Dart library URI for the entrypoint that will be executed as soon as the Dart snapshot is
+   * loaded.
+   *
+   * <p>Example value: "package:foo/bar.dart"
+   *
+   * <p>This preference can be controlled by setting a {@code <meta-data>} called {@link
+   * FlutterActivityLaunchConfigs#DART_ENTRYPOINT_URI_META_DATA_KEY} within the Android manifest
+   * definition for this {@code FlutterActivity}.
+   *
+   * <p>A value of null means use the default root library.
+   *
+   * <p>Subclasses may override this method to directly control the Dart entrypoint uri.
+   */
+  @Nullable
+  public String getDartEntrypointLibraryUri() {
+    try {
+      Bundle metaData = getMetaData();
+      String desiredDartLibraryUri =
+          metaData != null ? metaData.getString(DART_ENTRYPOINT_URI_META_DATA_KEY) : null;
+      return desiredDartLibraryUri;
+    } catch (PackageManager.NameNotFoundException e) {
+      return null;
     }
   }
 
@@ -1093,10 +1125,13 @@ public class FlutterActivity extends Activity
   @Override
   public void onFlutterUiDisplayed() {
     // Notifies Android that we're fully drawn so that performance metrics can be collected by
-    // Flutter performance tests.
-    // This was supported in KitKat (API 19), but has a bug around requiring
-    // permissions. See https://github.com/flutter/flutter/issues/46172
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    // Flutter performance tests. A few considerations:
+    // * reportFullyDrawn was supported in KitKat (API 19), but has a bug around requiring
+    // permissions in some Android versions.
+    // * reportFullyDrawn behavior isn't tested on pre-Q versions.
+    // See https://github.com/flutter/flutter/issues/46172, and
+    // https://github.com/flutter/flutter/issues/88767.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       reportFullyDrawn();
     }
   }
@@ -1124,9 +1159,20 @@ public class FlutterActivity extends Activity
     return false;
   }
 
+  @Override
+  public void updateSystemUiOverlays() {
+    if (delegate != null) {
+      delegate.updateSystemUiOverlays();
+    }
+  }
+
   private boolean stillAttachedForEvent(String event) {
     if (delegate == null) {
       Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after release.");
+      return false;
+    }
+    if (!delegate.isAttached()) {
+      Log.w(TAG, "FlutterActivity " + hashCode() + " " + event + " called after detach.");
       return false;
     }
     return true;

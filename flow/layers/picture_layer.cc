@@ -18,8 +18,6 @@ PictureLayer::PictureLayer(const SkPoint& offset,
       is_complex_(is_complex),
       will_change_(will_change) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 bool PictureLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
   // Only return true for identical pictures; This way
   // ContainerLayer::DiffChildren can detect when a picture layer got inserted
@@ -42,6 +40,10 @@ void PictureLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
   context->AddLayerBounds(picture()->cullRect());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
@@ -51,6 +53,7 @@ bool PictureLayer::Compare(DiffContext::Statistics& statistics,
                            const PictureLayer* l2) {
   const auto& pic1 = l1->picture_.skia_object();
   const auto& pic2 = l2->picture_.skia_object();
+
   if (pic1.get() == pic2.get()) {
     statistics.AddSameInstancePicture();
     return true;
@@ -104,26 +107,26 @@ sk_sp<SkData> PictureLayer::SerializedPicture() const {
   return cached_serialized_picture_;
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
 void PictureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "PictureLayer::Preroll");
 
   SkPicture* sk_picture = picture();
 
+  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "PictureLayer::RasterCache (Preroll)");
-
-    SkMatrix ctm = matrix;
-    ctm.preTranslate(offset_.x(), offset_.y());
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = RasterCache::GetIntegralTransCTM(ctm);
-#endif
-    cache->Prepare(context->gr_context, sk_picture, ctm,
-                   context->dst_color_space, is_complex_, will_change_);
+    if (context->cull_rect.intersects(bounds)) {
+      if (cache->Prepare(context, sk_picture, is_complex_, will_change_, matrix,
+                         offset_)) {
+        context->subtree_can_inherit_opacity = true;
+      }
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(sk_picture, matrix);
+    }
   }
 
-  SkRect bounds = sk_picture->cullRect().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 }
 
@@ -139,11 +142,16 @@ void PictureLayer::Paint(PaintContext& context) const {
       context.leaf_nodes_canvas->getTotalMatrix()));
 #endif
 
-  if (context.raster_cache &&
-      context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas)) {
-    TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
-    return;
+  if (context.raster_cache) {
+    AutoCachePaint cache_paint(context);
+    if (context.raster_cache->Draw(*picture(), *context.leaf_nodes_canvas,
+                                   cache_paint.paint())) {
+      TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
+      return;
+    }
   }
+
+  FML_DCHECK(context.inherited_opacity == SK_Scalar1);
   picture()->playback(context.leaf_nodes_canvas);
 }
 

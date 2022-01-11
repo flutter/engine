@@ -4,19 +4,30 @@
 
 import 'package:meta/meta.dart';
 
-import '../util.dart';
-import 'embedded_views.dart';
-import 'surface.dart';
+import '../../engine.dart';
 
 /// Caches surfaces used to overlay platform views.
 class SurfaceFactory {
-  /// The cache singleton.
-  static final SurfaceFactory instance =
-      SurfaceFactory(HtmlViewEmbedder.maximumSurfaces);
+  /// The lazy-initialized singleton surface factory.
+  ///
+  /// [debugClear] causes this singleton to be reinitialized.
+  static SurfaceFactory get instance =>
+      _instance ??= SurfaceFactory(configuration.canvasKitMaximumSurfaces);
+
+  /// Returns the raw (potentially uninitialized) value of the singleton.
+  ///
+  /// Useful in tests for checking the lifecycle of this class.
+  static SurfaceFactory? get debugUninitializedInstance => _instance;
+
+  static SurfaceFactory? _instance;
 
   SurfaceFactory(this.maximumSurfaces)
       : assert(maximumSurfaces >= 1,
-            'The maximum number of surfaces must be at least 1');
+            'The maximum number of surfaces must be at least 1') {
+    if (assertionsEnabled) {
+      registerHotRestartListener(debugClear);
+    }
+  }
 
   /// The base surface to paint on. This is the default surface which will be
   /// painted to. If there are no platform views, then this surface will receive
@@ -29,6 +40,12 @@ class SurfaceFactory {
   /// The maximum number of surfaces which can be live at once.
   final int maximumSurfaces;
 
+  /// The maximum number of assignable overlays.
+  ///
+  /// This is just `maximumSurfaces - 2` (the maximum number of surfaces minus
+  /// the base surface and backup surface).
+  int get maximumOverlays => maximumSurfaces - 2;
+
   /// Surfaces created by this factory which are currently in use.
   final List<Surface> _liveSurfaces = <Surface>[];
 
@@ -38,6 +55,11 @@ class SurfaceFactory {
 
   /// The number of surfaces which have been created by this factory.
   int get _surfaceCount => _liveSurfaces.length + _cache.length + 2;
+
+  /// The number of available overlay surfaces.
+  ///
+  /// This does not include the base surface or backup surface.
+  int get numAvailableOverlays => maximumOverlays - _liveSurfaces.length;
 
   /// The number of surfaces created by this factory. Used for testing.
   @visibleForTesting
@@ -52,15 +74,9 @@ class SurfaceFactory {
   /// surfaces.
   bool _warnedAboutTooManySurfaces = false;
 
-  /// Gets a [Surface] which is ready to paint to.
-  ///
-  /// If there are available surfaces in the cache, then this will return one of
-  /// them. If this factory hasn't yet created [maximumSurfaces] surfaces, then a
-  /// new one will be created. If this factory has already created [maximumSurfaces]
-  /// surfaces, then this will return a backup surface which will be returned by
-  /// all subsequent calls to [getSurface] until some surfaces have been
-  /// released with [releaseSurface].
-  Surface getSurface() {
+  /// Gets an overlay surface from the cache or creates a new one if it wouldn't
+  /// exceed the maximum. If there are no available surfaces, returns `null`.
+  Surface? getOverlay() {
     if (_cache.isNotEmpty) {
       final Surface surface = _cache.removeLast();
       _liveSurfaces.add(surface);
@@ -70,15 +86,31 @@ class SurfaceFactory {
       _liveSurfaces.add(surface);
       return surface;
     } else {
-      if (!_warnedAboutTooManySurfaces) {
-        _warnedAboutTooManySurfaces = true;
-        printWarning('Flutter was unable to create enough overlay surfaces. '
-            'This is usually caused by too many platform views being '
-            'displayed at once. '
-            'You may experience incorrect rendering.');
-      }
-      return backupSurface;
+      return null;
     }
+  }
+
+  /// Gets a [Surface] which is ready to paint to.
+  ///
+  /// If there are available surfaces in the cache, then this will return one of
+  /// them. If this factory hasn't yet created [maximumSurfaces] surfaces, then a
+  /// new one will be created. If this factory has already created [maximumSurfaces]
+  /// surfaces, then this will return a backup surface which will be returned by
+  /// all subsequent calls to [getSurface] until some surfaces have been
+  /// released with [releaseSurface].
+  Surface getSurface() {
+    final Surface? surface = getOverlay();
+    if (surface != null) {
+      return surface;
+    }
+    if (!_warnedAboutTooManySurfaces) {
+      _warnedAboutTooManySurfaces = true;
+      printWarning('Flutter was unable to create enough overlay surfaces. '
+          'This is usually caused by too many platform views being '
+          'displayed at once. '
+          'You may experience incorrect rendering.');
+    }
+    return backupSurface;
   }
 
   /// Releases all surfaces so they can be reused in the next frame.
@@ -147,7 +179,10 @@ class SurfaceFactory {
     for (final Surface surface in _liveSurfaces) {
       surface.dispose();
     }
+    baseSurface.dispose();
+    backupSurface.dispose();
     _liveSurfaces.clear();
     _cache.clear();
+    _instance = null;
   }
 }

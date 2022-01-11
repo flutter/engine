@@ -26,13 +26,13 @@ Future<void> testMain() async {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
     final html.Element testScene = html.Element.tag('flt-scene');
     testScene.append(canvas.rootElement);
-    domRenderer.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
+    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
   }
 
   setUpStableTestFonts();
 
   tearDown(() {
-    domRenderer.glassPaneShadow?.querySelector('flt-scene')?.remove();
+    flutterViewEmbedder.glassPaneShadow?.querySelector('flt-scene')?.remove();
   });
 
   /// Draws several lines, some aligned precisely with the pixel grid, and some
@@ -147,9 +147,9 @@ Future<void> testMain() async {
   //
   // More details: https://github.com/flutter/flutter/issues/32274
   test('renders clipped DOM text with high quality', () async {
-    final EngineParagraph paragraph =
+    final CanvasParagraph paragraph =
         (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))
-          ..addText('Am I blurry?')).build() as EngineParagraph;
+          ..addText('Am I blurry?')).build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
     final Rect canvasSize = Rect.fromLTRB(
@@ -199,7 +199,7 @@ Future<void> testMain() async {
       'breaks into multiple lines.';
     builder.addText(text);
 
-    final EngineParagraph paragraph = builder.build() as EngineParagraph;
+    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 100));
 
     final Rect canvasSize = Offset.zero & const Size(500, 500);
@@ -248,7 +248,7 @@ Future<void> testMain() async {
     final html.Element sceneElement = scene.webOnlyRootElement!;
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    domRenderer.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
+    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',

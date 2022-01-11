@@ -42,7 +42,7 @@ def RunCmd(cmd, forbidden_output=[], expect_failure=False, env=None, **kwargs):
   start_time = time.time()
   stdout_pipe = sys.stdout if not forbidden_output else subprocess.PIPE
   stderr_pipe = sys.stderr if not forbidden_output else subprocess.PIPE
-  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, env=env, **kwargs)
+  process = subprocess.Popen(cmd, stdout=stdout_pipe, stderr=stderr_pipe, env=env, universal_newlines=True, **kwargs)
   stdout, stderr = process.communicate()
   end_time = time.time()
 
@@ -179,11 +179,11 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
 
   RunEngineExecutable(build_dir, 'client_wrapper_unittests', filter, shuffle_flags, coverage=coverage)
 
-  # https://github.com/flutter/flutter/issues/36294
-  if not IsWindows():
-    RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags, coverage=coverage)
-    RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags, coverage=coverage)
-  else:
+  RunEngineExecutable(build_dir, 'embedder_unittests', filter, shuffle_flags, coverage=coverage)
+
+  RunEngineExecutable(build_dir, 'embedder_proctable_unittests', filter, shuffle_flags, coverage=coverage)
+
+  if IsWindows():
     RunEngineExecutable(build_dir, 'flutter_windows_unittests', filter, shuffle_flags, coverage=coverage)
 
     RunEngineExecutable(build_dir, 'client_wrapper_windows_unittests', filter, shuffle_flags, coverage=coverage)
@@ -297,12 +297,13 @@ def EnsureDebugUnoptSkyPackagesAreBuilt():
 def EnsureIosTestsAreBuilt(ios_out_dir):
   """Builds the engine variant and the test dylib containing the XCTests"""
   tmp_out_dir = os.path.join(out_dir, ios_out_dir)
+  ios_test_lib = os.path.join(tmp_out_dir, 'libios_test_flutter.dylib')
   message = []
   message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
   message.append('autoninja -C %s ios_test_flutter' % ios_out_dir)
-  final_message = '%s doesn\'t exist. Please run the following commands: \n%s' % (
-      ios_out_dir, '\n'.join(message))
-  assert os.path.exists(tmp_out_dir), final_message
+  final_message = '%s or %s doesn\'t exist. Please run the following commands: \n%s' % (
+      ios_out_dir, ios_test_lib, '\n'.join(message))
+  assert os.path.exists(tmp_out_dir) and os.path.exists(ios_test_lib), final_message
 
 
 def AssertExpectedXcodeVersion():
@@ -351,6 +352,25 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   RunCmd(command, cwd=test_runner_dir, env=env)
 
 
+def RunAndroidTests(android_variant='android_debug_unopt', adb_path=None):
+  test_runner_name = 'flutter_shell_native_unittests'
+  tests_path = os.path.join(out_dir, android_variant, test_runner_name)
+  remote_path = '/data/local/tmp'
+  remote_tests_path = os.path.join(remote_path, test_runner_name)
+  if adb_path == None:
+    adb_path = 'adb'
+  RunCmd([adb_path, 'push', tests_path, remote_path], cwd=buildroot_dir)
+  RunCmd([adb_path, 'shell', remote_tests_path])
+
+  systrace_test = os.path.join(buildroot_dir, 'flutter', 'testing',
+      'android_systrace_test.py')
+  scenario_apk = os.path.join(out_dir, android_variant, 'firebase_apks',
+      'scenario_app.apk')
+  RunCmd([systrace_test, '--adb-path', adb_path, '--apk-path', scenario_apk,
+      '--package-name', 'dev.flutter.scenarios',
+      '--activity-name', '.TextPlatformViewActivity'])
+
+
 def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   """Runs Objective-C XCTest unit tests for the iOS embedding"""
   AssertExpectedXcodeVersion()
@@ -367,7 +387,7 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
     'xcodebuild '
     '-sdk iphonesimulator '
     '-scheme IosUnitTests '
-    "-destination platform='iOS Simulator,name=iPhone 8' "
+    "-destination platform='iOS Simulator,name=iPhone 11' "
     'test '
     'FLUTTER_ENGINE=' + ios_variant
   ]
@@ -428,11 +448,12 @@ def RunFrontEndServerTests(build_dir):
     opts = [
       '--disable-dart-dev',
       dart_test_file,
+      build_dir,
       os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
       os.path.join(build_dir, 'flutter_patched_sdk')]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -445,7 +466,12 @@ def RunConstFinderTests(build_dir):
     os.path.join(test_dir, 'const_finder_test.dart'),
     os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
     os.path.join(build_dir, 'flutter_patched_sdk')]
-  RunEngineExecutable(build_dir, 'dart', None, flags=opts, cwd=test_dir)
+  RunEngineExecutable(
+    build_dir,
+    os.path.join('dart-sdk', 'bin', 'dart'),
+    None,
+    flags=opts,
+    cwd=test_dir)
 
 
 def RunLitetestTests(build_dir):
@@ -457,7 +483,7 @@ def RunLitetestTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -472,7 +498,7 @@ def RunBenchmarkTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -487,7 +513,7 @@ def RunGithooksTests(build_dir):
       dart_test_file]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -504,7 +530,7 @@ def RunClangTidyTests(build_dir):
       os.path.join(buildroot_dir, 'flutter')]
     RunEngineExecutable(
       build_dir,
-      'dart',
+      os.path.join('dart-sdk', 'bin', 'dart'),
       None,
       flags=opts,
       cwd=test_dir)
@@ -512,19 +538,20 @@ def RunClangTidyTests(build_dir):
 
 def main():
   parser = argparse.ArgumentParser()
+  all_types = ['engine', 'dart', 'benchmarks', 'java', 'android', 'objc', 'font-subset']
 
   parser.add_argument('--variant', dest='variant', action='store',
       default='host_debug_unopt', help='The engine build variant to run the tests for.')
-  parser.add_argument('--type', type=str, default='all')
+  parser.add_argument('--type', type=str, default='all', help='A list of test types, default is "all" (equivalent to "%s")' % (','.join(all_types)))
   parser.add_argument('--engine-filter', type=str, default='',
       help='A list of engine test executables to run.')
   parser.add_argument('--dart-filter', type=str, default='',
       help='A list of Dart test scripts to run.')
   parser.add_argument('--java-filter', type=str, default='',
-      help='A single Java test class to run.')
+      help='A single Java test class to run (example: "io.flutter.SmokeTest")')
   parser.add_argument('--android-variant', dest='android_variant', action='store',
       default='android_debug_unopt',
-      help='The engine build variant to run java tests for')
+      help='The engine build variant to run java or android tests for')
   parser.add_argument('--ios-variant', dest='ios_variant', action='store',
       default='ios_debug_sim_unopt',
       help='The engine build variant to run objective-c tests for')
@@ -538,16 +565,18 @@ def main():
       default=False, help='Capture core dumps from crashes of engine tests.')
   parser.add_argument('--use-sanitizer-suppressions', dest='sanitizer_suppressions', action='store_true',
       default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
+  parser.add_argument('--adb-path', dest='adb_path', action='store',
+      default=None, help='Provide the path of adb used for android tests. By default it looks on $PATH.')
 
   args = parser.parse_args()
 
   if args.type == 'all':
-    types = ['engine', 'dart', 'benchmarks', 'java', 'objc', 'font-subset']
+    types = all_types
   else:
     types = args.type.split(',')
 
   build_dir = os.path.join(out_dir, args.variant)
-  if args.type != 'java':
+  if args.type != 'java' and args.type != 'android':
     assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
   if args.sanitizer_suppressions:
@@ -585,6 +614,10 @@ def main():
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
     RunJavaTests(java_filter, args.android_variant)
+
+  if 'android' in types:
+    assert not IsWindows(), "Android engine files can't be compiled on Windows."
+    RunAndroidTests(args.android_variant, args.adb_path)
 
   if 'objc' in types:
     assert IsMac(), "iOS embedding tests can only be run on macOS."

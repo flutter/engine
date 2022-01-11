@@ -15,46 +15,36 @@
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/common/text_input_model.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
-#include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
 namespace flutter {
 
-class FlutterWindowsView;
-
 // Implements a text input plugin.
 //
 // Specifically handles window events within windows.
-class TextInputPlugin : public KeyboardHandlerBase {
+class TextInputPlugin {
  public:
   explicit TextInputPlugin(flutter::BinaryMessenger* messenger,
                            TextInputPluginDelegate* delegate);
 
   virtual ~TextInputPlugin();
 
-  // |KeyboardHandlerBase|
-  bool KeyboardHook(FlutterWindowsView* view,
-                    int key,
-                    int scancode,
-                    int action,
-                    char32_t character,
-                    bool extended,
-                    bool was_down) override;
+  virtual void KeyboardHook(int key,
+                            int scancode,
+                            int action,
+                            char32_t character,
+                            bool extended,
+                            bool was_down);
 
-  // |KeyboardHandlerBase|
-  void TextHook(FlutterWindowsView* view, const std::u16string& text) override;
+  virtual void TextHook(const std::u16string& text);
 
-  // |KeyboardHandlerBase|
-  void ComposeBeginHook() override;
+  virtual void ComposeBeginHook();
 
-  // |KeyboardHandlerBase|
-  void ComposeCommitHook() override;
+  virtual void ComposeCommitHook();
 
-  // |KeyboardHandlerBase|
-  void ComposeEndHook() override;
+  virtual void ComposeEndHook();
 
-  // |KeyboardHandlerBase|
-  void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
+  virtual void ComposeChangeHook(const std::u16string& text, int cursor_pos);
 
  private:
   // Sends the current state of the given model to the Flutter engine.

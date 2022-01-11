@@ -15,6 +15,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
@@ -43,7 +44,9 @@ class ShellTest : public FixtureTest {
           shell_test_external_view_embedder = nullptr,
       bool is_gpu_disabled = false,
       ShellTestPlatformView::BackendType rendering_backend =
-          ShellTestPlatformView::BackendType::kDefaultBackend);
+          ShellTestPlatformView::BackendType::kDefaultBackend,
+      Shell::CreateCallback<PlatformView> platform_view_create_callback =
+          nullptr);
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
   TaskRunners GetTaskRunnersForFixture();
@@ -96,6 +99,8 @@ class ShellTest : public FixtureTest {
                                    const SkData& key,
                                    const SkData& value);
 
+  static bool IsAnimatorRunning(Shell* shell);
+
   enum ServiceProtocolEnum {
     kGetSkSLs,
     kEstimateRasterCacheMemory,
@@ -119,6 +124,9 @@ class ShellTest : public FixtureTest {
   // Otherwise those tests will be flaky as the clearing of unreported timings
   // is unpredictive.
   static int UnreportedTimingsCount(Shell* shell);
+
+  static size_t GetLiveTrackedPathCount(
+      std::shared_ptr<VolatilePathTracker> tracker);
 
  private:
   ThreadHost thread_host_;

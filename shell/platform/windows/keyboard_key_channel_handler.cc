@@ -6,9 +6,15 @@
 
 #include <windows.h>
 
+#ifdef WINUWP
+#include "third_party/cppwinrt/generated/winrt/Windows.System.h"
+#include "third_party/cppwinrt/generated/winrt/Windows.UI.Core.h"
+#endif
+
 #include <iostream>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
+#include "flutter/shell/platform/windows/keyboard_win32_common.h"
 
 namespace flutter {
 
@@ -38,7 +44,7 @@ static constexpr int kMaxPendingEvents = 1000;
 // the same scancode as its non-extended counterpart, such as ShiftLeft.  In
 // Chromium's scancode table, from which Flutter's physical key list is
 // derived, these keys are marked with this bit.  See
-// https://chromium.googlesource.com/codesearch/chromium/src/+/refs/heads/master/ui/events/keycodes/dom/dom_code_data.inc
+// https://chromium.googlesource.com/codesearch/chromium/src/+/refs/heads/main/ui/events/keycodes/dom/dom_code_data.inc
 static constexpr int kScancodeExtended = 0xe000;
 
 // Re-definition of the modifiers for compatibility with the Flutter framework.
@@ -64,10 +70,48 @@ static constexpr int kScrollLock = 1 << 13;
 /// with the re-defined values declared above for compatibility with the Flutter
 /// framework.
 int GetModsForKeyState() {
-  // TODO(clarkezone) need to add support for get modifier state for UWP
-  // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
-  return 0;
+  using namespace winrt::Windows::System;
+  using namespace winrt::Windows::UI::Core;
+
+  auto window = CoreWindow::GetForCurrentThread();
+
+  auto key_is_down = [&window](VirtualKey key) {
+    auto state = window.GetKeyState(key);
+    return (state & CoreVirtualKeyStates::Down) == CoreVirtualKeyStates::Down;
+  };
+
+  int mods = 0;
+
+  if (key_is_down(VirtualKey::Shift))
+    mods |= kShift;
+  if (key_is_down(VirtualKey::LeftShift))
+    mods |= kShiftLeft;
+  if (key_is_down(VirtualKey::RightShift))
+    mods |= kShiftRight;
+  if (key_is_down(VirtualKey::Control))
+    mods |= kControl;
+  if (key_is_down(VirtualKey::LeftControl))
+    mods |= kControlLeft;
+  if (key_is_down(VirtualKey::RightControl))
+    mods |= kControlRight;
+  if (key_is_down(VirtualKey::Menu))
+    mods |= kAlt;
+  if (key_is_down(VirtualKey::LeftMenu))
+    mods |= kAltLeft;
+  if (key_is_down(VirtualKey::RightMenu))
+    mods |= kAltRight;
+  if (key_is_down(VirtualKey::LeftWindows))
+    mods |= kWinLeft;
+  if (key_is_down(VirtualKey::RightWindows))
+    mods |= kWinRight;
+  if (key_is_down(VirtualKey::CapitalLock))
+    mods |= kCapsLock;
+  if (key_is_down(VirtualKey::NumberKeyLock))
+    mods |= kNumLock;
+  if (key_is_down(VirtualKey::Scroll))
+    mods |= kScrollLock;
+  return mods;
 #else
   int mods = 0;
 
@@ -103,17 +147,6 @@ int GetModsForKeyState() {
 #endif
 }
 
-// Revert the "character" for a dead key to its normal value, or the argument
-// unchanged otherwise.
-//
-// When a dead key is pressed, the WM_KEYDOWN's lParam is mapped to a special
-// value: the "normal character" | 0x80000000.  For example, when pressing
-// "dead key caret" (one that makes the following e into ê), its mapped
-// character is 0x8000005E. "Reverting" it gives 0x5E, which is character '^'.
-uint32_t _UndeadChar(uint32_t ch) {
-  return ch & ~0x80000000;
-}
-
 }  // namespace
 
 KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
@@ -141,14 +174,16 @@ void KeyboardKeyChannelHandler::KeyboardHook(
   event.AddMember(kKeyCodeKey, key, allocator);
   event.AddMember(kScanCodeKey, scancode | (extended ? kScancodeExtended : 0),
                   allocator);
-  event.AddMember(kCharacterCodePointKey, _UndeadChar(character), allocator);
+  event.AddMember(kCharacterCodePointKey, UndeadChar(character), allocator);
   event.AddMember(kKeyMapKey, kWindowsKeyMap, allocator);
   event.AddMember(kModifiersKey, GetModsForKeyState(), allocator);
 
   switch (action) {
+    case WM_SYSKEYDOWN:
     case WM_KEYDOWN:
       event.AddMember(kTypeKey, kKeyDown, allocator);
       break;
+    case WM_SYSKEYUP:
     case WM_KEYUP:
       event.AddMember(kTypeKey, kKeyUp, allocator);
       break;
@@ -161,7 +196,7 @@ void KeyboardKeyChannelHandler::KeyboardHook(
                                                          size_t reply_size) {
     auto decoded = flutter::JsonMessageCodec::GetInstance().DecodeMessage(
         reply, reply_size);
-    bool handled = (*decoded)[kHandledKey].GetBool();
+    bool handled = decoded ? (*decoded)[kHandledKey].GetBool() : false;
     callback(handled);
   });
 }

@@ -301,9 +301,11 @@ void null_platform_messages() {
 
 Picture CreateSimplePicture() {
   Paint blackPaint = Paint();
+  Paint whitePaint = Paint()..color = Color.fromARGB(255, 255, 255, 255);
   PictureRecorder baseRecorder = PictureRecorder();
   Canvas canvas = Canvas(baseRecorder);
   canvas.drawRect(Rect.fromLTRB(0.0, 0.0, 1000.0, 1000.0), blackPaint);
+  canvas.drawRect(Rect.fromLTRB(10.0, 10.0, 990.0, 990.0), whitePaint);
   return baseRecorder.endRecording();
 }
 
@@ -564,6 +566,27 @@ void key_data_echo() async {
     );
     return data.synthesized;
   };
+  signalNativeTest();
+}
+
+// After platform channel 'test/starts_echo' receives a message, starts echoing
+// the event data with `_echoKeyEvent`, and returns synthesized as handled.
+@pragma('vm:entry-point')
+void key_data_late_echo() async {
+  channelBuffers.setListener('test/starts_echo', (ByteData? data, PlatformMessageResponseCallback callback) {
+    PlatformDispatcher.instance.onKeyData = (KeyData data) {
+      _echoKeyEvent(
+        _serializeKeyEventType(data.type),
+        data.timeStamp.inMicroseconds,
+        data.physical,
+        data.logical,
+        data.character == null ? 0 : data.character!.codeUnitAt(0),
+        data.synthesized,
+      );
+      return data.synthesized;
+    };
+    callback(null);
+  });
   signalNativeTest();
 }
 

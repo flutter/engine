@@ -37,6 +37,7 @@ source_set("fml") {
     "make_copyable.h",
     "mapping.cc",
     "mapping.h",
+    "math.h",
     "memory/ref_counted.h",
     "memory/ref_counted_internal.h",
     "memory/ref_ptr.h",
@@ -217,10 +218,8 @@ source_set("fml") {
       "platform/win/wstring_conversion.h",
     ]
 
-    if (is_win) {
-      # For wstring_conversion. See issue #50053.
-      defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
-    }
+    # For wstring_conversion. See issue #50053.
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   } else {
     sources += [
       "platform/posix/file_posix.cc",
@@ -274,9 +273,11 @@ if (enable_unittests) {
       "hex_codec_unittest.cc",
       "logging_unittests.cc",
       "mapping_unittests.cc",
+      "math_unittests.cc",
       "memory/ref_counted_unittest.cc",
       "memory/task_runner_checker_unittest.cc",
       "memory/weak_ptr_unittest.cc",
+      "message_loop_impl_unittests.cc",
       "message_loop_task_queues_merge_unmerge_unittests.cc",
       "message_loop_task_queues_unittests.cc",
       "message_loop_unittests.cc",

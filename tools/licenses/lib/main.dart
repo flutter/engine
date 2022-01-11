@@ -52,9 +52,9 @@ abstract class _RepositoryLicensedFile extends _RepositoryFile {
 
   // file names that we are confident won't be included in the final build product
   static final RegExp _readmeNamePattern = RegExp(r'\b_*(?:readme|contributing|patents)_*\b', caseSensitive: false);
-  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg)$', caseSensitive: false);
+  static final RegExp _buildTimePattern = RegExp(r'^(?!.*gen$)(?:CMakeLists\.txt|(?:pkgdata)?Makefile(?:\.inc)?(?:\.am|\.in|)|configure(?:\.ac|\.in)?|config\.(?:sub|guess)|.+\.m4|install-sh|.+\.sh|.+\.bat|.+\.pyc?|.+\.pl|icu-configure|.+\.gypi?|.*\.gni?|.+\.mk|.+\.cmake|.+\.gradle|.+\.yaml|pubspec\.lock|\.packages|vms_make\.com|pom\.xml|\.project|source\.properties|.+\.obj|.+\.autopkg|Brewfile)$', caseSensitive: false);
   static final RegExp _docsPattern = RegExp(r'^(?:INSTALL|NEWS|OWNERS|AUTHORS|ChangeLog(?:\.rst|\.[0-9]+)?|.+\.txt|.+\.md|.+\.log|.+\.css|.+\.1|doxygen\.config|Doxyfile|.+\.spec(?:\.in)?)$', caseSensitive: false);
-  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache)$', caseSensitive: false);
+  static final RegExp _devPattern = RegExp(r'^(?:codereview\.settings|.+\.~|.+\.~[0-9]+~|\.clang-format|\.gitattributes|\.landmines|\.DS_Store|\.travis\.yml|\.cirrus\.yml|\.cache|\.mailmap)$', caseSensitive: false);
   static final RegExp _testsPattern = RegExp(r'^(?:tj(?:bench|example)test\.(?:java\.)?in|example\.c)$', caseSensitive: false);
   // The ICU library has sample code that will never get linked.
   static final RegExp _icuSamplesPattern = RegExp(r'.*(?:icu\/source\/samples).*$', caseSensitive: false);
@@ -919,6 +919,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   ///   directory (a.k.a. buildroot).
   bool shouldRecurse(fs.IoNode entry) {
     return !entry.fullName.endsWith('third_party/gn') &&
+            entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
             entry.name != '.git' &&
             entry.name != '.github' &&
@@ -1361,6 +1362,23 @@ class _RepositoryExpatDirectory extends _RepositoryDirectory {
 
   @override
   bool get subdirectoriesAreLicenseRoots => true;
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'expat')
+      return _RepositoryExpatExpatDirectory(this, entry);
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryExpatExpatDirectory extends _RepositoryDirectory {
+  _RepositoryExpatExpatDirectory(_RepositoryDirectory parent, fs.Directory io) : super(parent, io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'doc' // we don't ship the documentation
+        && super.shouldRecurse(entry);
+  }
 }
 
 class _RepositoryFreetypeDocsDirectory extends _RepositoryDirectory {
@@ -1815,6 +1833,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'markupsafe' // build-time only
         && entry.name != 'mockito' // only used by tests
         && entry.name != 'pymock' // presumably only used by tests
+        && entry.name != 'pyyaml' // build-time dependency only
         && entry.name != 'android_embedding_dependencies' // testing framework for android
         && entry.name != 'yasm' // build-time dependency only
         && entry.name != 'binutils' // build-time dependency only
@@ -1831,7 +1850,8 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
         && entry.name != 'spirv_headers' // only used on hosts for tests
         && entry.name != 'spirv_cross' // only used on hosts for tests
         && entry.name != 'ocmock' // only used for tests
-        && entry.name != 'java'// only used for Android builds
+        && entry.name != 'java' // only used for Android builds
+        && entry.name != 'inja' // only used on hosts for builds
         && super.shouldRecurse(entry);
   }
 

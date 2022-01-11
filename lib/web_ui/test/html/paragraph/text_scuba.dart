@@ -98,7 +98,7 @@ void testEachCanvas(String description, CanvasTest body,
     return body(BitmapCanvas(bounds, RenderStrategy()));
   });
   test('$description (dom)', () {
-    return body(DomCanvas(domRenderer.createElement('flt-picture')));
+    return body(DomCanvas(html.document.createElement('flt-picture')));
   });
 }
 
@@ -108,7 +108,7 @@ final ui.TextStyle _defaultTextStyle = ui.TextStyle(
   fontSize: 14,
 );
 
-EngineParagraph paragraph(
+CanvasParagraph paragraph(
   String text, {
   ui.ParagraphStyle? paragraphStyle,
   ui.TextStyle? textStyle,
@@ -119,7 +119,7 @@ EngineParagraph paragraph(
   builder.pushStyle(textStyle ?? _defaultTextStyle);
   builder.addText(text);
   builder.pop();
-  final EngineParagraph paragraph = builder.build() as EngineParagraph;
+  final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
   paragraph.layout(ui.ParagraphConstraints(width: maxWidth));
   return paragraph;
 }

@@ -14,7 +14,6 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
@@ -132,10 +131,12 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   const char* device_extensions[] = {
       VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
   };
+  const int device_extensions_count =
+      sizeof(device_extensions) / sizeof(device_extensions[0]);
   GrVkExtensions vk_extensions;
   vk_extensions.init(backend_context.fGetProc, backend_context.fInstance,
                      backend_context.fPhysicalDevice, 0, nullptr,
-                     countof(device_extensions), device_extensions);
+                     device_extensions_count, device_extensions);
   backend_context.fVkExtensions = &vk_extensions;
   GrContextOptions options;
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
@@ -157,9 +158,9 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   return true;
 }
 
-void VulkanSurfaceProducer::OnSurfacesPresented(
+void VulkanSurfaceProducer::SubmitSurfaces(
     std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces) {
-  TRACE_EVENT0("flutter", "VulkanSurfaceProducer::OnSurfacesPresented");
+  TRACE_EVENT0("flutter", "VulkanSurfaceProducer::SubmitSurfaces");
 
   // Do a single flush for all canvases derived from the context.
   {

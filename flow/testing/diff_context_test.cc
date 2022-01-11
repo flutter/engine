@@ -3,11 +3,10 @@
 // found in the LICENSE file.
 
 #include "diff_context_test.h"
+#include "flutter/display_list/display_list_builder.h"
 
 namespace flutter {
 namespace testing {
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 DiffContextTest::DiffContextTest()
     : unref_queue_(fml::MakeRefCounted<SkiaUnrefQueue>(
@@ -53,7 +52,8 @@ sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
 std::shared_ptr<DisplayListLayer> DiffContextTest::CreateDisplayListLayer(
     sk_sp<DisplayList> display_list,
     const SkPoint& offset) {
-  return std::make_shared<DisplayListLayer>(offset, display_list, false, false);
+  return std::make_shared<DisplayListLayer>(
+      offset, SkiaGPUObject(display_list, unref_queue()), false, false);
 }
 
 std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(
@@ -65,7 +65,16 @@ std::shared_ptr<ContainerLayer> DiffContextTest::CreateContainerLayer(
   return res;
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
+std::shared_ptr<OpacityLayer> DiffContextTest::CreateOpacityLater(
+    std::initializer_list<std::shared_ptr<Layer>> layers,
+    SkAlpha alpha,
+    const SkPoint& offset) {
+  auto res = std::make_shared<OpacityLayer>(alpha, offset);
+  for (const auto& l : layers) {
+    res->Add(l);
+  }
+  return res;
+}
 
 }  // namespace testing
 }  // namespace flutter

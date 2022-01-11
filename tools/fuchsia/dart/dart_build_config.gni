@@ -2,6 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/common/config.gni")
+
 # Builds the component in a non-product JIT build. This will
 # launch the vm service in the runner.
 dart_debug_build_cfg = {
@@ -34,6 +36,19 @@ dart_profile_build_cfg = {
   platform_name = "dart_runner"
   is_aot = true
   is_product = false
+  enable_asserts = false
+}
+
+# Builds the component in a product JIT build. This will
+# not launch the vm service in the runner.
+dart_jit_release_build_cfg = {
+  runtime_meta =
+      "//flutter/shell/platform/fuchsia/dart_runner/meta/jit_product_runtime"
+  runner_dep =
+      "//flutter/shell/platform/fuchsia/dart_runner:dart_jit_product_runner"
+  platform_name = "dart_runner"
+  is_aot = true
+  is_product = true
   enable_asserts = false
 }
 

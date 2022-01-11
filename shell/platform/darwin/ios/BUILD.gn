@@ -7,6 +7,7 @@ assert(is_ios)
 import("//build/config/ios/ios_sdk.gni")
 import("//build/toolchain/clang.gni")
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/shell/platform/darwin/common/framework_shared.gni")
 import("//flutter/testing/testing.gni")
@@ -76,6 +77,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterPluginAppLifeCycleDelegate.mm",
     "framework/Source/FlutterRestorationPlugin.h",
     "framework/Source/FlutterRestorationPlugin.mm",
+    "framework/Source/FlutterSemanticsScrollView.h",
+    "framework/Source/FlutterSemanticsScrollView.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
@@ -156,6 +159,7 @@ source_set("flutter_framework_source") {
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/shell/common",
+    "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
@@ -212,6 +216,10 @@ source_set("ios_test_flutter_mrc") {
     "//third_party/rapidjson",
     "//third_party/skia",
   ]
+
+  if (shell_enable_vulkan) {
+    deps += [ "//flutter/vulkan" ]
+  }
 }
 
 shared_library("ios_test_flutter") {
@@ -251,6 +259,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/connection_collection_test.mm",
   ]
   deps = [
+    ":flutter_framework",
     ":flutter_framework_source",
     ":ios_gpu_configuration",
     ":ios_test_flutter_mrc",
@@ -318,10 +327,16 @@ action("copy_framework_info_plist") {
   sources = [ "framework/Info.plist" ]
   outputs = [ "$_flutter_framework_dir/Info.plist" ]
   args = [
+    "--source",
     rebase_path(sources[0]),
+    "--destination",
     rebase_path(outputs[0]),
-    "--bitcode=$enable_bitcode",
+    "--minversion",
+    ios_deployment_target,
   ]
+  if (enable_bitcode) {
+    args += [ "--bitcode" ]
+  }
 }
 
 copy("copy_framework_module_map") {

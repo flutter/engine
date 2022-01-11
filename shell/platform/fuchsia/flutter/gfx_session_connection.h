@@ -74,14 +74,13 @@ class GfxSessionConnection final {
       fuchsia::scenic::scheduling::FuturePresentationTimes future_info,
       fuchsia::scenic::scheduling::PresentationInfo& presentation_info);
 
-  GfxSessionConnection(
-      std::string debug_label,
-      inspect::Node inspect_node,
-      fidl::InterfaceHandle<fuchsia::ui::scenic::Session> session,
-      fml::closure session_error_callback,
-      on_frame_presented_event on_frame_presented_callback,
-      uint64_t max_frames_in_flight,
-      fml::TimeDelta vsync_offset);
+  GfxSessionConnection(std::string debug_label,
+                       inspect::Node inspect_node,
+                       fuchsia::ui::scenic::SessionHandle session,
+                       fml::closure session_error_callback,
+                       on_frame_presented_event on_frame_presented_callback,
+                       uint64_t max_frames_in_flight,
+                       fml::TimeDelta vsync_offset);
 
   ~GfxSessionConnection();
 
@@ -173,6 +172,11 @@ class GfxSessionConnection final {
   // The callback passed in from VsyncWaiter which eventually runs on the UI
   // thread.
   FireCallbackCallback fire_callback_;
+
+  // Generates WeakPtrs to the instance of the class so callbacks can verify
+  // that the instance is still in-scope before accessing state.
+  // This must be the last field in the class.
+  fml::WeakPtrFactory<GfxSessionConnection> weak_factory_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GfxSessionConnection);
 };

@@ -8,6 +8,7 @@
 #include <fuchsia/sys/cpp/fidl.h>
 #include <fuchsia/ui/input/cpp/fidl.h>
 #include <fuchsia/ui/input3/cpp/fidl.h>
+#include <fuchsia/ui/pointer/cpp/fidl.h>
 #include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <lib/fidl/cpp/binding.h>
 #include <lib/fit/function.h>
@@ -15,27 +16,29 @@
 #include <lib/ui/scenic/cpp/id.h>
 
 #include <array>
+#include <functional>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/platform/fuchsia/flutter/fuchsia_external_view_embedder.h"
 #include "flutter/shell/platform/fuchsia/flutter/keyboard.h"
 #include "flutter/shell/platform/fuchsia/flutter/vsync_waiter.h"
 #include "focus_delegate.h"
+#include "pointer_delegate.h"
 
 namespace flutter_runner {
 
 using OnEnableWireframe = fit::function<void(bool)>;
-using OnCreateView =
-    fit::function<void(int64_t, ViewCallback, ViewIdCallback, bool, bool)>;
+using ViewCallback = std::function<void()>;
 using OnUpdateView = fit::function<void(int64_t, SkRect, bool, bool)>;
-using OnDestroyView = fit::function<void(int64_t, ViewIdCallback)>;
 using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 using OnSemanticsNodeUpdate =
     fit::function<void(flutter::SemanticsNodeUpdates, float)>;
@@ -60,31 +63,28 @@ class PlatformView : public flutter::PlatformView,
                      private fuchsia::ui::input3::KeyboardListener,
                      private fuchsia::ui::input::InputMethodEditorClient {
  public:
-  PlatformView(flutter::PlatformView::Delegate& delegate,
-               std::string debug_label,
-               fuchsia::ui::views::ViewRef view_ref,
-               flutter::TaskRunners task_runners,
-               std::shared_ptr<sys::ServiceDirectory> runner_services,
-               fidl::InterfaceHandle<fuchsia::sys::ServiceProvider>
-                   parent_environment_service_provider,
-               fidl::InterfaceHandle<fuchsia::ui::views::ViewRefFocused> vrf,
-               fidl::InterfaceHandle<fuchsia::ui::views::Focuser> focuser,
-               fidl::InterfaceRequest<fuchsia::ui::input3::KeyboardListener>
-                   keyboard_listener,
-               OnEnableWireframe wireframe_enabled_callback,
-               OnCreateView on_create_view_callback,
-               OnUpdateView on_update_view_callback,
-               OnDestroyView on_destroy_view_callback,
-               OnCreateSurface on_create_surface_callback,
-               OnSemanticsNodeUpdate on_semantics_node_update_callback,
-               OnRequestAnnounce on_request_announce_callback,
-               OnShaderWarmup on_shader_warmup,
-               std::shared_ptr<flutter::ExternalViewEmbedder> view_embedder,
-               AwaitVsyncCallback await_vsync_callback,
-               AwaitVsyncForSecondaryCallbackCallback
-                   await_vsync_for_secondary_callback_callback);
+  PlatformView(
+      flutter::PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      fuchsia::ui::views::ViewRef view_ref,
+      std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder,
+      fuchsia::ui::input::ImeServiceHandle ime_service,
+      fuchsia::ui::input3::KeyboardHandle keyboard,
+      fuchsia::ui::pointer::TouchSourceHandle touch_source,
+      fuchsia::ui::pointer::MouseSourceHandle mouse_source,
+      fuchsia::ui::views::FocuserHandle focuser,
+      fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused,
+      OnEnableWireframe wireframe_enabled_callback,
+      OnUpdateView on_update_view_callback,
+      OnCreateSurface on_create_surface_callback,
+      OnSemanticsNodeUpdate on_semantics_node_update_callback,
+      OnRequestAnnounce on_request_announce_callback,
+      OnShaderWarmup on_shader_warmup,
+      AwaitVsyncCallback await_vsync_callback,
+      AwaitVsyncForSecondaryCallbackCallback
+          await_vsync_for_secondary_callback_callback);
 
-  virtual ~PlatformView();
+  ~PlatformView() override;
 
   // |flutter::PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
@@ -109,14 +109,6 @@ class PlatformView : public flutter::PlatformView,
 
   // |fuchsia::ui::input::InputMethodEditorClient|
   void OnAction(fuchsia::ui::input::InputMethodAction action) override;
-
-  // ViewHolder event handlers.  These return false if the ViewHolder
-  // corresponding to `view_holder_id` could not be found and the evnt was
-  // unhandled.
-  bool OnChildViewConnected(scenic::ResourceId view_holder_id);
-  bool OnChildViewDisconnected(scenic::ResourceId view_holder_id);
-  bool OnChildViewStateChanged(scenic::ResourceId view_holder_id,
-                               bool is_rendering);
 
   bool OnHandlePointerEvent(const fuchsia::ui::input::PointerEvent& pointer);
 
@@ -170,14 +162,14 @@ class PlatformView : public flutter::PlatformView,
       OnShaderWarmup on_shader_warmup,
       std::unique_ptr<flutter::PlatformMessage> message);
 
+  virtual void OnCreateView(ViewCallback on_view_created,
+                            int64_t view_id_raw,
+                            bool hit_testable,
+                            bool focusable) = 0;
+  virtual void OnDisposeView(int64_t view_id_raw) = 0;
+
   // Utility function for coordinate massaging.
   std::array<float, 2> ClampToViewSpace(const float x, const float y) const;
-
-  const std::string debug_label_;
-  // TODO(MI4-2490): remove once ViewRefControl is passed to Scenic and kept
-  // alive there
-  const fuchsia::ui::views::ViewRef view_ref_;
-  std::shared_ptr<FocusDelegate> focus_delegate_;
 
   // Logical size and origin, and logical->physical ratio.  These are optional
   // to provide an "unset" state during program startup, before Scenic has sent
@@ -190,29 +182,20 @@ class PlatformView : public flutter::PlatformView,
   std::optional<std::array<float, 2>> view_logical_origin_;
   std::optional<float> view_pixel_ratio_;
 
-  OnEnableWireframe wireframe_enabled_callback_;
-  OnCreateView on_create_view_callback_;
-  OnUpdateView on_update_view_callback_;
-  OnDestroyView on_destroy_view_callback_;
-  OnCreateSurface on_create_surface_callback_;
-
-  // Accessibility handlers:
-  OnSemanticsNodeUpdate on_semantics_node_update_callback_;
-  OnRequestAnnounce on_request_announce_callback_;
-
-  OnShaderWarmup on_shader_warmup_;
   std::shared_ptr<flutter::ExternalViewEmbedder> external_view_embedder_;
 
-  int current_text_input_client_ = 0;
+  std::shared_ptr<FocusDelegate> focus_delegate_;
+  std::shared_ptr<PointerDelegate> pointer_delegate_;
+
   fidl::Binding<fuchsia::ui::input::InputMethodEditorClient> ime_client_;
   fuchsia::ui::input::InputMethodEditorPtr ime_;
   fuchsia::ui::input::ImeServicePtr text_sync_service_;
+  int current_text_input_client_ = 0;
 
-  fuchsia::sys::ServiceProviderPtr parent_environment_service_provider_;
-
-  // child_view_ids_ maintains a persistent mapping from Scenic ResourceId's to
-  // flutter view ids, which are really zx_handle_t of ViewHolderToken.
-  std::unordered_map<scenic::ResourceId, zx_handle_t> child_view_ids_;
+  fidl::Binding<fuchsia::ui::input3::KeyboardListener>
+      keyboard_listener_binding_;
+  fuchsia::ui::input3::KeyboardPtr keyboard_;
+  Keyboard keyboard_translator_;
 
   // last_text_state_ is the last state of the text input as reported by the IME
   // or initialized by Flutter. We set it to null if Flutter doesn't want any
@@ -230,13 +213,12 @@ class PlatformView : public flutter::PlatformView,
   // https://github.com/flutter/flutter/issues/55966
   std::set<std::string /* channel */> unregistered_channels_;
 
-  // The registered binding for serving the keyboard listener server endpoint.
-  fidl::Binding<fuchsia::ui::input3::KeyboardListener>
-      keyboard_listener_binding_;
-
-  // The keyboard translation for fuchsia.ui.input3.KeyEvent.
-  Keyboard keyboard_;
-
+  OnEnableWireframe wireframe_enabled_callback_;
+  OnUpdateView on_update_view_callback_;
+  OnCreateSurface on_create_surface_callback_;
+  OnSemanticsNodeUpdate on_semantics_node_update_callback_;
+  OnRequestAnnounce on_request_announce_callback_;
+  OnShaderWarmup on_shader_warmup_;
   AwaitVsyncCallback await_vsync_callback_;
   AwaitVsyncForSecondaryCallbackCallback
       await_vsync_for_secondary_callback_callback_;

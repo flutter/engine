@@ -35,6 +35,7 @@ public class MethodChannel {
   private final BinaryMessenger messenger;
   private final String name;
   private final MethodCodec codec;
+  private final BinaryMessenger.TaskQueue taskQueue;
 
   /**
    * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
@@ -56,6 +57,25 @@ public class MethodChannel {
    * @param codec a {@link MessageCodec}.
    */
   public MethodChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
+    this(messenger, name, codec, null);
+  }
+
+  /**
+   * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
+   * specified name and {@link MethodCodec}.
+   *
+   * @param messenger a {@link BinaryMessenger}.
+   * @param name a channel name String.
+   * @param codec a {@link MessageCodec}.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null means execute on the platform thread. See also {@link
+   *     BinaryMessenger#makeBackgroundTaskQueue()}.
+   */
+  public MethodChannel(
+      BinaryMessenger messenger,
+      String name,
+      MethodCodec codec,
+      @Nullable BinaryMessenger.TaskQueue taskQueue) {
     if (BuildConfig.DEBUG) {
       if (messenger == null) {
         Log.e(TAG, "Parameter messenger must not be null.");
@@ -70,6 +90,7 @@ public class MethodChannel {
     this.messenger = messenger;
     this.name = name;
     this.codec = codec;
+    this.taskQueue = taskQueue;
   }
 
   /**
@@ -116,8 +137,16 @@ public class MethodChannel {
    */
   @UiThread
   public void setMethodCallHandler(final @Nullable MethodCallHandler handler) {
-    messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingMethodCallHandler(handler));
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMethodCallHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMethodCallHandler(handler));
+    }
   }
 
   /**
@@ -136,8 +165,8 @@ public class MethodChannel {
      *
      * <p>Handler implementations must submit a result for all incoming calls, by making a single
      * call on the given {@link Result} callback. Failure to do so will result in lingering Flutter
-     * result handlers. The result may be submitted asynchronously. Calls to unknown or
-     * unimplemented methods should be handled using {@link Result#notImplemented()}.
+     * result handlers. The result may be submitted asynchronously and on any thread. Calls to
+     * unknown or unimplemented methods should be handled using {@link Result#notImplemented()}.
      *
      * <p>Any uncaught exception thrown by this method will be caught by the channel implementation
      * and logged, and an error result will be sent back to Flutter.
@@ -172,7 +201,6 @@ public class MethodChannel {
      *     codec. For instance, if you are using {@link StandardMessageCodec} (default), please see
      *     its documentation on what types are supported.
      */
-    @UiThread
     void success(@Nullable Object result);
 
     /**
@@ -184,11 +212,9 @@ public class MethodChannel {
      *     supported by the codec. For instance, if you are using {@link StandardMessageCodec}
      *     (default), please see its documentation on what types are supported.
      */
-    @UiThread
     void error(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
 
     /** Handles a call to an unimplemented method. */
-    @UiThread
     void notImplemented();
   }
 

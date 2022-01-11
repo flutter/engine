@@ -210,13 +210,6 @@ class EmbeddedViewParams {
     final_bounding_rect_ = path.getBounds();
   }
 
-  EmbeddedViewParams(const EmbeddedViewParams& other) {
-    size_points_ = other.size_points_;
-    mutators_stack_ = other.mutators_stack_;
-    matrix_ = other.matrix_;
-    final_bounding_rect_ = other.final_bounding_rect_;
-  };
-
   // The transformation Matrix corresponding to the sum of all the
   // transformations in the platform view's mutator stack.
   const SkMatrix& transformMatrix() const { return matrix_; };
@@ -336,6 +329,11 @@ class ExternalViewEmbedder {
   // * See also |BegineFrame| and |EndFrame| for getting the
   // |RasterThreadMerger| instance.
   virtual bool SupportsDynamicThreadMerging();
+
+  // Called when the rasterizer is being torn down.
+  // This method provides a way to release resources associated with the current
+  // embedder.
+  virtual void Teardown();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

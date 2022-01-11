@@ -38,6 +38,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -133,7 +134,7 @@ public class FlutterEngine {
    *
    * <p>A new {@code FlutterEngine} will not display any UI until a {@link RenderSurface} is
    * registered. See {@link #getRenderer()} and {@link
-   * FlutterRenderer#startRenderingToSurface(Surface)}.
+   * FlutterRenderer#startRenderingToSurface(Surface, boolean)}.
    *
    * <p>A new {@code FlutterEngine} automatically attaches all plugins. See {@link #getPlugins()}.
    *
@@ -357,8 +358,7 @@ public class FlutterEngine {
 
   private void attachToJni() {
     Log.v(TAG, "Attaching to JNI.");
-    // TODO(mattcarroll): update native call to not take in "isBackgroundView"
-    flutterJNI.attachToNative(false);
+    flutterJNI.attachToNative();
 
     if (!isAttachedToJni()) {
       throw new RuntimeException("FlutterEngine failed to attach to its native Object reference.");
@@ -381,11 +381,17 @@ public class FlutterEngine {
    * @param dartEntrypoint specifies the {@link DartEntrypoint} the new engine should run. It
    *     doesn't need to be the same entrypoint as the current engine but must be built in the same
    *     AOT or snapshot.
+   * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
+   *     null, it will default to the "/" route.
+   * @param dartEntrypointArgs Arguments passed as a list of string to Dart's entrypoint function.
    * @return a new {@link io.flutter.embedding.engine.FlutterEngine}.
    */
   @NonNull
   /*package*/ FlutterEngine spawn(
-      @NonNull Context context, @NonNull DartEntrypoint dartEntrypoint) {
+      @NonNull Context context,
+      @NonNull DartEntrypoint dartEntrypoint,
+      @Nullable String initialRoute,
+      @Nullable List<String> dartEntrypointArgs) {
     if (!isAttachedToJni()) {
       throw new IllegalStateException(
           "Spawn can only be called on a fully constructed FlutterEngine");
@@ -393,7 +399,10 @@ public class FlutterEngine {
 
     FlutterJNI newFlutterJNI =
         flutterJNI.spawn(
-            dartEntrypoint.dartEntrypointFunctionName, dartEntrypoint.dartEntrypointLibrary);
+            dartEntrypoint.dartEntrypointFunctionName,
+            dartEntrypoint.dartEntrypointLibrary,
+            initialRoute,
+            dartEntrypointArgs);
     return new FlutterEngine(
         context, // Context.
         null, // FlutterLoader. A null value passed here causes the constructor to get it from the

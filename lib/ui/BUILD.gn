@@ -30,6 +30,8 @@ source_set("ui") {
     "painting/color_filter.h",
     "painting/engine_layer.cc",
     "painting/engine_layer.h",
+    "painting/fragment_program.cc",
+    "painting/fragment_program.h",
     "painting/fragment_shader.cc",
     "painting/fragment_shader.h",
     "painting/gradient.cc",
@@ -42,6 +44,7 @@ source_set("ui") {
     "painting/image_descriptor.h",
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
+    "painting/image_encoding_impl.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_generator.cc",
@@ -127,12 +130,15 @@ source_set("ui") {
 
   public_configs = [ "//flutter:config" ]
 
-  public_deps = [ "//flutter/third_party/txt" ]
+  public_deps = [
+    "//flutter/flow",
+    "//flutter/third_party/txt",
+  ]
 
   deps = [
     "//flutter/assets",
     "//flutter/common",
-    "//flutter/flow",
+    "//flutter/display_list",
     "//flutter/fml",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",

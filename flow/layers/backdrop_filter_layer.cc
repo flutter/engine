@@ -10,8 +10,6 @@ BackdropFilterLayer::BackdropFilterLayer(sk_sp<SkImageFilter> filter,
                                          SkBlendMode blend_mode)
     : filter_(std::move(filter)), blend_mode_(blend_mode) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const BackdropFilterLayer*>(old_layer);
@@ -26,23 +24,19 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   auto paint_bounds = context->GetCullRect();
   context->AddLayerBounds(paint_bounds);
 
-  // convert paint bounds and filter to screen coordinates
-  context->GetTransform().mapRect(&paint_bounds);
-  auto input_filter_bounds = paint_bounds.roundOut();
-  auto filter = filter_->makeWithLocalMatrix(context->GetTransform());
-
-  auto filter_bounds =  // in screen coordinates
-      filter->filterBounds(input_filter_bounds, SkMatrix::I(),
-                           SkImageFilter::kReverse_MapDirection);
-
-  context->AddReadbackRegion(filter_bounds);
+  if (filter_) {
+    context->GetTransform().mapRect(&paint_bounds);
+    auto input_filter_bounds = paint_bounds.roundOut();
+    auto filter_bounds =  // in screen coordinates
+        filter_->filterBounds(input_filter_bounds, context->GetTransform(),
+                              SkImageFilter::kReverse_MapDirection);
+    context->AddReadbackRegion(filter_bounds);
+  }
 
   DiffChildren(context, prev);
 
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void BackdropFilterLayer::Preroll(PrerollContext* context,
                                   const SkMatrix& matrix) {
@@ -62,7 +56,10 @@ void BackdropFilterLayer::Paint(PaintContext& context) const {
   paint.setBlendMode(blend_mode_);
   Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
       context,
-      SkCanvas::SaveLayerRec{&paint_bounds(), &paint, filter_.get(), 0});
+      SkCanvas::SaveLayerRec{&paint_bounds(), &paint, filter_.get(), 0},
+      // BackdropFilter should only happen on the leaf nodes canvas.
+      // See https:://flutter.dev/go/backdrop-filter-with-overlay-canvas
+      AutoSaveLayer::SaveMode::kLeafNodesCanvas);
   PaintChildren(context);
 }
 

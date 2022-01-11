@@ -6,24 +6,18 @@
 
 #include <sys/stat.h>
 
-#include <mutex>
 #include <sstream>
 #include <vector>
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
-#include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
-#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/lib/io/dart_io.h"
-#include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
 #include "flutter/runtime/dart_isolate.h"
-#include "flutter/runtime/dart_service_isolate.h"
 #include "flutter/runtime/dart_vm_initializer.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
@@ -33,7 +27,6 @@
 #include "third_party/tonic/dart_class_provider.h"
 #include "third_party/tonic/file_loader/file_loader.h"
 #include "third_party/tonic/logging/dart_error.h"
-#include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/typed_data/typed_list.h"
 
 namespace dart {
@@ -64,10 +57,7 @@ static const char* kDartLanguageArgs[] = {
     // clang-format on
 };
 
-// TODO(74520): Remove flag once isolate group work is completed (or add it to
-//              JIT mode).
-static const char* kDartPrecompilationArgs[] = {"--precompilation",
-                                                "--enable-isolate-groups"};
+static const char* kDartPrecompilationArgs[] = {"--precompilation"};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
@@ -97,11 +87,8 @@ static const char* kDartEndlessTraceBufferArgs[]{
     "--timeline_recorder=endless",
 };
 
-static const char* kDartSystraceTraceBufferArgs[]{
-    "--timeline_recorder=systrace",
-};
-
-static const char* kDartFuchsiaTraceArgs[] FML_ALLOW_UNUSED_TYPE = {
+// This is the same as --timeline_recorder=systrace.
+static const char* kDartSystraceTraceBufferArgs[] = {
     "--systrace_timeline",
 };
 
@@ -218,11 +205,25 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
   // the VM enables the same by default. In either case, we have some profiling
   // flags.
   if (enable_profiling) {
-    return {// This is the default. But just be explicit.
-            "--profiler",
-            // This instructs the profiler to walk C++ frames, and to include
-            // them in the profile.
-            "--profile-vm"};
+    return {
+      // This is the default. But just be explicit.
+      "--profiler",
+          // This instructs the profiler to walk C++ frames, and to include
+          // them in the profile.
+          "--profile-vm",
+#if OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+          // Set the profiler interrupt period to 500Hz instead of the
+          // default 1000Hz on 32-bit iOS devices to reduce average and worst
+          // case frame build times.
+          //
+          // Note: profile_period is time in microseconds between sampling
+          // events, not frequency. Frequency is calculated 1/period (or
+          // 1,000,000 / 2,000 -> 500Hz in this case).
+          "--profile_period=2000",
+#else
+          "--profile_period=1000",
+#endif  // OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+    };
   } else {
     return {"--no-profiler"};
   }
@@ -386,7 +387,8 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   }
 
 #if defined(OS_FUCHSIA)
-  PushBackAll(&args, kDartFuchsiaTraceArgs, fml::size(kDartFuchsiaTraceArgs));
+  PushBackAll(&args, kDartSystraceTraceBufferArgs,
+              fml::size(kDartSystraceTraceBufferArgs));
   PushBackAll(&args, kDartSystraceTraceStreamsArgs,
               fml::size(kDartSystraceTraceStreamsArgs));
 #else

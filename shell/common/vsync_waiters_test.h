@@ -49,11 +49,23 @@ class ConstantFiringVsyncWaiter : public VsyncWaiter {
   static constexpr fml::TimePoint frame_target_time =
       fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromSeconds(100));
 
-  ConstantFiringVsyncWaiter(TaskRunners task_runners)
+  explicit ConstantFiringVsyncWaiter(TaskRunners task_runners)
       : VsyncWaiter(std::move(task_runners)) {}
 
  protected:
   void AwaitVSync() override;
+};
+
+class TestRefreshRateReporter final : public VariableRefreshRateReporter {
+ public:
+  explicit TestRefreshRateReporter(double refresh_rate);
+  void UpdateRefreshRate(double refresh_rate);
+
+  // |RefreshRateReporter|
+  double GetRefreshRate() const override;
+
+ private:
+  double refresh_rate_;
 };
 
 }  // namespace testing

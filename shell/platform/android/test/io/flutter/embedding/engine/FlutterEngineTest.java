@@ -45,7 +45,7 @@ public class FlutterEngineTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     jniAttached = false;
     when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
     doAnswer(
@@ -57,7 +57,7 @@ public class FlutterEngineTest {
               }
             })
         .when(flutterJNI)
-        .attachToNative(false);
+        .attachToNative();
     GeneratedPluginRegistrant.clearRegisteredEngines();
   }
 
@@ -282,7 +282,7 @@ public class FlutterEngineTest {
             /*dartVmArgs=*/ new String[] {},
             /*automaticallyRegisterPlugins=*/ false);
 
-    verify(flutterJNI, never()).attachToNative(false);
+    verify(flutterJNI, never()).attachToNative();
   }
 
   @Test

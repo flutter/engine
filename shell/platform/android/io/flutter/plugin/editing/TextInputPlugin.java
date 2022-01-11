@@ -30,6 +30,7 @@ import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /** Android implementation of the text input plugin. */
@@ -43,7 +44,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @NonNull private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
   @Nullable private TextInputChannel.Configuration configuration;
   @Nullable private SparseArray<TextInputChannel.Configuration> mAutofillConfigurations;
-  @Nullable private ListenableEditingState mEditable;
+  @NonNull private ListenableEditingState mEditable;
   private boolean mRestartInputPending;
   @Nullable private InputConnection lastInputConnection;
   @NonNull private PlatformViewsController platformViewsController;
@@ -65,6 +66,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       @NonNull TextInputChannel textInputChannel,
       @NonNull PlatformViewsController platformViewsController) {
     mView = view;
+    // Create a default object.
+    mEditable = new ListenableEditingState(null, mView);
     mImm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       afm = view.getContext().getSystemService(AutofillManager.class);
@@ -217,9 +220,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     platformViewsController.detachTextInputPlugin();
     textInputChannel.setTextInputMethodHandler(null);
     notifyViewExited();
-    if (mEditable != null) {
-      mEditable.removeEditingStateListener(this);
-    }
+    mEditable.removeEditingStateListener(this);
     if (imeSyncCallback != null) {
       imeSyncCallback.remove();
     }
@@ -414,9 +415,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, client);
     }
 
-    if (mEditable != null) {
-      mEditable.removeEditingStateListener(this);
-    }
+    mEditable.removeEditingStateListener(this);
     mEditable =
         new ListenableEditingState(
             configuration.autofill != null ? configuration.autofill.editState : null, mView);
@@ -624,6 +623,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     final int selectionEnd = mEditable.getSelectionEnd();
     final int composingStart = mEditable.getComposingStart();
     final int composingEnd = mEditable.getComposingEnd();
+
+    final ArrayList<TextEditingDelta> batchTextEditingDeltas =
+        mEditable.extractBatchTextEditingDeltas();
     final boolean skipFrameworkUpdate =
         // The framework needs to send its editing state first.
         mLastKnownFrameworkTextEditingState == null
@@ -634,16 +636,25 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
                 && composingEnd == mLastKnownFrameworkTextEditingState.composingEnd);
     if (!skipFrameworkUpdate) {
       Log.v(TAG, "send EditingState to flutter: " + mEditable.toString());
-      textInputChannel.updateEditingState(
-          inputTarget.id,
-          mEditable.toString(),
-          selectionStart,
-          selectionEnd,
-          composingStart,
-          composingEnd);
+
+      if (configuration.enableDeltaModel) {
+        textInputChannel.updateEditingStateWithDeltas(inputTarget.id, batchTextEditingDeltas);
+        mEditable.clearBatchDeltas();
+      } else {
+        textInputChannel.updateEditingState(
+            inputTarget.id,
+            mEditable.toString(),
+            selectionStart,
+            selectionEnd,
+            composingStart,
+            composingEnd);
+      }
       mLastKnownFrameworkTextEditingState =
           new TextEditState(
               mEditable.toString(), selectionStart, selectionEnd, composingStart, composingEnd);
+    } else {
+      // Don't accumulate deltas if they are not sent to the framework.
+      mEditable.clearBatchDeltas();
     }
   }
 
@@ -817,7 +828,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         editingValues.put(autofill.uniqueIdentifier, newState);
       }
     }
-
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
   // -------- End: Autofill -------

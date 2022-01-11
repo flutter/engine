@@ -138,8 +138,11 @@ TEST(RasterizerTest,
       std::make_shared<MockExternalViewEmbedder>();
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -199,8 +202,10 @@ TEST(
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
   EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
       .WillRepeatedly(Return(true));
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -260,8 +265,11 @@ TEST(
       std::make_shared<MockExternalViewEmbedder>();
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
@@ -290,6 +298,80 @@ TEST(
   EXPECT_TRUE(result);
   auto no_discard = [](LayerTree&) { return false; };
   rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+}
+
+TEST(RasterizerTest,
+     drawLastLayerTreeWithThreadsMergedExternalViewEmbedderAndEndFrameCalled) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  TaskRunners task_runners("test",
+                           fml::MessageLoop::GetCurrent().GetTaskRunner(),
+                           fml::MessageLoop::GetCurrent().GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+
+  MockDelegate delegate;
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  EXPECT_CALL(delegate, OnFrameRasterized(_));
+
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<MockSurface>();
+
+  std::shared_ptr<MockExternalViewEmbedder> external_view_embedder =
+      std::make_shared<MockExternalViewEmbedder>();
+  rasterizer->SetExternalViewEmbedder(external_view_embedder);
+
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
+  auto surface_frame1 = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  auto surface_frame2 = std::make_unique<SurfaceFrame>(
+      /*surface=*/nullptr, framebuffer_info,
+      /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
+      .WillRepeatedly(Return(true));
+  // Prepare two frames for Draw() and DrawLastLayerTree().
+  EXPECT_CALL(*surface, AcquireFrame(SkISize()))
+      .WillOnce(Return(ByMove(std::move(surface_frame1))))
+      .WillOnce(Return(ByMove(std::move(surface_frame2))));
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+  EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
+      .WillRepeatedly(Return(true));
+
+  EXPECT_CALL(*external_view_embedder,
+              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
+                         /*device_pixel_ratio=*/2.0,
+                         /*raster_thread_merger=*/_))
+      .Times(2);
+  EXPECT_CALL(*external_view_embedder, SubmitFrame).Times(2);
+  EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
+                                                /*raster_thread_merger=*/_))
+      .Times(2);
+
+  rasterizer->Setup(std::move(surface));
+
+  auto pipeline = std::make_shared<Pipeline<LayerTree>>(/*depth=*/10);
+  auto layer_tree = std::make_unique<LayerTree>(/*frame_size=*/SkISize(),
+                                                /*device_pixel_ratio=*/2.0f);
+  bool result = pipeline->Produce().Complete(std::move(layer_tree));
+  EXPECT_TRUE(result);
+  auto no_discard = [](LayerTree&) { return false; };
+
+  // The Draw() will respectively call BeginFrame(), SubmitFrame() and
+  // EndFrame() one time.
+  rasterizer->Draw(CreateFinishedBuildRecorder(), pipeline, no_discard);
+
+  // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
+  // and EndFrame() one more time, totally 2 times.
+  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
@@ -349,8 +431,10 @@ TEST(RasterizerTest,
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(false);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -397,8 +481,11 @@ TEST(
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(true);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
   ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -447,8 +534,11 @@ TEST(
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(false);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())
@@ -496,8 +586,11 @@ TEST(
   auto is_gpu_disabled_sync_switch =
       std::make_shared<const fml::SyncSwitch>(true);
 
+  SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
+
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*supports_readback=*/true,
+      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, SkCanvas*) { return true; });
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
   EXPECT_CALL(delegate, GetIsGpuDisabledSyncSwitch())

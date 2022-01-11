@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
-
 
 // @dart = 2.12
 part of dart.ui;
@@ -28,6 +26,9 @@ void _updateWindowMetrics(
   double systemGestureInsetBottom,
   double systemGestureInsetLeft,
   double physicalTouchSlop,
+  List<double> displayFeaturesBounds,
+  List<int> displayFeaturesType,
+  List<int> displayFeaturesState,
 ) {
   PlatformDispatcher.instance._updateWindowMetrics(
     id,
@@ -47,84 +48,69 @@ void _updateWindowMetrics(
     systemGestureInsetBottom,
     systemGestureInsetLeft,
     physicalTouchSlop,
+    displayFeaturesBounds,
+    displayFeaturesType,
+    displayFeaturesState,
   );
 }
 
 typedef _LocaleClosure = String Function();
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 _LocaleClosure? _getLocaleClosure() => PlatformDispatcher.instance._localeClosure;
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _updateLocales(List<String> locales) {
   PlatformDispatcher.instance._updateLocales(locales);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _updateUserSettingsData(String jsonData) {
   PlatformDispatcher.instance._updateUserSettingsData(jsonData);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _updateLifecycleState(String state) {
   PlatformDispatcher.instance._updateLifecycleState(state);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _updateSemanticsEnabled(bool enabled) {
   PlatformDispatcher.instance._updateSemanticsEnabled(enabled);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _updateAccessibilityFeatures(int values) {
   PlatformDispatcher.instance._updateAccessibilityFeatures(values);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _dispatchPlatformMessage(String name, ByteData? data, int responseId) {
   PlatformDispatcher.instance._dispatchPlatformMessage(name, data, responseId);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _dispatchPointerDataPacket(ByteData packet) {
   PlatformDispatcher.instance._dispatchPointerDataPacket(packet);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
-void _dispatchKeyData(ByteData packet, int responseId) {
-  PlatformDispatcher.instance._dispatchKeyData(packet, responseId);
-}
-
-@pragma('vm:entry-point')
-// ignore: unused_element
 void _dispatchSemanticsAction(int id, int action, ByteData? args) {
   PlatformDispatcher.instance._dispatchSemanticsAction(id, action, args);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _beginFrame(int microseconds, int frameNumber) {
   PlatformDispatcher.instance._beginFrame(microseconds);
   PlatformDispatcher.instance._updateFrameData(frameNumber);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _reportTimings(List<int> timings) {
   PlatformDispatcher.instance._reportTimings(timings);
 }
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _drawFrame() {
   PlatformDispatcher.instance._drawFrame();
 }
@@ -133,7 +119,6 @@ void _drawFrame() {
 typedef _ListStringArgFunction(List<String> args);
 
 @pragma('vm:entry-point')
-// ignore: unused_element
 void _runMainZoned(Function startMainIsolateFunction,
                    Function userMainFunction,
                    List<String> args) {
@@ -246,21 +231,22 @@ bool _isLoopback(String host) {
 /// Zone override with 'flutter.io.allow_http' takes first priority.
 /// If zone override is not provided, engine setting is checked.
 @pragma('vm:entry-point')
-// ignore: unused_element
 void Function(Uri) _getHttpConnectionHookClosure(bool mayInsecurelyConnectToAllDomains) {
   return (Uri uri) {
-      if (_isLoopback(uri.host)) {
-        return;
-      }
       final dynamic zoneOverride = Zone.current[#flutter.io.allow_http];
       if (zoneOverride == true) {
         return;
       }
       if (zoneOverride == false && uri.isScheme('http')) {
-        // Going to throw
+        // Going to _isLoopback check before throwing
       } else if (mayInsecurelyConnectToAllDomains || uri.isScheme('https')) {
         // In absence of zone override, if engine setting allows the connection
         // or if connection is to `https`, allow the connection.
+        return;
+      }
+      // Loopback connections are always allowed
+      // Check at last resort to avoid debug annoyance of try/on ArgumentError
+      if (_isLoopback(uri.host)) {
         return;
       }
       throw UnsupportedError(

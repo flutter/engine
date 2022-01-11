@@ -105,7 +105,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @param[in]  delegate                   The rasterizer delegate.
   ///
-  Rasterizer(Delegate& delegate);
+  explicit Rasterizer(Delegate& delegate);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
@@ -230,13 +230,13 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @param[in]  pipeline  The layer tree pipeline to take the next layer tree
   ///                       to render from.
-  /// @param[in]  discardCallback if specified and returns true, the layer tree
+  /// @param[in]  discard_callback if specified and returns true, the layer tree
   ///                             is discarded instead of being rendered
   ///
   RasterStatus Draw(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-      LayerTreeDiscardCallback discardCallback = NoDiscard);
+      LayerTreeDiscardCallback discard_callback = NoDiscard);
 
   //----------------------------------------------------------------------------
   /// @brief      The type of the screenshot to obtain of the previously
@@ -448,22 +448,6 @@ class Rasterizer final : public SnapshotDelegate {
   void DisableThreadMergerIfNeeded();
 
  private:
-  Delegate& delegate_;
-  std::unique_ptr<Surface> surface_;
-  std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
-  std::unique_ptr<flutter::CompositorContext> compositor_context_;
-  // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
-  // Set when we need attempt to rasterize the layer tree again. This layer_tree
-  // has not successfully rasterized. This can happen due to the change in the
-  // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
-  fml::closure next_frame_callback_;
-  bool user_override_resource_cache_bytes_;
-  std::optional<size_t> max_cache_bytes_;
-  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
-  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,
@@ -499,7 +483,26 @@ class Rasterizer final : public SnapshotDelegate {
   void FireNextFrameCallbackIfPresent();
 
   static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
+  static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
+  Delegate& delegate_;
+  std::unique_ptr<Surface> surface_;
+  std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
+  std::unique_ptr<flutter::CompositorContext> compositor_context_;
+  // This is the last successfully rasterized layer tree.
+  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
+  // Set when we need attempt to rasterize the layer tree again. This layer_tree
+  // has not successfully rasterized. This can happen due to the change in the
+  // thread configuration. This will be inserted to the front of the pipeline.
+  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  fml::closure next_frame_callback_;
+  bool user_override_resource_cache_bytes_;
+  std::optional<size_t> max_cache_bytes_;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
+  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
+
+  // WeakPtrFactory must be the last member.
+  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   FML_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
 };
 
