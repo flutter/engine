@@ -11,14 +11,14 @@ namespace flutter {
 namespace testing {
 
 TEST(VariableRefreshRateDisplayTest, ReportCorrectInitialRefreshRate) {
-  auto refresh_rate_reporter = std::make_shared<TestRefreshRateReporter>(60);
+  auto refresh_rate_reporter = std::make_unique<TestRefreshRateReporter>(60);
   auto display =
       flutter::VariableRefreshRateDisplay(*refresh_rate_reporter.get());
   ASSERT_EQ(display.GetRefreshRate(), 60);
 }
 
 TEST(VariableRefreshRateDisplayTest, ReportCorrectRefreshRateWhenUpdated) {
-  auto refresh_rate_reporter = std::make_shared<TestRefreshRateReporter>(60);
+  auto refresh_rate_reporter = std::make_unique<TestRefreshRateReporter>(60);
   auto display =
       flutter::VariableRefreshRateDisplay(*refresh_rate_reporter.get());
   refresh_rate_reporter->UpdateRefreshRate(30);
