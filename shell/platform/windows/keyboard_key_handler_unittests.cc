@@ -203,14 +203,6 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
-  EXPECT_EQ(handler.HasRedispatched(), true);
-
-  // Resolve the event
-  EXPECT_EQ(handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false,
-                                 false),
-            false);
-
-  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
   key_event_response = kNoResponse;
 }

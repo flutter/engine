@@ -161,14 +161,10 @@ void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
       std::cerr << " (character " << character << ")";
     }
     std::cerr << std::endl;
-    ;
   }
 }
 
 void KeyboardManagerWin32::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
-#ifdef WINUWP
-  return;
-#else
   DispatchEvent(*event);
   if (pending_redispatches_.size() > kMaxPendingEvents) {
     std::cerr
@@ -177,7 +173,6 @@ void KeyboardManagerWin32::RedispatchEvent(std::unique_ptr<PendingEvent> event) 
         << "framework. Are responses being sent?" << std::endl;
   }
   pending_redispatches_.push_back(std::move(event));
-#endif
 }
 
 size_t KeyboardManagerWin32::RedispatchedCount() {

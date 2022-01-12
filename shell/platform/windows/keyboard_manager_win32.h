@@ -28,6 +28,8 @@ namespace flutter {
 // |FlutterWindowsView|'s.
 class KeyboardManagerWin32 {
  public:
+  using KeyEventCallback = std::function<void(bool)>;
+
   // Define how the keyboard manager accesses Win32 system calls (to allow
   // mocking) and sends the results of |OnKey| and |OnText|.
   //
