@@ -19,7 +19,7 @@ static constexpr int kHandledScanCode2 = 22;
 static constexpr int kUnhandledScanCode = 21;
 
 constexpr uint64_t kScanCodeShiftRight = 0x36;
-constexpr uint64_t kScanCodeControlLeft = 0x1D;
+constexpr uint64_t kScanCodeControl = 0x1D;
 constexpr uint64_t kScanCodeAltLeft = 0x38;
 
 typedef std::function<void(bool)> Callback;
@@ -467,7 +467,7 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
 
   // The key down event causes a ControlLeft down and a AltRight (extended
   // AltLeft) down.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             true);
   EXPECT_EQ(handler.KeyboardHook(VK_RMENU, kScanCodeAltLeft, WM_KEYDOWN, 0,
@@ -475,18 +475,18 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
             true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
-  EXPECT_EQ(hook_history.front().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.front().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.front().was_down, false);
   EXPECT_EQ(hook_history.back().scancode, kScanCodeAltLeft);
   EXPECT_EQ(hook_history.back().was_down, false);
 
   hook_history.front().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
   hook_history.back().callback(false);
   EXPECT_EQ(redispatch_scancode, kScanCodeAltLeft);
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             false);
   EXPECT_EQ(handler.KeyboardHook(VK_RMENU, kScanCodeAltLeft, WM_KEYDOWN, 0,
@@ -506,21 +506,21 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   EXPECT_EQ(hook_history.front().was_down, true);
 
   // A ControlLeft key up is synthesized.
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             true);
 
-  EXPECT_EQ(hook_history.back().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.back().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.back().was_down, true);
 
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, kScanCodeAltLeft);
   hook_history.back().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             false);
   EXPECT_EQ(
@@ -537,21 +537,21 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   // than "tapping AltGr".
 
   // Key down ControlLeft.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 1);
-  EXPECT_EQ(hook_history.front().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.front().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.front().was_down, false);
 
   hook_history.front().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
   hook_history.clear();
   redispatch_scancode = 0;
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             false);
 
@@ -584,21 +584,21 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   EXPECT_EQ(hook_history.front().was_down, true);
 
   // A ControlLeft key up is synthesized.
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             true);
 
-  EXPECT_EQ(hook_history.back().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.back().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.back().was_down, true);
 
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, kScanCodeAltLeft);
   hook_history.back().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             false);
   EXPECT_EQ(
@@ -611,12 +611,12 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   // Key up ControlLeft should be dispatched to delegates, but will be properly
   // handled by delegates' logic.
 
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 1);
-  EXPECT_EQ(hook_history.front().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.front().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.front().was_down, true);
 
   hook_history.front().callback(true);
@@ -632,7 +632,7 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   // (repeat).
 
   // Key down AltRight.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             true);
   EXPECT_EQ(handler.KeyboardHook(VK_RMENU, kScanCodeAltLeft, WM_KEYDOWN, 0,
@@ -640,18 +640,18 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
             true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
-  EXPECT_EQ(hook_history.front().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.front().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.front().was_down, false);
   EXPECT_EQ(hook_history.back().scancode, kScanCodeAltLeft);
   EXPECT_EQ(hook_history.back().was_down, false);
 
   hook_history.front().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
   hook_history.back().callback(false);
   EXPECT_EQ(redispatch_scancode, kScanCodeAltLeft);
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             false);
   EXPECT_EQ(handler.KeyboardHook(VK_RMENU, kScanCodeAltLeft, WM_KEYDOWN, 0,
@@ -663,7 +663,7 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   hook_history.clear();
 
   // Another key down AltRight.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, true),
             true);
   EXPECT_EQ(handler.KeyboardHook(VK_RMENU, kScanCodeAltLeft, WM_KEYDOWN, 0,
@@ -671,18 +671,18 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
             true);
   EXPECT_EQ(redispatch_scancode, 0);
   EXPECT_EQ(hook_history.size(), 2);
-  EXPECT_EQ(hook_history.front().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.front().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.front().was_down, true);
   EXPECT_EQ(hook_history.back().scancode, kScanCodeAltLeft);
   EXPECT_EQ(hook_history.back().was_down, true);
 
   hook_history.front().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
   hook_history.back().callback(false);
   EXPECT_EQ(redispatch_scancode, kScanCodeAltLeft);
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYDOWN,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYDOWN,
                                  0, false, false),
             false);
   EXPECT_EQ(handler.KeyboardHook(VK_RMENU, kScanCodeAltLeft, WM_KEYDOWN, 0,
@@ -702,21 +702,21 @@ TEST(KeyboardKeyHandlerTest, AltGr) {
   EXPECT_EQ(hook_history.front().was_down, true);
 
   // A ControlLeft key up is synthesized.
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             true);
 
-  EXPECT_EQ(hook_history.back().scancode, kScanCodeControlLeft);
+  EXPECT_EQ(hook_history.back().scancode, kScanCodeControl);
   EXPECT_EQ(hook_history.back().was_down, true);
 
   hook_history.front().callback(false);
   EXPECT_EQ(redispatch_scancode, kScanCodeAltLeft);
   hook_history.back().callback(false);
-  EXPECT_EQ(redispatch_scancode, kScanCodeControlLeft);
+  EXPECT_EQ(redispatch_scancode, kScanCodeControl);
 
   // Resolve redispatches.
-  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControlLeft, WM_KEYUP, 0,
+  EXPECT_EQ(handler.KeyboardHook(VK_LCONTROL, kScanCodeControl, WM_KEYUP, 0,
                                  false, true),
             false);
   EXPECT_EQ(
