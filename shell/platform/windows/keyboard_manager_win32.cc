@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 #include <assert.h>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include "keyboard_manager_win32.h"
@@ -153,7 +153,8 @@ void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
           },
   };
 
-  UINT accepted = window_delegate_->Win32DispatchEvent(1, &input_event, sizeof(input_event));
+  UINT accepted = window_delegate_->Win32DispatchEvent(1, &input_event,
+                                                       sizeof(input_event));
   if (accepted != 1) {
     std::cerr << "Unable to synthesize event for keyboard event with scancode "
               << event.scancode;
@@ -164,7 +165,8 @@ void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
   }
 }
 
-void KeyboardManagerWin32::RedispatchEvent(std::unique_ptr<PendingEvent> event) {
+void KeyboardManagerWin32::RedispatchEvent(
+    std::unique_ptr<PendingEvent> event) {
   DispatchEvent(*event);
   if (pending_redispatches_.size() > kMaxPendingEvents) {
     std::cerr
@@ -175,7 +177,8 @@ void KeyboardManagerWin32::RedispatchEvent(std::unique_ptr<PendingEvent> event) 
   pending_redispatches_.push_back(std::move(event));
 }
 
-bool KeyboardManagerWin32::RemoveRedispatchedEvent(const PendingEvent& incoming) {
+bool KeyboardManagerWin32::RemoveRedispatchedEvent(
+    const PendingEvent& incoming) {
   for (auto iter = pending_redispatches_.begin();
        iter != pending_redispatches_.end(); ++iter) {
     if ((*iter)->hash == incoming.hash) {
@@ -187,12 +190,12 @@ bool KeyboardManagerWin32::RemoveRedispatchedEvent(const PendingEvent& incoming)
 }
 
 bool KeyboardManagerWin32::OnKey(int key,
-                    int scancode,
-                    int action,
-                    char32_t character,
-                    bool extended,
-                    bool was_down,
-                    OnKeyCallback callback) {
+                                 int scancode,
+                                 int action,
+                                 char32_t character,
+                                 bool extended,
+                                 bool was_down,
+                                 OnKeyCallback callback) {
   std::unique_ptr<PendingEvent> incoming =
       std::make_unique<PendingEvent>(PendingEvent{
           .key = static_cast<uint32_t>(key),
@@ -233,11 +236,12 @@ bool KeyboardManagerWin32::OnKey(int key,
     }
   }
 
-  window_delegate_->OnKey(
-      key, scancode, action, character, extended, was_down,
-      [this, event = incoming.release(), callback = std::move(callback)](bool handled) {
-        callback(std::unique_ptr<PendingEvent>(event), handled);
-      });
+  window_delegate_->OnKey(key, scancode, action, character, extended, was_down,
+                          [this, event = incoming.release(),
+                           callback = std::move(callback)](bool handled) {
+                            callback(std::unique_ptr<PendingEvent>(event),
+                                     handled);
+                          });
   return true;
 }
 
@@ -257,9 +261,9 @@ void KeyboardManagerWin32::HandleOnKeyResult(
   // |SendInput|.
   const bool is_syskey =
       event->action == WM_SYSKEYDOWN || event->action == WM_SYSKEYUP;
-  const bool real_handled =
-      handled || _IsDeadKey(event->character) || is_syskey
-      || IsKeyDownShiftRight(event->key, event->was_down);
+  const bool real_handled = handled || _IsDeadKey(event->character) ||
+                            is_syskey ||
+                            IsKeyDownShiftRight(event->key, event->was_down);
 
   // For handled events, that's all.
   if (real_handled) {
@@ -337,13 +341,14 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
         } else {
           event_character = IsPrintable(code_point) ? code_point : 0;
         }
-        bool is_new_event = OnKey(
-            keycode_for_char_message_, scancode,
-            message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN, event_character,
-            extended, was_down,
-            [this, message, text](std::unique_ptr<PendingEvent> event, bool handled) {
-              HandleOnKeyResult(std::move(event), handled, message, text);
-            });
+        bool is_new_event =
+            OnKey(keycode_for_char_message_, scancode,
+                  message == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN,
+                  event_character, extended, was_down,
+                  [this, message, text](std::unique_ptr<PendingEvent> event,
+                                        bool handled) {
+                    HandleOnKeyResult(std::move(event), handled, message, text);
+                  });
         if (!is_new_event) {
           break;
         }
@@ -407,12 +412,11 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
       keyCode = ResolveKeyCode(keyCode, extended, scancode);
       const bool was_down = lparam & 0x40000000;
       bool is_syskey = message == WM_SYSKEYDOWN || message == WM_SYSKEYUP;
-      bool is_new_event =
-          OnKey(keyCode, scancode, message, 0, extended, was_down,
-                [this](std::unique_ptr<PendingEvent> event,
-                                      bool handled) {
-                  HandleOnKeyResult(std::move(event), handled, 0, std::u16string());
-                });
+      bool is_new_event = OnKey(
+          keyCode, scancode, message, 0, extended, was_down,
+          [this](std::unique_ptr<PendingEvent> event, bool handled) {
+            HandleOnKeyResult(std::move(event), handled, 0, std::u16string());
+          });
       if (!is_new_event) {
         break;
       }

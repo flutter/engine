@@ -552,8 +552,8 @@ uint32_t WindowWin32::Win32MapVkToChar(uint32_t virtual_key) {
 }
 
 UINT WindowWin32::Win32DispatchEvent(UINT cInputs,
-                                LPINPUT pInputs,
-                                int cbSize) {
+                                     LPINPUT pInputs,
+                                     int cbSize) {
   return ::SendInput(cInputs, pInputs, cbSize);
 }
 

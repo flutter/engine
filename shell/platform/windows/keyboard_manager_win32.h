@@ -105,7 +105,8 @@ class KeyboardManagerWin32 {
     uint64_t hash;
   };
 
-  using OnKeyCallback = std::function<void(std::unique_ptr<PendingEvent>, bool)>;
+  using OnKeyCallback =
+      std::function<void(std::unique_ptr<PendingEvent>, bool)>;
 
   // Returns true if it's a new event, or false if it's a redispatched event.
   bool OnKey(int key,

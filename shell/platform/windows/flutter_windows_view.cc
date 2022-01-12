@@ -262,8 +262,8 @@ void FlutterWindowsView::InitializeKeyboard() {
 #else
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
 #endif
-  keyboard_key_handler_ = std::move(CreateKeyboardKeyHandler(
-      internal_plugin_messenger, get_key_state));
+  keyboard_key_handler_ = std::move(
+      CreateKeyboardKeyHandler(internal_plugin_messenger, get_key_state));
   text_input_plugin_ =
       std::move(CreateTextInputPlugin(internal_plugin_messenger));
 }
