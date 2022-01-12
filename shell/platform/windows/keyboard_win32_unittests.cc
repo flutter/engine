@@ -352,6 +352,8 @@ constexpr uint64_t kScanCodeDigit6 = 0x07;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
 constexpr uint64_t kScanCodeControl = 0x1d;
+constexpr uint64_t kScanCodeMetaLeft = 0x5b;
+constexpr uint64_t kScanCodeMetaRight = 0x5c;
 constexpr uint64_t kScanCodeAlt = 0x38;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 constexpr uint64_t kScanCodeShiftRight = 0x36;
@@ -750,6 +752,82 @@ TEST(KeyboardTest, AltRightUnhandled) {
 
   // Sys events are not redispatched.
   EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, MetaLeftUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press MetaLeft
+  tester.SetKeyState(VK_LWIN, true, false);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_LWIN, kScanCodeMetaLeft, kExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalMetaLeft,
+                       kLogicalMetaLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release MetaLeft
+  tester.SetKeyState(VK_LWIN, false, true);
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_LWIN, kScanCodeMetaLeft, kExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaLeft,
+                       kLogicalMetaLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, MetaRightUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press MetaRight
+  tester.SetKeyState(VK_RWIN, true, false);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_RWIN, kScanCodeMetaRight, kExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalMetaRight,
+                       kLogicalMetaRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release MetaRight
+  tester.SetKeyState(VK_RWIN, false, true);
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_RWIN, kScanCodeMetaRight, kExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaRight,
+                       kLogicalMetaRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 }
