@@ -2,6 +2,7 @@ package io.flutter.embedding.android;
 
 import android.util.LongSparseArray;
 import android.view.MotionEvent;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicLong;

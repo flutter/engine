@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.platform;
 
+import androidx.annotation.NonNull;
+
 /**
  * Registry for platform view factories.
  *

@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.systemchannels;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;

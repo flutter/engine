@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.editing;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import org.json.JSONException;
