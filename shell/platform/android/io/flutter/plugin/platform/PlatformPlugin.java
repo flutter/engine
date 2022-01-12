@@ -270,8 +270,7 @@ public class PlatformPlugin {
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
       WindowCompat.setDecorFitsSystemWindows(window, false);
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
       // Available starting at SDK 20
       // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
