@@ -1552,10 +1552,10 @@ class TextStyle {
     _locale,
     _background,
     _foreground,
-    Object.hashAll(_shadows ?? const <Object?>[]),
+    _shadows == null ? null : Object.hashAll(_shadows!),
     _decorationThickness,
-    Object.hashAll(_fontFeatures ?? const <Object?>[]),
-    Object.hashAll(_fontVariations ?? const <Object?>[]),
+    _fontFeatures == null ? null : Object.hashAll(_fontFeatures!),
+    _fontVariations == null ? null : Object.hashAll(_fontVariations!),
   );
 
   @override

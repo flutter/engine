@@ -78,8 +78,8 @@ class TextHeightStyle {
     fontFamily,
     fontSize,
     height,
-    Object.hashAll(fontFeatures ?? const <Object?>[]),
-    Object.hashAll(fontVariations ?? const <Object?>[]),
+    fontFeatures == null ? null : Object.hashAll(fontFeatures!),
+    fontVariations == null ? null : Object.hashAll(fontVariations!),
   );
 }
 
