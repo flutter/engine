@@ -248,7 +248,8 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
-      // Available starting at SDK 20
+      // Available starting at SDK 20, due to the backwards compatibility provided by the
+      // WindowInsetsControllerCompat class for setting the behavior of system bars.
       // Should not show overlays, tap to reveal overlays, needs onChange callback
       // When the overlays come in on tap, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
@@ -260,7 +261,8 @@ public class PlatformPlugin {
       WindowCompat.setDecorFitsSystemWindows(window, false);
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at SDK 20
+      // Available starting at SDK 20, due to the backwards compatibility provided by the
+      // WindowInsetsControllerCompat class for setting the behavior of system bars.
       // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
       // When the overlays come in on swipe, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
@@ -272,7 +274,8 @@ public class PlatformPlugin {
       WindowCompat.setDecorFitsSystemWindows(window, false);
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
-      // Available starting at SDK 20
+      // Available starting at SDK 20, due to the backwards compatibility provided by the
+      // WindowInsetsControllerCompat class for setting the behavior of system bars.
       // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
@@ -281,9 +284,11 @@ public class PlatformPlugin {
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
       WindowCompat.setDecorFitsSystemWindows(window, false);
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
+        && Build.VERSION.SDK_INT >= 29) {
       // EDGE TO EDGE
-      // Available starting at SDK 16
+      // Available starting at SDK 29. See issue for context:
+      // https://github.com/flutter/flutter/issues/89774.
       // Will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
