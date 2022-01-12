@@ -245,11 +245,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           View view = vdController.getView();
           if (view == null) {
             throw new IllegalStateException(
-                    "Platform view of type  " + request.viewType + " with id: " + request.viewId)
-                + " cannot be null at this time";
+                "Platform view of type  "
+                    + request.viewType
+                    + " with id: "
+                    + request.viewId
+                    + " cannot be null at this time");
           }
-          platformView.setLayoutDirection(request.direction);
-          contextToPlatformView.put(platformView.getContext(), platformView);
+          view.setLayoutDirection(request.direction);
+          contextToPlatformView.put(view.getContext(), view);
 
           // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
 

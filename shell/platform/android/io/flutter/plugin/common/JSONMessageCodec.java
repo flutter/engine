@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.common;
 
+import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 import org.json.JSONException;
 import org.json.JSONObject;

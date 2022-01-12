@@ -124,7 +124,7 @@ public class KeyboardManager {
       boolean isCalled = false;
 
       @Override
-      public void onKeyEventHandled(Boolean canHandleEvent) {
+      public void onKeyEventHandled(boolean canHandleEvent) {
         if (isCalled) {
           throw new IllegalStateException(
               "The onKeyEventHandledCallback should be called exactly once.");
@@ -142,7 +142,7 @@ public class KeyboardManager {
       this.keyEvent = keyEvent;
     }
 
-    @NonNull final KeyEvent keyEvent;
+    final KeyEvent keyEvent;
     int unrepliedCount = responders.length;
     boolean isEventHandled = false;
 
