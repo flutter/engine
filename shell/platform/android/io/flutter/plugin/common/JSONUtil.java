@@ -17,7 +17,8 @@ public class JSONUtil {
    * Convert the Json java representation to Java objects. Particularly used for converting
    * JSONArray and JSONObject to Lists and Maps.
    */
-  public static Object unwrap(Object o) {
+  @Nullable
+  public static Object unwrap(@Nullable Object o) {
     if (JSONObject.NULL.equals(o) || o == null) {
       return null;
     }
@@ -57,7 +58,8 @@ public class JSONUtil {
   }
 
   /** Backport of {@link JSONObject#wrap(Object)} for use on pre-KitKat systems. */
-  public static Object wrap(Object o) {
+  @Nullable
+  public static Object wrap(@Nullable Object o) {
     if (o == null) {
       return JSONObject.NULL;
     }

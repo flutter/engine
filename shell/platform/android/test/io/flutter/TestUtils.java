@@ -29,7 +29,7 @@ public class TestUtils {
     }
   }
 
-  public static void setLegacyLocale(Configuration config, Locale locale) {
+  public static void setLegacyLocale(@NonNull Configuration config, @NonNull Locale locale) {
     try {
       Field field = config.getClass().getField("locale");
       field.setAccessible(true);

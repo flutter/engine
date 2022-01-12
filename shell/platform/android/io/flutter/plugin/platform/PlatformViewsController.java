@@ -159,7 +159,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final FlutterMutatorView parentView = platformViewParent.get(viewId);
           if (platformView != null) {
             if (parentView != null) {
-              parentView.removeView(platformView.getView());
+              final View view = platformView.getView();
+              if (view != null) {
+                parentView.removeView(view);
+              }
             }
             platformViews.remove(viewId);
             platformView.dispose();
@@ -239,7 +242,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
 
           vdControllers.put(request.viewId, vdController);
-          View platformView = vdController.getView();
+          View view = vdController.getView();
+          if (view == null) {
+            throw new IllegalStateException(
+                    "Platform view of type  " + request.viewType + " with id: " + request.viewId)
+                + " cannot be null at this time";
+          }
           platformView.setLayoutDirection(request.direction);
           contextToPlatformView.put(platformView.getContext(), platformView);
 
@@ -344,12 +352,17 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         public void clearFocus(int viewId) {
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView != null) {
-            platformView.getView().clearFocus();
+            final View view = platformView.getView();
+            if (view != null) {
+              view.clearFocus();
+            }
             return;
           }
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
-          View view = vdControllers.get(viewId).getView();
-          view.clearFocus();
+          final View view = vdControllers.get(viewId).getView();
+          if (view != null) {
+            view.clearFocus();
+          }
         }
 
         private void ensureValidAndroidVersion(int minSdkVersion) {
@@ -369,8 +382,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       };
 
   @VisibleForTesting
+  @NonNull
   public MotionEvent toMotionEvent(
-      float density, PlatformViewsChannel.PlatformViewTouch touch, boolean usingVirtualDiplays) {
+      float density,
+      @NonNull PlatformViewsChannel.PlatformViewTouch touch,
+      boolean usingVirtualDiplays) {
     MotionEventTracker.MotionEventId motionEventId =
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
@@ -448,7 +464,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * @param dartExecutor The dart execution context, which is used to set up a system channel.
    */
   public void attach(
-      Context context, TextureRegistry textureRegistry, @NonNull DartExecutor dartExecutor) {
+      @Nullable Context context,
+      @NonNull TextureRegistry textureRegistry,
+      @NonNull DartExecutor dartExecutor) {
     if (this.context != null) {
       throw new AssertionError(
           "A PlatformViewsController can only be attached to a single output target.\n"
@@ -513,7 +531,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @Override
-  public void attachAccessibilityBridge(AccessibilityBridge accessibilityBridge) {
+  public void attachAccessibilityBridge(@NonNull AccessibilityBridge accessibilityBridge) {
     accessibilityEventsDelegate.setAccessibilityBridge(accessibilityBridge);
   }
 
@@ -531,7 +549,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>A platform views controller should be attached to a text input plugin whenever it is
    * possible for the Flutter framework to receive text input.
    */
-  public void attachTextInputPlugin(TextInputPlugin textInputPlugin) {
+  public void attachTextInputPlugin(@NonNull TextInputPlugin textInputPlugin) {
     this.textInputPlugin = textInputPlugin;
   }
 
@@ -563,6 +581,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return platformView.checkInputConnectionProxy(view);
   }
 
+  @NonNull
   public PlatformViewRegistry getRegistry() {
     return registry;
   }
@@ -590,7 +609,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @Override
-  public View getPlatformViewById(Integer id) {
+  @Nullable
+  public View getPlatformViewById(int id) {
     // Hybrid composition.
     if (platformViews.get(id) != null) {
       return platformViews.get(id).getView();
@@ -603,7 +623,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @Override
-  public boolean usesVirtualDisplay(Integer id) {
+  public boolean usesVirtualDisplay(int id) {
     return vdControllers.containsKey(id);
   }
 
@@ -767,7 +787,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     ((FlutterView) flutterView).addView(parentView);
   }
 
-  public void attachToFlutterRenderer(FlutterRenderer flutterRenderer) {
+  public void attachToFlutterRenderer(@NonNull FlutterRenderer flutterRenderer) {
     androidTouchProcessor = new AndroidTouchProcessor(flutterRenderer, /*trackMotionEvents=*/ true);
   }
 
@@ -792,7 +812,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       int height,
       int viewWidth,
       int viewHeight,
-      FlutterMutatorsStack mutatorsStack) {
+      @NonNull FlutterMutatorsStack mutatorsStack) {
     initializeRootImageViewIfNeeded();
     initializePlatformViewIfNeeded(viewId);
 
@@ -932,6 +952,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @VisibleForTesting
   @TargetApi(19)
+  @NonNull
   public FlutterOverlaySurface createOverlaySurface(@NonNull FlutterImageView imageView) {
     final int id = nextOverlayLayerId++;
     overlayLayerViews.put(id, imageView);
@@ -946,6 +967,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * <p>This member is not intended for public use, and is only visible for testing.
    */
   @TargetApi(19)
+  @NonNull
   public FlutterOverlaySurface createOverlaySurface() {
     // Overlay surfaces have the same size as the background surface.
     //

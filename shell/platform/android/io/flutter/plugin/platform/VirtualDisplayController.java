@@ -203,6 +203,7 @@ class VirtualDisplayController {
     presentation.getView().onInputConnectionUnlocked();
   }
 
+  @Nullable
   public View getView() {
     if (presentation == null) return null;
     PlatformView platformView = presentation.getView();

@@ -28,7 +28,8 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
   private JSONMessageCodec() {}
 
   @Override
-  public ByteBuffer encodeMessage(Object message) {
+  @Nullable
+  public ByteBuffer encodeMessage(@Nullable Object message) {
     if (message == null) {
       return null;
     }
@@ -41,7 +42,8 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
   }
 
   @Override
-  public Object decodeMessage(ByteBuffer message) {
+  @Nullable
+  public Object decodeMessage(@Nullable ByteBuffer message) {
     if (message == null) {
       return null;
     }

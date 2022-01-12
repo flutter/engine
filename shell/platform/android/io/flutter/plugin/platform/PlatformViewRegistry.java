@@ -18,5 +18,5 @@ public interface PlatformViewRegistry {
    * @param factory factory for creating platform views of the specified type.
    * @return true if succeeded, false if a factory is already registered for viewTypeId.
    */
-  boolean registerViewFactory(String viewTypeId, PlatformViewFactory factory);
+  boolean registerViewFactory(@NonNull String viewTypeId, @NonNull PlatformViewFactory factory);
 }
