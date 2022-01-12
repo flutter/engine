@@ -697,7 +697,7 @@ TEST(KeyboardTest, AltLeftUnhandled) {
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
-  // Release AltLeft
+  // Release AltLeft. AltLeft is a SysKeyUp event.
   tester.SetKeyState(VK_LMENU, false, true);
   tester.InjectMessages(
       1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kNotExtended}.Build(
@@ -706,6 +706,46 @@ TEST(KeyboardTest, AltLeftUnhandled) {
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltLeft,
                        kLogicalAltLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Sys events are not redispatched.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, AltRightUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press AltRight. AltRight is a SysKeyDown event.
+  tester.SetKeyState(VK_RMENU, true, false);
+  tester.InjectMessages(
+      1,
+      WmSysKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+          kWmResultDefault)); // Always pass to the default WndProc.
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Sys events are not redispatched.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release AltRight. AltRight is a SysKeyUp event.
+  tester.SetKeyState(VK_RMENU, false, true);
+  tester.InjectMessages(
+      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
+             kWmResultDefault)); // Always pass to the default WndProc.
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
   // Sys events are not redispatched.
