@@ -147,6 +147,11 @@ public class TextInputChannel {
               textInputMethodHandler.finishAutofillContext((boolean) args);
               result.success(null);
               break;
+            case "TextInput.initiateSpellChecking":
+              final String text = (String) args;
+              textInputMethodHandler.initiateSpellChecking(text);
+              result.success(null);
+              break;
             default:
               result.notImplemented();
               break;
@@ -357,6 +362,13 @@ public class TextInputChannel {
         "TextInputClient.performPrivateCommand", Arrays.asList(inputClientId, json));
   }
 
+  /** Responsible for sending spell checker results across to the framework. */
+  public void updateSpellCheckerResults(ArrayList<HashMap<String, String>> spellCheckerResults) {
+    channel.invokeMethod(
+        "TextInputClient.updateSpellCheckerResults",
+        Arrays.asList(inputClientId, spellCheckerResults));
+  }
+
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests that are parsed
    * from the underlying platform channel.
@@ -433,6 +445,12 @@ public class TextInputChannel {
      * @param data Any data to include with the command.
      */
     void sendAppPrivateCommand(String action, Bundle data);
+
+    /**
+     * Requests that spell checking is initiated for the inputted text recognized by the framework,
+     * which will automatically result in spell checking resutls being sent back to the framework.
+     */
+    void initiateSpellChecking(String text);
   }
 
   /** A text editing configuration. */

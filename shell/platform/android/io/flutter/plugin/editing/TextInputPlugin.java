@@ -23,7 +23,6 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.textservice.SpellCheckerSession;
-import android.view.textservice.SpellCheckerSession.SpellCheckerSessionListener;
 import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
@@ -165,6 +164,11 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
           public void sendAppPrivateCommand(String action, Bundle data) {
             sendTextInputAppPrivateCommand(action, data);
           }
+
+          @Override
+          public void initiateSpellChecking(String text) {
+            performSpellCheck();
+          }
         });
 
     textInputChannel.requestExistingInputState();
@@ -173,8 +177,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     this.platformViewsController.attachTextInputPlugin(this);
 
     // Retrieve manager for text services
-    tsm = (TextServicesManager) view.getContext().
-      getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    tsm =
+        (TextServicesManager)
+            view.getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
   }
 
   @NonNull
@@ -236,7 +241,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     }
     if (mSpellCheckerSession != null) {
       mSpellCheckerSession.close();
-   }
+    }
   }
 
   private static int inputTypeFromTextInputType(
@@ -440,16 +445,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     unlockPlatformViewInputConnection();
     lastClientRect = null;
     mEditable.addEditingStateListener(this);
-
-    // Open a new spell checker session when a new text input client is set.
-    // Closes spell checker session if one previously in use.
-    if (mSpellCheckerSession != null) {
-      mSpellCheckerSession.close();
-      mSpellCheckerSession = textServicesManager.newSpellCheckerSession(...)
-    }
-    else {
-      mSpellCheckerSession = textServicesManager.newSpellCheckerSession(...);
-    }
   }
 
   private void setPlatformViewTextInputClient(int platformViewId, boolean usesVirtualDisplay) {
@@ -643,6 +638,16 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     if (textChanged) {
       // Notify the autofill manager of the value change.
       notifyValueChanged(mEditable.toString());
+
+      // Open a new spell checker session when a new text input client is set.
+      // Closes spell checker session if one previously in use.
+      // TODO(camillesimon): Get locale from framework to initialize this session.
+      if (mSpellCheckerSession != null) {
+        mSpellCheckerSession.close();
+        mSpellCheckerSession = tsm.newSpellCheckerSession(null, null, this, true);
+      } else {
+        mSpellCheckerSession = tsm.newSpellCheckerSession(null, null, this, true);
+      }
     }
 
     final int selectionStart = mEditable.getSelectionStart();
@@ -864,18 +869,18 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   public void performSpellCheck() {
     // Define TextInfo[] object (textInfos) based on the current input to be
     // spell checked.
-    TextInfo[] textInfos = new String[]{TextInfo(mEditable.toString())};
+    TextInfo[] textInfos = new String[] {TextInfo(mEditable.toString())};
 
     // Make API call. Maximum suggestions requested set to 3 for now.
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
-}
+  }
 
   // Responsible for decomposing spell checker results into an object that can
   // then be sent to the framework.
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
     ArrayList<HashMap<String, String>> spellCheckerSuggestionSpans =
-      new ArrayList<HashMap<String, String>>();
+        new ArrayList<HashMap<String, String>>();
 
     for (int i = 0; i < results[0].getSuggestionsCount(); i++) {
       SuggestionsInfo suggestionsInfo = results[0].getSuggestionsInfoAt(i);
@@ -901,6 +906,5 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     // Make call to update the spell checker results in the framework.
     updateSpellCheckerResults(spellCheckerSuggestionSpans);
   }
-
-// -------- End: Spell Check -------
+  // -------- End: Spell Check -------
 }
