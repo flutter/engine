@@ -22,8 +22,10 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.view.textservice.SentenceSuggestionsInfo;
 import android.view.textservice.SpellCheckerSession;
 import android.view.textservice.SuggestionsInfo;
+import android.view.textservice.TextInfo;
 import android.view.textservice.TextServicesManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -37,7 +39,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /** Android implementation of the text input plugin. */
-public class TextInputPlugin implements ListenableEditingState.EditingStateWatcher {
+public class TextInputPlugin
+    implements ListenableEditingState.EditingStateWatcher,
+        SpellCheckerSession.SpellCheckerSessionListener {
   private static final String TAG = "TextInputPlugin";
 
   @NonNull private final View mView;
@@ -869,7 +873,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   public void performSpellCheck() {
     // Define TextInfo[] object (textInfos) based on the current input to be
     // spell checked.
-    TextInfo[] textInfos = new String[] {TextInfo(mEditable.toString())};
+    TextInfo[] textInfos = new TextInfo[] {new TextInfo(mEditable.toString())};
 
     // Make API call. Maximum suggestions requested set to 3 for now.
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
@@ -899,12 +903,17 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
           spellCheckerSuggestionSpan.put(key, suggestionsInfo.getSuggestionAt(j));
         }
 
-        spellCheckerSuggestionSpans.put(spellCheckerSuggestionSpan);
+        spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan);
       }
     }
 
     // Make call to update the spell checker results in the framework.
-    updateSpellCheckerResults(spellCheckerSuggestionSpans);
+    textInputChannel.updateSpellCheckerResults(inputTarget.id, spellCheckerSuggestionSpans);
+  }
+
+  @Override
+  public void onGetSuggestions(SuggestionsInfo[] results) {
+    // Callback for a deprecated method, so will not use.
   }
   // -------- End: Spell Check -------
 }
