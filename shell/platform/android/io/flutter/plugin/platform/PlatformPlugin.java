@@ -248,7 +248,7 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
-      // Available starting at SDK 16
+      // Available starting at SDK 20
       // Should not show overlays, tap to reveal overlays, needs onChange callback
       // When the overlays come in on tap, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
@@ -258,10 +258,9 @@ public class PlatformPlugin {
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
       WindowCompat.setDecorFitsSystemWindows(window, false);
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at 19
+      // Available starting at SDK 20
       // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
       // When the overlays come in on swipe, the app does not receive the gesture and does not know
       // the system overlay has changed. The overlays cannot be dismissed, so adding callback
@@ -274,7 +273,7 @@ public class PlatformPlugin {
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // STICKY IMMERSIVE
-      // Available starting at 19
+      // Available starting at SDK 20
       // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
       // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
       // allow users to restore the system ui and dismiss the overlays.
@@ -283,11 +282,10 @@ public class PlatformPlugin {
           WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
       windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
       WindowCompat.setDecorFitsSystemWindows(window, false);
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
-        && Build.VERSION.SDK_INT >= 29) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE) {
       // EDGE TO EDGE
-      // Available starting at 29
-      // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
+      // Available starting at SDK 16
+      // Will apply a translucent body scrim behind 2/3 button navigation bars
       // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
       // enforced in the overlay styling.
       WindowCompat.setDecorFitsSystemWindows(window, false);
@@ -310,10 +308,8 @@ public class PlatformPlugin {
     windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
     WindowCompat.setDecorFitsSystemWindows(window, false);
 
-    // The sticky immersive mode was introduced in API 19, so we
-    // apply it if desired, and if the current Android version is
-    // 19 or greater.
-    if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    // We apply sticky immersive mode if desired. Available starting at SDK 20.
+    if (overlaysToShow.size() == 0) {
       currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
 
       windowInsetsControllerCompat.setSystemBarsBehavior(
