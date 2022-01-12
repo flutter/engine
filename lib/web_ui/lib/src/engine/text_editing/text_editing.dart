@@ -1191,11 +1191,11 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   void handleBeforeInput(html.Event event) {
-    final String eventData = js_util.getProperty(event, 'data').toString();
+    final String? eventData = js_util.getProperty(event, 'data') as String?;
     final TextEditingDeltaState newDeltaState = lastTextEditingDeltaState ?? TextEditingDeltaState(oldText: lastEditingState!.text!);
 
-    if (eventData == 'null') {
-      // When event.data is 'null' we have a deletion.
+    if (eventData == null) {
+      // When event.data is null we have a deletion.
       // The deltaStart is set in handleChange because there is where we get access
       // to the new selection baseOffset which is our new deltaStart.
       lastTextEditingDeltaState = newDeltaState.copyWith(oldText: lastEditingState!.text, deltaText: '', deltaEnd: lastEditingState!.extentOffset);
