@@ -833,8 +833,8 @@ class PlatformDispatcher {
   ///
   ///  * [EditableText.obscureText], which when set to true hides the text in
   ///    the text field.
-  bool get textShowPassword => _textShowPassword;
-  bool _textShowPassword = true;
+  bool get brieflyShowPassword => _brieflyShowPassword;
+  bool _brieflyShowPassword = true;
 
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
@@ -868,9 +868,9 @@ class PlatformDispatcher {
     final double textScaleFactor = (data['textScaleFactor'] as num).toDouble();
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat'] as bool;
     // This field is optional.
-    final bool? textShowPassword = data['textShowPassword'] as bool?;
-    if (textShowPassword != null) {
-      _textShowPassword = textShowPassword;
+    final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
+    if (brieflyShowPassword != null) {
+      _brieflyShowPassword = brieflyShowPassword;
     }
     final Brightness platformBrightness =
     data['platformBrightness'] as String == 'dark' ? Brightness.dark : Brightness.light;

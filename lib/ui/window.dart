@@ -432,7 +432,7 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   ///  * [EditableText.obscureText], which when set to true hides the text in
   ///    the text field.
-  bool get textShowPassword => platformDispatcher.textShowPassword;
+  bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
