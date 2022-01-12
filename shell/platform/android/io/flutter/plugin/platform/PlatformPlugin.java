@@ -26,8 +26,6 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /** Android implementation of the platform plugin. */
@@ -38,6 +36,7 @@ public class PlatformPlugin {
   private final PlatformPluginDelegate platformPluginDelegate;
   private PlatformChannel.SystemChromeStyle currentTheme;
   private PlatformChannel.SystemUiMode currentSystemUiMode;
+  private List<PlatformChannel.SystemUiOverlay> currentOverlays;
   private static final String TAG = "PlatformPlugin";
 
   /**
@@ -326,21 +325,14 @@ public class PlatformPlugin {
       PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
       switch (overlayToShow) {
         case TOP_OVERLAYS:
-          currentSystemUiMode =
-              i == 0
-                  ? PlatformChannel.SystemUiMode.MANUAL_TOP
-                  : PlatformChannel.SystemUiMode.MANUAL_BOTH;
           windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
           break;
         case BOTTOM_OVERLAYS:
-          currentSystemUiMode =
-              i == 0
-                  ? PlatformChannel.SystemUiMode.MANUAL_BOTTOM
-                  : PlatformChannel.SystemUiMode.MANUAL_BOTH;
           windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
           break;
       }
     }
+    currentOverlays = overlaysToShow;
   }
 
   /**
@@ -352,26 +344,10 @@ public class PlatformPlugin {
    * PlatformPlugin}.
    */
   public void updateSystemUiOverlays() {
-    switch (currentSystemUiMode) {
-      case MANUAL_TOP:
-        setSystemChromeEnabledSystemUIOverlays(
-            new ArrayList<PlatformChannel.SystemUiOverlay>(
-                Arrays.asList(PlatformChannel.SystemUiOverlay.TOP_OVERLAYS)));
-        break;
-      case MANUAL_BOTTOM:
-        setSystemChromeEnabledSystemUIOverlays(
-            new ArrayList<PlatformChannel.SystemUiOverlay>(
-                Arrays.asList(PlatformChannel.SystemUiOverlay.BOTTOM_OVERLAYS)));
-        break;
-      case MANUAL_BOTH:
-        setSystemChromeEnabledSystemUIOverlays(
-            new ArrayList<PlatformChannel.SystemUiOverlay>(
-                Arrays.asList(
-                    PlatformChannel.SystemUiOverlay.TOP_OVERLAYS,
-                    PlatformChannel.SystemUiOverlay.BOTTOM_OVERLAYS)));
-        break;
-      default:
-        setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+    setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+
+    if (currentOverlays != null) {
+      setSystemChromeEnabledSystemUIOverlays(currentOverlays);
     }
 
     if (currentTheme != null) {
