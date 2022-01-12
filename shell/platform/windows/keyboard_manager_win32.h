@@ -28,8 +28,6 @@ namespace flutter {
 // |FlutterWindowsView|'s.
 class KeyboardManagerWin32 {
  public:
-  using KeyEventCallback = std::function<void(bool)>;
-
   // Define how the keyboard manager accesses Win32 system calls (to allow
   // mocking) and sends the results of |OnKey| and |OnText|.
   //
@@ -65,6 +63,9 @@ class KeyboardManagerWin32 {
     // Used to process key messages.
     virtual uint32_t Win32MapVkToChar(uint32_t virtual_key) = 0;
 
+    // Win32's |SendInput|.
+    //
+    // Used to synthesize key events.
     virtual UINT Win32DispatchEvent(UINT cInputs,
                                     LPINPUT pInputs,
                                     int cbSize) = 0;
@@ -90,9 +91,6 @@ class KeyboardManagerWin32 {
                      WPARAM const wparam,
                      LPARAM const lparam);
 
- protected:
-  size_t RedispatchedCount();
-
  private:
   struct PendingEvent {
     uint32_t key;
@@ -101,11 +99,6 @@ class KeyboardManagerWin32 {
     char32_t character;
     bool extended;
     bool was_down;
-
-    // The number of delegates that haven't replied.
-    size_t unreplied;
-    // Whether any replied delegates reported true (handled).
-    bool any_handled;
 
     // A value calculated out of critical event information that can be used
     // to identify redispatched events.

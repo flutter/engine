@@ -91,9 +91,6 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
                     bool was_down,
                     KeyEventCallback callback) override;
 
- protected:
-  size_t RedispatchedCount();
-
  private:
   struct PendingEvent {
     // Self-incrementing ID attached to an event sent to the framework.
@@ -111,14 +108,14 @@ class KeyboardKeyHandler : public KeyboardHandlerBase {
 
   void ResolvePendingEvent(uint64_t sequence_id, bool handled);
 
+  std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
+
   // The queue of key events that have been sent to the framework but have not
   // yet received a response.
   std::deque<std::unique_ptr<PendingEvent>> pending_responds_;
 
   // The sequence_id attached to the last event sent to the framework.
   uint64_t last_sequence_id_;
-
-  std::vector<std::unique_ptr<KeyboardKeyHandlerDelegate>> delegates_;
 };
 
 }  // namespace flutter

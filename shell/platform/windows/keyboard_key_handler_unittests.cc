@@ -92,11 +92,6 @@ class MockKeyHandlerDelegate
   std::list<KeyboardHookCall>* hook_history;
 };
 
-class TestKeyboardKeyHandler : public KeyboardKeyHandler {
- public:
-  explicit TestKeyboardKeyHandler() : KeyboardKeyHandler() {}
-};
-
 enum KeyEventResponse {
   kNoResponse,
   kHandled,
@@ -114,7 +109,7 @@ void OnKeyEventResult(bool handled) {
 TEST(KeyboardKeyHandlerTest, SingleDelegateWithAsyncResponds) {
   std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
 
-  TestKeyboardKeyHandler handler;
+  KeyboardKeyHandler handler;
   // Add one delegate
   auto delegate = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
   handler.AddDelegate(std::move(delegate));
@@ -172,7 +167,7 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithAsyncResponds) {
 TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   std::list<MockKeyHandlerDelegate::KeyboardHookCall> hook_history;
 
-  TestKeyboardKeyHandler handler;
+  KeyboardKeyHandler handler;
   // Add one delegate
   auto delegate = std::make_unique<MockKeyHandlerDelegate>(1, &hook_history);
   CallbackHandler& delegate_handler = delegate->callback_handler;

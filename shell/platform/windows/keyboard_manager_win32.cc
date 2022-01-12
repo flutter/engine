@@ -134,11 +134,11 @@ KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
       should_synthesize_ctrl_left_up(false) {}
 
 void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
-  char32_t character = event.character;
-
   assert(event.action != WM_SYSKEYDOWN && event.action != WM_SYSKEYUP &&
          "Unexpectedly dispatching a SYS event. SYS events can't be dispatched "
          "and should have been prevented in earlier code.");
+
+  char32_t character = event.character;
 
   INPUT input_event{
       .type = INPUT_KEYBOARD,
@@ -173,10 +173,6 @@ void KeyboardManagerWin32::RedispatchEvent(std::unique_ptr<PendingEvent> event) 
         << "framework. Are responses being sent?" << std::endl;
   }
   pending_redispatches_.push_back(std::move(event));
-}
-
-size_t KeyboardManagerWin32::RedispatchedCount() {
-  return pending_redispatches_.size();
 }
 
 bool KeyboardManagerWin32::RemoveRedispatchedEvent(const PendingEvent& incoming) {

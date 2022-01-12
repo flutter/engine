@@ -231,5 +231,5 @@ BOOL MockMessageQueue::Win32PeekMessage(LPMSG lpMsg,
   return FALSE;
 }
 
-  }  // namespace testing
+}  // namespace testing
 }  // namespace flutter
