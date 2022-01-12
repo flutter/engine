@@ -45,9 +45,9 @@ Win32Message WmCharInfo::Build(LRESULT expected_result, HWND hWnd) {
 }
 
 Win32Message WmSysKeyDownInfo::Build(LRESULT expected_result, HWND hWnd) {
-  uint32_t lParam = (repeat_count << 0) | (scan_code << 16) |
-                    (extended << 24) | (context << 29) |
-                    (prev_state << 30) | (0 /* transition */ << 31);
+  uint32_t lParam = (repeat_count << 0) | (scan_code << 16) | (extended << 24) |
+                    (context << 29) | (prev_state << 30) |
+                    (0 /* transition */ << 31);
   return Win32Message{
       .message = WM_SYSKEYDOWN,
       .wParam = key,
