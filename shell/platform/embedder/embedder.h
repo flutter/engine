@@ -1347,7 +1347,7 @@ typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
 
 /// An immutable buffer of potentially shared data.
 typedef struct {
-  /// The size of the struct. Must be sizeof(FlutterEngineMapping).
+  /// The size of the struct. Must be sizeof(FlutterMapping).
   size_t struct_size;
 
   /// A pointer to the data accessed by the Flutter Engine. The data will not be
@@ -1367,9 +1367,9 @@ typedef struct {
   /// mutate/free/unmap the data, as it will no longer be accessed by the
   /// Flutter Engine.
   VoidCallback destruction_callback;
-} FlutterEngineMappingCreateInfo;
+} FlutterMappingCreateInfo;
 
-typedef struct FlutterEngineMappingPrivate* FlutterEngineMapping;
+typedef struct FlutterMappingPrivate* FlutterMapping;
 
 /// Callback for fetching assets for a `FlutterEngineAssetResolver`.
 ///
@@ -1380,14 +1380,14 @@ typedef struct FlutterEngineMappingPrivate* FlutterEngineMapping;
 /// via `FlutterProjectArgs`.
 ///
 /// If the asset was found and successfully loaded, return a valid
-/// `FlutterEngineMapping`. Otherwise return NULL to indicate an error occurred
+/// `FlutterMapping`. Otherwise return NULL to indicate an error occurred
 /// while loading the asset.
 ///
-/// Note that the returned `FlutterEngineMapping` is owned by the Engine and
+/// Note that the returned `FlutterMapping` is owned by the Engine and
 /// should be cached or reused. Each callback invocation must return a new
-/// FlutterEngineMapping. Multiple mappings may refer to the same area in
+/// FlutterMapping. Multiple mappings may refer to the same area in
 /// memory, proper book-keeping is up to the embedder.
-typedef FlutterEngineMapping (*FlutterAssetResolverGetAssetCallback)(
+typedef FlutterMapping (*FlutterAssetResolverGetAssetCallback)(
     const char* /* asset_name */,
     void* /* user_data */);
 
@@ -2330,7 +2330,7 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
     size_t display_count);
 
 //------------------------------------------------------------------------------
-/// @brief      Creates a `FlutterEngineMapping` using the given creation info.
+/// @brief      Creates a `FlutterMapping` using the given creation info.
 ///             The backing memory is never mutated by the Engine, and must not
 ///             be mutated by the embedder until the mapping is destroyed.
 ///             The engine may access the mapping from multiple threads, and may
@@ -2343,8 +2343,8 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
 ///
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineCreateMapping(
-    const FlutterEngineMappingCreateInfo* create_info,
-    FlutterEngineMapping* out_mapping);
+    const FlutterMappingCreateInfo* create_info,
+    FlutterMapping* out_mapping);
 
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
@@ -2463,8 +2463,8 @@ typedef FlutterEngineResult (*FlutterEngineNotifyDisplayUpdateFnPtr)(
     const FlutterEngineDisplay* displays,
     size_t display_count);
 typedef FlutterEngineResult (*FlutterEngineCreateMappingFnPtr)(
-    const FlutterEngineMappingCreateInfo* create_info,
-    FlutterEngineMapping* out_mapping);
+    const FlutterMappingCreateInfo* create_info,
+    FlutterMapping* out_mapping);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {

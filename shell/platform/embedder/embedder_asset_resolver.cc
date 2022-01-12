@@ -33,7 +33,7 @@ class EmbedderAssetResolver final : public flutter::AssetResolver {
       return std::unique_ptr<fml::Mapping>();
     }
 
-    FlutterEngineMapping mapping = get_asset_(asset_name.c_str(), user_data_);
+    FlutterMapping mapping = get_asset_(asset_name.c_str(), user_data_);
     return std::unique_ptr<fml::Mapping>(
         reinterpret_cast<fml::Mapping*>(mapping));
   }

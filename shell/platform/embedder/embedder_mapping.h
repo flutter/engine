@@ -11,7 +11,7 @@
 namespace flutter {
 
 std::unique_ptr<fml::Mapping> CreateEmbedderMapping(
-    const FlutterEngineMappingCreateInfo* mapping);
+    const FlutterMappingCreateInfo* mapping);
 
 }  // namespace flutter
 

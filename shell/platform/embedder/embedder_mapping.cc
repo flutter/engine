@@ -42,7 +42,7 @@ class EmbedderMapping final : public fml::Mapping {
 };
 
 std::unique_ptr<fml::Mapping> CreateEmbedderMapping(
-    const FlutterEngineMappingCreateInfo* mapping) {
+    const FlutterMappingCreateInfo* mapping) {
   return std::make_unique<EmbedderMapping>(
       SAFE_ACCESS(mapping, data, nullptr), SAFE_ACCESS(mapping, data_size, 0),
       SAFE_ACCESS(mapping, user_data, nullptr),

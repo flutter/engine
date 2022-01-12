@@ -2384,15 +2384,15 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
 }
 
 FlutterEngineResult FlutterEngineCreateMapping(
-    const FlutterEngineMappingCreateInfo* create_info,
-    FlutterEngineMapping* out_mapping) {
+    const FlutterMappingCreateInfo* create_info,
+    FlutterMapping* out_mapping) {
   if (SAFE_ACCESS(create_info, data, nullptr) == nullptr &&
       SAFE_ACCESS(create_info, data_size, 0) > 0) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid mapping specified.");
   }
 
   auto mapping = flutter::CreateEmbedderMapping(create_info);
-  *out_mapping = reinterpret_cast<FlutterEngineMapping>(mapping.release());
+  *out_mapping = reinterpret_cast<FlutterMapping>(mapping.release());
 
   return kSuccess;
 }
