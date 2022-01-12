@@ -143,6 +143,8 @@ class AndroidEGLSurfaceDamage {
   // last two frames
   static const int kMaxHistorySize = 2;
 
+  bool SupportsPartialRepaint() const { return partial_redraw_supported_; }
+
   std::optional<SkIRect> InitialDamage(EGLDisplay display, EGLSurface surface) {
     if (!partial_redraw_supported_) {
       return std::nullopt;
@@ -251,6 +253,10 @@ bool AndroidEGLSurface::SwapBuffers(
     const std::optional<SkIRect>& surface_damage) {
   TRACE_EVENT0("flutter", "AndroidContextGL::SwapBuffers");
   return damage_->SwapBuffersWithDamage(display_, surface_, surface_damage);
+}
+
+bool AndroidEGLSurface::SupportsPartialRepaint() const {
+  return damage_->SupportsPartialRepaint();
 }
 
 std::optional<SkIRect> AndroidEGLSurface::InitialDamage() {

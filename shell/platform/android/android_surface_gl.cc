@@ -131,6 +131,7 @@ SurfaceFrame::FramebufferInfo AndroidSurfaceGL::GLContextFramebufferInfo()
   FML_DCHECK(IsValid());
   SurfaceFrame::FramebufferInfo res;
   res.supports_readback = true;
+  res.supports_partial_repaint = onscreen_surface_->SupportsPartialRepaint();
   res.existing_damage = onscreen_surface_->InitialDamage();
   return res;
 }

@@ -46,6 +46,12 @@ class AndroidEGLSurface {
   bool MakeCurrent() const;
 
   //----------------------------------------------------------------------------
+  ///
+  /// @return     Whether target surface supports partial repaint.
+  ///
+  bool SupportsPartialRepaint() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      This is the minimal area that needs to be repainted to get
   ///             correct result.
   ///
