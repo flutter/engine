@@ -2207,7 +2207,7 @@ void testMain() {
     test('Verify correct delta is inferred - insertion', () {
       final EditingState newEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
       final EditingState lastEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
-      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'worl', deltaText: 'd', deltaStart: 4, deltaEnd: 4, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'worl', deltaText: 'd', deltaStart: 4, deltaEnd: 4, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 
@@ -2224,7 +2224,7 @@ void testMain() {
     test('Verify correct delta is inferred - deletion', () {
       final EditingState newEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
       final EditingState lastEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
-      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'world', deltaText: '', deltaStart: 4, deltaEnd: 5, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'world', deltaText: '', deltaStart: 4, deltaEnd: 5, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 
@@ -2241,7 +2241,7 @@ void testMain() {
     test('Verify correct delta is inferred - composing region replacement', () {
       final EditingState newEditState = EditingState(text: '你好吗', baseOffset: 3, extentOffset: 3);
       final EditingState lastEditState = EditingState(text: 'ni hao ma', baseOffset: 9, extentOffset: 9);
-      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'ni hao ma', deltaText: '你好吗', deltaStart: 9, deltaEnd: 9, baseOffset: -1, extentOffset: -1, composingOffset: 0, composingExtent: 9);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'ni hao ma', deltaText: '你好吗', deltaStart: 9, deltaEnd: 9, baseOffset: -1, extentOffset: -1, composingOffset: 0, composingExtent: 9);
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 
@@ -2258,7 +2258,7 @@ void testMain() {
     test('Verify correct delta is inferred for double space to insert a period', () {
       final EditingState newEditState = EditingState(text: 'hello. ', baseOffset: 7, extentOffset: 7);
       final EditingState lastEditState = EditingState(text: 'hello ', baseOffset: 6, extentOffset: 6);
-      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'hello ', deltaText: '. ', deltaStart: 6, deltaEnd: 6, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'hello ', deltaText: '. ', deltaStart: 6, deltaEnd: 6, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 
@@ -2275,7 +2275,7 @@ void testMain() {
     test('Verify correct delta is inferred for accent menu', () {
       final EditingState newEditState = EditingState(text: 'à', baseOffset: 1, extentOffset: 1);
       final EditingState lastEditState = EditingState(text: 'a', baseOffset: 1, extentOffset: 1);
-      const TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'a', deltaText: 'à', deltaStart: 1, deltaEnd: 1, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'a', deltaText: 'à', deltaStart: 1, deltaEnd: 1, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 

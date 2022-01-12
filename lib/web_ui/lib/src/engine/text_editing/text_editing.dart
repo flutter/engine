@@ -976,9 +976,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   TextEditingDeltaState? lastTextEditingDeltaState;
   TextEditingDeltaState get editingDelta {
-    if (lastTextEditingDeltaState == null){
-      lastTextEditingDeltaState = TextEditingDeltaState(oldText: lastEditingState!.text!);
-    }
+    lastTextEditingDeltaState ??= TextEditingDeltaState(oldText: lastEditingState!.text!);
     return lastTextEditingDeltaState!;
   }
 
@@ -1175,7 +1173,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   void handleBeforeInput(html.Event event) {
-    final String? eventData = js_util.getProperty(event, 'data') as String?;
+    final String? eventData = js_util.getProperty<void>(event, 'data') as String?;
 
     if (eventData == null) {
       // When event.data is null we have a deletion.
