@@ -1,4 +1,4 @@
-Signature: 49a681051f210ef77fe2c686e6a67701
+Signature: db2cf27a6e263cdfc10def879003b83f
 
 UNUSED LICENSES:
 
@@ -9772,6 +9772,8 @@ FILE: ../../../third_party/dart/benchmarks/FfiAsTypedList/dart/FfiAsTypedList.da
 FILE: ../../../third_party/dart/benchmarks/FfiAsTypedList/dart2/FfiAsTypedList.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart/IsolateFibonacci.dart
 FILE: ../../../third_party/dart/benchmarks/IsolateFibonacci/dart2/IsolateFibonacci.dart
+FILE: ../../../third_party/dart/benchmarks/MapCopy/dart/MapCopy.dart
+FILE: ../../../third_party/dart/benchmarks/MapCopy/dart2/MapCopy.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/MapLookup.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart/maps.dart
 FILE: ../../../third_party/dart/benchmarks/MapLookup/dart2/MapLookup.dart
@@ -10555,7 +10557,6 @@ FILE: ../../../third_party/dart/sdk/lib/core/core.dart
 FILE: ../../../third_party/dart/sdk/lib/core/double.dart
 FILE: ../../../third_party/dart/sdk/lib/core/errors.dart
 FILE: ../../../third_party/dart/sdk/lib/core/exceptions.dart
-FILE: ../../../third_party/dart/sdk/lib/core/expando.dart
 FILE: ../../../third_party/dart/sdk/lib/core/identical.dart
 FILE: ../../../third_party/dart/sdk/lib/core/int.dart
 FILE: ../../../third_party/dart/sdk/lib/core/invocation.dart
@@ -10568,6 +10569,7 @@ FILE: ../../../third_party/dart/sdk/lib/core/regexp.dart
 FILE: ../../../third_party/dart/sdk/lib/core/string.dart
 FILE: ../../../third_party/dart/sdk/lib/core/type.dart
 FILE: ../../../third_party/dart/sdk/lib/core/uri.dart
+FILE: ../../../third_party/dart/sdk/lib/core/weak.dart
 FILE: ../../../third_party/dart/sdk/lib/html/dart2js/html_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/html/dartium/nativewrappers.dart
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions.dart

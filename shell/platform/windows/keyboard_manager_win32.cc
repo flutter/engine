@@ -130,7 +130,8 @@ static bool IsPrintable(uint32_t c) {
 
 KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
     : window_delegate_(delegate),
-      last_key_is_ctrl_left_down(false) {}
+      last_key_is_ctrl_left_down(false),
+      should_synthesize_ctrl_left_up(false) {}
 
 void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
   char32_t character = event.character;

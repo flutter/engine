@@ -19,7 +19,7 @@ static constexpr int kHandledScanCode2 = 22;
 static constexpr int kUnhandledScanCode = 21;
 
 constexpr uint64_t kScanCodeShiftRight = 0x36;
-constexpr uint64_t kScanCodeControlLeft = 0x1D;
+constexpr uint64_t kScanCodeControl = 0x1D;
 constexpr uint64_t kScanCodeAltLeft = 0x38;
 
 typedef std::function<void(bool)> Callback;
@@ -203,8 +203,16 @@ TEST(KeyboardKeyHandlerTest, SingleDelegateWithSyncResponds) {
   EXPECT_EQ(hook_history.back().scancode, kHandledScanCode);
   EXPECT_EQ(hook_history.back().was_down, false);
 
+  EXPECT_EQ(handler.HasRedispatched(), true);
+
+  // Resolve the event
+  EXPECT_EQ(handler.KeyboardHook(64, kHandledScanCode, WM_KEYDOWN, L'a', false,
+                                 false),
+            false);
+
+  EXPECT_EQ(handler.HasRedispatched(), false);
   hook_history.clear();
-  key_event_response = kUnhandled;
+  key_event_response = kNoResponse;
 }
 
 }  // namespace testing
