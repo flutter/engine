@@ -44,7 +44,7 @@ public class FlutterMutatorView extends FrameLayout {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
-    paint = new Paint();
+    this.paint = new Paint();
   }
 
   /** Initialize the FlutterMutatorView. */
