@@ -66,6 +66,10 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
 
+  // Obtain a raw pointer to the on-screen AndroidEGLSurface.
+  //
+  // This method is intended for use in tests. Callers must not
+  // delete the returned pointer.
   AndroidEGLSurface* GetOnscreenSurface() const {
     return onscreen_surface_.get();
   }
