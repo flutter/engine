@@ -132,22 +132,18 @@ void testMain() {
       };
 
       root.style.fontSize = '20px';
-      await Future<void>(() {
-        expect(isCalled, true);
-      }).then((_) {
-        expect(ui.PlatformDispatcher.instance.textScaleFactor,
-            findBrowserTextScaleFactor());
-      });
+      await Future<void>.delayed(Duration.zero);
+      expect(root.style.fontSize, '20px');
+      expect(isCalled, isTrue);
+      expect(ui.PlatformDispatcher.instance.textScaleFactor, findBrowserTextScaleFactor());
 
       isCalled = false;
 
       root.style.fontSize = '16px';
-      await Future<void>(() {
-        expect(isCalled, true);
-      }).then((_) {
-        expect(ui.PlatformDispatcher.instance.textScaleFactor,
-            findBrowserTextScaleFactor());
-      });
+      await Future<void>.delayed(Duration.zero);
+      expect(root.style.fontSize, '16px');
+      expect(isCalled, isTrue);
+      expect(ui.PlatformDispatcher.instance.textScaleFactor, findBrowserTextScaleFactor());
     });
   });
 }

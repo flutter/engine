@@ -807,8 +807,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
     _fontSizeObserver = html.MutationObserver(
         (List<dynamic> mutations, html.MutationObserver _) {
-      for (final html.MutationRecord record
-          in mutations.cast<html.MutationRecord>()) {
+      for (final mutation in mutations) {
+        final html.MutationRecord record = mutation as html.MutationRecord;
         if (record.type == 'attributes' &&
             record.attributeName == styleAttribute) {
           final double newTextScaleFactor = findBrowserTextScaleFactor();
