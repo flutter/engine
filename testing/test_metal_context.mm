@@ -65,11 +65,11 @@ sk_sp<GrDirectContext> TestMetalContext::GetSkiaContext() const {
 
 TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize& size) {
   std::scoped_lock lock(textures_mutex);
-  auto texture_descriptor = fml::scoped_nsobject{[MTLTextureDescriptor
-      texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
-                                   width:size.width()
-                                  height:size.height()
-                               mipmapped:NO]};
+  auto texture_descriptor = fml::scoped_nsobject{
+      [[MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
+                                                          width:size.width()
+                                                         height:size.height()
+                                                      mipmapped:NO] retain]};
 
   // The most pessimistic option and disables all optimizations but allows tests
   // the most flexible access to the surface. They may read and write to the
