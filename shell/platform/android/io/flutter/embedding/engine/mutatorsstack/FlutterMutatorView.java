@@ -29,6 +29,7 @@ public class FlutterMutatorView extends FrameLayout {
   private int top;
   private int prevLeft;
   private int prevTop;
+  private Paint paint;
 
   private final AndroidTouchProcessor androidTouchProcessor;
 
@@ -43,6 +44,7 @@ public class FlutterMutatorView extends FrameLayout {
     super(context, null);
     this.screenDensity = screenDensity;
     this.androidTouchProcessor = androidTouchProcessor;
+    paint = new Paint();
   }
 
   /** Initialize the FlutterMutatorView. */
@@ -145,9 +147,8 @@ public class FlutterMutatorView extends FrameLayout {
     }
 
     // Apply the final opacity value on the parent canvas.
-    Paint transparency = new Paint();
-    transparency.setAlpha((int) (mutatorsStack.getFinalOpacity() * 255));
-    this.setLayerType(LAYER_TYPE_HARDWARE, transparency);
+    paint.setAlpha((int) (mutatorsStack.getFinalOpacity() * 255));
+    this.setLayerType(LAYER_TYPE_HARDWARE, paint);
 
     super.draw(canvas);
     canvas.restore();
