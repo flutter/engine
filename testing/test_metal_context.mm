@@ -14,7 +14,7 @@
 namespace flutter {
 
 TestMetalContext::TestMetalContext() {
-  auto device = fml::scoped_nsprotocol{[MTLCreateSystemDefaultDevice() retain]};
+  auto device = fml::scoped_nsprotocol{MTLCreateSystemDefaultDevice()};
   if (!device) {
     FML_LOG(ERROR) << "Could not acquire Metal device.";
     return;
@@ -42,6 +42,9 @@ TestMetalContext::TestMetalContext() {
 
 TestMetalContext::~TestMetalContext() {
   std::scoped_lock lock(textures_mutex);
+  for (auto& [_, texture] : textures_) {
+    [(id)texture.get() release];
+  }
   textures_.clear();
   if (device_) {
     [(__bridge id)device_ release];
@@ -65,11 +68,11 @@ sk_sp<GrDirectContext> TestMetalContext::GetSkiaContext() const {
 
 TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize& size) {
   std::scoped_lock lock(textures_mutex);
-  auto texture_descriptor = fml::scoped_nsobject{
-      [[MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
-                                                          width:size.width()
-                                                         height:size.height()
-                                                      mipmapped:NO] retain]};
+  auto texture_descriptor = fml::scoped_nsobject{[MTLTextureDescriptor
+      texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
+                                   width:size.width()
+                                  height:size.height()
+                               mipmapped:NO]};
 
   // The most pessimistic option and disables all optimizations but allows tests
   // the most flexible access to the surface. They may read and write to the
@@ -82,8 +85,7 @@ TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize
   }
 
   id<MTLDevice> device = (__bridge id<MTLDevice>)GetMetalDevice();
-  sk_cfp<void*> texture =
-      sk_cfp<void*>{[[device newTextureWithDescriptor:texture_descriptor.get()] retain]};
+  sk_cfp<void*> texture = sk_cfp<void*>{[device newTextureWithDescriptor:texture_descriptor.get()]};
 
   if (!texture) {
     FML_CHECK(false) << "Could not create texture from texture descriptor.";
