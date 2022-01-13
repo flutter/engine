@@ -148,9 +148,15 @@ public class TextInputChannel {
               result.success(null);
               break;
             case "TextInput.initiateSpellChecking":
-              final String text = (String) args;
-              textInputMethodHandler.initiateSpellChecking(text);
-              result.success(null);
+              try {
+                final JSONArray argumentList = (JSONArray) args;
+                String locale = argumentList.getString(0);
+                String text = argumentList.getString(1);
+                textInputMethodHandler.initiateSpellChecking(locale, text);
+                result.success(null);
+              } catch (JSONException exception) {
+                result.error("error", exception.getMessage(), null);
+              }
               break;
             default:
               result.notImplemented();
@@ -451,7 +457,7 @@ public class TextInputChannel {
      * Requests that spell checking is initiated for the inputted text recognized by the framework,
      * which will automatically result in spell checking resutls being sent back to the framework.
      */
-    void initiateSpellChecking(String text);
+    void initiateSpellChecking(String locale, String text);
   }
 
   /** A text editing configuration. */

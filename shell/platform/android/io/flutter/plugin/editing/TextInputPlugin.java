@@ -37,6 +37,7 @@ import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 /** Android implementation of the text input plugin. */
 public class TextInputPlugin
@@ -170,8 +171,8 @@ public class TextInputPlugin
           }
 
           @Override
-          public void initiateSpellChecking(String text) {
-            performSpellCheck();
+          public void initiateSpellChecking(String locale, String text) {
+            performSpellCheck(locale, text);
           }
         });
 
@@ -642,16 +643,6 @@ public class TextInputPlugin
     if (textChanged) {
       // Notify the autofill manager of the value change.
       notifyValueChanged(mEditable.toString());
-
-      // Open a new spell checker session when a new text input client is set.
-      // Closes spell checker session if one previously in use.
-      // TODO(camillesimon): Get locale from framework to initialize this session.
-      if (mSpellCheckerSession != null) {
-        mSpellCheckerSession.close();
-        mSpellCheckerSession = tsm.newSpellCheckerSession(null, null, this, true);
-      } else {
-        mSpellCheckerSession = tsm.newSpellCheckerSession(null, null, this, true);
-      }
     }
 
     final int selectionStart = mEditable.getSelectionStart();
@@ -870,10 +861,30 @@ public class TextInputPlugin
   // -------- Start: Spell Check -------
   // Responsible for calling the Android spell checker API to retrieve spell
   // checking results.
-  public void performSpellCheck() {
+  public void performSpellCheck(String locale, String text) {
+    String[] localeCodes = locale.split("-");
+    Locale localeToUse;
+
+    if (localeCodes.length == 3) {
+      localeToUse = new Locale(localeCodes[0], localeCodes[1], localeCodes[2]);
+    } else if (localeCodes.length == 2) {
+      localeToUse = new Locale(localeCodes[0], localeCodes[1]);
+    } else {
+      localeToUse = new Locale(localeCodes[0]);
+    }
+
+    // Open a new spell checker session when a new text input client is set.
+    // Closes spell checker session if one previously in use.
+    if (mSpellCheckerSession != null) {
+      mSpellCheckerSession.close();
+      mSpellCheckerSession = tsm.newSpellCheckerSession(null, localeToUse, this, true);
+    } else {
+      mSpellCheckerSession = tsm.newSpellCheckerSession(null, localeToUse, this, true);
+    }
+
     // Define TextInfo[] object (textInfos) based on the current input to be
     // spell checked.
-    TextInfo[] textInfos = new TextInfo[] {new TextInfo(mEditable.toString())};
+    TextInfo[] textInfos = new TextInfo[] {new TextInfo(text)};
 
     // Make API call. Maximum suggestions requested set to 3 for now.
     mSpellCheckerSession.getSentenceSuggestions(textInfos, 3);
