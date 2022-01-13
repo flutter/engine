@@ -371,11 +371,6 @@ bool KeyboardManagerWin32::HandleMessage(UINT const message,
       //   control key shortcuts.
       if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
           IsPrintable(character)) {
-        auto found_text_iter = text_for_scancode_on_redispatch_.find(scancode);
-        if (found_text_iter != text_for_scancode_on_redispatch_.end()) {
-          text = found_text_iter->second;
-          text_for_scancode_on_redispatch_.erase(found_text_iter);
-        }
         window_delegate_->OnText(text);
       }
       return true;

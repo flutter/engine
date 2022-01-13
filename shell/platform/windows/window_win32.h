@@ -243,8 +243,6 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // message.
   int keycode_for_char_message_ = 0;
 
-  std::map<uint16_t, std::u16string> text_for_scancode_on_redispatch_;
-
   // Manages IME state.
   std::unique_ptr<TextInputManagerWin32> text_input_manager_;
 
