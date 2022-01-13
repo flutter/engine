@@ -1345,6 +1345,16 @@ typedef void (*FlutterLogMessageCallback)(const char* /* tag */,
 /// FlutterEngine instance in AOT mode.
 typedef struct _FlutterEngineAOTData* FlutterEngineAOTData;
 
+// Callback called by the Engine to destroy a previously created FlutterMapping.
+//
+// The callback may be called on any thread, so it must be thread-safe.
+//
+// The `data`, `data_size`, and `user_data` parameters are the same values passed
+// in `FlutterEngineCreateMapping`.
+typedef void (*FlutterMappingDestroyCallback)(const uint8_t* /* data */,
+                                              size_t /* data_size */,
+                                              void* /* user_data */);
+
 /// An immutable buffer of potentially shared data.
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterMapping).
@@ -1362,11 +1372,11 @@ typedef struct {
   /// An opaque baton passed back to the embedder when the destruction_callback
   /// is invoked. The engine does not interpret this field in any way.
   void* user_data;
-  /// Called once by the engine to destroy this mapping. The `user_data`
-  /// specified above is passed in as the only argument. This call may
+  /// Called once by the engine to destroy this mapping. The `data`, `data_size`,
+  /// and `user_data` are passed into the given callback. This call may
   /// mutate/free/unmap the data, as it will no longer be accessed by the
   /// Flutter Engine.
-  VoidCallback destruction_callback;
+  FlutterMappingDestroyCallback destruction_callback;
 } FlutterMappingCreateInfo;
 
 typedef struct FlutterMappingPrivate* FlutterMapping;
@@ -1384,9 +1394,9 @@ typedef struct FlutterMappingPrivate* FlutterMapping;
 /// while loading the asset.
 ///
 /// Note that the returned `FlutterMapping` is owned by the Engine and
-/// should be cached or reused. Each callback invocation must return a new
+/// shouldn't be cached or reused. Each callback invocation MUST return a new
 /// FlutterMapping. Multiple mappings may refer to the same area in
-/// memory, proper book-keeping is up to the embedder.
+/// memory, but proper book-keeping is up to the Embedder.
 typedef FlutterMapping (*FlutterAssetResolverGetAssetCallback)(
     const char* /* asset_name */,
     void* /* user_data */);
@@ -2331,9 +2341,14 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
 
 //------------------------------------------------------------------------------
 /// @brief      Creates a `FlutterMapping` using the given creation info.
+///             The returned mapping is owned by the Embedder until passed to the
+///             Engine.
+///             
+///             When owned by the Engine:
+///             
 ///             The backing memory is never mutated by the Engine, and must not
-///             be mutated by the embedder until the mapping is destroyed.
-///             The engine may access the mapping from multiple threads, and may
+///             be mutated by the Embedder until the mapping is destroyed.
+///             The Engine may access the mapping from multiple threads, and may
 ///             destroy the mapping from any thread.
 ///
 /// @param[in]  create_info     Struct describing the mapping to create.
@@ -2345,6 +2360,29 @@ FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineCreateMapping(
     const FlutterMappingCreateInfo* create_info,
     FlutterMapping* out_mapping);
+
+//------------------------------------------------------------------------------
+/// @brief      Destroys a `FlutterMapping` owned by the Embedder.
+///             This may be called by any thread, as long as the Engine doesn't
+///             own the mapping.
+///
+/// @param[in]  mapping     The mapping owned by the Embedder to destroy.
+///
+FLUTTER_EXPORT
+void FlutterEngineDestroyMapping(FlutterMapping mapping);
+
+//------------------------------------------------------------------------------
+/// @brief      Gets the data and size of a `FlutterMapping`.
+///             The mapping must be owned by the Embedder.
+///
+/// @param[in]  mapping         The mapping to get the data and size of.
+/// @param[out] out_size        Returns the mapping's size, if provided.
+///                             May be NULL.
+///
+/// @return     The address to the mapping's data.
+///
+FLUTTER_EXPORT
+const uint8_t* FlutterEngineGetMappingData(FlutterMapping mapping, size_t* out_size);
 
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
@@ -2465,6 +2503,8 @@ typedef FlutterEngineResult (*FlutterEngineNotifyDisplayUpdateFnPtr)(
 typedef FlutterEngineResult (*FlutterEngineCreateMappingFnPtr)(
     const FlutterMappingCreateInfo* create_info,
     FlutterMapping* out_mapping);
+typedef void (*FlutterEngineDestroyMappingFnPtr)(FlutterMapping mapping);
+typedef const uint8_t* (*FlutterEngineGetMappingDataFnPtr)(FlutterMapping mapping, size_t* out_size);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
@@ -2510,6 +2550,8 @@ typedef struct {
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
   FlutterEngineCreateMappingFnPtr CreateMapping;
+  FlutterEngineDestroyMappingFnPtr DestroyMapping;
+  FlutterEngineGetMappingDataFnPtr GetMappingData;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------

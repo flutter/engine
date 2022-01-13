@@ -12,7 +12,7 @@ class EmbedderMapping final : public fml::Mapping {
   EmbedderMapping(const uint8_t* data,
                   size_t size,
                   void* user_data,
-                  VoidCallback destruction_callback)
+                  FlutterMappingDestroyCallback destruction_callback)
       : data_(data),
         size_(size),
         user_data_(user_data),
@@ -20,7 +20,7 @@ class EmbedderMapping final : public fml::Mapping {
 
   ~EmbedderMapping() override {
     if (destruction_callback_)
-      destruction_callback_(user_data_);
+      destruction_callback_(data_, size_, user_data_);
   }
 
   // |Mapping|
@@ -36,7 +36,7 @@ class EmbedderMapping final : public fml::Mapping {
   const uint8_t* data_;
   size_t size_;
   void* user_data_;
-  VoidCallback destruction_callback_;
+  FlutterMappingDestroyCallback destruction_callback_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderMapping);
 };

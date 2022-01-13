@@ -2397,6 +2397,16 @@ FlutterEngineResult FlutterEngineCreateMapping(
   return kSuccess;
 }
 
+void FlutterEngineDestroyMapping(FlutterMapping mapping) {
+  delete reinterpret_cast<fml::Mapping*>(mapping);
+}
+
+const uint8_t* FlutterEngineGetMappingData(FlutterMapping mapping, size_t* out_size) {
+  auto fml_mapping = reinterpret_cast<fml::Mapping*>(mapping);
+  if (out_size != nullptr) *out_size = fml_mapping->GetSize();
+  return fml_mapping->GetMapping();
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2448,6 +2458,8 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(CreateMapping, FlutterEngineCreateMapping);
+  SET_PROC(DestroyMapping, FlutterEngineDestroyMapping);
+  SET_PROC(GetMappingData, FlutterEngineGetMappingData);
 #undef SET_PROC
 
   return kSuccess;
