@@ -77,7 +77,8 @@ class MockKeyboardManagerWin32Delegate
              bool extended,
              bool was_down,
              KeyEventCallback callback) override {
-    view_->OnKey(key, scancode, action, character, extended, was_down, callback);
+    view_->OnKey(key, scancode, action, character, extended, was_down,
+                 callback);
   }
 
   // |WindowWin32|
@@ -118,9 +119,9 @@ class MockKeyboardManagerWin32Delegate
 
  protected:
   BOOL Win32PeekMessage(LPMSG lpMsg,
-                                UINT wMsgFilterMin,
-                                UINT wMsgFilterMax,
-                                UINT wRemoveMsg) override {
+                        UINT wMsgFilterMin,
+                        UINT wMsgFilterMax,
+                        UINT wRemoveMsg) override {
     return MockMessageQueue::Win32PeekMessage(lpMsg, wMsgFilterMin,
                                               wMsgFilterMax, wRemoveMsg);
   }
@@ -130,8 +131,8 @@ class MockKeyboardManagerWin32Delegate
   }
 
   LRESULT Win32SendMessage(UINT const message,
-                                   WPARAM const wparam,
-                                   LPARAM const lparam) override {
+                           WPARAM const wparam,
+                           LPARAM const lparam) override {
     return keyboard_manager_->HandleMessage(message, wparam, lparam)
                ? 0
                : kWmResultDefault;
@@ -191,9 +192,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
-    return FlutterWindowsView::CreateKeyboardKeyHandler(
-        messenger,
-        key_state_.Getter());
+    return FlutterWindowsView::CreateKeyboardKeyHandler(messenger,
+                                                        key_state_.Getter());
   }
 
  private:
