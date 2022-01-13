@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -1173,7 +1172,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   void handleBeforeInput(html.Event event) {
-    final String? eventData = js_util.getProperty<void>(event, 'data') as String?;
+    final String? eventData = getJsProperty<void>(event, 'data') as String?;
 
     if (eventData == null) {
       // When event.data is null we have a deletion.
