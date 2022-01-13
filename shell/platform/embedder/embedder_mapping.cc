@@ -7,46 +7,18 @@
 
 namespace flutter {
 
-class EmbedderMapping final : public fml::Mapping {
- public:
-  EmbedderMapping(const uint8_t* data,
-                  size_t size,
-                  void* user_data,
-                  FlutterMappingDestroyCallback destruction_callback)
-      : data_(data),
-        size_(size),
-        user_data_(user_data),
-        destruction_callback_(destruction_callback) {}
-
-  ~EmbedderMapping() override {
-    if (destruction_callback_)
-      destruction_callback_(data_, size_, user_data_);
-  }
-
-  // |Mapping|
-  size_t GetSize() const override { return size_; }
-
-  // |Mapping|
-  const uint8_t* GetMapping() const override { return data_; }
-
-  // |Mapping|
-  bool IsDontNeedSafe() const override { return false; }
-
- private:
-  const uint8_t* data_;
-  size_t size_;
-  void* user_data_;
-  FlutterMappingDestroyCallback destruction_callback_;
-
-  FML_DISALLOW_COPY_AND_ASSIGN(EmbedderMapping);
-};
-
 std::unique_ptr<fml::Mapping> CreateEmbedderMapping(
     const FlutterMappingCreateInfo* mapping) {
-  return std::make_unique<EmbedderMapping>(
+  auto user_data = SAFE_ACCESS(mapping, user_data, nullptr);
+  auto destruction_callback =
+      SAFE_ACCESS(mapping, destruction_callback, nullptr);
+  return std::make_unique<fml::NonOwnedMapping>(
       SAFE_ACCESS(mapping, data, nullptr), SAFE_ACCESS(mapping, data_size, 0),
-      SAFE_ACCESS(mapping, user_data, nullptr),
-      SAFE_ACCESS(mapping, destruction_callback, nullptr));
+      [user_data, destruction_callback](const uint8_t* data, size_t size) {
+        if (destruction_callback) {
+          destruction_callback(data, size, user_data);
+        }
+      });
 }
 
 }  // namespace flutter
