@@ -43,8 +43,8 @@ public class SettingsChannel {
     }
 
     @NonNull
-    public MessageBuilder setTextShowPassword(@NonNull boolean showPassword) {
-      message.put(TEXT_SHOW_PASSWORD, showPassword);
+    public MessageBuilder setBrieflyShowPassword(@NonNull boolean brieflyShowPassword) {
+      message.put(TEXT_SHOW_PASSWORD, brieflyShowPassword);
       return this;
     }
 

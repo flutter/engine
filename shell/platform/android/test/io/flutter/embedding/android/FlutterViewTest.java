@@ -196,7 +196,8 @@ public class FlutterViewTest {
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
     SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setTextShowPassword(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenAnswer(
@@ -246,7 +247,8 @@ public class FlutterViewTest {
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
     SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setTextShowPassword(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenAnswer(
@@ -287,7 +289,7 @@ public class FlutterViewTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setTextShowPassword(any(Boolean.class)))
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
         .thenAnswer(
             new Answer<SettingsChannel.MessageBuilder>() {
               @Override
@@ -322,7 +324,7 @@ public class FlutterViewTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
-    when(fakeMessageBuilder.setTextShowPassword(any(Boolean.class)))
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
         .thenAnswer(
             new Answer<SettingsChannel.MessageBuilder>() {
               @Override

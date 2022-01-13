@@ -1421,7 +1421,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
-        .setTextShowPassword(
+        .setBrieflyShowPassword(
             Settings.System.getInt(
                     getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)
                 == 1)
