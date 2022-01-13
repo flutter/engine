@@ -175,7 +175,7 @@ AndroidContextGL* AndroidSurfaceGL::GLContextPtr() const {
   return reinterpret_cast<AndroidContextGL*>(android_context_.get());
 }
 
-std::unique_ptr<Surface> AndroidSurfaceGL::CreatePbufferSurface() {
+std::unique_ptr<Surface> AndroidSurfaceGL::CreateSnapshotSurface() {
   if (!onscreen_surface_ || !onscreen_surface_->IsValid()) {
     onscreen_surface_ = GLContextPtr()->CreatePbufferSurface();
   }

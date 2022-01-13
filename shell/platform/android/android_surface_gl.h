@@ -49,7 +49,7 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) override;
 
   // |AndroidSurface|
-  virtual std::unique_ptr<Surface> CreatePbufferSurface() override;
+  virtual std::unique_ptr<Surface> CreateSnapshotSurface() override;
 
   // |GPUSurfaceGLDelegate|
   std::unique_ptr<GLContextResult> GLContextMakeCurrent() override;
@@ -65,6 +65,10 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
 
   // |GPUSurfaceGLDelegate|
   sk_sp<const GrGLInterface> GetGLInterface() const override;
+
+  AndroidEGLSurface* GetOnscreenSurface() const {
+    return onscreen_surface_.get();
+  }
 
  private:
   fml::RefPtr<AndroidNativeWindow> native_window_;
