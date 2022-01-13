@@ -348,10 +348,10 @@ public class PlatformPlugin {
 
     if (currentOverlays != null) {
       setSystemChromeEnabledSystemUIOverlays(currentOverlays);
-    }
-
-    if (currentTheme != null) {
-      setSystemChromeSystemUIOverlayStyle(currentTheme);
+    } else {
+      if (currentTheme != null) {
+        setSystemChromeSystemUIOverlayStyle(currentTheme);
+      }
     }
   }
 
