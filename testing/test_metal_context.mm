@@ -42,9 +42,6 @@ TestMetalContext::TestMetalContext() {
 
 TestMetalContext::~TestMetalContext() {
   std::scoped_lock lock(textures_mutex);
-  for (auto& [_, texture] : textures_) {
-    [(id)texture.get() release];
-  }
   textures_.clear();
   if (device_) {
     [(__bridge id)device_ release];
