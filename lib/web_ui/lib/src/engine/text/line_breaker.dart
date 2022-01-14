@@ -4,8 +4,6 @@
 
 import 'dart:math' as math;
 
-import 'package:ui/ui.dart' as ui;
-
 import '../util.dart';
 import 'line_break_properties.dart';
 import 'unicode_range.dart';
