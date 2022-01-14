@@ -1226,6 +1226,9 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     if (flutterImageView != null) {
       flutterImageView.closeImageReader();
+      // Remove the {@link FlutterImageView} that was previously added by {@code
+      // convertToImageView}.
+      removeView(flutterImageView);
       flutterImageView = null;
     }
     previousRenderSurface = null;
