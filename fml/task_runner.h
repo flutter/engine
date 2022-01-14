@@ -66,9 +66,9 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner>,
   static void RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
                                const fml::closure& task);
 
-  /// Similar to |RunNowOrPostTask|, but it needs to synchronize with thread
-  /// merging operation.
-  static void RunNowOrPostSyncTask(fml::RefPtr<fml::TaskRunner> runner,
+  /// Similar to |RunNowOrPostTask|, but it needs to mutex with thread
+  /// merging operation and post the \p tast synchronously.
+  static void RunNowOrPostTaskSync(fml::RefPtr<fml::TaskRunner> runner,
                                    const fml::closure& task);
 
  protected:

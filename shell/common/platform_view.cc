@@ -62,16 +62,14 @@ void PlatformView::NotifyCreated() {
   // Using the weak pointer is illegal. But, we are going to introduce a latch
   // so that the platform view is not collected till the surface is obtained.
   auto* platform_view = this;
-  fml::ManualResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostSyncTask(
-      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
+  fml::TaskRunner::RunNowOrPostTaskSync(
+      task_runners_.GetRasterTaskRunner(), [platform_view, &surface]() {
         surface = platform_view->CreateRenderingSurface();
         if (surface && !surface->IsValid()) {
           surface.reset();
         }
-        latch.Signal();
       });
-  latch.Wait();
+
   if (!surface) {
     FML_LOG(ERROR) << "Failed to create platform view rendering surface";
     return;

@@ -13,6 +13,7 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/message_loop_task_queues.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 
 namespace fml {
 
@@ -64,9 +65,19 @@ void TaskRunner::RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
   }
 }
 
-void TaskRunner::RunNowOrPostSyncTask(fml::RefPtr<fml::TaskRunner> runner,
+void TaskRunner::RunNowOrPostTaskSync(fml::RefPtr<fml::TaskRunner> runner,
                                       const fml::closure& task) {
+  FML_DCHECK(runner);
   std::scoped_lock lock(g_thread_merging_lock);
-  RunNowOrPostTask(runner, task);
+  if (runner->RunsTasksOnCurrentThread()) {
+    task();
+  } else {
+    fml::AutoResetWaitableEvent latch;
+    runner->PostTask([&] {
+      task();
+      latch.Signal();
+    });
+    latch.Wait();
+  }
 }
 }  // namespace fml
