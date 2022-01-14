@@ -5,25 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Primary target
 
-set(EXE_NAME custom_embedder_vulkan)
+set(EXE_NAME embedder_example_vulkan)
 
 file(GLOB_RECURSE SOURCE_FILES "src/*.cc" "src/*.h")
 add_executable(${EXE_NAME} ${SOURCE_FILES})
-
-
-# Dependency: Vulkan SDK Loader
-
-# Override the SDK location and ICD list by using environment variables.
-# MacOS MoltenVK example:
-#  export VULKAN_SDK=~/VulkanSDK/1.2.198.1/macOS
-#  export VK_LOADER_DEBUG=all
-#  export VK_ICD_FILENAMES=$VULKAN_SDK/share/vulkan/icd.d/MoltenVK_icd.json
-#  export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
-#  export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
-
-find_package(Vulkan REQUIRED)
-target_include_directories(${EXE_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
-target_link_libraries(${EXE_NAME} PRIVATE Vulkan::Vulkan)
 
 
 # Dependency: GLFW
@@ -34,7 +19,7 @@ set(BUILD_SHARED_LIBS OFF)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_VULKAN_STATIC ON CACHE BOOL "" FORCE)
+set(GLFW_VULKAN_STATIC OFF CACHE BOOL "" FORCE)
 add_subdirectory(${GLFW_REPOSITORY} build_glfw)
 
 target_link_libraries(${EXE_NAME} PRIVATE glfw)

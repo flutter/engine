@@ -22,6 +22,6 @@ popd > /dev/null
 #################################################################
 # Run the Flutter Engine Embedder
 #################################################################
-./custom_embedder_vulkan ./myapp ../../../../third_party/icu/common/icudtl.dat
+./embedder_example_vulkan ./myapp ../../../../third_party/icu/common/icudtl.dat
 
 popd > /dev/null
