@@ -152,12 +152,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
           if (flutterEngine == null) {
             return;
           }
-          Log.v(TAG, "! System settings changed. Sending user settings to Flutter.");
+          Log.v(TAG, "System settings changed. Sending user settings to Flutter.");
           sendUserSettingsToFlutter();
         }
 
         @Override
         public boolean deliverSelfNotifications() {
+          // The Flutter app may change system settings.
           return true;
         }
       };
