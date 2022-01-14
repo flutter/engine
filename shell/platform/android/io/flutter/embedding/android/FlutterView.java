@@ -1225,7 +1225,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     flutterEngine.getPlatformViewsController().detachFromView();
 
     // Disconnect the FlutterEngine's PlatformViewsController from the AccessibilityBridge.
-    flutterEngine.getPlatformViewsController().detachAccessibiltyBridge();
+    flutterEngine.getPlatformViewsController().detachAccessibilityBridge();
 
     // Disconnect and clean up the AccessibilityBridge.
     accessibilityBridge.release();

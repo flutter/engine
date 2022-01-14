@@ -213,6 +213,7 @@ bool DartComponentControllerV2::CreateAndBindNamespace() {
 
 bool DartComponentControllerV2::SetUpFromKernel() {
   dart_utils::MappedResource manifest;
+
   if (!dart_utils::MappedResource::LoadFromNamespace(
           namespace_, data_path_ + "/app.dilplist", manifest)) {
     return false;
@@ -223,14 +224,10 @@ bool DartComponentControllerV2::SetUpFromKernel() {
           isolate_snapshot_data_)) {
     return false;
   }
-  if (!dart_utils::MappedResource::LoadFromNamespace(
-          nullptr, "/pkg/data/isolate_core_snapshot_instructions.bin",
-          isolate_snapshot_instructions_, true /* executable */)) {
-    return false;
-  }
 
+  // The core snapshot does not separate instructions from data.
   if (!CreateIsolate(isolate_snapshot_data_.address(),
-                     isolate_snapshot_instructions_.address())) {
+                     nullptr /* isolate_snapshot_instructions */)) {
     return false;
   }
 
@@ -295,16 +292,16 @@ bool DartComponentControllerV2::SetUpFromAppSnapshot() {
       return false;
     }
   } else {
+    // TODO(fxb/91200): This code path was broken for over a year and is
+    // probably not used.
     if (!dart_utils::MappedResource::LoadFromNamespace(
             namespace_, data_path_ + "/isolate_snapshot_data.bin",
             isolate_snapshot_data_)) {
       return false;
     }
-    if (!dart_utils::MappedResource::LoadFromNamespace(
-            namespace_, data_path_ + "/isolate_snapshot_instructions.bin",
-            isolate_snapshot_instructions_, true /* executable */)) {
-      return false;
-    }
+    isolate_data = isolate_snapshot_data_.address();
+    // We don't separate instructions from data in 'core' snapshots.
+    isolate_instructions = nullptr;
   }
   return CreateIsolate(isolate_data, isolate_instructions);
 #endif  // defined(AOT_RUNTIME)
@@ -412,7 +409,11 @@ bool DartComponentControllerV2::RunDartMain() {
   // that run in the dart runner are written with main functions that have the
   // signature `void main(List<String> args)`. In order to ensure that these
   // components do not break we need to have this stub argument list.
-  Dart_Handle dart_arguments = Dart_NewListOf(Dart_CoreType_String, 0);
+  Dart_Handle corelib = Dart_LookupLibrary(ToDart("dart:core"));
+  Dart_Handle string_type =
+      Dart_GetNonNullableType(corelib, ToDart("String"), 0, NULL);
+  Dart_Handle dart_arguments =
+      Dart_NewListOfTypeFilled(string_type, Dart_EmptyString(), 0);
 
   if (Dart_IsError(dart_arguments)) {
     FX_LOGF(ERROR, LOG_TAG, "Failed to allocate Dart arguments list: %s",
