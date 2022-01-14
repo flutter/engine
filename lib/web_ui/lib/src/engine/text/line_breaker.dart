@@ -86,7 +86,7 @@ class LineBreakResult {
       type == LineBreakType.mandatory || type == LineBreakType.endOfText;
 
   @override
-  int get hashCode => ui.hashValues(
+  int get hashCode => Object.hash(
         index,
         indexWithoutTrailingNewlines,
         indexWithoutTrailingSpaces,

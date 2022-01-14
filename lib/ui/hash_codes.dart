@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 // @dart = 2.12
 part of dart.ui;
 
@@ -41,6 +40,10 @@ class _Jenkins {
 /// ```dart
 /// int hashCode => hashValues(foo, bar, hashList(quux), baz);
 /// ```
+@Deprecated(
+  'Use Object.hash() instead '
+  'This feature was deprecated in v2.9.0-0.1.pre'
+)
 int hashValues(
   Object? arg01,            Object? arg02,          [ Object? arg03 = _hashEnd,
   Object? arg04 = _hashEnd, Object? arg05 = _hashEnd, Object? arg06 = _hashEnd,
@@ -113,6 +116,10 @@ int hashValues(
 /// Combine the [Object.hashCode] values of an arbitrary number of objects from
 /// an [Iterable] into one value. This function will return the same value if
 /// given null as if given an empty list.
+@Deprecated(
+  'Use Object.hashAll() or Object.hashAllUnordered() instead '
+  'This feature was deprecated in v2.9.0-0.1.pre'
+)
 int hashList(Iterable<Object?>? arguments) {
   int result = 0;
   if (arguments != null) {

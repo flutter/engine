@@ -74,12 +74,12 @@ class TextHeightStyle {
   }
 
   @override
-  late final int hashCode = ui.hashValues(
+  late final int hashCode = Object.hash(
     fontFamily,
     fontSize,
     height,
-    ui.hashList(fontFeatures),
-    ui.hashList(fontVariations),
+    Object.hashAll(fontFeatures ?? const <Object?>[]),
+    Object.hashAll(fontVariations ?? const <Object?>[]),
   );
 }
 

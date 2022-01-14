@@ -602,7 +602,7 @@ class CodeunitRange {
   }
 
   @override
-  int get hashCode => ui.hashValues(start, end);
+  int get hashCode => Object.hash(start, end);
 
   @override
   String toString() => '[$start, $end]';
