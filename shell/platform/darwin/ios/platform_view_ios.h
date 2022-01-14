@@ -136,12 +136,8 @@ class PlatformViewIOS final : public PlatformView {
   std::unique_ptr<IOSSurface> ios_surface_;
   std::shared_ptr<IOSContext> ios_context_;
   const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
-<<<<<<< HEAD
   PlatformMessageRouter platform_message_router_;
-  AccessibilityBridgePtr accessibility_bridge_;
-=======
   AccessibilityBridgeManager accessibility_bridge_;
->>>>>>> fb3ee7f2b5 (Ensure that PlatformViewIOS does not call into Shell semantics APIs during destruction (#30835))
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
   fml::closure firstFrameCallback_;
   ScopedObserver dealloc_view_controller_observer_;
