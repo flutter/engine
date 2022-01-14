@@ -141,7 +141,6 @@ public final class FlutterActivityDelegate
       Window window = activity.getWindow();
       window.addFlags(LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
-      WindowCompat.setDecorFitsSystemWindows(window, false);
     }
 
     String[] args = getArgsFromIntent(activity.getIntent());
