@@ -322,7 +322,8 @@ public class TextInputChannel {
   public void commitContent(int inputClientId, Map<String, Object> content) {
     Log.v(TAG, "Sending 'commitContent' message.");
     channel.invokeMethod(
-        "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
+        "TextInputClient.performAction",
+        Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
   }
 
   /** Instructs Flutter to execute an "unspecified" action. */
@@ -463,11 +464,12 @@ public class TextInputChannel {
 
       // Build list of content commit mime types from the passed in JSON list
       List<String> contentList = new ArrayList<String>();
-      JSONArray contentCommitMimeTypes = json.isNull("contentCommitMimeTypes")
-          ? null
-          : json.getJSONArray("contentCommitMimeTypes");
+      JSONArray contentCommitMimeTypes =
+          json.isNull("contentCommitMimeTypes")
+              ? null
+              : json.getJSONArray("contentCommitMimeTypes");
       if (contentCommitMimeTypes != null) {
-        for(int i = 0; i < contentCommitMimeTypes.length(); i++){
+        for (int i = 0; i < contentCommitMimeTypes.length(); i++) {
           contentList.add(contentCommitMimeTypes.optString(i));
         }
       }
