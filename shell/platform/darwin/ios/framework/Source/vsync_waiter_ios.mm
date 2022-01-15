@@ -100,9 +100,15 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   }
   assert(resultFrameRate > 0);
   if (@available(iOS 15.0, *)) {
+    if (display_link_.get().preferredFrameRateRange.preferred == resultFrameRate) {
+      return;
+    }
     display_link_.get().preferredFrameRateRange =
         CAFrameRateRangeMake(resultFrameRate, resultFrameRate, resultFrameRate);
   } else if (@available(iOS 10.0, *)) {
+    if (display_link_.get().preferredFramesPerSecond == resultFrameRate) {
+      return;
+    }
     display_link_.get().preferredFramesPerSecond = resultFrameRate;
   }
 }
