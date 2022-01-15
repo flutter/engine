@@ -91,8 +91,8 @@ void Rasterizer::Teardown() {
   surface_.reset();
   last_layer_tree_.reset();
 
-  if (external_view_embedder_) {
-    external_view_embedder_->Teardown();
+  if (external_view_embedder_ && raster_thread_merger_.get() != nullptr) {
+    external_view_embedder_->Teardown(raster_thread_merger_);
   }
 
   if (raster_thread_merger_.get() != nullptr &&

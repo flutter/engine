@@ -953,9 +953,25 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
 
   embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
 
+  // Teardown while on platform thread.
+  ASSERT_TRUE(raster_thread_merger->IsOnPlatformThread());
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces());
-  // Teardown.
-  embedder->Teardown();
+  embedder->Teardown(raster_thread_merger);
+
+  // Teardown while on raster thread.
+  {
+    fml::Thread raster_thread("raster");
+    auto raster_thread_merger = fml::MakeRefCounted<fml::RasterThreadMerger>(
+        raster_thread.GetTaskRunner()
+            ->GetTaskQueueId(),  // Make the platform thread be the raster
+                                 // thread.
+        raster_thread.GetTaskRunner()->GetTaskQueueId());
+
+    ASSERT_FALSE(raster_thread_merger->IsOnPlatformThread());
+
+    EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(0);
+    embedder->Teardown(raster_thread_merger);
+  }
 }
 
 }  // namespace testing

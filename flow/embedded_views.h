@@ -333,7 +333,8 @@ class ExternalViewEmbedder {
   // Called when the rasterizer is being torn down.
   // This method provides a way to release resources associated with the current
   // embedder.
-  virtual void Teardown();
+  virtual void Teardown(
+      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
   FML_DISALLOW_COPY_AND_ASSIGN(ExternalViewEmbedder);
 

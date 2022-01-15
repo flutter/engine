@@ -299,8 +299,11 @@ bool AndroidExternalViewEmbedder::SupportsDynamicThreadMerging() {
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::Teardown() {
-  surface_pool_->DestroyLayers(jni_facade_);
+void AndroidExternalViewEmbedder::Teardown(
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  if (raster_thread_merger->IsOnPlatformThread()) {
+    surface_pool_->DestroyLayers(jni_facade_);
+  }
 }
 
 }  // namespace flutter
