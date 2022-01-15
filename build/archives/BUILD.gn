@@ -48,17 +48,45 @@ if (host_os == "linux") {
   }
 }
 
-zip_bundle("flutter_patched_sdk") {
-  output = "flutter_patched_sdk.zip"
-  deps = [ "//flutter/lib/snapshot:strong_platform" ]
-  files = [
-    {
-      source = "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill"
-      destination = "vm_outline_strong.dill"
-    },
-    {
-      source = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
-      destination = "platform_strong.dill"
-    },
-  ]
+# This is the flutter_sdk from debug configuration.
+if (flutter_runtime_mode == "debug") {
+  zip_bundle("flutter_patched_sdk") {
+    output = "flutter_patched_sdk.zip"
+    deps = [ "//flutter/lib/snapshot:strong_platform" ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill"
+        destination = "vm_outline_strong.dill"
+      },
+      {
+        source = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
+        destination = "platform_strong.dill"
+      },
+    ]
+  }
+}
+
+# This is the flutter_sdk from release configuration.
+if (flutter_runtime_mode == "release") {
+  zip_bundle("flutter_patched_sdk_product") {
+    output = "flutter_patched_sdk_product.zip"
+    deps = [ "//flutter/lib/snapshot:strong_platform" ]
+    files = [
+      {
+        source = "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill"
+        destination = "flutter_patched_sdk_product/vm_outline_strong.dill"
+      },
+      {
+        source = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
+        destination = "flutter_patched_sdk_product/platform_strong.dill"
+      },
+    ]
+  }
+}
+
+# Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
+# the zip file we are just copying the original file to the artifacts location.
+copy("dart_sdk_archive") {
+  sources = [ "//flutter/prebuilts/dartsdk-$host_os-$target_cpu-release.zip" ]
+  outputs = [ "$root_out_dir/zip_archives/dart-sdk-$host_os-$target_cpu.zip" ]
 }
