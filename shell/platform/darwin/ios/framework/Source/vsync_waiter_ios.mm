@@ -83,33 +83,41 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 }
 
 - (void)updateFrameRate:(int64_t)rate {
-  float resultFrameRate = 60.0;
+  float targetPreferredFrameRate = 60.0;
+  const float minFrameRate = 10.0;
+  const float normalFrameRate = 60.0;
+  const float maxFrameRate = fmax([DisplayLinkManager displayRefreshRate], 60.0);
+
   switch (rate) {
     case flutter::kNormalRate:
-      resultFrameRate = 60.0;
+      targetPreferredFrameRate = normalFrameRate;
       break;
     case flutter::kMinRate:
-      resultFrameRate = 30.0;
+      targetPreferredFrameRate = minFrameRate;
       break;
     case flutter::kMaxRate:
-      resultFrameRate = fmax([DisplayLinkManager displayRefreshRate], 60);
+      targetPreferredFrameRate = maxFrameRate;
       break;
     default:
-      resultFrameRate = rate;
+      targetPreferredFrameRate = rate;
       break;
   }
-  assert(resultFrameRate > 0);
+  assert(targetPreferredFrameRate > 0);
+
+  float currentPreferredFrame = 0.0;
   if (@available(iOS 15.0, *)) {
-    if (display_link_.get().preferredFrameRateRange.preferred == resultFrameRate) {
+    currentPreferredFrame = display_link_.get().preferredFrameRateRange.preferred;
+    if (currentPreferredFrame == targetPreferredFrameRate) {
       return;
     }
     display_link_.get().preferredFrameRateRange =
-        CAFrameRateRangeMake(resultFrameRate, resultFrameRate, resultFrameRate);
+        CAFrameRateRangeMake(minFrameRate, maxFrameRate, targetPreferredFrameRate);
   } else if (@available(iOS 10.0, *)) {
-    if (display_link_.get().preferredFramesPerSecond == resultFrameRate) {
+    currentPreferredFrame = display_link_.get().preferredFramesPerSecond;
+    if (currentPreferredFrame == targetPreferredFrameRate) {
       return;
     }
-    display_link_.get().preferredFramesPerSecond = resultFrameRate;
+    display_link_.get().preferredFramesPerSecond = targetPreferredFrameRate;
   }
 }
 
@@ -139,12 +147,6 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   recorder->RecordVsync(frame_start_time, frame_target_time);
   display_link_.get().paused = YES;
 
-  if (@available(iOS 10.0, *)) {
-    // Here is debug code and it will be removed later
-    float frameInterval = [display_link_.get() targetTimestamp] - [display_link_.get() timestamp];
-    float fps = round(1.0 / frameInterval);
-    NSLog(@"frame rate is %f FPS", fps);
-  }
   callback_(std::move(recorder));
 }
 
