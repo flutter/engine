@@ -185,40 +185,33 @@ public class InputConnectionAdaptorTest {
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
-            new InputConnectionAdaptor(
-                    testView,
-                    client,
-                    textInputChannel,
-                    mockKeyboardManager,
-                    editable,
-                    null,
-                    mockFlutterJNI);
+        new InputConnectionAdaptor(
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
     adaptor.commitContent(
-            new InputContentInfo(
-                    Uri.parse("content://mock/uri/test/commitContent"),
-                    new ClipDescription("commitContent test", new String[] { "image/png" })
-            ),
-            0,
-            null
-    );
+        new InputContentInfo(
+            Uri.parse("content://mock/uri/test/commitContent"),
+            new ClipDescription("commitContent test", new String[] {"image/png"})),
+        0,
+        null);
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-            .send(
-                    channelCaptor.capture(),
-                    bufferCaptor.capture(),
-                    any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
-            bufferCaptor.getValue(),
-            "TextInputClient.performAction",
-            new String[] {
-                    "0",
-                    "TextInputAction.commitContent",
-                    "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
-            }
-    );
+        bufferCaptor.getValue(),
+        "TextInputClient.performAction",
+        new String[] {
+          "0",
+          "TextInputAction.commitContent",
+          "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
+        });
   }
 
   @Test
