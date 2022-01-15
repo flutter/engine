@@ -37,6 +37,8 @@
 
 - (double)getRefreshRate;
 
+- (void)updateFrameRate:(int64_t)frequency;
+
 @end
 
 namespace flutter {
@@ -52,6 +54,9 @@ class VsyncWaiterIOS final : public VsyncWaiter, public VariableRefreshRateRepor
 
  private:
   fml::scoped_nsobject<VSyncClient> client_;
+
+  // |VsyncWaiter|
+  void UpdateFrameRate(int64_t frequency) override;
 
   // |VsyncWaiter|
   void AwaitVSync() override;

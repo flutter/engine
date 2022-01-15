@@ -17,6 +17,10 @@
 
 namespace flutter {
 
+const int64_t kNormalRate = -1;
+const int64_t kMinRate = 0;
+const int64_t kMaxRate = 2147483647;
+
 VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
     : VsyncWaiter(std::move(task_runners)) {
   auto callback = [this](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
@@ -33,6 +37,10 @@ VsyncWaiterIOS::~VsyncWaiterIOS() {
   // This way, we will get no more callbacks from the display link that holds a weak (non-nilling)
   // reference to this C++ object.
   [client_.get() invalidate];
+}
+
+void VsyncWaiterIOS::UpdateFrameRate(int64_t frequency) {
+  [client_.get() updateFrameRate:frequency];
 }
 
 void VsyncWaiterIOS::AwaitVSync() {
@@ -74,6 +82,31 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   return self;
 }
 
+- (void)updateFrameRate:(int64_t)rate {
+  float resultFrameRate = 60.0;
+  switch (rate) {
+    case flutter::kNormalRate:
+      resultFrameRate = 60.0;
+      break;
+    case flutter::kMinRate:
+      resultFrameRate = 30.0;
+      break;
+    case flutter::kMaxRate:
+      resultFrameRate = fmax([DisplayLinkManager displayRefreshRate], 60);
+      break;
+    default:
+      resultFrameRate = rate;
+      break;
+  }
+  assert(resultFrameRate > 0);
+  if (@available(iOS 15.0, *)) {
+    display_link_.get().preferredFrameRateRange =
+        CAFrameRateRangeMake(resultFrameRate, resultFrameRate, resultFrameRate);
+  } else if (@available(iOS 10.0, *)) {
+    display_link_.get().preferredFramesPerSecond = resultFrameRate;
+  }
+}
+
 - (void)await {
   display_link_.get().paused = NO;
 }
@@ -100,6 +133,12 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   recorder->RecordVsync(frame_start_time, frame_target_time);
   display_link_.get().paused = YES;
 
+  if (@available(iOS 10.0, *)) {
+    // Here is debug code and it will be removed later
+    float frameInterval = [display_link_.get() targetTimestamp] - [display_link_.get() timestamp];
+    float fps = round(1.0 / frameInterval);
+    NSLog(@"frame rate is %f FPS", fps);
+  }
   callback_(std::move(recorder));
 }
 

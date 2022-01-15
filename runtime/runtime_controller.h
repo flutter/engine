@@ -599,6 +599,9 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
+  void UpdateFrameRate(int64_t frequency) override;
+
+  // |PlatformConfigurationClient|
   void Render(Scene* scene) override;
 
   // |PlatformConfigurationClient|

@@ -74,6 +74,14 @@ class PlatformConfigurationClient {
   virtual void UpdateSemantics(SemanticsUpdate* update) = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief      Update the refresh frame rate for operating system
+  ///
+  /// @param[in] frequency The frequency the operating system will take for
+  /// refresh rate
+  ///
+  virtual void UpdateFrameRate(int64_t frequency) = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      When the Flutter application has a message to send to the
   ///             underlying platform, the message needs to be forwarded to
   ///             the platform on the appropriate thread (via the platform

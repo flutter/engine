@@ -52,6 +52,8 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
+  void UpdateFrameRate(int64_t frequency);
+
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
 
   const VsyncWaiter& GetVsyncWaiter() const;

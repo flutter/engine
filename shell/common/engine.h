@@ -785,6 +785,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
+  void UpdateFrameRate(int64_t frequency) override;
+
+  // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
   // Return the asset manager associated with the current engine, or nullptr.

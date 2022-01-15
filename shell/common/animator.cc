@@ -261,6 +261,10 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
   frame_scheduled_ = true;
 }
 
+void Animator::UpdateFrameRate(int64_t frequency) {
+  waiter_->UpdateFrameRate(frequency);
+}
+
 void Animator::AwaitVSync() {
   waiter_->AsyncWaitForVsync(
       [self = weak_factory_.GetWeakPtr()](

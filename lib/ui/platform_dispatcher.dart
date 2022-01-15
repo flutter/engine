@@ -617,6 +617,12 @@ class PlatformDispatcher {
   ///    scheduling of frames.
   void scheduleFrame() native 'PlatformConfiguration_scheduleFrame';
 
+  /// Update the refresh frame rate of the operating system.
+  ///
+  /// The Flutter framework will call this function to tell engine the max frame rate
+  /// that the screen will take
+  void updateFrameRate(int frequency) native 'PlatformConfiguration_updateFrameRate';
+
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
 

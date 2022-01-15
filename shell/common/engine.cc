@@ -476,6 +476,10 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
+void Engine::UpdateFrameRate(int64_t frequency) {
+  animator_->UpdateFrameRate(frequency);
+}
+
 void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree) {
     return;

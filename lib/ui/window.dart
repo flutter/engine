@@ -624,6 +624,9 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///   scheduling of frames.
   void scheduleFrame() => platformDispatcher.scheduleFrame();
 
+  /// Update the refresh frame rate of the operating system.
+  void updateFrameRate(int frequency) => platformDispatcher.updateFrameRate(frequency);
+
   /// Whether the user has requested that [updateSemantics] be called when
   /// the semantic contents of window changes.
   ///

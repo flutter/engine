@@ -32,6 +32,10 @@ class VsyncWaiter : public std::enable_shared_from_this<VsyncWaiter> {
   /// |Animator::ScheduleMaybeClearTraceFlowIds|.
   void ScheduleSecondaryCallback(uintptr_t id, const fml::closure& callback);
 
+  /// Update the screen's refresh rate,different platforms may have different
+  /// ways to implement this function to change refresh rate.
+  virtual void UpdateFrameRate(int64_t frequency){};
+
  protected:
   // On some backends, the |FireCallback| needs to be made from a static C
   // method.

@@ -35,6 +35,19 @@ void ScheduleFrame(Dart_NativeArguments args) {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
+void UpdateFrameRate(Dart_NativeArguments args) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  Dart_Handle exception = nullptr;
+  int64_t frequency =
+      tonic::DartConverter<int64_t>::FromArguments(args, 1, exception);
+  if (exception) {
+    Dart_ThrowException(exception);
+    return;
+  }
+  UIDartState::Current()->platform_configuration()->client()->UpdateFrameRate(
+      frequency);
+}
+
 void Render(Dart_NativeArguments args) {
   UIDartState::ThrowIfUIOperationsProhibited();
   Dart_Handle exception = nullptr;
@@ -454,6 +467,7 @@ void PlatformConfiguration::RegisterNatives(
   natives->Register({
       {"PlatformConfiguration_defaultRouteName", DefaultRouteName, 1, true},
       {"PlatformConfiguration_scheduleFrame", ScheduleFrame, 1, true},
+      {"PlatformConfiguration_updateFrameRate", UpdateFrameRate, 2, true},
       {"PlatformConfiguration_sendPlatformMessage", _SendPlatformMessage, 4,
        true},
       {"PlatformConfiguration_respondToPlatformMessage",

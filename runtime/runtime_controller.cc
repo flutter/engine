@@ -278,6 +278,11 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
+void RuntimeController::UpdateFrameRate(int64_t frequency) {
+  client_.UpdateFrameRate(frequency);
+}
+
+// |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene) {
   client_.Render(scene->takeLayerTree());
 }
