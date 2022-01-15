@@ -1,4 +1,4 @@
-Signature: e708448e275be02184d5ad40f0457dc5
+Signature: 2bf12e1b30756eb791f7f7658410e55b
 
 UNUSED LICENSES:
 
@@ -6038,8 +6038,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/graphite/src/PaintParams.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/experimental/graphite/src/Log.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/experimental/graphite/src/Log.h
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.cpp
