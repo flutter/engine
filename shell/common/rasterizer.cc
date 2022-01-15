@@ -91,15 +91,15 @@ void Rasterizer::Teardown() {
   surface_.reset();
   last_layer_tree_.reset();
 
+  if (external_view_embedder_) {
+    external_view_embedder_->Teardown();
+  }
+
   if (raster_thread_merger_.get() != nullptr &&
       raster_thread_merger_.get()->IsMerged()) {
     FML_DCHECK(raster_thread_merger_->IsEnabled());
     raster_thread_merger_->UnMergeNowIfLastOne();
     raster_thread_merger_->SetMergeUnmergeCallback(nullptr);
-  }
-
-  if (external_view_embedder_) {
-    external_view_embedder_->Teardown();
   }
 }
 
