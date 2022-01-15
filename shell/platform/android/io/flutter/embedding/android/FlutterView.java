@@ -1420,6 +1420,20 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     textInputPlugin.autofill(values);
   }
 
+  // TODO add comment
+  /* package */ void onStart() {
+    if (flutterSurfaceView != null && flutterSurfaceView.getParent() == null) {
+      addView(flutterSurfaceView);
+    }
+  }
+
+  // TODO add comment
+  /* package */ void onStop() {
+    if (flutterSurfaceView != null && flutterSurfaceView.getParent() != null) {
+      removeView(flutterSurfaceView);
+    }
+  }
+
   /**
    * Listener that is notified when a {@link io.flutter.embedding.engine.FlutterEngine} is attached
    * to/detached from a given {@code FlutterView}.
