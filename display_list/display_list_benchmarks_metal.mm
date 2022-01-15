@@ -7,16 +7,35 @@
 
 #include "third_party/skia/include/core/SkCanvas.h"
 
+#import <Foundation/NSAutoreleasePool.h>
+
 namespace flutter {
 namespace testing {
+
+class AutoreleasePool {
+ public:
+  AutoreleasePool() : pool_([[NSAutoreleasePool alloc] init]) {}
+
+  ~AutoreleasePool() {
+    [pool_ release];
+    pool_ = nullptr;
+  }
+  void drain() {
+    [pool_ drain];
+    pool_ = [[NSAutoreleasePool alloc] init];
+  }
+
+ private:
+  id pool_;
+};
 
 class MetalCanvasProvider : public CanvasProvider {
  public:
   virtual ~MetalCanvasProvider() = default;
+
   void InitializeSurface(const size_t width, const size_t height) override {
     metal_context_ = std::make_unique<TestMetalContext>();
-    metal_surface_ =
-        TestMetalSurface::Create(*metal_context_, SkISize::Make(width, height));
+    metal_surface_ = TestMetalSurface::Create(*metal_context_, SkISize::Make(width, height));
     metal_surface_->GetSurface()->getCanvas()->clear(SK_ColorTRANSPARENT);
   }
 
@@ -27,8 +46,7 @@ class MetalCanvasProvider : public CanvasProvider {
     return metal_surface_->GetSurface();
   }
 
-  sk_sp<SkSurface> MakeOffscreenSurface(const size_t width,
-                                        const size_t height) override {
+  sk_sp<SkSurface> MakeOffscreenSurface(const size_t width, const size_t height) override {
     metal_offscreen_surface_ =
         TestMetalSurface::Create(*metal_context_, SkISize::Make(width, height));
     return metal_offscreen_surface_->GetSurface();
@@ -40,6 +58,7 @@ class MetalCanvasProvider : public CanvasProvider {
   std::unique_ptr<TestMetalContext> metal_context_;
   std::unique_ptr<TestMetalSurface> metal_surface_;
   std::unique_ptr<TestMetalSurface> metal_offscreen_surface_;
+  AutoreleasePool pool_;
 };
 
 RUN_DISPLAYLIST_BENCHMARKS(Metal)

@@ -81,7 +81,7 @@ if (enable_unittests) {
     }
 
     if (is_mac) {
-      sources += [ "display_list_benchmarks_metal.cc" ]
+      sources += [ "display_list_benchmarks_metal.mm" ]
       deps += [ "//flutter/testing:metal" ]
     }
   }
@@ -97,17 +97,14 @@ if (is_ios) {
       "//build/config:symbol_visibility_hidden",
     ]
     configs += [ "//flutter/benchmarking:benchmark_library_config" ]
-    cflags = [
-      "-fobjc-arc",
-      "-mios-simulator-version-min=$ios_testing_deployment_target",
-    ]
+    cflags = [ "-mios-simulator-version-min=$ios_testing_deployment_target" ]
     ldflags =
         [ "-Wl,-install_name,@rpath/libios_display_list_benchmarks.dylib" ]
 
     sources = [
       "display_list_benchmarks.cc",
       "display_list_benchmarks.h",
-      "display_list_benchmarks_metal.cc",
+      "display_list_benchmarks_metal.mm",
     ]
 
     deps = [
