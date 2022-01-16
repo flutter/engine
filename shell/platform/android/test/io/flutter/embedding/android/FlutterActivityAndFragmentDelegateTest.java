@@ -484,6 +484,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -511,6 +512,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -538,6 +540,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -565,6 +568,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -590,6 +594,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
