@@ -214,16 +214,15 @@ RasterStatus Rasterizer::Draw(
   // between successive tries.
   switch (consume_result) {
     case PipelineConsumeResult::MoreAvailable: {
-      delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
-          fml::MakeCopyable(
-              [weak_this = weak_factory_.GetWeakPtr(), pipeline,
-               resubmit_recorder = std::move(resubmit_recorder),
-               discard_callback = std::move(discard_callback)]() mutable {
-                if (weak_this) {
-                  weak_this->Draw(std::move(resubmit_recorder), pipeline,
-                                  std::move(discard_callback));
-                }
-              }));
+      if (raster_status != RasterStatus::kSuccess)
+        delegate_.GetTaskRunners().GetRasterTaskRunner()->PostTask(
+            fml::MakeCopyable(
+                [weak_this = weak_factory_.GetWeakPtr(), pipeline,
+                 resubmit_recorder = std::move(resubmit_recorder)]() mutable {
+                  if (weak_this) {
+                    weak_this->Draw(std::move(resubmit_recorder), pipeline);
+                  }
+                }));
       break;
     }
     default:
