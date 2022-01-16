@@ -688,6 +688,18 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void itChangesSurfaceViewVisibilityWhenOnStartAndOnStop() {
+    Context context = Robolectric.setupActivity(Activity.class);
+    FlutterView flutterView = spy(new FlutterView(context));
+    FlutterSurfaceView flutterSurfaceView = (FlutterSurfaceView) flutterView.renderSurface;
+    assertEquals(View.VISIBLE, flutterSurfaceView.getVisibility());
+    flutterView.onStop();
+    assertEquals(View.GONE, flutterSurfaceView.getVisibility());
+    flutterView.onStart();
+    assertEquals(View.VISIBLE, flutterSurfaceView.getVisibility());
+  }
+
+  @Test
   public void itSendsHingeDisplayFeatureToFlutter() {
     Context context = Robolectric.setupActivity(Activity.class);
     FlutterView flutterView = spy(new FlutterView(context));

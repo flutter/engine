@@ -984,6 +984,24 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
+  public void itNotifiesFlutterViewWhenOnStartAndOnStop() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
+    delegate.flutterView = mock(FlutterView.class);
+    delegate.onStart();
+    // Verify that the onStart of flutterView was called.
+    verify(delegate.flutterView, times(1)).onStart();
+    delegate.onStop();
+    // Verify that the onStop of flutterView was called.
+    verify(delegate.flutterView, times(1)).onStop();
+  }
+
+  @Test
   public void itDoesNotDelayTheFirstDrawWhenRequestedAndWithAProvidedSplashScreen() {
     when(mockHost.provideSplashScreen())
         .thenReturn(new DrawableSplashScreen(new ColorDrawable(Color.GRAY)));

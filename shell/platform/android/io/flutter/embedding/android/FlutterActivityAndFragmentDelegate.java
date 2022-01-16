@@ -74,7 +74,7 @@ import java.util.Arrays;
   // to this FlutterActivityAndFragmentDelegate.
   @NonNull private Host host;
   @Nullable private FlutterEngine flutterEngine;
-  @Nullable private FlutterView flutterView;
+  @VisibleForTesting @Nullable FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
   @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
