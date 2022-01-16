@@ -99,10 +99,11 @@ double VsyncWaiterIOS::GetRefreshRate() const {
       targetPreferredFrameRate = maxFrameRate;
       break;
     default:
-      targetPreferredFrameRate = rate;
+      targetPreferredFrameRate = fmax(rate, minFrameRate);
       break;
   }
-  assert(targetPreferredFrameRate > 0);
+    
+  assert(targetPreferredFrameRate >= minFrameRate);
 
   float currentPreferredFrame = 0.0;
   if (@available(iOS 15.0, *)) {
