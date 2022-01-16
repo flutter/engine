@@ -102,7 +102,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
       targetPreferredFrameRate = fmax(rate, minFrameRate);
       break;
   }
-    
+
   assert(targetPreferredFrameRate >= minFrameRate);
 
   float currentPreferredFrame = 0.0;
