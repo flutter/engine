@@ -395,10 +395,7 @@ public class PlatformViewsControllerTest {
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
     PlatformView platformView = mock(PlatformView.class);
-
-    Context context = RuntimeEnvironment.application.getApplicationContext();
-    View androidView = new View(context);
-
+    final View androidView = mock(View.class);
     when(platformView.getView()).thenReturn(androidView);
     when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
     platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
@@ -406,12 +403,16 @@ public class PlatformViewsControllerTest {
     FlutterJNI jni = new FlutterJNI();
     attach(jni, platformViewsController);
 
+    verify(androidView, never()).setLayoutDirection(anyInt());
+
     // Simulate create call from the framework.
     createPlatformView(jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ true);
     assertEquals(ShadowFlutterJNI.getResponses().size(), 1);
 
     // Simulate set direction call from the framework.
     setLayoutDirection(jni, platformViewsController, platformViewId, 1);
+    verify(androidView, times(1)).setLayoutDirection(1);
+
     // The limit value of reply message will be equal to 2 if the layout direction is set
     // successfully, otherwise it will be much more than 2 due to the reply message contains
     // an error message wrapped with exception detail information.
