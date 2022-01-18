@@ -183,18 +183,14 @@ class AndroidEGLSurfaceDamage {
   }
 
  private:
-  std::vector<EGLint> static RectToInts(EGLDisplay display,
-                                        EGLSurface surface,
-                                        const SkIRect& rect) {
-    std::vector<EGLint> res;
+  std::array<EGLint, 4> static RectToInts(EGLDisplay display,
+                                          EGLSurface surface,
+                                          const SkIRect& rect) {
     EGLint height;
     eglQuerySurface(display, surface, EGL_HEIGHT, &height);
 
-    res.push_back(rect.left());
-    res.push_back(height - rect.bottom());
-    res.push_back(rect.width());
-    res.push_back(rect.height());
-
+    std::array<EGLint, 4> res{rect.left(), height - rect.bottom(), rect.width(),
+                              rect.height()};
     return res;
   }
 
