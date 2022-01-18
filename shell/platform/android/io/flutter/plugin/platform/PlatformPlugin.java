@@ -141,8 +141,6 @@ public class PlatformPlugin {
     this.platformChannel = platformChannel;
     this.platformChannel.setPlatformMessageHandler(mPlatformMessageHandler);
     this.platformPluginDelegate = delegate;
-
-    currentSystemUiMode = PlatformChannel.SystemUiMode.EDGE_TO_EDGE;
   }
 
   /**
@@ -344,11 +342,13 @@ public class PlatformPlugin {
    * PlatformPlugin}.
    */
   public void updateSystemUiOverlays() {
-    setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
-
     if (currentOverlays != null) {
       setSystemChromeEnabledSystemUIOverlays(currentOverlays);
-    } else if (currentTheme != null) {
+    } else if (currentSystemUiMode != null) {
+      setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+    }
+
+    if (currentTheme != null) {
       setSystemChromeSystemUIOverlayStyle(currentTheme);
     }
   }
