@@ -64,7 +64,6 @@ bool ExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return false;
 }
 
-void ExternalViewEmbedder::Teardown(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+void ExternalViewEmbedder::Teardown() {}
 
 }  // namespace flutter

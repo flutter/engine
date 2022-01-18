@@ -1,10 +1,13 @@
 package io.flutter.embedding.engine;
 
+import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -19,7 +22,9 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -244,5 +249,37 @@ public class FlutterJNITest {
     FlutterJNI flutterJNI = new FlutterJNI();
     ByteBuffer buffer = ByteBuffer.allocate(4);
     flutterJNI.invokePlatformMessageResponseCallback(0, buffer, buffer.position());
+  }
+
+  @Test
+  public void destroyOverlaySurfaces__calledFromDifferentThread() throws Exception {
+    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
+
+    FlutterJNI flutterJNI = new FlutterJNI();
+    flutterJNI.setPlatformViewsController(platformViewsController);
+
+    AtomicReference<Exception> exception = new AtomicReference<>();
+
+    // --- Execute Test ---
+    CountDownLatch latch = new CountDownLatch(1);
+    Thread thread =
+        new Thread(
+            () -> {
+              try {
+                flutterJNI.destroyOverlaySurfaces();
+              } catch (Exception e) {
+                exception.set(e);
+              }
+              latch.countDown();
+            });
+
+    thread.start();
+    latch.await();
+    shadowOf(getMainLooper()).idle();
+
+    // --- Verify Results ---
+    if (exception.get() != null) {
+      fail("Unexpected exception: " + exception.get().toString());
+    }
   }
 }

@@ -11,6 +11,7 @@ import android.graphics.ColorSpace;
 import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Size;
 import android.view.Surface;
@@ -1171,12 +1172,25 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public void destroyOverlaySurfaces() {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to destroy an overlay surface");
-    }
-    platformViewsController.destroyOverlaySurfaces();
+    // Normally, this method is called on the Android main thread.
+    //
+    // However, it may be called from a different thread after the thread merger lease expired
+    // and the rasterizer is being torn down.
+    //
+    // The platform view embedder may keep these surfaces even after the lease have expired in
+    // case they are used in a future frame that contains platform views.
+    //
+    // This is particularly an issue when a "cached" engine is used.
+    //
+    // See Rasterizer::Teardown in C++, and FlutterEngineCache in Java.
+    runOnMainThread(
+        () -> {
+          if (platformViewsController == null) {
+            throw new RuntimeException(
+                "platformViewsController must be set before attempting to destroy an overlay surface");
+          }
+          platformViewsController.destroyOverlaySurfaces();
+        });
   }
   // ----- End Engine Lifecycle Support ----
 
@@ -1404,6 +1418,21 @@ public class FlutterJNI {
           "Methods marked with @UiThread must be executed on the main thread. Current thread: "
               + Thread.currentThread().getName());
     }
+  }
+
+  /**
+   * Causes the runnable r to be run on the Android main thread. If the current thread is different,
+   * then it adds the runnable to the message queue of the main thread.
+   *
+   * @param r The runnable that will be executed.
+   */
+  private void runOnMainThread(Runnable r) {
+    if (Looper.myLooper() == mainLooper) {
+      r.run();
+      return;
+    }
+    final Handler handler = new Handler(mainLooper);
+    handler.post(r);
   }
 
   /**

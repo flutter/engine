@@ -264,7 +264,7 @@ void AndroidExternalViewEmbedder::BeginFrame(
 
   // The surface size changed. Therefore, destroy existing surfaces as
   // the existing surfaces in the pool can't be recycled.
-  if (frame_size_ != frame_size && raster_thread_merger->IsOnPlatformThread()) {
+  if (frame_size_ != frame_size) {
     surface_pool_->DestroyLayers(jni_facade_);
   }
   surface_pool_->SetFrameSize(frame_size);
@@ -299,11 +299,8 @@ bool AndroidExternalViewEmbedder::SupportsDynamicThreadMerging() {
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::Teardown(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  if (raster_thread_merger->IsOnPlatformThread()) {
-    surface_pool_->DestroyLayers(jni_facade_);
-  }
+void AndroidExternalViewEmbedder::Teardown() {
+  surface_pool_->DestroyLayers(jni_facade_);
 }
 
 }  // namespace flutter
