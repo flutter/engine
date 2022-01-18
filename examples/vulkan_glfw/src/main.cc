@@ -20,6 +20,10 @@
 static const bool g_enable_validation_layers = true;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
+// Use `VK_PRESENT_MODE_FIFO_KHR` for full vsync (one swap per screen refresh),
+// `VK_PRESENT_MODE_MAILBOX_KHR` for continual swap without horizontal tearing,
+// or `VK_PRESENT_MODE_IMMEDIATE_KHR` for no vsync.
+static const VkPresentModeKHR kPreferredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
 
 static_assert(FLUTTER_ENGINE_VERSION == 1,
               "This Flutter Embedder was authored against the stable Flutter "
@@ -30,14 +34,20 @@ static_assert(FLUTTER_ENGINE_VERSION == 1,
 /// Global struct for holding the Window+Vulkan state.
 struct {
   uint32_t vk_version;
+
   GLFWwindow* window;
   VkInstance instance;
   VkSurfaceKHR surface;
+
   VkPhysicalDevice physical_device;
   std::vector<const char*> enabled_device_extensions;
   VkDevice device;
   uint32_t queue_family_index;
   VkQueue queue;
+
+  VkSwapchainKHR swapchain;
+  std::vector<VkImage> swapchain_images;
+  std::vector<VkImageView> swapchain_image_views;
 } g_state;
 
 void GLFW_ErrorCallback(int error, const char* description) {
@@ -49,7 +59,109 @@ void PrintUsage() {
             << std::endl;
 }
 
-void RecreateSwapchain() {}
+bool InitializeSwapchain() {
+  /// --------------------------------------------------------------------------
+  /// Choose an image format that can be presented to the surface, preferring
+  /// the common BGRA+sRGB if available.
+  /// --------------------------------------------------------------------------
+
+  uint32_t format_count;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(g_state.physical_device, g_state.surface,
+                                       &format_count, nullptr);
+  std::vector<VkSurfaceFormatKHR> formats(format_count);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(g_state.physical_device, g_state.surface,
+                                       &format_count, formats.data());
+  assert(!formats.empty());  // Shouldn't be possible.
+
+  VkSurfaceFormatKHR surface_format = formats[0];
+  for (const auto& format : formats) {
+    if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
+        format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+      surface_format = format;
+    }
+  }
+
+  /// --------------------------------------------------------------------------
+  /// Choose the presentable image size that's as close as possible to the
+  /// window size.
+  /// --------------------------------------------------------------------------
+
+  VkExtent2D extent;
+
+  VkSurfaceCapabilitiesKHR surface_capabilities;
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+      g_state.physical_device, g_state.surface, &surface_capabilities);
+
+  if (surface_capabilities.currentExtent.width != UINT32_MAX) {
+    // If the surface reports a specific extent, we must use it.
+    extent = surface_capabilities.currentExtent;
+  } else {
+    // `glfwGetWindowSize` returns the window size in screen coordinates, so we
+    // instead use `glfwGetFramebufferSize` to get the size in pixels in order
+    // to properly support high DPI displays.
+    int width, height;
+    glfwGetFramebufferSize(g_state.window, &width, &height);
+
+    VkExtent2D actual_extent = {
+        .width = static_cast<uint32_t>(width),
+        .height = static_cast<uint32_t>(height),
+    };
+    actual_extent.width =
+        std::max(surface_capabilities.minImageExtent.width,
+                 std::min(surface_capabilities.maxImageExtent.width,
+                          actual_extent.width));
+    actual_extent.height =
+        std::max(surface_capabilities.minImageExtent.height,
+                 std::min(surface_capabilities.maxImageExtent.height,
+                          actual_extent.height));
+  }
+
+  /// --------------------------------------------------------------------------
+  /// Choose the present mode.
+  /// --------------------------------------------------------------------------
+
+  uint32_t mode_count;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(
+      g_state.physical_device, g_state.surface, &mode_count, nullptr);
+  std::vector<VkPresentModeKHR> modes(mode_count);
+  vkGetPhysicalDeviceSurfacePresentModesKHR(
+      g_state.physical_device, g_state.surface, &mode_count, modes.data());
+  assert(!formats.empty());  // Shouldn't be possible.
+
+  // If the preferred mode isn't available, just choose the first one.
+  VkPresentModeKHR present_mode = modes[0];
+  for (const auto& mode : modes) {
+    if (mode == kPreferredPresentMode) {
+      present_mode = mode;
+      break;
+    }
+  }
+
+  /// --------------------------------------------------------------------------
+  /// Create the swapchain.
+  /// --------------------------------------------------------------------------
+
+  VkSwapchainCreateInfoKHR info = {
+      .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+      .surface = g_state.surface,
+      .minImageCount = surface_capabilities.minImageCount + 1,
+      .imageFormat = surface_format.format,
+      .imageColorSpace = surface_format.colorSpace,
+      .imageExtent = extent,
+      .imageArrayLayers = 1,
+      .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+      .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+      .queueFamilyIndexCount = 0,
+      .pQueueFamilyIndices = nullptr,
+      .preTransform = surface_capabilities.currentTransform,
+      .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+      .presentMode = present_mode,
+      .clipped = true,
+  };
+  vkCreateSwapchainKHR(g_state.device, &info, nullptr, &g_state.swapchain);
+
+  return true;
+}
 
 int main(int argc, char** argv) {
   if (argc != 3) {
@@ -99,10 +211,10 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  int vk_version = gladLoadVulkan(nullptr, [](const char* procname) {
+  g_state.vk_version = gladLoadVulkan(nullptr, [](const char* procname) {
     return glfwGetInstanceProcAddress(nullptr, procname);
   });
-  if (vk_version == 0) {
+  if (g_state.vk_version == 0) {
     std::cerr << "Failed to initialize Vulkan proc table." << std::endl;
     return EXIT_FAILURE;
   }
@@ -110,15 +222,16 @@ int main(int argc, char** argv) {
   /// --------------------------------------------------------------------------
   /// Create a Vulkan instance.
   /// --------------------------------------------------------------------------
+
   {
     uint32_t instance_extensions_count;
     const char** instance_extensions =
         glfwGetRequiredInstanceExtensions(&instance_extensions_count);
 
-    std::cout << "GLFW requires " << instance_extensions_count
-              << " Vulkan extensions:" << std::endl;
+    std::cout << "Enabling " << instance_extensions_count
+              << " instance extensions:" << std::endl;
     for (unsigned int i = 0; i < instance_extensions_count; i++) {
-      std::cout << " - " << instance_extensions[i] << std::endl;
+      std::cout << "  - " << instance_extensions[i] << std::endl;
     }
 
     VkApplicationInfo app_info = {
@@ -161,6 +274,7 @@ int main(int argc, char** argv) {
   /// --------------------------------------------------------------------------
   /// Create the window surface.
   /// --------------------------------------------------------------------------
+
   if (glfwCreateWindowSurface(g_state.instance, g_state.window, NULL,
                               &g_state.surface) != VK_SUCCESS) {
     std::cerr << "Failed to create window surface." << std::endl;
@@ -170,6 +284,7 @@ int main(int argc, char** argv) {
   /// --------------------------------------------------------------------------
   /// Select a compatible physical device.
   /// --------------------------------------------------------------------------
+
   {
     uint32_t count;
     vkEnumeratePhysicalDevices(g_state.instance, &count, nullptr);
@@ -229,12 +344,19 @@ int main(int argc, char** argv) {
       std::vector<VkExtensionProperties> available_extensions(extension_count);
       vkEnumerateDeviceExtensionProperties(pdevice, nullptr, &extension_count,
                                            available_extensions.data());
+
+      bool supports_swapchain = false;
       for (const auto& available_extension : available_extensions) {
+        if (strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+                   available_extension.extensionName) == 0) {
+          supports_swapchain = true;
+          supported_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        }
         // The spec requires VK_KHR_portability_subset be enabled whenever it's
         // available on a device. It's present on compatibility ICDs like
         // MoltenVK.
-        if (strcmp("VK_KHR_portability_subset",
-                   available_extension.extensionName) == 0) {
+        else if (strcmp("VK_KHR_portability_subset",
+                        available_extension.extensionName) == 0) {
           supported_extensions.push_back("VK_KHR_portability_subset");
         }
 
@@ -245,6 +367,13 @@ int main(int argc, char** argv) {
           supported_extensions.push_back(
               VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         }
+      }
+
+      // Skip physical devices that don't have swapchain support.
+      if (!supports_swapchain) {
+        std::cout << "  - Skipping due to lack of swapchain support."
+                  << std::endl;
+        continue;
       }
 
       // Prefer GPUs with larger max texture sizes.
@@ -270,8 +399,30 @@ int main(int argc, char** argv) {
   }
 
   /// --------------------------------------------------------------------------
+  /// Reload the proc table now that a physical device has been selected.
+  /// --------------------------------------------------------------------------
+
+  {
+    int vk_version =
+        gladLoadVulkan(g_state.physical_device, [](const char* procname) {
+          return glfwGetInstanceProcAddress(g_state.instance, procname);
+        });
+    if (vk_version == 0) {
+      std::cerr << "Failed to initialize Vulkan proc table." << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+
+  /// --------------------------------------------------------------------------
   /// Create a logical device.
   /// --------------------------------------------------------------------------
+
+  std::cout << "Enabling " << g_state.enabled_device_extensions.size()
+            << " device extensions:" << std::endl;
+  for (const char* extension : g_state.enabled_device_extensions) {
+    std::cout << "  - " << extension << std::endl;
+  }
+
   {
     VkPhysicalDeviceFeatures device_features = {};
 
@@ -305,6 +456,12 @@ int main(int argc, char** argv) {
 
   vkGetDeviceQueue(g_state.device, g_state.queue_family_index, 0,
                    &g_state.queue);
+
+  /// --------------------------------------------------------------------------
+  /// Create swapchain.
+  /// --------------------------------------------------------------------------
+
+  InitializeSwapchain();
 
   std::cout << "Success.\n";
 
