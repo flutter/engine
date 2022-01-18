@@ -9,6 +9,9 @@
 #include <list>
 #include <utility>
 
+// required to get API level
+#include <sys/system_properties.h>
+
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -109,6 +112,14 @@ static bool TeardownContext(EGLDisplay display, EGLContext context) {
 class AndroidEGLSurfaceDamage {
  public:
   void init(EGLDisplay display, EGLContext context) {
+    if (GetAPILevel() < 29) {
+      // Disable partial repaint for devices older than Android 10. There
+      // are old devices that have extensions below available but the
+      // implementation causes glitches (i.e. Xperia Z3 with Android 6).
+      partial_redraw_supported_ = false;
+      return;
+    }
+
     const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
 
     if (HasExtension(extensions, "EGL_KHR_partial_update")) {
@@ -128,6 +139,15 @@ class AndroidEGLSurfaceDamage {
 
     partial_redraw_supported_ =
         set_damage_region_ != nullptr && swap_buffers_with_damage_ != nullptr;
+  }
+
+  static int GetAPILevel() {
+    char sdk_version_string[PROP_VALUE_MAX];
+    if (__system_property_get("ro.build.version.sdk", sdk_version_string)) {
+      return atoi(sdk_version_string);
+    } else {
+      return -1;
+    }
   }
 
   void SetDamageRegion(EGLDisplay display,
