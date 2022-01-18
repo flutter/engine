@@ -140,8 +140,8 @@ class AndroidEGLSurfaceDamage {
   }
 
   // Maximum damage history - for triple buffering we need to store damage for
-  // last two frames
-  static const int kMaxHistorySize = 2;
+  // last two frames; Some Android devices (Pixel 4) use quad buffering.
+  static const int kMaxHistorySize = 10;
 
   bool SupportsPartialRepaint() const { return partial_redraw_supported_; }
 
@@ -155,15 +155,12 @@ class AndroidEGLSurfaceDamage {
 
     if (age == 0) {  // full repaint
       return std::nullopt;
-    } else if (age == 1) {
-      // no initial damage
-      return SkIRect::MakeEmpty();
     } else {
-      FML_DCHECK(age >= kMaxHistorySize);
-      age -= kMaxHistorySize;
-      SkIRect res;
-      for (auto i = damage_history_.begin();
-           i != damage_history_.end() && age >= 0; ++i, --age) {
+      // join up to (age - 1) last rects from damage history
+      --age;
+      auto res = SkIRect::MakeEmpty();
+      for (auto i = damage_history_.rbegin();
+           i != damage_history_.rend() && age > 0; ++i, --age) {
         res.join(*i);
       }
       return res;
