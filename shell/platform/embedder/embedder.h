@@ -1357,7 +1357,7 @@ typedef void (*FlutterMappingDestroyCallback)(const uint8_t* /* data */,
 
 /// An immutable buffer of potentially shared data.
 typedef struct {
-  /// The size of the struct. Must be sizeof(FlutterMapping).
+  /// The size of the struct. Must be sizeof(FlutterMappingCreateInfo).
   size_t struct_size;
 
   /// A pointer to the data accessed by the Flutter Engine. The data will not be

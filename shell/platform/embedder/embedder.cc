@@ -50,7 +50,6 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_asset_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
-#include "flutter/shell/platform/embedder/embedder_mapping.h"
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
@@ -2386,12 +2385,24 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
 FlutterEngineResult FlutterEngineCreateMapping(
     const FlutterMappingCreateInfo* create_info,
     FlutterMapping* out_mapping) {
-  if (SAFE_ACCESS(create_info, data, nullptr) == nullptr &&
-      SAFE_ACCESS(create_info, data_size, 0) > 0) {
+  auto data = SAFE_ACCESS(create_info, data, nullptr);
+  auto data_size = SAFE_ACCESS(create_info, data_size, 0);
+  if (data == nullptr && data_size > 0) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid mapping specified.");
   }
 
-  auto mapping = flutter::CreateEmbedderMapping(create_info);
+  auto user_data = SAFE_ACCESS(create_info, user_data, nullptr);
+  auto destruction_callback =
+      SAFE_ACCESS(create_info, destruction_callback, nullptr);
+
+  auto mapping = std::make_unique<fml::NonOwnedMapping>(
+      data, data_size,
+      [user_data, destruction_callback](const uint8_t* data, size_t size) {
+        if (destruction_callback) {
+          destruction_callback(data, size, user_data);
+        }
+      });
+
   *out_mapping = reinterpret_cast<FlutterMapping>(mapping.release());
 
   return kSuccess;
