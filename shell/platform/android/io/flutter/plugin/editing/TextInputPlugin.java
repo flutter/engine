@@ -23,6 +23,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
 import android.view.textservice.SentenceSuggestionsInfo;
+import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.SpellCheckerSession;
 import android.view.textservice.SuggestionsInfo;
 import android.view.textservice.TextInfo;
@@ -185,6 +186,7 @@ public class TextInputPlugin
     tsm =
         (TextServicesManager)
             view.getContext().getSystemService(Context.TEXT_SERVICES_MANAGER_SERVICE);
+    Log.e("CAMILLE_TSM", tsm.toString());
   }
 
   @NonNull
@@ -862,6 +864,7 @@ public class TextInputPlugin
   // Responsible for calling the Android spell checker API to retrieve spell
   // checking results.
   public void performSpellCheck(String locale, String text) {
+    Log.e("CAMILLE_TEXT", text);
     String[] localeCodes = locale.split("-");
     Locale localeToUse;
 
@@ -877,9 +880,19 @@ public class TextInputPlugin
     // Closes spell checker session if one previously in use.
     if (mSpellCheckerSession != null) {
       mSpellCheckerSession.close();
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, localeToUse, this, true);
+      mSpellCheckerSession = tsm.newSpellCheckerSession(null, Locale.ENGLISH, this, true);
+      Log.e("CAMILLE_OLD", mSpellCheckerSession.toString());
     } else {
-      mSpellCheckerSession = tsm.newSpellCheckerSession(null, localeToUse, this, true);
+      mSpellCheckerSession = tsm.newSpellCheckerSession(null, Locale.ENGLISH, this, true);
+      Log.e("CAMILLE_NEW", mSpellCheckerSession.toString());
+    }
+    SpellCheckerInfo infoChecker = mSpellCheckerSession.getSpellChecker();
+    Log.e("CAMILLE_SC", String.valueOf(infoChecker.describeContents()));
+    Log.e("CAMILLE_LIST", tsm.getEnabledSpellCheckerInfos().toString());
+    Log.e("CAMILLE_ONE", tsm.getCurrentSpellCheckerInfo().toString());
+    Log.e("CAMILLE_ISC", Boolean.toString(tsm.isSpellCheckerEnabled()));
+    if (mSpellCheckerSession.isSessionDisconnected()) {
+      Log.e("CAMILLE_SESSION", "is disconnected");
     }
 
     // Define TextInfo[] object (textInfos) based on the current input to be
@@ -894,12 +907,15 @@ public class TextInputPlugin
   // then be sent to the framework.
   @Override
   public void onGetSentenceSuggestions(SentenceSuggestionsInfo[] results) {
+    Log.e("CAMILLE_RES_LEN", String.valueOf(results.length));
     ArrayList<HashMap<String, String>> spellCheckerSuggestionSpans =
         new ArrayList<HashMap<String, String>>();
 
     for (int i = 0; i < results[0].getSuggestionsCount(); i++) {
       SuggestionsInfo suggestionsInfo = results[0].getSuggestionsInfoAt(i);
       int suggestionsCount = suggestionsInfo.getSuggestionsCount();
+      Log.e("CAMILLE_INFO", suggestionsInfo.toString());
+      Log.e("CAMILLE_SUG_LEN", String.valueOf(suggestionsCount));
 
       if (suggestionsCount > 0) {
         HashMap<String, String> spellCheckerSuggestionSpan = new HashMap<>();
@@ -911,6 +927,7 @@ public class TextInputPlugin
 
         for (int j = 0; j < suggestionsCount; j++) {
           String key = "suggestion_" + String.valueOf(j);
+          Log.e("CAMILLE_SUGGESTION", suggestionsInfo.getSuggestionAt(j));
           spellCheckerSuggestionSpan.put(key, suggestionsInfo.getSuggestionAt(j));
         }
 
