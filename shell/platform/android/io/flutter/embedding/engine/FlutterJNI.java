@@ -1180,7 +1180,9 @@ public class FlutterJNI {
     // The platform view embedder may keep these surfaces even after the lease have expired in
     // case they are used in a future frame that contains platform views.
     //
-    // This is particularly an issue when a "cached" engine is used.
+    // This is particularly an issue when a "cached" engine is used. In this case, this method
+    // would not be called if it requires to run on the main thread. For this reason, this
+    // method hops to the Android main thread if necessary.
     //
     // See Rasterizer::Teardown in C++, and FlutterEngineCache in Java.
     runOnMainThread(
