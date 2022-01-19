@@ -953,6 +953,12 @@ import java.util.Arrays;
     @NonNull
     TransparencyMode getTransparencyMode();
 
+    /**
+     * Returns the {@link ExclusiveAppComponent<Activity>} attached to {@link
+     * io.flutter.embedding.engine.FlutterEngine}.
+     */
+    ExclusiveAppComponent<Activity> getExclusiveAppComponent();
+
     @Nullable
     SplashScreen provideSplashScreen();
 

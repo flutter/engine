@@ -454,6 +454,7 @@ public class FlutterActivity extends Activity
    * Returns the Android App Component exclusively attached to {@link
    * io.flutter.embedding.engine.FlutterEngine}.
    */
+  @Override
   public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
     return delegate;
   }
