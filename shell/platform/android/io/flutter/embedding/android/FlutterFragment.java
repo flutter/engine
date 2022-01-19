@@ -747,16 +747,8 @@ public class FlutterFragment extends Fragment
   }
 
   /**
-   * Returns the {@link ExclusiveAppComponent<Activity>} that is associated with {@link
+   * Returns the Android App Component exclusively attached to {@link
    * io.flutter.embedding.engine.FlutterEngine}.
-   *
-   * <p>In the scenario where multiple {@link FlutterFragment} share the same {@link FlutterEngine},
-   * to attach/re-attache a {@link FlutterFragment} to the shared {@link FlutterEngine}, we MUST
-   * manually invoke {@link ActivityControlSurface#attachToActivity(ExclusiveAppComponent,
-   * Lifecycle)}.
-   *
-   * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
-   * FlutterFragment} can access it.
    */
   @Override
   public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
