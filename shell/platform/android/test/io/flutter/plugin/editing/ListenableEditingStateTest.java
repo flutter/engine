@@ -45,7 +45,9 @@ public class ListenableEditingStateTest {
   @Test
   public void testConstructor() {
     // When provided valid composing range, should not fail
-    new ListenableEditingState(new TextInputChannel.TextEditState("hello", 1, 4, 1, 4), new View(RuntimeEnvironment.application));
+    new ListenableEditingState(
+        new TextInputChannel.TextEditState("hello", 1, 4, 1, 4),
+        new View(RuntimeEnvironment.application));
   }
 
   // -------- Start: Test BatchEditing   -------
