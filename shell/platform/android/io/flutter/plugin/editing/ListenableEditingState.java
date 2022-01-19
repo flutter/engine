@@ -141,7 +141,11 @@ class ListenableEditingState extends SpannableStringBuilder {
     if (composingStart < 0 || composingStart >= composingEnd) {
       BaseInputConnection.removeComposingSpans(this);
     } else {
-      mDummyConnection.setComposingRegion(composingStart, composingEnd);
+      if (mDummyConnection != null) {
+        mDummyConnection.setComposingRegion(composingStart, composingEnd);
+      } else {
+        Log.w(TAG, "setComposingRange skip since mDummyConnection is null");
+      }
     }
   }
 
