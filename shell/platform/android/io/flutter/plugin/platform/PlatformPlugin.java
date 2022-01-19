@@ -37,6 +37,8 @@ public class PlatformPlugin {
   private PlatformChannel.SystemChromeStyle currentTheme;
   private PlatformChannel.SystemUiMode currentSystemUiMode;
   private List<PlatformChannel.SystemUiOverlay> currentOverlays;
+  public static final int DEFAULT_SYSTEM_UI_LEGACY =
+      View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
   private static final String TAG = "PlatformPlugin";
 
   /**
@@ -236,9 +238,8 @@ public class PlatformPlugin {
         });
   }
 
-  private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
+  private void setSystemChromeEnabledSystemUIModeLegacy(PlatformChannel.SystemUiMode systemUiMode) {
     int enabledOverlays;
-
     Window window = activity.getWindow();
     View view = window.getDecorView();
     WindowInsetsControllerCompat windowInsetsControllerCompat =
@@ -246,76 +247,133 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
-      // Available starting at SDK 20, due to the backwards compatibility provided by the
-      // WindowInsetsControllerCompat class for setting the behavior of system bars.
-      // Should not show overlays, tap to reveal overlays, needs onChange callback
-      // When the overlays come in on tap, the app does not receive the gesture and does not know
-      // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
-      // support will allow users to restore the system ui and dismiss the overlays.
-      // Not compatible with top/bottom overlays enabled.
-      windowInsetsControllerCompat.setSystemBarsBehavior(
-          WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
-      windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
-      WindowCompat.setDecorFitsSystemWindows(window, false);
+      // Available starting at SDK 16
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at SDK 20, due to the backwards compatibility provided by the
-      // WindowInsetsControllerCompat class for setting the behavior of system bars.
-      // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
-      // When the overlays come in on swipe, the app does not receive the gesture and does not know
-      // the system overlay has changed. The overlays cannot be dismissed, so adding callback
-      // support will allow users to restore the system ui and dismiss the overlays.
-      // Not compatible with top/bottom overlays enabled.
-      windowInsetsControllerCompat.setSystemBarsBehavior(
-          WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
-      windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
-      WindowCompat.setDecorFitsSystemWindows(window, false);
+      // Available starting at 19
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_IMMERSIVE
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
-      // Available starting at SDK 20, due to the backwards compatibility provided by the
-      // WindowInsetsControllerCompat class for setting the behavior of system bars.
-      // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
-      // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
-      // allow users to restore the system ui and dismiss the overlays.
-      // Not compatible with top/bottom overlays enabled.
-      windowInsetsControllerCompat.setSystemBarsBehavior(
-          WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-      windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
-      WindowCompat.setDecorFitsSystemWindows(window, false);
+      // Available starting at 19
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
         && Build.VERSION.SDK_INT >= 29) {
       // EDGE TO EDGE
-      // Available starting at SDK 29. See issue for context:
-      // https://github.com/flutter/flutter/issues/89774.
-      // Will apply a translucent body scrim behind 2/3 button navigation bars
-      // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
-      // enforced in the overlay styling.
+      // Available starting at 29
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
       WindowCompat.setDecorFitsSystemWindows(window, false);
     } else {
       // When none of the conditions are matched, return without updating the system UI overlays.
       return;
     }
+    view.setSystemUiVisibility(enabledOverlays);
+  }
+
+  private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
+    // As of API 30, controlling insets and overlays changed significantly, but provided backwards
+    // compatibility back through API 20. Flutter currently supports API 19, so the legacy code is
+    // left
+    // for that case and can be deleted if Flutter ever decides to stop supporting this version.
+    if (Build.VERSION.SDK_INT == 19) {
+      setSystemChromeEnabledSystemUIModeLegacy(systemUiMode);
+    } else {
+      Window window = activity.getWindow();
+      View view = window.getDecorView();
+      WindowInsetsControllerCompat windowInsetsControllerCompat =
+          new WindowInsetsControllerCompat(window, view);
+
+      if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
+        // LEAN BACK
+        // Available starting at SDK 20, due to the backwards compatibility provided by the
+        // WindowInsetsControllerCompat class for setting the behavior of system bars.
+        // Should not show overlays, tap to reveal overlays, needs onChange callback
+        // When the overlays come in on tap, the app does not receive the gesture and does not know
+        // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
+        // support will allow users to restore the system ui and dismiss the overlays.
+        // Not compatible with top/bottom overlays enabled.
+        windowInsetsControllerCompat.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_TOUCH);
+        windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+      } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
+        // IMMERSIVE
+        // Available starting at SDK 20, due to the backwards compatibility provided by the
+        // WindowInsetsControllerCompat class for setting the behavior of system bars.
+        // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
+        // When the overlays come in on swipe, the app does not receive the gesture and does not
+        // know
+        // the system overlay has changed. The overlays cannot be dismissed, so adding callback
+        // support will allow users to restore the system ui and dismiss the overlays.
+        // Not compatible with top/bottom overlays enabled.
+        windowInsetsControllerCompat.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE);
+        windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+      } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
+        // STICKY IMMERSIVE
+        // Available starting at SDK 20, due to the backwards compatibility provided by the
+        // WindowInsetsControllerCompat class for setting the behavior of system bars.
+        // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
+        // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
+        // allow users to restore the system ui and dismiss the overlays.
+        // Not compatible with top/bottom overlays enabled.
+        windowInsetsControllerCompat.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+      } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
+          && Build.VERSION.SDK_INT >= 29) {
+        // EDGE TO EDGE
+        // Available starting at SDK 29. See issue for context:
+        // https://github.com/flutter/flutter/issues/89774.
+        // Will apply a translucent body scrim behind 2/3 button navigation bars
+        // to ensure contrast with buttons on the nav and status bars, unless the contrast is not
+        // enforced in the overlay styling.
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+      } else {
+        // When none of the conditions are matched, return without updating the system UI overlays.
+        return;
+      }
+    }
     currentSystemUiMode = systemUiMode;
   }
 
-  private void setSystemChromeEnabledSystemUIOverlays(
+  private void setSystemChromeEnabledSystemUIOverlaysLegacy(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-    Window window = activity.getWindow();
-    View view = window.getDecorView();
-    WindowInsetsControllerCompat windowInsetsControllerCompat =
-        new WindowInsetsControllerCompat(window, view);
-
     // Start by assuming we want to hide all system overlays (like an immersive
     // game).
-    windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
-    WindowCompat.setDecorFitsSystemWindows(window, false);
+    int enabledOverlays =
+        DEFAULT_SYSTEM_UI_LEGACY
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
-    // We apply sticky immersive mode if desired. Available starting at SDK 20.
-    if (overlaysToShow.size() == 0) {
-      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
-
-      windowInsetsControllerCompat.setSystemBarsBehavior(
-          WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+    // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
+    // apply it
+    // if desired, and if the current Android version is 19 or greater.
+    if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
     }
 
     // Re-add any desired system overlays.
@@ -323,11 +381,53 @@ public class PlatformPlugin {
       PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
       switch (overlayToShow) {
         case TOP_OVERLAYS:
-          windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
+          enabledOverlays &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
           break;
         case BOTTOM_OVERLAYS:
-          windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
+          enabledOverlays &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+          enabledOverlays &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
           break;
+      }
+    }
+    activity.getWindow().getDecorView().setSystemUiVisibility(enabledOverlays);
+  }
+
+  private void setSystemChromeEnabledSystemUIOverlays(
+      List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
+    if (Build.VERSION.SDK_INT == 19) {
+      // This method calls offer support for the same behaviors below for API 19 that is unsupported
+      // by Android new overlays/insets API that offers backward compatibility only up to API 20.
+      setSystemChromeEnabledSystemUIOverlaysLegacy(overlaysToShow);
+    } else {
+      Window window = activity.getWindow();
+      View view = window.getDecorView();
+      WindowInsetsControllerCompat windowInsetsControllerCompat =
+          new WindowInsetsControllerCompat(window, view);
+
+      // Start by assuming we want to hide all system overlays (like an immersive
+      // game).
+      windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+      WindowCompat.setDecorFitsSystemWindows(window, false);
+
+      // We apply sticky immersive mode if desired. Available starting at SDK 20.
+      if (overlaysToShow.size() == 0) {
+        currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
+
+        windowInsetsControllerCompat.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      }
+
+      // Re-add any desired system overlays.
+      for (int i = 0; i < overlaysToShow.size(); ++i) {
+        PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
+        switch (overlayToShow) {
+          case TOP_OVERLAYS:
+            windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
+            break;
+          case BOTTOM_OVERLAYS:
+            windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
+            break;
+        }
       }
     }
     currentOverlays = overlaysToShow;
@@ -344,8 +444,15 @@ public class PlatformPlugin {
   public void updateSystemUiOverlays() {
     if (currentOverlays != null) {
       setSystemChromeEnabledSystemUIOverlays(currentOverlays);
-    } else if (currentSystemUiMode != null) {
-      setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+    } else {
+      if (currentSystemUiMode != null) {
+        setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+      } else if (Build.VERSION.SDK_INT == 19) {
+        // On API 19, if there is not a system ui mode already set, we wish to restore the enabled
+        // flags
+        // to the default system ui flags defined above.
+        activity.getWindow().getDecorView().setSystemUiVisibility(DEFAULT_SYSTEM_UI_LEGACY);
+      }
     }
 
     if (currentTheme != null) {

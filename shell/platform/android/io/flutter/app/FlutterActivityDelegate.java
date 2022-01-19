@@ -26,6 +26,7 @@ import android.view.Window;
 import android.view.WindowManager.LayoutParams;
 import io.flutter.Log;
 import io.flutter.plugin.common.PluginRegistry;
+import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.Preconditions;
 import io.flutter.view.FlutterMain;
 import io.flutter.view.FlutterNativeView;
@@ -140,6 +141,9 @@ public final class FlutterActivityDelegate
       Window window = activity.getWindow();
       window.addFlags(LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
       window.setStatusBarColor(0x40000000);
+      if (Build.VERSION.SDK_INT == 19) {
+        window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI_LEGACY);
+      }
     }
 
     String[] args = getArgsFromIntent(activity.getIntent());
