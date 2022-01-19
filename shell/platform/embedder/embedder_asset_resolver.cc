@@ -9,9 +9,8 @@ namespace flutter {
 
 class EmbedderAssetResolver final : public flutter::AssetResolver {
  public:
-  explicit EmbedderAssetResolver(void* user_data,
-                                 FlutterAssetResolverGetAssetCallback get_asset)
-      : user_data_(user_data), get_asset_(get_asset) {}
+  explicit EmbedderAssetResolver(EmbedderAssetResolverGetAsset get_asset)
+      : get_asset_(get_asset) {}
 
   ~EmbedderAssetResolver() override {}
 
@@ -33,23 +32,19 @@ class EmbedderAssetResolver final : public flutter::AssetResolver {
       return std::unique_ptr<fml::Mapping>();
     }
 
-    FlutterMapping mapping = get_asset_(asset_name.c_str(), user_data_);
-    return std::unique_ptr<fml::Mapping>(
-        reinterpret_cast<fml::Mapping*>(mapping));
+    return get_asset_(asset_name.c_str());
   }
 
  private:
-  void* user_data_;
-  FlutterAssetResolverGetAssetCallback get_asset_;
+  EmbedderAssetResolverGetAsset get_asset_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderAssetResolver);
 };
 
 std::unique_ptr<flutter::AssetResolver> CreateEmbedderAssetResolver(
-    const FlutterEngineAssetResolver* resolver) {
+    EmbedderAssetResolverGetAsset get_asset) {
   return std::make_unique<EmbedderAssetResolver>(
-      SAFE_ACCESS(resolver, user_data, nullptr),
-      SAFE_ACCESS(resolver, get_asset, nullptr));
+      std::move(get_asset));
 }
 
 }  // namespace flutter

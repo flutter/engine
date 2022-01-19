@@ -5,13 +5,17 @@
 #ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_ASSET_RESOLVER_H_
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_ASSET_RESOLVER_H_
 
+#include <functional>
+
 #include "flutter/assets/asset_resolver.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
 
+using EmbedderAssetResolverGetAsset = std::function<std::unique_ptr<fml::Mapping>(const char* /* asset_name */)>;
+
 std::unique_ptr<flutter::AssetResolver> CreateEmbedderAssetResolver(
-    const FlutterEngineAssetResolver* resolver);
+    EmbedderAssetResolverGetAsset get_asset);
 
 }  // namespace flutter
 

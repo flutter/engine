@@ -1305,8 +1305,22 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   auto asset_manager = std::make_shared<flutter::AssetManager>();
 
   if (SAFE_ACCESS(args, asset_resolver, nullptr) != nullptr) {
+    auto resolver = args->asset_resolver;
+
+    auto user_data = SAFE_ACCESS(resolver, user_data, nullptr);
+    auto get_asset = SAFE_ACCESS(resolver, get_asset, nullptr);
+
+    if (get_asset == nullptr) {
+      return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                                "Asset Resolver get_asset is null.");
+    }
+
     asset_manager->PushBack(
-        flutter::CreateEmbedderAssetResolver(args->asset_resolver));
+        flutter::CreateEmbedderAssetResolver([=](const char* asset_name) {
+          FlutterMapping mapping = get_asset(asset_name, user_data);
+          return std::unique_ptr<fml::Mapping>(
+            reinterpret_cast<fml::Mapping*>(mapping));
+        }));
   }
 
   if (args->assets_path) {
