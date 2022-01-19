@@ -48,10 +48,16 @@ struct {
   uint32_t queue_family_index;
   VkQueue queue;
 
+  VkCommandPool swapchain_command_pool;
+  std::vector<VkCommandBuffer> present_transition_buffers;
+
+  VkFence image_ready_fence;
+  VkSemaphore present_transition_semaphore;
+
+  VkSurfaceFormatKHR surface_format;
   VkSwapchainKHR swapchain;
   std::vector<VkImage> swapchain_images;
-  VkFence image_ready_fence;
-  VkSemaphore present_semaphore;
+  uint32_t last_image_index;
 
   FlutterEngine engine;
 
@@ -59,7 +65,7 @@ struct {
 } g_state;
 
 void GLFW_ErrorCallback(int error, const char* description) {
-  std::cout << "GLFW Error: (" << error << ") " << description << std::endl;
+  std::cerr << "GLFW Error: (" << error << ") " << description << std::endl;
 }
 
 void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
@@ -127,7 +133,7 @@ void GLFWframebufferSizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 void PrintUsage() {
-  std::cout
+  std::cerr
       << "usage: embedder_example_vulkan <path to project> <path to icudtl.dat>"
       << std::endl;
 }
@@ -136,6 +142,8 @@ bool InitializeSwapchain() {
   if (g_state.resize_pending) {
     g_state.resize_pending = false;
     vkDestroySwapchainKHR(g_state.device, g_state.swapchain, nullptr);
+    vkResetCommandPool(g_state.device, g_state.swapchain_command_pool,
+                       VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
   }
 
   /// --------------------------------------------------------------------------
@@ -151,11 +159,11 @@ bool InitializeSwapchain() {
                                        &format_count, formats.data());
   assert(!formats.empty());  // Shouldn't be possible.
 
-  VkSurfaceFormatKHR surface_format = formats[0];
+  g_state.surface_format = formats[0];
   for (const auto& format : formats) {
     if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
         format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-      surface_format = format;
+      g_state.surface_format = format;
     }
   }
 
@@ -223,8 +231,8 @@ bool InitializeSwapchain() {
       .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
       .surface = g_state.surface,
       .minImageCount = surface_capabilities.minImageCount + 1,
-      .imageFormat = surface_format.format,
-      .imageColorSpace = surface_format.colorSpace,
+      .imageFormat = g_state.surface_format.format,
+      .imageColorSpace = g_state.surface_format.colorSpace,
       .imageExtent = extent,
       .imageArrayLayers = 1,
       .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -252,17 +260,124 @@ bool InitializeSwapchain() {
   vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
                           g_state.swapchain_images.data());
 
+  /// --------------------------------------------------------------------------
+  /// Record a command buffer for each of the images to be executed prior to
+  /// presenting.
+  /// --------------------------------------------------------------------------
+
+  g_state.present_transition_buffers.resize(g_state.swapchain_images.size());
+
+  VkCommandBufferAllocateInfo buffers_info = {
+      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+      .commandPool = g_state.swapchain_command_pool,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .commandBufferCount =
+          static_cast<uint32_t>(g_state.present_transition_buffers.size()),
+  };
+  vkAllocateCommandBuffers(g_state.device, &buffers_info,
+                           g_state.present_transition_buffers.data());
+
+  for (size_t i = 0; i < g_state.swapchain_images.size(); i++) {
+    auto image = g_state.swapchain_images[i];
+    auto buffer = g_state.present_transition_buffers[i];
+
+    VkCommandBufferBeginInfo begin_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    vkBeginCommandBuffer(buffer, &begin_info);
+
+    // Flutter Engine hands back the image after writing to it
+    VkImageMemoryBarrier barrier = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .image = image,
+        .subresourceRange = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        }};
+    vkCmdPipelineBarrier(
+        buffer,                                         // commandBuffer
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // srcStageMask
+        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,           // dstStageMask
+        0,                                              // dependencyFlags
+        0,                                              // memoryBarrierCount
+        nullptr,                                        // pMemoryBarriers
+        0,        // bufferMemoryBarrierCount
+        nullptr,  // pBufferMemoryBarriers
+        1,        // imageMemoryBarrierCount
+        &barrier  // pImageMemoryBarriers
+    );
+
+    vkEndCommandBuffer(buffer);
+  }
+
   return true;  // \o/
 }
 
 FlutterVulkanImage FlutterGetNextImageCallback(
     void* user_data,
     const FlutterFrameInfo* frame_info) {
-  return {};
+  vkAcquireNextImageKHR(g_state.device, g_state.swapchain, UINT64_MAX, nullptr,
+                        g_state.image_ready_fence, &g_state.last_image_index);
+
+  // Flutter Engine expects the image to be available for transitioning and
+  // attaching immediately, and so we need to force a host sync here before
+  // returning.
+  vkWaitForFences(g_state.device, 1, &g_state.image_ready_fence, true,
+                  UINT64_MAX);
+  vkResetFences(g_state.device, 1, &g_state.image_ready_fence);
+
+  return {
+      .struct_size = sizeof(FlutterVulkanImage),
+      .image = reinterpret_cast<uint64_t>(
+          g_state.swapchain_images[g_state.last_image_index]),
+      .format = g_state.surface_format.format,
+  };
 }
 
 bool FlutterPresentCallback(void* user_data, const FlutterVulkanImage* image) {
-  return false;
+  VkPipelineStageFlags stage_flags =
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+  VkSubmitInfo submit_info = {
+      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+      .waitSemaphoreCount = 0,
+      .pWaitSemaphores = nullptr,
+      .pWaitDstStageMask = &stage_flags,
+      .commandBufferCount = 1,
+      .pCommandBuffers =
+          &g_state.present_transition_buffers[g_state.last_image_index],
+      .signalSemaphoreCount = 1,
+      .pSignalSemaphores = &g_state.present_transition_semaphore,
+  };
+  vkQueueSubmit(g_state.queue, 1, &submit_info, nullptr);
+
+  VkPresentInfoKHR present_info = {
+      .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+      .waitSemaphoreCount = 1,
+      .pWaitSemaphores = &g_state.present_transition_semaphore,
+      .swapchainCount = 1,
+      .pSwapchains = &g_state.swapchain,
+      .pImageIndices = &g_state.last_image_index,
+  };
+  VkResult result = vkQueuePresentKHR(g_state.queue, &present_info);
+
+  // If the GLFW framebuffer has been resized or the swapchain is otherwise no
+  // longer compatible with the surface, discard the swapchain and create a new
+  // one.
+  if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR ||
+      g_state.resize_pending) {
+    InitializeSwapchain();
+  }
+  vkQueueWaitIdle(g_state.queue);
+
+  return result == VK_SUCCESS;
 }
 
 void* FlutterGetInstanceProcAddressCallback(
@@ -431,7 +546,7 @@ int main(int argc, char** argv) {
       vkGetPhysicalDeviceQueueFamilyProperties(pdevice, &qfp_count, qfp.data());
       std::optional<uint32_t> graphics_queue_family;
       for (uint32_t i = 0; i < qfp.size(); i++) {
-        // Only pick graphics queues that can present to the surface.
+        // Only pick graphics queues that can also present to the surface.
         // Graphics queues that can't present are rare if not nonexistent, but
         // the spec allows for this, so check it anyways.
         VkBool32 surface_present_supported;
@@ -575,16 +690,8 @@ int main(int argc, char** argv) {
                    &g_state.queue);
 
   /// --------------------------------------------------------------------------
-  /// Create swapchain.
-  /// --------------------------------------------------------------------------
-
-  if (!InitializeSwapchain()) {
-    std::cerr << "Failed to create swapchain." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  /// --------------------------------------------------------------------------
-  /// Create sync primitives to use in the render loop callbacks.
+  /// Create sync primitives and command pool to use in the render loop
+  /// callbacks.
   /// --------------------------------------------------------------------------
 
   {
@@ -594,7 +701,23 @@ int main(int argc, char** argv) {
     VkSemaphoreCreateInfo s_info = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     vkCreateSemaphore(g_state.device, &s_info, nullptr,
-                      &g_state.present_semaphore);
+                      &g_state.present_transition_semaphore);
+
+    VkCommandPoolCreateInfo pool_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .queueFamilyIndex = g_state.queue_family_index,
+    };
+    vkCreateCommandPool(g_state.device, &pool_info, nullptr,
+                        &g_state.swapchain_command_pool);
+  }
+
+  /// --------------------------------------------------------------------------
+  /// Create swapchain.
+  /// --------------------------------------------------------------------------
+
+  if (!InitializeSwapchain()) {
+    std::cerr << "Failed to create swapchain." << std::endl;
+    return EXIT_FAILURE;
   }
 
   /// --------------------------------------------------------------------------
@@ -661,7 +784,9 @@ int main(int argc, char** argv) {
     std::cerr << "Flutter Engine shutdown failed." << std::endl;
   }
 
-  vkDestroySemaphore(g_state.device, g_state.present_semaphore, nullptr);
+  vkDestroyCommandPool(g_state.device, g_state.swapchain_command_pool, nullptr);
+  vkDestroySemaphore(g_state.device, g_state.present_transition_semaphore,
+                     nullptr);
   vkDestroyFence(g_state.device, g_state.image_ready_fence, nullptr);
 
   vkDestroyDevice(g_state.device, nullptr);
