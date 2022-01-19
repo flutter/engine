@@ -37,6 +37,8 @@ public class PlatformPlugin {
   private PlatformChannel.SystemChromeStyle currentTheme;
   private PlatformChannel.SystemUiMode currentSystemUiMode;
   private List<PlatformChannel.SystemUiOverlay> currentOverlays;
+
+  // These flags are used on API 19 to set the default overlays and insets.
   public static final int DEFAULT_SYSTEM_UI_LEGACY =
       View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
   private static final String TAG = "PlatformPlugin";
@@ -247,7 +249,6 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
-      // Available starting at SDK 16
       enabledOverlays =
           View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -256,7 +257,6 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
-      // Available starting at 19
       enabledOverlays =
           View.SYSTEM_UI_FLAG_IMMERSIVE
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -266,7 +266,6 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
-      // Available starting at 19
       enabledOverlays =
           View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -274,15 +273,6 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
-        && Build.VERSION.SDK_INT >= 29) {
-      // EDGE TO EDGE
-      // Available starting at 29
-      enabledOverlays =
-          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-      WindowCompat.setDecorFitsSystemWindows(window, false);
     } else {
       // When none of the conditions are matched, return without updating the system UI overlays.
       return;
@@ -293,8 +283,7 @@ public class PlatformPlugin {
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
     // As of API 30, controlling insets and overlays changed significantly, but provided backwards
     // compatibility back through API 20. Flutter currently supports API 19, so the legacy code is
-    // left
-    // for that case and can be deleted if Flutter ever decides to stop supporting this version.
+    // left for that case.
     if (Build.VERSION.SDK_INT == 19) {
       setSystemChromeEnabledSystemUIModeLegacy(systemUiMode);
     } else {
@@ -361,8 +350,6 @@ public class PlatformPlugin {
 
   private void setSystemChromeEnabledSystemUIOverlaysLegacy(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-    // Start by assuming we want to hide all system overlays (like an immersive
-    // game).
     int enabledOverlays =
         DEFAULT_SYSTEM_UI_LEGACY
             | View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -370,13 +357,11 @@ public class PlatformPlugin {
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
-    // apply it
-    // if desired, and if the current Android version is 19 or greater.
+    // apply it if desired.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
     }
 
-    // Re-add any desired system overlays.
     for (int i = 0; i < overlaysToShow.size(); ++i) {
       PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
       switch (overlayToShow) {
@@ -449,8 +434,7 @@ public class PlatformPlugin {
         setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
       } else if (Build.VERSION.SDK_INT == 19) {
         // On API 19, if there is not a system ui mode already set, we wish to restore the enabled
-        // flags
-        // to the default system ui flags defined above.
+        // flags to the default system ui flags defined above.
         activity.getWindow().getDecorView().setSystemUiVisibility(DEFAULT_SYSTEM_UI_LEGACY);
       }
     }
