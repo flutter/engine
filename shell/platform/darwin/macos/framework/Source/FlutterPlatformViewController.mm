@@ -32,6 +32,7 @@
     result([FlutterError errorWithCode:@"recreating_view"
                                message:@"trying to create an already created view"
                                details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
+    return;
   }
 
   NSObject<FlutterPlatformViewFactory>* factory = _platformViewFactories[viewType];
@@ -77,12 +78,18 @@
 - (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result {
   if ([[call method] isEqualToString:@"create"]) {
     NSMutableDictionary<NSString*, id>* args = [call arguments];
-    int64_t viewId = [args[@"id"] longValue];
-    NSString* viewType = [NSString stringWithUTF8String:([args[@"viewType"] UTF8String])];
-    [self onCreateWithViewID:viewId viewType:viewType result:result];
+    if ([args objectForKey:@"id"]) {
+      int64_t viewId = [args[@"id"] longValue];
+      NSString* viewType = [NSString stringWithUTF8String:([args[@"viewType"] UTF8String])];
+      [self onCreateWithViewID:viewId viewType:viewType result:result];
+    } else {
+      result([FlutterError errorWithCode:@"unknown_view"
+                                 message:@"'id' argument must be passed to create a platform view."
+                                 details:[NSString stringWithFormat:@"'id' not specified."]]);
+    }
   } else if ([[call method] isEqualToString:@"dispose"]) {
     NSNumber* arg = [call arguments];
-    int64_t viewId = [arg longLongValue];
+    int64_t viewId = [arg longValue];
     [self onDisposeWithViewID:viewId result:result];
   } else {
     result(FlutterMethodNotImplemented);

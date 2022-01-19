@@ -108,7 +108,7 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
 void FlutterMetalCompositor::PresentPlatformView(const FlutterLayer* layer, size_t layer_position) {
   // TODO (https://github.com/flutter/flutter/issues/96668)
   FML_DCHECK([[NSThread currentThread] isMainThread])
-      << "Must be on the main thread to handle presenting platform views";
+      << "Must be on the main thread to present platform views";
 
   int64_t platform_view_id = layer->platform_view->identifier;
   NSView* platform_view = [platform_views_controller_ platformViewWithID:platform_view_id];
@@ -120,9 +120,8 @@ void FlutterMetalCompositor::PresentPlatformView(const FlutterLayer* layer, size
                                    layer->size.width / scale, layer->size.height / scale);
   if (platform_view.superview == nil) {
     [view_controller_.flutterView addSubview:platform_view];
-  } else {
-    platform_view.layer.zPosition = layer_position;
   }
+  platform_view.layer.zPosition = layer_position;
 }
 
 }  // namespace flutter

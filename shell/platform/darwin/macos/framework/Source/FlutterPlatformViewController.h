@@ -26,7 +26,7 @@
                     result:(nonnull FlutterResult)result;
 
 /**
- * Disposes the platform view with id viewId.
+ * Disposes the platform view with `viewId`.
  * FlutterResult is updated to contain nil for success or a FlutterError if there is an error.
  */
 - (void)onDisposeWithViewID:(int64_t)viewId result:(nonnull FlutterResult)result;
@@ -44,8 +44,7 @@
                      withId:(nonnull NSString*)factoryId;
 
 /**
- * Handles platform view related method calls. These method calls are used to create and dispose the
- * platform views.
+ * Handles platform view related method calls, for example create, dispose, etc.
  */
 - (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result;
 

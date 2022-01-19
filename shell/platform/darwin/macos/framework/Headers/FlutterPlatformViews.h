@@ -15,10 +15,10 @@
 /**
  * Create a Platform View which is an `NSView`.
  *
- * Implemented by MacOS plugin code to return an `NSView` to be inserted into the Flutter view
- * hierarchy.
+ * A MacOS plugin should implement this method and return an `NSView`, which can be embedded in a
+ * Flutter App.
  *
- * The implementation of this method should create a new `NSView` and return it.
+ * The implementation of this method should create a new `NSView`.
  *
  * @param frame The rectangle for the newly created view measured in points.
  * @param viewId A unique identifier for this view.
@@ -34,7 +34,7 @@
 /**
  * Returns the `FlutterMessageCodec` for decoding the args parameter of `createWithFrame`.
  *
- * Only needs to be implemented if `createWithFrame` needs an arguments parameter.
+ * Only implement this if `createWithFrame` needs an arguments parameter.
  */
 @optional
 - (nullable NSObject<FlutterMessageCodec>*)createArgsCodec;
