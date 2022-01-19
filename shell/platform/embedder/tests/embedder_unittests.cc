@@ -489,18 +489,18 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsValidAsset) {
   resolver.struct_size = sizeof(FlutterEngineAssetResolver);
   resolver.user_data = reinterpret_cast<void*>(&destroy);
   resolver.get_asset = [](const char* asset,
-                          void* user_data) -> FlutterEngineMapping {
+                          void* user_data) -> FlutterMapping {
     if (strcmp(asset, "existing_asset") == 0) {
       // Return an asset with the string "hello" as its contents.
       // When the mapping is destroyed (on GC or Engine shutdown) the
       // `destroy` event is signaled.
-      FlutterEngineMappingCreateInfo create_info = {};
-      FlutterEngineMapping out = nullptr;
-      create_info.struct_size = sizeof(FlutterEngineMappingCreateInfo);
+      FlutterMappingCreateInfo create_info = {};
+      FlutterMapping out = nullptr;
+      create_info.struct_size = sizeof(FlutterMappingCreateInfo);
       create_info.data = reinterpret_cast<const uint8_t*>("hello");
       create_info.data_size = 5;
       create_info.user_data = user_data;
-      create_info.destruction_callback = [](void* user_data) {
+      create_info.destruction_callback = [](const uint8_t* data, size_t size, void* user_data) {
         reinterpret_cast<fml::AutoResetWaitableEvent*>(user_data)->Signal();
       };
       auto result = FlutterEngineCreateMapping(&create_info, &out);
@@ -552,7 +552,7 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsInvalidAsset) {
   FlutterEngineAssetResolver resolver = {};
   resolver.struct_size = sizeof(FlutterEngineAssetResolver);
   resolver.get_asset = [](const char* asset,
-                          void* user_data) -> FlutterEngineMapping {
+                          void* user_data) -> FlutterMapping {
     return nullptr;
   };
 
