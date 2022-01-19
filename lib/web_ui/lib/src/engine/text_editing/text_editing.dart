@@ -1155,7 +1155,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleChange(html.Event event) {
     assert(isEnabled);
-    print('handling regular input');
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     TextEditingDeltaState? newTextEditingDeltaState;
@@ -1174,7 +1173,6 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleBeforeInput(html.Event event) {
     final String? eventData = getJsProperty<void>(event, 'data') as String?;
-    print('handle before input');
 
     if (eventData == null) {
       // When event.data is null we have a deletion.
