@@ -388,7 +388,7 @@ import java.util.Arrays;
     Log.v(TAG, "onStart()");
     ensureAlive();
     doInitialFlutterViewRun();
-    flutterView.onStart();
+    flutterView.setVisibility(View.VISIBLE);
   }
 
   /**
@@ -575,7 +575,7 @@ import java.util.Arrays;
     Log.v(TAG, "onStop()");
     ensureAlive();
     flutterEngine.getLifecycleChannel().appIsPaused();
-    flutterView.onStop();
+    flutterView.setVisibility(View.GONE);
   }
 
   /**

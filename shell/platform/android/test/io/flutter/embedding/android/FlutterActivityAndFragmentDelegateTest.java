@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.FlutterInjector;
@@ -984,7 +985,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itNotifiesFlutterViewWhenOnStartAndOnStop() {
+  public void itChangesFlutterViewVisibilityWhenOnStartAndOnStop() {
     // ---- Test setup ----
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -992,13 +993,15 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     delegate.onAttach(RuntimeEnvironment.application);
     delegate.onCreateView(null, null, null, 0, true);
-    delegate.flutterView = mock(FlutterView.class);
     delegate.onStart();
-    // Verify that the onStart of flutterView was called.
-    verify(delegate.flutterView, times(1)).onStart();
+    // Verify that the flutterView is visible.
+    assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
     delegate.onStop();
-    // Verify that the onStop of flutterView was called.
-    verify(delegate.flutterView, times(1)).onStop();
+    // Verify that the flutterView is not visible.
+    assertEquals(View.GONE, delegate.flutterView.getVisibility());
+    delegate.onStart();
+    // Verify that the flutterView is visible.
+    assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
   }
 
   @Test
