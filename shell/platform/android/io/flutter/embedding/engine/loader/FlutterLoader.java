@@ -41,8 +41,15 @@ public class FlutterLoader {
       "io.flutter.embedding.android.EnableSkParagraph";
 
   /**
-   * Set whether leave or clean up the VM after the last shell shuts down. It's true by default, set
-   * it to false to destroy VM.
+   * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
+   * meta-data in <application /> in AndroidManifest.xml. Set it to true in to leave the Dart VM,
+   * set it to false to destroy VM.
+   *
+   * <p>If your want to let your app destroy the last shell and re-create shells more quickly, set
+   * it to true, otherwise if you want to clean up the memory of the leak VM, set it to false.
+   *
+   * <p>TODO(eggfly): Should it be set to false by default?
+   * https://github.com/flutter/flutter/issues/96843
    */
   private static final String LEAK_VM_META_DATA_KEY = "io.flutter.embedding.android.LeakVM";
 
