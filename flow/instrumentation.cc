@@ -4,6 +4,7 @@
 
 #include "flutter/flow/instrumentation.h"
 
+#include <flutter/fml/logging.h>
 #include <algorithm>
 #include <limits>
 
@@ -15,13 +16,30 @@ namespace flutter {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch(fml::Milliseconds frame_budget)
-    : start_(fml::TimePoint::Now()), current_sample_(0) {
+Stopwatch::Stopwatch(fml::Milliseconds initial_frame_budget)
+    : Stopwatch(FrameBudgetUpdateType::kOnShotValue,
+                nullptr,
+                initial_frame_budget) {}
+
+Stopwatch::Stopwatch(Stopwatch::Delegate* delegate)
+    : Stopwatch(FrameBudgetUpdateType::kUpdateEverytime,
+                delegate,
+                fml::kDefaultFrameBudget) {
+  FML_CHECK(delegate != nullptr) << "The delegate cannot be null.";
+}
+
+Stopwatch::Stopwatch(FrameBudgetUpdateType frame_budget_update_type,
+                     Delegate* delegate,
+                     fml::Milliseconds initial_frame_budget)
+    : frame_budget_update_type_(frame_budget_update_type),
+      delegate_(delegate),
+      start_(fml::TimePoint::Now()),
+      current_sample_(0),
+      initial_frame_budget_(initial_frame_budget) {
   const fml::TimeDelta delta = fml::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
   cache_dirty_ = true;
   prev_drawn_sample_index_ = 0;
-  frame_budget_ = frame_budget;
 }
 
 Stopwatch::~Stopwatch() = default;
@@ -45,7 +63,7 @@ const fml::TimeDelta& Stopwatch::LastLap() const {
 }
 
 double Stopwatch::UnitFrameInterval(double raster_time_ms) const {
-  return raster_time_ms / frame_budget_.count();
+  return raster_time_ms / GetFrameBudget().count();
 }
 
 double Stopwatch::UnitHeight(double raster_time_ms,
@@ -101,7 +119,7 @@ void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double one_frame_ms = frame_budget_.count();
+  const double one_frame_ms = GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
@@ -151,7 +169,7 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
-  const double one_frame_ms = frame_budget_.count();
+  const double one_frame_ms = GetFrameBudget().count();
   const double max_interval = one_frame_ms * 3.0;
   const double max_unit_interval = UnitFrameInterval(max_interval);
 
@@ -228,6 +246,19 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
   visualize_cache_surface_->draw(canvas, rect.x(), rect.y());
 }
 
+fml::Milliseconds Stopwatch::GetFrameBudget() const {
+  switch (frame_budget_update_type_) {
+    case kUpdateEverytime:
+      FML_CHECK(delegate_ != nullptr)
+          << "The delegate_ must not be null when kUpdateEverytime.";
+      return delegate_->GetFrameBudget();
+    case kOnShotValue:
+      return initial_frame_budget_;
+    default:
+      FML_CHECK(false) << "Unknown FrameBudgetUpdateType.";
+  }
+}
+
 CounterValues::CounterValues() : current_sample_(kMaxSamples - 1) {
   values_.resize(kMaxSamples, 0);
 }
@@ -298,10 +329,6 @@ void CounterValues::Visualize(SkCanvas* canvas, const SkRect& rect) const {
       sample_x, y,
       sample_x + width * sample_unit_width + sample_margin_width * 2, bottom);
   canvas->drawRect(marker_rect, paint);
-}
-
-int64_t CounterValues::GetCurrentValue() const {
-  return values_[current_sample_];
 }
 
 int64_t CounterValues::GetMaxValue() const {

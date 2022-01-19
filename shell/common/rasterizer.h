@@ -42,7 +42,7 @@ namespace flutter {
 /// and the on-screen render surface. The compositor context has all the GPU
 /// state necessary to render frames to the render surface.
 ///
-class Rasterizer final : public SnapshotDelegate {
+class Rasterizer final : public SnapshotDelegate, public Stopwatch::Delegate {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Used to forward events from the rasterizer to interested
@@ -459,6 +459,12 @@ class Rasterizer final : public SnapshotDelegate {
 
   // |SnapshotDelegate|
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
+
+  // |Stopwatch::Delegate|
+  /// Time limit for a smooth frame.
+  ///
+  /// See: `DisplayManager::GetMainDisplayRefreshRate`.
+  fml::Milliseconds GetFrameBudget() override;
 
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
       flutter::LayerTree* tree,

@@ -43,8 +43,10 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
   }
 }
 
-CompositorContext::CompositorContext(fml::Milliseconds frame_budget)
-    : raster_time_(frame_budget), ui_time_(frame_budget) {}
+CompositorContext::CompositorContext() : raster_time_(), ui_time_() {}
+
+CompositorContext::CompositorContext(Stopwatch::Delegate& delegate)
+    : raster_time_(&delegate), ui_time_(&delegate) {}
 
 CompositorContext::~CompositorContext() = default;
 

@@ -16,13 +16,34 @@ namespace flutter {
 
 class Stopwatch {
  public:
-  explicit Stopwatch(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
+  /// The update type that is passed to the Stopwatch's constructor.
+  enum FrameBudgetUpdateType {
+    /// Update the latest frame budget value from refresh rate everytime.
+    /// See: `DisplayManager::GetMainDisplayRefreshRate`
+    kUpdateEverytime,
+    /// Using the default value `fml::kDefaultFrameBudget` (60 fps)
+    kOnShotValue,
+  };
+
+  /// The delegate interface for `Stopwatch`.
+  class Delegate {
+   public:
+    /// Time limit for a smooth frame.
+    /// See: `DisplayManager::GetMainDisplayRefreshRate`.
+    virtual fml::Milliseconds GetFrameBudget() = 0;
+  };
+
+  /// The constructor to save the on-shot initial_frame_budget value.
+  explicit Stopwatch(
+      fml::Milliseconds initial_frame_budget = fml::kDefaultFrameBudget);
+
+  /// The constructor with a delegate parameter, it will update frame_budget
+  /// everytime when `GetFrameBudget()` is called.
+  explicit Stopwatch(Delegate* delegate);
 
   ~Stopwatch();
 
   const fml::TimeDelta& LastLap() const;
-
-  fml::TimeDelta CurrentLap() const { return fml::TimePoint::Now() - start_; }
 
   fml::TimeDelta MaxDelta() const;
 
@@ -38,15 +59,25 @@ class Stopwatch {
 
   void SetLapTime(const fml::TimeDelta& delta);
 
+  /// All places which want to get frame_budget should call this function.
+  fml::Milliseconds GetFrameBudget() const;
+
  private:
+  /// The private constructor which is called by the public constructors, it
+  /// includes the common initializing logic.
+  explicit Stopwatch(FrameBudgetUpdateType frame_budget_update_type,
+                     Delegate* delegate,
+                     fml::Milliseconds initial_frame_budget);
+
   inline double UnitFrameInterval(double time_ms) const;
   inline double UnitHeight(double time_ms, double max_height) const;
 
+  FrameBudgetUpdateType frame_budget_update_type_;
+  Delegate* delegate_;
   fml::TimePoint start_;
   std::vector<fml::TimeDelta> laps_;
   size_t current_sample_;
-
-  fml::Milliseconds frame_budget_;
+  fml::Milliseconds initial_frame_budget_;
 
   // Mutable data cache for performance optimization of the graphs. Prevents
   // expensive redrawing of old data.
@@ -82,8 +113,6 @@ class CounterValues {
   void Add(int64_t value);
 
   void Visualize(SkCanvas* canvas, const SkRect& rect) const;
-
-  int64_t GetCurrentValue() const;
 
   int64_t GetMaxValue() const;
 

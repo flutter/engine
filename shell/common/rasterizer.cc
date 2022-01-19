@@ -30,8 +30,7 @@ static constexpr std::chrono::milliseconds kSkiaCleanupExpiration(15000);
 
 Rasterizer::Rasterizer(Delegate& delegate)
     : delegate_(delegate),
-      compositor_context_(std::make_unique<flutter::CompositorContext>(
-          delegate.GetFrameBudget())),
+      compositor_context_(std::make_unique<flutter::CompositorContext>(*this)),
       user_override_resource_cache_bytes_(false),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
@@ -380,6 +379,10 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                                 canvas->drawImage(image, 0, 0);
                               });
 }
+
+fml::Milliseconds Rasterizer::GetFrameBudget() {
+  return delegate_.GetFrameBudget();
+};
 
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,

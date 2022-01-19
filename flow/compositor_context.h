@@ -138,8 +138,9 @@ class CompositorContext {
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  explicit CompositorContext(
-      fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
+  CompositorContext();
+
+  explicit CompositorContext(Stopwatch::Delegate& delegate);
 
   virtual ~CompositorContext();
 
