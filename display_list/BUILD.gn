@@ -55,15 +55,13 @@ fixtures_location("display_list_benchmarks_fixtures") {
   assets_dir = "$target_gen_dir/"
 }
 
-if (enable_unittests) {
+if (enable_unittests || is_android) {
   executable("display_list_benchmarks") {
     testonly = true
 
     sources = [
       "display_list_benchmarks.cc",
       "display_list_benchmarks.h",
-      "display_list_benchmarks_software.cc",
-      "display_list_benchmarks_software.h",
     ]
 
     deps = [
@@ -78,7 +76,22 @@ if (enable_unittests) {
       "//third_party/skia",
     ]
 
-    defines = [ "ENABLE_SOFTWARE_BENCHMARKS" ]
+    defines = []
+
+    if (is_android) {
+      libs = [
+        "android",
+        "EGL",
+        "GLESv2",
+      ]
+    } else {
+      # We only do software benchmarks on non-mobile platforms
+      sources += [
+        "display_list_benchmarks_software.cc",
+        "display_list_benchmarks_software.h",
+      ]
+      defines += [ "ENABLE_SOFTWARE_BENCHMARKS" ]
+    }
 
     if (!is_fuchsia) {
       defines += [ "ENABLE_OPENGL_BENCHMARKS" ]

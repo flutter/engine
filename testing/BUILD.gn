@@ -150,26 +150,6 @@ if (enable_unittests) {
     }
   }
 
-  # SwiftShader only supports x86/x86_64
-  if (target_cpu == "x86" || target_cpu == "x64") {
-    source_set("opengl") {
-      testonly = true
-
-      configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
-
-      sources = [
-        "test_gl_surface.cc",
-        "test_gl_surface.h",
-      ]
-
-      deps = [
-        ":skia",
-        "//flutter/fml",
-        "//third_party/swiftshader_flutter:swiftshader_gl",
-      ]
-    }
-  }
-
   test_fixtures("testing_fixtures") {
     fixtures = []
   }
@@ -229,5 +209,32 @@ if (enable_unittests || is_ios) {
     }
 
     testonly = true
+  }
+}
+
+# We only use SwiftShader on unittests and
+# SwiftShader only supports x86/x86_64
+if (enable_unittests && (target_cpu == "x86" || target_cpu == "x64")) {
+  use_swiftshader = true
+} else {
+  use_swiftshader = false
+}
+
+source_set("opengl") {
+  testonly = true
+
+  sources = [
+    "test_gl_surface.cc",
+    "test_gl_surface.h",
+  ]
+
+  deps = [
+    ":skia",
+    "//flutter/fml",
+  ]
+
+  if (use_swiftshader) {
+    configs += [ "//third_party/swiftshader_flutter:swiftshader_config" ]
+    deps += [ "//third_party/swiftshader_flutter:swiftshader_gl" ]
   }
 }
