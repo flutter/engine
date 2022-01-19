@@ -18,6 +18,8 @@
 #include "embedder.h"  // Flutter's Embedder ABI.
 
 static const bool g_enable_validation_layers = true;
+// This value is calculated after the window is created.
+static double g_pixelRatio = 1.0;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
 // Use `VK_PRESENT_MODE_FIFO_KHR` for full vsync (one swap per screen refresh),
@@ -33,9 +35,9 @@ static_assert(FLUTTER_ENGINE_VERSION == 1,
 
 /// Global struct for holding the Window+Vulkan state.
 struct {
-  uint32_t vk_version;
-
   GLFWwindow* window;
+
+  uint32_t vk_version;
   VkInstance instance;
   VkSurfaceKHR surface;
 
@@ -47,11 +49,74 @@ struct {
 
   VkSwapchainKHR swapchain;
   std::vector<VkImage> swapchain_images;
-  std::vector<VkImageView> swapchain_image_views;
+  VkFence image_ready_fence;
+  VkSemaphore present_semaphore;
 } g_state;
 
 void GLFW_ErrorCallback(int error, const char* description) {
   std::cout << "GLFW Error: (" << error << ") " << description << std::endl;
+}
+
+void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
+                                       FlutterPointerPhase phase,
+                                       double x,
+                                       double y) {
+  FlutterPointerEvent event = {};
+  event.struct_size = sizeof(event);
+  event.phase = phase;
+  event.x = x * g_pixelRatio;
+  event.y = y * g_pixelRatio;
+  event.timestamp =
+      std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch())
+          .count();
+  FlutterEngineSendPointerEvent(
+      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)), &event,
+      1);
+}
+
+void GLFWcursorPositionCallback(GLFWwindow* window, double x, double y) {
+  GLFWcursorPositionCallbackAtPhase(window, FlutterPointerPhase::kMove, x, y);
+}
+
+void GLFWmouseButtonCallback(GLFWwindow* window,
+                             int key,
+                             int action,
+                             int mods) {
+  if (key == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    GLFWcursorPositionCallbackAtPhase(window, FlutterPointerPhase::kDown, x, y);
+    glfwSetCursorPosCallback(window, GLFWcursorPositionCallback);
+  }
+
+  if (key == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    GLFWcursorPositionCallbackAtPhase(window, FlutterPointerPhase::kUp, x, y);
+    glfwSetCursorPosCallback(window, nullptr);
+  }
+}
+
+void GLFWKeyCallback(GLFWwindow* window,
+                     int key,
+                     int scancode,
+                     int action,
+                     int mods) {
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  }
+}
+
+void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = width * g_pixelRatio;
+  event.height = height * g_pixelRatio;
+  event.pixel_ratio = g_pixelRatio;
+  FlutterEngineSendWindowMetricsEvent(
+      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
+      &event);
 }
 
 void PrintUsage() {
@@ -158,9 +223,23 @@ bool InitializeSwapchain() {
       .presentMode = present_mode,
       .clipped = true,
   };
-  vkCreateSwapchainKHR(g_state.device, &info, nullptr, &g_state.swapchain);
+  if (vkCreateSwapchainKHR(g_state.device, &info, nullptr,
+                           &g_state.swapchain) != VK_SUCCESS) {
+    return false;
+  }
 
-  return true;
+  /// --------------------------------------------------------------------------
+  /// Fetch swapchain images.
+  /// --------------------------------------------------------------------------
+
+  uint32_t image_count;
+  vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
+                          nullptr);
+  g_state.swapchain_images.resize(image_count);
+  vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
+                          g_state.swapchain_images.data());
+
+  return true;  // \o/
 }
 
 int main(int argc, char** argv) {
@@ -176,20 +255,27 @@ int main(int argc, char** argv) {
   /// Create a GLFW window.
   /// --------------------------------------------------------------------------
 
-  if (!glfwInit()) {
-    std::cerr << "Failed to initialize GLFW." << std::endl;
-    return EXIT_FAILURE;
-  }
+  {
+    if (!glfwInit()) {
+      std::cerr << "Failed to initialize GLFW." << std::endl;
+      return EXIT_FAILURE;
+    }
 
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  g_state.window = glfwCreateWindow(kInitialWindowWidth, kInitialWindowHeight,
-                                    "Flutter", nullptr, nullptr);
-  if (!g_state.window) {
-    std::cerr << "Failed to create GLFW window." << std::endl;
-    return EXIT_FAILURE;
-  }
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    g_state.window = glfwCreateWindow(kInitialWindowWidth, kInitialWindowHeight,
+                                      "Flutter", nullptr, nullptr);
+    if (!g_state.window) {
+      std::cerr << "Failed to create GLFW window." << std::endl;
+      return EXIT_FAILURE;
+    }
 
-  glfwSetErrorCallback(GLFW_ErrorCallback);
+    int framebuffer_width, framebuffer_height;
+    glfwGetFramebufferSize(g_state.window, &framebuffer_width,
+                           &framebuffer_height);
+    g_pixelRatio = framebuffer_width / kInitialWindowWidth;
+
+    glfwSetErrorCallback(GLFW_ErrorCallback);
+  }
 
   /// --------------------------------------------------------------------------
   /// Dynamically load the Vulkan loader with GLFW and use it to populate GLAD's
@@ -414,7 +500,7 @@ int main(int argc, char** argv) {
   }
 
   /// --------------------------------------------------------------------------
-  /// Create a logical device.
+  /// Create a logical device and a graphics queue handle.
   /// --------------------------------------------------------------------------
 
   std::cout << "Enabling " << g_state.enabled_device_extensions.size()
@@ -450,10 +536,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  /// --------------------------------------------------------------------------
-  /// Get queue handle.
-  /// --------------------------------------------------------------------------
-
   vkGetDeviceQueue(g_state.device, g_state.queue_family_index, 0,
                    &g_state.queue);
 
@@ -461,13 +543,49 @@ int main(int argc, char** argv) {
   /// Create swapchain.
   /// --------------------------------------------------------------------------
 
-  InitializeSwapchain();
+  if (!InitializeSwapchain()) {
+    std::cerr << "Failed to create swapchain." << std::endl;
+    return EXIT_FAILURE;
+  }
 
-  std::cout << "Success.\n";
+  /// --------------------------------------------------------------------------
+  /// Create sync primitives to use in the render loop callbacks.
+  /// --------------------------------------------------------------------------
+
+  {
+    VkFenceCreateInfo f_info = {.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+    vkCreateFence(g_state.device, &f_info, nullptr, &g_state.image_ready_fence);
+
+    VkSemaphoreCreateInfo s_info = {
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
+    vkCreateSemaphore(g_state.device, &s_info, nullptr,
+                      &g_state.present_semaphore);
+  }
+
+  /// --------------------------------------------------------------------------
+  /// Start the Flutter Engine.
+  /// --------------------------------------------------------------------------
+
+
+
+  /// --------------------------------------------------------------------------
+  /// GLFW render loop.
+  /// --------------------------------------------------------------------------
+
+  glfwSetKeyCallback(g_state.window, GLFWKeyCallback);
+  glfwSetWindowSizeCallback(g_state.window, GLFWwindowSizeCallback);
+  glfwSetMouseButtonCallback(g_state.window, GLFWmouseButtonCallback);
 
   while (!glfwWindowShouldClose(g_state.window)) {
     glfwPollEvents();
   }
+
+  /// --------------------------------------------------------------------------
+  /// Cleanup.
+  /// --------------------------------------------------------------------------
+
+  vkDestroySemaphore(g_state.device, g_state.present_semaphore, nullptr);
+  vkDestroyFence(g_state.device, g_state.image_ready_fence, nullptr);
 
   vkDestroyDevice(g_state.device, nullptr);
   vkDestroySurfaceKHR(g_state.instance, g_state.surface, nullptr);
