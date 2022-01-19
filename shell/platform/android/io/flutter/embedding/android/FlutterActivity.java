@@ -451,8 +451,16 @@ public class FlutterActivity extends Activity
   }
 
   /**
-   * Returns the Android App Component exclusively attached to {@link
+   * Returns the {@link ExclusiveAppComponent<Activity>} that is associated with {@link
    * io.flutter.embedding.engine.FlutterEngine}.
+   *
+   * <p>In the scenario where multiple {@link FlutterActivity} share the same {@link FlutterEngine},
+   * to attach/re-attache a {@link FlutterActivity} to the shared {@link FlutterEngine}, we MUST
+   * manually invoke {@link ActivityControlSurface#attachToActivity(ExclusiveAppComponent,
+   * Lifecycle)}.
+   *
+   * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
+   * FlutterActivity} can access it.
    */
   @Override
   public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
