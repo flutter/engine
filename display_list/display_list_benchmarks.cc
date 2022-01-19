@@ -11,6 +11,27 @@
 namespace flutter {
 namespace testing {
 
+std::unique_ptr<CanvasProvider> CreateCanvasProvider(BackendType backend_type) {
+  switch (backend_type) {
+#ifdef ENABLE_SOFTWARE_BENCHMARKS
+    case kSoftware_Backend:
+      return std::make_unique<SoftwareCanvasProvider>();
+#endif
+#ifdef ENABLE_OPENGL_BENCHMARKS
+    case kOpenGL_Backend:
+      return std::make_unique<OpenGLCanvasProvider>();
+#endif
+#ifdef ENABLE_METAL_BENCHMARKS
+    case kMetal_Backend:
+      return std::make_unique<MetalCanvasProvider>();
+#endif
+    default:
+      return nullptr;
+  }
+
+  return nullptr;
+}
+
 // Constants chosen to produce benchmark results in the region of 1-50ms
 constexpr size_t kLinesToDraw = 10000;
 constexpr size_t kRectsToDraw = 5000;

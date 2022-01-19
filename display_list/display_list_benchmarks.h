@@ -28,26 +28,7 @@ namespace testing {
 
 typedef enum { kSoftware_Backend, kOpenGL_Backend, kMetal_Backend } BackendType;
 
-std::unique_ptr<CanvasProvider> CreateCanvasProvider(BackendType backend_type) {
-  switch (backend_type) {
-#ifdef ENABLE_SOFTWARE_BENCHMARKS
-    case kSoftware_Backend:
-      return std::make_unique<SoftwareCanvasProvider>();
-#endif
-#ifdef ENABLE_OPENGL_BENCHMARKS
-    case kOpenGL_Backend:
-      return std::make_unique<OpenGLCanvasProvider>();
-#endif
-#ifdef ENABLE_METAL_BENCHMARKS
-    case kMetal_Backend:
-      return std::make_unique<MetalCanvasProvider>();
-#endif
-    default:
-      return nullptr;
-  }
-
-  return nullptr;
-}
+std::unique_ptr<CanvasProvider> CreateCanvasProvider(BackendType backend_type);
 
 // Benchmarks
 
