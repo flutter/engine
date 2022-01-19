@@ -12,10 +12,10 @@ class EmbedderAssetResolver final : public flutter::AssetResolver {
   explicit EmbedderAssetResolver(EmbedderAssetResolverGetAsset get_asset)
       : get_asset_(get_asset) {}
 
-  ~EmbedderAssetResolver() override {}
+  ~EmbedderAssetResolver() = default;
 
   // |AssetResolver|
-  bool IsValid() const override { return true; }
+  bool IsValid() const override { return (bool)get_asset_; }
 
   // |AssetResolver|
   bool IsValidAfterAssetManagerChange() const override { return true; }
@@ -29,7 +29,7 @@ class EmbedderAssetResolver final : public flutter::AssetResolver {
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override {
     if (!get_asset_) {
-      return std::unique_ptr<fml::Mapping>();
+      return nullptr;
     }
 
     return get_asset_(asset_name.c_str());
@@ -43,8 +43,7 @@ class EmbedderAssetResolver final : public flutter::AssetResolver {
 
 std::unique_ptr<flutter::AssetResolver> CreateEmbedderAssetResolver(
     EmbedderAssetResolverGetAsset get_asset) {
-  return std::make_unique<EmbedderAssetResolver>(
-      std::move(get_asset));
+  return std::make_unique<EmbedderAssetResolver>(std::move(get_asset));
 }
 
 }  // namespace flutter

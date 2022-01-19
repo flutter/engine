@@ -500,7 +500,8 @@ TEST_F(EmbedderTest, CustomAssetResolverReturnsValidAsset) {
       create_info.data = reinterpret_cast<const uint8_t*>("hello");
       create_info.data_size = 5;
       create_info.user_data = user_data;
-      create_info.destruction_callback = [](const uint8_t* data, size_t size, void* user_data) {
+      create_info.destruction_callback = [](const uint8_t* data, size_t size,
+                                            void* user_data) {
         reinterpret_cast<fml::AutoResetWaitableEvent*>(user_data)->Signal();
       };
       auto result = FlutterEngineCreateMapping(&create_info, &out);

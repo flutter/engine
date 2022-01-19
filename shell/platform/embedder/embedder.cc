@@ -1319,7 +1319,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
         flutter::CreateEmbedderAssetResolver([=](const char* asset_name) {
           FlutterMapping mapping = get_asset(asset_name, user_data);
           return std::unique_ptr<fml::Mapping>(
-            reinterpret_cast<fml::Mapping*>(mapping));
+              reinterpret_cast<fml::Mapping*>(mapping));
         }));
   }
 

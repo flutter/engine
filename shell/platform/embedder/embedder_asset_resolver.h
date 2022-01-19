@@ -12,7 +12,8 @@
 
 namespace flutter {
 
-using EmbedderAssetResolverGetAsset = std::function<std::unique_ptr<fml::Mapping>(const char* /* asset_name */)>;
+using EmbedderAssetResolverGetAsset =
+    std::function<std::unique_ptr<fml::Mapping>(const char* /* asset_name */)>;
 
 std::unique_ptr<flutter::AssetResolver> CreateEmbedderAssetResolver(
     EmbedderAssetResolverGetAsset get_asset);
