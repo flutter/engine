@@ -31,7 +31,7 @@ const MethodCodec codec = JSONMethodCodec();
 
 DefaultTextEditingStrategy? editingStrategy;
 EditingState? lastEditingState;
-TextEditingDeltaState? lastTextEditingDeltaState;
+TextEditingDeltaState? editingDeltaState;
 String? lastInputAction;
 
 final InputConfiguration singlelineConfig = InputConfiguration(
@@ -49,7 +49,7 @@ final Map<String, dynamic> flutterMultilineConfig =
 
 void trackEditingState(EditingState? editingState, TextEditingDeltaState? textEditingDeltaState) {
   lastEditingState = editingState;
-  lastTextEditingDeltaState = textEditingDeltaState;
+  editingDeltaState = textEditingDeltaState;
 }
 
 void trackInputAction(String? inputAction) {
@@ -63,7 +63,7 @@ void main() {
 void testMain() {
   tearDown(() {
     lastEditingState = null;
-    lastTextEditingDeltaState = null;
+    editingDeltaState = null;
     lastInputAction = null;
     cleanTextEditingStrategy();
     cleanTestFlags();

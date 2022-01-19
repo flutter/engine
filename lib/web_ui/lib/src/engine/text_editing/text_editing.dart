@@ -973,10 +973,10 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
 
-  TextEditingDeltaState? lastTextEditingDeltaState;
+  TextEditingDeltaState? _editingDelta;
   TextEditingDeltaState get editingDelta {
-    lastTextEditingDeltaState ??= TextEditingDeltaState(oldText: lastEditingState!.text!);
-    return lastTextEditingDeltaState!;
+    _editingDelta ??= TextEditingDeltaState(oldText: lastEditingState!.text!);
+    return _editingDelta!;
   }
 
   /// Styles associated with the editable text.
@@ -1112,7 +1112,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     isEnabled = false;
     lastEditingState = null;
-    lastTextEditingDeltaState = null;
+    _editingDelta = null;
     style = null;
     geometry = null;
 
@@ -1155,6 +1155,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleChange(html.Event event) {
     assert(isEnabled);
+    print('handling regular input');
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     TextEditingDeltaState? newTextEditingDeltaState;
@@ -1164,15 +1165,16 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
-      lastTextEditingDeltaState = newTextEditingDeltaState;
-      onChange!(lastEditingState, lastTextEditingDeltaState);
+      _editingDelta = newTextEditingDeltaState;
+      onChange!(lastEditingState, editingDelta);
       // Flush delta after it has been sent to framework.
-      lastTextEditingDeltaState = null;
+      _editingDelta = null;
     }
   }
 
   void handleBeforeInput(html.Event event) {
     final String? eventData = getJsProperty<void>(event, 'data') as String?;
+    print('handle before input');
 
     if (eventData == null) {
       // When event.data is null we have a deletion.
