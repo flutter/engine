@@ -15,11 +15,13 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
@@ -213,28 +215,50 @@ public class PlatformPlugin {
     }
   }
 
-  private void setSystemChromeChangeListener() {
-    // Set up a listener to notify the framework when the system ui has changed.
+  private void setSystemChromeChangeListenerLegacy() {
     View decorView = activity.getWindow().getDecorView();
     decorView.setOnSystemUiVisibilityChangeListener(
         new View.OnSystemUiVisibilityChangeListener() {
           @Override
           public void onSystemUiVisibilityChange(int visibility) {
             if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-              // The system bars are visible. Make any desired adjustments to
-              // your UI, such as showing the action bar or other navigational
-              // controls. Another common action is to set a timer to dismiss
-              // the system bars and restore the fullscreen mode that was
-              // previously enabled.
               platformChannel.systemChromeChanged(false);
             } else {
-              // The system bars are NOT visible. Make any desired adjustments
-              // to your UI, such as hiding the action bar or other
-              // navigational controls.
               platformChannel.systemChromeChanged(true);
             }
           }
         });
+  }
+
+  private void setSystemChromeChangeListener() {
+    // Set up a listener to notify the framework when the system ui has changed.
+    // The Android API for overlays/insets as of API 30 provides backwards compatibility
+    // up through API 20, so legacy code with equivalent behavior is still used for API 19.
+    if (Build.VERSION.SDK_INT == 19) {
+      setSystemChromeChangeListenerLegacy();
+    } else {
+      View decorView = activity.getWindow().getDecorView();
+      decorView.setOnApplyWindowInsetsListener(
+          new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
+              if (windowInsets.isVisible(WindowInsetsCompat.Type.systemBars())) {
+                // The system bars are visible. Make any desired adjustments to
+                // your UI, such as showing the action bar or other navigational
+                // controls. Another common action is to set a timer to dismiss
+                // the system bars and restore the fullscreen mode that was
+                // previously enabled.
+                platformChannel.systemChromeChanged(false);
+              } else {
+                // The system bars are NOT visible. Make any desired adjustments
+                // to your UI, such as hiding the action bar or other
+                // navigational controls.
+                platformChannel.systemChromeChanged(true);
+              }
+              return null;
+            }
+          });
+    }
   }
 
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
