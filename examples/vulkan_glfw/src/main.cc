@@ -37,7 +37,8 @@ static_assert(FLUTTER_ENGINE_VERSION == 1,
 struct {
   GLFWwindow* window;
 
-  uint32_t vk_version;
+  uint32_t enabled_instance_extension_count;
+  const char** enabled_instance_extensions;
   VkInstance instance;
   VkSurfaceKHR surface;
 
@@ -51,6 +52,10 @@ struct {
   std::vector<VkImage> swapchain_images;
   VkFence image_ready_fence;
   VkSemaphore present_semaphore;
+
+  FlutterEngine engine;
+
+  bool resize_pending = false;
 } g_state;
 
 void GLFW_ErrorCallback(int error, const char* description) {
@@ -108,11 +113,13 @@ void GLFWKeyCallback(GLFWwindow* window,
   }
 }
 
-void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
+void GLFWframebufferSizeCallback(GLFWwindow* window, int width, int height) {
+  g_state.resize_pending = true;
+
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
-  event.width = width * g_pixelRatio;
-  event.height = height * g_pixelRatio;
+  event.width = width;
+  event.height = height;
   event.pixel_ratio = g_pixelRatio;
   FlutterEngineSendWindowMetricsEvent(
       reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
@@ -120,11 +127,17 @@ void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 void PrintUsage() {
-  std::cout << "usage: flutter_glfw <path to project> <path to icudtl.dat>"
-            << std::endl;
+  std::cout
+      << "usage: embedder_example_vulkan <path to project> <path to icudtl.dat>"
+      << std::endl;
 }
 
 bool InitializeSwapchain() {
+  if (g_state.resize_pending) {
+    g_state.resize_pending = false;
+    vkDestroySwapchainKHR(g_state.device, g_state.swapchain, nullptr);
+  }
+
   /// --------------------------------------------------------------------------
   /// Choose an image format that can be presented to the surface, preferring
   /// the common BGRA+sRGB if available.
@@ -242,6 +255,25 @@ bool InitializeSwapchain() {
   return true;  // \o/
 }
 
+FlutterVulkanImage FlutterGetNextImageCallback(
+    void* user_data,
+    const FlutterFrameInfo* frame_info) {
+  return {};
+}
+
+bool FlutterPresentCallback(void* user_data, const FlutterVulkanImage* image) {
+  return false;
+}
+
+void* FlutterGetInstanceProcAddressCallback(
+    void* user_data,
+    FlutterVulkanInstanceHandle instance,
+    const char* procname) {
+  auto* proc = glfwGetInstanceProcAddress(
+      reinterpret_cast<VkInstance>(instance), procname);
+  return reinterpret_cast<void*>(proc);
+}
+
 int main(int argc, char** argv) {
   if (argc != 3) {
     PrintUsage();
@@ -297,10 +329,10 @@ int main(int argc, char** argv) {
     return EXIT_FAILURE;
   }
 
-  g_state.vk_version = gladLoadVulkan(nullptr, [](const char* procname) {
+  uint32_t vk_version = gladLoadVulkan(nullptr, [](const char* procname) {
     return glfwGetInstanceProcAddress(nullptr, procname);
   });
-  if (g_state.vk_version == 0) {
+  if (vk_version == 0) {
     std::cerr << "Failed to initialize Vulkan proc table." << std::endl;
     return EXIT_FAILURE;
   }
@@ -310,14 +342,15 @@ int main(int argc, char** argv) {
   /// --------------------------------------------------------------------------
 
   {
-    uint32_t instance_extensions_count;
-    const char** instance_extensions =
-        glfwGetRequiredInstanceExtensions(&instance_extensions_count);
+    g_state.enabled_instance_extensions = glfwGetRequiredInstanceExtensions(
+        &g_state.enabled_instance_extension_count);
 
-    std::cout << "Enabling " << instance_extensions_count
+    std::cout << "Enabling " << g_state.enabled_instance_extension_count
               << " instance extensions:" << std::endl;
-    for (unsigned int i = 0; i < instance_extensions_count; i++) {
-      std::cout << "  - " << instance_extensions[i] << std::endl;
+    for (unsigned int i = 0; i < g_state.enabled_instance_extension_count;
+         i++) {
+      std::cout << "  - " << g_state.enabled_instance_extensions[i]
+                << std::endl;
     }
 
     VkApplicationInfo app_info = {
@@ -333,8 +366,8 @@ int main(int argc, char** argv) {
     info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     info.flags = 0;
     info.pApplicationInfo = &app_info;
-    info.enabledExtensionCount = instance_extensions_count;
-    info.ppEnabledExtensionNames = instance_extensions;
+    info.enabledExtensionCount = g_state.enabled_instance_extension_count;
+    info.ppEnabledExtensionNames = g_state.enabled_instance_extensions;
     if (g_enable_validation_layers) {
       uint32_t layer_count;
       vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -497,6 +530,8 @@ int main(int argc, char** argv) {
       std::cerr << "Failed to initialize Vulkan proc table." << std::endl;
       return EXIT_FAILURE;
     }
+    std::cout << "Using Vulkan version: " << std::hex << "0x" << vk_version
+              << std::dec << std::endl;
   }
 
   /// --------------------------------------------------------------------------
@@ -566,14 +601,52 @@ int main(int argc, char** argv) {
   /// Start the Flutter Engine.
   /// --------------------------------------------------------------------------
 
+  {
+    FlutterRendererConfig config = {};
+    config.type = kVulkan;
+    config.vulkan.struct_size = sizeof(config.vulkan);
+    config.vulkan.version = VK_MAKE_VERSION(1, 1, 0);
+    config.vulkan.instance = g_state.instance;
+    config.vulkan.physical_device = g_state.physical_device;
+    config.vulkan.device = g_state.device;
+    config.vulkan.queue_family_index = g_state.queue_family_index;
+    config.vulkan.queue = g_state.queue;
+    config.vulkan.enabled_instance_extension_count =
+        g_state.enabled_instance_extension_count;
+    config.vulkan.enabled_instance_extensions =
+        g_state.enabled_instance_extensions;
+    config.vulkan.enabled_device_extension_count =
+        g_state.enabled_device_extensions.size();
+    config.vulkan.enabled_device_extensions =
+        g_state.enabled_device_extensions.data();
+    config.vulkan.get_instance_proc_address_callback =
+        FlutterGetInstanceProcAddressCallback;
+    config.vulkan.get_next_image_callback = FlutterGetNextImageCallback;
+    config.vulkan.present_image_callback = FlutterPresentCallback;
 
+    // This directory is generated by `flutter build bundle`.
+    std::string assets_path = project_path + "/build/flutter_assets";
+    FlutterProjectArgs args = {
+        .struct_size = sizeof(FlutterProjectArgs),
+        .assets_path = assets_path.c_str(),
+        .icu_data_path =
+            icudtl_path.c_str(),  // Find this in your bin/cache directory.
+    };
+    FlutterEngineResult result =
+        FlutterEngineRun(FLUTTER_ENGINE_VERSION, &config, &args, g_state.window,
+                         &g_state.engine);
+    if (result != kSuccess || g_state.engine == nullptr) {
+      std::cerr << "Failed to start Flutter Engine." << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
 
   /// --------------------------------------------------------------------------
   /// GLFW render loop.
   /// --------------------------------------------------------------------------
 
   glfwSetKeyCallback(g_state.window, GLFWKeyCallback);
-  glfwSetWindowSizeCallback(g_state.window, GLFWwindowSizeCallback);
+  glfwSetFramebufferSizeCallback(g_state.window, GLFWframebufferSizeCallback);
   glfwSetMouseButtonCallback(g_state.window, GLFWmouseButtonCallback);
 
   while (!glfwWindowShouldClose(g_state.window)) {
@@ -583,6 +656,10 @@ int main(int argc, char** argv) {
   /// --------------------------------------------------------------------------
   /// Cleanup.
   /// --------------------------------------------------------------------------
+
+  if (FlutterEngineShutdown(g_state.engine) != kSuccess) {
+    std::cerr << "Flutter Engine shutdown failed." << std::endl;
+  }
 
   vkDestroySemaphore(g_state.device, g_state.present_semaphore, nullptr);
   vkDestroyFence(g_state.device, g_state.image_ready_fence, nullptr);
