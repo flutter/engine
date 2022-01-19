@@ -843,9 +843,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
     embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
   }
 
-  // Changing the frame size from the raster thread does not make JNI calls.
-
-  EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(0);
+  EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(1);
   EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
 
   fml::Thread platform_thread("platform");
