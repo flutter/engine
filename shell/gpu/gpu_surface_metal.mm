@@ -133,7 +133,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
       return false;
     }
 
-    canvas->flush();
+    {
+      TRACE_EVENT0("flutter", "SkCanvas::Flush");
+      canvas->flush();
+    }
 
     uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
     for (auto& entry : damage_) {
@@ -160,7 +163,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromCAMetalLayer(
   if (i != damage_.end()) {
     framebuffer_info.existing_damage = i->second;
   }
-
+  framebuffer_info.supports_partial_repaint = true;
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback);
 }
 
@@ -191,7 +194,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrameFromMTLTexture(
       return false;
     }
 
-    canvas->flush();
+    {
+      TRACE_EVENT0("flutter", "SkCanvas::Flush");
+      canvas->flush();
+    }
 
     return delegate->PresentTexture(texture);
   };
