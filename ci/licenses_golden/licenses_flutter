@@ -1314,8 +1314,6 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_include.c
 FILE: ../../../flutter/shell/platform/embedder/embedder_include2.c
 FILE: ../../../flutter/shell/platform/embedder/embedder_layers.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_layers.h
-FILE: ../../../flutter/shell/platform/embedder/embedder_mapping.cc
-FILE: ../../../flutter/shell/platform/embedder/embedder_mapping.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_platform_message_response.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.cc
