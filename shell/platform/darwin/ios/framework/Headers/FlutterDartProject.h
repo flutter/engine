@@ -28,13 +28,6 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initFromDefaultSourceForConfiguration FLUTTER_UNAVAILABLE("Use -init instead.");
 
 /**
- * Sets whether leave or clean up the VM after the last shell shuts down. It's YES by default, set
- * to NO to destroy VM.
- * @param enabled Whether leak Dart VM or not.
- */
-- (void)setLeakDartVM:(BOOL)enabled;
-
-/**
  * Returns the file name for the given asset. If the bundle with the identifier
  * "io.flutter.flutter.app" exists, it will try use that bundle; otherwise, it
  * will use the main bundle.  To specify a different bundle, use

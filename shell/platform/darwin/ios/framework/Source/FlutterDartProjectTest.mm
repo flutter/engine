@@ -29,15 +29,6 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(project.settings.old_gen_heap_size, old_gen_heap_size);
 }
 
-- (void)testLeakDartVMSetting {
-  FlutterDartProject* project = [[FlutterDartProject alloc] init];
-  [project setLeakDartVM:YES];
-  XCTAssertEqual(project.settings.leak_vm, YES);
-
-  [project setLeakDartVM:NO];
-  XCTAssertEqual(project.settings.leak_vm, NO);
-}
-
 - (void)testMainBundleSettingsAreCorrectlyParsed {
   NSBundle* mainBundle = [NSBundle mainBundle];
   NSDictionary* appTransportSecurity =
@@ -46,6 +37,17 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqualObjects(
       @"[[\"invalid-site.com\",true,false],[\"sub.invalid-site.com\",false,false]]",
       [FlutterDartProject domainNetworkPolicy:appTransportSecurity]);
+}
+
+- (void)testLeakDartVMSettingsAreCorrectlyParsed {
+  // The FLTLeakDartVM's value is defined in Info.plist
+  NSBundle* mainBundle = [NSBundle mainBundle];
+  NSNumber* leakDartVM = [mainBundle objectForInfoDictionaryKey:@"FLTLeakDartVM"];
+  XCTAssertEqual(leakDartVM.boolValue, NO);
+
+  auto settings = FLTDefaultSettingsForBundle();
+  // Check settings.leak_vm value is same as the value defined in Info.plist.
+  XCTAssertEqual(settings.leak_vm, NO);
 }
 
 - (void)testEmptySettingsAreCorrect {
