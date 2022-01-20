@@ -71,9 +71,9 @@ public interface BinaryMessenger {
   /**
    * Creates a TaskQueue that executes the tasks serially on a background thread.
    *
-   * <p>{@link TaskQueueOptions} can be used to configure the task queue to execute tasks in
-   * parallel. Doing so can be more performant, though users need to ensure that the task handlers
-   * are thread-safe.
+   * <p>{@link TaskQueueOptions} can be used to configure the task queue to execute tasks
+   * concurrently. Doing so can be more performant, though users need to ensure that the task
+   * handlers are thread-safe.
    */
   @UiThread
   default TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
