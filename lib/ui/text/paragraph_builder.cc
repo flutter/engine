@@ -19,7 +19,6 @@
 #include "flutter/third_party/txt/src/txt/text_baseline.h"
 #include "flutter/third_party/txt/src/txt/text_decoration.h"
 #include "flutter/third_party/txt/src/txt/text_style.h"
-#include "third_party/icu/source/common/unicode/ustring.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
