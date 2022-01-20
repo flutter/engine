@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -351,7 +352,9 @@ public class FlutterViewTest {
   public void reportSystemInsetWhenNotFullscreen() {
     // Without custom shadows, the default system ui visibility flags is 0.
     FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -390,7 +393,9 @@ public class FlutterViewTest {
   public void reportSystemInsetWhenNotFullscreenLegacy() {
     // Without custom shadows, the default system ui visibility flags is 0.
     FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
 
     FlutterEngine flutterEngine =
         spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
@@ -423,7 +428,9 @@ public class FlutterViewTest {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_90);
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -461,7 +468,10 @@ public class FlutterViewTest {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
+
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -499,7 +509,10 @@ public class FlutterViewTest {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
+
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -540,7 +553,10 @@ public class FlutterViewTest {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
+
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -578,7 +594,9 @@ public class FlutterViewTest {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
     setExpectedDisplayRotation(Surface.ROTATION_270);
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
     when(flutterView.getWindowSystemUiVisibility())
         .thenReturn(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
@@ -617,7 +635,9 @@ public class FlutterViewTest {
   public void systemInsetDisplayCutoutSimple() {
     RuntimeEnvironment.setQualifiers("+land");
     FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.systemContext));
-    assertEquals(0, flutterView.getSystemUiVisibility());
+    View.OnApplyWindowInsetsListener listenerMock = mock(View.OnApplyWindowInsetsListener.class);
+    flutterView.setOnApplyWindowInsetsListener(listenerMock);
+    verify(listenerMock, never()).onApplyWindowInsets(any(), any());
     when(flutterView.getWindowSystemUiVisibility()).thenReturn(0);
     when(flutterView.getContext()).thenReturn(RuntimeEnvironment.systemContext);
 
