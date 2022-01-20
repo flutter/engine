@@ -258,8 +258,7 @@ public class FlutterJNITest {
     Object lock = new Object();
     // This thread acts as the Android main thread.
     // This is required because the test itself runs on the main thread, and without this
-    // workaround,
-    // a deadlock is produced.
+    // workaround, a deadlock is produced.
     Thread mainThreadImpostor =
         new Thread(
             () -> {
