@@ -241,11 +241,14 @@ using namespace flutter;
   // in the navigation hierarchy.
   // It's also possible in an Add2App scenario that the FlutterViewController was presented
   // outside the context of a UINavigationController, and still wants to be popped.
-  UIViewController* viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-  if ([viewController isKindOfClass:[UINavigationController class]]) {
-    [((UINavigationController*)viewController) popViewControllerAnimated:isAnimated];
+
+  auto engineViewController = static_cast<UIViewController*>([_engine.get() viewController]);
+  UINavigationController* navigationController = [engineViewController navigationController];
+  if (navigationController) {
+    [navigationController popViewControllerAnimated:isAnimated];
   } else {
-    auto engineViewController = static_cast<UIViewController*>([_engine.get() viewController]);
+    UIViewController* viewController =
+        [UIApplication sharedApplication].keyWindow.rootViewController;
     if (engineViewController != viewController) {
       [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
     }
