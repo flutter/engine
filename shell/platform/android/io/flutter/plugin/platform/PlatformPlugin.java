@@ -15,12 +15,12 @@ import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsets;
 import android.view.WindowManager;
 import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
@@ -232,16 +232,18 @@ public class PlatformPlugin {
 
   private void setSystemChromeChangeListener() {
     // Set up a listener to notify the framework when the system ui has changed.
-    // The Android API for overlays/insets as of API 30 provides backwards compatibility
+    // The Android API for overlays/insets as of API 30 provides backwrds compatibility
     // up through API 20, so legacy code with equivalent behavior is still used for API 19.
-    if (Build.VERSION.SDK_INT == 19) {
+    if (Build.VERSION.SDK_INT <= 19) {
       setSystemChromeChangeListenerLegacy();
     } else {
       View decorView = activity.getWindow().getDecorView();
-      decorView.setOnApplyWindowInsetsListener(
-          new View.OnApplyWindowInsetsListener() {
+      ViewCompat.setOnApplyWindowInsetsListener(
+          decorView,
+          new androidx.core.view.OnApplyWindowInsetsListener() {
             @Override
-            public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
+            public WindowInsetsCompat onApplyWindowInsets(
+                View view, WindowInsetsCompat windowInsets) {
               if (windowInsets.isVisible(WindowInsetsCompat.Type.systemBars())) {
                 // The system bars are visible. Make any desired adjustments to
                 // your UI, such as showing the action bar or other navigational
