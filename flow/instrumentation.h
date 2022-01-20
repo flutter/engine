@@ -28,6 +28,8 @@ class Stopwatch {
 
   fml::TimeDelta AverageDelta() const;
 
+  double AverageFps() const;
+
   void InitVisualizeSurface(const SkRect& rect) const;
 
   void Visualize(SkCanvas* canvas, const SkRect& rect) const;

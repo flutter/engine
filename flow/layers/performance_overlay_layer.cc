@@ -51,16 +51,18 @@ sk_sp<SkTextBlob> PerformanceOverlayLayer::MakeStatisticsText(
   if (font_path != "") {
     font = SkFont(SkTypeface::MakeFromFile(font_path.c_str()));
   }
-  font.setSize(15);
+  font.setSize(13);
 
   double max_ms_per_frame = stopwatch.MaxDelta().ToMillisecondsF();
   double average_ms_per_frame = stopwatch.AverageDelta().ToMillisecondsF();
+  double average_fps = stopwatch.AverageFps();
   std::stringstream stream;
   stream.setf(std::ios::fixed | std::ios::showpoint);
   stream << std::setprecision(1);
   stream << label_prefix << "  "
          << "max " << max_ms_per_frame << " ms/frame, "
-         << "avg " << average_ms_per_frame << " ms/frame";
+         << "avg " << average_ms_per_frame << " ms/frame, "
+         << "avg_fps " << average_fps;
   auto text = stream.str();
   return SkTextBlob::MakeFromText(text.c_str(), text.size(), font,
                                   SkTextEncoding::kUTF8);
