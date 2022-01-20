@@ -52,11 +52,11 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
   main_context_ = CreateGrContext(instance, version, instance_extension_count,
                                   instance_extensions, device_extension_count,
                                   device_extensions, ContextType::kRender);
-  // TODO(bdero): Add a second (optional) queue+family index to the Embedder API
-  //             to allow embedders to specify a dedicated transfer queue for
-  //             use by the resource context. Queue families with graphics
-  //             capability can always be used for memory transferring, but it
-  //             would be adventageous to use a dedicated transter queue here.
+  // TODO(96954): Add a second (optional) queue+family index to the Embedder API
+  //              to allow embedders to specify a dedicated transfer queue for
+  //              use by the resource context. Queue families with graphics
+  //              capability can always be used for memory transferring, but it
+  //              would be advantageous to use a dedicated transter queue here.
   resource_context_ = CreateGrContext(
       instance, version, instance_extension_count, instance_extensions,
       device_extension_count, device_extensions, ContextType::kResource);
