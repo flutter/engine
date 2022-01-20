@@ -37,8 +37,7 @@ static_assert(FLUTTER_ENGINE_VERSION == 1,
 struct {
   GLFWwindow* window;
 
-  uint32_t enabled_instance_extension_count;
-  const char** enabled_instance_extensions;
+  std::vector<const char*> enabled_instance_extensions;
   VkInstance instance;
   VkSurfaceKHR surface;
 
@@ -457,15 +456,22 @@ int main(int argc, char** argv) {
   /// --------------------------------------------------------------------------
 
   {
-    g_state.enabled_instance_extensions = glfwGetRequiredInstanceExtensions(
-        &g_state.enabled_instance_extension_count);
+    uint32_t extension_count;
+    const char** glfw_extensions =
+        glfwGetRequiredInstanceExtensions(&extension_count);
+    g_state.enabled_instance_extensions.resize(extension_count);
+    memcpy(g_state.enabled_instance_extensions.data(), glfw_extensions,
+           extension_count * sizeof(char*));
 
-    std::cout << "Enabling " << g_state.enabled_instance_extension_count
+    if (g_enable_validation_layers) {
+      g_state.enabled_instance_extensions.push_back(
+          VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    }
+
+    std::cout << "Enabling " << extension_count
               << " instance extensions:" << std::endl;
-    for (unsigned int i = 0; i < g_state.enabled_instance_extension_count;
-         i++) {
-      std::cout << "  - " << g_state.enabled_instance_extensions[i]
-                << std::endl;
+    for (const auto& extension : g_state.enabled_instance_extensions) {
+      std::cout << "  - " << extension << std::endl;
     }
 
     VkApplicationInfo app_info = {
@@ -481,8 +487,8 @@ int main(int argc, char** argv) {
     info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     info.flags = 0;
     info.pApplicationInfo = &app_info;
-    info.enabledExtensionCount = g_state.enabled_instance_extension_count;
-    info.ppEnabledExtensionNames = g_state.enabled_instance_extensions;
+    info.enabledExtensionCount = g_state.enabled_instance_extensions.size();
+    info.ppEnabledExtensionNames = g_state.enabled_instance_extensions.data();
     if (g_enable_validation_layers) {
       uint32_t layer_count;
       vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -735,9 +741,9 @@ int main(int argc, char** argv) {
     config.vulkan.queue_family_index = g_state.queue_family_index;
     config.vulkan.queue = g_state.queue;
     config.vulkan.enabled_instance_extension_count =
-        g_state.enabled_instance_extension_count;
+        g_state.enabled_instance_extensions.size();
     config.vulkan.enabled_instance_extensions =
-        g_state.enabled_instance_extensions;
+        g_state.enabled_instance_extensions.data();
     config.vulkan.enabled_device_extension_count =
         g_state.enabled_device_extensions.size();
     config.vulkan.enabled_device_extensions =
