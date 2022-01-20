@@ -660,7 +660,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/window.dart
 FILE: ../../../flutter/lib/web_ui/lib/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui.dart
-FILE: ../../../flutter/lib/web_ui/lib/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/window.dart
 FILE: ../../../flutter/lib/web_ui/tool/unicode_sync_script.dart
 FILE: ../../../flutter/runtime/dart_isolate.cc
