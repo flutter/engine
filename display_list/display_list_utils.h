@@ -126,7 +126,7 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   bool has_opacity() { return opacity_ < SK_Scalar1; }
 
  protected:
-  void save_opacity(bool reset_and_restore);
+  void save_opacity(bool reset_and_restore, bool children_can_inherit_opacity);
   void restore_opacity();
 
  private:
@@ -324,7 +324,9 @@ class DisplayListBoundsCalculator final
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds, bool with_paint) override;
+  void saveLayer(const SkRect* bounds,
+                 bool with_paint,
+                 bool children_can_inherit_opacity) override;
   void restore() override;
 
   void drawPaint() override;

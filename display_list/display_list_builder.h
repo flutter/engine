@@ -153,7 +153,12 @@ class DisplayListBuilder final : public virtual Dispatcher,
   sk_sp<SkImageFilter> getImageFilter() const { return current_image_filter_; }
 
   void save() override;
-  void saveLayer(const SkRect* bounds, bool restore_with_paint) override;
+  // children_can_inherit_opacity should not be specified when
+  // building a DisplayList. The value will be ignored and
+  // calculated from the contents of the built DisplayList.
+  void saveLayer(const SkRect* bounds,
+                 bool restore_with_paint,
+                 bool children_can_inherit_opacity = false) override;
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
 
@@ -271,11 +276,13 @@ class DisplayListBuilder final : public virtual Dispatcher,
   }
 
   struct LayerInfo {
-    LayerInfo(bool has_layer = false)
-        : has_layer(has_layer),
+    LayerInfo(size_t save_layer_offset = 0, bool has_layer = false)
+        : save_layer_offset(save_layer_offset),
+          has_layer(has_layer),
           cannot_inherit_opacity(false),
           has_compatible_op(false) {}
 
+    size_t save_layer_offset;
     bool has_layer;
     bool cannot_inherit_opacity;
     bool has_compatible_op;

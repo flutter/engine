@@ -62,7 +62,9 @@ class Dispatcher {
   // rendering it back to the current surface. If the parameter is false
   // then this method is equivalent to |SkCanvas::saveLayer| with a null
   // paint object.
-  virtual void saveLayer(const SkRect* bounds, bool restore_with_paint) = 0;
+  virtual void saveLayer(const SkRect* bounds,
+                         bool restore_with_paint,
+                         bool children_can_inherit_opacity) = 0;
   virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;

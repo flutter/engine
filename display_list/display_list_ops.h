@@ -215,12 +215,14 @@ struct SaveOp final : DLOp {
 struct SaveLayerOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayer;
 
-  explicit SaveLayerOp(bool with_paint) : with_paint(with_paint) {}
+  explicit SaveLayerOp(bool with_paint)
+      : with_paint(with_paint), children_can_inherit_opacity(false) {}
 
-  bool with_paint;
+  uint16_t with_paint;
+  uint16_t children_can_inherit_opacity;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(nullptr, with_paint);
+    dispatcher.saveLayer(nullptr, with_paint, children_can_inherit_opacity);
   }
 };
 // 4 byte header + 20 byte payload packs evenly into 24 bytes
@@ -228,13 +230,16 @@ struct SaveLayerBoundsOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayerBounds;
 
   SaveLayerBoundsOp(SkRect rect, bool with_paint)
-      : with_paint(with_paint), rect(rect) {}
+      : with_paint(with_paint),
+        children_can_inherit_opacity(false),
+        rect(rect) {}
 
-  bool with_paint;
+  uint16_t with_paint;
+  uint16_t children_can_inherit_opacity;
   const SkRect rect;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(&rect, with_paint);
+    dispatcher.saveLayer(&rect, with_paint, children_can_inherit_opacity);
   }
 };
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)

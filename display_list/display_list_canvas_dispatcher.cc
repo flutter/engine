@@ -26,17 +26,24 @@ const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
 
 void DisplayListCanvasDispatcher::save() {
   canvas_->save();
-  save_opacity(false);
+  save_opacity(false, false);
 }
 void DisplayListCanvasDispatcher::restore() {
   canvas_->restore();
   restore_opacity();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
-                                            bool restore_with_paint) {
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
-  canvas_->saveLayer(bounds, safe_paint(restore_with_paint));
-  save_opacity(true);
+                                            bool restore_with_paint,
+                                            bool children_can_inherit_opacity) {
+  if (children_can_inherit_opacity) {
+    // FML_LOG(ERROR) << "Eliding a saveLayer";
+    canvas_->save();
+    save_opacity(true, true);
+  } else {
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
+    canvas_->saveLayer(bounds, safe_paint(restore_with_paint));
+    save_opacity(true, false);
+  }
 }
 
 void DisplayListCanvasDispatcher::translate(SkScalar tx, SkScalar ty) {

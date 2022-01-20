@@ -237,7 +237,14 @@ void DisplayListBuilder::restore() {
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
     Push<RestoreOp>(0, 1);
-    if (!layer_info.has_layer) {
+    if (layer_info.has_layer) {
+      if (!layer_info.cannot_inherit_opacity) {
+        SaveLayerOp* op =
+            reinterpret_cast<SaveLayerOp*>(storage_.get() +
+                                           layer_info.save_layer_offset);
+        op->children_can_inherit_opacity = true;
+      }
+    } else {
       // For regular save() ops there was no protecting layer so we have to
       // accumulate the values into the enclosing layer.
       if (layer_info.cannot_inherit_opacity) {
@@ -249,12 +256,18 @@ void DisplayListBuilder::restore() {
   }
 }
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
-                                   bool restore_with_paint) {
+                                   bool restore_with_paint,
+                                   bool children_can_inherit_opacity) {
+  if (children_can_inherit_opacity) {
+    FML_LOG(INFO)
+        << "DisplayListBuilder::saveLayer ignoring inherit_opacity flag";
+  }
+  size_t save_layer_offset = used_;
   bounds  //
       ? Push<SaveLayerBoundsOp>(0, 1, *bounds, restore_with_paint)
       : Push<SaveLayerOp>(0, 1, restore_with_paint);
   CheckLayerOpacityCompatibility(restore_with_paint);
-  layer_stack_.emplace_back(true);
+  layer_stack_.emplace_back(save_layer_offset, true);
   current_layer_ = &layer_stack_.back();
 }
 
