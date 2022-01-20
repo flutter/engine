@@ -306,11 +306,10 @@ void DisplayListBoundsCalculator::save() {
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            bool with_paint,
-                                            bool children_can_inherit_opacity) {
+                                            DisplayListSaveLayerFlags flags) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  if (with_paint) {
+  if (flags.renders_with_attributes()) {
     layer_infos_.emplace_back(std::make_unique<SaveLayerData>(
         accumulator_, image_filter_, paint_nops_on_transparency()));
   } else {

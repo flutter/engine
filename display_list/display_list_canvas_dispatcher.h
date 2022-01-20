@@ -30,8 +30,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
   void save() override;
   void restore() override;
   void saveLayer(const SkRect* bounds,
-                 bool restore_with_paint,
-                 bool children_can_inherit_opacity) override;
+                 DisplayListSaveLayerFlags flags) override;
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;

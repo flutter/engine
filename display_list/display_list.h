@@ -150,6 +150,45 @@ enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 class Dispatcher;
 class DisplayListBuilder;
 
+class DisplayListSaveLayerFlags {
+ public:
+  static const uint32_t kRendersWithAttributesFlag = 0x1 << 0;
+  static const uint32_t kSingleChildFlag = 0x1 << 1;
+  static const uint32_t kNonoverlappingChildrenFlag = 0x1 << 2;
+  static const uint32_t kOpacityOptimizationFlag = 0x1 << 3;
+
+  static const DisplayListSaveLayerFlags kWithAttributes;
+  static const DisplayListSaveLayerFlags kNoAttributes;
+
+  explicit DisplayListSaveLayerFlags(uint32_t flags) : flags_(flags) {}
+
+  DisplayListSaveLayerFlags without_optimizations() {
+    return DisplayListSaveLayerFlags(flags_ & kRendersWithAttributesFlag);
+  }
+
+  uint32_t flags() { return flags_; }
+
+  DisplayListSaveLayerFlags with(DisplayListSaveLayerFlags other_flags) {
+    return DisplayListSaveLayerFlags(flags_ | other_flags.flags_);
+  }
+
+  DisplayListSaveLayerFlags with(uint32_t new_flags) {
+    return DisplayListSaveLayerFlags(flags_ | new_flags);
+  }
+
+  bool renders_with_attributes() {
+    return (flags_ & kRendersWithAttributesFlag) != 0;
+  }
+
+  bool can_distribute_opacity() {
+    return ((flags_ & (kSingleChildFlag | kNonoverlappingChildrenFlag)) != 0 &&
+            (flags_ & kOpacityOptimizationFlag) != 0);
+  }
+
+ private:
+  uint32_t flags_;
+};
+
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().

@@ -61,9 +61,10 @@ SkCanvas::SaveLayerStrategy DisplayListCanvasRecorder::getSaveLayerStrategy(
     const SaveLayerRec& rec) {
   if (rec.fPaint) {
     builder_->setAttributesFromPaint(*rec.fPaint, kSaveLayerWithPaintFlags);
-    builder_->saveLayer(rec.fBounds, true);
+    builder_->saveLayer(rec.fBounds,
+                        DisplayListSaveLayerFlags::kWithAttributes);
   } else {
-    builder_->saveLayer(rec.fBounds, false);
+    builder_->saveLayer(rec.fBounds, DisplayListSaveLayerFlags::kNoAttributes);
   }
   return SaveLayerStrategy::kNoLayer_SaveLayerStrategy;
 }

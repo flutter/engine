@@ -325,8 +325,7 @@ class DisplayListBoundsCalculator final
 
   void save() override;
   void saveLayer(const SkRect* bounds,
-                 bool with_paint,
-                 bool children_can_inherit_opacity) override;
+                 DisplayListSaveLayerFlags flags) override;
   void restore() override;
 
   void drawPaint() override;

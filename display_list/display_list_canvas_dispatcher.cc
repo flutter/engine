@@ -33,15 +33,13 @@ void DisplayListCanvasDispatcher::restore() {
   restore_opacity();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
-                                            bool restore_with_paint,
-                                            bool children_can_inherit_opacity) {
-  if (children_can_inherit_opacity) {
-    // FML_LOG(ERROR) << "Eliding a saveLayer";
+                                            DisplayListSaveLayerFlags flags) {
+  if (flags.can_distribute_opacity()) {
     canvas_->save();
     save_opacity(true, true);
   } else {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
-    canvas_->saveLayer(bounds, safe_paint(restore_with_paint));
+    canvas_->saveLayer(bounds, safe_paint(flags.renders_with_attributes()));
     save_opacity(true, false);
   }
 }

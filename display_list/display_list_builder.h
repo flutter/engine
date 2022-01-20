@@ -153,12 +153,19 @@ class DisplayListBuilder final : public virtual Dispatcher,
   sk_sp<SkImageFilter> getImageFilter() const { return current_image_filter_; }
 
   void save() override;
-  // children_can_inherit_opacity should not be specified when
-  // building a DisplayList. The value will be ignored and
-  // calculated from the contents of the built DisplayList.
+  // Only the |kRendersWithAttributesFlag| should be specified here, using
+  // the convenient |kWithAttributes| and |kNoAttributes| constants. Any other
+  // flags will be ignored and calculated anew as the DisplayList is built.
+  // Alternatively, use the convenience |saveLayer(SkRect, bool)| method.
   void saveLayer(const SkRect* bounds,
-                 bool restore_with_paint,
-                 bool children_can_inherit_opacity = false) override;
+                 DisplayListSaveLayerFlags flags) override;
+  // Convenience method with just a boolean to indicate whether the saveLayer
+  // should apply the rendering attributes.
+  void saveLayer(const SkRect* bounds, bool renders_with_attributes) {
+    saveLayer(bounds, renders_with_attributes
+                          ? DisplayListSaveLayerFlags::kWithAttributes
+                          : DisplayListSaveLayerFlags::kNoAttributes);
+  }
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }
 

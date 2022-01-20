@@ -363,12 +363,47 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "Save(Layer)+Restore", {
-      // cv.save/restore are ignored if there are no draw calls between them
-      {2, 16, 0, 0, [](DisplayListBuilder& b) {b.save(); b.restore();}},
-      {2, 16, 2, 16, [](DisplayListBuilder& b) {b.saveLayer(nullptr, false); b.restore(); }},
-      {2, 16, 2, 16, [](DisplayListBuilder& b) {b.saveLayer(nullptr, true); b.restore(); }},
-      {2, 32, 2, 32, [](DisplayListBuilder& b) {b.saveLayer(&TestBounds, false); b.restore(); }},
-      {2, 32, 2, 32, [](DisplayListBuilder& b) {b.saveLayer(&TestBounds, true); b.restore(); }},
+    // There are many reasons that save and restore can elide content, including
+    // whether or not there are any draw operations between them, whether or not
+    // there are any state changes to restore, and whether group rendering (opacity)
+    // optimizations can allow attributes to be distributed to the children.
+    // To prevent those cases we include at least one clip operation and 2 overlapping
+    // rendering primitives between each save/restore pair.
+      {5, 88, 5, 88, [](DisplayListBuilder& b) {
+        b.save();
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 88, 5, 88, [](DisplayListBuilder& b) {
+        b.saveLayer(nullptr, false);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 88, 5, 88, [](DisplayListBuilder& b) {
+        b.saveLayer(nullptr, true);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 104, 5, 104, [](DisplayListBuilder& b) {
+        b.saveLayer(&TestBounds, false);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 104, 5, 104, [](DisplayListBuilder& b) {
+        b.saveLayer(&TestBounds, true);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
     }
   },
   { "Translate", {
