@@ -17,10 +17,8 @@
 @end
 
 @implementation TestFlutterPlatformViewFactory
-- (NSView*)createWithFrame:(CGRect)frame
-            viewIdentifier:(int64_t)viewId
-                 arguments:(nullable id)args {
-  return [[TestFlutterPlatformView alloc] initWithFrame:frame];
+- (NSView*)createWithviewIdentifier:(int64_t)viewId arguments:(nullable id)args {
+  return [[TestFlutterPlatformView alloc] initWithFrame:CGRectZero];
 }
 
 - (NSObject<FlutterMessageCodec>*)createArgsCodec {

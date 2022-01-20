@@ -107,6 +107,7 @@ bool FlutterMetalCompositor::Present(const FlutterLayer** layers, size_t layers_
 
 void FlutterMetalCompositor::PresentPlatformView(const FlutterLayer* layer, size_t layer_position) {
   // TODO (https://github.com/flutter/flutter/issues/96668)
+  // once the issue is fixed, this check will pass.
   FML_DCHECK([[NSThread currentThread] isMainThread])
       << "Must be on the main thread to present platform views";
 

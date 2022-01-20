@@ -20,16 +20,13 @@
  *
  * The implementation of this method should create a new `NSView`.
  *
- * @param frame The rectangle for the newly created view measured in points.
  * @param viewId A unique identifier for this view.
  * @param args Parameters for creating the view sent from the Dart side of the
  * Flutter app. If `createArgsCodec` is not implemented, or if no creation arguments were sent from
  * the Dart code, this will be null. Otherwise this will be the value sent from the Dart code as
  * decoded by `createArgsCodec`.
  */
-- (nonnull NSView*)createWithFrame:(CGRect)frame
-                    viewIdentifier:(int64_t)viewId
-                         arguments:(nullable id)args;
+- (nonnull NSView*)createWithviewIdentifier:(int64_t)viewId arguments:(nullable id)args;
 
 /**
  * Returns the `FlutterMessageCodec` for decoding the args parameter of `createWithFrame`.
