@@ -1,19 +1,19 @@
 package io.flutter.embedding.engine;
 
-import static android.os.Looper.getMainLooper;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.Shadows.shadowOf;
 
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Handler;
 import android.os.LocaleList;
+import android.os.Looper;
+import android.os.Message;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
@@ -22,7 +22,6 @@ import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
@@ -253,33 +252,45 @@ public class FlutterJNITest {
 
   @Test
   public void destroyOverlaySurfaces__calledFromDifferentThread() throws Exception {
+    AtomicReference<FlutterJNI> flutterJNI = new AtomicReference<>();
     PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
 
-    FlutterJNI flutterJNI = new FlutterJNI();
-    flutterJNI.setPlatformViewsController(platformViewsController);
-
-    AtomicReference<Exception> exception = new AtomicReference<>();
-
-    // --- Execute Test ---
-    CountDownLatch latch = new CountDownLatch(1);
-    Thread thread =
+    Object lock = new Object();
+    // This thread acts as the Android main thread.
+    // This is required because the test itself runs on the main thread, and without this
+    // workaround,
+    // a deadlock is produced.
+    Thread mainThreadImpostor =
         new Thread(
             () -> {
-              try {
-                flutterJNI.destroyOverlaySurfaces();
-              } catch (Exception e) {
-                exception.set(e);
+              Looper.prepare();
+
+              flutterJNI.set(new FlutterJNI(Looper.myLooper()));
+              flutterJNI.get().setPlatformViewsController(platformViewsController);
+
+              synchronized (lock) {
+                lock.notify();
               }
-              latch.countDown();
+
+              new Handler(Looper.myLooper()) {
+                public void handleMessage(Message msg) {
+                  msg.getCallback().run();
+                }
+              };
+              Looper.loop();
             });
 
-    thread.start();
-    latch.await();
-    shadowOf(getMainLooper()).idle();
+    mainThreadImpostor.start();
+    synchronized (lock) {
+      lock.wait();
+    }
+
+    // --- Execute Test ---
+    flutterJNI.get().destroyOverlaySurfaces();
 
     // --- Verify Results ---
-    if (exception.get() != null) {
-      fail("Unexpected exception: " + exception.get().toString());
-    }
+    verify(platformViewsController, times(1)).destroyOverlaySurfaces();
+
+    mainThreadImpostor.interrupt();
   }
 }

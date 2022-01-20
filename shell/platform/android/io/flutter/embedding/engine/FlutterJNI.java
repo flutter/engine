@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -73,7 +74,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * <pre>{@code
  * // Instantiate FlutterJNI and attach to the native side.
- * FlutterJNI flutterJNI = new FlutterJNI();
+ * FlutterJNI flutterJNI = new FlutterJNI(Looper.getMainLooper());
  * flutterJNI.attachToNative();
  *
  * // Use FlutterJNI as desired. flutterJNI.dispatchPointerDataPacket(...);
@@ -107,11 +108,13 @@ public class FlutterJNI {
   // platform thread and doesn't require locking.
   private ReentrantReadWriteLock shellHolderLock = new ReentrantReadWriteLock();
 
-  // Prefer using the FlutterJNI.Factory so it's easier to test.
+  /** @param looper The main looper. Typically, Looper.getMainLooper(). */
+  public FlutterJNI(@NonNull Looper looper) {
+    mainLooper = looper;
+  }
+
   public FlutterJNI() {
-    // We cache the main looper so that we can ensure calls are made on the main thread
-    // without consistently paying the synchronization cost of getMainLooper().
-    mainLooper = Looper.getMainLooper();
+    this(Looper.getMainLooper());
   }
 
   /**
@@ -1170,8 +1173,7 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
-  public void destroyOverlaySurfaces() {
+  public void destroyOverlaySurfaces() throws Exception {
     // Normally, this method is called on the Android main thread.
     //
     // However, it may be called from a different thread after the thread merger lease expired
@@ -1185,14 +1187,15 @@ public class FlutterJNI {
     // method hops to the Android main thread if necessary.
     //
     // See Rasterizer::Teardown in C++, and FlutterEngineCache in Java.
-    runOnMainThread(
+    runOnLooper(
         () -> {
           if (platformViewsController == null) {
             throw new RuntimeException(
                 "platformViewsController must be set before attempting to destroy an overlay surface");
           }
           platformViewsController.destroyOverlaySurfaces();
-        });
+        },
+        mainLooper);
   }
   // ----- End Engine Lifecycle Support ----
 
@@ -1423,18 +1426,39 @@ public class FlutterJNI {
   }
 
   /**
-   * Causes the runnable r to be run on the Android main thread. If the current thread is different,
-   * then it adds the runnable to the message queue of the main thread.
+   * Causes the runnable r to be run on the thread associated with the given looper l. Then, it
+   * waits for the runnable to run.
+   *
+   * <p>If the runnable throws, then the exception is captured and rethrown in the current thread.
    *
    * @param r The runnable that will be executed.
+   * @param l The looper where the runnable is added.
    */
-  private void runOnMainThread(Runnable r) {
-    if (Looper.myLooper() == mainLooper) {
+  private void runOnLooper(Runnable r, Looper l) throws Exception {
+    if (Looper.myLooper() == l) {
       r.run();
       return;
     }
-    final Handler handler = new Handler(mainLooper);
-    handler.post(r);
+    final AtomicReference<Exception> exception = new AtomicReference<>();
+    final Handler handler = new Handler(l);
+    handler.post(
+        () -> {
+          try {
+            r.run();
+          } catch (Exception e) {
+            exception.set(e);
+          }
+          synchronized (handler) {
+            handler.notify();
+          }
+        });
+    synchronized (handler) {
+      handler.wait();
+    }
+    if (exception.get() != null) {
+      // Rethrow the exception on the current thread.
+      throw exception.get();
+    }
   }
 
   /**
