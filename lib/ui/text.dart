@@ -2942,12 +2942,7 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// Adds the given text to the paragraph.
   ///
   /// The text will be styled according to the current stack of text styles.
-  void addText(String text) {
-    final String? error = _addText(text);
-    if (error != null)
-      throw ArgumentError(error);
-  }
-  String? _addText(String text) native 'ParagraphBuilder_addText';
+  void addText(String text) native 'ParagraphBuilder_addText';
 
   /// Adds an inline placeholder space to the paragraph.
   ///

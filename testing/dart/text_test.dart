@@ -241,4 +241,21 @@ void main() {
   testTextRange();
   testLoadFontFromList();
   testFontFeatureClass();
+
+  test('Invalid UTF-16 does not cause crash', () async {
+    // First half of this UTF32 code point is not a valid UTF16 code point.
+    final String invalidString = '💩'.substring(0, 1);  // i.e. codeUnitAt(0)
+
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+    builder.addText(invalidString);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    // This must not crash.
+    canvas.drawParagraph(paragraph, Offset.zero);
+    final Picture picture = recorder.endRecording();
+    expect(picture.approximateBytesUsed > 0, true);
+  });
 }

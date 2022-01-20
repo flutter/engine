@@ -55,7 +55,7 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
 
   void pop();
 
-  Dart_Handle addText(const std::u16string& text);
+  void addText(const std::u16string& text);
 
   // Pushes the information required to leave an open space, where Flutter may
   // draw a custom placeholder into.

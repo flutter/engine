@@ -490,24 +490,12 @@ void ParagraphBuilder::pop() {
   m_paragraphBuilder->Pop();
 }
 
-Dart_Handle ParagraphBuilder::addText(const std::u16string& text) {
+void ParagraphBuilder::addText(const std::u16string& text) {
   if (text.empty()) {
-    return Dart_Null();
-  }
-
-  // Use ICU to validate the UTF-16 input.  Calling u_strToUTF8 with a null
-  // output buffer will return U_BUFFER_OVERFLOW_ERROR if the input is well
-  // formed.
-  const UChar* text_ptr = reinterpret_cast<const UChar*>(text.data());
-  UErrorCode error_code = U_ZERO_ERROR;
-  u_strToUTF8(nullptr, 0, nullptr, text_ptr, text.size(), &error_code);
-  if (error_code != U_BUFFER_OVERFLOW_ERROR) {
-    return tonic::ToDart("string is not well-formed UTF-16");
+    return;
   }
 
   m_paragraphBuilder->AddText(text);
-
-  return Dart_Null();
 }
 
 Dart_Handle ParagraphBuilder::addPlaceholder(double width,
