@@ -15,11 +15,15 @@ import 'canvaskit_api.dart';
 import 'fonts.dart';
 
 /// Whether to use CanvasKit as the rendering backend.
-bool get useCanvasKit => FlutterConfiguration.flutterWebAutoDetect ? _detectRenderer() : FlutterConfiguration.useSkia;
+final bool useCanvasKit = FlutterConfiguration.flutterWebAutoDetect
+  ? _detectedRenderer
+  : FlutterConfiguration.useSkia;
 
 /// Returns true if CanvasKit is used.
 ///
 /// Otherwise, returns false.
+final bool _detectedRenderer = _detectRenderer();
+
 bool _detectRenderer() {
   if (requestedRendererType != null) {
     return requestedRendererType! == 'canvaskit';
