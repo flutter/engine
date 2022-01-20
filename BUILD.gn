@@ -62,7 +62,7 @@ _build_engine_artifacts =
     (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
 
 group("dart_sdk") {
-  if (_build_engine_artifacts) {
+  if (build_engine_artifacts) {
     if (flutter_prebuilt_dart_sdk) {
       public_deps = [ ":copy_dart_sdk" ]
     } else {
