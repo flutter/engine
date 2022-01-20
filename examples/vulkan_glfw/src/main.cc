@@ -80,9 +80,7 @@ void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
-  FlutterEngineSendPointerEvent(
-      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)), &event,
-      1);
+  FlutterEngineSendPointerEvent(g_state.engine, &event, 1);
 }
 
 void GLFWcursorPositionCallback(GLFWwindow* window, double x, double y) {
@@ -126,9 +124,7 @@ void GLFWframebufferSizeCallback(GLFWwindow* window, int width, int height) {
   event.width = width;
   event.height = height;
   event.pixel_ratio = g_pixelRatio;
-  FlutterEngineSendWindowMetricsEvent(
-      reinterpret_cast<FlutterEngine>(glfwGetWindowUserPointer(window)),
-      &event);
+  FlutterEngineSendWindowMetricsEvent(g_state.engine, &event);
 }
 
 void PrintUsage() {
@@ -141,6 +137,8 @@ bool InitializeSwapchain() {
   if (g_state.resize_pending) {
     g_state.resize_pending = false;
     vkDestroySwapchainKHR(g_state.device, g_state.swapchain, nullptr);
+
+    vkQueueWaitIdle(g_state.queue);
     vkResetCommandPool(g_state.device, g_state.swapchain_command_pool,
                        VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
   }
@@ -323,6 +321,12 @@ bool InitializeSwapchain() {
 FlutterVulkanImage FlutterGetNextImageCallback(
     void* user_data,
     const FlutterFrameInfo* frame_info) {
+  // If the GLFW framebuffer has been resized, discard the swapchain and create
+  // a new one.
+  if (g_state.resize_pending) {
+    InitializeSwapchain();
+  }
+
   vkAcquireNextImageKHR(g_state.device, g_state.swapchain, UINT64_MAX, nullptr,
                         g_state.image_ready_fence, &g_state.last_image_index);
 
@@ -367,11 +371,9 @@ bool FlutterPresentCallback(void* user_data, const FlutterVulkanImage* image) {
   };
   VkResult result = vkQueuePresentKHR(g_state.queue, &present_info);
 
-  // If the GLFW framebuffer has been resized or the swapchain is otherwise no
-  // longer compatible with the surface, discard the swapchain and create a new
-  // one.
-  if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR ||
-      g_state.resize_pending) {
+  // If the swapchain is no longer compatible with the surface, discard the
+  // swapchain and create a new one.
+  if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
     InitializeSwapchain();
   }
   vkQueueWaitIdle(g_state.queue);
@@ -468,7 +470,7 @@ int main(int argc, char** argv) {
           VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
 
-    std::cout << "Enabling " << extension_count
+    std::cout << "Enabling " << g_state.enabled_instance_extensions.size()
               << " instance extensions:" << std::endl;
     for (const auto& extension : g_state.enabled_instance_extensions) {
       std::cout << "  - " << extension << std::endl;
@@ -727,7 +729,7 @@ int main(int argc, char** argv) {
   }
 
   /// --------------------------------------------------------------------------
-  /// Start the Flutter Engine.
+  /// Start Flutter Engine.
   /// --------------------------------------------------------------------------
 
   {
@@ -768,6 +770,13 @@ int main(int argc, char** argv) {
       std::cerr << "Failed to start Flutter Engine." << std::endl;
       return EXIT_FAILURE;
     }
+
+    // Trigger a FlutterEngineSendWindowMetricsEvent to communicate the initial
+    // size of the window.
+    int width, height;
+    glfwGetFramebufferSize(g_state.window, &width, &height);
+    GLFWframebufferSizeCallback(g_state.window, width, height);
+    g_state.resize_pending = false;
   }
 
   /// --------------------------------------------------------------------------
@@ -779,7 +788,7 @@ int main(int argc, char** argv) {
   glfwSetMouseButtonCallback(g_state.window, GLFWmouseButtonCallback);
 
   while (!glfwWindowShouldClose(g_state.window)) {
-    glfwPollEvents();
+    glfwWaitEvents();
   }
 
   /// --------------------------------------------------------------------------
