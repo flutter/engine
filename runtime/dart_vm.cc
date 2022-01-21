@@ -59,11 +59,15 @@ static const char* kDartLanguageArgs[] = {
 
 static const char* kDartPrecompilationArgs[] = {"--precompilation"};
 
-static const char* kSerialGCArgs[] = {"--concurrent_mark=false",
-                                      "--concurrent_sweep=false",
-                                      "--compactor_tasks=1",
-                                      "--scavenger_tasks=0",
-                                      "--marker_tasks=0"};
+static const char* kSerialGCArgs[] = {
+    // clang-format off
+    "--concurrent_mark=false",
+    "--concurrent_sweep=false",
+    "--compactor_tasks=1",
+    "--scavenger_tasks=0",
+    "--marker_tasks=0",
+    // clang-format on
+};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
