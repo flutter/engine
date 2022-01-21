@@ -21,6 +21,7 @@ namespace testing {
 class TestVulkanContext : public fml::RefCountedThreadSafe<TestVulkanContext> {
  public:
   TestVulkanContext();
+  ~TestVulkanContext();
 
   std::optional<TestVulkanImage> CreateImage(const SkISize& size) const;
 

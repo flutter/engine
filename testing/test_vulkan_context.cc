@@ -95,6 +95,10 @@ TestVulkanContext::TestVulkanContext() {
   context_ = GrDirectContext::MakeVulkan(backend_context, options);
 }
 
+TestVulkanContext::~TestVulkanContext() {
+  context_->releaseResourcesAndAbandonContext();
+}
+
 std::optional<TestVulkanImage> TestVulkanContext::CreateImage(
     const SkISize& size) const {
   TestVulkanImage result;
