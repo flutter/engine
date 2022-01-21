@@ -1102,8 +1102,10 @@ import java.util.Arrays;
      * FlutterActivity#1)
      *
      * <p>On the one hand, the {@code paused} state from FlutterActivity#1 will cause the
-     * FlutterActivity#2 page to be stuck; on the other hand, from the perspective of the entire
-     * application life cycle, the {@code paused} state is unexpected.
+     * FlutterActivity#2 page to be stuck; On the other hand, these states are not expected from the
+     * perspective of the entire application lifecycle. If the host application gets the control of
+     * sending {@link AppLifecycleState}, It will be possible to correctly match the {@link
+     * AppLifecycleState} with the application-level lifecycle.
      *
      * <p>Return {@code false} means the host application dispatches these app lifecycle events,
      * while return {@code true} means the engine dispatches these events.
