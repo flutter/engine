@@ -15,8 +15,7 @@
 
 dartdevc:
   include:
-    target: dartdevc
-    path: "../dart-sdk/lib/libraries.json"
+    - {path: "../dart-sdk/lib/libraries.json", target: dartdevc}
 
   libraries:
     ui:
@@ -27,8 +26,7 @@ dartdevc:
 
 dart2js:
   include:
-    target: dart2js
-    path: "../dart-sdk/lib/libraries.json"
+    - {path: "../dart-sdk/lib/libraries.json", target: dart2js}
 
   libraries:
     ui:

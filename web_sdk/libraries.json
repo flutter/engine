@@ -2,10 +2,12 @@
   "comment:0": "NOTE: THIS FILE IS GENERATED. DO NOT EDIT.",
   "comment:1": "Instead modify 'flutter/web_sdk/libraries.yaml' and follow the instructions therein.",
   "dartdevc": {
-    "include": {
-      "target": "dartdevc",
-      "path": "../dart-sdk/lib/libraries.json"
-    },
+    "include": [
+      {
+        "path": "../dart-sdk/lib/libraries.json",
+        "target": "dartdevc"
+      }
+    ],
     "libraries": {
       "ui": {
         "uri": "lib/ui/ui.dart"
@@ -16,10 +18,12 @@
     }
   },
   "dart2js": {
-    "include": {
-      "target": "dart2js",
-      "path": "../dart-sdk/lib/libraries.json"
-    },
+    "include": [
+      {
+        "path": "../dart-sdk/lib/libraries.json",
+        "target": "dart2js"
+      }
+    ],
     "libraries": {
       "ui": {
         "uri": "lib/ui/ui.dart"
