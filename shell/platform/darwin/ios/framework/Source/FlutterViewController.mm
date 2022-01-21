@@ -107,9 +107,6 @@ typedef enum UIAccessibilityContrast : NSInteger {
   fml::scoped_nsobject<UIHoverGestureRecognizer> _hoverGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIPanGestureRecognizer> _panGestureRecognizer API_AVAILABLE(ios(13.4));
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
-  fml::scoped_nsobject<UIPinchGestureRecognizer> _pinchGestureRecognizer API_AVAILABLE(ios(13.4));
-  fml::scoped_nsobject<UIRotationGestureRecognizer> _rotationGestureRecognizer
-      API_AVAILABLE(ios(13.4));
   MouseState _mouseState;
 }
 
@@ -661,21 +658,11 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     [_flutterView.get() addGestureRecognizer:_hoverGestureRecognizer.get()];
 
     _panGestureRecognizer.reset(
-        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panEvent:)]);
+        [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(scrollEvent:)]);
+    _panGestureRecognizer.get().delegate = self;
     _panGestureRecognizer.get().allowedScrollTypesMask = UIScrollTypeMaskAll;
     _panGestureRecognizer.get().allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
-    _panGestureRecognizer.get().delegate = self;
     [_flutterView.get() addGestureRecognizer:_panGestureRecognizer.get()];
-    _pinchGestureRecognizer.reset(
-        [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchEvent:)]);
-    _pinchGestureRecognizer.get().allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
-    _pinchGestureRecognizer.get().delegate = self;
-    [_flutterView.get() addGestureRecognizer:_pinchGestureRecognizer.get()];
-    _rotationGestureRecognizer.reset(
-        [[UIRotationGestureRecognizer alloc] initWithTarget:self action:@selector(rotationEvent:)]);
-    _rotationGestureRecognizer.get().allowedTouchTypes = @[ @(UITouchTypeIndirectPointer) ];
-    _rotationGestureRecognizer.get().delegate = self;
-    [_flutterView.get() addGestureRecognizer:_rotationGestureRecognizer.get()];
   }
 
   [super viewDidLoad];
@@ -910,23 +897,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  // When UIApplicationSupportsIndirectInputEvents is set in Info.plist, mouse clicks will be
-  // received with touch.type of UITouchTypeIndirectPointer, which will be correctly translated to
-  // flutter::PointerData::DeviceKind::kMouse. But since we use an identifier unique to the touch
-  // as its device identifier, after the mouse click ends, the device needs to be removed from the
-  // framework. If the device is not removed, the released click will keep triggering hover events
-  // on MouseRegions, with no way to remove it. This didn't happen previously because the framework
-  // only does this hover logic when device kind is flutter::PointerData::DeviceKind::kMouse.
-  size_t touches_to_remove_count = 0;
-  for (UITouch* touch in touches) {
-    if (touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled) {
-      touches_to_remove_count++;
-    }
-  }
-
   const CGFloat scale = [UIScreen mainScreen].scale;
-  auto packet =
-      std::make_unique<flutter::PointerDataPacket>(touches.count + touches_to_remove_count);
+  auto packet = std::make_unique<flutter::PointerDataPacket>(touches.count);
 
   size_t pointer_index = 0;
 
@@ -1048,12 +1020,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
 
     packet->SetPointerData(pointer_index++, pointer_data);
-
-    if (touch.phase == UITouchPhaseEnded || touch.phase == UITouchPhaseCancelled) {
-      flutter::PointerData remove_pointer_data = pointer_data;
-      remove_pointer_data.change = flutter::PointerData::Change::kRemove;
-      packet->SetPointerData(pointer_index++, remove_pointer_data);
-    }
   }
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
@@ -1785,60 +1751,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
-- (void)panEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
+- (void)scrollEvent:(UIPanGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
   CGPoint translation = [recognizer translationInView:self.view];
   const CGFloat scale = [UIScreen mainScreen].scale;
 
   translation.x *= scale;
   translation.y *= scale;
 
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+
   flutter::PointerData pointer_data = [self generatePointerDataForMouse];
-  pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
-  pointer_data.device = reinterpret_cast<int64_t>(recognizer);
-  if (recognizer.state == UIGestureRecognizerStateBegan) {
-    pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
-  } else if (recognizer.state == UIGestureRecognizerStateChanged) {
-    pointer_data.change = flutter::PointerData::Change::kPanZoomUpdate;
-    pointer_data.pan_x = translation.x;
-    pointer_data.pan_y = translation.y;
-    pointer_data.pan_delta_x = 0;  // Delta will be generated in pointer_data_packet_converter.cc.
-    pointer_data.pan_delta_y = 0;  // Delta will be generated in pointer_data_packet_converter.cc.
-    pointer_data.scale = 1;
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
+  pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
+  pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
+
+  // The translation reported by UIPanGestureRecognizer is the total translation
+  // generated by the pan gesture since the gesture began. We need to be able
+  // to keep track of the last translation value in order to generate the deltaX
+  // and deltaY coordinates for each subsequent scroll event.
+  if (recognizer.state != UIGestureRecognizerStateEnded) {
     _mouseState.last_translation = translation;
   } else {
     _mouseState.last_translation = CGPointZero;
-    pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
-  }
-
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
-
-  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-}
-
-- (void)pinchEvent:(UIPinchGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-
-  flutter::PointerData pointer_data = [self generatePointerDataForMouse];
-  pointer_data.kind = flutter::PointerData::DeviceKind::kTouch;
-  if (recognizer.state == UIGestureRecognizerStateBegan) {
-    pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
-  } else if (recognizer.state == UIGestureRecognizerStateChanged) {
-    pointer_data.change = flutter::PointerData::Change::kPanZoomUpdate;
-    pointer_data.scale = recognizer.scale;
-    pointer_data.rotation = _rotationGestureRecognizer.get().rotation;
-  } else {
-    pointer_data.change = flutter::PointerData::Change::kPanZoomEnd;
   }
 
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-}
-
-- (void)rotationEvent:(UIRotationGestureRecognizer*)recognizer API_AVAILABLE(ios(13.4)) {
-  // We need to have an action selector, but the rotation data will instead be queried in
-  // pinchEvent:
 }
 
 #pragma mark - State Restoration

@@ -134,8 +134,6 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
                               size_t row_bytes,
                               size_t height) override;
 
-  PointerLocation GetPrimaryPointerLocation() override;
-
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.
