@@ -70,8 +70,8 @@ bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
   return normalized_a->equals(normalized_b.get());
 }
 
-std::string ImagePrefix(EmbedderTestContextType backend,
-                        const std::string& name) {
+std::string FixtureNameForBackend(EmbedderTestContextType backend,
+                                  const std::string& name) {
   switch (backend) {
     case EmbedderTestContextType::kVulkanContext:
       return "vk_" + name;
@@ -80,7 +80,7 @@ std::string ImagePrefix(EmbedderTestContextType backend,
   }
 }
 
-EmbedderTestBackingStoreProducer::RenderTargetType GetTargetFromBackend(
+EmbedderTestBackingStoreProducer::RenderTargetType GetRenderTargetFromBackend(
     EmbedderTestContextType backend,
     bool opengl_framebuffer) {
   switch (backend) {

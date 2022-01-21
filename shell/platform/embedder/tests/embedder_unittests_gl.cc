@@ -1257,8 +1257,8 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithoutCompositor) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
-                                  rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(
+      FixtureNameForBackend(backend, "gradient.png"), rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithoutCompositorWithXform) {
@@ -1303,7 +1303,7 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithCompositor) {
   builder.SetDartEntrypoint("render_gradient");
   builder.SetRendererConfig(backend, SkISize::Make(800, 600));
   builder.SetCompositor();
-  builder.SetRenderTargetType(GetTargetFromBackend(backend, true));
+  builder.SetRenderTargetType(GetRenderTargetFromBackend(backend, true));
 
   auto rendered_scene = context.GetNextSceneImage();
 
@@ -1319,8 +1319,8 @@ TEST_P(EmbedderTestMultiBackend, CanRenderGradientWithCompositor) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
-                                  rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(
+      FixtureNameForBackend(backend, "gradient.png"), rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorWithXform) {
@@ -1370,7 +1370,7 @@ TEST_P(EmbedderTestMultiBackend,
   builder.SetDartEntrypoint("render_gradient_on_non_root_backing_store");
   builder.SetRendererConfig(backend, SkISize::Make(800, 600));
   builder.SetCompositor();
-  builder.SetRenderTargetType(GetTargetFromBackend(backend, true));
+  builder.SetRenderTargetType(GetRenderTargetFromBackend(backend, true));
 
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
@@ -1461,8 +1461,8 @@ TEST_P(EmbedderTestMultiBackend,
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
 
-  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "gradient.png"),
-                                  rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(
+      FixtureNameForBackend(backend, "gradient.png"), rendered_scene));
 }
 
 TEST_F(EmbedderTest, CanRenderGradientWithCompositorOnNonRootLayerWithXform) {
@@ -1822,7 +1822,7 @@ TEST_P(EmbedderTestMultiBackend,
   builder.SetCompositor();
   builder.SetDartEntrypoint("can_display_platform_view_with_pixel_ratio");
 
-  builder.SetRenderTargetType(GetTargetFromBackend(backend, false));
+  builder.SetRenderTargetType(GetRenderTargetFromBackend(backend, false));
 
   fml::CountDownLatch latch(1);
 
@@ -1897,8 +1897,8 @@ TEST_P(EmbedderTestMultiBackend,
 
   latch.Wait();
 
-  ASSERT_TRUE(ImageMatchesFixture(ImagePrefix(backend, "dpr_noxform.png"),
-                                  rendered_scene));
+  ASSERT_TRUE(ImageMatchesFixture(
+      FixtureNameForBackend(backend, "dpr_noxform.png"), rendered_scene));
 }
 
 TEST_F(
@@ -2091,7 +2091,7 @@ TEST_P(EmbedderTestMultiBackend, PlatformViewMutatorsAreValid) {
   builder.SetCompositor();
   builder.SetDartEntrypoint("platform_view_mutators");
 
-  builder.SetRenderTargetType(GetTargetFromBackend(backend, false));
+  builder.SetRenderTargetType(GetRenderTargetFromBackend(backend, false));
 
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
