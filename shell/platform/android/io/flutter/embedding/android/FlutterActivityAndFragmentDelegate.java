@@ -1090,7 +1090,20 @@ import java.util.Arrays;
     void updateSystemUiOverlays();
 
     /**
-     * Give the host application a chance to take control of the app lifecycle events.
+     * Give the host application a chance to take control of the app lifecycle events to avoid
+     * lifecycle crosstalk.
+     *
+     * <p>In the add-to-app scenario where multiple {@link FlutterActivity} shares the same {@link
+     * FlutterEngine}, the application lifecycle state will have crosstalk causing the page to
+     * freeze. For example, we open a new page called FlutterActivity#2 from the previous page
+     * called FlutterActivity#1. The flow of app lifecycle states received by dart is as follows:
+     *
+     * <p>inactive (from FlutterActivity#1) -> resumed (from FlutterActivity#2) -> paused (from
+     * FlutterActivity#1)
+     *
+     * <p>On the one hand, the {@code paused} state from FlutterActivity#1 will cause the
+     * FlutterActivity#2 page to be stuck; on the other hand, from the perspective of the entire
+     * application life cycle, the {@code paused} state is unexpected.
      *
      * <p>Return {@code false} means the host application dispatches these app lifecycle events,
      * while return {@code true} means the engine dispatches these events.
