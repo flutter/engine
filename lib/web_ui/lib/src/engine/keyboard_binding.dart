@@ -43,13 +43,6 @@ final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = <int, _ModifierGe
   _kLogicalMetaRight: (FlutterHtmlKeyboardEvent event) => event.metaKey,
 };
 
-/// After a keydown is received, this is the duration we wait for a repeat event
-/// before we decide to synthesize a keyup event.
-///
-/// This value is only for macOS, where the keyboard repeat delay goes up to
-/// 2000ms.
-const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 2000);
-
 // ASCII for a, z, A, and Z
 const int _kCharLowerA = 0x61;
 const int _kCharLowerZ = 0x7a;
@@ -242,6 +235,13 @@ class KeyboardConverter {
   bool _shouldDoKeyGuard() {
     return onMacOs;
   }
+
+  /// After a keydown is received, this is the duration we wait for a repeat event
+  /// before we decide to synthesize a keyup event.
+  ///
+  /// This value is only for macOS, where the keyboard repeat delay goes up to
+  /// 2000ms.
+  static const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 2000);
 
   static int _getPhysicalCode(String code) {
     return kWebToPhysicalKey[code] ?? (code.hashCode + _kWebKeyIdPlane);

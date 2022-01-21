@@ -144,7 +144,7 @@ void initializeEngine() {
     }
   };
 
-  Keyboard.initialize(operatingSystem == OperatingSystem.macOs);
+  Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
 }
 

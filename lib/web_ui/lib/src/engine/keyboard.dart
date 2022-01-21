@@ -10,19 +10,12 @@ import '../engine.dart'  show registerHotRestartListener;
 import 'platform_dispatcher.dart';
 import 'services.dart';
 
-/// After a keydown is received, this is the duration we wait for a repeat event
-/// before we decide to synthesize a keyup event.
-///
-/// This value is only for macOS, where the keyboard repeat delay goes up to
-/// 2000ms.
-const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 1000);
-
 /// Provides keyboard bindings, such as the `flutter/keyevent` channel.
 class Keyboard {
   /// Initializes the [Keyboard] singleton.
   ///
   /// Use the [instance] getter to get the singleton after calling this method.
-  static void initialize(bool onMacOs) {
+  static void initialize({bool onMacOs = false}) {
     _instance ??= Keyboard._(onMacOs);
   }
 
@@ -167,6 +160,13 @@ class Keyboard {
     EnginePlatformDispatcher.instance.invokeOnPlatformMessage('flutter/keyevent',
         _messageCodec.encodeMessage(eventData), _noopCallback);
   }
+
+  /// After a keydown is received, this is the duration we wait for a repeat event
+  /// before we decide to synthesize a keyup event.
+  ///
+  /// This value is only for macOS, where the keyboard repeat delay goes up to
+  /// 2000ms.
+  static const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 2000);
 }
 
 const int _modifierNone = 0x00;
