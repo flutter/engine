@@ -131,6 +131,17 @@ void MockEmbedderApiForKeyboard(
               });
           return kSuccess;
         }
+        if (std::string(message->channel) == std::string("flutter/textinput")) {
+          std::unique_ptr<rapidjson::Document> document =
+              flutter::JsonMessageCodec::GetInstance().DecodeMessage(
+                  message->message, message->message_size);
+          if (document == nullptr) {
+            return kInvalidArguments;
+          }
+          stored_response_controller->HandleTextInputMessage(
+              std::move(document));
+          return kSuccess;
+        }
         return kSuccess;
       };
 

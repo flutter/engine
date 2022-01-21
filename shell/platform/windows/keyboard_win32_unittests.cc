@@ -204,6 +204,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 typedef enum {
   kKeyCallOnKey,
   kKeyCallOnText,
+  kKeyCallMethodTextInput,
 } KeyCallType;
 
 typedef struct {
@@ -212,6 +213,7 @@ typedef struct {
   // Only one of the following fields should be assigned.
   FlutterKeyEvent key_event;
   std::u16string text;
+  std::unique_ptr<rapidjson::Document> document;
 } KeyCall;
 
 static std::vector<KeyCall> key_calls;
@@ -322,6 +324,13 @@ class KeyboardTester {
         std::make_shared<MockKeyResponseController>();
     key_response_controller->SetEmbedderResponse(
         std::move(embedder_callback_handler));
+    key_response_controller->SetTextInputResponse(
+        [](std::unique_ptr<rapidjson::Document> document) {
+          key_calls.push_back(KeyCall{
+              .type = kKeyCallMethodTextInput,
+              .document = std::move(document),
+          });
+        });
 
     MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
