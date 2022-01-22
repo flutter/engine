@@ -442,10 +442,16 @@ class AutofillInfo {
 
 /// Replaces a range of text in the original string with the text given in the
 /// replacement string.
-String _replace(String originalText, String replacementText, int start, int end) {
-  final String textStart = originalText.substring(0, start);
-  final String textEnd = originalText.substring(end, originalText.length);
-  final String newText = textStart + replacementText + textEnd;
+String _replace(String originalText, String replacementText, ui.TextRange replacedRange) {
+  assert(replacedRange.isValid);
+  assert(replacedRange.start <= originalText.length && replacedRange.end <= originalText.length);
+
+  final ui.TextRange normalizedRange = ui.TextRange(
+    start: math.min(replacedRange.start, replacedRange.end), 
+    end: math.max(replacedRange.start, replacedRange.end));
+
+  final String newText = normalizedRange.textBefore(originalText) + replacementText + normalizedRange.textAfter(originalText);
+
   return newText;
 }
 
@@ -453,6 +459,7 @@ class TextEditingDeltaState {
   TextEditingDeltaState({
     this.oldText = '',
     this.deltaText = '',
+    this.inputType = '',
     this.deltaStart = -1,
     this.deltaEnd = -1,
     this.baseOffset = -1,
@@ -475,8 +482,8 @@ class TextEditingDeltaState {
 
     // If we are composing then set the delta range to the composing region we
     // captured in compositionupdate.
-    final bool isCurrentlyComposing = lastTextEditingDeltaState.composingOffset != -1 && lastTextEditingDeltaState.composingOffset != lastTextEditingDeltaState.composingExtent;
-    if (lastTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
+    final bool isCurrentlyComposing = lastTextEditingDeltaState.inputType == 'insertCompositionText';
+    if (isCurrentlyComposing) {
       lastTextEditingDeltaState.deltaStart = lastTextEditingDeltaState.composingOffset;
       lastTextEditingDeltaState.deltaEnd = lastTextEditingDeltaState.composingExtent;
     }
@@ -491,10 +498,10 @@ class TextEditingDeltaState {
       // are accurate. What may not be accurate is the range of the delta.
       //
       // We can think of the newEditingState as our source of truth.
+      final ui.TextRange replacementRange = ui.TextRange(start: lastTextEditingDeltaState.deltaStart, end: lastTextEditingDeltaState.deltaEnd);
       final String textAfterDelta = _replace(
           lastTextEditingDeltaState.oldText, lastTextEditingDeltaState.deltaText,
-          lastTextEditingDeltaState.deltaStart,
-          lastTextEditingDeltaState.deltaEnd);
+          replacementRange);
       final bool isDeltaVerified = textAfterDelta == newEditingState.text!;
 
       if (!isDeltaVerified) {
@@ -511,16 +518,20 @@ class TextEditingDeltaState {
             textAfterMatch = _replace(
               lastTextEditingDeltaState.oldText,
               lastTextEditingDeltaState.deltaText,
-              match.start,
-              actualEnd,
+              ui.TextRange(
+                start: match.start,
+                end: actualEnd,
+              ),
             );
           } else {
             actualEnd = match.end;
             textAfterMatch = _replace(
               lastTextEditingDeltaState.oldText,
               lastTextEditingDeltaState.deltaText,
-              match.start,
-              actualEnd,
+              ui.TextRange(
+                start: match.start,
+                end: actualEnd,
+              ),
             );
           }
 
@@ -538,6 +549,7 @@ class TextEditingDeltaState {
 
   String oldText;
   String deltaText;
+  String inputType;
   int deltaStart;
   int deltaEnd;
   int baseOffset;
@@ -1177,20 +1189,29 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
   void handleBeforeInput(html.Event event) {
     final String? eventData = getJsProperty<void>(event, 'data') as String?;
+    final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
-    if (eventData == null) {
-      // When event.data is null we have a deletion.
-      // The deltaStart is set in handleChange because there is where we get access
-      // to the new selection baseOffset which is our new deltaStart.
-      editingDelta.deltaText = '';
-      editingDelta.deltaEnd = lastEditingState!.extentOffset!;
-    } else {
-      // When event.data is not null we we will begin by considering this delta as an insertion
-      // at the selection extentOffset. This may change due to logic in handleChange to handle
-      // composition and other IME behaviors.
-      editingDelta.deltaText = eventData;
-      editingDelta.deltaStart = lastEditingState!.extentOffset!;
-      editingDelta.deltaEnd = lastEditingState!.extentOffset!;
+    if (inputType != null) {
+      editingDelta.inputType = inputType;
+
+      if (inputType.contains('delete')) {
+        // The deltaStart is set in handleChange because there is where we get access
+        // to the new selection baseOffset which is our new deltaStart.
+        editingDelta.deltaText = '';
+        editingDelta.deltaEnd = lastEditingState!.extentOffset!;
+      } else if (inputType == 'insertLineBreak'){
+        // event.data is null, so we manually set deltaText as a line break by setting it to '\n'.
+        editingDelta.deltaText = '\n';
+        editingDelta.deltaStart = lastEditingState!.extentOffset!;
+        editingDelta.deltaEnd = lastEditingState!.extentOffset!;
+      } else if (eventData != null) {
+        // When event.data is not null we we will begin by considering this delta as an insertion
+        // at the selection extentOffset. This may change due to logic in handleChange to handle
+        // composition and other IME behaviors.
+        editingDelta.deltaText = eventData;
+        editingDelta.deltaStart = lastEditingState!.extentOffset!;
+        editingDelta.deltaEnd = lastEditingState!.extentOffset!;
+      }
     }
   }
 
