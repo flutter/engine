@@ -446,9 +446,7 @@ String _replace(String originalText, String replacementText, ui.TextRange replac
   assert(replacedRange.isValid);
   assert(replacedRange.start <= originalText.length && replacedRange.end <= originalText.length);
 
-  final ui.TextRange normalizedRange = ui.TextRange(
-    start: math.min(replacedRange.start, replacedRange.end), 
-    end: math.max(replacedRange.start, replacedRange.end));
+  final ui.TextRange normalizedRange = ui.TextRange(start: math.min(replacedRange.start, replacedRange.end), end: math.max(replacedRange.start, replacedRange.end));
 
   final String newText = normalizedRange.textBefore(originalText) + replacementText + normalizedRange.textAfter(originalText);
 
