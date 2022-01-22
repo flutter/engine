@@ -64,7 +64,10 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
   valid_ = main_context_ && resource_context_;
 }
 
-EmbedderSurfaceVulkan::~EmbedderSurfaceVulkan() = default;
+EmbedderSurfaceVulkan::~EmbedderSurfaceVulkan() {
+  main_context_->releaseResourcesAndAbandonContext();
+  resource_context_->releaseResourcesAndAbandonContext();
+}
 
 // |GPUSurfaceVulkanDelegate|
 const vulkan::VulkanProcTable& EmbedderSurfaceVulkan::vk() {
