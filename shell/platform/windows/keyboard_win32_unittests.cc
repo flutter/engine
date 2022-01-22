@@ -200,7 +200,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
     rapidjson::Document message_doc(rapidjson::kObjectType);
     auto& allocator = message_doc.GetAllocator();
-    message_doc.AddMember("method", rapidjson::Value(method, allocator), allocator);
+    message_doc.AddMember("method", rapidjson::Value(method, allocator),
+                          allocator);
     message_doc.AddMember("args", args_doc, allocator);
 
     rapidjson::StringBuffer buffer;
@@ -243,9 +244,9 @@ typedef struct {
   KeyCallType type;
 
   // Only one of the following fields should be assigned.
-  FlutterKeyEvent key_event;      // For kKeyCallOnKey
-  std::u16string text;            // For kKeyCallOnText
-  std::string text_method_call;   // For kKeyCallTextMethodCall
+  FlutterKeyEvent key_event;     // For kKeyCallOnKey
+  std::u16string text;           // For kKeyCallOnText
+  std::string text_method_call;  // For kKeyCallTextMethodCall
 } KeyCall;
 
 static std::vector<KeyCall> key_calls;
@@ -427,7 +428,7 @@ constexpr bool kNotSynthesized = false;
   EXPECT_EQ(_key_call.text, u16_string);
 
 #define EXPECT_CALL_IS_TEXT_METHOD_CALL(_key_call, json_string) \
-  EXPECT_EQ(_key_call.type, kKeyCallTextMethodCall);       \
+  EXPECT_EQ(_key_call.type, kKeyCallTextMethodCall);            \
   EXPECT_STREQ(_key_call.text_method_call.c_str(), json_string);
 
 TEST(KeyboardTest, LowerCaseAHandled) {
@@ -1816,9 +1817,8 @@ TEST(KeyboardTest, TextInputSubmit) {
              kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
-                       kPhysicalEnter, kLogicalEnter, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalEnter,
+                       kLogicalEnter, "", kNotSynthesized);
   EXPECT_CALL_IS_TEXT_METHOD_CALL(
       key_calls[1],
       "{"
