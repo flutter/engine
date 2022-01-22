@@ -16,9 +16,13 @@
 
 #include "gtest/gtest.h"
 
+struct _FlutterPlatformMessageResponseHandle {
+  FlutterDesktopBinaryReply callback;
+  void* user_data;
+};
+
 namespace flutter {
 namespace testing {
-
 ::testing::AssertionResult _EventEquals(const char* expr_event,
                                         const char* expr_expected,
                                         const FlutterKeyEvent& event,

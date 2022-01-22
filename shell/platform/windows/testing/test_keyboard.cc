@@ -50,15 +50,6 @@ static std::string ordinal(int num) {
       return "th";
   }
 }
-
-// A struct to use as a FlutterPlatformMessageResponseHandle so it can keep the
-// callbacks and user data passed to the engine's
-// PlatformMessageCreateResponseHandle for use in the SendPlatformMessage
-// overridden function.
-struct TestResponseHandle {
-  FlutterDesktopBinaryReply callback;
-  void* user_data;
-};
 }  // namespace
 
 #define _RETURN_IF_NOT_EQUALS(val1, val2)                                     \
@@ -121,9 +112,7 @@ void MockEmbedderApiForKeyboard(
           stored_response_controller->HandleChannelMessage(
               [message](bool handled) {
                 auto response = _keyHandlingResponse(handled);
-                const TestResponseHandle* response_handle =
-                    reinterpret_cast<const TestResponseHandle*>(
-                        message->response_handle);
+                auto response_handle = message->response_handle;
                 if (response_handle->callback != nullptr) {
                   response_handle->callback(response->data(), response->size(),
                                             response_handle->user_data);
@@ -161,20 +150,26 @@ void MockEmbedderApiForKeyboard(
   // The following mocks enable channel mocking.
   modifier.embedder_api().PlatformMessageCreateResponseHandle =
       [](auto engine, auto data_callback, auto user_data, auto response_out) {
-        TestResponseHandle* response_handle = new TestResponseHandle();
+        auto response_handle = new FlutterPlatformMessageResponseHandle();
         response_handle->user_data = user_data;
         response_handle->callback = data_callback;
-        *response_out = reinterpret_cast<FlutterPlatformMessageResponseHandle*>(
-            response_handle);
+        *response_out = response_handle;
         return kSuccess;
       };
 
   modifier.embedder_api().PlatformMessageReleaseResponseHandle =
       [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
          FlutterPlatformMessageResponseHandle* response) {
-        const TestResponseHandle* response_handle =
-            reinterpret_cast<const TestResponseHandle*>(response);
-        delete response_handle;
+        delete response;
+        return kSuccess;
+      };
+
+  // The following mock disables responses for method channels sent from the
+  // embedding to the framework. (No code uses the response yet.)
+  modifier.embedder_api().SendPlatformMessageResponse =
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterPlatformMessageResponseHandle* handle,
+         const uint8_t* data, size_t data_length) {
         return kSuccess;
       };
 
