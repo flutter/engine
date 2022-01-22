@@ -478,7 +478,8 @@ InferVulkanPlatformViewCreationCallback(
 
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
-       external_view_embedder = view_embedder](flutter::Shell& shell) mutable {
+       external_view_embedder =
+           std::move(view_embedder)](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                             // delegate
             shell.GetTaskRunners(),            // task runners

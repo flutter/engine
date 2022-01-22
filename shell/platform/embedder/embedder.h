@@ -592,11 +592,13 @@ typedef struct {
   /// The Vulkan API version. This should match the value set in
   /// VkApplicationInfo::apiVersion when the VkInstance was created.
   uint32_t version;
-  /// VkInstance handle.
+  /// VkInstance handle. Must not be destroyed before `FlutterEngineShutdown` is
+  /// called.
   FlutterVulkanInstanceHandle instance;
   /// VkPhysicalDevice handle.
   FlutterVulkanPhysicalDeviceHandle physical_device;
-  /// VkDevice handle.
+  /// VkDevice handle. Must not be destroyed before `FlutterEngineShutdown` is
+  /// called.
   FlutterVulkanDeviceHandle device;
   /// The queue family index of the VkQueue supplied in the next field.
   uint32_t queue_family_index;
