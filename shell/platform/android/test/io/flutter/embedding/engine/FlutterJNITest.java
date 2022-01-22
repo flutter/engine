@@ -10,10 +10,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.os.Handler;
 import android.os.LocaleList;
-import android.os.Looper;
-import android.os.Message;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
@@ -23,7 +20,6 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -248,48 +244,5 @@ public class FlutterJNITest {
     FlutterJNI flutterJNI = new FlutterJNI();
     ByteBuffer buffer = ByteBuffer.allocate(4);
     flutterJNI.invokePlatformMessageResponseCallback(0, buffer, buffer.position());
-  }
-
-  @Test
-  public void destroyOverlaySurfaces__calledFromDifferentThread() throws Exception {
-    AtomicReference<FlutterJNI> flutterJNI = new AtomicReference<>();
-    PlatformViewsController platformViewsController = mock(PlatformViewsController.class);
-
-    Object lock = new Object();
-    // This thread acts as the Android main thread.
-    // This is required because the test itself runs on the main thread, and without this
-    // workaround, a deadlock is produced.
-    Thread mainThreadImpostor =
-        new Thread(
-            () -> {
-              Looper.prepare();
-
-              flutterJNI.set(new FlutterJNI(Looper.myLooper()));
-              flutterJNI.get().setPlatformViewsController(platformViewsController);
-
-              synchronized (lock) {
-                lock.notify();
-              }
-
-              new Handler(Looper.myLooper()) {
-                public void handleMessage(Message msg) {
-                  msg.getCallback().run();
-                }
-              };
-              Looper.loop();
-            });
-
-    mainThreadImpostor.start();
-    synchronized (lock) {
-      lock.wait();
-    }
-
-    // --- Execute Test ---
-    flutterJNI.get().destroyOverlaySurfaces();
-
-    // --- Verify Results ---
-    verify(platformViewsController, times(1)).destroyOverlaySurfaces();
-
-    mainThreadImpostor.interrupt();
   }
 }
