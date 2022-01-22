@@ -6,6 +6,7 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -57,8 +58,9 @@ bool EmbedderTestCompositorVulkan::UpdateOffscrenComposition(
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore:
         layer_image =
-            reinterpret_cast<SkSurface*>(layer->backing_store->user_data)
-                ->makeImageSnapshot();
+            reinterpret_cast<EmbedderTestBackingStoreProducer::UserData*>(
+                layer->backing_store->user_data)
+                ->surface->makeImageSnapshot();
         break;
       case kFlutterLayerContentTypePlatformView:
         layer_image =

@@ -24,6 +24,11 @@ namespace testing {
 
 class EmbedderTestBackingStoreProducer {
  public:
+  struct UserData {
+    SkSurface* surface;
+    FlutterVulkanImage* image;
+  };
+
   enum class RenderTargetType {
     kSoftwareBuffer,
     kOpenGLFramebuffer,

@@ -283,16 +283,30 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
     return false;
   }
   backing_store_out->type = kFlutterBackingStoreTypeVulkan;
-  backing_store_out->user_data = surface.get();
-  backing_store_out->vulkan.user_data = surface.get();
-  backing_store_out->vulkan.image =
-      reinterpret_cast<uint64_t>(image_info.fImage);
-  backing_store_out->vulkan.format = VK_FORMAT_R8G8B8A8_UNORM;
-  backing_store_out->vulkan.destruction_callback = [](void* user_data) {
-    reinterpret_cast<SkSurface*>(user_data)->unref();
-  };
-  // The balancing unref is in the destruction callback.
-  surface->ref();
+
+  FlutterVulkanImage* image = new FlutterVulkanImage();
+  image->image = reinterpret_cast<uint64_t>(image_info.fImage);
+  image->format = VK_FORMAT_R8G8B8A8_UNORM;
+  backing_store_out->vulkan.image = image;
+
+  // Collect all allocated resources in the destruction_callback.
+  {
+    UserData* user_data = new UserData();
+    user_data->image = image;
+    user_data->surface = surface.get();
+
+    backing_store_out->user_data = user_data;
+    backing_store_out->vulkan.user_data = user_data;
+    backing_store_out->vulkan.destruction_callback = [](void* user_data) {
+      UserData* d = reinterpret_cast<UserData*>(user_data);
+      d->surface->unref();
+      delete d->image;
+      delete d;
+    };
+
+    // The balancing unref is in the destruction callback.
+    surface->ref();
+  }
 
   return true;
 #else
