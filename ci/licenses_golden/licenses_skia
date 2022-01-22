@@ -1,4 +1,4 @@
-Signature: c56796a4b8819774accc5ba71c8d4345
+Signature: 1b2312f72f03f51c0c68da4893279e98
 
 UNUSED LICENSES:
 
@@ -1902,7 +1902,7 @@ FILE: ../../../third_party/skia/include/gpu/vk/GrVkTypes.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_FontConfigInterface.h
 FILE: ../../../third_party/skia/include/ports/SkImageGeneratorCG.h
 FILE: ../../../third_party/skia/include/ports/SkImageGeneratorWIC.h
-FILE: ../../../third_party/skia/include/private/GrSingleOwner.h
+FILE: ../../../third_party/skia/include/private/SingleOwner.h
 FILE: ../../../third_party/skia/include/private/SkBitmaskEnum.h
 FILE: ../../../third_party/skia/include/private/SkEncodedInfo.h
 FILE: ../../../third_party/skia/include/private/SkSLIRNode.h
@@ -2489,7 +2489,6 @@ FILE: ../../../third_party/skia/experimental/graphite/src/Texture.h
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureInfo.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/TextureProxy.h
-FILE: ../../../third_party/skia/experimental/graphite/src/Uniform.h
 FILE: ../../../third_party/skia/experimental/graphite/src/UniformCache.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/UniformCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/UniformManager.cpp
@@ -2560,6 +2559,7 @@ FILE: ../../../third_party/skia/src/core/SkCustomMeshPriv.cpp
 FILE: ../../../third_party/skia/src/core/SkCustomMeshPriv.h
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.h
+FILE: ../../../third_party/skia/src/core/SkUniform.h
 FILE: ../../../third_party/skia/src/core/SkVMBlitter.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/effects/SkBlenders.cpp
@@ -6052,7 +6052,10 @@ FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
 FILE: ../../../third_party/skia/src/core/SkKeyHelpers.cpp
 FILE: ../../../third_party/skia/src/core/SkKeyHelpers.h
 FILE: ../../../third_party/skia/src/core/SkPaintParamsKey.cpp
+FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
+FILE: ../../../third_party/skia/src/core/SkUniformData.cpp
+FILE: ../../../third_party/skia/src/core/SkUniformData.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google LLC
 
