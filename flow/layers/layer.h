@@ -56,10 +56,10 @@ struct PrerollContext {
   const float frame_device_pixel_ratio;
 
   // These allow us to track properties like elevation, opacity, and the
-  // prescence of a platform view during Preroll.
+  // presence of a platform view during Preroll.
   bool has_platform_view = false;
   // These allow us to track properties like elevation, opacity, and the
-  // prescence of a texture layer during Preroll.
+  // presence of a texture layer during Preroll.
   bool has_texture_layer = false;
 
   // This value indicates that the entire subtree below the layer can inherit
@@ -71,7 +71,7 @@ struct PrerollContext {
   // constructor using the |set_layer_can_inherit_opacity| method and the
   // value will be accumulated and recorded by the |PrerollChidren| method
   // automatically.
-  // If the property is more dynamic then the Layer can dynamically set this
+  // If the property is more dynamic than the Layer can dynamically set this
   // flag before returning from the |Preroll| method.
   // For ContainerLayers that need to know if their children can inherit
   // the value, the |PrerollChildren| method will have set this value in
@@ -88,7 +88,7 @@ class PerformanceOverlayLayer;
 class TextureLayer;
 
 // Represents a single composited layer. Created on the UI thread but then
-// subquently used on the Rasterizer thread.
+// subsequently used on the Rasterizer thread.
 class Layer {
  public:
   Layer();

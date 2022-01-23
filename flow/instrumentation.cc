@@ -75,22 +75,29 @@ fml::TimeDelta Stopwatch::AverageDelta() const {
   return sum / kMaxSamples;
 }
 
-double Stopwatch::AverageFps() const {
+Stopwatch::FpsInfo Stopwatch::AverageFpsInfo() const {
   double one_frame_ms = frame_budget_.count();
   int frame_count = 0;
-  double total_time = 0;
+  int janky_frame_count = 0;
+  double total_time_ms = 0;
   for (size_t i = 0; i < kMaxSamples; i++) {
     double frame_time_ms = laps_[i].ToMillisecondsF();
     if (frame_time_ms > 0) {
-      total_time += std::max(one_frame_ms, frame_time_ms);
+      total_time_ms += std::max(one_frame_ms, frame_time_ms);
       frame_count++;
+      if (frame_time_ms > one_frame_ms) {
+        janky_frame_count++;
+      }
     }
   }
   double max_fps = 1e3 / one_frame_ms;
-  double avg_fps = frame_count > 0 && total_time > 0
-                       ? 1e3 * frame_count / total_time
-                       : max_fps;
-  return avg_fps;
+  double average_fps = frame_count > 0 && total_time_ms > 0
+                           ? 1e3 * frame_count / total_time_ms
+                           : max_fps;
+  return FpsInfo{.frame_count = frame_count,
+                 .janky_frame_count = janky_frame_count,
+                 .total_time_ms = total_time_ms,
+                 .average_fps = average_fps};
 }
 
 // Initialize the SkSurface for drawing into. Draws the base background and any

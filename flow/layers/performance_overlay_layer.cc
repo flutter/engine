@@ -5,7 +5,6 @@
 #include "flutter/flow/layers/performance_overlay_layer.h"
 
 #include <iomanip>
-#include <iostream>
 #include <string>
 
 #include "third_party/skia/include/core/SkFont.h"
@@ -24,8 +23,8 @@ void VisualizeStopWatch(SkCanvas* canvas,
                         bool show_labels,
                         const std::string& label_prefix,
                         const std::string& font_path) {
-  const int label_x = 8;    // distance from x
-  const int label_y = -10;  // distance from y+height
+  const int margin_top = 3;
+  const int margin_left = 1;
 
   if (show_graph) {
     SkRect visualization_rect = SkRect::MakeXYWH(x, y, width, height);
@@ -33,39 +32,74 @@ void VisualizeStopWatch(SkCanvas* canvas,
   }
 
   if (show_labels) {
-    auto text = PerformanceOverlayLayer::MakeStatisticsText(
-        stopwatch, label_prefix, font_path);
+    SkFont font;
+    if (!font_path.empty()) {
+      font = SkFont(SkTypeface::MakeFromFile(font_path.c_str()));
+    }
+    font.setSize(PerformanceOverlayLayer::kFontSize);
+
+    auto label = PerformanceOverlayLayer::MakeLabelText(label_prefix, font);
+    const SkRect& label_bounds = label.bounds;
+    auto statistics =
+        PerformanceOverlayLayer::MakeStatisticsText(stopwatch, font);
+    const SkRect& statistics_bounds = statistics.bounds;
+
     SkPaint paint;
-    paint.setColor(SK_ColorGRAY);
-    canvas->drawTextBlob(text, x + label_x, y + height + label_y, paint);
+    paint.setColor(SK_ColorRED);
+
+    // Draw the label on the first line.
+    canvas->drawTextBlob(label.text_blob, x + margin_left - label_bounds.left(),
+                         y + margin_top - label_bounds.top(), paint);
+    // Draw the statistics text on the second line.
+    canvas->drawTextBlob(
+        statistics.text_blob, x + margin_left - statistics_bounds.left(),
+        y + margin_top * 2 - statistics_bounds.top() + label_bounds.height(),
+        paint);
   }
 }
 
 }  // namespace
 
-sk_sp<SkTextBlob> PerformanceOverlayLayer::MakeStatisticsText(
-    const Stopwatch& stopwatch,
-    const std::string& label_prefix,
-    const std::string& font_path) {
-  SkFont font;
-  if (font_path != "") {
-    font = SkFont(SkTypeface::MakeFromFile(font_path.c_str()));
-  }
-  font.setSize(13);
-
-  double max_ms_per_frame = stopwatch.MaxDelta().ToMillisecondsF();
-  double average_ms_per_frame = stopwatch.AverageDelta().ToMillisecondsF();
-  double average_fps = stopwatch.AverageFps();
+PerformanceOverlayLayer::TextBlobAndBounds
+PerformanceOverlayLayer::MakeLabelText(const std::string& label_prefix,
+                                       const SkFont& font) {
   std::stringstream stream;
   stream.setf(std::ios::fixed | std::ios::showpoint);
   stream << std::setprecision(1);
-  stream << label_prefix << "  "
-         << "max " << max_ms_per_frame << " ms/frame, "
-         << "avg " << average_ms_per_frame << " ms/frame, "
-         << "avg_fps " << average_fps;
+  stream << label_prefix << " thread";
   auto text = stream.str();
-  return SkTextBlob::MakeFromText(text.c_str(), text.size(), font,
-                                  SkTextEncoding::kUTF8);
+  SkRect measured_bounds{};
+  // The bounds measured by font is preciser than the SkTextBlob's bounds.
+  font.measureText(text.c_str(), text.size(), SkTextEncoding::kUTF8,
+                   &measured_bounds);
+  return TextBlobAndBounds{
+      .text_blob = SkTextBlob::MakeFromText(text.c_str(), text.size(), font,
+                                            SkTextEncoding::kUTF8),
+      .bounds = measured_bounds};
+}
+
+PerformanceOverlayLayer::TextBlobAndBounds
+PerformanceOverlayLayer::MakeStatisticsText(const Stopwatch& stopwatch,
+                                            const SkFont& font) {
+  double max_ms_per_frame = stopwatch.MaxDelta().ToMillisecondsF();
+  double average_ms_per_frame = stopwatch.AverageDelta().ToMillisecondsF();
+  const Stopwatch::FpsInfo& fps_info = stopwatch.AverageFpsInfo();
+  std::stringstream stream;
+  stream.setf(std::ios::fixed | std::ios::showpoint);
+  stream << std::setprecision(1);
+  stream << fps_info.average_fps << " FPS (jank " << fps_info.janky_frame_count
+         << " in " << fps_info.frame_count << " frames, "
+         << fps_info.total_time_ms << " ms), max=" << max_ms_per_frame
+         << " ms, avg=" << average_ms_per_frame << " ms";
+  auto text = stream.str();
+  SkRect measured_bounds{};
+  // The bounds measured by font is preciser than the SkTextBlob's bounds.
+  font.measureText(text.c_str(), text.size(), SkTextEncoding::kUTF8,
+                   &measured_bounds);
+  return TextBlobAndBounds{
+      .text_blob = SkTextBlob::MakeFromText(text.c_str(), text.size(), font,
+                                            SkTextEncoding::kUTF8),
+      .bounds = measured_bounds};
 }
 
 PerformanceOverlayLayer::PerformanceOverlayLayer(uint64_t options,

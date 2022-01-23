@@ -28,7 +28,14 @@ class Stopwatch {
 
   fml::TimeDelta AverageDelta() const;
 
-  double AverageFps() const;
+  struct FpsInfo {
+    int frame_count;
+    int janky_frame_count;
+    double total_time_ms;
+    double average_fps;
+  };
+
+  FpsInfo AverageFpsInfo() const;
 
   void InitVisualizeSurface(const SkRect& rect) const;
 

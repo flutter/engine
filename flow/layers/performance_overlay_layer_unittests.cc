@@ -150,6 +150,19 @@ TEST_F(PerformanceOverlayLayerTest, InvalidOptions) {
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 
+TEST_F(PerformanceOverlayLayerTest, GetAverageFpsInfoTest) {
+  flutter::Stopwatch mock_stopwatch(fml::RefreshRateToFrameBudget(60));
+  for (int i = 0; i < size(kMockedTimes); ++i) {
+    mock_stopwatch.SetLapTime(
+        fml::TimeDelta::FromMilliseconds(kMockedTimes[i]));
+  }
+  const Stopwatch::FpsInfo& fps_info = mock_stopwatch.AverageFpsInfo();
+  EXPECT_EQ(fps_info.frame_count, 28);
+  EXPECT_EQ(fps_info.janky_frame_count, 17);
+  EXPECT_DOUBLE_EQ(fps_info.total_time_ms, 643.333333333333);
+  EXPECT_DOUBLE_EQ(fps_info.average_fps, 43.52331606217616);
+}
+
 TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   const SkRect layer_bounds = SkRect::MakeLTRB(0.0f, 0.0f, 64.0f, 64.0f);
   const uint64_t overlay_opts = kDisplayRasterizerStatistics;
@@ -164,12 +177,37 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   EXPECT_TRUE(layer->needs_painting(paint_context()));
 
   layer->Paint(paint_context());
-  auto overlay_text = PerformanceOverlayLayer::MakeStatisticsText(
-      paint_context().raster_time, "Raster", "");
-  auto overlay_text_data = overlay_text->serialize(SkSerialProcs{});
+
+  SkFont font;
+  font.setSize(PerformanceOverlayLayer::kFontSize);
+
+  const int margin_top = 3;
+  const int margin_left = 1;
+  const int padding = 8;
+
+  // The label data on the first line.
+  auto overlay_label_text =
+      PerformanceOverlayLayer::MakeLabelText("Raster", font);
+  auto overlay_label_data =
+      overlay_label_text.text_blob->serialize(SkSerialProcs{});
+  float label_left = padding + margin_left - overlay_label_text.bounds.left();
+  float label_top = padding + margin_top - overlay_label_text.bounds.top();
+  SkPoint label_position = SkPoint::Make(label_left, label_top);
+
+  // The statistics data on the second line.
+  auto overlay_statistics_text = PerformanceOverlayLayer::MakeStatisticsText(
+      paint_context().raster_time, font);
+  auto overlay_statistics_data =
+      overlay_statistics_text.text_blob->serialize(SkSerialProcs{});
+  float statistics_left =
+      padding + margin_left - overlay_statistics_text.bounds.left();
+  float statistics_top = padding + margin_top * 2 -
+                         overlay_statistics_text.bounds.top() +
+                         overlay_label_text.bounds.height();
+  SkPoint statistics_position = SkPoint::Make(statistics_left, statistics_top);
+
   SkPaint text_paint;
-  text_paint.setColor(SK_ColorGRAY);
-  SkPoint text_position = SkPoint::Make(16.0f, 22.0f);
+  text_paint.setColor(SK_ColorRED);
 
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
@@ -177,10 +215,16 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
 #if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Expectation requires a valid default font manager";
 #endif  // OS_FUCHSIA
-  EXPECT_EQ(mock_canvas().draw_calls(),
-            std::vector({MockCanvas::DrawCall{
-                0, MockCanvas::DrawTextData{overlay_text_data, text_paint,
-                                            text_position}}}));
+  EXPECT_EQ(
+      mock_canvas().draw_calls(),
+      std::vector({
+          MockCanvas::DrawCall{
+              0, MockCanvas::DrawTextData{overlay_label_data, text_paint,
+                                          label_position}},
+          MockCanvas::DrawCall{
+              0, MockCanvas::DrawTextData{overlay_statistics_data, text_paint,
+                                          statistics_position}},
+      }));
 }
 
 TEST(PerformanceOverlayLayerDefault, Gold) {

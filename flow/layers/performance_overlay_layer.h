@@ -22,9 +22,19 @@ const int kVisualizeEngineStatistics = 1 << 3;
 
 class PerformanceOverlayLayer : public Layer {
  public:
-  static sk_sp<SkTextBlob> MakeStatisticsText(const Stopwatch& stopwatch,
-                                              const std::string& label_prefix,
-                                              const std::string& font_path);
+  /// Store SKTextBlob and more precise bounds measured by font and text.
+  struct TextBlobAndBounds {
+    sk_sp<SkTextBlob> text_blob;
+    SkRect bounds;
+  };
+
+  static constexpr SkScalar kFontSize = 11;
+
+  static TextBlobAndBounds MakeLabelText(const std::string& label_prefix,
+                                         const SkFont& font);
+
+  static TextBlobAndBounds MakeStatisticsText(const Stopwatch& stopwatch,
+                                              const SkFont& font);
 
   bool IsReplacing(DiffContext* context, const Layer* layer) const override {
     return layer->as_performance_overlay_layer() != nullptr;
