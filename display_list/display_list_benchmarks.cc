@@ -37,6 +37,7 @@ SkPaint GetPaintForRun(unsigned attributes) {
   SkPaint paint;
 
   if (attributes & kStrokedStyle_Flag && attributes & kFilledStyle_Flag) {
+    // Not currently exposed by Flutter, but we can probably benchmark this in the future
     paint.setStyle(SkPaint::kStrokeAndFill_Style);
   } else if (attributes & kStrokedStyle_Flag) {
     paint.setStyle(SkPaint::kStroke_Style);
