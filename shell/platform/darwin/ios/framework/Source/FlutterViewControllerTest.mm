@@ -405,12 +405,10 @@ typedef enum UIAccessibilityContrast : NSInteger {
 
 - (void)testInternalPluginsWeakPtrNotCrash {
   FlutterSendKeyEvent sendEvent;
-  __weak FlutterViewController* weakVC;
   @autoreleasepool {
     FlutterViewController* vc = [[FlutterViewController alloc] initWithProject:nil
                                                                        nibName:nil
                                                                         bundle:nil];
-    weakVC = vc;
     [vc addInternalPlugins];
     FlutterKeyboardManager* keyboardManager = vc.keyboardManager;
     FlutterEmbedderKeyResponder* keyPrimaryResponder = (FlutterEmbedderKeyResponder*)
