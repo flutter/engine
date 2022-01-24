@@ -37,7 +37,8 @@ SkPaint GetPaintForRun(unsigned attributes) {
   SkPaint paint;
 
   if (attributes & kStrokedStyle_Flag && attributes & kFilledStyle_Flag) {
-    // Not currently exposed by Flutter, but we can probably benchmark this in the future
+    // Not currently exposed by Flutter, but we can probably benchmark this in
+    // the future
     paint.setStyle(SkPaint::kStrokeAndFill_Style);
   } else if (attributes & kStrokedStyle_Flag) {
     paint.setStyle(SkPaint::kStroke_Style);
@@ -1228,7 +1229,8 @@ void BM_SaveLayer(benchmark::State& state,
 
   // Ensure we draw two overlapping rects to avoid any peephole optimisations
   SkRect rect1 = SkRect::MakeLTRB(0, 0, 0.75f * length, 0.75f * length);
-  SkRect rect2 = SkRect::MakeLTRB(0.25f * length, 0.25f * length, length, length);
+  SkRect rect2 =
+      SkRect::MakeLTRB(0.25f * length, 0.25f * length, length, length);
 
   for (size_t i = 0; i < save_layer_calls; i++) {
     for (size_t j = 0; j < save_depth; j++) {
