@@ -34,6 +34,7 @@
 #include "third_party/tonic/dart_microtask_queue.h"
 #include "third_party/tonic/dart_state.h"
 #include "third_party/tonic/logging/dart_error.h"
+#include "third_party/tonic/logging/dart_invoke.h"
 
 #include "builtin_libraries.h"
 #include "logging.h"
@@ -205,14 +206,10 @@ bool DartComponentController::SetupFromKernel() {
           isolate_snapshot_data_)) {
     return false;
   }
-  if (!dart_utils::MappedResource::LoadFromNamespace(
-          nullptr, "/pkg/data/isolate_core_snapshot_instructions.bin",
-          isolate_snapshot_instructions_, true /* executable */)) {
-    return false;
-  }
 
+  // The core snapshot does not separate instructions from data.
   if (!CreateIsolate(isolate_snapshot_data_.address(),
-                     isolate_snapshot_instructions_.address())) {
+                     nullptr /* isolate_snapshot_instructions */)) {
     return false;
   }
 
@@ -276,16 +273,16 @@ bool DartComponentController::SetupFromAppSnapshot() {
       return false;
     }
   } else {
+    // TODO(fxb/91200): This code path was broken for over a year and is
+    // probably not used.
     if (!dart_utils::MappedResource::LoadFromNamespace(
             namespace_, data_path_ + "/isolate_snapshot_data.bin",
             isolate_snapshot_data_)) {
       return false;
     }
-    if (!dart_utils::MappedResource::LoadFromNamespace(
-            namespace_, data_path_ + "/isolate_snapshot_instructions.bin",
-            isolate_snapshot_instructions_, true /* executable */)) {
-      return false;
-    }
+    isolate_data = isolate_snapshot_data_.address();
+    // We don't separate instructions from data in 'core' snapshots.
+    isolate_instructions = nullptr;
   }
   return CreateIsolate(isolate_data, isolate_instructions);
 #endif  // defined(AOT_RUNTIME)
@@ -418,12 +415,28 @@ bool DartComponentController::Main() {
         Dart_ListSetAt(dart_arguments, i, ToDart(arguments.at(i))));
   }
 
-  Dart_Handle argv[] = {
-      dart_arguments,
-  };
+  Dart_Handle user_main = Dart_GetField(Dart_RootLibrary(), ToDart("main"));
 
-  Dart_Handle main_result = Dart_Invoke(Dart_RootLibrary(), ToDart("main"),
-                                        dart_utils::ArraySize(argv), argv);
+  if (Dart_IsError(user_main)) {
+    FX_LOGF(ERROR, LOG_TAG,
+            "Failed to locate user_main in the root library: %s",
+            Dart_GetError(user_main));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle fuchsia_lib = Dart_LookupLibrary(tonic::ToDart("dart:fuchsia"));
+
+  if (Dart_IsError(fuchsia_lib)) {
+    FX_LOGF(ERROR, LOG_TAG, "Failed to locate dart:fuchsia: %s",
+            Dart_GetError(fuchsia_lib));
+    Dart_ExitScope();
+    return false;
+  }
+
+  Dart_Handle main_result = tonic::DartInvokeField(
+      fuchsia_lib, "_runUserMainForDartRunner", {user_main, dart_arguments});
+
   if (Dart_IsError(main_result)) {
     auto dart_state = tonic::DartState::Current();
     if (!dart_state->has_set_return_code()) {

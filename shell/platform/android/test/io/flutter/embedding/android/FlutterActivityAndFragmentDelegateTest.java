@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.FlutterInjector;
@@ -321,6 +322,25 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
+  public void itExecutesDartLibraryUriProvidedByHost() {
+    when(mockHost.getAppBundlePath()).thenReturn("/my/bundle/path");
+    when(mockHost.getDartEntrypointFunctionName()).thenReturn("myEntrypoint");
+    when(mockHost.getDartEntrypointLibraryUri()).thenReturn("package:foo/bar.dart");
+
+    DartExecutor.DartEntrypoint expectedEntrypoint =
+        new DartExecutor.DartEntrypoint("/my/bundle/path", "package:foo/bar.dart", "myEntrypoint");
+
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
+    delegate.onStart();
+
+    verify(mockFlutterEngine.getDartExecutor(), times(1))
+        .executeDartEntrypoint(eq(expectedEntrypoint));
+  }
+
+  @Test
   public void itUsesDefaultFlutterLoaderAppBundlePathWhenUnspecified() {
     // ---- Test setup ----
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
@@ -465,6 +485,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -492,6 +513,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -519,6 +541,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -546,6 +569,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -571,6 +595,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     // --- Execute the behavior under test ---
     // The FlutterEngine is set up in onAttach().
     delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
     // Emulate app start.
     delegate.onStart();
 
@@ -957,6 +982,26 @@ public class FlutterActivityAndFragmentDelegateTest {
         () -> {
           delegate.onCreateView(null, null, null, 0, shouldDelayFirstAndroidViewDraw);
         });
+  }
+
+  @Test
+  public void itChangesFlutterViewVisibilityWhenOnStartAndOnStop() {
+    // ---- Test setup ----
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    delegate.onAttach(RuntimeEnvironment.application);
+    delegate.onCreateView(null, null, null, 0, true);
+    delegate.onStart();
+    // Verify that the flutterView is visible.
+    assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
+    delegate.onStop();
+    // Verify that the flutterView is not visible.
+    assertEquals(View.GONE, delegate.flutterView.getVisibility());
+    delegate.onStart();
+    // Verify that the flutterView is visible.
+    assertEquals(View.VISIBLE, delegate.flutterView.getVisibility());
   }
 
   @Test

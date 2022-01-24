@@ -305,6 +305,12 @@ public class FlutterAndroidComponentTest {
       return "main";
     }
 
+    @Nullable
+    @Override
+    public String getDartEntrypointLibraryUri() {
+      return null;
+    }
+
     @NonNull
     @Override
     public String getAppBundlePath() {
@@ -327,6 +333,11 @@ public class FlutterAndroidComponentTest {
     @Override
     public TransparencyMode getTransparencyMode() {
       return TransparencyMode.transparent;
+    }
+
+    @Override
+    public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
+      return null;
     }
 
     @Nullable

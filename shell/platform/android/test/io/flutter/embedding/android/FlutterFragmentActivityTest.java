@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
@@ -89,6 +90,28 @@ public class FlutterFragmentActivityTest {
           }
         };
     assertEquals(activity.createFlutterFragment().getRenderMode(), RenderMode.texture);
+  }
+
+  @Test
+  public void createFlutterFragment__customDartEntrypointLibraryUri() {
+    final FlutterFragmentActivity activity =
+        new FakeFlutterFragmentActivity() {
+          @Override
+          public String getDartEntrypointLibraryUri() {
+            return "package:foo/bar.dart";
+          }
+        };
+    assertEquals(
+        activity.createFlutterFragment().getDartEntrypointLibraryUri(), "package:foo/bar.dart");
+  }
+
+  @Test
+  public void hasRootLayoutId() {
+    FlutterFragmentActivityWithRootLayout activity =
+        Robolectric.buildActivity(FlutterFragmentActivityWithRootLayout.class).get();
+    activity.onCreate(null);
+    assertNotNull(activity.FRAGMENT_CONTAINER_ID);
+    assertTrue(activity.FRAGMENT_CONTAINER_ID != View.NO_ID);
   }
 
   @Test
@@ -346,6 +369,11 @@ public class FlutterFragmentActivityTest {
     @Override
     public String getDartEntrypointFunctionName() {
       return "";
+    }
+
+    @Nullable
+    public String getDartEntrypointLibraryUri() {
+      return null;
     }
 
     @Override

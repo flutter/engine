@@ -5,6 +5,7 @@
 package io.flutter.embedding.android;
 
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_META_DATA_KEY;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_URI_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_BACKGROUND_MODE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_DART_ENTRYPOINT;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
@@ -45,6 +46,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
+import io.flutter.util.ViewUtils;
 
 /**
  * A Flutter {@code Activity} that is based upon {@link FragmentActivity}.
@@ -64,7 +66,8 @@ public class FlutterFragmentActivity extends FragmentActivity
   // FlutterFragment management.
   private static final String TAG_FLUTTER_FRAGMENT = "flutter_fragment";
   // TODO(mattcarroll): replace ID with R.id when build system supports R.java
-  private static final int FRAGMENT_CONTAINER_ID = 609893468; // random number
+  public static final int FRAGMENT_CONTAINER_ID =
+      ViewUtils.generateViewId(609893468); // random number
 
   /**
    * Creates an {@link Intent} that launches a {@code FlutterFragmentActivity}, which executes a
@@ -460,6 +463,9 @@ public class FlutterFragmentActivity extends FragmentActivity
               + "Dart entrypoint: "
               + getDartEntrypointFunctionName()
               + "\n"
+              + "Dart entrypoint library uri: "
+              + (getDartEntrypointLibraryUri() != null ? getDartEntrypointLibraryUri() : "\"\"")
+              + "\n"
               + "Initial route: "
               + getInitialRoute()
               + "\n"
@@ -471,6 +477,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
       return FlutterFragment.withNewEngine()
           .dartEntrypoint(getDartEntrypointFunctionName())
+          .dartLibraryUri(getDartEntrypointLibraryUri())
           .initialRoute(getInitialRoute())
           .appBundlePath(getAppBundlePath())
           .flutterShellArgs(FlutterShellArgs.fromIntent(getIntent()))
@@ -692,6 +699,32 @@ public class FlutterFragmentActivity extends FragmentActivity
       return desiredDartEntrypoint != null ? desiredDartEntrypoint : DEFAULT_DART_ENTRYPOINT;
     } catch (PackageManager.NameNotFoundException e) {
       return DEFAULT_DART_ENTRYPOINT;
+    }
+  }
+
+  /**
+   * The Dart library URI for the entrypoint that will be executed as soon as the Dart snapshot is
+   * loaded.
+   *
+   * <p>Example value: "package:foo/bar.dart"
+   *
+   * <p>This preference can be controlled by setting a {@code <meta-data>} called {@link
+   * FlutterActivityLaunchConfigs#DART_ENTRYPOINT_URI_META_DATA_KEY} within the Android manifest
+   * definition for this {@code FlutterFragmentActivity}.
+   *
+   * <p>A value of null means use the default root library.
+   *
+   * <p>Subclasses may override this method to directly control the Dart entrypoint uri.
+   */
+  @Nullable
+  public String getDartEntrypointLibraryUri() {
+    try {
+      Bundle metaData = getMetaData();
+      String desiredDartLibraryUri =
+          metaData != null ? metaData.getString(DART_ENTRYPOINT_URI_META_DATA_KEY) : null;
+      return desiredDartLibraryUri;
+    } catch (PackageManager.NameNotFoundException e) {
+      return null;
     }
   }
 

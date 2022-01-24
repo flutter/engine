@@ -121,15 +121,15 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*font_collection=*/font_collection_,
       /*runtime_controller=*/nullptr);
   result->runtime_controller_ = runtime_controller_->Spawn(
-      *result,                               // runtime delegate
-      settings_.advisory_script_uri,         // advisory script uri
-      settings_.advisory_script_entrypoint,  // advisory script entrypoint
-      settings_.idle_notification_callback,  // idle notification callback
-      settings_.isolate_create_callback,     // isolate create callback
-      settings_.isolate_shutdown_callback,   // isolate shutdown callback
-      settings_.persistent_isolate_data,     // persistent isolate data
-      io_manager,                            // io_manager
-      result->GetImageDecoderWeakPtr()       // imageDecoder
+      *result,                              // runtime delegate
+      settings.advisory_script_uri,         // advisory script uri
+      settings.advisory_script_entrypoint,  // advisory script entrypoint
+      settings.idle_notification_callback,  // idle notification callback
+      settings.isolate_create_callback,     // isolate create callback
+      settings.isolate_shutdown_callback,   // isolate shutdown callback
+      settings.persistent_isolate_data,     // persistent isolate data
+      io_manager,                           // io_manager
+      result->GetImageDecoderWeakPtr()      // imageDecoder
   );
   result->initial_route_ = initial_route;
   return result;
@@ -252,8 +252,9 @@ void Engine::ReportTimings(std::vector<int64_t> timings) {
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
-void Engine::NotifyIdle(int64_t deadline) {
-  auto trace_event = std::to_string(deadline - Dart_TimelineGetMicros());
+void Engine::NotifyIdle(fml::TimePoint deadline) {
+  auto trace_event = std::to_string(deadline.ToEpochDelta().ToMicroseconds() -
+                                    Dart_TimelineGetMicros());
   TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
                trace_event.c_str());
   runtime_controller_->NotifyIdle(deadline);
@@ -598,6 +599,10 @@ void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
     runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,
                                                       error_message, transient);
   }
+}
+
+const VsyncWaiter& Engine::GetVsyncWaiter() const {
+  return animator_->GetVsyncWaiter();
 }
 
 }  // namespace flutter
