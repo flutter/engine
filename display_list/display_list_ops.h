@@ -215,26 +215,26 @@ struct SaveOp final : DLOp {
 struct SaveLayerOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayer;
 
-  explicit SaveLayerOp(DisplayListSaveLayerFlags flags) : flags(flags) {}
+  explicit SaveLayerOp(const SaveLayerOptions options) : options(options) {}
 
-  DisplayListSaveLayerFlags flags;
+  SaveLayerOptions options;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(nullptr, flags);
+    dispatcher.saveLayer(nullptr, options);
   }
 };
 // 4 byte header + 20 byte payload packs evenly into 24 bytes
 struct SaveLayerBoundsOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayerBounds;
 
-  SaveLayerBoundsOp(SkRect rect, DisplayListSaveLayerFlags flags)
-      : flags(flags), rect(rect) {}
+  SaveLayerBoundsOp(SkRect rect, const SaveLayerOptions options)
+      : options(options), rect(rect) {}
 
-  DisplayListSaveLayerFlags flags;
+  SaveLayerOptions options;
   const SkRect rect;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.saveLayer(&rect, flags);
+    dispatcher.saveLayer(&rect, options);
   }
 };
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)

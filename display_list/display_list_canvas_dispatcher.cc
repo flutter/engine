@@ -26,21 +26,41 @@ const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
 
 void DisplayListCanvasDispatcher::save() {
   canvas_->save();
-  save_opacity(false, false);
+  // save has no impact on attributes, but it needs to register a record
+  // on the restore stack so that the eventual call to restore() will
+  // know what to do at that time. We could annotate the restore record
+  // with a flag that the record came from a save call, but it is simpler
+  // to just pass in the current opacity value as the value to be used by
+  // the children and let the utility calls notice that it didn't change.
+  save_opacity(opacity());
 }
 void DisplayListCanvasDispatcher::restore() {
   canvas_->restore();
   restore_opacity();
 }
 void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
-                                            DisplayListSaveLayerFlags flags) {
-  if (flags.can_distribute_opacity()) {
+                                            const SaveLayerOptions options) {
+  if (bounds == nullptr && options.can_distribute_opacity()) {
+    // We know that:
+    // - no bounds is needed for clipping here
+    // - the current attributes only have an alpha
+    // - the children are compatible with individually rendering with
+    //   an inherited alpha
+    // Therefore we can just use a save instead of a saveLayer and pass the
+    // intended opacity to the children.
     canvas_->save();
-    save_opacity(true, true);
+    // If the saveLayer does not use attributes, the children should continue
+    // to render with the inherited opacity unmodified. If attributes are to
+    // be applied, the children should render with the combination of the
+    // inherited opacity combined with the alpha from the current color.
+    save_opacity(options.renders_with_attributes() ? combined_opacity()
+                                                   : opacity());
   } else {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
-    canvas_->saveLayer(bounds, safe_paint(flags.renders_with_attributes()));
-    save_opacity(true, false);
+    canvas_->saveLayer(bounds, safe_paint(options.renders_with_attributes()));
+    // saveLayer will apply the current opacity on behalf of the children
+    // so they will inherit an opaque opacity.
+    save_opacity(SK_Scalar1);
   }
 }
 

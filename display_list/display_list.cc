@@ -11,11 +11,9 @@
 
 namespace flutter {
 
-const DisplayListSaveLayerFlags DisplayListSaveLayerFlags::kWithAttributes =
-    DisplayListSaveLayerFlags(
-        DisplayListSaveLayerFlags::kRendersWithAttributesFlag);
-const DisplayListSaveLayerFlags DisplayListSaveLayerFlags::kNoAttributes =
-    DisplayListSaveLayerFlags(0);
+const SaveLayerOptions SaveLayerOptions::kNoAttributes = SaveLayerOptions();
+const SaveLayerOptions SaveLayerOptions::kWithAttributes =
+    kNoAttributes.with_renders_with_attributes();
 
 const SkSamplingOptions DisplayList::NearestSampling =
     SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);

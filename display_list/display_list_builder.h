@@ -153,18 +153,16 @@ class DisplayListBuilder final : public virtual Dispatcher,
   sk_sp<SkImageFilter> getImageFilter() const { return current_image_filter_; }
 
   void save() override;
-  // Only the |kRendersWithAttributesFlag| should be specified here, using
-  // the convenient |kWithAttributes| and |kNoAttributes| constants. Any other
-  // flags will be ignored and calculated anew as the DisplayList is built.
-  // Alternatively, use the convenience |saveLayer(SkRect, bool)| method.
-  void saveLayer(const SkRect* bounds,
-                 DisplayListSaveLayerFlags flags) override;
+  // Only the |renders_with_attributes()| option will be accepted here. Any
+  // other flags will be ignored and calculated anew as the DisplayList is
+  // built. Alternatively, use the |saveLayer(SkRect, bool)| method.
+  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
   // Convenience method with just a boolean to indicate whether the saveLayer
   // should apply the rendering attributes.
   void saveLayer(const SkRect* bounds, bool renders_with_attributes) {
     saveLayer(bounds, renders_with_attributes
-                          ? DisplayListSaveLayerFlags::kWithAttributes
-                          : DisplayListSaveLayerFlags::kNoAttributes);
+                          ? SaveLayerOptions::kWithAttributes
+                          : SaveLayerOptions::kNoAttributes);
   }
   void restore() override;
   int getSaveCount() { return layer_stack_.size(); }

@@ -150,43 +150,66 @@ enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 class Dispatcher;
 class DisplayListBuilder;
 
-class DisplayListSaveLayerFlags {
+class SaveLayerOptions {
  public:
-  static const uint32_t kRendersWithAttributesFlag = 0x1 << 0;
-  static const uint32_t kSingleChildFlag = 0x1 << 1;
-  static const uint32_t kNonoverlappingChildrenFlag = 0x1 << 2;
-  static const uint32_t kOpacityOptimizationFlag = 0x1 << 3;
+  static const SaveLayerOptions kWithAttributes;
+  static const SaveLayerOptions kNoAttributes;
 
-  static const DisplayListSaveLayerFlags kWithAttributes;
-  static const DisplayListSaveLayerFlags kNoAttributes;
+  SaveLayerOptions() : flags_(0) {}
+  SaveLayerOptions(const SaveLayerOptions& options) : flags_(options.flags_) {}
+  SaveLayerOptions(const SaveLayerOptions* options) : flags_(options->flags_) {}
 
-  explicit DisplayListSaveLayerFlags(uint32_t flags) : flags_(flags) {}
-
-  DisplayListSaveLayerFlags without_optimizations() {
-    return DisplayListSaveLayerFlags(flags_ & kRendersWithAttributesFlag);
+  SaveLayerOptions without_optimizations() const {
+    SaveLayerOptions options;
+    options.fRendersWithAttributes = fRendersWithAttributes;
+    return options;
   }
 
-  uint32_t flags() { return flags_; }
-
-  DisplayListSaveLayerFlags with(DisplayListSaveLayerFlags other_flags) {
-    return DisplayListSaveLayerFlags(flags_ | other_flags.flags_);
+  bool renders_with_attributes() const { return fRendersWithAttributes; }
+  SaveLayerOptions with_renders_with_attributes() const {
+    SaveLayerOptions options(this);
+    options.fRendersWithAttributes = true;
+    return options;
   }
 
-  DisplayListSaveLayerFlags with(uint32_t new_flags) {
-    return DisplayListSaveLayerFlags(flags_ | new_flags);
+  bool has_single_child() const { return fHasSingleChild; }
+  SaveLayerOptions with_has_single_child() const {
+    SaveLayerOptions options(this);
+    options.fHasSingleChild = true;
+    return options;
   }
 
-  bool renders_with_attributes() {
-    return (flags_ & kRendersWithAttributesFlag) != 0;
+  bool has_nonoverlapping_children() const {
+    return fHasNonoverlappingChildren;
+  }
+  SaveLayerOptions with_has_nonoverlapping_children() const {
+    SaveLayerOptions options(this);
+    options.fHasNonoverlappingChildren = true;
+    return options;
   }
 
-  bool can_distribute_opacity() {
-    return ((flags_ & (kSingleChildFlag | kNonoverlappingChildrenFlag)) != 0 &&
-            (flags_ & kOpacityOptimizationFlag) != 0);
+  bool children_can_render_opacity() const { return fChildrenCanRenderOpacity; }
+  SaveLayerOptions with_children_can_render_opacity() const {
+    SaveLayerOptions options(this);
+    options.fChildrenCanRenderOpacity = true;
+    return *this;
+  }
+
+  bool can_distribute_opacity() const {
+    return ((fHasSingleChild || fHasNonoverlappingChildren) &&
+            fChildrenCanRenderOpacity);
   }
 
  private:
-  uint32_t flags_;
+  union {
+    struct {
+      unsigned fRendersWithAttributes : 1;
+      unsigned fHasSingleChild : 1;
+      unsigned fHasNonoverlappingChildren : 1;
+      unsigned fChildrenCanRenderOpacity : 1;
+    };
+    uint32_t flags_;
+  };
 };
 
 // The base class that contains a sequence of rendering operations

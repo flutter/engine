@@ -56,17 +56,17 @@ class Dispatcher {
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
-  // The |flags| parameter can specify whether the existing rendering
+  // The |options| parameter can specify whether the existing rendering
   // attributes will be applied to the save layer surface while rendering
   // it back to the current surface. If the flag is false then this method
   // is equivalent to |SkCanvas::saveLayer| with a null paint object.
-  // The |flags| parameter may contain other flags that indicate some
+  // The |options| parameter may contain other options that indicate some
   // specific optimizations may be made by the underlying implementation
-  // to avoid creating a temporary layer, these optimization flags will
+  // to avoid creating a temporary layer, these optimization options will
   // be determined as the |DisplayList| is constructed and should not be
   // specified in calling a |DisplayListBuilder| as they will be ignored.
   virtual void saveLayer(const SkRect* bounds,
-                         DisplayListSaveLayerFlags flags) = 0;
+                         const SaveLayerOptions options) = 0;
   virtual void restore() = 0;
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;

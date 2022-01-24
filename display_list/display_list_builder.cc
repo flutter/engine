@@ -241,9 +241,9 @@ void DisplayListBuilder::restore() {
       if (!layer_info.cannot_inherit_opacity) {
         SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
             storage_.get() + layer_info.save_layer_offset);
-        op->flags =
-            op->flags.with(DisplayListSaveLayerFlags::kSingleChildFlag |
-                           DisplayListSaveLayerFlags::kOpacityOptimizationFlag);
+        op->options = op->options  //
+                          .with_has_single_child()
+                          .with_children_can_render_opacity();
       }
     } else {
       // For regular save() ops there was no protecting layer so we have to
@@ -257,16 +257,16 @@ void DisplayListBuilder::restore() {
   }
 }
 void DisplayListBuilder::saveLayer(const SkRect* bounds,
-                                   DisplayListSaveLayerFlags flags) {
-  flags = flags.without_optimizations();
+                                   const SaveLayerOptions in_options) {
+  SaveLayerOptions options = in_options.without_optimizations();
   size_t save_layer_offset = used_;
   bounds  //
-      ? Push<SaveLayerBoundsOp>(0, 1, *bounds, flags)
-      : Push<SaveLayerOp>(0, 1, flags);
-  CheckLayerOpacityCompatibility(flags.renders_with_attributes());
+      ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
+      : Push<SaveLayerOp>(0, 1, options);
+  CheckLayerOpacityCompatibility(options.renders_with_attributes());
   layer_stack_.emplace_back(save_layer_offset, true);
   current_layer_ = &layer_stack_.back();
-  if (flags.renders_with_attributes()) {
+  if (options.renders_with_attributes()) {
     // |current_opacity_compatibility_| does not take an ImageFilter into
     // account because an individual primitive with an ImageFilter can apply
     // opacity on top of it. But, if the layer is applying the ImageFilter

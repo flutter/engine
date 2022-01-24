@@ -122,11 +122,21 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
+
+  /// Returns the current opacity attribute which is used to reduce
+  /// the alpha of all setColor calls encountered in the streeam
   SkScalar opacity() { return opacity_; }
+  /// Returns the combined opacity that includes both the current
+  /// opacity attribute and the alpha of the most recent color.
+  /// The most recently set color will have combined the two and
+  /// stored the combined value in the alpha of the paint.
+  SkScalar combined_opacity() { return paint_.getAlphaf(); }
+  /// Returns true iff the current opacity attribute is not opaque,
+  /// irrespective of the alpha of the current color
   bool has_opacity() { return opacity_ < SK_Scalar1; }
 
  protected:
-  void save_opacity(bool reset_and_restore, bool children_can_inherit_opacity);
+  void save_opacity(SkScalar opacity_for_children);
   void restore_opacity();
 
  private:
@@ -137,13 +147,18 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   sk_sp<SkColorFilter> makeColorFilter();
 
   struct SaveInfo {
-    SaveInfo(SkScalar opacity, bool restore_opacity)
-        : opacity(opacity), restore_opacity(restore_opacity) {}
+    SaveInfo(SkScalar opacity) : opacity(opacity) {}
 
     SkScalar opacity;
-    bool restore_opacity;
   };
   std::vector<SaveInfo> save_stack_;
+
+  void set_opacity(SkScalar opacity) {
+    if (opacity_ != opacity) {
+      opacity_ = opacity;
+      setColor(current_color_);
+    }
+  }
 
   SkColor current_color_;
   SkScalar opacity_;
@@ -324,8 +339,7 @@ class DisplayListBoundsCalculator final
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds,
-                 DisplayListSaveLayerFlags flags) override;
+  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
   void restore() override;
 
   void drawPaint() override;

@@ -29,8 +29,7 @@ class DisplayListCanvasDispatcher : public virtual Dispatcher,
 
   void save() override;
   void restore() override;
-  void saveLayer(const SkRect* bounds,
-                 DisplayListSaveLayerFlags flags) override;
+  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
 
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;

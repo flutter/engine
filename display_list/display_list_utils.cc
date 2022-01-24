@@ -26,30 +26,12 @@ constexpr float invert_color_matrix[20] = {
 };
 // clang-format on
 
-void SkPaintDispatchHelper::save_opacity(bool reset_and_restore,
-                                         bool children_can_inherit_opacity) {
-  SkScalar child_opacity = SK_Scalar1;
-  if (children_can_inherit_opacity) {
-    int alpha = SkColorGetA(current_color_);
-    if (opacity_ < SK_Scalar1 || alpha < 255) {
-      child_opacity = opacity_ * alpha / 255.0;
-    }
-  }
-  if (opacity_ >= SK_Scalar1 && child_opacity >= SK_Scalar1) {
-    reset_and_restore = false;
-  }
-  save_stack_.emplace_back(opacity_, reset_and_restore);
-  if (reset_and_restore) {
-    opacity_ = child_opacity;
-    setColor(current_color_);
-  }
+void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
+  save_stack_.emplace_back(opacity_);
+  set_opacity(child_opacity);
 }
 void SkPaintDispatchHelper::restore_opacity() {
-  SaveInfo& info = save_stack_.back();
-  if (info.restore_opacity) {
-    opacity_ = info.opacity;
-    setColor(current_color_);
-  }
+  set_opacity(save_stack_.back().opacity);
   save_stack_.pop_back();
 }
 
@@ -306,10 +288,10 @@ void DisplayListBoundsCalculator::save() {
   accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            DisplayListSaveLayerFlags flags) {
+                                            const SaveLayerOptions options) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  if (flags.renders_with_attributes()) {
+  if (options.renders_with_attributes()) {
     layer_infos_.emplace_back(std::make_unique<SaveLayerData>(
         accumulator_, image_filter_, paint_nops_on_transparency()));
   } else {
