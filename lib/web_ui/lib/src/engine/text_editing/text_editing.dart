@@ -480,8 +480,8 @@ class TextEditingDeltaState {
 
     // If we are composing then set the delta range to the composing region we
     // captured in compositionupdate.
-    final bool isCurrentlyComposing = lastTextEditingDeltaState.inputType == 'insertCompositionText';
-    if (isCurrentlyComposing) {
+    final bool isCurrentlyComposing = lastTextEditingDeltaState.composingOffset != -1 && lastTextEditingDeltaState.composingOffset != lastTextEditingDeltaState.composingExtent;
+    if (lastTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
       lastTextEditingDeltaState.deltaStart = lastTextEditingDeltaState.composingOffset;
       lastTextEditingDeltaState.deltaEnd = lastTextEditingDeltaState.composingExtent;
     }
