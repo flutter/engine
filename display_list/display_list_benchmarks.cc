@@ -1225,10 +1225,15 @@ void BM_SaveLayer(benchmark::State& state,
 
   size_t save_layer_calls = state.range(0);
 
+  // Ensure we draw two overlapping rects to avoid any peephole optimisations
+  SkRect rect1 = SkRect::MakeLTRB(0, 0, 0.75f * length, 0.75f * length);
+  SkRect rect2 = SkRect::MakeLTRB(0.25f * length, 0.25f * length, length, length);
+
   for (size_t i = 0; i < save_layer_calls; i++) {
     for (size_t j = 0; j < save_depth; j++) {
       builder.saveLayer(nullptr, false);
-      builder.drawColor(SK_ColorRED, SkBlendMode::kSrc);
+      builder.drawRect(rect1);
+      builder.drawRect(rect2);
     }
     for (size_t j = 0; j < save_depth; j++) {
       builder.restore();
