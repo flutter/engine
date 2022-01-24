@@ -43,10 +43,12 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
   }
 }
 
-CompositorContext::CompositorContext() : raster_time_(), ui_time_() {}
+CompositorContext::CompositorContext()
+    : raster_time_(fixed_refresh_rate_updater_),
+      ui_time_(fixed_refresh_rate_updater_) {}
 
-CompositorContext::CompositorContext(Stopwatch::Delegate& delegate)
-    : raster_time_(&delegate), ui_time_(&delegate) {}
+CompositorContext::CompositorContext(Stopwatch::RefreshRateUpdater& updater)
+    : raster_time_(updater), ui_time_(updater) {}
 
 CompositorContext::~CompositorContext() = default;
 

@@ -16,30 +16,17 @@ namespace flutter {
 
 class Stopwatch {
  public:
-  /// The update type that is passed to the Stopwatch's constructor.
-  enum FrameBudgetUpdateType {
-    /// Update the latest frame budget value from refresh rate everytime.
-    /// See: `DisplayManager::GetMainDisplayRefreshRate`
-    kUpdateEverytime,
-    /// Using the default value `fml::kDefaultFrameBudget` (60 fps)
-    kOnShotValue,
-  };
-
-  /// The delegate interface for `Stopwatch`.
-  class Delegate {
+  /// The refresh rate interface for `Stopwatch`.
+  class RefreshRateUpdater {
    public:
     /// Time limit for a smooth frame.
     /// See: `DisplayManager::GetMainDisplayRefreshRate`.
-    virtual fml::Milliseconds GetFrameBudget() = 0;
+    virtual fml::Milliseconds GetFrameBudget() const = 0;
   };
 
-  /// The constructor to save the on-shot initial_frame_budget value.
-  explicit Stopwatch(
-      fml::Milliseconds initial_frame_budget = fml::kDefaultFrameBudget);
-
-  /// The constructor with a delegate parameter, it will update frame_budget
+  /// The constructor with a updater parameter, it will update frame_budget
   /// everytime when `GetFrameBudget()` is called.
-  explicit Stopwatch(Delegate* delegate);
+  explicit Stopwatch(const RefreshRateUpdater& updater);
 
   ~Stopwatch();
 
@@ -63,21 +50,13 @@ class Stopwatch {
   fml::Milliseconds GetFrameBudget() const;
 
  private:
-  /// The private constructor which is called by the public constructors, it
-  /// includes the common initializing logic.
-  explicit Stopwatch(FrameBudgetUpdateType frame_budget_update_type,
-                     Delegate* delegate,
-                     fml::Milliseconds initial_frame_budget);
-
   inline double UnitFrameInterval(double time_ms) const;
   inline double UnitHeight(double time_ms, double max_height) const;
 
-  FrameBudgetUpdateType frame_budget_update_type_;
-  Delegate* delegate_;
+  const RefreshRateUpdater& refresh_rate_updater_;
   fml::TimePoint start_;
   std::vector<fml::TimeDelta> laps_;
   size_t current_sample_;
-  fml::Milliseconds initial_frame_budget_;
 
   // Mutable data cache for performance optimization of the graphs. Prevents
   // expensive redrawing of old data.
@@ -86,6 +65,28 @@ class Stopwatch {
   mutable size_t prev_drawn_sample_index_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Stopwatch);
+};
+
+/// Used for fixed refresh rate query cases.
+class FixedRefreshRateUpdater : public Stopwatch::RefreshRateUpdater {
+  fml::Milliseconds GetFrameBudget() const override;
+
+ public:
+  explicit FixedRefreshRateUpdater(
+      fml::Milliseconds fixed_frame_budget = fml::kDefaultFrameBudget);
+
+ private:
+  fml::Milliseconds fixed_frame_budget_;
+};
+
+/// Used for fixed refresh rate cases.
+class FixedRefreshRateStopwatch : public Stopwatch {
+ public:
+  explicit FixedRefreshRateStopwatch(
+      fml::Milliseconds fixed_frame_budget = fml::kDefaultFrameBudget);
+
+ private:
+  FixedRefreshRateUpdater fixed_delegate_;
 };
 
 class Counter {

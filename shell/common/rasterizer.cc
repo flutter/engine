@@ -14,7 +14,6 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
-#include "third_party/skia/include/core/SkEncodedImageFormat.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
@@ -380,7 +379,7 @@ sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
                               });
 }
 
-fml::Milliseconds Rasterizer::GetFrameBudget() {
+fml::Milliseconds Rasterizer::GetFrameBudget() const {
   return delegate_.GetFrameBudget();
 };
 

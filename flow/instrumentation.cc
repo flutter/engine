@@ -4,7 +4,6 @@
 
 #include "flutter/flow/instrumentation.h"
 
-#include <flutter/fml/logging.h>
 #include <algorithm>
 #include <limits>
 
@@ -16,26 +15,10 @@ namespace flutter {
 static const size_t kMaxSamples = 120;
 static const size_t kMaxFrameMarkers = 8;
 
-Stopwatch::Stopwatch(fml::Milliseconds initial_frame_budget)
-    : Stopwatch(FrameBudgetUpdateType::kOnShotValue,
-                nullptr,
-                initial_frame_budget) {}
-
-Stopwatch::Stopwatch(Stopwatch::Delegate* delegate)
-    : Stopwatch(FrameBudgetUpdateType::kUpdateEverytime,
-                delegate,
-                fml::kDefaultFrameBudget) {
-  FML_CHECK(delegate != nullptr) << "The delegate cannot be null.";
-}
-
-Stopwatch::Stopwatch(FrameBudgetUpdateType frame_budget_update_type,
-                     Delegate* delegate,
-                     fml::Milliseconds initial_frame_budget)
-    : frame_budget_update_type_(frame_budget_update_type),
-      delegate_(delegate),
+Stopwatch::Stopwatch(const RefreshRateUpdater& updater)
+    : refresh_rate_updater_(updater),
       start_(fml::TimePoint::Now()),
-      current_sample_(0),
-      initial_frame_budget_(initial_frame_budget) {
+      current_sample_(0) {
   const fml::TimeDelta delta = fml::TimeDelta::Zero();
   laps_.resize(kMaxSamples, delta);
   cache_dirty_ = true;
@@ -43,6 +26,14 @@ Stopwatch::Stopwatch(FrameBudgetUpdateType frame_budget_update_type,
 }
 
 Stopwatch::~Stopwatch() = default;
+
+FixedRefreshRateStopwatch::FixedRefreshRateStopwatch(
+    fml::Milliseconds frame_budget)
+    : Stopwatch(fixed_delegate_), fixed_delegate_(frame_budget) {}
+
+FixedRefreshRateUpdater::FixedRefreshRateUpdater(
+    fml::Milliseconds fixed_frame_budget)
+    : fixed_frame_budget_(fixed_frame_budget) {}
 
 void Stopwatch::Start() {
   start_ = fml::TimePoint::Now();
@@ -247,16 +238,7 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
 }
 
 fml::Milliseconds Stopwatch::GetFrameBudget() const {
-  switch (frame_budget_update_type_) {
-    case kUpdateEverytime:
-      FML_CHECK(delegate_ != nullptr)
-          << "The delegate_ must not be null when kUpdateEverytime.";
-      return delegate_->GetFrameBudget();
-    case kOnShotValue:
-      return initial_frame_budget_;
-    default:
-      FML_CHECK(false) << "Unknown FrameBudgetUpdateType.";
-  }
+  return refresh_rate_updater_.GetFrameBudget();
 }
 
 CounterValues::CounterValues() : current_sample_(kMaxSamples - 1) {
@@ -345,6 +327,10 @@ int64_t CounterValues::GetMinValue() const {
     min = std::min<int64_t>(min, values_[i]);
   }
   return min;
+}
+
+fml::Milliseconds FixedRefreshRateUpdater::GetFrameBudget() const {
+  return fixed_frame_budget_;
 }
 
 }  // namespace flutter
