@@ -74,7 +74,7 @@ import java.util.Arrays;
   // to this FlutterActivityAndFragmentDelegate.
   @NonNull private Host host;
   @Nullable private FlutterEngine flutterEngine;
-  @Nullable private FlutterView flutterView;
+  @VisibleForTesting @Nullable FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
   @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
   private boolean isFlutterEngineFromHost;
@@ -388,6 +388,12 @@ import java.util.Arrays;
     Log.v(TAG, "onStart()");
     ensureAlive();
     doInitialFlutterViewRun();
+    // This is a workaround for a bug on some OnePlus phones. The visibility of the application
+    // window is still true after locking the screen on some OnePlus phones, and shows a black
+    // screen when unlocked. We can work around this by changing the visibility of FlutterView in
+    // onStart and onStop.
+    // See https://github.com/flutter/flutter/issues/93276
+    flutterView.setVisibility(View.VISIBLE);
   }
 
   /**
@@ -574,6 +580,12 @@ import java.util.Arrays;
     Log.v(TAG, "onStop()");
     ensureAlive();
     flutterEngine.getLifecycleChannel().appIsPaused();
+    // This is a workaround for a bug on some OnePlus phones. The visibility of the application
+    // window is still true after locking the screen on some OnePlus phones, and shows a black
+    // screen when unlocked. We can work around this by changing the visibility of FlutterView in
+    // onStart and onStop.
+    // See https://github.com/flutter/flutter/issues/93276
+    flutterView.setVisibility(View.GONE);
   }
 
   /**
@@ -952,6 +964,20 @@ import java.util.Arrays;
      */
     @NonNull
     TransparencyMode getTransparencyMode();
+
+    /**
+     * Returns the {@link ExclusiveAppComponent<Activity>} that is associated with {@link
+     * io.flutter.embedding.engine.FlutterEngine}.
+     *
+     * <p>In the scenario where multiple {@link FlutterActivity} or {@link FlutterFragment} share
+     * the same {@link FlutterEngine}, to attach/re-attache a {@link FlutterActivity} or {@link
+     * FlutterFragment} to the shared {@link FlutterEngine}, we MUST manually invoke {@link
+     * ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)}.
+     *
+     * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
+     * FlutterActivity} or {@link FlutterFragment} can access it.
+     */
+    ExclusiveAppComponent<Activity> getExclusiveAppComponent();
 
     @Nullable
     SplashScreen provideSplashScreen();
