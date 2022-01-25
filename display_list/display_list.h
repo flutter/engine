@@ -192,7 +192,7 @@ class SaveLayerOptions {
   SaveLayerOptions with_children_can_render_opacity() const {
     SaveLayerOptions options(this);
     options.fChildrenCanRenderOpacity = true;
-    return *this;
+    return options;
   }
 
   bool can_distribute_opacity() const {

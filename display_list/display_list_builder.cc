@@ -238,7 +238,7 @@ void DisplayListBuilder::restore() {
     current_layer_ = &layer_stack_.back();
     Push<RestoreOp>(0, 1);
     if (layer_info.has_layer) {
-      if (!layer_info.cannot_inherit_opacity) {
+      if (layer_info.is_group_opacity_compatible()) {
         SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
             storage_.get() + layer_info.save_layer_offset);
         op->options = op->options  //
@@ -474,6 +474,8 @@ void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
   Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
   // DrawVertices applies its colors to the paint so we have no way
   // of controlling opacity using the current paint attributes.
+  // Although, examination of the |mode| might find some predictable
+  // cases.
   UpdateLayerOpacityCompatibility(false);
 }
 
