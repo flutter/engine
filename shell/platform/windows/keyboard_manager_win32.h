@@ -123,29 +123,27 @@ class KeyboardManagerWin32 {
   };
 
   struct PendingEvent {
-    uint32_t key;
+    uint16_t key;
     uint8_t scancode;
     uint32_t action;
     char32_t character;
     bool extended;
     bool was_down;
 
+    std::vector<Win32Message> session;
+
     // A value calculated out of critical event information that can be used
     // to identify redispatched events.
-    uint64_t hash;
+    uint64_t Hash() const {
+      return ComputeEventHash(*this);
+    }
   };
 
   using OnKeyCallback =
       std::function<void(std::unique_ptr<PendingEvent>, bool)>;
 
   // Returns true if it's a new event, or false if it's a redispatched event.
-  bool OnKey(int key,
-             int scancode,
-             int action,
-             char32_t character,
-             bool extended,
-             bool was_down,
-             OnKeyCallback callback);
+  bool OnKey(std::unique_ptr<PendingEvent> event, OnKeyCallback callback);
 
   void HandleOnKeyResult(std::unique_ptr<PendingEvent> event,
                          bool handled,

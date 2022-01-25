@@ -181,7 +181,7 @@ bool KeyboardManagerWin32::RemoveRedispatchedEvent(
     const PendingEvent& incoming) {
   for (auto iter = pending_redispatches_.begin();
        iter != pending_redispatches_.end(); ++iter) {
-    if ((*iter)->hash == incoming.hash) {
+    if ((*iter)->Hash() == incoming.Hash()) {
       pending_redispatches_.erase(iter);
       return true;
     }
@@ -189,41 +189,25 @@ bool KeyboardManagerWin32::RemoveRedispatchedEvent(
   return false;
 }
 
-bool KeyboardManagerWin32::OnKey(int key,
-                                 int scancode,
-                                 int action,
-                                 char32_t character,
-                                 bool extended,
-                                 bool was_down,
+bool KeyboardManagerWin32::OnKey(std::unique_ptr<PendingEvent> event,
                                  OnKeyCallback callback) {
-  std::unique_ptr<PendingEvent> incoming =
-      std::make_unique<PendingEvent>(PendingEvent{
-          .key = static_cast<uint32_t>(key),
-          .scancode = static_cast<uint8_t>(scancode),
-          .action = static_cast<uint32_t>(action),
-          .character = character,
-          .extended = extended,
-          .was_down = was_down,
-      });
-  incoming->hash = ComputeEventHash(*incoming);
-
-  if (RemoveRedispatchedEvent(*incoming)) {
+  if (RemoveRedispatchedEvent(*event)) {
     return false;
   }
 
-  if (IsKeyDownAltRight(action, key, extended)) {
+  if (IsKeyDownAltRight(event->action, event->key, event->extended)) {
     if (last_key_is_ctrl_left_down) {
       should_synthesize_ctrl_left_up = true;
     }
   }
-  if (IsKeyDownCtrlLeft(action, key)) {
+  if (IsKeyDownCtrlLeft(event->action, event->key)) {
     last_key_is_ctrl_left_down = true;
-    ctrl_left_scancode = scancode;
+    ctrl_left_scancode = event->scancode;
     should_synthesize_ctrl_left_up = false;
   } else {
     last_key_is_ctrl_left_down = false;
   }
-  if (IsKeyUpAltRight(action, key, extended)) {
+  if (IsKeyUpAltRight(event->action, event->key, event->extended)) {
     if (should_synthesize_ctrl_left_up) {
       should_synthesize_ctrl_left_up = false;
       PendingEvent ctrl_left_up{
@@ -236,8 +220,10 @@ bool KeyboardManagerWin32::OnKey(int key,
     }
   }
 
-  window_delegate_->OnKey(key, scancode, action, character, extended, was_down,
-                          [this, event = incoming.release(),
+  const PendingEvent clone = *event;
+  window_delegate_->OnKey(clone.key, clone.scancode, clone.action,
+                          clone.character, clone.extended, clone.was_down,
+                          [this, event = event.release(),
                            callback = std::move(callback)](bool handled) {
                             callback(std::unique_ptr<PendingEvent>(event),
                                      handled);
@@ -329,8 +315,8 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       if (current_session_.front().IsGeneralKeyDown()) {
         const Win32Message first_message = current_session_.front();
         current_session_.clear();
-        const unsigned int scancode = (lparam >> 16) & 0xff;
-        const int keycode = first_message.wparam;
+        const uint8_t scancode = (lparam >> 16) & 0xff;
+        const uint16_t key_code = first_message.wparam;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;
         const bool was_down = lparam & 0x40000000;
         // Certain key combinations yield control characters as WM_CHAR's
@@ -342,18 +328,25 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
           // rare cases the bit is *not* set (US INTL Shift-6 circumflex, see
           // https://github.com/flutter/flutter/issues/92654 .)
           character =
-              window_delegate_->Win32MapVkToChar(keycode) |
+              window_delegate_->Win32MapVkToChar(key_code) |
               kDeadKeyCharMask;
         } else {
           character = IsPrintable(code_point) ? code_point : 0;
         }
+        auto event = std::make_unique<PendingEvent>(PendingEvent{
+            .key = key_code,
+            .scancode = scancode,
+            .action = static_cast<uint32_t>(action == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN),
+            .character = character,
+            .extended = extended,
+            .was_down = was_down,
+            .session = std::move(current_session_),
+        });
         const bool is_unmet_event =
-            OnKey(keycode, scancode,
-                  action == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN, character,
-                  extended, was_down,
-                  [this, action, text](std::unique_ptr<PendingEvent> event,
-                                       bool handled) {
-                    HandleOnKeyResult(std::move(event), handled, action, text);
+            OnKey(std::move(event),
+                  [this, char_action = action, text](
+                      std::unique_ptr<PendingEvent> event, bool handled) {
+                    HandleOnKeyResult(std::move(event), handled, char_action, text);
                   });
         const bool is_syskey = action == WM_SYSCHAR;
         // For system characters, always pass them to the default WndProc so
@@ -411,11 +404,19 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       const uint8_t scancode = (lparam >> 16) & 0xff;
       const bool extended = ((lparam >> 24) & 0x01) == 0x01;
       // If the key is a modifier, get its side.
-      const uint16_t keyCode = ResolveKeyCode(wparam, extended, scancode);
+      const uint16_t key_code = ResolveKeyCode(wparam, extended, scancode);
       const bool was_down = lparam & 0x40000000;
-      current_session_.clear();
+      auto event = std::make_unique<PendingEvent>(PendingEvent{
+          .key = key_code,
+          .scancode = scancode,
+          .action = action,
+          .character = 0,
+          .extended = extended,
+          .was_down = was_down,
+          .session = std::move(current_session_),
+      });
       const bool is_unmet_event = OnKey(
-          keyCode, scancode, action, 0, extended, was_down,
+          std::move(event),
           [this](std::unique_ptr<PendingEvent> event, bool handled) {
             HandleOnKeyResult(std::move(event), handled, 0, std::u16string());
           });
