@@ -241,7 +241,7 @@ void DisplayListBuilder::restore() {
       if (layer_info.is_group_opacity_compatible()) {
         SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
             storage_.get() + layer_info.save_layer_offset);
-        op->options = op->options.with_has_single_opacity_compatible_child();
+        op->options = op->options.with_can_distribute_opacity();
       }
     } else {
       // For regular save() ops there was no protecting layer so we have to

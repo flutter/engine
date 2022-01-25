@@ -172,17 +172,11 @@ class SaveLayerOptions {
     return options;
   }
 
-  bool has_single_opacity_compatible_child() const {
-    return fHasSingleOpacityCompatibleChild;
-  }
-  SaveLayerOptions with_has_single_opacity_compatible_child() const {
+  bool can_distribute_opacity() const { return fCanDistributeOpacity; }
+  SaveLayerOptions with_can_distribute_opacity() const {
     SaveLayerOptions options(this);
-    options.fHasSingleOpacityCompatibleChild = true;
+    options.fCanDistributeOpacity = true;
     return options;
-  }
-
-  bool can_distribute_opacity() const {
-    return (fHasSingleOpacityCompatibleChild);
   }
 
   bool operator==(const SaveLayerOptions& other) const {
@@ -196,7 +190,7 @@ class SaveLayerOptions {
   union {
     struct {
       unsigned fRendersWithAttributes : 1;
-      unsigned fHasSingleOpacityCompatibleChild : 1;
+      unsigned fCanDistributeOpacity : 1;
     };
     uint32_t flags_;
   };

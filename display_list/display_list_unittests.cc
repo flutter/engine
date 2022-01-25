@@ -1643,8 +1643,8 @@ class SaveLayerOptionsExpector : public virtual Dispatcher,
 };
 
 TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes
-                                  .with_has_single_opacity_compatible_child();
+  SaveLayerOptions expected =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
@@ -1716,8 +1716,8 @@ TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
 }
 
 TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
-  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes
-                                  .with_has_single_opacity_compatible_child();
+  SaveLayerOptions expected =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
