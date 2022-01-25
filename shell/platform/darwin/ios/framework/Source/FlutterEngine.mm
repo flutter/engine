@@ -253,14 +253,14 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView {
   FML_DCHECK(_shell);
-  if (!_shell->IsSetup()) {
-    FML_LOG(ERROR) << "The supplied FlutterEngine has not been run with [engine run]";
-  }
   return _shell->GetPlatformView();
 }
 
 - (flutter::PlatformViewIOS*)iosPlatformView {
   FML_DCHECK(_shell);
+  if (!_shell->IsSetup()) {
+    FML_LOG(ERROR) << "The supplied FlutterEngine has not been run with [engine run]";
+  }
   return static_cast<flutter::PlatformViewIOS*>(_shell->GetPlatformView().get());
 }
 
