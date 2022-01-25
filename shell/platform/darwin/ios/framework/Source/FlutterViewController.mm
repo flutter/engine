@@ -518,15 +518,17 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     FML_DCHECK(RasterTaskRunner->RunsTasksOnCurrentThread());
     // Get callback on raster thread and jump back to platform thread.
     platformTaskRunner->PostTask([weakSelf]() {
-      fml::scoped_nsobject<FlutterViewController> flutterViewController(
-          [(FlutterViewController*)weakSelf.get() retain]);
-      if (flutterViewController) {
-        if (flutterViewController.get()->_splashScreenView) {
-          [flutterViewController removeSplashScreenView:^{
+      if (weakSelf) {
+        fml::scoped_nsobject<FlutterViewController> flutterViewController(
+            [(FlutterViewController*)weakSelf.get() retain]);
+        if (flutterViewController) {
+          if (flutterViewController.get()->_splashScreenView) {
+            [flutterViewController removeSplashScreenView:^{
+              [flutterViewController callViewRenderedCallback];
+            }];
+          } else {
             [flutterViewController callViewRenderedCallback];
-          }];
-        } else {
-          [flutterViewController callViewRenderedCallback];
+          }
         }
       }
     });
@@ -673,8 +675,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
         [weakSelf.get()->_engine.get() sendKeyEvent:event callback:callback userData:userData];
       };
-  [self.keyboardManager
-      addPrimaryResponder:[[FlutterEmbedderKeyResponder alloc] initWithSendEvent:sendEvent]];
+  [self.keyboardManager addPrimaryResponder:[[[FlutterEmbedderKeyResponder alloc]
+                                                initWithSendEvent:sendEvent] autorelease]];
   FlutterChannelKeyResponder* responder = [[[FlutterChannelKeyResponder alloc]
       initWithChannel:self.engine.keyEventChannel] autorelease];
   [self.keyboardManager addPrimaryResponder:responder];
@@ -1608,12 +1610,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get().binaryMessenger sendOnChannel:channel message:message binaryReply:callback];
 }
 
+- (NSObject<FlutterTaskQueue>*)makeBackgroundTaskQueue {
+  return [_engine.get().binaryMessenger makeBackgroundTaskQueue];
+}
+
 - (FlutterBinaryMessengerConnection)setMessageHandlerOnChannel:(NSString*)channel
                                           binaryMessageHandler:
                                               (FlutterBinaryMessageHandler)handler {
+  return [self setMessageHandlerOnChannel:channel binaryMessageHandler:handler taskQueue:nil];
+}
+
+- (FlutterBinaryMessengerConnection)
+    setMessageHandlerOnChannel:(NSString*)channel
+          binaryMessageHandler:(FlutterBinaryMessageHandler _Nullable)handler
+                     taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   NSAssert(channel, @"The channel must not be null");
   return [_engine.get().binaryMessenger setMessageHandlerOnChannel:channel
-                                              binaryMessageHandler:handler];
+                                              binaryMessageHandler:handler
+                                                         taskQueue:taskQueue];
 }
 
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {

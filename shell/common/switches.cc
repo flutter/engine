@@ -384,6 +384,10 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
                               &settings.temp_directory_path);
 
+  bool leak_vm = "true" == command_line.GetOptionValueWithDefault(
+                               FlagForSwitch(Switch::LeakVM), "true");
+  settings.leak_vm = leak_vm;
+
   if (settings.icu_initialization_required) {
     command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
                                 &settings.icu_data_path);
@@ -407,8 +411,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
 
-  settings.enable_skparagraph =
-      command_line.HasOption(FlagForSwitch(Switch::EnableSkParagraph));
+  std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
+      FlagForSwitch(Switch::EnableSkParagraph), "");
+  settings.enable_skparagraph = enable_skparagraph != "false";
 
   settings.prefetched_default_font_manager = command_line.HasOption(
       FlagForSwitch(Switch::PrefetchedDefaultFontManager));

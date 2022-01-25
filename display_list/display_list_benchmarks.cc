@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_benchmarks.h"
 #include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_flags.h"
 
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -11,28 +12,67 @@
 namespace flutter {
 namespace testing {
 
-class SoftwareCanvasProvider : public CanvasProvider {
- public:
-  virtual ~SoftwareCanvasProvider() = default;
-  void InitializeSurface(const size_t width, const size_t height) override {
-    surface_ = SkSurface::MakeRasterN32Premul(width, height);
-    surface_->getCanvas()->clear(SK_ColorTRANSPARENT);
+std::unique_ptr<CanvasProvider> CreateCanvasProvider(BackendType backend_type) {
+  switch (backend_type) {
+#ifdef ENABLE_SOFTWARE_BENCHMARKS
+    case kSoftware_Backend:
+      return std::make_unique<SoftwareCanvasProvider>();
+#endif
+#ifdef ENABLE_OPENGL_BENCHMARKS
+    case kOpenGL_Backend:
+      return std::make_unique<OpenGLCanvasProvider>();
+#endif
+#ifdef ENABLE_METAL_BENCHMARKS
+    case kMetal_Backend:
+      return std::make_unique<MetalCanvasProvider>();
+#endif
+    default:
+      return nullptr;
   }
 
-  sk_sp<SkSurface> GetSurface() override { return surface_; }
+  return nullptr;
+}
 
-  sk_sp<SkSurface> MakeOffscreenSurface(const size_t width,
-                                        const size_t height) override {
-    auto surface = SkSurface::MakeRasterN32Premul(width, height);
-    surface->getCanvas()->clear(SK_ColorTRANSPARENT);
-    return surface;
+SkPaint GetPaintForRun(unsigned attributes) {
+  SkPaint paint;
+
+  if (attributes & kStrokedStyle_Flag && attributes & kFilledStyle_Flag) {
+    // Not currently exposed by Flutter, but we can probably benchmark this in
+    // the future
+    paint.setStyle(SkPaint::kStrokeAndFill_Style);
+  } else if (attributes & kStrokedStyle_Flag) {
+    paint.setStyle(SkPaint::kStroke_Style);
+  } else if (attributes & kFilledStyle_Flag) {
+    paint.setStyle(SkPaint::kFill_Style);
   }
 
-  const std::string BackendName() override { return "Software"; }
+  if (attributes & kHairlineStroke_Flag) {
+    paint.setStrokeWidth(0.0f);
+  } else {
+    paint.setStrokeWidth(1.0f);
+  }
 
- private:
-  sk_sp<SkSurface> surface_;
-};
+  paint.setAntiAlias(attributes & kAntiAliasing_Flag);
+  return paint;
+}
+
+void AnnotateAttributes(unsigned attributes,
+                        benchmark::State& state,
+                        const DisplayListAttributeFlags flags) {
+  if (flags.always_stroked()) {
+    state.counters["HairlineStroke"] =
+        attributes & kHairlineStroke_Flag ? 1 : 0;
+  }
+  if (flags.applies_style()) {
+    state.counters["HairlineStroke"] =
+        attributes & kHairlineStroke_Flag ? 1 : 0;
+    state.counters["StrokedStyle"] = attributes & kStrokedStyle_Flag ? 1 : 0;
+    state.counters["FilledStyle"] = attributes & kFilledStyle_Flag ? 1 : 0;
+  }
+  if (flags.applies_anti_alias()) {
+    state.counters["AntiAliasing"] = attributes & kAntiAliasing_Flag ? 1 : 0;
+  }
+}
 
 // Constants chosen to produce benchmark results in the region of 1-50ms
 constexpr size_t kLinesToDraw = 10000;
@@ -51,8 +91,14 @@ constexpr size_t kFixedCanvasSize = 1024;
 //
 // The resulting image will be an hourglass shape.
 void BM_DrawLine(benchmark::State& state,
-                 std::unique_ptr<CanvasProvider> canvas_provider) {
+                 BackendType backend_type,
+                 unsigned attributes) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawLineFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawLineFlags);
+
   size_t length = state.range(0);
 
   canvas_provider->InitializeSurface(length, length);
@@ -81,8 +127,14 @@ void BM_DrawLine(benchmark::State& state,
 //
 // Half the drawn rects will not have an integral offset.
 void BM_DrawRect(benchmark::State& state,
-                 std::unique_ptr<CanvasProvider> canvas_provider) {
+                 BackendType backend_type,
+                 unsigned attributes) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawRectFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawRectFlags);
+
   size_t length = state.range(0);
   size_t canvas_size = length * 2;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -122,8 +174,14 @@ void BM_DrawRect(benchmark::State& state,
 //
 // Half the drawn ovals will not have an integral offset.
 void BM_DrawOval(benchmark::State& state,
-                 std::unique_ptr<CanvasProvider> canvas_provider) {
+                 BackendType backend_type,
+                 unsigned attributes) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawOvalFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawOvalFlags);
+
   size_t length = state.range(0);
   size_t canvas_size = length * 2;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -160,8 +218,14 @@ void BM_DrawOval(benchmark::State& state,
 //
 // Half the drawn circles will not have an integral center point.
 void BM_DrawCircle(benchmark::State& state,
-                   std::unique_ptr<CanvasProvider> canvas_provider) {
+                   BackendType backend_type,
+                   unsigned attributes) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawCircleFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawCircleFlags);
+
   size_t length = state.range(0);
   size_t canvas_size = length * 2;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -200,9 +264,15 @@ void BM_DrawCircle(benchmark::State& state,
 //
 // Half the drawn rounded rects will not have an integral offset.
 void BM_DrawRRect(benchmark::State& state,
-                  std::unique_ptr<CanvasProvider> canvas_provider,
+                  BackendType backend_type,
+                  unsigned attributes,
                   SkRRect::Type type) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawRRectFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawRRectFlags);
+
   size_t length = state.range(0);
   size_t canvas_size = length * 2;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -266,8 +336,15 @@ void BM_DrawRRect(benchmark::State& state,
 }
 
 void BM_DrawArc(benchmark::State& state,
-                std::unique_ptr<CanvasProvider> canvas_provider) {
+                BackendType backend_type,
+                unsigned attributes) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawArcNoCenterFlags);
+  AnnotateAttributes(attributes, state,
+                     DisplayListOpFlags::kDrawArcNoCenterFlags);
+
   size_t length = state.range(0);
   size_t canvas_size = length * 2;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -472,9 +549,15 @@ std::string VerbToString(SkPath::Verb type) {
 // cost of using drawPath as well as an idea of how the cost varies according
 // to the verb count.
 void BM_DrawPath(benchmark::State& state,
-                 std::unique_ptr<CanvasProvider> canvas_provider,
+                 BackendType backend_type,
+                 unsigned attributes,
                  SkPath::Verb type) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawPathFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawPathFlags);
+
   size_t length = kFixedCanvasSize;
   canvas_provider->InitializeSurface(length, length);
   auto canvas = canvas_provider->GetSurface()->getCanvas();
@@ -601,9 +684,15 @@ std::string VertexModeToString(SkVertices::VertexMode mode) {
 // The discs drawn will be centered on points along a circle with radius of 25%
 // of the canvas width/height, with each point being equally spaced out.
 void BM_DrawVertices(benchmark::State& state,
-                     std::unique_ptr<CanvasProvider> canvas_provider,
+                     BackendType backend_type,
+                     unsigned attributes,
                      SkVertices::VertexMode mode) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawVerticesFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawVerticesFlags);
+
   size_t length = kFixedCanvasSize;
   canvas_provider->InitializeSurface(length, length);
   auto canvas = canvas_provider->GetSurface()->getCanvas();
@@ -689,9 +778,36 @@ std::string PointModeToString(SkCanvas::PointMode mode) {
 // This benchmark will automatically calculate the Big-O complexity of
 // `DrawPoints` with N being the number of points being drawn.
 void BM_DrawPoints(benchmark::State& state,
-                   std::unique_ptr<CanvasProvider> canvas_provider,
+                   BackendType backend_type,
+                   unsigned attributes,
                    SkCanvas::PointMode mode) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  SkPaint paint;
+  switch (mode) {
+    case SkCanvas::kPoints_PointMode:
+      builder.setAttributesFromPaint(
+          GetPaintForRun(attributes),
+          DisplayListOpFlags::kDrawPointsAsPointsFlags);
+      AnnotateAttributes(attributes, state,
+                         DisplayListOpFlags::kDrawPointsAsPointsFlags);
+      break;
+    case SkCanvas::kLines_PointMode:
+      builder.setAttributesFromPaint(
+          GetPaintForRun(attributes),
+          DisplayListOpFlags::kDrawPointsAsLinesFlags);
+      AnnotateAttributes(attributes, state,
+                         DisplayListOpFlags::kDrawPointsAsLinesFlags);
+      break;
+    case SkCanvas::kPolygon_PointMode:
+      builder.setAttributesFromPaint(
+          GetPaintForRun(attributes),
+          DisplayListOpFlags::kDrawPointsAsPolygonFlags);
+      AnnotateAttributes(attributes, state,
+                         DisplayListOpFlags::kDrawPointsAsPolygonFlags);
+      break;
+  }
+
   size_t length = kFixedCanvasSize;
   canvas_provider->InitializeSurface(length, length);
   auto canvas = canvas_provider->GetSurface()->getCanvas();
@@ -729,10 +845,17 @@ sk_sp<SkImage> ImageFromBitmapWithNewID(const SkBitmap& bitmap) {
 // Draws `kImagesToDraw` bitmaps to a canvas, either with texture-backed
 // bitmaps or bitmaps that need to be uploaded to the GPU first.
 void BM_DrawImage(benchmark::State& state,
-                  std::unique_ptr<CanvasProvider> canvas_provider,
+                  BackendType backend_type,
+                  unsigned attributes,
                   const SkSamplingOptions& options,
                   bool upload_bitmap) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawImageWithPaintFlags);
+  AnnotateAttributes(attributes, state,
+                     DisplayListOpFlags::kDrawImageWithPaintFlags);
+
   size_t bitmap_size = state.range(0);
   size_t canvas_size = 2 * bitmap_size;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -799,11 +922,19 @@ std::string ConstraintToString(SkCanvas::SrcRectConstraint constraint) {
 //
 // The bitmaps are shrunk down to 75% of their size when rendered to the canvas.
 void BM_DrawImageRect(benchmark::State& state,
-                      std::unique_ptr<CanvasProvider> canvas_provider,
+                      BackendType backend_type,
+                      unsigned attributes,
                       const SkSamplingOptions& options,
                       SkCanvas::SrcRectConstraint constraint,
                       bool upload_bitmap) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(
+      GetPaintForRun(attributes),
+      DisplayListOpFlags::kDrawImageRectWithPaintFlags);
+  AnnotateAttributes(attributes, state,
+                     DisplayListOpFlags::kDrawImageRectWithPaintFlags);
+
   size_t bitmap_size = state.range(0);
   size_t canvas_size = 2 * bitmap_size;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -874,10 +1005,18 @@ std::string FilterModeToString(const SkFilterMode mode) {
 // The image is split into 9 sub-rects and stretched proportionally for final
 // rendering.
 void BM_DrawImageNine(benchmark::State& state,
-                      std::unique_ptr<CanvasProvider> canvas_provider,
+                      BackendType backend_type,
+                      unsigned attributes,
                       const SkFilterMode filter,
                       bool upload_bitmap) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(
+      GetPaintForRun(attributes),
+      DisplayListOpFlags::kDrawImageNineWithPaintFlags);
+  AnnotateAttributes(attributes, state,
+                     DisplayListOpFlags::kDrawImageNineWithPaintFlags);
+
   size_t bitmap_size = state.range(0);
   size_t canvas_size = 2 * bitmap_size;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -940,8 +1079,14 @@ void BM_DrawImageNine(benchmark::State& state,
 // This benchmark will automatically calculate the Big-O complexity of
 // `DrawTextBlob` with N being the number of glyphs being drawn.
 void BM_DrawTextBlob(benchmark::State& state,
-                     std::unique_ptr<CanvasProvider> canvas_provider) {
+                     BackendType backend_type,
+                     unsigned attributes) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawTextBlobFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawTextBlobFlags);
+
   size_t glyph_runs = state.range(0);
   size_t canvas_size = kFixedCanvasSize;
   canvas_provider->InitializeSurface(canvas_size, canvas_size);
@@ -1004,10 +1149,16 @@ void BM_DrawTextBlob(benchmark::State& state,
 // The benchmark can be run with either a transparent occluder or an opaque
 // occluder.
 void BM_DrawShadow(benchmark::State& state,
-                   std::unique_ptr<CanvasProvider> canvas_provider,
+                   BackendType backend_type,
+                   unsigned attributes,
                    bool transparent_occluder,
                    SkPath::Verb type) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
   DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kDrawShadowFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kDrawShadowFlags);
+
   size_t length = kFixedCanvasSize;
   canvas_provider->InitializeSurface(length, length);
   auto canvas = canvas_provider->GetSurface()->getCanvas();
@@ -1054,7 +1205,56 @@ void BM_DrawShadow(benchmark::State& state,
   canvas_provider->Snapshot(filename);
 }
 
-RUN_DISPLAYLIST_BENCHMARKS(Software)
+// Calls saveLayer N times from the root canvas layer, and optionally calls
+// saveLayer a further M times nested inside that top saveLayer call.
+//
+// The total number of saveLayer calls will be N * (M+1).
+//
+// In each saveLayer call, simply draw the colour red with no clip rect.
+void BM_SaveLayer(benchmark::State& state,
+                  BackendType backend_type,
+                  unsigned attributes,
+                  size_t save_depth) {
+  auto canvas_provider = CreateCanvasProvider(backend_type);
+  DisplayListBuilder builder;
+  builder.setAttributesFromPaint(GetPaintForRun(attributes),
+                                 DisplayListOpFlags::kSaveLayerFlags);
+  AnnotateAttributes(attributes, state, DisplayListOpFlags::kSaveLayerFlags);
+
+  size_t length = kFixedCanvasSize;
+  canvas_provider->InitializeSurface(length, length);
+  auto canvas = canvas_provider->GetSurface()->getCanvas();
+
+  size_t save_layer_calls = state.range(0);
+
+  // Ensure we draw two overlapping rects to avoid any peephole optimisations
+  SkRect rect1 = SkRect::MakeLTRB(0, 0, 0.75f * length, 0.75f * length);
+  SkRect rect2 =
+      SkRect::MakeLTRB(0.25f * length, 0.25f * length, length, length);
+
+  for (size_t i = 0; i < save_layer_calls; i++) {
+    for (size_t j = 0; j < save_depth; j++) {
+      builder.saveLayer(nullptr, false);
+      builder.drawRect(rect1);
+      builder.drawRect(rect2);
+    }
+    for (size_t j = 0; j < save_depth; j++) {
+      builder.restore();
+    }
+  }
+  auto display_list = builder.Build();
+
+  // We only want to time the actual rasterization.
+  for (auto _ : state) {
+    display_list->RenderTo(canvas);
+    canvas_provider->GetSurface()->flushAndSubmit(true);
+  }
+
+  auto filename = canvas_provider->BackendName() + "-SaveLayer-" +
+                  std::to_string(save_depth) + "-" +
+                  std::to_string(save_layer_calls) + ".png";
+  canvas_provider->Snapshot(filename);
+}
 
 }  // namespace testing
 }  // namespace flutter
