@@ -91,6 +91,73 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
   // clang-format on
 };
 
+class IgnoreDrawDispatchHelper : public virtual Dispatcher {
+ public:
+  void save() override {}
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options) override {}
+  void restore() override {}
+  void drawColor(SkColor color, SkBlendMode mode) override {}
+  void drawPaint() override {}
+  void drawLine(const SkPoint& p0, const SkPoint& p1) override {}
+  void drawRect(const SkRect& rect) override {}
+  void drawOval(const SkRect& bounds) override {}
+  void drawCircle(const SkPoint& center, SkScalar radius) override {}
+  void drawRRect(const SkRRect& rrect) override {}
+  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {}
+  void drawPath(const SkPath& path) override {}
+  void drawArc(const SkRect& oval_bounds,
+               SkScalar start_degrees,
+               SkScalar sweep_degrees,
+               bool use_center) override {}
+  void drawPoints(SkCanvas::PointMode mode,
+                  uint32_t count,
+                  const SkPoint points[]) override {}
+  void drawVertices(const sk_sp<SkVertices> vertices,
+                    SkBlendMode mode) override {}
+  void drawImage(const sk_sp<SkImage> image,
+                 const SkPoint point,
+                 const SkSamplingOptions& sampling,
+                 bool render_with_attributes) override {}
+  void drawImageRect(const sk_sp<SkImage> image,
+                     const SkRect& src,
+                     const SkRect& dst,
+                     const SkSamplingOptions& sampling,
+                     bool render_with_attributes,
+                     SkCanvas::SrcRectConstraint constraint) override {}
+  void drawImageNine(const sk_sp<SkImage> image,
+                     const SkIRect& center,
+                     const SkRect& dst,
+                     SkFilterMode filter,
+                     bool render_with_attributes) override {}
+  void drawImageLattice(const sk_sp<SkImage> image,
+                        const SkCanvas::Lattice& lattice,
+                        const SkRect& dst,
+                        SkFilterMode filter,
+                        bool render_with_attributes) override {}
+  void drawAtlas(const sk_sp<SkImage> atlas,
+                 const SkRSXform xform[],
+                 const SkRect tex[],
+                 const SkColor colors[],
+                 int count,
+                 SkBlendMode mode,
+                 const SkSamplingOptions& sampling,
+                 const SkRect* cull_rect,
+                 bool render_with_attributes) override {}
+  void drawPicture(const sk_sp<SkPicture> picture,
+                   const SkMatrix* matrix,
+                   bool render_with_attributes) override {}
+  void drawDisplayList(const sk_sp<DisplayList> display_list) override {}
+  void drawTextBlob(const sk_sp<SkTextBlob> blob,
+                    SkScalar x,
+                    SkScalar y) override {}
+  void drawShadow(const SkPath& path,
+                  const SkColor color,
+                  const SkScalar elevation,
+                  bool transparent_occluder,
+                  SkScalar dpr) override {}
+};
+
 // A utility class that will monitor the Dispatcher methods relating
 // to the rendering attributes and accumulate them into an SkPaint
 // which can be accessed at any time via paint().

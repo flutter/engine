@@ -5,6 +5,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -1617,6 +1618,143 @@ TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
   builder.restore();
   SkRect bounds = builder.Build()->bounds();
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
+}
+
+class SaveLayerOptionsExpector : public virtual Dispatcher,
+                                 public IgnoreAttributeDispatchHelper,
+                                 public IgnoreClipDispatchHelper,
+                                 public IgnoreTransformDispatchHelper,
+                                 public IgnoreDrawDispatchHelper {
+ public:
+  SaveLayerOptionsExpector(SaveLayerOptions expected) : expected_(expected) {}
+
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options) override {
+    save_layer_count_++;
+    EXPECT_EQ(options, expected_);
+  }
+
+  int save_layer_count() { return save_layer_count_; }
+
+ private:
+  SaveLayerOptions expected_;
+  int save_layer_count_ = 0;
+};
+
+TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes
+                                  .with_has_single_opacity_compatible_child();
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerTwoOverlappingOpsPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.drawRect({10, 10, 20, 20});
+  builder.drawRect({15, 15, 25, 25});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.setImageFilter(TestImageFilter1);
+  builder.saveLayer(nullptr, true);
+  builder.setImageFilter(nullptr);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.setColorFilter(TestColorFilter1);
+  builder.saveLayer(nullptr, true);
+  builder.setColorFilter(nullptr);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.saveLayer(nullptr, true);
+  builder.setBlendMode(SkBlendMode::kSrcOver);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes
+                                  .with_has_single_opacity_compatible_child();
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.setImageFilter(TestImageFilter1);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.setColorFilter(TestColorFilter1);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerSrcBlendOnChildPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
 }  // namespace testing

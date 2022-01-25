@@ -172,41 +172,31 @@ class SaveLayerOptions {
     return options;
   }
 
-  bool has_single_child() const { return fHasSingleChild; }
-  SaveLayerOptions with_has_single_child() const {
-    SaveLayerOptions options(this);
-    options.fHasSingleChild = true;
-    return options;
+  bool has_single_opacity_compatible_child() const {
+    return fHasSingleOpacityCompatibleChild;
   }
-
-  bool has_nonoverlapping_children() const {
-    return fHasNonoverlappingChildren;
-  }
-  SaveLayerOptions with_has_nonoverlapping_children() const {
+  SaveLayerOptions with_has_single_opacity_compatible_child() const {
     SaveLayerOptions options(this);
-    options.fHasNonoverlappingChildren = true;
-    return options;
-  }
-
-  bool children_can_render_opacity() const { return fChildrenCanRenderOpacity; }
-  SaveLayerOptions with_children_can_render_opacity() const {
-    SaveLayerOptions options(this);
-    options.fChildrenCanRenderOpacity = true;
+    options.fHasSingleOpacityCompatibleChild = true;
     return options;
   }
 
   bool can_distribute_opacity() const {
-    return ((fHasSingleChild || fHasNonoverlappingChildren) &&
-            fChildrenCanRenderOpacity);
+    return (fHasSingleOpacityCompatibleChild);
+  }
+
+  bool operator==(const SaveLayerOptions& other) const {
+    return flags_ == other.flags_;
+  }
+  bool operator!=(const SaveLayerOptions& other) const {
+    return flags_ != other.flags_;
   }
 
  private:
   union {
     struct {
       unsigned fRendersWithAttributes : 1;
-      unsigned fHasSingleChild : 1;
-      unsigned fHasNonoverlappingChildren : 1;
-      unsigned fChildrenCanRenderOpacity : 1;
+      unsigned fHasSingleOpacityCompatibleChild : 1;
     };
     uint32_t flags_;
   };
