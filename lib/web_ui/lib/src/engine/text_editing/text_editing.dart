@@ -470,7 +470,7 @@ class TextEditingDeltaState {
 
     if (lastTextEditingDeltaState.deltaText.isEmpty && lastTextEditingDeltaState.deltaEnd != -1) {
       // We are removing text.
-      // When text is deleted outside of the composing region or is cut using the native toolbar, 
+      // When text is deleted outside of the composing region or is cut using the native toolbar,
       // we calculate the length of the deleted text by comparing the new and old editing state lengths.
       // This value is then subtracted from the end position of the delta to capture the deleted range.
       final int deletedLength = lastTextEditingDeltaState.oldText.length - newEditingState.text!.length;
