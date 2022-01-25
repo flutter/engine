@@ -366,7 +366,7 @@ void BM_DrawDRRect(benchmark::State& state,
       radii[3] = SkVector::Make(5.0f, 5.0f);
       break;
     case SkRRect::Type::kNinePatch_Type:
-      radii[0] = SkVector::Make(5.0f, 2.0f);
+      radii[0] = SkVector::Make(5.0f, 7.0f);
       radii[1] = SkVector::Make(3.0f, 2.0f);
       radii[2] = SkVector::Make(3.0f, 4.0f);
       radii[3] = SkVector::Make(5.0f, 4.0f);
@@ -375,7 +375,7 @@ void BM_DrawDRRect(benchmark::State& state,
       radii[0] = SkVector::Make(5.0f, 4.0f);
       radii[1] = SkVector::Make(4.0f, 5.0f);
       radii[2] = SkVector::Make(3.0f, 6.0f);
-      radii[3] = SkVector::Make(2.0f, 7.0f);
+      radii[3] = SkVector::Make(8.0f, 7.0f);
       break;
     default:
       break;
