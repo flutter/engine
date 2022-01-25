@@ -83,6 +83,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                             const std::u16string& ellipsis,
                             const std::string& locale);
 
+  txt::ParagraphStyle style_;
+  std::shared_ptr<txt::FontCollection> font_collection_;
   std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
 };
 

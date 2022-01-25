@@ -38,6 +38,7 @@ class ParagraphBuilderTxt : public ParagraphBuilder {
   virtual void AddText(const std::u16string& text) override;
   virtual void AddPlaceholder(PlaceholderRun& span) override;
   virtual std::unique_ptr<Paragraph> Build() override;
+  virtual void Reset() override;
 
  private:
   std::vector<uint16_t> text_;

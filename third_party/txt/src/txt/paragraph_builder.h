@@ -79,6 +79,11 @@ class ParagraphBuilder {
   // to a SkCanvas.
   virtual std::unique_ptr<Paragraph> Build() = 0;
 
+  // Reverts to initial state, i.e. drops all styles, text, and placeholders
+  // that have previously been pushed but maintains the original paragraph
+  // style and font collection.
+  virtual void Reset() = 0;
+
  protected:
   ParagraphBuilder() = default;
 

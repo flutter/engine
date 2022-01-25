@@ -244,56 +244,55 @@ ParagraphBuilder::ParagraphBuilder(
     const std::u16string& ellipsis,
     const std::string& locale) {
   int32_t mask = encoded[0];
-  txt::ParagraphStyle style;
 
   if (mask & psTextAlignMask) {
-    style.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
+    style_.text_align = txt::TextAlign(encoded[psTextAlignIndex]);
   }
 
   if (mask & psTextDirectionMask) {
-    style.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
+    style_.text_direction = txt::TextDirection(encoded[psTextDirectionIndex]);
   }
 
   if (mask & psFontWeightMask) {
-    style.font_weight =
+    style_.font_weight =
         static_cast<txt::FontWeight>(encoded[psFontWeightIndex]);
   }
 
   if (mask & psFontStyleMask) {
-    style.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
+    style_.font_style = static_cast<txt::FontStyle>(encoded[psFontStyleIndex]);
   }
 
   if (mask & psFontFamilyMask) {
-    style.font_family = fontFamily;
+    style_.font_family = fontFamily;
   }
 
   if (mask & psFontSizeMask) {
-    style.font_size = fontSize;
+    style_.font_size = fontSize;
   }
 
   if (mask & psHeightMask) {
-    style.height = height;
-    style.has_height_override = true;
+    style_.height = height;
+    style_.has_height_override = true;
   }
 
   if (mask & psTextHeightBehaviorMask) {
-    style.text_height_behavior = encoded[psTextHeightBehaviorIndex];
+    style_.text_height_behavior = encoded[psTextHeightBehaviorIndex];
   }
 
   if (mask & psStrutStyleMask) {
-    decodeStrut(strutData, strutFontFamilies, style);
+    decodeStrut(strutData, strutFontFamilies, style_);
   }
 
   if (mask & psMaxLinesMask) {
-    style.max_lines = encoded[psMaxLinesIndex];
+    style_.max_lines = encoded[psMaxLinesIndex];
   }
 
   if (mask & psEllipsisMask) {
-    style.ellipsis = ellipsis;
+    style_.ellipsis = ellipsis;
   }
 
   if (mask & psLocaleMask) {
-    style.locale = locale;
+    style_.locale = locale;
   }
 
   FontCollection& font_collection = UIDartState::Current()
@@ -317,7 +316,8 @@ ParagraphBuilder::ParagraphBuilder(
   }
 #endif  // FLUTTER_ENABLE_SKSHAPER
 
-  m_paragraphBuilder = factory(style, font_collection.GetFontCollection());
+  font_collection_ = font_collection.GetFontCollection();
+  m_paragraphBuilder = factory(style_, font_collection_);
 }
 
 ParagraphBuilder::~ParagraphBuilder() = default;
@@ -526,6 +526,7 @@ Dart_Handle ParagraphBuilder::addPlaceholder(double width,
 
 void ParagraphBuilder::build(Dart_Handle paragraph_handle) {
   Paragraph::Create(paragraph_handle, m_paragraphBuilder->Build());
+  m_paragraphBuilder->Reset();
 }
 
 }  // namespace flutter

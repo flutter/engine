@@ -82,4 +82,15 @@ std::unique_ptr<Paragraph> ParagraphBuilderTxt::Build() {
   return paragraph;
 }
 
+void ParagraphBuilderTxt::Reset() {
+  StyledRuns clean_runs;
+  runs_.swap(clean_runs);
+  text_.clear();
+  inline_placeholders_.clear();
+  obj_replacement_char_indexes_.clear();
+  style_stack_.clear();
+
+  SetParagraphStyle(paragraph_style_);
+}
+
 }  // namespace txt

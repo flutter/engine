@@ -28,6 +28,58 @@ void main() {
     paragraphBuilder.pushStyle(TextStyle());
   });
 
+  test('ParagraphBuilder is reusable after build()', () {
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+    // Assert because the engine runs these tests with asserts disabled
+    assert(builder.debugClean);
+
+    builder.addText('foo');
+    assert(!builder.debugClean);
+
+    const ParagraphConstraints infiniteConstraints = ParagraphConstraints(width: double.infinity);
+    final Paragraph first = builder.build()..layout(infiniteConstraints);
+    assert(builder.debugClean);
+
+    builder.addText('a much longer line than the first one');
+    assert(!builder.debugClean);
+    final Paragraph second = builder.build()..layout(infiniteConstraints);
+
+    expect(first.longestLine < second.longestLine, true);
+  });
+
+  test('debugClean works', () {
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+
+    void checkClean(ParagraphBuilder builder, bool expected) {
+      if (assertsEnabled) {
+        expect(builder.debugClean, expected);
+      } else {
+        expect(builder.debugClean, false);
+      }
+    }
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
+    checkClean(builder, true);
+
+    builder.addText('asdf');
+    checkClean(builder, false);
+
+    builder.build();
+    checkClean(builder, true);
+
+    builder.addPlaceholder(10, 10, PlaceholderAlignment.bottom);
+    checkClean(builder, false);
+
+    builder.build();
+    checkClean(builder, true);
+
+    builder.pushStyle(TextStyle());
+    checkClean(builder, false);
+  });
+
   test('GetRectsForRange smoke test', () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
     builder.addText('Hello');

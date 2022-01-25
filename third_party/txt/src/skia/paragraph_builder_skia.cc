@@ -180,4 +180,10 @@ std::unique_ptr<Paragraph> ParagraphBuilderSkia::Build() {
   return std::unique_ptr<Paragraph>(new ParagraphSkia(builder_->Build()));
 }
 
+void ParagraphBuilderSkia::Reset() {
+  std::stack<txt::TextStyle> txt_style_stack;
+  txt_style_stack_.swap(txt_style_stack);
+  builder_->Reset();
+}
+
 }  // namespace txt

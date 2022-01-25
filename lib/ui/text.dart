@@ -2776,12 +2776,13 @@ class Paragraph extends NativeFieldWrapperClass1 {
 /// text to the object.
 ///
 /// Finally, call [build] to obtain the constructed [Paragraph] object. After
-/// this point, the builder is no longer usable.
+/// this point, the builder is reset to use its initial [ParagraphStyle] and
+/// may be used again to create new paragraph objects with the same paragraph
+/// style.
 ///
 /// After constructing a [Paragraph], call [Paragraph.layout] on it and then
 /// paint it with [Canvas.drawParagraph].
 class ParagraphBuilder extends NativeFieldWrapperClass1 {
-
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   @pragma('vm:entry-point')
@@ -2842,7 +2843,13 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// Applies the given style to the added text until [pop] is called.
   ///
   /// See [pop] for details.
+  ///
+  /// When asserts are enabled, this method makes [debugClean] return false.
   void pushStyle(TextStyle style) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     final List<String> fullFontFamilies = <String>[];
     fullFontFamilies.add(style._fontFamily);
     if (style._fontFamilyFallback != null)
@@ -2916,7 +2923,13 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// Adds the given text to the paragraph.
   ///
   /// The text will be styled according to the current stack of text styles.
+  ///
+  /// When asserts are enabled, this method makes [debugClean] return false.
   void addText(String text) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     final String? error = _addText(text);
     if (error != null)
       throw ArgumentError(error);
@@ -2970,11 +2983,17 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// The `scale` parameter will scale the `width` and `height` by the specified amount,
   /// and keep track of the scale. The scales of placeholders added can be accessed
   /// through [placeholderScales]. This is primarily used for accessibility scaling.
+  ///
+  /// When asserts are enabled, this method makes [debugClean] return false.
   void addPlaceholder(double width, double height, PlaceholderAlignment alignment, {
     double scale = 1.0,
     double? baselineOffset,
     TextBaseline? baseline,
   }) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     // Require a baseline to be specified if using a baseline-based alignment.
     assert(!(alignment == PlaceholderAlignment.aboveBaseline ||
             alignment == PlaceholderAlignment.belowBaseline ||
@@ -2991,14 +3010,41 @@ class ParagraphBuilder extends NativeFieldWrapperClass1 {
   /// Applies the given paragraph style and returns a [Paragraph] containing the
   /// added text and associated styling.
   ///
-  /// After calling this function, the paragraph builder object is invalid and
-  /// cannot be used further.
+  /// After calling this function, the paragraph builder object is reset to its
+  /// initial state and may be used again to construct additional paragraphs
+  /// with the same [ParagraphStyle].
+  ///
+  /// When asserts are enabled, this method makes [debugClean] return true.
   Paragraph build() {
     final Paragraph paragraph = Paragraph._();
     _build(paragraph);
+    assert(() {
+      _clean = true;
+      return true;
+    }());
     return paragraph;
   }
   void _build(Paragraph outParagraph) native 'ParagraphBuilder_build';
+
+  bool _clean = true;
+
+  /// Whether this builder is in its initial state, having only a
+  /// [ParagraphStyle] and no other styles, text, or placeholders applied.
+  ///
+  /// The builder is clean after initial construction and before [pushStyle],
+  /// [addText], or [addPlaceholder] is called. It is dirty as soon as one of
+  /// those methods are called, and reset to clean when [build] is called.
+  ///
+  /// This property is only available when asserts are enabled. It always
+  /// returns false if asserts are disabled.
+  bool get debugClean {
+    bool clean = false;
+    assert(() {
+      clean = _clean;
+      return true;
+    }());
+    return clean;
+  }
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.
