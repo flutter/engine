@@ -109,13 +109,9 @@ class KeyboardManagerWin32 {
     WPARAM const wparam;
     LPARAM const lparam;
 
-    bool IsHighSurrogate() const {
-      return IS_HIGH_SURROGATE(wparam);
-    }
+    bool IsHighSurrogate() const { return IS_HIGH_SURROGATE(wparam); }
 
-    bool IsLowSurrogate() const {
-      return IS_LOW_SURROGATE(wparam);
-    }
+    bool IsLowSurrogate() const { return IS_LOW_SURROGATE(wparam); }
 
     bool IsGeneralKeyDown() const {
       return action == WM_KEYDOWN || action == WM_SYSKEYDOWN;
@@ -134,9 +130,7 @@ class KeyboardManagerWin32 {
 
     // A value calculated out of critical event information that can be used
     // to identify redispatched events.
-    uint64_t Hash() const {
-      return ComputeEventHash(*this);
-    }
+    uint64_t Hash() const { return ComputeEventHash(*this); }
   };
 
   using OnKeyCallback =

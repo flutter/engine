@@ -278,8 +278,8 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
     case WM_SYSDEADCHAR:
     case WM_CHAR:
     case WM_SYSCHAR: {
-      const Win32Message message = Win32Message{
-          .action = action, .wparam = wparam, .lparam = lparam};
+      const Win32Message message =
+          Win32Message{.action = action, .wparam = wparam, .lparam = lparam};
       current_session_.push_back(message);
 
       std::u16string text;
@@ -328,26 +328,26 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
           // rare cases the bit is *not* set (US INTL Shift-6 circumflex, see
           // https://github.com/flutter/flutter/issues/92654 .)
           character =
-              window_delegate_->Win32MapVkToChar(key_code) |
-              kDeadKeyCharMask;
+              window_delegate_->Win32MapVkToChar(key_code) | kDeadKeyCharMask;
         } else {
           character = IsPrintable(code_point) ? code_point : 0;
         }
         auto event = std::make_unique<PendingEvent>(PendingEvent{
             .key = key_code,
             .scancode = scancode,
-            .action = static_cast<uint32_t>(action == WM_SYSCHAR ? WM_SYSKEYDOWN : WM_KEYDOWN),
+            .action = static_cast<uint32_t>(action == WM_SYSCHAR ? WM_SYSKEYDOWN
+                                                                 : WM_KEYDOWN),
             .character = character,
             .extended = extended,
             .was_down = was_down,
             .session = std::move(current_session_),
         });
-        const bool is_unmet_event =
-            OnKey(std::move(event),
-                  [this, char_action = action, text](
-                      std::unique_ptr<PendingEvent> event, bool handled) {
-                    HandleOnKeyResult(std::move(event), handled, char_action, text);
-                  });
+        const bool is_unmet_event = OnKey(
+            std::move(event),
+            [this, char_action = action, text](
+                std::unique_ptr<PendingEvent> event, bool handled) {
+              HandleOnKeyResult(std::move(event), handled, char_action, text);
+            });
         const bool is_syskey = action == WM_SYSCHAR;
         // For system characters, always pass them to the default WndProc so
         // that system keys like the ALT-TAB are processed correctly.
