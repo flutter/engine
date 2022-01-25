@@ -153,7 +153,6 @@ void TextInputPlugin::ComposeCommitHook() {
     std::string text = active_model_->GetText();
     TextEditingDelta delta =
         TextEditingDelta(text);
-    //printf("justin commit composing %s => %s, %llu - %llu\n", text_before_change.c_str(), text.c_str(), selection_before_change.base(), selection_before_change.extent());
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -172,7 +171,6 @@ void TextInputPlugin::ComposeEndHook() {
     std::string text = active_model_->GetText();
     TextEditingDelta delta =
         TextEditingDelta(text);
-    //printf("justin end composing %s => %s, %llu - %llu\n", text_before_change.c_str(), text.c_str(), selection_before_change.base(), selection_before_change.extent());
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -185,17 +183,15 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
     return;
   }
   std::string text_before_change = active_model_->GetText();
-  TextRange selection_before_change = active_model_->selection();
+  TextRange composing_before_change = active_model_->composing_range();
   active_model_->AddText(text);
-  cursor_pos += active_model_->composing_range().base();
+  cursor_pos += active_model_->composing_range().extent();
   active_model_->UpdateComposingText(text);
   active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
   std::string text_after_change = active_model_->GetText();
-  //printf("justin ComposeChangeHook %s => %s\n", text_before_change.c_str(), text_after_change.c_str());
   if (enable_delta_model) {
-    // TODO(justinmc): The range selection_before_change may result in an off-by-one composing range.
     TextEditingDelta delta =
-        TextEditingDelta(Utf8ToUtf16(text_before_change), selection_before_change, text);
+        TextEditingDelta(Utf8ToUtf16(text_before_change), composing_before_change, text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -437,8 +433,6 @@ void TextInputPlugin::SendStateUpdateWithDelta(const TextInputModel& model,
   deltas.PushBack(deltaJson, allocator);
   object.AddMember(kDeltasKey, deltas, allocator);
   args->PushBack(object, allocator);
-
-  printf("justin SendStateUpdateWithDelta %s => %s, selection: %llu - %llu, composing: %i - %i\n", delta->old_text().c_str(), delta->delta_text().c_str(), selection.base(), selection.extent(), composing_base, composing_extent);
 
   channel_->InvokeMethod(kUpdateEditingStateWithDeltasMethod, std::move(args));
 }
