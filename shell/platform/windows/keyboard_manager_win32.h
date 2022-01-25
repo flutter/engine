@@ -119,9 +119,9 @@ class KeyboardManagerWin32 {
   };
 
   struct PendingEvent {
-    uint16_t key;
+    WPARAM key;
     uint8_t scancode;
-    uint32_t action;
+    UINT action;
     char32_t character;
     bool extended;
     bool was_down;

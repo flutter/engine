@@ -335,8 +335,8 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
         auto event = std::make_unique<PendingEvent>(PendingEvent{
             .key = key_code,
             .scancode = scancode,
-            .action = static_cast<uint32_t>(action == WM_SYSCHAR ? WM_SYSKEYDOWN
-                                                                 : WM_KEYDOWN),
+            .action = static_cast<UINT>(action == WM_SYSCHAR ? WM_SYSKEYDOWN
+                                                             : WM_KEYDOWN),
             .character = character,
             .extended = extended,
             .was_down = was_down,
