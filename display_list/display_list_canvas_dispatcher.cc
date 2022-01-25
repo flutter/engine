@@ -45,7 +45,7 @@ void DisplayListCanvasDispatcher::saveLayer(const SkRect* bounds,
     // - no bounds is needed for clipping here
     // - the current attributes only have an alpha
     // - the children are compatible with individually rendering with
-    //   an inherited alpha
+    //   an inherited opacity
     // Therefore we can just use a save instead of a saveLayer and pass the
     // intended opacity to the children.
     canvas_->save();
