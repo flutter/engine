@@ -457,7 +457,6 @@ class TextEditingDeltaState {
   TextEditingDeltaState({
     this.oldText = '',
     this.deltaText = '',
-    this.inputType = '',
     this.deltaStart = -1,
     this.deltaEnd = -1,
     this.baseOffset = -1,
@@ -471,10 +470,15 @@ class TextEditingDeltaState {
 
     if (lastTextEditingDeltaState.deltaText.isEmpty && lastTextEditingDeltaState.deltaEnd != -1) {
       // We are removing text.
+      // When text is deleted outside of the composing region or is cut using the native toolbar, 
+      // we calculate the length of the deleted text by comparing the new and old editing state lengths.
+      // This value is then subtracted from the end position of the delta to capture the deleted range.
       final int deletedLength = lastTextEditingDeltaState.oldText.length - newEditingState.text!.length;
       lastTextEditingDeltaState.deltaStart = lastTextEditingDeltaState.deltaEnd - deletedLength;
     } else if (lastTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed) {
       // We are replacing text at a selection.
+      // When a selection of text is replaced by a copy/paste operation we set the starting range
+      // of the delta to be the beginning of the selection of the previous editing state.
       lastTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
     }
 
@@ -547,7 +551,6 @@ class TextEditingDeltaState {
 
   String oldText;
   String deltaText;
-  String inputType;
   int deltaStart;
   int deltaEnd;
   int baseOffset;
@@ -1190,15 +1193,13 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
     if (inputType != null) {
-      editingDelta.inputType = inputType;
-
       if (inputType.contains('delete')) {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDelta.deltaText = '';
         editingDelta.deltaEnd = lastEditingState!.extentOffset!;
       } else if (inputType == 'insertLineBreak'){
-        // event.data is null, so we manually set deltaText as a line break by setting it to '\n'.
+        // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDelta.deltaText = '\n';
         editingDelta.deltaStart = lastEditingState!.extentOffset!;
         editingDelta.deltaEnd = lastEditingState!.extentOffset!;
