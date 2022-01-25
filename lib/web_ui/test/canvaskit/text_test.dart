@@ -53,6 +53,22 @@ void testMain() {
         expect(paragraph, isNotNull);
       }
     });
+
+    test('paragraph builder can be reused', () {
+      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: 16));
+      assert(builder.debugClean);
+      builder.addText('test');
+      assert(!builder.debugClean);
+      final ui.Paragraph paragraph = builder.build()..layout(const ui.ParagraphConstraints(width: double.infinity));
+      expect(paragraph, isNotNull);
+
+      assert(builder.debugClean);
+      builder.addText('tessssssstttttt');
+      assert(!builder.debugClean);
+      final ui.Paragraph paragraph2 = builder.build()..layout(const ui.ParagraphConstraints(width: double.infinity));
+      expect(paragraph, isNotNull);
+      expect(paragraph.longestLine < paragraph2.longestLine, true);
+    });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

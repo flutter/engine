@@ -672,6 +672,10 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     double? baselineOffset,
     ui.TextBaseline? baseline,
   }) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     // TODO(mdebbar): for measurement of placeholders, look at:
     // - https://github.com/flutter/engine/blob/c0f7e8acf9318d264ad6a235facd097de597ffcc/third_party/txt/src/txt/paragraph_txt.cc#L325-L350
 
@@ -694,6 +698,10 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pushStyle(ui.TextStyle style) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     _styleStack.add(_currentStyleNode.createChild(style as EngineTextStyle));
   }
 
@@ -708,6 +716,10 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     final EngineTextStyle style = _currentStyleNode.resolveStyle();
     final int start = _plainTextBuffer.length;
     _plainTextBuffer.write(text);
@@ -732,12 +744,31 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   CanvasParagraph build() {
-    return CanvasParagraph(
-      _spans,
+    final CanvasParagraph paragraph =  CanvasParagraph(
+      _spans.toList(),
       paragraphStyle: _paragraphStyle,
       plainText: _plainTextBuffer.toString(),
       placeholderCount: _placeholderCount,
       drawOnCanvas: _drawOnCanvas,
     );
+    _spans.clear();
+    _plainTextBuffer.clear();
+    _styleStack.clear();
+    assert(() {
+      _clean = true;
+      return true;
+    }());
+    return paragraph;
+  }
+
+  bool _clean = true;
+  @override
+  bool get debugClean {
+    bool clean = false;
+    assert(() {
+      clean = _clean;
+      return true;
+    }());
+    return clean;
   }
 }

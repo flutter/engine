@@ -829,7 +829,7 @@ class CkLineMetrics implements ui.LineMetrics {
 }
 
 class CkParagraphBuilder implements ui.ParagraphBuilder {
-  final SkParagraphBuilder _paragraphBuilder;
+  late SkParagraphBuilder _paragraphBuilder;
   final CkParagraphStyle _style;
   final List<_ParagraphCommand> _commands;
   int _placeholderCount;
@@ -841,11 +841,19 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
         _style = style as CkParagraphStyle,
         _placeholderCount = 0,
         _placeholderScales = <double>[],
-        _styleStack = <CkTextStyle>[],
-        _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
-          style.skParagraphStyle,
-          skiaFontCollection.fontProvider,
-        ) {
+        _styleStack = <CkTextStyle>[] {
+    _init();
+  }
+
+  void _init() {
+    assert(() {
+      _clean = true;
+      return true;
+    }());
+    _paragraphBuilder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
+      _style.skParagraphStyle,
+      skiaFontCollection.fontProvider,
+    );
     _styleStack.add(_style.getTextStyle());
   }
 
@@ -858,6 +866,10 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     double? baselineOffset,
     ui.TextBaseline? baseline,
   }) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     // Require a baseline to be specified if using a baseline-based alignment.
     assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
             alignment == ui.PlaceholderAlignment.belowBaseline ||
@@ -905,6 +917,10 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     final List<String> fontFamilies = <String>[];
     final CkTextStyle style = _peekStyle();
     if (style.fontFamily != null) {
@@ -921,12 +937,21 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   @override
   CkParagraph build() {
     final SkParagraph builtParagraph = _buildSkParagraph();
-    return CkParagraph(builtParagraph, _style, _commands);
+    final CkParagraph paragraph = CkParagraph(
+      builtParagraph,
+      _style,
+      _commands.toList(),
+    );
+    _init();
+    return paragraph;
   }
 
   /// Builds the CkParagraph with the builder and deletes the builder.
   SkParagraph _buildSkParagraph() {
     final SkParagraph result = _paragraphBuilder.build();
+    // TODO(dnfield): call reset instead of delete, see
+    // https://github.com/flutter/flutter/issues/97182 and
+    // https://skia-review.googlesource.com/c/skia/+/499877
     _paragraphBuilder.delete();
     return result;
   }
@@ -972,6 +997,10 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void pushStyle(ui.TextStyle style) {
+    assert(() {
+      _clean = false;
+      return true;
+    }());
     final CkTextStyle baseStyle = _peekStyle();
     final CkTextStyle ckStyle = style as CkTextStyle;
     final CkTextStyle skStyle = baseStyle.mergeWith(ckStyle);
@@ -993,6 +1022,17 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     } else {
       _paragraphBuilder.pushStyle(skStyle.skTextStyle);
     }
+  }
+
+  bool _clean = true;
+  @override
+  bool get debugClean {
+    bool clean = false;
+    assert(() {
+      _clean = clean;
+      return true;
+    }());
+    return clean;
   }
 }
 

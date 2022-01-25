@@ -20,6 +20,7 @@ void testMain() {
   group('EngineCanvas', () {
     late MockEngineCanvas mockCanvas;
     late ui.Paragraph paragraph;
+    late ui.Paragraph paragraph2;
 
     void testCanvas(
       String description,
@@ -75,6 +76,40 @@ void testMain() {
       expect(mockCanvas.methodCallLog, hasLength(2));
       expect(mockCanvas.methodCallLog[0].methodName, 'clear');
       expect(mockCanvas.methodCallLog[1].methodName, 'endOfPaint');
+    });
+
+    testCanvas('can reuse a paragraph builder',
+        (EngineCanvas canvas) {
+      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 100, 100);
+      final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
+      final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+      builder.addText('sample');
+      paragraph = builder.build();
+
+      builder.addText('sample number 2');
+      paragraph2 = builder.build();
+
+      paragraph.layout(const ui.ParagraphConstraints(width: 100));
+      paragraph2.layout(const ui.ParagraphConstraints(width: double.infinity));
+      recordingCanvas.drawParagraph(paragraph, const ui.Offset(10, 10));
+      recordingCanvas.drawParagraph(paragraph2, const ui.Offset(25, 10));
+      recordingCanvas.endRecording();
+      canvas.clear();
+      recordingCanvas.apply(canvas, screenRect);
+    }, whenDone: () {
+      expect(mockCanvas.methodCallLog, hasLength(3));
+
+      MockCanvasCall call = mockCanvas.methodCallLog[0];
+      expect(call.methodName, 'clear');
+
+      call = mockCanvas.methodCallLog[1];
+      expect(call.methodName, 'drawParagraph');
+      expect(call.arguments['paragraph'], paragraph);
+      expect(call.arguments['offset'], const ui.Offset(10, 10));
+      call = mockCanvas.methodCallLog[2];
+      expect(call.methodName, 'drawParagraph');
+      expect(call.arguments['paragraph'], paragraph2);
+      expect(call.arguments['offset'], const ui.Offset(25, 10));
     });
   });
 }

@@ -1618,6 +1618,9 @@ class SkParagraphBuilder {
   );
   external SkParagraph build();
   external void delete();
+  // TODO(dnfield): Expose reset when it rolls in, see
+  // https://skia-review.googlesource.com/c/skia/+/499877 and
+  // https://github.com/flutter/flutter/issues/97182
 }
 
 @JS()

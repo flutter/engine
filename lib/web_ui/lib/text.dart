@@ -723,6 +723,8 @@ abstract class ParagraphBuilder {
     double? baselineOffset,
     TextBaseline? baseline,
   });
+
+  bool get debugClean;
 }
 
 Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
