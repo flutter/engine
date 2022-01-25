@@ -4,9 +4,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import android.annotation.TargetApi;
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.plugin.common.MethodCall;
-import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.BasicMessageChannel;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -22,12 +22,12 @@ import org.robolectric.annotation.Config;
 public class AccessibilityChannelTest {
   @Test
   public void repliesWhenNoAccessibilityHandler() throws JSONException {
-    AccessibilityChannel accessibilityChannel = new AccessibilityChannel(mock(DartExecutor.class));
+    AccessibilityChannel accessibilityChannel =
+        new AccessibilityChannel(mock(DartExecutor.class), mock(FlutterJNI.class));
     JSONObject arguments = new JSONObject();
-    arguments.put("message", "my message");
-    MethodCall call = new MethodCall("announce", arguments);
-    MethodChannel.Result result = mock(MethodChannel.Result.class);
-    accessibilityChannel.parsingMethodHandler.onMethodCall(call, result);
-    verify(result).success(null);
+    arguments.put("type", "announce");
+    BasicMessageChannel.Reply reply = mock(BasicMessageChannel.Reply.class);
+    accessibilityChannel.parsingMessageHandler.onMessage(arguments, reply);
+    verify(reply).reply(null);
   }
 }
