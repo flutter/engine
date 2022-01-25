@@ -99,6 +99,10 @@ import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 
   @Override
   protected void onRestoreInstanceState(Parcelable state) {
+    if (!(state instanceof SavedState)) {
+      super.onRestoreInstanceState(state);
+      return;
+    }
     SavedState savedState = (SavedState) state;
     super.onRestoreInstanceState(savedState.getSuperState());
     previousCompletedSplashIsolate = savedState.previousCompletedSplashIsolate;
