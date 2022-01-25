@@ -253,6 +253,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView {
   FML_DCHECK(_shell);
+  if (!_shell.IsSetup()) {
+    FML_LOG(ERROR) << "The supplied FlutterEngine " << [[engine description] UTF8String]
+                   << " has not been run with [engine run]";
+  }
   return _shell->GetPlatformView();
 }
 
