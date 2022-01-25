@@ -1029,7 +1029,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   bool get debugClean {
     bool clean = false;
     assert(() {
-      _clean = clean;
+      clean = _clean;
       return true;
     }());
     return clean;
