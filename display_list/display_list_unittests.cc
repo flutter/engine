@@ -1626,7 +1626,8 @@ class SaveLayerOptionsExpector : public virtual Dispatcher,
                                  public IgnoreTransformDispatchHelper,
                                  public IgnoreDrawDispatchHelper {
  public:
-  SaveLayerOptionsExpector(SaveLayerOptions expected) : expected_(expected) {}
+  explicit SaveLayerOptionsExpector(SaveLayerOptions expected)
+      : expected_(expected) {}
 
   void saveLayer(const SkRect* bounds,
                  const SaveLayerOptions options) override {
