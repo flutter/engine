@@ -31,6 +31,7 @@ public class AccessibilityChannel {
           // If there is no handler to respond to this message then we don't need to
           // parse it. Return.
           if (handler == null) {
+            reply.reply(null);
             return;
           }
 
