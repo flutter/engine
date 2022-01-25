@@ -61,6 +61,9 @@ enum PointerDeviceKind {
   /// A pointer device with a stylus that has been inverted.
   invertedStylus,
 
+  /// A touch-based pointer device with an indirect surface.
+  trackpad,
+
   /// An unknown pointer device.
   unknown
 }

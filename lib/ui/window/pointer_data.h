@@ -53,6 +53,7 @@ struct alignas(8) PointerData {
     kMouse,
     kStylus,
     kInvertedStylus,
+    kTrackpad,
   };
 
   // Must match the PointerSignalKind enum in pointer.dart.

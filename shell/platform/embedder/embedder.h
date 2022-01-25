@@ -730,6 +730,7 @@ typedef enum {
   kFlutterPointerDeviceKindMouse = 1,
   kFlutterPointerDeviceKindTouch,
   kFlutterPointerDeviceKindStylus,
+  kFlutterPointerDeviceKindTrackpad,
 } FlutterPointerDeviceKind;
 
 /// Flags for the `buttons` field of `FlutterPointerEvent` when `device_kind`
