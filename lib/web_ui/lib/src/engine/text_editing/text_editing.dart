@@ -453,6 +453,9 @@ String _replace(String originalText, String replacementText, ui.TextRange replac
   return newText;
 }
 
+/// The change between the last editing state and the current editing state
+/// of a text field. This is packaged into a JSON and sent to the framework
+/// to be processed into a concrete [TextEditingDelta].
 class TextEditingDeltaState {
   TextEditingDeltaState({
     this.oldText = '',
