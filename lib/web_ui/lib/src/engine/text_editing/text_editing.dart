@@ -550,6 +550,10 @@ class TextEditingDeltaState {
       }
     }
 
+    // Update selection of the delta using information from the new editing state.
+    newTextEditingDeltaState.baseOffset = newEditingState.baseOffset!;
+    newTextEditingDeltaState.extentOffset = newEditingState.extentOffset!;
+
     return newTextEditingDeltaState;
   }
 
@@ -2047,8 +2051,6 @@ class HybridTextEditing {
       configuration!,
       onChange: (EditingState? editingState, TextEditingDeltaState? editingDeltaState) {
         if (configuration!.enableDeltaModel) {
-          editingDeltaState?.baseOffset = editingState!.baseOffset!;
-          editingDeltaState?.extentOffset = editingState!.extentOffset!;
           channel.updateEditingStateWithDelta(_clientId, editingDeltaState);
         } else {
           channel.updateEditingState(_clientId, editingState);
