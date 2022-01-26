@@ -15,11 +15,14 @@ import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.TextureView;
+import android.graphics.Color;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import android.view.MotionEvent;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.android.FlutterImageView;
@@ -37,6 +40,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.SurfaceTexture;
+import android.view.Surface;
+import android.view.TextureView.SurfaceTextureListener;
+import android.graphics.HardwareRenderer;
+import android.graphics.RenderNode;
 
 /**
  * Manages platform views.
@@ -207,43 +218,116 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           int physicalHeight = toPhysicalPixels(request.logicalHeight);
           validateVirtualDisplayDimensions(physicalWidth, physicalHeight);
 
+
+          // final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
+
+
+
+          // final HardwareRenderer hr = new HardwareRenderer();
+          // hr.setSurface(surface);
+
+          // RenderNode rn = new RenderNode("myRenderNode");
+          // rn.setPosition(0, 0, physicalWidth, physicalHeight);
+          // RecordingCanvas canvas = rn.beginRecording();
+          // hr.setContentRoot(content);
+
+          
+
+          // TextureView textureView = new TextureView(context);
+          // textureView.setSurfaceTexture(surfaceTexture);
+
           TextureRegistry.SurfaceTextureEntry textureEntry = textureRegistry.createSurfaceTexture();
-          VirtualDisplayController vdController =
-              VirtualDisplayController.create(
-                  context,
-                  accessibilityEventsDelegate,
-                  viewFactory,
-                  textureEntry,
-                  physicalWidth,
-                  physicalHeight,
-                  request.viewId,
-                  createParams,
-                  (view, hasFocus) -> {
-                    if (hasFocus) {
-                      platformViewsChannel.invokeViewFocused(request.viewId);
+          textureEntry.surfaceTexture().setDefaultBufferSize(physicalWidth, physicalHeight);
+
+
+
+          final PlatformView platformView = viewFactory.create(context, request.viewId, createParams);
+          final FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
+
+
+ 
+            Surface surface = new Surface(textureEntry.surfaceTexture());
+
+              FrameLayout parent = new FrameLayout(context) {
+                @Override
+                public void draw(Canvas canvas) {
+                  if (textureEntry.surfaceTexture().isReleased()) {
+                    super.draw(canvas);
+                    return;
+                  }
+                  System.out.println("draw");
+
+                  Canvas c = surface.lockHardwareCanvas();
+                  if (c != null) {
+                    try {
+                      c.drawColor(Color.BLACK);
+                      super.draw(c);
+                    } finally {
+                      surface.unlockCanvasAndPost(c);
                     }
-                  });
+                  }
+                }
 
-          if (vdController == null) {
-            throw new IllegalStateException(
-                "Failed creating virtual display for a "
-                    + request.viewType
-                    + " with id: "
-                    + request.viewId);
-          }
+                @Override
+                public void onDescendantInvalidated(@NonNull View child, @NonNull View target) {
+                  //not called per every frame. e.g. playing video on youtube.com doesn't result in calls.
+                  //  super.onDescendantInvalidated(child, target);
+                  System.out.println("onDescendantInvalidated");
+                  invalidate();
+                }
+              };
+              
+              parent.setLayoutParams(layoutParams);
+              parent.setWillNotDraw(false);
+              parent.addView(platformView.getView());
+              parent.bringToFront();
+              flutterView.addView(parent);
+              
+              
+              System.out.println("isHardwareAccelerated=" + parent.isHardwareAccelerated());
 
-          // If our FlutterEngine is already attached to a Flutter UI, provide that Android
-          // View to this new platform view.
-          if (flutterView != null) {
-            vdController.onFlutterViewAttached(flutterView);
-          }
 
-          vdControllers.put(request.viewId, vdController);
-          View platformView = vdController.getView();
-          platformView.setLayoutDirection(request.direction);
-          contextToPlatformView.put(platformView.getContext(), platformView);
+          
+   
+         
 
-          // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
+         
+          // VirtualDisplayController vdController =
+          //     VirtualDisplayController.create(
+          //         context,
+          //         accessibilityEventsDelegate,
+          //         viewFactory,
+          //         textureEntry,
+          //         physicalWidth,
+          //         physicalHeight,
+          //         request.viewId,
+          //         createParams,
+          //         (view, hasFocus) -> {
+          //           if (hasFocus) {
+          //             platformViewsChannel.invokeViewFocused(request.viewId);
+          //           }
+          //         });
+
+          // if (vdController == null) {
+          //   throw new IllegalStateException(
+          //       "Failed creating virtual display for a "
+          //           + request.viewType
+          //           + " with id: "
+          //           + request.viewId);
+          // }
+
+          // // If our FlutterEngine is already attached to a Flutter UI, provide that Android
+          // // View to this new platform view.
+          // if (flutterView != null) {
+          //   vdController.onFlutterViewAttached(flutterView);
+          // }
+
+          // vdControllers.put(request.viewId, vdController);
+          // View platformView = vdController.getView();
+          // platformView.setLayoutDirection(request.direction);
+          // contextToPlatformView.put(platformView.getContext(), platformView);
+
+          // // TODO(amirh): copy accessibility nodes to the FlutterView's accessibility tree.
 
           return textureEntry.id();
         }
@@ -311,7 +395,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               view.dispatchTouchEvent(event);
             }
           } else {
-            throw new IllegalStateException("Sending touch to an unknown view with id: " + viewId);
+            // throw new IllegalStateException("Sending touch to an unknown view with id: " + viewId);
           }
         }
 

@@ -100,7 +100,7 @@ public class FlutterRenderer implements TextureRegistry {
   public SurfaceTextureEntry createSurfaceTexture() {
     Log.v(TAG, "Creating a SurfaceTexture.");
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
-    return registerSurfaceTexture(surfaceTexture);
+    return registerSurfaceTexture(surfaceTexture, null);
   }
 
   /**
@@ -108,10 +108,10 @@ public class FlutterRenderer implements TextureRegistry {
    * available to Flutter code.
    */
   @Override
-  public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
+  public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
-        new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
+        new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture, bitmap);
     Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), entry.textureWrapper());
     return entry;
@@ -121,10 +121,12 @@ public class FlutterRenderer implements TextureRegistry {
     private final long id;
     @NonNull private final SurfaceTextureWrapper textureWrapper;
     private boolean released;
+    private Bitmap bitmap;
 
-    SurfaceTextureRegistryEntry(long id, @NonNull SurfaceTexture surfaceTexture) {
+    SurfaceTextureRegistryEntry(long id, @NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
       this.id = id;
       this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture);
+      this.bitmap = bitmap;
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // The callback relies on being executed on the UI thread (unsynchronised read of
@@ -165,6 +167,12 @@ public class FlutterRenderer implements TextureRegistry {
     @NonNull
     public SurfaceTexture surfaceTexture() {
       return textureWrapper.surfaceTexture();
+    }
+
+    @Override
+    @NonNull
+    public Bitmap bitmap() {
+      return bitmap;
     }
 
     @Override

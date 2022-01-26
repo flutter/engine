@@ -4,6 +4,7 @@
 
 package io.flutter.view;
 
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import androidx.annotation.NonNull;
 
@@ -26,12 +27,14 @@ public interface TextureRegistry {
    *
    * @return A SurfaceTextureEntry.
    */
-  SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture);
+  SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap);
 
   /** A registry entry for a managed SurfaceTexture. */
   interface SurfaceTextureEntry {
     /** @return The managed SurfaceTexture. */
     SurfaceTexture surfaceTexture();
+
+    Bitmap bitmap();
 
     /** @return The identity of this SurfaceTexture. */
     long id();

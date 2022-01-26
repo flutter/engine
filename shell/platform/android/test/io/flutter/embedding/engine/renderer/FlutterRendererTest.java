@@ -168,7 +168,7 @@ public class FlutterRendererTest {
     // Execute the behavior under test.
     FlutterRenderer.SurfaceTextureRegistryEntry entry =
         (FlutterRenderer.SurfaceTextureRegistryEntry)
-            flutterRenderer.registerSurfaceTexture(surfaceTexture);
+            flutterRenderer.registerSurfaceTexture(surfaceTexture, null);
 
     flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
 

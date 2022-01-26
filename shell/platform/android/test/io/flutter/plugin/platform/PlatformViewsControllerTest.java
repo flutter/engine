@@ -10,6 +10,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.SurfaceTexture;
+import android.graphics.Bitmap;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -875,11 +876,11 @@ public class PlatformViewsControllerTest {
 
           @Override
           public SurfaceTextureEntry createSurfaceTexture() {
-            return registerSurfaceTexture(mock(SurfaceTexture.class));
+            return registerSurfaceTexture(mock(SurfaceTexture.class), mock(Bitmap.class));
           }
 
           @Override
-          public SurfaceTextureEntry registerSurfaceTexture(SurfaceTexture surfaceTexture) {
+          public SurfaceTextureEntry registerSurfaceTexture(SurfaceTexture surfaceTexture, Bitmap bitmap) {
             return new SurfaceTextureEntry() {
               @Override
               public SurfaceTexture surfaceTexture() {
