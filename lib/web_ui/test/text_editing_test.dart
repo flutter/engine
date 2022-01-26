@@ -2249,8 +2249,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, 'd');
       expect(textEditingDeltaState.deltaStart, 4);
       expect(textEditingDeltaState.deltaEnd, 4);
-      expect(textEditingDeltaState.baseOffset, -1);
-      expect(textEditingDeltaState.extentOffset, -1);
+      expect(textEditingDeltaState.baseOffset, 5);
+      expect(textEditingDeltaState.extentOffset, 5);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2266,8 +2266,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, '');
       expect(textEditingDeltaState.deltaStart, 4);
       expect(textEditingDeltaState.deltaEnd, 5);
-      expect(textEditingDeltaState.baseOffset, -1);
-      expect(textEditingDeltaState.extentOffset, -1);
+      expect(textEditingDeltaState.baseOffset, 4);
+      expect(textEditingDeltaState.extentOffset, 4);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2283,8 +2283,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, '你好吗');
       expect(textEditingDeltaState.deltaStart, 0);
       expect(textEditingDeltaState.deltaEnd, 9);
-      expect(textEditingDeltaState.baseOffset, -1);
-      expect(textEditingDeltaState.extentOffset, -1);
+      expect(textEditingDeltaState.baseOffset, 3);
+      expect(textEditingDeltaState.extentOffset, 3);
       expect(textEditingDeltaState.composingOffset, 0);
       expect(textEditingDeltaState.composingExtent, 9);
     });
@@ -2300,8 +2300,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, '. ');
       expect(textEditingDeltaState.deltaStart, 5);
       expect(textEditingDeltaState.deltaEnd, 6);
-      expect(textEditingDeltaState.baseOffset, -1);
-      expect(textEditingDeltaState.extentOffset, -1);
+      expect(textEditingDeltaState.baseOffset, 7);
+      expect(textEditingDeltaState.extentOffset, 7);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2317,8 +2317,8 @@ void testMain() {
       expect(textEditingDeltaState.deltaText, 'à');
       expect(textEditingDeltaState.deltaStart, 0);
       expect(textEditingDeltaState.deltaEnd, 1);
-      expect(textEditingDeltaState.baseOffset, -1);
-      expect(textEditingDeltaState.extentOffset, -1);
+      expect(textEditingDeltaState.baseOffset, 1);
+      expect(textEditingDeltaState.extentOffset, 1);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
