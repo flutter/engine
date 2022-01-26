@@ -469,7 +469,7 @@ class TextEditingDeltaState {
   });
 
   static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState lastTextEditingDeltaState) {
-    final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState;
+    final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState.copyWith();
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
 
     if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
@@ -578,6 +578,28 @@ class TextEditingDeltaState {
       },
     ],
   };
+
+  TextEditingDeltaState copyWith({
+    String? oldText,
+    String? deltaText,
+    int? deltaStart,
+    int? deltaEnd,
+    int? baseOffset,
+    int? extentOffset,
+    int? composingOffset,
+    int? composingExtent,
+  }) {
+    return TextEditingDeltaState(
+      oldText: oldText ?? this.oldText,
+      deltaText: deltaText ?? this.deltaText,
+      deltaStart: deltaStart ?? this.deltaStart,
+      deltaEnd: deltaEnd ?? this.deltaEnd,
+      baseOffset: baseOffset ?? this.baseOffset,
+      extentOffset: extentOffset ?? this.extentOffset,
+      composingOffset: composingOffset ?? this.composingOffset,
+      composingExtent: composingExtent ?? this.composingExtent,
+    );
+  }
 }
 
 /// The current text and selection state of a text field.
@@ -1183,8 +1205,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     TextEditingDeltaState? newTextEditingDeltaState;
-    if (inputConfiguration.enableDeltaModel) {
-      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);
+    if (inputConfiguration.enableDeltaModel) {     
+      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);    
     }
 
     if (newEditingState != lastEditingState) {
