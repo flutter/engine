@@ -557,4 +557,8 @@ UINT WindowWin32::Win32DispatchEvent(UINT cInputs,
   return ::SendInput(cInputs, pInputs, cbSize);
 }
 
+UINT WindowWin32::Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) {
+  return ::PostMessage(window_handle_, Msg, wParam, lParam);
+}
+
 }  // namespace flutter

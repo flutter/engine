@@ -148,11 +148,21 @@ class MockKeyboardManagerWin32Delegate
     return 1;
   }
 
+  UINT Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) override {
+    pending_messages_.push_back(Win32Message{
+      .message = Msg,
+      .wParam = wParam,
+      .lParam = lParam,
+    });
+    return 1;
+  }
+
  private:
   WindowBindingHandlerDelegate* view_;
   std::unique_ptr<KeyboardManagerWin32> keyboard_manager_;
   MapVkToCharHandler map_vk_to_char_;
   std::vector<KEYBDINPUT> pending_responds_;
+  std::vector<Win32Message> pending_messages_;
 };
 
 class TestKeystate {

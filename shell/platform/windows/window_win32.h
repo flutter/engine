@@ -53,6 +53,9 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
                                   LPINPUT pInputs,
                                   int cbSize) override;
 
+  // |KeyboardManagerWin32::WindowDelegate|
+  virtual UINT Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) override;
+
  protected:
   // Converts a c string to a wide unicode string.
   std::wstring NarrowToWide(const char* source);

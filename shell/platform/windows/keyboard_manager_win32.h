@@ -81,6 +81,13 @@ class KeyboardManagerWin32 {
     virtual UINT Win32DispatchEvent(UINT cInputs,
                                     LPINPUT pInputs,
                                     int cbSize) = 0;
+
+    // Win32's |SendMessage|.
+    //
+    // Used to synthesize key messages.
+    virtual UINT Win32DispatchMessage(UINT Msg,
+                                      WPARAM wParam,
+                                      LPARAM lParam) = 0;
   };
 
   using KeyEventCallback = WindowDelegate::KeyEventCallback;
@@ -105,9 +112,9 @@ class KeyboardManagerWin32 {
 
  private:
   struct Win32Message {
-    UINT const action;
-    WPARAM const wparam;
-    LPARAM const lparam;
+    UINT action;
+    WPARAM wparam;
+    LPARAM lparam;
 
     bool IsHighSurrogate() const { return IS_HIGH_SURROGATE(wparam); }
 
@@ -137,7 +144,7 @@ class KeyboardManagerWin32 {
       std::function<void(std::unique_ptr<PendingEvent>, bool)>;
 
   // Returns true if it's a new event, or false if it's a redispatched event.
-  bool OnKey(std::unique_ptr<PendingEvent> event, OnKeyCallback callback);
+  void OnKey(std::unique_ptr<PendingEvent> event, OnKeyCallback callback);
 
   void HandleOnKeyResult(std::unique_ptr<PendingEvent> event,
                          bool handled,
@@ -158,7 +165,7 @@ class KeyboardManagerWin32 {
   //
   // If an matching event is found, removes the matching event from the
   // redispatch list, and returns true. Otherwise, returns false;
-  bool RemoveRedispatchedEvent(const PendingEvent& incoming);
+  bool RemoveRedispatchedMessage(UINT action, WPARAM wparam, LPARAM lparam);
   void RedispatchEvent(std::unique_ptr<PendingEvent> event);
 
   WindowDelegate* window_delegate_;
@@ -185,7 +192,7 @@ class KeyboardManagerWin32 {
 
   // The queue of key events that have been redispatched to the system but have
   // not yet been received for a second time.
-  std::deque<std::unique_ptr<PendingEvent>> pending_redispatches_;
+  std::deque<Win32Message> pending_redispatches_;
 
   // Calculate a hash based on event data for fast comparison for a redispatched
   // event.
