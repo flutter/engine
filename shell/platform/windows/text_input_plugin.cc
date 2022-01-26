@@ -130,9 +130,7 @@ void TextInputPlugin::ComposeBeginHook() {
   if (enable_delta_model) {
     std::string text = active_model_->GetText();
     TextRange selection = active_model_->selection();
-    TextEditingDelta delta =
-        //TextEditingDelta(text, selection, text);
-        TextEditingDelta(text);
+    TextEditingDelta delta = TextEditingDelta(text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -146,7 +144,9 @@ void TextInputPlugin::ComposeCommitHook() {
   std::string text_before_change = active_model_->GetText();
   TextRange selection_before_change = active_model_->selection();
   TextRange composing_before_change = active_model_->composing_range();
-  std::string composing_text_before_change = text_before_change.substr(composing_before_change.base(), composing_before_change.extent() - composing_before_change.base());
+  std::string composing_text_before_change = text_before_change.substr(
+      composing_before_change.base(),
+      composing_before_change.extent() - composing_before_change.base());
   active_model_->CommitComposing();
 
   // We do not trigger SendStateUpdate here.
@@ -183,8 +183,7 @@ void TextInputPlugin::ComposeEndHook() {
   active_model_->EndComposing();
   if (enable_delta_model) {
     std::string text = active_model_->GetText();
-    TextEditingDelta delta =
-        TextEditingDelta(text);
+    TextEditingDelta delta = TextEditingDelta(text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);
@@ -204,8 +203,8 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
   std::string text_after_change = active_model_->GetText();
   if (enable_delta_model) {
-    TextEditingDelta delta =
-        TextEditingDelta(Utf8ToUtf16(text_before_change), composing_before_change, text);
+    TextEditingDelta delta = TextEditingDelta(Utf8ToUtf16(text_before_change),
+                                              composing_before_change, text);
     SendStateUpdateWithDelta(*active_model_, &delta);
   } else {
     SendStateUpdate(*active_model_);

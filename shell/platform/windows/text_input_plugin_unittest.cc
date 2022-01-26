@@ -158,15 +158,14 @@ TEST(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();
-  args->PushBack(123, allocator); // client_id
+  args->PushBack(123, allocator);  // client_id
 
   rapidjson::Value client_config(rapidjson::kObjectType);
   client_config.AddMember(kEnableDeltaModel, true, allocator);
 
   args->PushBack(client_config, allocator);
   auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
-      MethodCall<rapidjson::Document>(kSetClientMethod,
-                                      std::move(args)));
+      MethodCall<rapidjson::Document>(kSetClientMethod, std::move(args)));
 
   EXPECT_TRUE(messenger.SimulateEngineMessage(
       kChannelName, encoded->data(), encoded->size(),
