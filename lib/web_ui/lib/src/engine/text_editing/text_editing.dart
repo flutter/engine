@@ -1205,8 +1205,8 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
 
     final EditingState newEditingState = EditingState.fromDomElement(activeDomElement);
     TextEditingDeltaState? newTextEditingDeltaState;
-    if (inputConfiguration.enableDeltaModel) {     
-      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);    
+    if (inputConfiguration.enableDeltaModel) {
+      newTextEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditingState, lastEditingState, editingDeltaState);
     }
 
     if (newEditingState != lastEditingState) {
