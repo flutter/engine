@@ -1,8 +1,8 @@
-// Copyright 2022 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// FlutterTesterOptions=--serial_gc
+// FlutterTesterOptions=--enable-serial-gc
 
 import 'package:litetest/litetest.dart';
 

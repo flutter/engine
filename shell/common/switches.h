@@ -194,7 +194,7 @@ DEF_SWITCH(DisableDartAsserts,
            "with assertions disabled in the debug product mode (i.e. with JIT "
            "or DBC).")
 DEF_SWITCH(EnableSerialGC,
-           "enable_serial_gc",
+           "enable-serial-gc",
            "On low power devices with low core counts, running concurrent "
            "GC tasks on threads can cause them to contend with the UI thread "
            "which could potentially lead to jank. This option turns off all "
