@@ -82,14 +82,14 @@ void TextInputPlugin::TextHook(const std::u16string& text) {
   }
 }
 
-bool TextInputPlugin::KeyboardHook(int key,
+void TextInputPlugin::KeyboardHook(int key,
                                    int scancode,
                                    int action,
                                    char32_t character,
                                    bool extended,
                                    bool was_down) {
   if (active_model_ == nullptr) {
-    return false;
+    return;
   }
   if (action == WM_KEYDOWN || action == WM_SYSKEYDOWN) {
     // Most editing keys (arrow keys, backspace, delete, etc.) are handled in
@@ -102,7 +102,6 @@ bool TextInputPlugin::KeyboardHook(int key,
         break;
     }
   }
-  return false;
 }
 
 TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
@@ -149,14 +148,29 @@ void TextInputPlugin::ComposeCommitHook() {
   TextRange composing_before_change = active_model_->composing_range();
   std::string composing_text_before_change = text_before_change.substr(composing_before_change.base(), composing_before_change.extent() - composing_before_change.base());
   active_model_->CommitComposing();
-  if (enable_delta_model) {
-    std::string text = active_model_->GetText();
-    TextEditingDelta delta =
-        TextEditingDelta(text);
-    SendStateUpdateWithDelta(*active_model_, &delta);
-  } else {
-    SendStateUpdate(*active_model_);
-  }
+
+  // We do not trigger SendStateUpdate here.
+  //
+  // Until a WM_IME_ENDCOMPOSING event, the user is still composing from the OS
+  // point of view. Commit events are always immediately followed by another
+  // composing event or an end composing event. However, in the brief window
+  // between the commit event and the following event, the composing region is
+  // collapsed. Notifying the framework of this intermediate state will trigger
+  // any framework code designed to execute at the end of composing, such as
+  // input formatters, which may try to update the text and send a message back
+  // to the engine with changes.
+  //
+  // This is a particular problem with Korean IMEs, which build up one
+  // character at a time in their composing region until a keypress that makes
+  // no sense for the in-progress character. At that point, the result
+  // character is committed and a compose event is immedidately received with
+  // the new composing region.
+  //
+  // In the case where this event is immediately followed by a composing event,
+  // the state will be sent in ComposeChangeHook.
+  //
+  // In the case where this event is immediately followed by an end composing
+  // event, the state will be sent in ComposeEndHook.
 }
 
 void TextInputPlugin::ComposeEndHook() {

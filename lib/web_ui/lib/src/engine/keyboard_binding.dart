@@ -43,14 +43,6 @@ final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = <int, _ModifierGe
   _kLogicalMetaRight: (FlutterHtmlKeyboardEvent event) => event.metaKey,
 };
 
-// After a keydown is received, this is the duration we wait for a repeat event
-// before we decide to synthesize a keyup event.
-//
-// On Linux and Windows, the typical ranges for keyboard repeat delay go up to
-// 1000ms. On Mac, the range goes up to 2000ms.
-const Duration _kKeydownCancelDurationNormal = Duration(milliseconds: 1000);
-const Duration _kKeydownCancelDurationMacOs = Duration(milliseconds: 2000);
-
 // ASCII for a, z, A, and Z
 const int _kCharLowerA = 0x61;
 const int _kCharLowerZ = 0x7a;
@@ -230,7 +222,26 @@ class KeyboardConverter {
     return onMacOs;
   }
 
-  Duration get _keydownCancelDuration => onMacOs ? _kKeydownCancelDurationMacOs : _kKeydownCancelDurationNormal;
+  // ## About Key guards
+  //
+  // When the user enters a browser/system shortcut (e.g. `Cmd+Alt+i`) the
+  // browser doesn't send a keyup for it. This puts the framework in a corrupt
+  // state because it thinks the key was never released.
+  //
+  // To avoid this, we rely on the fact that browsers send repeat events
+  // while the key is held down by the user. If we don't receive a repeat
+  // event within a specific duration ([_keydownCancelDurationMac]) we assume
+  // the user has released the key and we synthesize a keyup event.
+  bool _shouldDoKeyGuard() {
+    return onMacOs;
+  }
+
+  /// After a keydown is received, this is the duration we wait for a repeat event
+  /// before we decide to synthesize a keyup event.
+  ///
+  /// This value is only for macOS, where the keyboard repeat delay goes up to
+  /// 2000ms.
+  static const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 2000);
 
   static int _getPhysicalCode(String code) {
     return kWebToPhysicalKey[code] ?? (code.hashCode + _kWebKeyIdPlane);
@@ -309,23 +320,15 @@ class KeyboardConverter {
     return () { canceled = true; };
   }
 
-  // ## About Key guards
-  //
-  // When the user enters a browser/system shortcut (e.g. `cmd+alt+i`) the
-  // browser doesn't send a keyup for it. This puts the framework in a corrupt
-  // state because it thinks the key was never released.
-  //
-  // To avoid this, we rely on the fact that browsers send repeat events
-  // while the key is held down by the user. If we don't receive a repeat
-  // event within a specific duration ([_keydownCancelDuration]) we assume
-  // the user has released the key and we synthesize a keyup event.
   final Map<int, _VoidCallback> _keyGuards = <int, _VoidCallback>{};
   // Call this method on the down or repeated event of a non-modifier key.
   void _startGuardingKey(int physicalKey, int logicalKey, Duration currentTimeStamp) {
+    if (!_shouldDoKeyGuard())
+      return;
     final _VoidCallback cancelingCallback = _scheduleAsyncEvent(
-      _keydownCancelDuration,
+      _kKeydownCancelDurationMac,
       () => ui.KeyData(
-        timeStamp: currentTimeStamp + _keydownCancelDuration,
+        timeStamp: currentTimeStamp + _kKeydownCancelDurationMac,
         type: ui.KeyEventType.up,
         physical: physicalKey,
         logical: logicalKey,
@@ -371,9 +374,7 @@ class KeyboardConverter {
       // followed by an immediate cancel event.
       (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock);
 
-    final int? lastLogicalRecord = _pressingRecords[physicalKey];
-
-    ui.KeyEventType type;
+    final ui.KeyEventType type;
 
     if (_shouldSynthesizeCapsLockUp() && event.code! == _kPhysicalCapsLock) {
       // Case 1: Handle CapsLock on macOS
@@ -399,28 +400,45 @@ class KeyboardConverter {
 
     } else if (isPhysicalDown) {
       // Case 2: Handle key down of normal keys
-      type = ui.KeyEventType.down;
-      if (lastLogicalRecord != null) {
+      if (_pressingRecords[physicalKey] != null) {
         // This physical key is being pressed according to the record.
         if (event.repeat ?? false) {
           // A normal repeated key.
           type = ui.KeyEventType.repeat;
         } else {
           // A non-repeated key has been pressed that has the exact physical key as
-          // a currently pressed one, usually indicating multiple keyboards are
-          // pressing keys with the same physical key, or the up event was lost
-          // during a loss of focus. The down event is ignored.
-          event.preventDefault();
-          return;
+          // a currently pressed one. This can mean one of the following cases:
+          //
+          //  * Multiple keyboards are pressing keys with the same physical key.
+          //  * The up event was lost during a loss of focus.
+          //  * The previous down event was a system shortcut and its release
+          //    was skipped (see `_startGuardingKey`,) such as holding Ctrl and
+          //    pressing V then V, within the "guard window".
+          //
+          // The three cases can't be distinguished, and in the 3rd case, the
+          // latter event must be dispatched as down events for the framework to
+          // correctly recognize and choose to not to handle. Therefore, an up
+          // event is synthesized before it.
+          _dispatchKeyData!(ui.KeyData(
+            timeStamp: timeStamp,
+            type: ui.KeyEventType.up,
+            physical: physicalKey,
+            logical: logicalKey,
+            character: null,
+            synthesized: true,
+          ));
+          _pressingRecords.remove(physicalKey);
+          type = ui.KeyEventType.down;
         }
       } else {
         // This physical key is not being pressed according to the record. It's a
         // normal down event, whether the system event is a repeat or not.
+        type = ui.KeyEventType.down;
       }
 
     } else { // isPhysicalDown is false and not CapsLock
       // Case 2: Handle key up of normal keys
-      if (lastLogicalRecord == null) {
+      if (_pressingRecords[physicalKey] == null) {
         // The physical key has been released before. It indicates multiple
         // keyboards pressed keys with the same physical key. Ignore the up event.
         event.preventDefault();
@@ -429,6 +447,10 @@ class KeyboardConverter {
 
       type = ui.KeyEventType.up;
     }
+
+    // The _pressingRecords[physicalKey] might have been changed during the last
+    // `if` clause.
+    final int? lastLogicalRecord = _pressingRecords[physicalKey];
 
     final int? nextLogicalRecord;
     switch (type) {

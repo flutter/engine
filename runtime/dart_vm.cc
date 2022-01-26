@@ -57,10 +57,17 @@ static const char* kDartLanguageArgs[] = {
     // clang-format on
 };
 
-// TODO(74520): Remove flag once isolate group work is completed (or add it to
-//              JIT mode).
-static const char* kDartPrecompilationArgs[] = {"--precompilation",
-                                                "--enable-isolate-groups"};
+static const char* kDartPrecompilationArgs[] = {"--precompilation"};
+
+static const char* kSerialGCArgs[] = {
+    // clang-format off
+    "--concurrent_mark=false",
+    "--concurrent_sweep=false",
+    "--compactor_tasks=1",
+    "--scavenger_tasks=0",
+    "--marker_tasks=0",
+    // clang-format on
+};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
@@ -168,14 +175,6 @@ Dart_Handle GetVMServiceAssetsArchiveCallback() {
       ::dart::observatory::observatory_assets_archive,
       ::dart::observatory::observatory_assets_archive_len);
 #endif
-}
-
-void PostTaskCallback(void* post_task_data,
-                      Dart_Task task,
-                      Dart_TaskData task_data) {
-  auto* dart_vm = reinterpret_cast<DartVM*>(post_task_data);
-  dart_vm->GetConcurrentWorkerTaskRunner()->PostTask(
-      [task] { Dart_RunTask(task); });
 }
 
 static const char kStdoutStreamId[] = "Stdout";
@@ -369,6 +368,13 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
   }
 
+  // On low power devices with lesser number of cores, using concurrent
+  // marking or sweeping causes contention for the UI thread leading to
+  // Jank, this option can be used to turn off all concurrent GC activities.
+  if (settings_.enable_serial_gc) {
+    PushBackAll(&args, kSerialGCArgs, fml::size(kSerialGCArgs));
+  }
+
   if (settings_.start_paused) {
     PushBackAll(&args, kDartStartPausedArgs, fml::size(kDartStartPausedArgs));
   }
@@ -450,8 +456,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     params.thread_exit = ThreadExitCallback;
     params.get_service_assets = GetVMServiceAssetsArchiveCallback;
     params.entropy_source = dart::bin::GetEntropy;
-    params.post_task = PostTaskCallback;
-    params.post_task_data = this;
     DartVMInitializer::Initialize(&params);
     // Send the earliest available timestamp in the application lifecycle to
     // timeline. The difference between this timestamp and the time we render
@@ -486,10 +490,6 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     Dart_SetDartLibrarySourcesKernel(dart_library_sources->GetMapping(),
                                      dart_library_sources->GetSize());
   }
-
-  // Update thread names now that the Dart VM is initialized.
-  concurrent_message_loop_->PostTaskToAllWorkers(
-      [] { Dart_SetThreadName("FlutterConcurrentMessageLoopWorker"); });
 }
 
 DartVM::~DartVM() {

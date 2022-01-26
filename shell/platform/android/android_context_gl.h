@@ -5,10 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_H_
 
-#include <EGL/egl.h>
-#define EGL_EGLEXT_PROTOTYPES
-#include <EGL/eglext.h>
-
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -27,11 +23,11 @@ namespace flutter {
 /// This can be used in conjunction to unique_ptr to provide better guarantees
 /// about the lifespan of the `EGLSurface` object.
 ///
+class AndroidEGLSurfaceDamage;
+
 class AndroidEGLSurface {
  public:
-  AndroidEGLSurface(EGLSurface surface,
-                    fml::RefPtr<AndroidEnvironmentGL> environment,
-                    EGLContext context);
+  AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
   ~AndroidEGLSurface();
 
   //----------------------------------------------------------------------------
@@ -50,14 +46,34 @@ class AndroidEGLSurface {
   bool MakeCurrent() const;
 
   //----------------------------------------------------------------------------
+  ///
+  /// @return     Whether target surface supports partial repaint.
+  ///
+  bool SupportsPartialRepaint() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      This is the minimal area that needs to be repainted to get
+  ///             correct result.
+  ///
+  /// With double or triple buffering this buffer content may lag behind
+  /// current front buffer and the rect accounts for accumulated damage.
+  ///
+  /// @return     The area of current surface where it is behind front buffer.
+  ///
+  std::optional<SkIRect> InitialDamage();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Sets the damage region for current surface. Corresponds to
+  //              eglSetDamageRegionKHR
+  void SetDamageRegion(const std::optional<SkIRect>& buffer_damage);
+
+  //----------------------------------------------------------------------------
   /// @brief      This only applies to on-screen surfaces such as those created
   ///             by `AndroidContextGL::CreateOnscreenSurface`.
   ///
-  /// @param target_time  The vsync target time for the buffer.
-  ///
   /// @return     Whether the EGL surface color buffer was swapped.
   ///
-  bool SwapBuffers(fml::TimePoint target_time);
+  bool SwapBuffers(const std::optional<SkIRect>& surface_damage);
 
   //----------------------------------------------------------------------------
   /// @return     The size of an `EGLSurface`.
@@ -66,8 +82,9 @@ class AndroidEGLSurface {
 
  private:
   const EGLSurface surface_;
-  const fml::RefPtr<AndroidEnvironmentGL> environment_;
+  const EGLDisplay display_;
   const EGLContext context_;
+  std::unique_ptr<AndroidEGLSurfaceDamage> damage_;
 };
 
 //------------------------------------------------------------------------------

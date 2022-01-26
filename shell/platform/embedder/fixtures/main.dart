@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -301,9 +301,11 @@ void null_platform_messages() {
 
 Picture CreateSimplePicture() {
   Paint blackPaint = Paint();
+  Paint whitePaint = Paint()..color = Color.fromARGB(255, 255, 255, 255);
   PictureRecorder baseRecorder = PictureRecorder();
   Canvas canvas = Canvas(baseRecorder);
   canvas.drawRect(Rect.fromLTRB(0.0, 0.0, 1000.0, 1000.0), blackPaint);
+  canvas.drawRect(Rect.fromLTRB(10.0, 10.0, 990.0, 990.0), whitePaint);
   return baseRecorder.endRecording();
 }
 

@@ -10,7 +10,6 @@
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/time/time_point.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -28,6 +27,10 @@ class SurfaceFrame {
     // Indicates whether or not the surface supports pixel readback as used in
     // circumstances such as a BackdropFilter.
     bool supports_readback = false;
+
+    // Indicates that target device supports partial repaint. At very minimum
+    // this means that the surface will provide valid existing damage.
+    bool supports_partial_repaint = false;
 
     // This is the area of framebuffer that lags behind the front buffer.
     //
@@ -67,12 +70,6 @@ class SurfaceFrame {
     //
     // Corresponds to EGL_KHR_partial_update
     std::optional<SkIRect> buffer_damage;
-
-    // The vsync target time.
-    //
-    // Backends may use this information to avoid overloading the GPU with
-    // multiple frames per vsync.
-    fml::TimePoint target_time;
   };
 
   bool Submit();
