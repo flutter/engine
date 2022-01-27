@@ -258,10 +258,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (flutter::PlatformViewIOS*)iosPlatformView {
-  FML_DCHECK(_shell);
-  if (!_shell->IsSetup()) {
-    FML_LOG(ERROR) << "The supplied FlutterEngine has not been run with [engine run]";
-  }
+  FML_DCHECK(_shell) << "Cannot run iosPlatformView without a shell";
   return static_cast<flutter::PlatformViewIOS*>(_shell->GetPlatformView().get());
 }
 
