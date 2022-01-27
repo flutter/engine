@@ -474,7 +474,7 @@ class TextEditingDeltaState {
 
     newTextEditingDeltaState.deltaStart = lastEditingState!.extentOffset!;
     newTextEditingDeltaState.deltaEnd = lastEditingState.extentOffset!;
-
+    
     if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
       // We are removing text.
       // When text is deleted outside of the composing region or is cut using the native toolbar,
