@@ -248,7 +248,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
  
             Surface surface = new Surface(textureEntry.surfaceTexture());
 
-              FrameLayout parent = new FrameLayout(context) {
+            FrameLayout parent = new FrameLayout(context) {
                 @Override
                 public void draw(Canvas canvas) {
                   if (textureEntry.surfaceTexture().isReleased()) {
@@ -282,6 +282,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               parent.addView(platformView.getView());
               parent.bringToFront();
               flutterView.addView(parent);
+
+              pv = parent;
+              viewLayout = layoutParams;
               
               
               System.out.println("isHardwareAccelerated=" + parent.isHardwareAccelerated());
@@ -332,6 +335,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           return textureEntry.id();
         }
 
+        private FrameLayout.LayoutParams viewLayout;
+        private FrameLayout pv;
+
         @Override
         public void disposeVirtualDisplayForPlatformView(int viewId) {
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
@@ -348,6 +354,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           contextToPlatformView.remove(vdController.getView().getContext());
           vdController.dispose();
           vdControllers.remove(viewId);
+        }
+
+        @Override
+        public void setOffset(int viewId, double top, double left) {
+          int physicalTop = toPhysicalPixels(top);
+          int physicalLeft = toPhysicalPixels(left);
+
+          viewLayout.topMargin = physicalTop;
+          viewLayout.leftMargin = physicalLeft;
+          pv.setLayoutParams(viewLayout);
         }
 
         @Override

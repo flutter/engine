@@ -64,6 +64,9 @@ public class PlatformViewsChannel {
             case "resize":
               resize(call, result);
               break;
+            case "offset":
+              offset(call, result);
+              break;
             case "touch":
               touch(call, result);
               break;
@@ -146,6 +149,19 @@ public class PlatformViewsChannel {
                     result.success(null);
                   }
                 });
+          } catch (IllegalStateException exception) {
+            result.error("error", detailedExceptionString(exception), null);
+          }
+        }
+
+        private void offset(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
+          Map<String, Object> offsetArgs = call.arguments();
+          try {
+            handler.setOffset(
+              (int) offsetArgs.get("id"),
+              (double) offsetArgs.get("top"),
+              (double) offsetArgs.get("left"));
+            result.success(null);
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
           }
@@ -279,6 +295,12 @@ public class PlatformViewsChannel {
      */
     void resizePlatformView(
         @NonNull PlatformViewResizeRequest request, @NonNull Runnable onComplete);
+
+    /**
+     * The Flutter application would like to change the offset an existing Android {@code View}, i.e., platform
+     * view.
+     */
+    void setOffset(int viewId, double top, double left);
 
     /**
      * The user touched a platform view within Flutter.
