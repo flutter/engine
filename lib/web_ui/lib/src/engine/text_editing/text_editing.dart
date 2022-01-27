@@ -472,9 +472,6 @@ class TextEditingDeltaState {
     final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState.copyWith();
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
 
-    newTextEditingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-    newTextEditingDeltaState.deltaEnd = lastEditingState.extentOffset!;
-    
     if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
       // We are removing text.
       // When text is deleted outside of the composing region or is cut using the native toolbar,
@@ -1230,14 +1227,19 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDeltaState.deltaText = '';
+        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
       } else if (inputType == 'insertLineBreak'){
         // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDeltaState.deltaText = '\n';
+        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
       } else if (eventData != null) {
         // When event.data is not null we we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
+        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
       }
     }
   }
