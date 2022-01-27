@@ -1219,6 +1219,14 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
   }
 
   void handleBeforeInput(html.Event event) {
+    // In some cases the beforeinput event is not fired such as when the selection
+    // of a text field is updated. In this case only the oninput event is fired.
+    // We still want a delta generated in these cases so we can properly update
+    // the selection. We begin to set the deltaStart and deltaEnd in beforeinput
+    // because a change in the selection will not have a delta range, it will only
+    // have a baseOffset and extentOffset. If these are set inside of inferDeltaState
+    // then the method will incorrectly report a deltaStart and deltaEnd for a non
+    // text update delta.
     final String? eventData = getJsProperty<void>(event, 'data') as String?;
     final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
