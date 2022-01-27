@@ -486,7 +486,7 @@ class TextEditingDeltaState {
       // We are replacing text at a selection.
       // When a selection of text is replaced by a copy/paste operation we set the starting range
       // of the delta to be the beginning of the selection of the previous editing state.
-      newTextEditingDeltaState.deltaStart = lastEditingState.baseOffset!;
+      newTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
     }
 
     // If we are composing then set the delta range to the composing region we
