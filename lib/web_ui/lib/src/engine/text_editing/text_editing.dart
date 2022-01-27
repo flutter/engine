@@ -468,6 +468,23 @@ class TextEditingDeltaState {
     this.composingExtent = -1,
   });
 
+  /// Infers the correct delta values based on information from the new editing state
+  /// and the last editing state.
+  ///
+  /// For a deletion we calculate the length of the deleted text by comparing the new
+  /// and last editing states. We subtract this from the deltaEnd that we set when beforeinput
+  /// was fired to determine out deltaStart.
+  ///
+  /// For a replacement at a selection we set the deltaStart to be the beginning of the selection
+  /// from the last editing state.
+  /// 
+  /// For the composing region we check if a composing range was captured by the compositionupdate event,
+  /// we have a non empty deltaText, and that we did not have an active selection. An active selection
+  /// would mean we are not composing.
+  ///
+  /// We then verify that the delta we collected results in the text contained within the new editing state
+  /// when applied to the last editing state. If it is not then we use our new editing state as the source of truth,
+  /// and use regex to find the correct deltaStart and deltaEnd.
   static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState lastTextEditingDeltaState) {
     final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState.copyWith();
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
