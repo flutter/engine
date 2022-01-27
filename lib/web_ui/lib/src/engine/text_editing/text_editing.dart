@@ -591,7 +591,7 @@ class TextEditingDeltaState {
   /// The updated starting position of the selection in the text field.
   int baseOffset;
 
-  /// The updated terminating position of the selection.
+  /// The updated terminating position of the selection in the text field.
   int extentOffset;
 
   /// The starting position of the composing region.
