@@ -101,7 +101,6 @@ TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger)
           messenger,
           kChannelName,
           &flutter::JsonMethodCodec::GetInstance())),
-      client_id_(0),
       active_model_(nullptr) {
   channel_->SetMethodCallHandler(
       [this](
