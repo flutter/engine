@@ -588,17 +588,16 @@ class TextEditingDeltaState {
   /// The position in the text field where the change ends.
   int deltaEnd;
 
-  /// The updated selection offset, or starting position of the selection
-  /// in the text field.
+  /// The updated starting position of the selection in the text field.
   int baseOffset;
 
-  /// The extent of the selection.
+  /// The updated terminating position of the selection.
   int extentOffset;
 
   /// The starting position of the composing region.
   int composingOffset;
 
-  /// The extent of the composing region.
+  /// The terminating position of the composing region.
   int composingExtent;
 
   Map<String, dynamic> toFlutter() => <String, dynamic>{
