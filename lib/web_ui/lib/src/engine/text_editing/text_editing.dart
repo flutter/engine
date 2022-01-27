@@ -574,13 +574,31 @@ class TextEditingDeltaState {
     return newTextEditingDeltaState;
   }
 
+  /// The text before the text field was updated.
   String oldText;
+
+  /// The text that is being inserted/replaced into the text field.
+  /// This will be an empty string for deletions and non text updates
+  /// such as selection updates.
   String deltaText;
+
+  /// The position in the text field where the change begins.
   int deltaStart;
+
+  /// The position in the text field where the change ends.
   int deltaEnd;
+
+  /// The updated selection offset, or starting position of the selection
+  /// in the text field.
   int baseOffset;
+
+  /// The extent of the selection.
   int extentOffset;
+
+  /// The starting position of the composing region.
   int composingOffset;
+
+  /// The extent of the composing region.
   int composingExtent;
 
   Map<String, dynamic> toFlutter() => <String, dynamic>{
