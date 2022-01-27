@@ -1,4 +1,4 @@
-Signature: dbab2eaa7ef7443c2c8fa1b69d579137
+Signature: 586b63558c4eb870f2b8679863f5095a
 
 UNUSED LICENSES:
 
@@ -6038,13 +6038,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/graphite/src/Log.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/experimental/graphite/src/Log.h
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.h
+FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h
+FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.mm
+FILE: ../../../third_party/skia/gm/bug12866.cpp
 FILE: ../../../third_party/skia/include/private/SkPaintParamsKey.h
 FILE: ../../../third_party/skia/include/private/SkShaderCodeDictionary.h
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
@@ -6056,6 +6061,7 @@ FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
 FILE: ../../../third_party/skia/src/core/SkUniformData.cpp
 FILE: ../../../third_party/skia/src/core/SkUniformData.h
+FILE: ../../../third_party/skia/src/sksl/analysis/SkSLFinalizationChecks.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google LLC
 
