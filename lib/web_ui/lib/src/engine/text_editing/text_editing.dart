@@ -1212,7 +1212,7 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
     if (newEditingState != lastEditingState) {
       lastEditingState = newEditingState;
       _editingDeltaState = newTextEditingDeltaState;
-      onChange!(lastEditingState, editingDeltaState);
+      onChange!(lastEditingState, _editingDeltaState);
       // Flush delta after it has been sent to framework.
       _editingDeltaState = null;
     }
