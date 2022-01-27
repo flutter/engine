@@ -477,7 +477,7 @@ class TextEditingDeltaState {
   ///
   /// For a replacement at a selection we set the deltaStart to be the beginning of the selection
   /// from the last editing state.
-  /// 
+  ///
   /// For the composing region we check if a composing range was captured by the compositionupdate event,
   /// we have a non empty deltaText, and that we did not have an active selection. An active selection
   /// would mean we are not composing.
