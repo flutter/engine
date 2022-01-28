@@ -22,13 +22,12 @@ class DartRunner : public fuchsia::sys::Runner,
 
  private:
   // |fuchsia::sys::Runner| implementation:
-  void StartComponent(
-      fuchsia::sys::Package package,
-      fuchsia::sys::StartupInfo startup_info,
-      ::fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller)
-      override;
+  void StartComponent(fuchsia::sys::Package package,
+                      fuchsia::sys::StartupInfo startup_info,
+                      fidl::InterfaceRequest<fuchsia::sys::ComponentController>
+                          controller) override;
 
-  // |fuchsia::component::runner::ComponentRunner|
+  // |fuchsia::component::runner::ComponentRunner| implementation:
   void Start(
       fuchsia::component::runner::ComponentStartInfo start_info,
       fidl::InterfaceRequest<fuchsia::component::runner::ComponentController>

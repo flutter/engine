@@ -5,6 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_CONTEXT_GL_H_
 
+#include <EGL/egl.h>
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/eglext.h>
+
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -25,7 +29,9 @@ namespace flutter {
 ///
 class AndroidEGLSurface {
  public:
-  AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
+  AndroidEGLSurface(EGLSurface surface,
+                    fml::RefPtr<AndroidEnvironmentGL> environment,
+                    EGLContext context);
   ~AndroidEGLSurface();
 
   //----------------------------------------------------------------------------
@@ -47,9 +53,11 @@ class AndroidEGLSurface {
   /// @brief      This only applies to on-screen surfaces such as those created
   ///             by `AndroidContextGL::CreateOnscreenSurface`.
   ///
+  /// @param target_time  The vsync target time for the buffer.
+  ///
   /// @return     Whether the EGL surface color buffer was swapped.
   ///
-  bool SwapBuffers();
+  bool SwapBuffers(fml::TimePoint target_time);
 
   //----------------------------------------------------------------------------
   /// @return     The size of an `EGLSurface`.
@@ -58,7 +66,7 @@ class AndroidEGLSurface {
 
  private:
   const EGLSurface surface_;
-  const EGLDisplay display_;
+  const fml::RefPtr<AndroidEnvironmentGL> environment_;
   const EGLContext context_;
 };
 
@@ -72,7 +80,8 @@ class AndroidEGLSurface {
 class AndroidContextGL : public AndroidContext {
  public:
   AndroidContextGL(AndroidRenderingAPI rendering_api,
-                   fml::RefPtr<AndroidEnvironmentGL> environment);
+                   fml::RefPtr<AndroidEnvironmentGL> environment,
+                   const TaskRunners& taskRunners);
 
   ~AndroidContextGL();
 
@@ -131,6 +140,7 @@ class AndroidContextGL : public AndroidContext {
   EGLContext context_;
   EGLContext resource_context_;
   bool valid_ = false;
+  TaskRunners task_runners_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
 };

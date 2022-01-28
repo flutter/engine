@@ -11,9 +11,10 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
+import '../embedder.dart';
 import '../host_node.dart';
 import '../platform_dispatcher.dart';
+import '../safe_browser_api.dart';
 import '../semantics.dart';
 import '../services.dart';
 import '../text/paragraph.dart';
@@ -46,7 +47,7 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => domRenderer.glassPaneShadow!;
+HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow!;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -129,14 +130,16 @@ void _hideAutofillElements(html.HtmlElement domElement,
 
 /// Form that contains all the fields in the same AutofillGroup.
 ///
-/// These values are to be used when autofill is enabled and there is a group of
-/// text fields with more than one text field.
+/// An [EngineAutofillForm] will only be constructed when autofill is enabled
+/// (the default) on the current input field. See the [fromFrameworkMessage]
+/// static method.
 class EngineAutofillForm {
-  EngineAutofillForm(
-      {required this.formElement,
-      this.elements,
-      this.items,
-      this.formIdentifier = ''});
+  EngineAutofillForm({
+    required this.formElement,
+    this.elements,
+    this.items,
+    this.formIdentifier = '',
+  });
 
   final html.FormElement formElement;
 
@@ -153,12 +156,23 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
+  /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
+  /// framework `TextInputConfiguration` object.
+  ///
+  /// The `focusedElementAutofill` argument corresponds to the "autofill" field
+  /// in a `TextInputConfiguration`. Not having this field indicates autofill
+  /// is explicitly disabled on the text field by the developer.
+  ///
+  /// The `fields` argument corresponds to the "fields" field in a
+  /// `TextInputConfiguration`.
+  ///
+  /// Returns null if autofill is disabled for the input field.
   static EngineAutofillForm? fromFrameworkMessage(
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
-    // Autofill value can be null if focused text element does not have an
-    // autofill hint set.
+    // Autofill value will be null if the developer explicitly disables it on
+    // the input field.
     if (focusedElementAutofill == null) {
       return null;
     }
@@ -191,17 +205,20 @@ class EngineAutofillForm {
     if (fields != null) {
       for (final Map<String, dynamic> field in
           fields.cast<Map<String, dynamic>>()) {
-        final Map<String, dynamic> autofillInfo = field['autofill'];
+        final Map<String, dynamic> autofillInfo = field.readJson('autofill');
         final AutofillInfo autofill = AutofillInfo.fromFrameworkMessage(
-            autofillInfo,
-            textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
-                field['textCapitalization']));
+          autofillInfo,
+          textCapitalization: TextCapitalizationConfig.fromInputConfiguration(
+            field.readString('textCapitalization'),
+          ),
+        );
 
         ids.add(autofill.uniqueIdentifier);
 
         if (autofill.uniqueIdentifier != focusedElement.uniqueIdentifier) {
-          final EngineInputType engineInputType =
-              EngineInputType.fromName(field['inputType']['name']);
+          final EngineInputType engineInputType = EngineInputType.fromName(
+            field.readJson('inputType').readString('name'),
+          );
 
           final html.HtmlElement htmlElement = engineInputType.createDomElement();
           autofill.editingState.applyToDomElement(htmlElement);
@@ -278,20 +295,20 @@ class EngineAutofillForm {
     final List<StreamSubscription<html.Event>> subscriptions =
         <StreamSubscription<html.Event>>[];
 
-    final void Function(String key) addSubscriptionForKey = (String key) {
+    void addSubscriptionForKey(String key) {
         final html.Element element = elements![key]!;
         subscriptions.add(
             element.onInput.listen((html.Event e) {
               if (items![key] == null) {
                 throw StateError(
-                    'Autofill would not work withuot Autofill value set');
+                    'AutofillInfo must have a valid uniqueIdentifier.');
               } else {
                 final AutofillInfo autofillInfo = items![key]!;
                 handleChange(element, autofillInfo);
               }
             })
         );
-    };
+    }
 
     keys.forEach(addSubscriptionForKey);
     return subscriptions;
@@ -327,11 +344,13 @@ class EngineAutofillForm {
 /// These values are to be used when a text field have autofill enabled.
 @visibleForTesting
 class AutofillInfo {
-  AutofillInfo(
-      {required this.editingState,
-      required this.uniqueIdentifier,
-      required this.hint,
-      required this.textCapitalization});
+  AutofillInfo({
+    required this.editingState,
+    required this.uniqueIdentifier,
+    required this.autofillHint,
+    required this.textCapitalization,
+    this.placeholder,
+  });
 
   /// The current text and selection state of a text field.
   final EditingState editingState;
@@ -356,46 +375,67 @@ class AutofillInfo {
   /// other the focused field, we need to use this information.
   final TextCapitalizationConfig textCapitalization;
 
-  /// Attribute used for autofill.
+  /// The type of information expected in the field, specified by the developer.
   ///
   /// Used as a guidance to the browser as to the type of information expected
   /// in the field.
   /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete
-  final String hint;
+  final String? autofillHint;
+
+  /// The optional hint text placed on the view that typically suggests what
+  /// sort of input the field accepts, for example "enter your password here".
+  ///
+  /// If the developer does not specify any [autofillHints], the [placeholder]
+  /// can be a useful indication to the platform autofill service as to what
+  /// information is expected in this field.
+  final String? placeholder;
 
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
       {TextCapitalizationConfig textCapitalization =
           const TextCapitalizationConfig.defaultCapitalization()}) {
     assert(autofill != null); // ignore: unnecessary_null_comparison
-    final String uniqueIdentifier = autofill['uniqueIdentifier']!;
-    final List<dynamic> hintsList = autofill['hints'];
+    final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
+    final List<dynamic>? hintsList = autofill.tryList('hints');
+    final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
     final EditingState editingState =
-        EditingState.fromFrameworkMessage(autofill['editingValue']);
+        EditingState.fromFrameworkMessage(autofill.readJson('editingValue'));
     return AutofillInfo(
-        uniqueIdentifier: uniqueIdentifier,
-        hint: BrowserAutofillHints.instance.flutterToEngine(hintsList[0]),
-        editingState: editingState,
-        textCapitalization: textCapitalization);
+      uniqueIdentifier: uniqueIdentifier,
+      autofillHint: (firstHint != null) ? BrowserAutofillHints.instance.flutterToEngine(firstHint) : null,
+      editingState: editingState,
+      placeholder: autofill.tryString('hintText'),
+      textCapitalization: textCapitalization,
+    );
   }
 
   void applyToDomElement(html.HtmlElement domElement,
       {bool focusedElement = false}) {
-    domElement.id = hint;
+    final String? autofillHint = this.autofillHint;
+    final String? placeholder = this.placeholder;
     if (domElement is html.InputElement) {
       final html.InputElement element = domElement;
-      element.name = hint;
-      element.id = hint;
-      element.autocomplete = hint;
-      if (hint.contains('password')) {
-        element.type = 'password';
-      } else {
-        element.type = 'text';
+      if (placeholder != null) {
+        element.placeholder = placeholder;
       }
+      if (autofillHint != null) {
+        element.name = autofillHint;
+        element.id = autofillHint;
+        if (autofillHint.contains('password')) {
+          element.type = 'password';
+        } else {
+          element.type = 'text';
+        }
+      }
+      element.autocomplete = autofillHint ?? 'on';
     } else if (domElement is html.TextAreaElement) {
-      final html.TextAreaElement element = domElement;
-      element.name = hint;
-      element.id = hint;
-      element.setAttribute('autocomplete', hint);
+      if (placeholder != null) {
+        domElement.placeholder = placeholder;
+      }
+      if (autofillHint != null) {
+        domElement.name = autofillHint;
+        domElement.id = autofillHint;
+      }
+      domElement.setAttribute('autocomplete', autofillHint ?? 'on');
     }
   }
 }
@@ -429,9 +469,9 @@ class EditingState {
   /// valid selection range for input DOM elements.
   factory EditingState.fromFrameworkMessage(
       Map<String, dynamic> flutterEditingState) {
-    final int selectionBase = flutterEditingState['selectionBase'];
-    final int selectionExtent = flutterEditingState['selectionExtent'];
-    final String? text = flutterEditingState['text'];
+    final int selectionBase = flutterEditingState.readInt('selectionBase');
+    final int selectionExtent = flutterEditingState.readInt('selectionExtent');
+    final String? text = flutterEditingState.tryString('text');
 
     return EditingState(
       text: text,
@@ -576,24 +616,25 @@ class InputConfiguration {
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
       : inputType = EngineInputType.fromName(
-          flutterInputConfiguration['inputType']['name'],
-          isDecimal: flutterInputConfiguration['inputType']['decimal'] ?? false,
+          flutterInputConfiguration.readJson('inputType').readString('name'),
+          isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
         ),
         inputAction =
-            flutterInputConfiguration['inputAction'] ?? 'TextInputAction.done',
-        obscureText = flutterInputConfiguration['obscureText'] ?? false,
-        readOnly = flutterInputConfiguration['readOnly'] ?? false,
-        autocorrect = flutterInputConfiguration['autocorrect'] ?? true,
+            flutterInputConfiguration.tryString('inputAction') ?? 'TextInputAction.done',
+        obscureText = flutterInputConfiguration.tryBool('obscureText') ?? false,
+        readOnly = flutterInputConfiguration.tryBool('readOnly') ?? false,
+        autocorrect = flutterInputConfiguration.tryBool('autocorrect') ?? true,
         textCapitalization = TextCapitalizationConfig.fromInputConfiguration(
-          flutterInputConfiguration['textCapitalization'],
+          flutterInputConfiguration.readString('textCapitalization'),
         ),
         autofill = flutterInputConfiguration.containsKey('autofill')
             ? AutofillInfo.fromFrameworkMessage(
-                flutterInputConfiguration['autofill'])
+                flutterInputConfiguration.readJson('autofill'))
             : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
-            flutterInputConfiguration['autofill'],
-            flutterInputConfiguration['fields']);
+          flutterInputConfiguration.tryJson('autofill'),
+          flutterInputConfiguration.tryList('fields'),
+        );
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -686,15 +727,13 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
 
   @override
   void placeElement() {
+    geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
-      geometry?.applyToDomElement(focusedFormElement!);
       placeForm();
       // Set the last editing state if it exists, this is critical for a
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
-      if (lastEditingState != null) {
-        lastEditingState!.applyToDomElement(domElement);
-      }
+      lastEditingState?.applyToDomElement(domElement);
       // On Chrome, when a form is focused, it opens an autofill menu
       // immediately.
       // Flutter framework sends `setEditableSizeAndTransform` for informing
@@ -707,8 +746,6 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus();
       activeDomElement.focus();
-    } else {
-      geometry?.applyToDomElement(activeDomElement);
     }
   }
 }
@@ -757,9 +794,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
       // the transform.
       // If domElement is not focused cursor location will not be correct.
       activeDomElement.focus();
-      if (lastEditingState != null) {
-        lastEditingState!.applyToDomElement(activeDomElement);
-      }
+      lastEditingState?.applyToDomElement(activeDomElement);
     }
   }
 
@@ -883,7 +918,12 @@ abstract class DefaultTextEditingStrategy implements TextEditingStrategy {
       activeDomElement.setAttribute('inputmode', 'none');
     }
 
-    config.autofill?.applyToDomElement(activeDomElement, focusedElement: true);
+    final AutofillInfo? autofill = config.autofill;
+    if (autofill != null) {
+      autofill.applyToDomElement(activeDomElement, focusedElement: true);
+    } else {
+      activeDomElement.setAttribute('autocomplete', 'off');
+    }
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
     activeDomElement.setAttribute('autocorrect', autocorrectValue);
@@ -1141,7 +1181,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // On iOS, blur is trigerred in the following cases:
     //
     // 1. The browser app is sent to the background (or the tab is changed). In
-    //    this case, the window loses focus (see [domRenderer.windowHasFocus]),
+    //    this case, the window loses focus (see [windowHasFocus]),
     //    so we close the input connection with the framework.
     // 2. The user taps on another focusable element. In this case, we refocus
     //    the input field and wait for the framework to manage the focus change.
@@ -1150,7 +1190,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    okay because the virtual keyboard will hide, and as soon as the user
     //    taps the text field again, the virtual keyboard will come up.
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (domRenderer.windowHasFocus) {
+      if (windowHasFocus) {
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
@@ -1262,11 +1302,11 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(html.document.onSelectionChange.listen(handleChange));
 
     subscriptions.add(activeDomElement.onBlur.listen((_) {
-      if (domRenderer.windowHasFocus) {
+      if (windowHasFocus) {
         // Chrome on Android will hide the onscreen keyboard when you tap outside
         // the text box. Instead, we want the framework to tell us to hide the
         // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-        // refocus as long as [domRenderer.windowHasFocus] is true.
+        // refocus as long as [windowHasFocus] is true.
         activeDomElement.focus();
       } else {
         owner.sendTextConnectionClosedToFrameworkIfAny();
@@ -1361,9 +1401,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to
     // the transform.
-    if (lastEditingState != null) {
-      lastEditingState!.applyToDomElement(activeDomElement);
-    }
+    lastEditingState?.applyToDomElement(activeDomElement);
   }
 }
 
@@ -1379,7 +1417,7 @@ abstract class TextInputCommand {
 
 /// Responds to the 'TextInput.setClient' message.
 class TextInputSetClient extends TextInputCommand {
-  TextInputSetClient({
+  const TextInputSetClient({
     required this.clientId,
     required this.configuration,
   });
@@ -1421,7 +1459,7 @@ DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing te
 
 /// Responds to the 'TextInput.updateConfig' message.
 class TextInputUpdateConfig extends TextInputCommand {
-  TextInputUpdateConfig();
+  const TextInputUpdateConfig();
 
   @override
   void run(HybridTextEditing textEditing) {
@@ -1431,7 +1469,7 @@ class TextInputUpdateConfig extends TextInputCommand {
 
 /// Responds to the 'TextInput.setEditingState' message.
 class TextInputSetEditingState extends TextInputCommand {
-  TextInputSetEditingState({
+  const TextInputSetEditingState({
     required this.state,
   });
 
@@ -1457,7 +1495,7 @@ class TextInputShow extends TextInputCommand {
 
 /// Responds to the 'TextInput.setEditableSizeAndTransform' message.
 class TextInputSetEditableSizeAndTransform extends TextInputCommand {
-  TextInputSetEditableSizeAndTransform({
+  const TextInputSetEditableSizeAndTransform({
     required this.geometry,
   });
 
@@ -1471,7 +1509,7 @@ class TextInputSetEditableSizeAndTransform extends TextInputCommand {
 
 /// Responds to the 'TextInput.setStyle' message.
 class TextInputSetStyle extends TextInputCommand {
-  TextInputSetStyle({
+  const TextInputSetStyle({
     required this.style,
   });
 
@@ -1536,7 +1574,7 @@ class TextInputRequestAutofill extends TextInputCommand {
 }
 
 class TextInputFinishAutofillContext extends TextInputCommand {
-  TextInputFinishAutofillContext({
+  const TextInputFinishAutofillContext({
     required this.saveForm,
   });
 
@@ -1597,8 +1635,8 @@ class TextEditingChannel {
     switch (call.method) {
       case 'TextInput.setClient':
         command = TextInputSetClient(
-          clientId: call.arguments[0],
-          configuration: InputConfiguration.fromFrameworkMessage(call.arguments[1]),
+          clientId: call.arguments[0] as int,
+          configuration: InputConfiguration.fromFrameworkMessage(call.arguments[1] as Map<String, dynamic>),
         );
         break;
 
@@ -1606,13 +1644,17 @@ class TextEditingChannel {
         // Set configuration eagerly because it contains data about the text
         // field used to flush the command queue. However, delaye applying the
         // configuration because the strategy may not be available yet.
-        implementation.configuration = InputConfiguration.fromFrameworkMessage(call.arguments);
-        command = TextInputUpdateConfig();
+        implementation.configuration = InputConfiguration.fromFrameworkMessage(
+          call.arguments as Map<String, dynamic>
+        );
+        command = const TextInputUpdateConfig();
         break;
 
       case 'TextInput.setEditingState':
         command = TextInputSetEditingState(
-          state: EditingState.fromFrameworkMessage(call.arguments),
+          state: EditingState.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>
+          ),
         );
         break;
 
@@ -1622,13 +1664,17 @@ class TextEditingChannel {
 
       case 'TextInput.setEditableSizeAndTransform':
         command = TextInputSetEditableSizeAndTransform(
-          geometry: EditableTextGeometry.fromFrameworkMessage(call.arguments),
+          geometry: EditableTextGeometry.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>
+          ),
         );
         break;
 
       case 'TextInput.setStyle':
         command = TextInputSetStyle(
-          style: EditableTextStyle.fromFrameworkMessage(call.arguments),
+          style: EditableTextStyle.fromFrameworkMessage(
+            call.arguments as Map<String, dynamic>,
+          ),
         );
         break;
 
@@ -1740,11 +1786,9 @@ class HybridTextEditing {
   ///
   /// The constructor also decides which text editing strategy to use depending
   /// on the operating system and browser engine.
-  HybridTextEditing() {
-    channel = TextEditingChannel(this);
-  }
+  HybridTextEditing();
 
-  late TextEditingChannel channel;
+  late final TextEditingChannel channel = TextEditingChannel(this);
 
   /// A CSS class name used to identify all elements used for text editing.
   @visibleForTesting
@@ -1823,9 +1867,9 @@ class EditableTextStyle {
     assert(flutterStyle.containsKey('textAlignIndex'));
     assert(flutterStyle.containsKey('textDirectionIndex'));
 
-    final int textAlignIndex = flutterStyle['textAlignIndex'];
-    final int textDirectionIndex = flutterStyle['textDirectionIndex'];
-    final int? fontWeightIndex = flutterStyle['fontWeightIndex'];
+    final int textAlignIndex = flutterStyle['textAlignIndex'] as int;
+    final int textDirectionIndex = flutterStyle['textDirectionIndex'] as int;
+    final int? fontWeightIndex = flutterStyle['fontWeightIndex'] as int?;
 
     // Convert [fontWeightIndex] to its CSS equivalent value.
     final String fontWeight = fontWeightIndex != null
@@ -1836,8 +1880,8 @@ class EditableTextStyle {
     // corresponding enum values in [ui.TextAlign] and [ui.TextDirection]
     // respectively.
     return EditableTextStyle(
-      fontSize: flutterStyle['fontSize'],
-      fontFamily: flutterStyle['fontFamily'],
+      fontSize: flutterStyle.tryDouble('fontSize'),
+      fontFamily: flutterStyle.tryString('fontFamily'),
       textAlign: ui.TextAlign.values[textAlignIndex],
       textDirection: ui.TextDirection.values[textDirectionIndex],
       fontWeight: fontWeight,
@@ -1870,7 +1914,7 @@ class EditableTextStyle {
 /// message from the framework.
 @immutable
 class EditableTextGeometry {
-  EditableTextGeometry({
+  const EditableTextGeometry({
     required this.width,
     required this.height,
     required this.globalTransform,
@@ -1885,10 +1929,10 @@ class EditableTextGeometry {
     assert(encodedGeometry.containsKey('transform'));
 
     final List<double> transformList =
-        List<double>.from(encodedGeometry['transform']);
+        List<double>.from(encodedGeometry.readList('transform'));
     return EditableTextGeometry(
-      width: encodedGeometry['width'],
-      height: encodedGeometry['height'],
+      width: encodedGeometry.readDouble('width'),
+      height: encodedGeometry.readDouble('height'),
       globalTransform: Float32List.fromList(transformList),
     );
   }

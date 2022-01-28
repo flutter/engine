@@ -64,10 +64,12 @@ static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
           vm.GetIsolateSnapshot(),             // isolate_snapshot
           {},                                  // platform configuration
           DartIsolate::Flags{},                // flags
+          nullptr,                             // root isolate create callback
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback,
           entrypoint,                          // dart entrypoint
           std::nullopt,                        // dart entrypoint library
+          {},                                  // dart entrypoint arguments
           std::move(isolate_configuration),    // isolate configuration
           std::move(context)                   // engine context
           )

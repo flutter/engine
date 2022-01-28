@@ -8,6 +8,16 @@ import("//flutter/common/config.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
+group("generate_snapshot_bins") {
+  deps = [
+    ":generate_snapshot_bin",
+    ":kernel_platform_files",
+  ]
+  if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
+    deps += [ ":create_arm_gen_snapshot" ]
+  }
+}
+
 compiled_action("generate_snapshot_bin") {
   if (target_cpu == "x86" && host_os == "linux") {
     # By default Dart will create a 32-bit gen_snapshot host binary if the target
@@ -221,9 +231,6 @@ source_set("snapshot") {
     ":vm_snapshot_data_linkable",
     ":vm_snapshot_instructions_linkable",
   ]
-  if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
-    deps += [ ":create_arm_gen_snapshot" ]
-  }
 
   sources = get_target_outputs(":isolate_snapshot_data_linkable") +
             get_target_outputs(":isolate_snapshot_instructions_linkable") +
@@ -242,6 +249,8 @@ compile_platform("strong_platform") {
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
+
+  pool = "//flutter/build/dart:dart_pool"
 
   is_runtime_mode_release =
       flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"

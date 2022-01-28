@@ -313,6 +313,7 @@ typedef bool (*TextureFrameCallback)(void* /* user data */,
                                      size_t /* height */,
                                      FlutterOpenGLTexture* /* texture out */);
 typedef void (*VsyncCallback)(void* /* user data */, intptr_t /* baton */);
+typedef void (*OnPreEngineRestartCallback)(void* /* user data */);
 
 /// A structure to represent the width and height.
 typedef struct {
@@ -371,7 +372,7 @@ typedef uint32_t (*UIntFrameInfoCallback)(
 ///
 /// See: \ref FlutterOpenGLRendererConfig.present_with_info.
 typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterFrameInfo).
+  /// The size of this struct. Must be sizeof(FlutterPresentInfo).
   size_t struct_size;
   /// Id of the fbo backing the surface that was presented.
   uint32_t fbo_id;
@@ -693,6 +694,14 @@ typedef enum {
 ///    released.
 ///  * All events throughout a key press sequence shall have the same `physical`
 ///    and `logical`. Having different `character`s is allowed.
+///
+/// A `FlutterKeyEvent` with `physical` 0 and `logical` 0 is an empty event.
+/// This is the only case either `physical` or `logical` can be 0. An empty
+/// event must be sent if a key message should be converted to no
+/// `FlutterKeyEvent`s, for example, when a key down message is received for a
+/// key that has already been pressed according to the record. This is to ensure
+/// some `FlutterKeyEvent` arrives at the framework before raw key message.
+/// See https://github.com/flutter/flutter/issues/87230.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterKeyEvent).
   size_t struct_size;
@@ -706,11 +715,17 @@ typedef struct {
   ///
   /// For the full definition and list of pre-defined physical keys, see
   /// `PhysicalKeyboardKey` from the framework.
+  ///
+  /// The only case that `physical` might be 0 is when this is an empty event.
+  /// See `FlutterKeyEvent` for introduction.
   uint64_t physical;
   /// The key ID for the logical key of this event.
   ///
   /// For the full definition and a list of pre-defined logical keys, see
   /// `LogicalKeyboardKey` from the framework.
+  ///
+  /// The only case that `logical` might be 0 is when this is an empty event.
+  /// See `FlutterKeyEvent` for introduction.
   uint64_t logical;
   /// Null-terminated character input from the event. Can be null. Ignored for
   /// up events.
@@ -1380,9 +1395,10 @@ typedef struct {
   /// `switches.h` engine source file.
   const char* const* command_line_argv;
   /// The callback invoked by the engine in order to give the embedder the
-  /// chance to respond to platform messages from the Dart application. The
-  /// callback will be invoked on the thread on which the `FlutterEngineRun`
-  /// call is made.
+  /// chance to respond to platform messages from the Dart application.
+  /// The callback will be invoked on the thread on which the `FlutterEngineRun`
+  /// call is made. The second parameter, `user_data`, is supplied when
+  /// `FlutterEngineRun` or `FlutterEngineInitialize` is called.
   FlutterPlatformMessageCallback platform_message_callback;
   /// The VM snapshot data buffer used in AOT operation. This buffer must be
   /// mapped in as read-only. For more information refer to the documentation on
@@ -1563,6 +1579,16 @@ typedef struct {
   // or component name to embedder's logger. This string will be passed to to
   // callbacks on `log_message_callback`. Defaults to "flutter" if unspecified.
   const char* log_tag;
+
+  // A callback that is invoked right before the engine is restarted.
+  //
+  // This optional callback is typically used to reset states to as if the
+  // engine has just been started, and usually indicates the user has requested
+  // a hot restart (Shift-R in the Flutter CLI.) It is not called the first time
+  // the engine starts.
+  //
+  // The first argument is the `user_data` from `FlutterEngineInitialize`.
+  OnPreEngineRestartCallback on_pre_engine_restart_callback;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES

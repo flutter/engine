@@ -14,7 +14,6 @@
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/gpu/GrBackendSemaphore.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
@@ -157,9 +156,9 @@ bool VulkanSurfaceProducer::Initialize(scenic::Session* scenic_session) {
   return true;
 }
 
-void VulkanSurfaceProducer::OnSurfacesPresented(
+void VulkanSurfaceProducer::SubmitSurfaces(
     std::vector<std::unique_ptr<SurfaceProducerSurface>> surfaces) {
-  TRACE_EVENT0("flutter", "VulkanSurfaceProducer::OnSurfacesPresented");
+  TRACE_EVENT0("flutter", "VulkanSurfaceProducer::SubmitSurfaces");
 
   // Do a single flush for all canvases derived from the context.
   {

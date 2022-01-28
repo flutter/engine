@@ -9,16 +9,15 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../../browser_detection.dart';
+import '../../safe_browser_api.dart';
 import '../../util.dart';
 import '../../validators.dart';
 import '../../vector_math.dart';
-import '../offscreen_canvas.dart';
 import '../path/path_utils.dart';
 import '../render_vertices.dart';
 import 'normalized_gradient.dart';
 import 'shader_builder.dart';
 import 'vertex_shaders.dart';
-import 'webgl_context.dart';
 
 const double kFltEpsilon = 1.19209290E-07; // == 1 / (2 ^ 23)
 const double kFltEpsilonSquared = 1.19209290E-07 * 1.19209290E-07;
@@ -239,7 +238,7 @@ class GradientLinear extends EngineGradient {
 
     /// When creating an image to apply to a dom element, render
     /// contents at 0,0 and adjust gradient vector for shaderBounds.
-    final bool translateToOrigin = createDataUrl && shaderBounds != null;
+    final bool translateToOrigin = createDataUrl;
 
     if (translateToOrigin) {
       shaderBounds = shaderBounds.translate(-shaderBounds.left, -shaderBounds.top);
@@ -584,7 +583,7 @@ class GradientRadial extends EngineGradient {
   }
 }
 
-/// TODO: Implement focal https://github.com/flutter/flutter/issues/76643.
+// TODO(ferhat): Implement focal https://github.com/flutter/flutter/issues/76643.
 class GradientConical extends GradientRadial {
   GradientConical(
       this.focal,
@@ -697,7 +696,7 @@ class _BlurEngineImageFilter extends EngineImageFilter {
   final double sigmaY;
   final ui.TileMode tileMode;
 
-  // TODO(flutter_web): implement TileMode.
+  // TODO(ferhat): implement TileMode.
   @override
   String get filterAttribute => blurSigmasToCssString(sigmaX, sigmaY);
 
@@ -728,7 +727,7 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
   final Float64List webMatrix;
   final ui.FilterQuality filterQuality;
 
-  // TODO(flutter_web): implement FilterQuality.
+  // TODO(yjbanov): implement FilterQuality.
   @override
   String get transformAttribute => float64ListToCssTransform(webMatrix);
 

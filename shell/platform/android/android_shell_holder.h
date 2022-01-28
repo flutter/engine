@@ -16,6 +16,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_message_handler_android.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 
 namespace flutter {
@@ -40,8 +41,7 @@ namespace flutter {
 class AndroidShellHolder {
  public:
   AndroidShellHolder(flutter::Settings settings,
-                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                     bool is_background_view);
+                     std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
 
   ~AndroidShellHolder();
 
@@ -79,11 +79,14 @@ class AndroidShellHolder {
   std::unique_ptr<AndroidShellHolder> Spawn(
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       const std::string& entrypoint,
-      const std::string& libraryUrl) const;
+      const std::string& libraryUrl,
+      const std::string& initial_route,
+      const std::vector<std::string>& entrypoint_args) const;
 
   void Launch(std::shared_ptr<AssetManager> asset_manager,
               const std::string& entrypoint,
-              const std::string& libraryUrl);
+              const std::string& libraryUrl,
+              const std::vector<std::string>& entrypoint_args);
 
   const flutter::Settings& GetSettings() const;
 
@@ -95,6 +98,11 @@ class AndroidShellHolder {
   void UpdateAssetManager(fml::RefPtr<flutter::AssetManager> asset_manager);
 
   void NotifyLowMemoryWarning();
+
+  const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
+      const {
+    return shell_->GetPlatformMessageHandler();
+  }
 
  private:
   const flutter::Settings settings_;
@@ -126,7 +134,8 @@ class AndroidShellHolder {
   std::optional<RunConfiguration> BuildRunConfiguration(
       std::shared_ptr<flutter::AssetManager> asset_manager,
       const std::string& entrypoint,
-      const std::string& libraryUrl) const;
+      const std::string& libraryUrl,
+      const std::vector<std::string>& entrypoint_args) const;
 
   bool IsNDKImageDecoderAvailable();
 

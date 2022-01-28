@@ -7,10 +7,7 @@
 #include "flutter/flow/display_list.h"
 #include "flutter/flow/display_list_canvas.h"
 #include "flutter/flow/display_list_utils.h"
-#include "flutter/fml/logging.h"
 
-#include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/core/SkMaskFilter.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkRSXform.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -74,7 +71,7 @@ struct DLOp {
   struct Set##name##Op final : DLOp {                        \
     static const auto kType = DisplayListOpType::kSet##name; \
                                                              \
-    Set##name##Op(bool value) : value(value) {}              \
+    explicit Set##name##Op(bool value) : value(value) {}     \
                                                              \
     const bool value;                                        \
                                                              \
@@ -82,45 +79,43 @@ struct DLOp {
       dispatcher.set##name(value);                           \
     }                                                        \
   };
-DEFINE_SET_BOOL_OP(AA)
+DEFINE_SET_BOOL_OP(AntiAlias)
 DEFINE_SET_BOOL_OP(Dither)
 DEFINE_SET_BOOL_OP(InvertColors)
 #undef DEFINE_SET_BOOL_OP
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
-#define DEFINE_SET_ENUM_OP(name)                                \
-  struct Set##name##s##Op final : DLOp {                        \
-    static const auto kType = DisplayListOpType::kSet##name##s; \
-                                                                \
-    Set##name##s##Op(SkPaint::name value) : value(value) {}     \
-                                                                \
-    const SkPaint::name value;                                  \
-                                                                \
-    void dispatch(Dispatcher& dispatcher) const {               \
-      dispatcher.set##name##s(value);                           \
-    }                                                           \
+#define DEFINE_SET_ENUM_OP(name)                                        \
+  struct SetStroke##name##Op final : DLOp {                             \
+    static const auto kType = DisplayListOpType::kSetStroke##name;      \
+                                                                        \
+    explicit SetStroke##name##Op(SkPaint::name value) : value(value) {} \
+                                                                        \
+    const SkPaint::name value;                                          \
+                                                                        \
+    void dispatch(Dispatcher& dispatcher) const {                       \
+      dispatcher.setStroke##name(value);                                \
+    }                                                                   \
   };
 DEFINE_SET_ENUM_OP(Cap)
 DEFINE_SET_ENUM_OP(Join)
 #undef DEFINE_SET_ENUM_OP
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
-struct SetDrawStyleOp final : DLOp {
-  static const auto kType = DisplayListOpType::kSetDrawStyle;
+struct SetStyleOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetStyle;
 
-  SetDrawStyleOp(SkPaint::Style style) : style(style) {}
+  explicit SetStyleOp(SkPaint::Style style) : style(style) {}
 
   const SkPaint::Style style;
 
-  void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.setDrawStyle(style);
-  }
+  void dispatch(Dispatcher& dispatcher) const { dispatcher.setStyle(style); }
 };
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct SetStrokeWidthOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetStrokeWidth;
 
-  SetStrokeWidthOp(SkScalar width) : width(width) {}
+  explicit SetStrokeWidthOp(SkScalar width) : width(width) {}
 
   const SkScalar width;
 
@@ -129,15 +124,15 @@ struct SetStrokeWidthOp final : DLOp {
   }
 };
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
-struct SetMiterLimitOp final : DLOp {
-  static const auto kType = DisplayListOpType::kSetMiterLimit;
+struct SetStrokeMiterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetStrokeMiter;
 
-  SetMiterLimitOp(SkScalar limit) : limit(limit) {}
+  explicit SetStrokeMiterOp(SkScalar limit) : limit(limit) {}
 
   const SkScalar limit;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.setMiterLimit(limit);
+    dispatcher.setStrokeMiter(limit);
   }
 };
 
@@ -145,7 +140,7 @@ struct SetMiterLimitOp final : DLOp {
 struct SetColorOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetColor;
 
-  SetColorOp(SkColor color) : color(color) {}
+  explicit SetColorOp(SkColor color) : color(color) {}
 
   const SkColor color;
 
@@ -155,7 +150,7 @@ struct SetColorOp final : DLOp {
 struct SetBlendModeOp final : DLOp {
   static const auto kType = DisplayListOpType::kSetBlendMode;
 
-  SetBlendModeOp(SkBlendMode mode) : mode(mode) {}
+  explicit SetBlendModeOp(SkBlendMode mode) : mode(mode) {}
 
   const SkBlendMode mode;
 
@@ -167,26 +162,26 @@ struct SetBlendModeOp final : DLOp {
 // Set: 4 byte header + an sk_sp (ptr) uses 16 bytes due to the
 //      alignment of the ptr.
 //      (4 bytes unused)
-#define DEFINE_SET_CLEAR_SKREF_OP(name, field)                        \
-  struct Clear##name##Op final : DLOp {                               \
-    static const auto kType = DisplayListOpType::kClear##name;        \
-                                                                      \
-    Clear##name##Op() {}                                              \
-                                                                      \
-    void dispatch(Dispatcher& dispatcher) const {                     \
-      dispatcher.set##name(nullptr);                                  \
-    }                                                                 \
-  };                                                                  \
-  struct Set##name##Op final : DLOp {                                 \
-    static const auto kType = DisplayListOpType::kSet##name;          \
-                                                                      \
-    Set##name##Op(sk_sp<Sk##name> field) : field(std::move(field)) {} \
-                                                                      \
-    sk_sp<Sk##name> field;                                            \
-                                                                      \
-    void dispatch(Dispatcher& dispatcher) const {                     \
-      dispatcher.set##name(field);                                    \
-    }                                                                 \
+#define DEFINE_SET_CLEAR_SKREF_OP(name, field)                                 \
+  struct Clear##name##Op final : DLOp {                                        \
+    static const auto kType = DisplayListOpType::kClear##name;                 \
+                                                                               \
+    Clear##name##Op() {}                                                       \
+                                                                               \
+    void dispatch(Dispatcher& dispatcher) const {                              \
+      dispatcher.set##name(nullptr);                                           \
+    }                                                                          \
+  };                                                                           \
+  struct Set##name##Op final : DLOp {                                          \
+    static const auto kType = DisplayListOpType::kSet##name;                   \
+                                                                               \
+    explicit Set##name##Op(sk_sp<Sk##name> field) : field(std::move(field)) {} \
+                                                                               \
+    sk_sp<Sk##name> field;                                                     \
+                                                                               \
+    void dispatch(Dispatcher& dispatcher) const {                              \
+      dispatcher.set##name(field);                                             \
+    }                                                                          \
   };
 DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
 DEFINE_SET_CLEAR_SKREF_OP(Shader, shader)
@@ -203,7 +198,7 @@ DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
   struct SetMaskBlurFilter##name##Op final : DLOp {                        \
     static const auto kType = DisplayListOpType::kSetMaskBlurFilter##name; \
                                                                            \
-    SetMaskBlurFilter##name##Op(SkScalar sigma) : sigma(sigma) {}          \
+    explicit SetMaskBlurFilter##name##Op(SkScalar sigma) : sigma(sigma) {} \
                                                                            \
     SkScalar sigma;                                                        \
                                                                            \
@@ -229,7 +224,7 @@ struct SaveOp final : DLOp {
 struct SaveLayerOp final : DLOp {
   static const auto kType = DisplayListOpType::kSaveLayer;
 
-  SaveLayerOp(bool with_paint) : with_paint(with_paint) {}
+  explicit SaveLayerOp(bool with_paint) : with_paint(with_paint) {}
 
   bool with_paint;
 
@@ -288,7 +283,7 @@ struct ScaleOp final : DLOp {
 struct RotateOp final : DLOp {
   static const auto kType = DisplayListOpType::kRotate;
 
-  RotateOp(SkScalar degrees) : degrees(degrees) {}
+  explicit RotateOp(SkScalar degrees) : degrees(degrees) {}
 
   const SkScalar degrees;
 
@@ -308,53 +303,50 @@ struct SkewOp final : DLOp {
 };
 // 4 byte header + 24 byte payload uses 28 bytes but is rounded up to 32 bytes
 // (4 bytes unused)
-struct Transform2x3Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform2x3;
+struct Transform2DAffineOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransform2DAffine;
 
-  Transform2x3Op(SkScalar mxx,
-                 SkScalar mxy,
-                 SkScalar mxt,
-                 SkScalar myx,
-                 SkScalar myy,
-                 SkScalar myt)
+  // clang-format off
+  Transform2DAffineOp(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                      SkScalar myx, SkScalar myy, SkScalar myt)
       : mxx(mxx), mxy(mxy), mxt(mxt), myx(myx), myy(myy), myt(myt) {}
+  // clang-format on
 
   const SkScalar mxx, mxy, mxt;
   const SkScalar myx, myy, myt;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform2x3(mxx, mxy, mxt, myx, myy, myt);
+    dispatcher.transform2DAffine(mxx, mxy, mxt,  //
+                                 myx, myy, myt);
   }
 };
-// 4 byte header + 36 byte payload packs evenly into 40 bytes
-struct Transform3x3Op final : DLOp {
-  static const auto kType = DisplayListOpType::kTransform3x3;
+// 4 byte header + 64 byte payload uses 68 bytes which is rounded up to 72 bytes
+// (4 bytes unused)
+struct TransformFullPerspectiveOp final : DLOp {
+  static const auto kType = DisplayListOpType::kTransformFullPerspective;
 
-  Transform3x3Op(SkScalar mxx,
-                 SkScalar mxy,
-                 SkScalar mxt,
-                 SkScalar myx,
-                 SkScalar myy,
-                 SkScalar myt,
-                 SkScalar px,
-                 SkScalar py,
-                 SkScalar pt)
-      : mxx(mxx),
-        mxy(mxy),
-        mxt(mxt),
-        myx(myx),
-        myy(myy),
-        myt(myt),
-        px(px),
-        py(py),
-        pt(pt) {}
+  // clang-format off
+  TransformFullPerspectiveOp(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt)
+      : mxx(mxx), mxy(mxy), mxz(mxz), mxt(mxt),
+        myx(myx), myy(myy), myz(myz), myt(myt),
+        mzx(mzx), mzy(mzy), mzz(mzz), mzt(mzt),
+        mwx(mwx), mwy(mwy), mwz(mwz), mwt(mwt) {}
+  // clang-format on
 
-  const SkScalar mxx, mxy, mxt;
-  const SkScalar myx, myy, myt;
-  const SkScalar px, py, pt;
+  const SkScalar mxx, mxy, mxz, mxt;
+  const SkScalar myx, myy, myz, myt;
+  const SkScalar mzx, mzy, mzz, mzt;
+  const SkScalar mwx, mwy, mwz, mwt;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.transform3x3(mxx, mxy, mxt, myx, myy, myt, px, py, pt);
+    dispatcher.transformFullPerspective(mxx, mxy, mxz, mxt,  //
+                                        myx, myy, myz, myt,  //
+                                        mzx, mzy, mzz, mzt,  //
+                                        mwx, mwy, mwz, mwt);
   }
 };
 
@@ -379,7 +371,7 @@ struct Transform3x3Op final : DLOp {
     const Sk##shapetype shape;                                             \
                                                                            \
     void dispatch(Dispatcher& dispatcher) const {                          \
-      dispatcher.clip##shapetype(shape, is_aa, SkClipOp::k##clipop);       \
+      dispatcher.clip##shapetype(shape, SkClipOp::k##clipop, is_aa);       \
     }                                                                      \
   };
 DEFINE_CLIP_SHAPE_OP(Rect, Intersect)
@@ -399,7 +391,7 @@ DEFINE_CLIP_SHAPE_OP(RRect, Difference)
     const SkPath path;                                                   \
                                                                          \
     void dispatch(Dispatcher& dispatcher) const {                        \
-      dispatcher.clipPath(path, is_aa, SkClipOp::k##clipop);             \
+      dispatcher.clipPath(path, SkClipOp::k##clipop, is_aa);             \
     }                                                                    \
                                                                          \
     DisplayListCompare equals(const Clip##clipop##PathOp* other) const { \
@@ -440,17 +432,17 @@ struct DrawColorOp final : DLOp {
 //        (4 bytes unused)
 // SkOval is same as SkRect
 // SkRRect is 52 more bytes, which packs efficiently into 56 bytes total
-#define DEFINE_DRAW_1ARG_OP(op_name, arg_type, arg_name)         \
-  struct Draw##op_name##Op final : DLOp {                        \
-    static const auto kType = DisplayListOpType::kDraw##op_name; \
-                                                                 \
-    Draw##op_name##Op(arg_type arg_name) : arg_name(arg_name) {} \
-                                                                 \
-    const arg_type arg_name;                                     \
-                                                                 \
-    void dispatch(Dispatcher& dispatcher) const {                \
-      dispatcher.draw##op_name(arg_name);                        \
-    }                                                            \
+#define DEFINE_DRAW_1ARG_OP(op_name, arg_type, arg_name)                  \
+  struct Draw##op_name##Op final : DLOp {                                 \
+    static const auto kType = DisplayListOpType::kDraw##op_name;          \
+                                                                          \
+    explicit Draw##op_name##Op(arg_type arg_name) : arg_name(arg_name) {} \
+                                                                          \
+    const arg_type arg_name;                                              \
+                                                                          \
+    void dispatch(Dispatcher& dispatcher) const {                         \
+      dispatcher.draw##op_name(arg_name);                                 \
+    }                                                                     \
   };
 DEFINE_DRAW_1ARG_OP(Rect, SkRect, rect)
 DEFINE_DRAW_1ARG_OP(Oval, SkRect, oval)
@@ -462,7 +454,7 @@ DEFINE_DRAW_1ARG_OP(RRect, SkRRect, rrect)
 struct DrawPathOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawPath;
 
-  DrawPathOp(SkPath path) : path(path) {}
+  explicit DrawPathOp(SkPath path) : path(path) {}
 
   const SkPath path;
 
@@ -526,7 +518,7 @@ struct DrawArcOp final : DLOp {
   struct Draw##name##Op final : DLOp {                                 \
     static const auto kType = DisplayListOpType::kDraw##name;          \
                                                                        \
-    Draw##name##Op(uint32_t count) : count(count) {}                   \
+    explicit Draw##name##Op(uint32_t count) : count(count) {}          \
                                                                        \
     const uint32_t count;                                              \
                                                                        \
@@ -556,69 +548,81 @@ struct DrawVerticesOp final : DLOp {
 };
 
 // 4 byte header + 36 byte payload packs efficiently into 40 bytes
-struct DrawImageOp final : DLOp {
-  static const auto kType = DisplayListOpType::kDrawImage;
+#define DEFINE_DRAW_IMAGE_OP(name, with_attributes)                    \
+  struct name##Op final : DLOp {                                       \
+    static const auto kType = DisplayListOpType::k##name;              \
+                                                                       \
+    name##Op(const sk_sp<SkImage> image,                               \
+             const SkPoint& point,                                     \
+             const SkSamplingOptions& sampling)                        \
+        : point(point), sampling(sampling), image(std::move(image)) {} \
+                                                                       \
+    const SkPoint point;                                               \
+    const SkSamplingOptions sampling;                                  \
+    const sk_sp<SkImage> image;                                        \
+                                                                       \
+    void dispatch(Dispatcher& dispatcher) const {                      \
+      dispatcher.drawImage(image, point, sampling, with_attributes);   \
+    }                                                                  \
+  };
+DEFINE_DRAW_IMAGE_OP(DrawImage, false)
+DEFINE_DRAW_IMAGE_OP(DrawImageWithAttr, true)
+#undef DEFINE_DRAW_IMAGE_OP
 
-  DrawImageOp(const sk_sp<SkImage> image,
-              const SkPoint& point,
-              const SkSamplingOptions& sampling)
-      : point(point), sampling(sampling), image(std::move(image)) {}
+// 4 byte header + 68 byte payload packs efficiently into 72 bytes
+struct DrawImageRectOp final : DLOp {
+  static const auto kType = DisplayListOpType::kDrawImageRect;
 
-  const SkPoint point;
+  DrawImageRectOp(const sk_sp<SkImage> image,
+                  const SkRect& src,
+                  const SkRect& dst,
+                  const SkSamplingOptions& sampling,
+                  bool render_with_attributes,
+                  SkCanvas::SrcRectConstraint constraint)
+      : src(src),
+        dst(dst),
+        sampling(sampling),
+        render_with_attributes(render_with_attributes),
+        constraint(constraint),
+        image(std::move(image)) {}
+
+  const SkRect src;
+  const SkRect dst;
   const SkSamplingOptions sampling;
+  const bool render_with_attributes;
+  const SkCanvas::SrcRectConstraint constraint;
   const sk_sp<SkImage> image;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawImage(image, point, sampling);
+    dispatcher.drawImageRect(image, src, dst, sampling, render_with_attributes,
+                             constraint);
   }
 };
-
-// 4 byte header + 60 byte payload packs efficiently into 64 bytes
-//
-// The constraint could be stored in the struct, but it would not pack
-// efficiently so 2 variants are defined instead.
-#define DEFINE_DRAW_IMAGE_RECT_OP(name, constraint)                          \
-  struct Draw##name##Op final : DLOp {                                       \
-    static const auto kType = DisplayListOpType::kDraw##name;                \
-                                                                             \
-    Draw##name##Op(const sk_sp<SkImage> image,                               \
-                   const SkRect& src,                                        \
-                   const SkRect& dst,                                        \
-                   const SkSamplingOptions& sampling)                        \
-        : src(src), dst(dst), sampling(sampling), image(std::move(image)) {} \
-                                                                             \
-    const SkRect src;                                                        \
-    const SkRect dst;                                                        \
-    const SkSamplingOptions sampling;                                        \
-    const sk_sp<SkImage> image;                                              \
-                                                                             \
-    void dispatch(Dispatcher& dispatcher) const {                            \
-      dispatcher.drawImageRect(image, src, dst, sampling, constraint);       \
-    }                                                                        \
-  };
-DEFINE_DRAW_IMAGE_RECT_OP(ImageRectStrict, SkCanvas::kStrict_SrcRectConstraint)
-DEFINE_DRAW_IMAGE_RECT_OP(ImageRectFast, SkCanvas::kFast_SrcRectConstraint)
-#undef DEFINE_DRAW_IMAGE_RECT_OP
 
 // 4 byte header + 44 byte payload packs efficiently into 48 bytes
-struct DrawImageNineOp final : DLOp {
-  static const auto kType = DisplayListOpType::kDrawImageNine;
-
-  DrawImageNineOp(const sk_sp<SkImage> image,
-                  const SkIRect& center,
-                  const SkRect& dst,
-                  SkFilterMode filter)
-      : center(center), dst(dst), filter(filter), image(std::move(image)) {}
-
-  const SkIRect center;
-  const SkRect dst;
-  const SkFilterMode filter;
-  const sk_sp<SkImage> image;
-
-  void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawImageNine(image, center, dst, filter);
-  }
-};
+#define DEFINE_DRAW_IMAGE_NINE_OP(name, render_with_attributes)                \
+  struct name##Op final : DLOp {                                               \
+    static const auto kType = DisplayListOpType::k##name;                      \
+                                                                               \
+    name##Op(const sk_sp<SkImage> image,                                       \
+             const SkIRect& center,                                            \
+             const SkRect& dst,                                                \
+             SkFilterMode filter)                                              \
+        : center(center), dst(dst), filter(filter), image(std::move(image)) {} \
+                                                                               \
+    const SkIRect center;                                                      \
+    const SkRect dst;                                                          \
+    const SkFilterMode filter;                                                 \
+    const sk_sp<SkImage> image;                                                \
+                                                                               \
+    void dispatch(Dispatcher& dispatcher) const {                              \
+      dispatcher.drawImageNine(image, center, dst, filter,                     \
+                               render_with_attributes);                        \
+    }                                                                          \
+  };
+DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNine, false)
+DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNineWithAttr, true)
+#undef DEFINE_DRAW_IMAGE_NINE_OP
 
 // 4 byte header + 60 byte payload packs evenly into 64 bytes
 struct DrawImageLatticeOp final : DLOp {
@@ -667,82 +671,111 @@ struct DrawImageLatticeOp final : DLOp {
   }
 };
 
-#define DRAW_ATLAS_NO_COLORS_ARRAY(tex, count) nullptr
-#define DRAW_ATLAS_HAS_COLORS_ARRAY(tex, count) \
-  reinterpret_cast<const SkColor*>(tex + count)
-
-#define DRAW_ATLAS_NO_CULLING_ARGS                         \
-  const sk_sp<SkImage> atlas, int count, SkBlendMode mode, \
-      const SkSamplingOptions &sampling
-#define DRAW_ATLAS_NO_CULLING_INIT \
-  count(count), mode(mode), sampling(sampling), atlas(std::move(atlas))
-#define DRAW_ATLAS_NO_CULLING_FIELDS \
-  const int count;                   \
-  const SkBlendMode mode;            \
-  const SkSamplingOptions sampling;  \
-  const sk_sp<SkImage> atlas
-#define DRAW_ATLAS_NO_CULLING_P_ARG nullptr
-
-#define DRAW_ATLAS_HAS_CULLING_ARGS \
-  DRAW_ATLAS_NO_CULLING_ARGS, const SkRect& cull
-#define DRAW_ATLAS_HAS_CULLING_INIT DRAW_ATLAS_NO_CULLING_INIT, cull(cull)
-#define DRAW_ATLAS_HAS_CULLING_FIELDS \
-  DRAW_ATLAS_NO_CULLING_FIELDS;       \
-  const SkRect cull
-#define DRAW_ATLAS_HAS_CULLING_P_ARG &cull
-
 // 4 byte header + 36 byte common payload packs efficiently into 40 bytes
-// Culling version has an additional 16 bytes of payload for 56 bytes
-// So all 4 versions of the base structure pack well.
 // Each of these is then followed by a number of lists.
 // SkRSXform list is a multiple of 16 bytes so it is always packed well
 // SkRect list is also a multiple of 16 bytes so it also packs well
 // SkColor list only packs well if the count is even, otherwise there
 // can be 4 unusued bytes at the end.
-#define DEFINE_DRAW_ATLAS_OP(name, colors, cull)                             \
-  struct Draw##name##Op final : DLOp {                                       \
-    static const auto kType = DisplayListOpType::kDraw##name;                \
-                                                                             \
-    Draw##name##Op(DRAW_ATLAS_##cull##_ARGS) : DRAW_ATLAS_##cull##_INIT {}   \
-                                                                             \
-    DRAW_ATLAS_##cull##_FIELDS;                                              \
-                                                                             \
-    void dispatch(Dispatcher& dispatcher) const {                            \
-      const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1); \
-      const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);    \
-      const SkColor* colors = DRAW_ATLAS_##colors##_ARRAY(tex, count);       \
-      dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling, \
-                           DRAW_ATLAS_##cull##_P_ARG);                       \
-    }                                                                        \
-  };
-DEFINE_DRAW_ATLAS_OP(Atlas, NO_COLORS, NO_CULLING)
-DEFINE_DRAW_ATLAS_OP(AtlasColored, HAS_COLORS, NO_CULLING)
-DEFINE_DRAW_ATLAS_OP(AtlasCulled, NO_COLORS, HAS_CULLING)
-DEFINE_DRAW_ATLAS_OP(AtlasColoredCulled, HAS_COLORS, HAS_CULLING)
-#undef DEFINE_DRAW_ATLAS_OP
-#undef DRAW_ATLAS_NO_COLORS_ARRAY
-#undef DRAW_ATLAS_HAS_COLORS_ARRAY
-#undef DRAW_ATLAS_NO_CULLING_ARGS
-#undef DRAW_ATLAS_NO_CULLING_INIT
-#undef DRAW_ATLAS_NO_CULLING_FIELDS
-#undef DRAW_ATLAS_NO_CULLING_P_ARG
-#undef DRAW_ATLAS_HAS_CULLING_ARGS
-#undef DRAW_ATLAS_HAS_CULLING_INIT
-#undef DRAW_ATLAS_HAS_CULLING_FIELDS
-#undef DRAW_ATLAS_HAS_CULLING_P_ARG
+struct DrawAtlasBaseOp : DLOp {
+  DrawAtlasBaseOp(const sk_sp<SkImage> atlas,
+                  int count,
+                  SkBlendMode mode,
+                  const SkSamplingOptions& sampling,
+                  bool has_colors,
+                  bool render_with_attributes)
+      : count(count),
+        mode_index(static_cast<uint16_t>(mode)),
+        has_colors(has_colors),
+        render_with_attributes(render_with_attributes),
+        sampling(sampling),
+        atlas(std::move(atlas)) {}
+
+  const int count;
+  const uint16_t mode_index;
+  const uint8_t has_colors;
+  const uint8_t render_with_attributes;
+  const SkSamplingOptions sampling;
+  const sk_sp<SkImage> atlas;
+};
+
+// Packs as efficiently into 40 bytes as per DrawAtlasBaseOp
+// with array data following the struct also as per DrawAtlasBaseOp
+struct DrawAtlasOp final : DrawAtlasBaseOp {
+  static const auto kType = DisplayListOpType::kDrawAtlas;
+
+  DrawAtlasOp(const sk_sp<SkImage> atlas,
+              int count,
+              SkBlendMode mode,
+              const SkSamplingOptions& sampling,
+              bool has_colors,
+              bool render_with_attributes)
+      : DrawAtlasBaseOp(atlas,
+                        count,
+                        mode,
+                        sampling,
+                        has_colors,
+                        render_with_attributes) {}
+
+  void dispatch(Dispatcher& dispatcher) const {
+    const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
+    const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
+    const SkColor* colors =
+        has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
+    const SkBlendMode mode = static_cast<SkBlendMode>(mode_index);
+    dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
+                         nullptr, render_with_attributes);
+  }
+};
+
+// Packs efficiently into the same 40 bytes as DrawAtlasBaseOp plus
+// an additional 16 bytes for the cull rect resulting in a total
+// of 56 bytes for the Culled drawAtlas.
+// Also with array data following the struct as per DrawAtlasBaseOp
+struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
+  static const auto kType = DisplayListOpType::kDrawAtlasCulled;
+
+  DrawAtlasCulledOp(const sk_sp<SkImage> atlas,
+                    int count,
+                    SkBlendMode mode,
+                    const SkSamplingOptions& sampling,
+                    bool has_colors,
+                    const SkRect& cull_rect,
+                    bool render_with_attributes)
+      : DrawAtlasBaseOp(atlas,
+                        count,
+                        mode,
+                        sampling,
+                        has_colors,
+                        render_with_attributes),
+        cull_rect(cull_rect) {}
+
+  const SkRect cull_rect;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    const SkRSXform* xform = reinterpret_cast<const SkRSXform*>(this + 1);
+    const SkRect* tex = reinterpret_cast<const SkRect*>(xform + count);
+    const SkColor* colors =
+        has_colors ? reinterpret_cast<const SkColor*>(tex + count) : nullptr;
+    const SkBlendMode mode = static_cast<SkBlendMode>(mode_index);
+    dispatcher.drawAtlas(atlas, xform, tex, colors, count, mode, sampling,
+                         &cull_rect, render_with_attributes);
+  }
+};
 
 // 4 byte header + 12 byte payload packs evenly into 16 bytes
 struct DrawSkPictureOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawSkPicture;
 
-  DrawSkPictureOp(sk_sp<SkPicture> picture, bool with_layer)
-      : with_layer(with_layer), picture(std::move(picture)) {}
+  DrawSkPictureOp(sk_sp<SkPicture> picture, bool render_with_attributes)
+      : render_with_attributes(render_with_attributes),
+        picture(std::move(picture)) {}
 
-  const bool with_layer;
+  const bool render_with_attributes;
   const sk_sp<SkPicture> picture;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture, nullptr, with_layer);
+    dispatcher.drawPicture(picture, nullptr, render_with_attributes);
   }
 };
 
@@ -752,15 +785,17 @@ struct DrawSkPictureMatrixOp final : DLOp {
 
   DrawSkPictureMatrixOp(sk_sp<SkPicture> picture,
                         const SkMatrix matrix,
-                        bool with_layer)
-      : with_layer(with_layer), picture(std::move(picture)), matrix(matrix) {}
+                        bool render_with_attributes)
+      : render_with_attributes(render_with_attributes),
+        picture(std::move(picture)),
+        matrix(matrix) {}
 
-  const bool with_layer;
+  const bool render_with_attributes;
   const sk_sp<SkPicture> picture;
   const SkMatrix matrix;
 
   void dispatch(Dispatcher& dispatcher) const {
-    dispatcher.drawPicture(picture, &matrix, with_layer);
+    dispatcher.drawPicture(picture, &matrix, render_with_attributes);
   }
 };
 
@@ -769,7 +804,7 @@ struct DrawSkPictureMatrixOp final : DLOp {
 struct DrawDisplayListOp final : DLOp {
   static const auto kType = DisplayListOpType::kDrawDisplayList;
 
-  DrawDisplayListOp(const sk_sp<DisplayList> display_list)
+  explicit DrawDisplayListOp(const sk_sp<DisplayList> display_list)
       : display_list(std::move(display_list)) {}
 
   sk_sp<DisplayList> display_list;
@@ -797,42 +832,43 @@ struct DrawTextBlobOp final : DLOp {
 };
 
 // 4 byte header + 28 byte payload packs evenly into 32 bytes
-#define DEFINE_DRAW_SHADOW_OP(name, occludes)                         \
-  struct Draw##name##Op final : DLOp {                                \
-    static const auto kType = DisplayListOpType::kDraw##name;         \
-                                                                      \
-    Draw##name##Op(const SkPath& path,                                \
-                   SkColor color,                                     \
-                   SkScalar elevation,                                \
-                   SkScalar dpr)                                      \
-        : color(color), elevation(elevation), dpr(dpr), path(path) {} \
-                                                                      \
-    const SkColor color;                                              \
-    const SkScalar elevation;                                         \
-    const SkScalar dpr;                                               \
-    const SkPath path;                                                \
-                                                                      \
-    void dispatch(Dispatcher& dispatcher) const {                     \
-      dispatcher.drawShadow(path, color, elevation, occludes, dpr);   \
-    }                                                                 \
+#define DEFINE_DRAW_SHADOW_OP(name, transparent_occluder)                 \
+  struct Draw##name##Op final : DLOp {                                    \
+    static const auto kType = DisplayListOpType::kDraw##name;             \
+                                                                          \
+    Draw##name##Op(const SkPath& path,                                    \
+                   SkColor color,                                         \
+                   SkScalar elevation,                                    \
+                   SkScalar dpr)                                          \
+        : color(color), elevation(elevation), dpr(dpr), path(path) {}     \
+                                                                          \
+    const SkColor color;                                                  \
+    const SkScalar elevation;                                             \
+    const SkScalar dpr;                                                   \
+    const SkPath path;                                                    \
+                                                                          \
+    void dispatch(Dispatcher& dispatcher) const {                         \
+      dispatcher.drawShadow(path, color, elevation, transparent_occluder, \
+                            dpr);                                         \
+    }                                                                     \
   };
 DEFINE_DRAW_SHADOW_OP(Shadow, false)
-DEFINE_DRAW_SHADOW_OP(ShadowOccludes, true)
+DEFINE_DRAW_SHADOW_OP(ShadowTransparentOccluder, true)
 #undef DEFINE_DRAW_SHADOW_OP
 
 #pragma pack(pop, DLOp_Alignment)
 
 void DisplayList::ComputeBounds() {
-  DisplayListBoundsCalculator calculator(bounds_cull_);
+  DisplayListBoundsCalculator calculator(&bounds_cull_);
   Dispatch(calculator);
-  bounds_ = calculator.getBounds();
+  bounds_ = calculator.bounds();
 }
 
 void DisplayList::Dispatch(Dispatcher& dispatcher,
                            uint8_t* ptr,
                            uint8_t* end) const {
   while (ptr < end) {
-    auto op = (const DLOp*)ptr;
+    auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
     FML_DCHECK(ptr <= end);
     switch (op->type) {
@@ -854,7 +890,7 @@ void DisplayList::Dispatch(Dispatcher& dispatcher,
 
 static void DisposeOps(uint8_t* ptr, uint8_t* end) {
   while (ptr < end) {
-    auto op = (const DLOp*)ptr;
+    auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
     FML_DCHECK(ptr <= end);
     switch (op->type) {
@@ -867,7 +903,7 @@ static void DisposeOps(uint8_t* ptr, uint8_t* end) {
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
 
-#undef DL_OP_DISPATCH
+#undef DL_OP_DISPOSE
 
       default:
         FML_DCHECK(false);
@@ -886,8 +922,8 @@ static bool CompareOps(uint8_t* ptrA,
   uint8_t* bulkStartA = ptrA;
   uint8_t* bulkStartB = ptrB;
   while (ptrA < endA && ptrB < endB) {
-    auto opA = (const DLOp*)ptrA;
-    auto opB = (const DLOp*)ptrB;
+    auto opA = reinterpret_cast<const DLOp*>(ptrA);
+    auto opB = reinterpret_cast<const DLOp*>(ptrB);
     if (opA->type != opB->type || opA->size != opB->size) {
       return false;
     }
@@ -905,7 +941,7 @@ static bool CompareOps(uint8_t* ptrA,
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_EQUALS)
 
-#undef DL_OP_DISPATCH
+#undef DL_OP_EQUALS
 
       default:
         FML_DCHECK(false);
@@ -948,24 +984,30 @@ void DisplayList::RenderTo(SkCanvas* canvas) const {
 }
 
 bool DisplayList::Equals(const DisplayList& other) const {
-  if (used_ != other.used_ || op_count_ != other.op_count_) {
+  if (byte_count_ != other.byte_count_ || op_count_ != other.op_count_) {
     return false;
   }
-  if (ptr_ == other.ptr_) {
+  uint8_t* ptr = storage_.get();
+  uint8_t* o_ptr = other.storage_.get();
+  if (ptr == o_ptr) {
     return true;
   }
-  return CompareOps(ptr_, ptr_ + used_, other.ptr_, other.ptr_ + other.used_);
+  return CompareOps(ptr, ptr + byte_count_, o_ptr, o_ptr + other.byte_count_);
 }
 
 DisplayList::DisplayList(uint8_t* ptr,
-                         size_t used,
+                         size_t byte_count,
                          int op_count,
-                         const SkRect& cull)
-    : ptr_(ptr),
-      used_(used),
+                         size_t nested_byte_count,
+                         int nested_op_count,
+                         const SkRect& cull_rect)
+    : storage_(ptr),
+      byte_count_(byte_count),
       op_count_(op_count),
+      nested_byte_count_(nested_byte_count),
+      nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
-      bounds_cull_(cull) {
+      bounds_cull_(cull_rect) {
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);
@@ -973,7 +1015,8 @@ DisplayList::DisplayList(uint8_t* ptr,
 }
 
 DisplayList::~DisplayList() {
-  DisposeOps(ptr_, ptr_ + used_);
+  uint8_t* ptr = storage_.get();
+  DisposeOps(ptr, ptr + byte_count_);
 }
 
 #define DL_BUILDER_PAGE 4096
@@ -991,7 +1034,7 @@ static void CopyV(void* dst, const S* src, int n, Rest&&... rest) {
 }
 
 template <typename T, typename... Args>
-void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
+void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
   FML_DCHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
@@ -1004,12 +1047,12 @@ void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
     memset(storage_.get() + used_, 0, allocated_ - used_);
   }
   FML_DCHECK(used_ + size <= allocated_);
-  auto op = (T*)(storage_.get() + used_);
+  auto op = reinterpret_cast<T*>(storage_.get() + used_);
   used_ += size;
   new (op) T{std::forward<Args>(args)...};
   op->type = T::kType;
   op->size = size;
-  op_count_++;
+  op_count_ += op_inc;
   return op + 1;
 }
 
@@ -1017,15 +1060,20 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   while (save_level_ > 0) {
     restore();
   }
-  size_t used = used_;
+  size_t bytes = used_;
   int count = op_count_;
+  size_t nested_bytes = nested_bytes_;
+  int nested_count = nested_op_count_;
   used_ = allocated_ = op_count_ = 0;
-  storage_.realloc(used);
-  return sk_sp<DisplayList>(
-      new DisplayList(storage_.release(), used, count, cull_));
+  nested_bytes_ = nested_op_count_ = 0;
+  storage_.realloc(bytes);
+  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
+                                            nested_bytes, nested_count,
+                                            cull_rect_));
 }
 
-DisplayListBuilder::DisplayListBuilder(const SkRect& cull) : cull_(cull) {}
+DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
+    : cull_rect_(cull_rect) {}
 
 DisplayListBuilder::~DisplayListBuilder() {
   uint8_t* ptr = storage_.get();
@@ -1034,190 +1082,295 @@ DisplayListBuilder::~DisplayListBuilder() {
   }
 }
 
-void DisplayListBuilder::setAA(bool aa) {
-  Push<SetAAOp>(0, aa);
+void DisplayListBuilder::onSetAntiAlias(bool aa) {
+  Push<SetAntiAliasOp>(0, 0, current_anti_alias_ = aa);
 }
-void DisplayListBuilder::setDither(bool dither) {
-  Push<SetDitherOp>(0, dither);
+void DisplayListBuilder::onSetDither(bool dither) {
+  Push<SetDitherOp>(0, 0, current_dither_ = dither);
 }
-void DisplayListBuilder::setInvertColors(bool invert) {
-  Push<SetInvertColorsOp>(0, invert);
+void DisplayListBuilder::onSetInvertColors(bool invert) {
+  Push<SetInvertColorsOp>(0, 0, current_invert_colors_ = invert);
 }
-void DisplayListBuilder::setCaps(SkPaint::Cap cap) {
-  Push<SetCapsOp>(0, cap);
+void DisplayListBuilder::onSetStrokeCap(SkPaint::Cap cap) {
+  Push<SetStrokeCapOp>(0, 0, current_stroke_cap_ = cap);
 }
-void DisplayListBuilder::setJoins(SkPaint::Join join) {
-  Push<SetJoinsOp>(0, join);
+void DisplayListBuilder::onSetStrokeJoin(SkPaint::Join join) {
+  Push<SetStrokeJoinOp>(0, 0, current_stroke_join_ = join);
 }
-void DisplayListBuilder::setDrawStyle(SkPaint::Style style) {
-  Push<SetDrawStyleOp>(0, style);
+void DisplayListBuilder::onSetStyle(SkPaint::Style style) {
+  Push<SetStyleOp>(0, 0, current_style_ = style);
 }
-void DisplayListBuilder::setStrokeWidth(SkScalar width) {
-  Push<SetStrokeWidthOp>(0, width);
+void DisplayListBuilder::onSetStrokeWidth(SkScalar width) {
+  Push<SetStrokeWidthOp>(0, 0, current_stroke_width_ = width);
 }
-void DisplayListBuilder::setMiterLimit(SkScalar limit) {
-  Push<SetMiterLimitOp>(0, limit);
+void DisplayListBuilder::onSetStrokeMiter(SkScalar limit) {
+  Push<SetStrokeMiterOp>(0, 0, current_stroke_miter_ = limit);
 }
-void DisplayListBuilder::setColor(SkColor color) {
-  Push<SetColorOp>(0, color);
+void DisplayListBuilder::onSetColor(SkColor color) {
+  Push<SetColorOp>(0, 0, current_color_ = color);
 }
-void DisplayListBuilder::setBlendMode(SkBlendMode mode) {
-  Push<SetBlendModeOp>(0, mode);
+void DisplayListBuilder::onSetBlendMode(SkBlendMode mode) {
+  current_blender_ = nullptr;
+  Push<SetBlendModeOp>(0, 0, current_blend_mode_ = mode);
 }
-void DisplayListBuilder::setBlender(sk_sp<SkBlender> blender) {
-  blender  //
-      ? Push<SetBlenderOp>(0, std::move(blender))
-      : Push<ClearBlenderOp>(0);
+void DisplayListBuilder::onSetBlender(sk_sp<SkBlender> blender) {
+  // setBlender(nullptr) should be redirected to setBlendMode(SrcOver)
+  // by the set method, if not then the following is inefficient but works
+  FML_DCHECK(blender);
+  SkPaint p;
+  p.setBlender(blender);
+  if (p.asBlendMode()) {
+    setBlendMode(p.asBlendMode().value());
+  } else {
+    // |current_blender_| supersedes any value of |current_blend_mode_|
+    (current_blender_ = blender)  //
+        ? Push<SetBlenderOp>(0, 0, std::move(blender))
+        : Push<ClearBlenderOp>(0, 0);
+  }
 }
-void DisplayListBuilder::setShader(sk_sp<SkShader> shader) {
-  shader  //
-      ? Push<SetShaderOp>(0, std::move(shader))
-      : Push<ClearShaderOp>(0);
+void DisplayListBuilder::onSetShader(sk_sp<SkShader> shader) {
+  (current_shader_ = shader)  //
+      ? Push<SetShaderOp>(0, 0, std::move(shader))
+      : Push<ClearShaderOp>(0, 0);
 }
-void DisplayListBuilder::setImageFilter(sk_sp<SkImageFilter> filter) {
-  filter  //
-      ? Push<SetImageFilterOp>(0, std::move(filter))
-      : Push<ClearImageFilterOp>(0);
+void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
+  (current_image_filter_ = filter)  //
+      ? Push<SetImageFilterOp>(0, 0, std::move(filter))
+      : Push<ClearImageFilterOp>(0, 0);
 }
-void DisplayListBuilder::setColorFilter(sk_sp<SkColorFilter> filter) {
-  filter  //
-      ? Push<SetColorFilterOp>(0, std::move(filter))
-      : Push<ClearColorFilterOp>(0);
+void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
+  (current_color_filter_ = filter)  //
+      ? Push<SetColorFilterOp>(0, 0, std::move(filter))
+      : Push<ClearColorFilterOp>(0, 0);
 }
-void DisplayListBuilder::setPathEffect(sk_sp<SkPathEffect> effect) {
-  effect  //
-      ? Push<SetPathEffectOp>(0, std::move(effect))
-      : Push<ClearPathEffectOp>(0);
+void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {
+  (current_path_effect_ = effect)  //
+      ? Push<SetPathEffectOp>(0, 0, std::move(effect))
+      : Push<ClearPathEffectOp>(0, 0);
 }
-void DisplayListBuilder::setMaskFilter(sk_sp<SkMaskFilter> filter) {
-  Push<SetMaskFilterOp>(0, std::move(filter));
+void DisplayListBuilder::onSetMaskFilter(sk_sp<SkMaskFilter> filter) {
+  current_mask_sigma_ = kInvalidSigma;
+  (current_mask_filter_ = filter)  //
+      ? Push<SetMaskFilterOp>(0, 0, std::move(filter))
+      : Push<ClearMaskFilterOp>(0, 0);
 }
-void DisplayListBuilder::setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) {
+void DisplayListBuilder::onSetMaskBlurFilter(SkBlurStyle style,
+                                             SkScalar sigma) {
+  // Valid sigma is checked by setMaskBlurFilter
+  FML_DCHECK(mask_sigma_valid(sigma));
+  current_mask_filter_ = nullptr;
+  current_mask_style_ = style;
+  current_mask_sigma_ = sigma;
   switch (style) {
     case kNormal_SkBlurStyle:
-      Push<SetMaskBlurFilterNormalOp>(0, sigma);
+      Push<SetMaskBlurFilterNormalOp>(0, 0, sigma);
       break;
     case kSolid_SkBlurStyle:
-      Push<SetMaskBlurFilterSolidOp>(0, sigma);
+      Push<SetMaskBlurFilterSolidOp>(0, 0, sigma);
       break;
     case kOuter_SkBlurStyle:
-      Push<SetMaskBlurFilterOuterOp>(0, sigma);
+      Push<SetMaskBlurFilterOuterOp>(0, 0, sigma);
       break;
     case kInner_SkBlurStyle:
-      Push<SetMaskBlurFilterInnerOp>(0, sigma);
+      Push<SetMaskBlurFilterInnerOp>(0, 0, sigma);
       break;
+  }
+}
+
+void DisplayListBuilder::setAttributesFromPaint(
+    const SkPaint& paint,
+    const DisplayListAttributeFlags flags) {
+  if (flags.applies_anti_alias()) {
+    setAntiAlias(paint.isAntiAlias());
+  }
+  if (flags.applies_dither()) {
+    setDither(paint.isDither());
+  }
+  if (flags.applies_alpha_or_color()) {
+    setColor(paint.getColor());
+  }
+  if (flags.applies_blend()) {
+    skstd::optional<SkBlendMode> mode_optional = paint.asBlendMode();
+    if (mode_optional) {
+      setBlendMode(mode_optional.value());
+    } else {
+      setBlender(sk_ref_sp(paint.getBlender()));
+    }
+  }
+  if (flags.applies_style()) {
+    setStyle(paint.getStyle());
+  }
+  if (flags.is_stroked(paint.getStyle())) {
+    setStrokeWidth(paint.getStrokeWidth());
+    setStrokeMiter(paint.getStrokeMiter());
+    setStrokeCap(paint.getStrokeCap());
+    setStrokeJoin(paint.getStrokeJoin());
+  }
+  if (flags.applies_shader()) {
+    setShader(sk_ref_sp(paint.getShader()));
+  }
+  if (flags.applies_color_filter()) {
+    // invert colors is a Flutter::Paint thing, not an SkPaint thing
+    // we must clear it because it is a second potential color filter
+    // that is composed with the paint's color filter.
+    setInvertColors(false);
+    setColorFilter(sk_ref_sp(paint.getColorFilter()));
+  }
+  if (flags.applies_image_filter()) {
+    setImageFilter(sk_ref_sp(paint.getImageFilter()));
+  }
+  if (flags.applies_path_effect()) {
+    setPathEffect(sk_ref_sp(paint.getPathEffect()));
+  }
+  if (flags.applies_mask_filter()) {
+    setMaskFilter(sk_ref_sp(paint.getMaskFilter()));
   }
 }
 
 void DisplayListBuilder::save() {
   save_level_++;
-  Push<SaveOp>(0);
+  Push<SaveOp>(0, 1);
 }
 void DisplayListBuilder::restore() {
   if (save_level_ > 0) {
-    Push<RestoreOp>(0);
+    Push<RestoreOp>(0, 1);
     save_level_--;
   }
 }
-void DisplayListBuilder::saveLayer(const SkRect* bounds, bool with_paint) {
+void DisplayListBuilder::saveLayer(const SkRect* bounds,
+                                   bool restore_with_paint) {
   save_level_++;
   bounds  //
-      ? Push<SaveLayerBoundsOp>(0, *bounds, with_paint)
-      : Push<SaveLayerOp>(0, with_paint);
+      ? Push<SaveLayerBoundsOp>(0, 1, *bounds, restore_with_paint)
+      : Push<SaveLayerOp>(0, 1, restore_with_paint);
 }
 
 void DisplayListBuilder::translate(SkScalar tx, SkScalar ty) {
-  Push<TranslateOp>(0, tx, ty);
+  if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
+      (tx != 0.0 || ty != 0.0)) {
+    Push<TranslateOp>(0, 1, tx, ty);
+  }
 }
 void DisplayListBuilder::scale(SkScalar sx, SkScalar sy) {
-  Push<ScaleOp>(0, sx, sy);
+  if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
+      (sx != 1.0 || sy != 1.0)) {
+    Push<ScaleOp>(0, 1, sx, sy);
+  }
 }
 void DisplayListBuilder::rotate(SkScalar degrees) {
-  Push<RotateOp>(0, degrees);
+  if (SkScalarMod(degrees, 360.0) != 0.0) {
+    Push<RotateOp>(0, 1, degrees);
+  }
 }
 void DisplayListBuilder::skew(SkScalar sx, SkScalar sy) {
-  Push<SkewOp>(0, sx, sy);
-}
-void DisplayListBuilder::transform2x3(SkScalar mxx,
-                                      SkScalar mxy,
-                                      SkScalar mxt,
-                                      SkScalar myx,
-                                      SkScalar myy,
-                                      SkScalar myt) {
-  Push<Transform2x3Op>(0, mxx, mxy, mxt, myx, myy, myt);
-}
-void DisplayListBuilder::transform3x3(SkScalar mxx,
-                                      SkScalar mxy,
-                                      SkScalar mxt,
-                                      SkScalar myx,
-                                      SkScalar myy,
-                                      SkScalar myt,
-                                      SkScalar px,
-                                      SkScalar py,
-                                      SkScalar pt) {
-  Push<Transform3x3Op>(0, mxx, mxy, mxt, myx, myy, myt, px, py, pt);
+  if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
+      (sx != 0.0 || sy != 0.0)) {
+    Push<SkewOp>(0, 1, sx, sy);
+  }
 }
 
+// clang-format off
+
+// 2x3 2D affine subset of a 4x4 transform in row major order
+void DisplayListBuilder::transform2DAffine(
+    SkScalar mxx, SkScalar mxy, SkScalar mxt,
+    SkScalar myx, SkScalar myy, SkScalar myt) {
+  if (SkScalarsAreFinite(mxx, myx) &&
+      SkScalarsAreFinite(mxy, myy) &&
+      SkScalarsAreFinite(mxt, myt) &&
+      !(mxx == 1 && mxy == 0 && mxt == 0 &&
+        myx == 0 && myy == 1 && myt == 0)) {
+    Push<Transform2DAffineOp>(0, 1,
+                              mxx, mxy, mxt,
+                              myx, myy, myt);
+  }
+}
+// full 4x4 transform in row major order
+void DisplayListBuilder::transformFullPerspective(
+    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+  if (                        mxz == 0 &&
+                              myz == 0 &&
+      mzx == 0 && mzy == 0 && mzz == 1 && mzt == 0 &&
+      mwx == 0 && mwy == 0 && mwz == 0 && mwt == 1) {
+    transform2DAffine(mxx, mxy, mxt,
+                      myx, myy, myt);
+  } else if (SkScalarsAreFinite(mxx, mxy) && SkScalarsAreFinite(mxz, mxt) &&
+             SkScalarsAreFinite(myx, myy) && SkScalarsAreFinite(myz, myt) &&
+             SkScalarsAreFinite(mzx, mzy) && SkScalarsAreFinite(mzz, mzt) &&
+             SkScalarsAreFinite(mwx, mwy) && SkScalarsAreFinite(mwz, mwt)) {
+    Push<TransformFullPerspectiveOp>(0, 1,
+                                     mxx, mxy, mxz, mxt,
+                                     myx, myy, myz, myt,
+                                     mzx, mzy, mzz, mzt,
+                                     mwx, mwy, mwz, mwt);
+  }
+}
+
+// clang-format on
+
 void DisplayListBuilder::clipRect(const SkRect& rect,
-                                  bool is_aa,
-                                  SkClipOp clip_op) {
+                                  SkClipOp clip_op,
+                                  bool is_aa) {
   clip_op == SkClipOp::kIntersect  //
-      ? Push<ClipIntersectRectOp>(0, rect, is_aa)
-      : Push<ClipDifferenceRectOp>(0, rect, is_aa);
+      ? Push<ClipIntersectRectOp>(0, 1, rect, is_aa)
+      : Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
 }
 void DisplayListBuilder::clipRRect(const SkRRect& rrect,
-                                   bool is_aa,
-                                   SkClipOp clip_op) {
+                                   SkClipOp clip_op,
+                                   bool is_aa) {
   if (rrect.isRect()) {
-    clipRect(rrect.rect(), is_aa, clip_op);
+    clipRect(rrect.rect(), clip_op, is_aa);
   } else {
     clip_op == SkClipOp::kIntersect  //
-        ? Push<ClipIntersectRRectOp>(0, rrect, is_aa)
-        : Push<ClipDifferenceRRectOp>(0, rrect, is_aa);
+        ? Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa)
+        : Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
   }
 }
 void DisplayListBuilder::clipPath(const SkPath& path,
-                                  bool is_aa,
-                                  SkClipOp clip_op) {
+                                  SkClipOp clip_op,
+                                  bool is_aa) {
   if (!path.isInverseFillType()) {
     SkRect rect;
     if (path.isRect(&rect)) {
-      this->clipRect(rect, is_aa, clip_op);
+      this->clipRect(rect, clip_op, is_aa);
       return;
     }
     SkRRect rrect;
     if (path.isOval(&rect)) {
       rrect.setOval(rect);
-      this->clipRRect(rrect, is_aa, clip_op);
+      this->clipRRect(rrect, clip_op, is_aa);
       return;
     }
     if (path.isRRect(&rrect)) {
-      this->clipRRect(rrect, is_aa, clip_op);
+      this->clipRRect(rrect, clip_op, is_aa);
       return;
     }
   }
   clip_op == SkClipOp::kIntersect  //
-      ? Push<ClipIntersectPathOp>(0, path, is_aa)
-      : Push<ClipDifferencePathOp>(0, path, is_aa);
+      ? Push<ClipIntersectPathOp>(0, 1, path, is_aa)
+      : Push<ClipDifferencePathOp>(0, 1, path, is_aa);
 }
 
 void DisplayListBuilder::drawPaint() {
-  Push<DrawPaintOp>(0);
+  Push<DrawPaintOp>(0, 1);
 }
 void DisplayListBuilder::drawColor(SkColor color, SkBlendMode mode) {
-  Push<DrawColorOp>(0, color, mode);
+  Push<DrawColorOp>(0, 1, color, mode);
 }
 void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
-  Push<DrawLineOp>(0, p0, p1);
+  Push<DrawLineOp>(0, 1, p0, p1);
 }
 void DisplayListBuilder::drawRect(const SkRect& rect) {
-  Push<DrawRectOp>(0, rect);
+  Push<DrawRectOp>(0, 1, rect);
 }
 void DisplayListBuilder::drawOval(const SkRect& bounds) {
-  Push<DrawOvalOp>(0, bounds);
+  Push<DrawOvalOp>(0, 1, bounds);
 }
 void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
-  Push<DrawCircleOp>(0, center, radius);
+  Push<DrawCircleOp>(0, 1, center, radius);
 }
 void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   if (rrect.isRect()) {
@@ -1225,38 +1378,38 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
   } else if (rrect.isOval()) {
     drawOval(rrect.rect());
   } else {
-    Push<DrawRRectOp>(0, rrect);
+    Push<DrawRRectOp>(0, 1, rrect);
   }
 }
 void DisplayListBuilder::drawDRRect(const SkRRect& outer,
                                     const SkRRect& inner) {
-  Push<DrawDRRectOp>(0, outer, inner);
+  Push<DrawDRRectOp>(0, 1, outer, inner);
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
-  Push<DrawPathOp>(0, path);
+  Push<DrawPathOp>(0, 1, path);
 }
 
 void DisplayListBuilder::drawArc(const SkRect& bounds,
                                  SkScalar start,
                                  SkScalar sweep,
                                  bool useCenter) {
-  Push<DrawArcOp>(0, bounds, start, sweep, useCenter);
+  Push<DrawArcOp>(0, 1, bounds, start, sweep, useCenter);
 }
 void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
                                     uint32_t count,
                                     const SkPoint pts[]) {
   void* data_ptr;
-  FML_DCHECK(count < MaxDrawPointsCount);
+  FML_DCHECK(count < kMaxDrawPointsCount);
   int bytes = count * sizeof(SkPoint);
   switch (mode) {
     case SkCanvas::PointMode::kPoints_PointMode:
-      data_ptr = Push<DrawPointsOp>(bytes, count);
+      data_ptr = Push<DrawPointsOp>(bytes, 1, count);
       break;
     case SkCanvas::PointMode::kLines_PointMode:
-      data_ptr = Push<DrawLinesOp>(bytes, count);
+      data_ptr = Push<DrawLinesOp>(bytes, 1, count);
       break;
     case SkCanvas::PointMode::kPolygon_PointMode:
-      data_ptr = Push<DrawPolygonOp>(bytes, count);
+      data_ptr = Push<DrawPolygonOp>(bytes, 1, count);
       break;
     default:
       FML_DCHECK(false);
@@ -1266,34 +1419,41 @@ void DisplayListBuilder::drawPoints(SkCanvas::PointMode mode,
 }
 void DisplayListBuilder::drawVertices(const sk_sp<SkVertices> vertices,
                                       SkBlendMode mode) {
-  Push<DrawVerticesOp>(0, std::move(vertices), mode);
+  Push<DrawVerticesOp>(0, 1, std::move(vertices), mode);
 }
 
 void DisplayListBuilder::drawImage(const sk_sp<SkImage> image,
                                    const SkPoint point,
-                                   const SkSamplingOptions& sampling) {
-  Push<DrawImageOp>(0, std::move(image), point, sampling);
+                                   const SkSamplingOptions& sampling,
+                                   bool render_with_attributes) {
+  render_with_attributes
+      ? Push<DrawImageWithAttrOp>(0, 1, std::move(image), point, sampling)
+      : Push<DrawImageOp>(0, 1, std::move(image), point, sampling);
 }
 void DisplayListBuilder::drawImageRect(const sk_sp<SkImage> image,
                                        const SkRect& src,
                                        const SkRect& dst,
                                        const SkSamplingOptions& sampling,
+                                       bool render_with_attributes,
                                        SkCanvas::SrcRectConstraint constraint) {
-  constraint == SkCanvas::kFast_SrcRectConstraint  //
-      ? Push<DrawImageRectFastOp>(0, std::move(image), src, dst, sampling)
-      : Push<DrawImageRectStrictOp>(0, std::move(image), src, dst, sampling);
+  Push<DrawImageRectOp>(0, 1, std::move(image), src, dst, sampling,
+                        render_with_attributes, constraint);
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<SkImage> image,
                                        const SkIRect& center,
                                        const SkRect& dst,
-                                       SkFilterMode filter) {
-  Push<DrawImageNineOp>(0, std::move(image), center, dst, filter);
+                                       SkFilterMode filter,
+                                       bool render_with_attributes) {
+  render_with_attributes
+      ? Push<DrawImageNineWithAttrOp>(0, 1, std::move(image), center, dst,
+                                      filter)
+      : Push<DrawImageNineOp>(0, 1, std::move(image), center, dst, filter);
 }
 void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
                                           const SkCanvas::Lattice& lattice,
                                           const SkRect& dst,
                                           SkFilterMode filter,
-                                          bool with_paint) {
+                                          bool render_with_attributes) {
   int xDivCount = lattice.fXCount;
   int yDivCount = lattice.fYCount;
   FML_DCHECK((lattice.fRectTypes == nullptr) || (lattice.fColors != nullptr));
@@ -1304,9 +1464,9 @@ void DisplayListBuilder::drawImageLattice(const sk_sp<SkImage> image,
       (xDivCount + yDivCount) * sizeof(int) +
       cellCount * (sizeof(SkColor) + sizeof(SkCanvas::Lattice::RectType));
   SkIRect src = lattice.fBounds ? *lattice.fBounds : image->bounds();
-  void* pod = this->Push<DrawImageLatticeOp>(bytes, std::move(image), xDivCount,
-                                             yDivCount, cellCount, src, dst,
-                                             filter, with_paint);
+  void* pod = this->Push<DrawImageLatticeOp>(
+      bytes, 1, std::move(image), xDivCount, yDivCount, cellCount, src, dst,
+      filter, render_with_attributes);
   CopyV(pod, lattice.fXDivs, xDivCount, lattice.fYDivs, yDivCount,
         lattice.fColors, cellCount, lattice.fRectTypes, cellCount);
 }
@@ -1317,26 +1477,29 @@ void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
                                    int count,
                                    SkBlendMode mode,
                                    const SkSamplingOptions& sampling,
-                                   const SkRect* cullRect) {
+                                   const SkRect* cull_rect,
+                                   bool render_with_attributes) {
   int bytes = count * (sizeof(SkRSXform) + sizeof(SkRect));
   void* data_ptr;
-  if (colors) {
+  if (colors != nullptr) {
     bytes += count * sizeof(SkColor);
-    if (cullRect) {
-      data_ptr = Push<DrawAtlasColoredCulledOp>(bytes, std::move(atlas), count,
-                                                mode, sampling, *cullRect);
+    if (cull_rect != nullptr) {
+      data_ptr = Push<DrawAtlasCulledOp>(bytes, 1, std::move(atlas), count,
+                                         mode, sampling, true, *cull_rect,
+                                         render_with_attributes);
     } else {
-      data_ptr = Push<DrawAtlasColoredOp>(bytes, std::move(atlas), count, mode,
-                                          sampling);
+      data_ptr = Push<DrawAtlasOp>(bytes, 1, std::move(atlas), count, mode,
+                                   sampling, true, render_with_attributes);
     }
     CopyV(data_ptr, xform, count, tex, count, colors, count);
   } else {
-    if (cullRect) {
-      data_ptr = Push<DrawAtlasCulledOp>(bytes, std::move(atlas), count, mode,
-                                         sampling, *cullRect);
+    if (cull_rect != nullptr) {
+      data_ptr = Push<DrawAtlasCulledOp>(bytes, 1, std::move(atlas), count,
+                                         mode, sampling, false, *cull_rect,
+                                         render_with_attributes);
     } else {
-      data_ptr =
-          Push<DrawAtlasOp>(bytes, std::move(atlas), count, mode, sampling);
+      data_ptr = Push<DrawAtlasOp>(bytes, 1, std::move(atlas), count, mode,
+                                   sampling, false, render_with_attributes);
     }
     CopyV(data_ptr, xform, count, tex, count);
   }
@@ -1344,28 +1507,206 @@ void DisplayListBuilder::drawAtlas(const sk_sp<SkImage> atlas,
 
 void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
-                                     bool with_layer) {
+                                     bool render_with_attributes) {
   matrix  //
-      ? Push<DrawSkPictureMatrixOp>(0, std::move(picture), *matrix, with_layer)
-      : Push<DrawSkPictureOp>(0, std::move(picture), with_layer);
+      ? Push<DrawSkPictureMatrixOp>(0, 1, std::move(picture), *matrix,
+                                    render_with_attributes)
+      : Push<DrawSkPictureOp>(0, 1, std::move(picture), render_with_attributes);
+  // The non-nested op count accumulated in the |Push| method will include
+  // this call to |drawPicture| for non-nested op count metrics.
+  // But, for nested op count metrics we want the |drawPicture| call itself
+  // to be transparent. So we subtract 1 from our accumulated nested count to
+  // balance out against the 1 that was accumulated into the regular count.
+  // This behavior is identical to the way SkPicture computes nested op counts.
+  nested_op_count_ += picture->approximateOpCount(true) - 1;
+  nested_bytes_ += picture->approximateBytesUsed();
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  Push<DrawDisplayListOp>(0, std::move(display_list));
+  Push<DrawDisplayListOp>(0, 1, std::move(display_list));
+  // The non-nested op count accumulated in the |Push| method will include
+  // this call to |drawDisplayList| for non-nested op count metrics.
+  // But, for nested op count metrics we want the |drawDisplayList| call itself
+  // to be transparent. So we subtract 1 from our accumulated nested count to
+  // balance out against the 1 that was accumulated into the regular count.
+  // This behavior is identical to the way SkPicture computes nested op counts.
+  nested_op_count_ += display_list->op_count(true) - 1;
+  nested_bytes_ += display_list->bytes(true);
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
                                       SkScalar y) {
-  Push<DrawTextBlobOp>(0, std::move(blob), x, y);
+  Push<DrawTextBlobOp>(0, 1, std::move(blob), x, y);
 }
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const SkColor color,
                                     const SkScalar elevation,
-                                    bool occludes,
+                                    bool transparent_occluder,
                                     SkScalar dpr) {
-  occludes  //
-      ? Push<DrawShadowOccludesOp>(0, path, color, elevation, dpr)
-      : Push<DrawShadowOp>(0, path, color, elevation, dpr);
+  transparent_occluder  //
+      ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation, dpr)
+      : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
 }
+
+// clang-format off
+// Flags common to all primitives that apply colors
+#define PAINT_FLAGS (kUsesDither_ |      \
+                     kUsesColor_ |       \
+                     kUsesAlpha_ |       \
+                     kUsesBlend_ |       \
+                     kUsesShader_ |      \
+                     kUsesColorFilter_ | \
+                     kUsesImageFilter_)
+
+// Flags common to all primitives that stroke or fill
+#define STROKE_OR_FILL_FLAGS (kIsDrawnGeometry_ | \
+                              kUsesAntiAlias_ |   \
+                              kUsesMaskFilter_ |  \
+                              kUsesPathEffect_)
+
+// Flags common to primitives that stroke geometry
+#define STROKE_FLAGS (kIsStrokedGeometry_ | \
+                      kUsesAntiAlias_ |     \
+                      kUsesMaskFilter_ |    \
+                      kUsesPathEffect_)
+
+// Flags common to primitives that render an image with paint attributes
+#define IMAGE_FLAGS_BASE (kIsNonGeometric_ |  \
+                          kUsesAlpha_ |       \
+                          kUsesDither_ |      \
+                          kUsesBlend_ |       \
+                          kUsesColorFilter_ | \
+                          kUsesImageFilter_)
+// clang-format on
+
+const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kSaveLayerWithPaintFlags =
+    DisplayListAttributeFlags(kIsNonGeometric_ |   //
+                              kUsesAlpha_ |        //
+                              kUsesBlend_ |        //
+                              kUsesColorFilter_ |  //
+                              kUsesImageFilter_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawColorFlags =
+    DisplayListAttributeFlags(kFloodsSurface_ | kIgnoresPaint_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPaintFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | kFloodsSurface_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawHVLineFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS | kMayHaveCaps_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawLineFlags =
+    kDrawHVLineFlags.with(kMayHaveDiagonalCaps_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawRectFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveJoins_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawOvalFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawCircleFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawRRectFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawDRRectFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPathFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_ |
+                              kMayHaveJoins_ | kMayHaveAcuteJoins_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawArcNoCenterFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawArcWithCenterFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveJoins_ | kMayHaveAcuteJoins_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsPointsFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
+                              kMayHaveCaps_ | kButtCapIsSquare_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsLinesFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
+
+// Polygon mode just draws (count-1) separate lines, no joins
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPointsAsPolygonFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_FLAGS |  //
+                              kMayHaveCaps_ | kMayHaveDiagonalCaps_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawVerticesFlags =
+    DisplayListAttributeFlags(kIsNonGeometric_ |   //
+                              kUsesDither_ |       //
+                              kUsesAlpha_ |        //
+                              kUsesShader_ |       //
+                              kUsesBlend_ |        //
+                              kUsesColorFilter_ |  //
+                              kUsesImageFilter_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageWithPaintFlags =
+    DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
+                              kUsesAntiAlias_ | kUsesMaskFilter_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageRectFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags
+    DisplayListOpFlags::kDrawImageRectWithPaintFlags =
+        DisplayListAttributeFlags(IMAGE_FLAGS_BASE |  //
+                                  kUsesAntiAlias_ | kUsesMaskFilter_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageNineFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags
+    DisplayListOpFlags::kDrawImageNineWithPaintFlags =
+        DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawImageLatticeFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags
+    DisplayListOpFlags::kDrawImageLatticeWithPaintFlags =
+        DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawAtlasWithPaintFlags =
+    DisplayListAttributeFlags(IMAGE_FLAGS_BASE);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawPictureWithPaintFlags =
+    kSaveLayerWithPaintFlags;
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawDisplayListFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawTextBlobFlags =
+    DisplayListAttributeFlags(PAINT_FLAGS | STROKE_OR_FILL_FLAGS |
+                              kMayHaveJoins_)
+        .without(kUsesAntiAlias_);
+
+const DisplayListAttributeFlags DisplayListOpFlags::kDrawShadowFlags =
+    DisplayListAttributeFlags(kIgnoresPaint_);
+
+#undef PAINT_FLAGS
+#undef STROKE_OR_FILL_FLAGS
+#undef STROKE_FLAGS
+#undef IMAGE_FLAGS_BASE
 
 }  // namespace flutter

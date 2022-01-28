@@ -28,11 +28,13 @@ List<int> _to64(num value) {
 }
 
 /// A simple platform view.
-class PlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewScenario(PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -75,11 +77,14 @@ class NonFullScreenFlutterViewPlatformViewScenario extends Scenario
 }
 
 /// A simple platform view with overlay that doesn't intersect with the platform view.
-class PlatformViewNoOverlayIntersectionScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewNoOverlayIntersectionScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewNoOverlayIntersectionScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewNoOverlayIntersectionScenario(
+      PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -101,11 +106,14 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario with _BasePlatf
 }
 
 /// A simple platform view with an overlay that partially intersects with the platform view.
-class PlatformViewPartialIntersectionScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewPartialIntersectionScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewPartialIntersectionScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewPartialIntersectionScenario(
+      PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -127,11 +135,14 @@ class PlatformViewPartialIntersectionScenario extends Scenario with _BasePlatfor
 }
 
 /// A simple platform view with two overlays that intersect with each other and the platform view.
-class PlatformViewTwoIntersectingOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewTwoIntersectingOverlaysScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewTwoIntersectingOverlaysScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewTwoIntersectingOverlaysScenario(
+      PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -166,11 +177,14 @@ class PlatformViewTwoIntersectingOverlaysScenario extends Scenario with _BasePla
 }
 
 /// A simple platform view with one overlay and two overlays that intersect with each other and the platform view.
-class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewOneOverlayTwoIntersectingOverlaysScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewOneOverlayTwoIntersectingOverlaysScenario(
+      PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -210,11 +224,14 @@ class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario wit
 }
 
 /// Two platform views without an overlay intersecting either platform view.
-class MultiPlatformViewWithoutOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class MultiPlatformViewWithoutOverlaysScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  MultiPlatformViewWithoutOverlaysScenario(PlatformDispatcher dispatcher, String text, { required this.firstId, required this.secondId })
+  MultiPlatformViewWithoutOverlaysScenario(
+      PlatformDispatcher dispatcher, String text,
+      {required this.firstId, required this.secondId})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, firstId);
@@ -254,11 +271,13 @@ class MultiPlatformViewWithoutOverlaysScenario extends Scenario with _BasePlatfo
 }
 
 /// A simple platform view with too many overlays result in a single native view.
-class PlatformViewMaxOverlaysScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewMaxOverlaysScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewMaxOverlaysScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewMaxOverlaysScenario(PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -303,11 +322,13 @@ class PlatformViewMaxOverlaysScenario extends Scenario with _BasePlatformViewSce
 }
 
 /// Builds a scene with 2 platform views.
-class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class MultiPlatformViewScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  MultiPlatformViewScenario(PlatformDispatcher dispatcher, {required this.firstId, required this.secondId})
+  MultiPlatformViewScenario(PlatformDispatcher dispatcher,
+      {required this.firstId, required this.secondId})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, 'platform view 1', firstId);
@@ -337,11 +358,13 @@ class MultiPlatformViewScenario extends Scenario with _BasePlatformViewScenarioM
 /// Renders a frame with 2 platform views covered by a flutter drawn rectangle,
 /// when the app goes to the background and comes back to the foreground renders a new frame
 /// with the 2 platform views but without the flutter drawn rectangle.
-class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class MultiPlatformViewBackgroundForegroundScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  MultiPlatformViewBackgroundForegroundScenario(PlatformDispatcher dispatcher, {required this.firstId, required this.secondId})
+  MultiPlatformViewBackgroundForegroundScenario(PlatformDispatcher dispatcher,
+      {required this.firstId, required this.secondId})
       : assert(dispatcher != null),
         super(dispatcher) {
     _nextFrame = _firstFrame;
@@ -405,15 +428,16 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BaseP
 
   @override
   void onPlatformMessage(
-      String name,
-      ByteData? data,
-      PlatformMessageResponseCallback? callback,
-      ) {
+    String name,
+    ByteData? data,
+    PlatformMessageResponseCallback? callback,
+  ) {
     if (name != 'flutter/lifecycle') {
       return;
     }
     final String message = utf8.decode(data!.buffer.asUint8List());
-    if (_lastLifecycleState == 'AppLifecycleState.inactive' && message == 'AppLifecycleState.resumed') {
+    if (_lastLifecycleState == 'AppLifecycleState.inactive' &&
+        message == 'AppLifecycleState.resumed') {
       _nextFrame = _secondFrame;
       window.scheduleFrame();
     }
@@ -423,9 +447,11 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario with _BaseP
 }
 
 /// Platform view with clip rect.
-class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenarioMixin {
+class PlatformViewClipRectScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
   /// Constructs a platform view with clip rect scenario.
-  PlatformViewClipRectScenario(PlatformDispatcher dispatcher, String text, { required this.id })
+  PlatformViewClipRectScenario(PlatformDispatcher dispatcher, String text,
+      {required this.id})
       : assert(dispatcher != null),
         super(dispatcher) {
     createPlatformView(dispatcher, text, id);
@@ -436,8 +462,7 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
 
   @override
   void onBeginFrame(Duration duration) {
-    final SceneBuilder builder =
-      SceneBuilder()
+    final SceneBuilder builder = SceneBuilder()
       ..pushClipRect(const Rect.fromLTRB(100, 100, 400, 400));
 
     finishBuilderByAddingPlatformViewAndPicture(builder, id);
@@ -447,7 +472,8 @@ class PlatformViewClipRectScenario extends Scenario with _BasePlatformViewScenar
 /// Platform view with clip rrect.
 class PlatformViewClipRRectScenario extends PlatformViewScenario {
   /// Constructs a platform view with clip rrect scenario.
-  PlatformViewClipRRectScenario(PlatformDispatcher dispatcher, String text, { int id = 0 })
+  PlatformViewClipRRectScenario(PlatformDispatcher dispatcher, String text,
+      {int id = 0})
       : super(dispatcher, text, id: id);
 
   @override
@@ -471,7 +497,8 @@ class PlatformViewClipRRectScenario extends PlatformViewScenario {
 /// Platform view with clip path.
 class PlatformViewClipPathScenario extends PlatformViewScenario {
   /// Constructs a platform view with clip rrect scenario.
-  PlatformViewClipPathScenario(PlatformDispatcher dispatcher, String text, { int id = 0 })
+  PlatformViewClipPathScenario(PlatformDispatcher dispatcher, String text,
+      {int id = 0})
       : super(dispatcher, text, id: id);
 
   @override
@@ -491,7 +518,8 @@ class PlatformViewClipPathScenario extends PlatformViewScenario {
 /// Platform view with transform.
 class PlatformViewTransformScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
-  PlatformViewTransformScenario(PlatformDispatcher dispatcher, String text, { int id = 0 })
+  PlatformViewTransformScenario(PlatformDispatcher dispatcher, String text,
+      {int id = 0})
       : super(dispatcher, text, id: id);
 
   @override
@@ -510,7 +538,8 @@ class PlatformViewTransformScenario extends PlatformViewScenario {
 /// Platform view with opacity.
 class PlatformViewOpacityScenario extends PlatformViewScenario {
   /// Constructs a platform view with transform scenario.
-  PlatformViewOpacityScenario(PlatformDispatcher dispatcher, String text, { int id = 0 })
+  PlatformViewOpacityScenario(PlatformDispatcher dispatcher, String text,
+      {int id = 0})
       : super(dispatcher, text, id: id);
 
   @override
@@ -526,13 +555,15 @@ class PlatformViewForTouchIOSScenario extends Scenario
   /// Creates the PlatformView scenario.
   ///
   /// The [dispatcher] parameter must not be null.
-  PlatformViewForTouchIOSScenario(PlatformDispatcher dispatcher, String text, {int id = 0, required bool accept, bool rejectUntilTouchesEnded = false})
+  PlatformViewForTouchIOSScenario(PlatformDispatcher dispatcher, String text,
+      {int id = 0, required bool accept, bool rejectUntilTouchesEnded = false})
       : assert(dispatcher != null),
-       _accept = accept,
-      _viewId = id,
+        _accept = accept,
+        _viewId = id,
         super(dispatcher) {
     if (rejectUntilTouchesEnded) {
-      createPlatformView(dispatcher, text, id, viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded');
+      createPlatformView(dispatcher, text, id,
+          viewType: 'scenarios/textPlatformView_blockPolicyUntilTouchesEnded');
     } else {
       createPlatformView(dispatcher, text, id);
     }
@@ -563,32 +594,31 @@ class PlatformViewForTouchIOSScenario extends Scenario
   @override
   void onPointerDataPacket(PointerDataPacket packet) {
     if (packet.data.first.change == PointerChange.add) {
-    String method = 'rejectGesture';
-    if (_accept) {
-      method = 'acceptGesture';
+      String method = 'rejectGesture';
+      if (_accept) {
+        method = 'acceptGesture';
+      }
+      const int _valueString = 7;
+      const int _valueInt32 = 3;
+      const int _valueMap = 13;
+      final Uint8List message = Uint8List.fromList(<int>[
+        _valueString,
+        method.length,
+        ...utf8.encode(method),
+        _valueMap,
+        1,
+        _valueString,
+        'id'.length,
+        ...utf8.encode('id'),
+        _valueInt32,
+        ..._to32(_viewId),
+      ]);
+      window.sendPlatformMessage(
+        'flutter/platform_views',
+        message.buffer.asByteData(),
+        (ByteData? response) {},
+      );
     }
-    const int _valueString = 7;
-    const int _valueInt32 = 3;
-    const int _valueMap = 13;
-    final Uint8List message = Uint8List.fromList(<int>[
-      _valueString,
-      method.length,
-      ...utf8.encode(method),
-      _valueMap,
-      1,
-      _valueString,
-      'id'.length,
-      ...utf8.encode('id'),
-      _valueInt32,
-      ..._to32(_viewId),
-    ]);
-    window.sendPlatformMessage(
-      'flutter/platform_views',
-      message.buffer.asByteData(),
-      (ByteData? response) {},
-    );
-    }
-
   }
 
   void _firstFrame() {
@@ -606,16 +636,245 @@ class PlatformViewForTouchIOSScenario extends Scenario
 /// For example, it simulates a video being played.
 class PlatformViewWithContinuousTexture extends PlatformViewScenario {
   /// Constructs a platform view with continuous texture layer.
-  PlatformViewWithContinuousTexture(PlatformDispatcher dispatcher, String text, { int id = 0 })
+  PlatformViewWithContinuousTexture(PlatformDispatcher dispatcher, String text,
+      {int id = 0})
       : super(dispatcher, text, id: id);
 
   @override
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    builder.addTexture(0, width: 300, height: 300, offset: const Offset(200, 200));
+    builder.addTexture(0,
+        width: 300, height: 300, offset: const Offset(200, 200));
 
     finishBuilderByAddingPlatformViewAndPicture(builder, id);
+  }
+}
+
+/// A simple platform view for testing backDropFilter with a platform view in the scene.
+///
+/// The stack would look like: picture 1-> filter -> picture 2 -> pv -> picture 3. And picture 1 should be filtered.
+///
+/// Note it is not testing applying backDropFilter on a platform view.
+/// See: https://github.com/flutter/flutter/issues/80766
+class PlatformViewWithOtherBackDropFilter extends PlatformViewScenario {
+  /// Constructs the scenario.
+  PlatformViewWithOtherBackDropFilter(
+      PlatformDispatcher dispatcher, String text,
+      {int id = 0})
+      : super(dispatcher, text, id: id);
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    // This is just a background picture to make the result more viewable.
+    canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 500, 400),
+      Paint()..color = const Color(0xFFFF0000),
+    );
+    // This rect should look blur due to the backdrop filter.
+    canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 300, 300),
+      Paint()..color = const Color(0xFF00FF00),
+    );
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(const Offset(0, 0), picture);
+
+    final ImageFilter filter = ImageFilter.blur(sigmaX: 8, sigmaY: 8);
+    builder.pushBackdropFilter(filter);
+
+    final PictureRecorder recorder2 = PictureRecorder();
+    final Canvas canvas2 = Canvas(recorder2);
+    // This circle should not look blur.
+    canvas2.drawCircle(
+      const Offset(200, 100),
+      50,
+      Paint()..color = const Color(0xFF0000EF),
+    );
+    final Picture picture2 = recorder2.endRecording();
+    builder.addPicture(const Offset(100, 100), picture2);
+
+    builder.pop();
+
+    builder.pushOffset(0, 600);
+    _addPlatformViewToScene(builder, id, 500, 500);
+    builder.pop();
+
+    final PictureRecorder recorder3 = PictureRecorder();
+    final Canvas canvas3 = Canvas(recorder3);
+    // Add another picture layer so an overlay UIView is created, which was
+    // the root cause of the original issue.
+    canvas3.drawCircle(
+      const Offset(300, 200),
+      50,
+      Paint()..color = const Color(0xFF0000EF),
+    );
+    final Picture picture3 = recorder3.endRecording();
+    builder.addPicture(const Offset(100, 100), picture3);
+
+    final Scene scene = builder.build();
+    window.render(scene);
+    scene.dispose();
+  }
+}
+
+/// A simple platform view for testing backDropFilter with a platform view in the scene.
+///
+/// The stack would look like: picture 1 -> pv1 -> picture 2 -> filter -> pv2 - > picture 3.
+/// Because backdrop filter on platform views has not been implemented(see: https://github.com/flutter/flutter/issues/43902),
+/// the result will not including a filtered pv1.
+class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Constructs the scenario.
+  TwoPlatformViewsWithOtherBackDropFilter(PlatformDispatcher dispatcher,
+      {required int firstId, required int secondId})
+      : _firstId = firstId,
+        _secondId = secondId,
+        super(dispatcher) {
+    createPlatformView(dispatcher, 'platform view 1', firstId);
+    createPlatformView(dispatcher, 'platform view 2', secondId);
+  }
+
+  final int _firstId;
+  final int _secondId;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    // This is just a background picture to make the result more viewable.
+    canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 600, 1000),
+      Paint()..color = const Color(0xFFFF0000),
+    );
+    // This rect should look blur due to the backdrop filter.
+    canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 300, 300),
+      Paint()..color = const Color(0xFF00FF00),
+    );
+    final Picture picture1 = recorder.endRecording();
+    builder.addPicture(const Offset(0, 0), picture1);
+
+    builder.pushOffset(0, 200);
+    _addPlatformViewToScene(builder, _firstId, 100, 100);
+
+    final PictureRecorder recorder2 = PictureRecorder();
+    final Canvas canvas2 = Canvas(recorder2);
+    // This circle should look blur due to the backdrop filter.
+    canvas2.drawCircle(
+      const Offset(200, 100),
+      50,
+      Paint()..color = const Color(0xFF0000EF),
+    );
+    final Picture picture2 = recorder2.endRecording();
+    builder.addPicture(const Offset(100, 100), picture2);
+
+    final ImageFilter filter = ImageFilter.blur(sigmaX: 8, sigmaY: 8);
+    builder.pushBackdropFilter(filter);
+
+    builder.pushOffset(0, 600);
+    _addPlatformViewToScene(builder, _secondId, 500, 500);
+    builder.pop();
+
+    builder.pop();
+
+    final PictureRecorder recorder3 = PictureRecorder();
+    final Canvas canvas3 = Canvas(recorder3);
+    // Add another picture layer so an overlay UIView is created, which was
+    // the root cause of the original issue.
+    canvas3.drawCircle(
+      const Offset(300, 200),
+      50,
+      Paint()..color = const Color(0xFF0000EF),
+    );
+    final Picture picture3 = recorder3.endRecording();
+    builder.addPicture(const Offset(100, 100), picture3);
+
+    final Scene scene = builder.build();
+    window.render(scene);
+    scene.dispose();
+  }
+}
+
+/// Builds a scenario where many platform views are scrolling and pass under a picture.
+class PlatformViewScrollingUnderWidget extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  ///
+  /// The [dispatcher] parameter must not be null.
+  PlatformViewScrollingUnderWidget(PlatformDispatcher dispatcher,
+      {required int firstPlatformViewId, required int lastPlatformViewId})
+      : _firstPlatformViewId = firstPlatformViewId,
+        _lastPlatformViewId = lastPlatformViewId,
+        assert(dispatcher != null),
+        super(dispatcher) {
+    for (int i = _firstPlatformViewId; i <= _lastPlatformViewId; i++) {
+      createPlatformView(dispatcher, 'platform view', i);
+    }
+  }
+
+  final int _firstPlatformViewId;
+
+  final int _lastPlatformViewId;
+
+  double _offset = 0;
+
+  bool _movingUp = true;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    _buildOneFrame(_offset);
+  }
+
+  @override
+  void onDrawFrame() {
+    // Scroll up until -1000, then scroll down until -1.
+    if (_offset < -1000) {
+      _movingUp = false;
+    } else if (_offset > -1) {
+      _movingUp = true;
+    }
+
+    if (_movingUp) {
+      _offset -= 100;
+    } else {
+      _offset += 100;
+    }
+    window.scheduleFrame();
+    super.onDrawFrame();
+  }
+
+  void _buildOneFrame(double offset) {
+    const double cellWidth = 1000;
+    double localOffset = offset;
+    final SceneBuilder builder = SceneBuilder();
+    const double cellHeight = 300;
+    for (int i = _firstPlatformViewId; i <= _lastPlatformViewId; i++) {
+      // Build a list view with platform views.
+      builder.pushOffset(0, localOffset);
+      _addPlatformViewToScene(builder, i, cellWidth, cellHeight);
+      builder.pop();
+      localOffset += cellHeight;
+    }
+
+    // Add a "banner" that should display on top of the list view.
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawRect(
+      const Rect.fromLTRB(0, cellHeight, cellWidth, 100),
+      Paint()..color = const Color(0xFFFF0000),
+    );
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(const Offset(0, 20), picture);
+
+    final Scene scene = builder.build();
+    window.render(scene);
+    scene.dispose();
   }
 }
 
@@ -631,7 +890,8 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
   /// It prepare a TextPlatformView so it can be added to the SceneBuilder in `onBeginFrame`.
   /// Call this method in the constructor of the platform view related scenarios
   /// to perform necessary set up.
-  void createPlatformView(PlatformDispatcher dispatcher, String text, int id, {String viewType = 'scenarios/textPlatformView'}) {
+  void createPlatformView(PlatformDispatcher dispatcher, String text, int id,
+      {String viewType = 'scenarios/textPlatformView'}) {
     const int _valueTrue = 1;
     const int _valueInt32 = 3;
     const int _valueFloat64 = 6;
@@ -644,8 +904,7 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       'create'.length, // this won't work if we use multi-byte characters.
       ...utf8.encode('create'),
       _valueMap,
-      if (Platform.isIOS)
-        3, // 3 entries in map for iOS.
+      if (Platform.isIOS) 3, // 3 entries in map for iOS.
       if (Platform.isAndroid && !usesAndroidHybridComposition)
         6, // 6 entries in map for virtual displays on Android.
       if (Platform.isAndroid && usesAndroidHybridComposition)
@@ -701,7 +960,9 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
       'flutter/platform_views',
       message.buffer.asByteData(),
       (ByteData? response) {
-        if (response != null && Platform.isAndroid && !usesAndroidHybridComposition) {
+        if (response != null &&
+            Platform.isAndroid &&
+            !usesAndroidHybridComposition) {
           // Envelope.
           _textureId = response.getUint8(0);
         }
@@ -724,7 +985,8 @@ mixin _BasePlatformViewScenarioMixin on Scenario {
         sceneBuilder.addTexture(_textureId!, width: width, height: height);
       }
     } else {
-      throw UnsupportedError('Platform ${Platform.operatingSystem} is not supported');
+      throw UnsupportedError(
+          'Platform ${Platform.operatingSystem} is not supported');
     }
   }
 

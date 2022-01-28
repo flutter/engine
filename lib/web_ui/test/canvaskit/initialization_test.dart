@@ -19,11 +19,11 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('populates flt-renderer and flt-build-mode', () {
-      DomRenderer();
+      FlutterViewEmbedder();
       expect(html.document.body!.attributes['flt-renderer'],
           'canvaskit (requested explicitly)');
       expect(html.document.body!.attributes['flt-build-mode'], 'debug');
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

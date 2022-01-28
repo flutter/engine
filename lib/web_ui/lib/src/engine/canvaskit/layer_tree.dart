@@ -49,12 +49,12 @@ class LayerTree {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(frame.canvas);
     final List<CkCanvas> overlayCanvases =
-        frame.viewEmbedder!.getCurrentCanvases();
+        frame.viewEmbedder!.getOverlayCanvases();
     for (int i = 0; i < overlayCanvases.length; i++) {
       internalNodesCanvas.addCanvas(overlayCanvases[i]);
     }
     // Clear the canvases before painting
-    internalNodesCanvas.clear(ui.Color(0x00000000));
+    internalNodesCanvas.clear(const ui.Color(0x00000000));
     final PaintContext context = PaintContext(
       internalNodesCanvas,
       frame.canvas,

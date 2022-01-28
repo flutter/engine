@@ -21,6 +21,7 @@ import 'navigation/url_strategy.dart';
 import 'platform_dispatcher.dart';
 import 'services.dart';
 import 'test_embedding.dart';
+import 'util.dart';
 
 typedef _HandleMessageCallBack = Future<bool> Function();
 
@@ -47,13 +48,12 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
     engineDispatcher.windows[_windowId] = this;
-    engineDispatcher.windowConfigurations[_windowId] = ui.ViewConfiguration();
+    engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
-      _browserHistory =
-          MultiEntriesBrowserHistory(urlStrategy: _customUrlStrategy);
+      _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
     registerHotRestartListener(() {
-      window.resetHistory();
+      _browserHistory?.dispose();
     });
   }
 
@@ -66,7 +66,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   /// button, etc.
   BrowserHistory get browserHistory {
     return _browserHistory ??=
-        MultiEntriesBrowserHistory(urlStrategy: _urlStrategyForInitialization);
+        createHistoryForExistingState(_urlStrategyForInitialization);
   }
 
   UrlStrategy? get _urlStrategyForInitialization {
@@ -81,32 +81,50 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
       _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
 
   Future<void> _useSingleEntryBrowserHistory() async {
+    // Recreate the browser history mode that's appropriate for the existing
+    // history state.
+    //
+    // If it happens to be a single-entry one, then there's nothing further to do.
+    //
+    // But if it's a multi-entry one, it will be torn down below and replaced
+    // with a single-entry history.
+    //
+    // See: https://github.com/flutter/flutter/issues/79241
+    _browserHistory ??=
+        createHistoryForExistingState(_urlStrategyForInitialization);
+
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
     }
 
-    final UrlStrategy? strategy;
-    if (_browserHistory == null) {
-      strategy = _urlStrategyForInitialization;
-    } else {
-      strategy = _browserHistory?.urlStrategy;
-      await _browserHistory?.tearDown();
-    }
+    // At this point, we know that `_browserHistory` is a non-null
+    // `MultiEntriesBrowserHistory` instance.
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
     _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
   }
 
   Future<void> _useMultiEntryBrowserHistory() async {
+    // Recreate the browser history mode that's appropriate for the existing
+    // history state.
+    //
+    // If it happens to be a multi-entry one, then there's nothing further to do.
+    //
+    // But if it's a single-entry one, it will be torn down below and replaced
+    // with a multi-entry history.
+    //
+    // See: https://github.com/flutter/flutter/issues/79241
+    _browserHistory ??=
+        createHistoryForExistingState(_urlStrategyForInitialization);
+
     if (_browserHistory is MultiEntriesBrowserHistory) {
       return;
     }
 
-    final UrlStrategy? strategy;
-    if (_browserHistory == null) {
-      strategy = _urlStrategyForInitialization;
-    } else {
-      strategy = _browserHistory?.urlStrategy;
-      await _browserHistory?.tearDown();
-    }
+    // At this point, we know that `_browserHistory` is a non-null
+    // `SingleEntryBrowserHistory` instance.
+    final UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    await _browserHistory?.tearDown();
     _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
   }
 
@@ -151,8 +169,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
 
   Future<bool> handleNavigationMessage(ByteData? data) async {
     return _waitInTheLine(() async {
-      final MethodCall decoded = JSONMethodCodec().decodeMethodCall(data);
-      final Map<String, dynamic>? arguments = decoded.arguments;
+      final MethodCall decoded = const JSONMethodCodec().decodeMethodCall(data);
+      final Map<String, dynamic>? arguments = decoded.arguments as Map<String, dynamic>?;
       switch (decoded.method) {
         case 'selectMultiEntryHistory':
           await _useMultiEntryBrowserHistory();
@@ -164,14 +182,14 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         case 'routeUpdated': // deprecated
           assert(arguments != null);
           await _useSingleEntryBrowserHistory();
-          browserHistory.setRouteName(arguments!['routeName']);
+          browserHistory.setRouteName(arguments!.tryString('routeName'));
           return true;
         case 'routeInformationUpdated':
           assert(arguments != null);
           browserHistory.setRouteName(
-            arguments!['location'],
+            arguments!.tryString('location'),
             state: arguments['state'],
-            replace: arguments['replace'] ?? false,
+            replace: arguments.tryBool('replace') ?? false,
           );
           return true;
       }
@@ -185,7 +203,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
         platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher.windowConfigurations.containsKey(_windowId));
     return engineDispatcher.windowConfigurations[_windowId] ??
-        ui.ViewConfiguration();
+        const ui.ViewConfiguration();
   }
 
   @override
@@ -332,13 +350,13 @@ typedef _JsSetUrlStrategy = void Function(JsUrlStrategy?);
 // Keep this js name in sync with flutter_web_plugins. Find it at:
 // https://github.com/flutter/flutter/blob/custom_location_strategy/packages/flutter_web_plugins/lib/src/navigation/js_url_strategy.dart
 //
-// TODO: Add integration test https://github.com/flutter/flutter/issues/66852
+// TODO(mdebbar): Add integration test https://github.com/flutter/flutter/issues/66852
 @JS('_flutter_web_set_location_strategy')
 external set jsSetUrlStrategy(_JsSetUrlStrategy? newJsSetUrlStrategy);
 
 UrlStrategy? _createDefaultUrlStrategy() {
   return ui.debugEmulateFlutterTesterEnvironment
-      ? TestUrlStrategy.fromEntry(TestHistoryEntry('default', null, '/'))
+      ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
       : const HashUrlStrategy();
 }
 
@@ -378,7 +396,7 @@ class EngineFlutterWindowView extends ui.FlutterWindow {
         platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
     return engineDispatcher.windowConfigurations[_viewId] ??
-        ui.ViewConfiguration();
+        const ui.ViewConfiguration();
   }
 }
 

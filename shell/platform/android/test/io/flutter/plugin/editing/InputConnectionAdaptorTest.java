@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -15,12 +16,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.Emoji;
 import android.text.InputType;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
@@ -31,12 +33,14 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
+import com.ibm.icu.lang.UCharacter;
+import com.ibm.icu.lang.UProperty;
 import io.flutter.embedding.android.KeyboardManager;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
-import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.util.FakeKeyEvent;
@@ -177,45 +181,37 @@ public class InputConnectionAdaptorTest {
     View testView = new View(RuntimeEnvironment.application);
     int client = 0;
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    AndroidKeyProcessor mockKeyProcessor = mock(AndroidKeyProcessor.class);
     DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJNI, mock(AssetManager.class)));
     TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
     ListenableEditingState editable = sampleEditable(0, 0);
     InputConnectionAdaptor adaptor =
-            new InputConnectionAdaptor(
-                    testView,
-                    client,
-                    textInputChannel,
-                    mockKeyProcessor,
-                    editable,
-                    null,
-                    mockFlutterJNI);
+        new InputConnectionAdaptor(
+            testView,
+            client,
+            textInputChannel,
+            mockKeyboardManager,
+            editable,
+            null,
+            mockFlutterJNI);
     adaptor.commitContent(
-            new InputContentInfo(
-                    Uri.parse("content://mock/uri/test/commitContent"),
-                    new ClipDescription("commitContent test", new String[] { "image/png" })
-            ),
-            0,
-            null
-    );
+        new InputContentInfo(
+            Uri.parse("content://mock/uri/test/commitContent"),
+            new ClipDescription("commitContent test", new String[] {"image/png"})),
+        0,
+        null);
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-            .send(
-                    channelCaptor.capture(),
-                    bufferCaptor.capture(),
-                    any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
-            bufferCaptor.getValue(),
-            "TextInputClient.performAction",
-            new String[] {
-                    "0",
-                    "TextInputAction.commitContent",
-                    "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
-            }
-    );
+        bufferCaptor.getValue(),
+        "TextInputClient.performAction",
+        new String[] {
+          "0",
+          "TextInputAction.commitContent",
+          "{\"data\":[],\"mimeType\":\"image\\/png\",\"uri\":\"content:\\/\\/mock\\/uri\\/test\\/commitContent\"}"
+        });
   }
 
   @Test
@@ -239,11 +235,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -276,11 +268,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -315,11 +303,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -352,11 +336,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -392,11 +372,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -431,11 +407,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -470,11 +442,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -509,11 +477,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -546,11 +510,7 @@ public class InputConnectionAdaptorTest {
 
     ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
-    verify(dartExecutor, times(1))
-        .send(
-            channelCaptor.capture(),
-            bufferCaptor.capture(),
-            any(BinaryMessenger.BinaryReply.class));
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
     assertEquals("flutter/textinput", channelCaptor.getValue());
     verifyMethodCall(
         bufferCaptor.getValue(),
@@ -1280,16 +1240,34 @@ public class InputConnectionAdaptorTest {
     when(mockFlutterJNI.nativeFlutterTextUtilsIsEmojiModifierBase(anyInt()))
         .thenAnswer((invocation) -> Emoji.isEmojiModifierBase((int) invocation.getArguments()[0]));
     when(mockFlutterJNI.nativeFlutterTextUtilsIsVariationSelector(anyInt()))
-        .thenAnswer(
-            (invocation) -> {
-              int codePoint = (int) invocation.getArguments()[0];
-              return 0xFE0E <= codePoint && codePoint <= 0xFE0F;
-            });
+        .thenAnswer((invocation) -> Emoji.isVariationSelector((int) invocation.getArguments()[0]));
     when(mockFlutterJNI.nativeFlutterTextUtilsIsRegionalIndicator(anyInt()))
         .thenAnswer(
             (invocation) -> Emoji.isRegionalIndicatorSymbol((int) invocation.getArguments()[0]));
     return new InputConnectionAdaptor(
         testView, client, textInputChannel, mockKeyboardManager, editable, null, mockFlutterJNI);
+  }
+
+  private static class Emoji {
+    public static boolean isEmoji(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI);
+    }
+
+    public static boolean isEmojiModifier(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI_MODIFIER);
+    }
+
+    public static boolean isEmojiModifierBase(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI_MODIFIER_BASE);
+    }
+
+    public static boolean isRegionalIndicatorSymbol(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.REGIONAL_INDICATOR);
+    }
+
+    public static boolean isVariationSelector(int codePoint) {
+      return UCharacter.hasBinaryProperty(codePoint, UProperty.VARIATION_SELECTOR);
+    }
   }
 
   private class TestTextInputChannel extends TextInputChannel {

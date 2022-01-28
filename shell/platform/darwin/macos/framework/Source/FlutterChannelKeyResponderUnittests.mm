@@ -52,9 +52,20 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
         callback(keyMessage);
       }));
 
-  // Key down
   FlutterChannelKeyResponder* responder =
       [[FlutterChannelKeyResponder alloc] initWithChannel:mockKeyEventChannel];
+
+  // Initial empty modifiers. This can happen when user opens window while modifier key is pressed
+  // and then releases the modifier. Shouldn't result in an event being sent.
+  // Regression test for https://github.com/flutter/flutter/issues/87339.
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
+                callback:^(BOOL handled) {
+                  [responses addObject:@(handled)];
+                }];
+
+  EXPECT_EQ([messages count], 0u);
+
+  // Key down
   [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0x100, @"a", @"a", FALSE, 0)
                 callback:^(BOOL handled) {
                   [responses addObject:@(handled)];
@@ -64,7 +75,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keydown");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 0);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x100);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x0);
   EXPECT_EQ([[messages lastObject][@"characters"] UTF8String], "a");
   EXPECT_EQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
 
@@ -85,7 +96,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keyup");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 0);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x100);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0);
   EXPECT_EQ([[messages lastObject][@"characters"] UTF8String], "a");
   EXPECT_EQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
 
@@ -106,7 +117,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keydown");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 56);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x20102);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x20002);
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], TRUE);
@@ -116,7 +127,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
 
   // RShift down
   next_response = false;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20106, @"", @"", FALSE, 60)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20006, @"", @"", FALSE, 60)
                 callback:^(BOOL handled) {
                   [responses addObject:@(handled)];
                 }];
@@ -125,7 +136,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keydown");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 60);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x20106);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x20006);
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], FALSE);
@@ -144,7 +155,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keyup");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 56);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x20104);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x20004);
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], FALSE);
@@ -154,7 +165,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
 
   // RShift up
   next_response = false;
-  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, 60)
+  [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0, @"", @"", FALSE, 60)
                 callback:^(BOOL handled) {
                   [responses addObject:@(handled)];
                 }];
@@ -163,7 +174,7 @@ TEST(FlutterChannelKeyResponderUnittests, BasicKeyEvent) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keyup");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 60);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x100);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0);
 
   EXPECT_EQ([responses count], 1u);
   EXPECT_EQ([[responses lastObject] boolValue], FALSE);
@@ -210,7 +221,7 @@ TEST(FlutterChannelKeyResponderUnittests, EmptyResponseIsTakenAsHandled) {
   EXPECT_STREQ([[messages lastObject][@"keymap"] UTF8String], "macos");
   EXPECT_STREQ([[messages lastObject][@"type"] UTF8String], "keydown");
   EXPECT_EQ([[messages lastObject][@"keyCode"] intValue], 0);
-  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0x100);
+  EXPECT_EQ([[messages lastObject][@"modifiers"] intValue], 0);
   EXPECT_EQ([[messages lastObject][@"characters"] UTF8String], "a");
   EXPECT_EQ([[messages lastObject][@"charactersIgnoringModifiers"] UTF8String], "a");
 

@@ -7,7 +7,6 @@ import 'dart:html' as html;
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'shaders/shader.dart';
@@ -112,7 +111,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       ..height = '${height}px';
     if (browserEngine == BrowserEngine.firefox) {
       // For FireFox for now render transparent black background.
-      // TODO(flutter_web): Switch code to use filter when
+      // TODO(ferhat): Switch code to use filter when
       // See https://caniuse.com/#feat=css-backdrop-filter.
       filterElementStyle
         ..backgroundColor = '#000'
@@ -122,10 +121,10 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
       if (browserEngine == BrowserEngine.webkit) {
-        DomRenderer.setElementStyle(_filterElement!, '-webkit-backdrop-filter',
+        setElementStyle(_filterElement!, '-webkit-backdrop-filter',
             filter.filterAttribute);
       }
-      DomRenderer.setElementStyle(_filterElement!, 'backdrop-filter', filter.filterAttribute);
+      setElementStyle(_filterElement!, 'backdrop-filter', filter.filterAttribute);
     }
   }
 

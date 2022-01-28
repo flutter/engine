@@ -5,7 +5,11 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_UTILS_H_
 
+#include <optional>
+
 #include "flutter/flow/display_list.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
 
 #include "third_party/skia/include/core/SkMaskFilter.h"
 
@@ -39,14 +43,14 @@ namespace flutter {
 // to the setting of attributes.
 class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
  public:
-  void setAA(bool aa) override {}
+  void setAntiAlias(bool aa) override {}
   void setDither(bool dither) override {}
   void setInvertColors(bool invert) override {}
-  void setCaps(SkPaint::Cap cap) override {}
-  void setJoins(SkPaint::Join join) override {}
-  void setDrawStyle(SkPaint::Style style) override {}
+  void setStrokeCap(SkPaint::Cap cap) override {}
+  void setStrokeJoin(SkPaint::Join join) override {}
+  void setStyle(SkPaint::Style style) override {}
   void setStrokeWidth(SkScalar width) override {}
-  void setMiterLimit(SkScalar limit) override {}
+  void setStrokeMiter(SkScalar limit) override {}
   void setColor(SkColor color) override {}
   void setBlendMode(SkBlendMode mode) override {}
   void setBlender(sk_sp<SkBlender> blender) override {}
@@ -61,9 +65,9 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
 // A utility class that will ignore all Dispatcher methods relating
 // to setting a clip.
 class IgnoreClipDispatchHelper : public virtual Dispatcher {
-  void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) override {}
-  void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) override {}
-  void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) override {}
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override {}
+  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override {}
+  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override {}
 };
 
 // A utility class that will ignore all Dispatcher methods relating
@@ -74,21 +78,17 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
   void scale(SkScalar sx, SkScalar sy) override {}
   void rotate(SkScalar degrees) override {}
   void skew(SkScalar sx, SkScalar sy) override {}
-  void transform2x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt) override {}
-  void transform3x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt,
-                    SkScalar px,
-                    SkScalar py,
-                    SkScalar pt) override {}
+  // clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override {}
+  // full 4x4 transform in row major order
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {}
+  // clang-format on
 };
 
 // A utility class that will monitor the Dispatcher methods relating
@@ -96,23 +96,23 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
 // which can be accessed at any time via paint().
 class SkPaintDispatchHelper : public virtual Dispatcher {
  public:
-  void setAA(bool aa) override;
+  void setAntiAlias(bool aa) override;
   void setDither(bool dither) override;
-  void setInvertColors(bool invert) override;
-  void setCaps(SkPaint::Cap cap) override;
-  void setJoins(SkPaint::Join join) override;
-  void setDrawStyle(SkPaint::Style style) override;
-  void setStrokeWidth(SkScalar width) override;
-  void setMiterLimit(SkScalar limit) override;
+  void setStyle(SkPaint::Style style) override;
   void setColor(SkColor color) override;
+  void setStrokeWidth(SkScalar width) override;
+  void setStrokeMiter(SkScalar limit) override;
+  void setStrokeCap(SkPaint::Cap cap) override;
+  void setStrokeJoin(SkPaint::Join join) override;
+  void setShader(sk_sp<SkShader> shader) override;
+  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setInvertColors(bool invert) override;
   void setBlendMode(SkBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
-  void setShader(sk_sp<SkShader> shader) override;
-  void setImageFilter(sk_sp<SkImageFilter> filter) override;
-  void setColorFilter(sk_sp<SkColorFilter> filter) override;
   void setPathEffect(sk_sp<SkPathEffect> effect) override;
   void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+  void setImageFilter(sk_sp<SkImageFilter> filter) override;
 
   const SkPaint& paint() { return paint_; }
 
@@ -126,12 +126,22 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
 
 class SkMatrixSource {
  public:
+  // The current full 4x4 transform matrix. Not generally needed
+  // for 2D operations. See |matrix|.
+  virtual const SkM44& m44() const = 0;
+
+  // The current matrix expressed as an SkMatrix. The data held
+  // in an SkMatrix is enough to perform point and rect transforms
+  // assuming input coordinates have only an X and Y and an assumed
+  // Z of 0 and an assumed W of 1.
+  // See the block comment on the transform methods in |Dispatcher|
+  // for a detailed explanation.
   virtual const SkMatrix& matrix() const = 0;
 };
 
 // A utility class that will monitor the Dispatcher methods relating
 // to the transform and accumulate them into an SkMatrix which can
-// be accessed at any time via getMatrix().
+// be accessed at any time via matrix().
 //
 // This class also implements an appropriate stack of transforms via
 // its save() and restore() methods so those methods will need to be
@@ -143,33 +153,34 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
   void scale(SkScalar sx, SkScalar sy) override;
   void rotate(SkScalar degrees) override;
   void skew(SkScalar sx, SkScalar sy) override;
-  void transform2x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt) override;
-  void transform3x3(SkScalar mxx,
-                    SkScalar mxy,
-                    SkScalar mxt,
-                    SkScalar myx,
-                    SkScalar myy,
-                    SkScalar myt,
-                    SkScalar px,
-                    SkScalar py,
-                    SkScalar pt) override;
+
+  // clang-format off
+
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override;
+  // full 4x4 transform in row major order
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
+
+  // clang-format on
 
   void save() override;
   void restore() override;
 
-  const SkMatrix& matrix() const override { return matrix_; }
+  const SkM44& m44() const override { return matrix_; }
+  const SkMatrix& matrix() const override { return matrix33_; }
 
  protected:
   void reset();
 
  private:
-  SkMatrix matrix_;
-  std::vector<SkMatrix> saved_;
+  SkM44 matrix_;
+  SkMatrix matrix33_;
+  std::vector<SkM44> saved_;
 };
 
 // A utility class that will monitor the Dispatcher methods relating
@@ -186,34 +197,50 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
 class ClipBoundsDispatchHelper : public virtual Dispatcher,
                                  private virtual SkMatrixSource {
  public:
-  void clipRect(const SkRect& rect, bool isAA, SkClipOp clip_op) override;
-  void clipRRect(const SkRRect& rrect, bool isAA, SkClipOp clip_op) override;
-  void clipPath(const SkPath& path, bool isAA, SkClipOp clip_op) override;
+  ClipBoundsDispatchHelper() : ClipBoundsDispatchHelper(nullptr) {}
+
+  explicit ClipBoundsDispatchHelper(const SkRect* cull_rect)
+      : has_clip_(cull_rect),
+        bounds_(cull_rect && !cull_rect->isEmpty() ? *cull_rect
+                                                   : SkRect::MakeEmpty()) {}
+
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
+  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
+  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override;
 
   void save() override;
   void restore() override;
 
-  const SkRect& getCullingBounds() const { return bounds_; }
+  bool has_clip() const { return has_clip_; }
+  const SkRect& clip_bounds() const { return bounds_; }
+
+ protected:
+  void reset(const SkRect* cull_rect);
 
  private:
+  bool has_clip_;
   SkRect bounds_;
   std::vector<SkRect> saved_;
 
-  void intersect(const SkRect& clipBounds);
+  void intersect(const SkRect& clipBounds, bool is_aa);
 };
 
 class BoundsAccumulator {
  public:
   void accumulate(const SkPoint& p) { accumulate(p.fX, p.fY); }
   void accumulate(SkScalar x, SkScalar y) {
-    if (min_x_ > x)
+    if (min_x_ > x) {
       min_x_ = x;
-    if (min_y_ > y)
+    }
+    if (min_y_ > y) {
       min_y_ = y;
-    if (max_x_ < x)
+    }
+    if (max_x_ < x) {
       max_x_ = x;
-    if (max_y_ < y)
+    }
+    if (max_y_ < y) {
       max_y_ = y;
+    }
   }
   void accumulate(const SkRect& r) {
     if (r.fLeft <= r.fRight && r.fTop <= r.fBottom) {
@@ -222,10 +249,10 @@ class BoundsAccumulator {
     }
   }
 
-  bool isEmpty() const { return min_x_ >= max_x_ || min_y_ >= max_y_; }
-  bool isNotEmpty() const { return min_x_ < max_x_ && min_y_ < max_y_; }
+  bool is_empty() const { return min_x_ >= max_x_ || min_y_ >= max_y_; }
+  bool is_not_empty() const { return min_x_ < max_x_ && min_y_ < max_y_; }
 
-  SkRect getBounds() const {
+  SkRect bounds() const {
     return (max_x_ > min_x_ && max_y_ > min_y_)
                ? SkRect::MakeLTRB(min_x_, min_y_, max_x_, max_y_)
                : SkRect::MakeEmpty();
@@ -242,19 +269,37 @@ class BoundsAccumulator {
 // bounds of the rendering operations.
 class DisplayListBoundsCalculator final
     : public virtual Dispatcher,
-      public virtual SkPaintDispatchHelper,
+      public virtual IgnoreAttributeDispatchHelper,
       public virtual SkMatrixDispatchHelper,
-      public virtual ClipBoundsDispatchHelper {
+      public virtual ClipBoundsDispatchHelper,
+      DisplayListOpFlags {
  public:
   // Construct a Calculator to determine the bounds of a list of
   // DisplayList dispatcher method calls. Since 2 of the method calls
-  // have no intrinsic size because they render to the entire available,
-  // the |cullRect| provides a bounds for them to include.
-  DisplayListBoundsCalculator(const SkRect& cull_rect = SkRect::MakeEmpty())
-      : accumulator_(&root_accumulator_), bounds_cull_(cull_rect) {}
+  // have no intrinsic size because they flood the entire clip/surface,
+  // the |cull_rect| provides a bounds for them to include. If cull_rect
+  // is not specified or is null, then the unbounded calls will not
+  // affect the resulting bounds, but will set a flag that can be
+  // queried using |isUnbounded| if an alternate plan is available
+  // for such cases.
+  // The flag should never be set if a cull_rect is provided.
+  explicit DisplayListBoundsCalculator(const SkRect* cull_rect = nullptr);
 
-  void saveLayer(const SkRect* bounds, bool with_paint) override;
+  void setStrokeCap(SkPaint::Cap cap) override;
+  void setStrokeJoin(SkPaint::Join join) override;
+  void setStyle(SkPaint::Style style) override;
+  void setStrokeWidth(SkScalar width) override;
+  void setStrokeMiter(SkScalar limit) override;
+  void setBlendMode(SkBlendMode mode) override;
+  void setBlender(sk_sp<SkBlender> blender) override;
+  void setImageFilter(sk_sp<SkImageFilter> filter) override;
+  void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
+  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;
+
   void save() override;
+  void saveLayer(const SkRect* bounds, bool with_paint) override;
   void restore() override;
 
   void drawPaint() override;
@@ -277,21 +322,24 @@ class DisplayListBoundsCalculator final
                     SkBlendMode mode) override;
   void drawImage(const sk_sp<SkImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling) override;
+                 const SkSamplingOptions& sampling,
+                 bool render_with_attributes) override;
   void drawImageRect(const sk_sp<SkImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      const SkSamplingOptions& sampling,
+                     bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<SkImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter) override;
+                     SkFilterMode filter,
+                     bool render_with_attributes) override;
   void drawImageLattice(const sk_sp<SkImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         SkFilterMode filter,
-                        bool with_paint) override;
+                        bool render_with_attributes) override;
   void drawAtlas(const sk_sp<SkImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -299,7 +347,8 @@ class DisplayListBoundsCalculator final
                  int count,
                  SkBlendMode mode,
                  const SkSamplingOptions& sampling,
-                 const SkRect* cullRect) override;
+                 const SkRect* cullRect,
+                 bool render_with_attributes) override;
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
                    bool with_save_layer) override;
@@ -310,64 +359,210 @@ class DisplayListBoundsCalculator final
   void drawShadow(const SkPath& path,
                   const SkColor color,
                   const SkScalar elevation,
-                  bool occludes,
+                  bool transparent_occluder,
                   SkScalar dpr) override;
 
-  SkRect getBounds() { return accumulator_->getBounds(); }
+  // The DisplayList had an unbounded call with no cull rect or clip
+  // to contain it. Should only be called after the stream is fully
+  // dispatched.
+  // Unbounded operations are calls like |drawColor| which are defined
+  // to flood the entire surface, or calls that relied on a rendering
+  // attribute which is unable to compute bounds (should be rare).
+  // In those cases the bounds will represent only the accumulation
+  // of the bounded calls and this flag will be set to indicate that
+  // condition.
+  bool is_unbounded() const {
+    FML_DCHECK(layer_infos_.size() == 1);
+    return layer_infos_.front()->is_unbounded();
+  }
+
+  SkRect bounds() const {
+    FML_DCHECK(layer_infos_.size() == 1);
+    if (is_unbounded()) {
+      FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
+    }
+    return accumulator_->bounds();
+  }
 
  private:
   // current accumulator based on saveLayer history
   BoundsAccumulator* accumulator_;
 
-  // Only used for drawColor and drawPaint and paint objects that
-  // cannot support fast bounds.
-  SkRect bounds_cull_;
-  BoundsAccumulator root_accumulator_;
-
-  class SaveInfo {
+  // A class that abstracts the information kept for a single
+  // |save| or |saveLayer|, including the root information that
+  // is kept as a base set of information for the DisplayList
+  // at the initial conditions outside of any saveLayer.
+  // See |RootLayerData|, |SaveData| and |SaveLayerData|.
+  class LayerData {
    public:
-    SaveInfo(BoundsAccumulator* accumulator);
-    virtual ~SaveInfo() = default;
+    // Construct a LayerData to push on the save stack for a |save|
+    // or |saveLayer| call.
+    // There does not tend to be an actual layer in the case of
+    // a |save| call, but in order to homogenize the handling
+    // of |restore| it adds a trivial implementation of this
+    // class to the stack of saves.
+    // The |outer| parameter is the |BoundsAccumulator| that was
+    // in use by the stream before this layer was pushed on the
+    // stack and should be returned when this layer is popped off
+    // the stack.
+    // Some layers may substitute their own accumulator to compute
+    // their own local bounds while they are on the stack.
+    explicit LayerData(BoundsAccumulator* outer)
+        : outer_(outer), is_unbounded_(false) {}
+    virtual ~LayerData() = default;
 
-    virtual BoundsAccumulator* save();
-    virtual BoundsAccumulator* restore();
+    // The accumulator to use while this layer is put in play by
+    // a |save| or |saveLayer|
+    virtual BoundsAccumulator* layer_accumulator() { return outer_; }
 
-   protected:
-    BoundsAccumulator* saved_accumulator_;
+    // The accumulator to use after this layer is removed from play
+    // via |restore|
+    virtual BoundsAccumulator* restore_accumulator() { return outer_; }
+
+    // The bounds of this layer. May be empty for cases like
+    // a non-layer |save| call which uses the |outer_| accumulator
+    // to accumulate draw calls inside of it
+    virtual SkRect layer_bounds() = 0;
+
+    // is_unbounded should be set to true if we ever encounter an operation
+    // on a layer that either is unrestricted (|drawColor| or |drawPaint|)
+    // or cannot compute its bounds (some effects and filters) and there
+    // was no outstanding clip op at the time.
+    // When the layer is restored, the outer layer may then process this
+    // unbounded state by accumulating its own clip or transferring the
+    // unbounded state to its own outer layer.
+    // Typically the DisplayList will have been constructed with a cull
+    // rect which will act as a default clip for the outermost layer and
+    // the unbounded state of all sub layers will eventually be caught by
+    // that cull rect so that the overall unbounded state of the entire
+    // DisplayList will never be true.
+    //
+    // SkPicture treats these same conditions as a Nop (they accumulate
+    // the SkPicture cull rect, but if it was not specified then it is an
+    // empty Rect and so has no effect on the bounds).
+    // If the Calculator object accumulates this flag into the root layer,
+    // then at least we can make the caller aware of that exceptional
+    // condition via the |DisplayListBoundsCalculator::isUnbounded| call.
+    //
+    // Flutter is unlikely to ever run into this as the Dart mechanisms
+    // all supply a non-null cull rect for all Dart Picture objects,
+    // even if that cull rect is kGiantRect.
+    void set_unbounded() { is_unbounded_ = true; }
+
+    // |is_unbounded| should be called after |getLayerBounds| in case
+    // a problem was found during the computation of those bounds,
+    // the layer will have one last chance to flag an unbounded state.
+    bool is_unbounded() const { return is_unbounded_; }
+
+   private:
+    BoundsAccumulator* outer_;
+    bool is_unbounded_;
+
+    FML_DISALLOW_COPY_AND_ASSIGN(LayerData);
   };
 
-  class SaveLayerInfo : public SaveInfo {
+  // An intermediate implementation class that handles keeping
+  // a local accumulator for the layer, used by both |RootLayerData|
+  // and |SaveLayerData|.
+  class AccumulatorLayerData : public LayerData {
    public:
-    SaveLayerInfo(BoundsAccumulator* accumulator, const SkMatrix& matrix);
-    virtual ~SaveLayerInfo() = default;
+    BoundsAccumulator* layer_accumulator() override {
+      return &layer_accumulator_;
+    }
 
-    BoundsAccumulator* save() override;
-    BoundsAccumulator* restore() override;
+    SkRect layer_bounds() override {
+      // Even though this layer might be unbounded, we still
+      // accumulate what bounds we have as the unbounded condition
+      // may be contained at a higher level and we at least want to
+      // account for the bounds that we do have.
+      return layer_accumulator_.bounds();
+    }
 
    protected:
+    using LayerData::LayerData;
+    ~AccumulatorLayerData() = default;
+
+   private:
     BoundsAccumulator layer_accumulator_;
-    const SkMatrix matrix_;
   };
 
-  class SaveLayerWithPaintInfo : public SaveLayerInfo {
+  // Used as the initial default layer info for the Calculator.
+  class RootLayerData final : public AccumulatorLayerData {
    public:
-    SaveLayerWithPaintInfo(DisplayListBoundsCalculator* calculator,
-                           BoundsAccumulator* accumulator,
-                           const SkMatrix& save_matrix,
-                           const SkPaint& save_paint);
-    virtual ~SaveLayerWithPaintInfo() = default;
+    RootLayerData() : AccumulatorLayerData(nullptr) {}
+    ~RootLayerData() = default;
 
-    BoundsAccumulator* restore() override;
-
-   protected:
-    DisplayListBoundsCalculator* calculator_;
-
-    SkPaint paint_;
+   private:
+    FML_DISALLOW_COPY_AND_ASSIGN(RootLayerData);
   };
 
-  std::vector<SaveInfo> saved_infos_;
+  // Used for |save|
+  class SaveData final : public LayerData {
+   public:
+    using LayerData::LayerData;
+    ~SaveData() = default;
 
-  void accumulateRect(const SkRect& rect, bool force_stroke = false);
+    SkRect layer_bounds() override { return SkRect::MakeEmpty(); }
+
+   private:
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveData);
+  };
+
+  // Used for |saveLayer|
+  class SaveLayerData final : public AccumulatorLayerData {
+   public:
+    SaveLayerData(BoundsAccumulator* outer,
+                  sk_sp<SkImageFilter> filter,
+                  bool paint_nops_on_transparency)
+        : AccumulatorLayerData(outer), layer_filter_(std::move(filter)) {
+      if (!paint_nops_on_transparency) {
+        set_unbounded();
+      }
+    }
+    ~SaveLayerData() = default;
+
+    SkRect layer_bounds() override {
+      SkRect bounds = AccumulatorLayerData::layer_bounds();
+      if (!ComputeFilteredBounds(bounds, layer_filter_.get())) {
+        set_unbounded();
+      }
+      return bounds;
+    }
+
+   private:
+    sk_sp<SkImageFilter> layer_filter_;
+
+    FML_DISALLOW_COPY_AND_ASSIGN(SaveLayerData);
+  };
+
+  std::vector<std::unique_ptr<LayerData>> layer_infos_;
+
+  static constexpr SkScalar kMinStrokeWidth = 0.01;
+
+  skstd::optional<SkBlendMode> blend_mode_ = SkBlendMode::kSrcOver;
+  sk_sp<SkColorFilter> color_filter_;
+
+  SkScalar half_stroke_width_ = kMinStrokeWidth;
+  SkScalar miter_limit_ = 4.0;
+  SkPaint::Style style_ = SkPaint::Style::kFill_Style;
+  bool join_is_miter_ = true;
+  bool cap_is_square_ = false;
+  sk_sp<SkImageFilter> image_filter_;
+  sk_sp<SkPathEffect> path_effect_;
+  sk_sp<SkMaskFilter> mask_filter_;
+  SkScalar mask_sigma_pad_ = 0.0;
+
+  bool paint_nops_on_transparency();
+
+  static bool ComputeFilteredBounds(SkRect& rect, SkImageFilter* filter);
+  bool AdjustBoundsForPaint(SkRect& bounds, DisplayListAttributeFlags flags);
+
+  void AccumulateUnbounded();
+  void AccumulateRect(const SkRect& rect, DisplayListAttributeFlags flags) {
+    SkRect bounds = rect;
+    AccumulateRect(bounds, flags);
+  }
+  void AccumulateRect(SkRect& rect, DisplayListAttributeFlags flags);
 };
 
 }  // namespace flutter

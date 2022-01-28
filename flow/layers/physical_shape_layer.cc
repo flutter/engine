@@ -23,8 +23,6 @@ PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
       path_(path),
       clip_behavior_(clip_behavior) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const PhysicalShapeLayer*>(old_layer);
@@ -48,13 +46,12 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
 
   context->AddLayerBounds(bounds);
 
-  if (context->PushCullRect(bounds)) {
+  // Only push cull rect if there is clip.
+  if (clip_behavior_ == Clip::none || context->PushCullRect(bounds)) {
     DiffChildren(context, prev);
   }
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void PhysicalShapeLayer::Preroll(PrerollContext* context,
                                  const SkMatrix& matrix) {
@@ -101,10 +98,11 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
     case Clip::antiAlias:
       context.internal_nodes_canvas->clipPath(path_, true);
       break;
-    case Clip::antiAliasWithSaveLayer:
+    case Clip::antiAliasWithSaveLayer: {
+      TRACE_EVENT0("flutter", "Canvas::saveLayer");
       context.internal_nodes_canvas->clipPath(path_, true);
       context.internal_nodes_canvas->saveLayer(paint_bounds(), nullptr);
-      break;
+    } break;
     case Clip::none:
       break;
   }

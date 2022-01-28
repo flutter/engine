@@ -6,13 +6,17 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.editing.TextEditingDelta;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.json.JSONArray;
@@ -41,7 +45,8 @@ public class TextInputChannel {
   @NonNull public final MethodChannel channel;
   @Nullable private TextInputMethodHandler textInputMethodHandler;
 
-  private final MethodChannel.MethodCallHandler parsingMethodHandler =
+  @NonNull @VisibleForTesting
+  final MethodChannel.MethodCallHandler parsingMethodHandler =
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
@@ -114,6 +119,7 @@ public class TextInputChannel {
                 }
 
                 textInputMethodHandler.setEditableSizeAndTransform(width, height, matrix);
+                result.success(null);
               } catch (JSONException exception) {
                 result.error("error", exception.getMessage(), null);
               }
@@ -183,6 +189,18 @@ public class TextInputChannel {
     state.put("composingExtent", composingEnd);
     return state;
   }
+
+  private static HashMap<Object, Object> createEditingDeltaJSON(
+      ArrayList<TextEditingDelta> batchDeltas) {
+    HashMap<Object, Object> state = new HashMap<>();
+
+    JSONArray deltas = new JSONArray();
+    for (TextEditingDelta delta : batchDeltas) {
+      deltas.put(delta.toJSON());
+    }
+    state.put("deltas", deltas);
+    return state;
+  }
   /**
    * Instructs Flutter to update its text input editing state to reflect the given configuration.
    */
@@ -215,6 +233,21 @@ public class TextInputChannel {
         createEditingStateJSON(text, selectionStart, selectionEnd, composingStart, composingEnd);
 
     channel.invokeMethod("TextInputClient.updateEditingState", Arrays.asList(inputClientId, state));
+  }
+
+  public void updateEditingStateWithDeltas(
+      int inputClientId, ArrayList<TextEditingDelta> batchDeltas) {
+
+    Log.v(
+        TAG,
+        "Sending message to update editing state with deltas: \n"
+            + "Number of deltas: "
+            + batchDeltas.size());
+
+    final HashMap<Object, Object> state = createEditingDeltaJSON(batchDeltas);
+
+    channel.invokeMethod(
+        "TextInputClient.updateEditingStateWithDeltas", Arrays.asList(inputClientId, state));
   }
 
   public void updateEditingStateWithTag(
@@ -285,11 +318,12 @@ public class TextInputChannel {
         "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.previous"));
   }
 
-  /** Instructs flutter to commit content back to the text channel */
+  /** Instructs flutter to commit content back to the text channel. */
   public void commitContent(int inputClientId, Map<String, Object> content) {
     Log.v(TAG, "Sending 'commitContent' message.");
     channel.invokeMethod(
-        "TextInputClient.performAction", Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
+        "TextInputClient.performAction",
+        Arrays.asList(inputClientId, "TextInputAction.commitContent", content));
   }
 
   /** Instructs Flutter to execute an "unspecified" action. */
@@ -427,15 +461,31 @@ public class TextInputChannel {
         }
       }
       final Integer inputAction = inputActionFromTextInputAction(inputActionName);
+
+      // Build list of content commit mime types from the passed in JSON list
+      List<String> contentList = new ArrayList<String>();
+      JSONArray contentCommitMimeTypes =
+          json.isNull("contentCommitMimeTypes")
+              ? null
+              : json.getJSONArray("contentCommitMimeTypes");
+      if (contentCommitMimeTypes != null) {
+        for (int i = 0; i < contentCommitMimeTypes.length(); i++) {
+          contentList.add(contentCommitMimeTypes.optString(i));
+        }
+      }
+
       return new Configuration(
           json.optBoolean("obscureText"),
           json.optBoolean("autocorrect", true),
           json.optBoolean("enableSuggestions"),
+          json.optBoolean("enableIMEPersonalizedLearning"),
+          json.optBoolean("enableDeltaModel"),
           TextCapitalization.fromValue(json.getString("textCapitalization")),
           InputType.fromJson(json.getJSONObject("inputType")),
           inputAction,
           json.isNull("actionLabel") ? null : json.getString("actionLabel"),
           json.isNull("autofill") ? null : Autofill.fromJson(json.getJSONObject("autofill")),
+          contentList.toArray(new String[contentList.size()]),
           fields);
     }
 
@@ -471,18 +521,21 @@ public class TextInputChannel {
           throws JSONException, NoSuchFieldException {
         final String uniqueIdentifier = json.getString("uniqueIdentifier");
         final JSONArray hints = json.getJSONArray("hints");
+        final String hintText = json.isNull("hintText") ? null : json.getString("hintText");
         final JSONObject editingState = json.getJSONObject("editingValue");
-        final String[] hintList = new String[hints.length()];
+        final String[] autofillHints = new String[hints.length()];
 
-        for (int i = 0; i < hintList.length; i++) {
-          hintList[i] = translateAutofillHint(hints.getString(i));
+        for (int i = 0; i < hints.length(); i++) {
+          autofillHints[i] = translateAutofillHint(hints.getString(i));
         }
-        return new Autofill(uniqueIdentifier, hintList, TextEditState.fromJson(editingState));
+        return new Autofill(
+            uniqueIdentifier, autofillHints, hintText, TextEditState.fromJson(editingState));
       }
 
       public final String uniqueIdentifier;
       public final String[] hints;
       public final TextEditState editState;
+      public final String hintText;
 
       @NonNull
       private static String translateAutofillHint(@NonNull String hint) {
@@ -570,9 +623,11 @@ public class TextInputChannel {
       public Autofill(
           @NonNull String uniqueIdentifier,
           @NonNull String[] hints,
+          @Nullable String hintText,
           @NonNull TextEditState editingState) {
         this.uniqueIdentifier = uniqueIdentifier;
         this.hints = hints;
+        this.hintText = hintText;
         this.editState = editingState;
       }
     }
@@ -580,31 +635,40 @@ public class TextInputChannel {
     public final boolean obscureText;
     public final boolean autocorrect;
     public final boolean enableSuggestions;
+    public final boolean enableIMEPersonalizedLearning;
+    public final boolean enableDeltaModel;
     @NonNull public final TextCapitalization textCapitalization;
     @NonNull public final InputType inputType;
     @Nullable public final Integer inputAction;
     @Nullable public final String actionLabel;
     @Nullable public final Autofill autofill;
+    @Nullable public final String[] contentCommitMimeTypes;
     @Nullable public final Configuration[] fields;
 
     public Configuration(
         boolean obscureText,
         boolean autocorrect,
         boolean enableSuggestions,
+        boolean enableIMEPersonalizedLearning,
+        boolean enableDeltaModel,
         @NonNull TextCapitalization textCapitalization,
         @NonNull InputType inputType,
         @Nullable Integer inputAction,
         @Nullable String actionLabel,
         @Nullable Autofill autofill,
+        @Nullable String[] contentCommitMimeTypes,
         @Nullable Configuration[] fields) {
       this.obscureText = obscureText;
       this.autocorrect = autocorrect;
       this.enableSuggestions = enableSuggestions;
+      this.enableIMEPersonalizedLearning = enableIMEPersonalizedLearning;
+      this.enableDeltaModel = enableDeltaModel;
       this.textCapitalization = textCapitalization;
       this.inputType = inputType;
       this.inputAction = inputAction;
       this.actionLabel = actionLabel;
       this.autofill = autofill;
+      this.contentCommitMimeTypes = contentCommitMimeTypes;
       this.fields = fields;
     }
   }
@@ -725,7 +789,7 @@ public class TextInputChannel {
       }
 
       if ((composingStart != -1 || composingEnd != -1)
-          && (composingStart < 0 || composingStart >= composingEnd)) {
+          && (composingStart < 0 || composingStart > composingEnd)) {
         throw new IndexOutOfBoundsException(
             "invalid composing range: ("
                 + String.valueOf(composingStart)

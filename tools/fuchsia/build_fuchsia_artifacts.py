@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
@@ -35,7 +35,7 @@ def IsMac():
 
 def GetFuchsiaSDKPath():
   # host_os references the gn host_os
-  # https://gn.googlesource.com/gn/+/master/docs/reference.md#var_host_os
+  # https://gn.googlesource.com/gn/+/main/docs/reference.md#var_host_os
   host_os = ''
   if IsLinux():
     host_os = 'linux'

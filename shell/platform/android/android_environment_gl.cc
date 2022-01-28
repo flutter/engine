@@ -20,12 +20,19 @@ AndroidEnvironmentGL::AndroidEnvironmentGL()
     return;
   }
 
+  auto* extensions = eglQueryString(display_, EGL_EXTENSIONS);
+  if (strstr(extensions, "EGL_ANDROID_presentation_time")) {
+    presentation_time_proc_ =
+        reinterpret_cast<PFNEGLPRESENTATIONTIMEANDROIDPROC>(
+            eglGetProcAddress("sEGL_ANDROID_presentation_time"));
+  }
+
   valid_ = true;
 }
 
 AndroidEnvironmentGL::~AndroidEnvironmentGL() {
-  // Diconnect the display if valid.
-  if (display_ != EGL_NO_CONTEXT) {
+  // Disconnect the display if valid.
+  if (display_ != EGL_NO_DISPLAY) {
     eglTerminate(display_);
   }
 }
@@ -38,4 +45,12 @@ EGLDisplay AndroidEnvironmentGL::Display() const {
   return display_;
 }
 
+bool AndroidEnvironmentGL::SetPresentationTime(EGLSurface surface,
+                                               fml::TimePoint time) const {
+  if (!presentation_time_proc_) {
+    return false;
+  }
+  return presentation_time_proc_(display_, surface,
+                                 time.ToEpochDelta().ToNanoseconds());
+}
 }  // namespace flutter

@@ -28,9 +28,6 @@ typedef TimingsCallback = void Function(List<FrameTiming> timings);
 /// Signature for [PlatformDispatcher.onPointerDataPacket].
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 
-// Signature for the response to KeyDataCallback.
-typedef _KeyDataResponseCallback = void Function(int responseId, bool handled);
-
 /// Signature for [PlatformDispatcher.onKeyData].
 ///
 /// The callback should return true if the key event has been handled by the
@@ -55,6 +52,14 @@ typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
 /// Signature for [PlatformDispatcher.onConfigurationChanged].
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
+
+// A gesture setting value that indicates it has not been set by the engine.
+const double _kUnsetGestureSetting = -1.0;
+
+// A message channel to receive KeyData from the platform.
+//
+// See embedder.cc::kFlutterKeyDataChannel for more information.
+const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 /// Platform event dispatcher singleton.
 ///
@@ -179,6 +184,10 @@ class PlatformDispatcher {
     double systemGestureInsetRight,
     double systemGestureInsetBottom,
     double systemGestureInsetLeft,
+    double physicalTouchSlop,
+    List<double> displayFeaturesBounds,
+    List<int> displayFeaturesType,
+    List<int> displayFeaturesState,
   ) {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
@@ -213,8 +222,45 @@ class PlatformDispatcher {
         bottom: math.max(0.0, systemGestureInsetBottom),
         left: math.max(0.0, systemGestureInsetLeft),
       ),
+      // -1 is used as a sentinel for an undefined touch slop
+      gestureSettings: GestureSettings(
+        physicalTouchSlop: physicalTouchSlop == _kUnsetGestureSetting ? null : physicalTouchSlop,
+      ),
+      displayFeatures: _decodeDisplayFeatures(
+        bounds: displayFeaturesBounds,
+        type: displayFeaturesType,
+        state: displayFeaturesState,
+        devicePixelRatio: devicePixelRatio,
+      ),
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
+  List<DisplayFeature> _decodeDisplayFeatures({
+    required List<double> bounds,
+    required List<int> type,
+    required List<int> state,
+    required double devicePixelRatio,
+  }) {
+    assert(bounds.length / 4 == type.length, 'Bounds are rectangles, requiring 4 measurements each');
+    assert(type.length == state.length);
+    final List<DisplayFeature> result = <DisplayFeature>[];
+    for(int i = 0; i < type.length; i++){
+      final int rectOffset = i * 4;
+      result.add(DisplayFeature(
+        bounds: Rect.fromLTRB(
+          bounds[rectOffset] / devicePixelRatio,
+          bounds[rectOffset + 1] / devicePixelRatio,
+          bounds[rectOffset + 2] / devicePixelRatio,
+          bounds[rectOffset + 3] / devicePixelRatio,
+        ),
+        type: DisplayFeatureType.values[type[i]],
+        state: state[i] < DisplayFeatureState.values.length
+            ? DisplayFeatureState.values[state[i]]
+            : DisplayFeatureState.unknown,
+      ));
+    }
+    return result;
   }
 
   /// A callback invoked when any view begins a frame.
@@ -341,9 +387,19 @@ class PlatformDispatcher {
     return PointerDataPacket(data: data);
   }
 
-  /// Called by [_dispatchKeyData].
-  void _respondToKeyData(int responseId, bool handled)
-      native 'PlatformConfiguration_respondToKeyData';
+  static ChannelCallback _keyDataListener(KeyDataCallback onKeyData, Zone zone) =>
+    (ByteData? packet, PlatformMessageResponseCallback callback) {
+      _invoke1<KeyData>(
+        (KeyData keyData) {
+          final bool handled = onKeyData(keyData);
+          final Uint8List response = Uint8List(1);
+          response[0] = handled ? 1 : 0;
+          callback(response.buffer.asByteData());
+        },
+        zone,
+        _unpackKeyData(packet!),
+      );
+    };
 
   /// A callback that is invoked when key data is available.
   ///
@@ -354,22 +410,13 @@ class PlatformDispatcher {
   /// framework and should not be propagated further.
   KeyDataCallback? get onKeyData => _onKeyData;
   KeyDataCallback? _onKeyData;
-  Zone _onKeyDataZone = Zone.root;
   set onKeyData(KeyDataCallback? callback) {
     _onKeyData = callback;
-    _onKeyDataZone = Zone.current;
-  }
-
-  // Called from the engine, via hooks.dart
-  void _dispatchKeyData(ByteData packet, int responseId) {
-    _invoke2<KeyData, _KeyDataResponseCallback>(
-      (KeyData data, _KeyDataResponseCallback callback) {
-        callback(responseId, onKeyData != null && onKeyData!(data));
-      },
-      _onKeyDataZone,
-      _unpackKeyData(packet),
-      _respondToKeyData,
-    );
+    if (callback != null) {
+      channelBuffers.setListener(_kFlutterKeyDataChannel, _keyDataListener(callback, Zone.current));
+    } else {
+      channelBuffers.clearListener(_kFlutterKeyDataChannel);
+    }
   }
 
   // If this value changes, update the encoding code in the following files:
@@ -439,10 +486,10 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _reportTimings(List<int> timings) {
-    assert(timings.length % (FramePhase.values.length + 1) == 0);
+    assert(timings.length % FrameTiming._dataLength == 0);
     final List<FrameTiming> frameTimings = <FrameTiming>[];
-    for (int i = 0; i < timings.length; i += FramePhase.values.length + 1) {
-      frameTimings.add(FrameTiming._(timings.sublist(i, i + FramePhase.values.length + 1)));
+    for (int i = 0; i < timings.length; i += FrameTiming._dataLength) {
+      frameTimings.add(FrameTiming._(timings.sublist(i, i + FrameTiming._dataLength)));
     }
     _invoke1(onReportTimings, _onReportTimingsZone, frameTimings);
   }
@@ -1026,6 +1073,8 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
+    this.displayFeatures = const <DisplayFeature>[],
   });
 
   /// Copy this configuration with some fields replaced.
@@ -1038,6 +1087,8 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings,
+    List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -1048,6 +1099,8 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
+      displayFeatures: displayFeatures ?? this.displayFeatures,
     );
   }
 
@@ -1120,6 +1173,33 @@ class ViewConfiguration {
   /// phone sensor housings).
   final WindowPadding padding;
 
+  /// Additional configuration for touch gestures performed on this view.
+  ///
+  /// For example, the touch slop defined in physical pixels may be provided
+  /// by the gesture settings and should be preferred over the framework
+  /// touch slop constant.
+  final GestureSettings gestureSettings;
+
+  /// {@template dart.ui.ViewConfiguration.displayFeatures}
+  /// Areas of the display that are obstructed by hardware features.
+  ///
+  /// This list is populated only on Android. If the device has no display
+  /// features, this list is empty.
+  ///
+  /// The coordinate space in which the [DisplayFeature.bounds] are defined spans
+  /// across the screens currently in use. This means that the space between the screens
+  /// is virtually part of the Flutter view space, with the [DisplayFeature.bounds]
+  /// of the display feature as an obstructed area. The [DisplayFeature.type] can
+  /// be used to determine if this display feature obstructs the screen or not.
+  /// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both
+  /// obstruct the display, while [DisplayFeatureType.fold] is a crease in the display.
+  ///
+  /// Folding [DisplayFeature]s like the [DisplayFeatureType.hinge] and
+  /// [DisplayFeatureType.fold] also have a [DisplayFeature.state] which can be
+  /// used to determine the posture the device is in.
+  /// {@endtemplate}
+  final List<DisplayFeature> displayFeatures;
+
   @override
   String toString() {
     return '$runtimeType[window: $window, geometry: $geometry]';
@@ -1162,6 +1242,23 @@ enum FramePhase {
   rasterFinishWallTime,
 }
 
+enum _FrameTimingInfo {
+  /// The number of engine layers cached in the raster cache during the frame.
+  layerCacheCount,
+
+  /// The number of bytes used to cache engine layers during the frame.
+  layerCacheBytes,
+
+  /// The number of picture layers cached in the raster cache during the frame.
+  pictureCacheCount,
+
+  /// The number of bytes used to cache pictures during the frame.
+  pictureCacheBytes,
+
+  /// The frame number of the frame.
+  frameNumber,
+}
+
 /// Time-related performance metrics of a frame.
 ///
 /// If you're using the whole Flutter framework, please use
@@ -1189,6 +1286,10 @@ class FrameTiming {
     required int rasterStart,
     required int rasterFinish,
     required int rasterFinishWallTime,
+    int layerCacheCount = 0,
+    int layerCacheBytes = 0,
+    int pictureCacheCount = 0,
+    int pictureCacheBytes = 0,
     int frameNumber = -1,
   }) {
     return FrameTiming._(<int>[
@@ -1198,9 +1299,15 @@ class FrameTiming {
       rasterStart,
       rasterFinish,
       rasterFinishWallTime,
+      layerCacheCount,
+      layerCacheBytes,
+      pictureCacheCount,
+      pictureCacheBytes,
       frameNumber,
     ]);
   }
+
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
   /// Construct [FrameTiming] with raw timestamps in microseconds.
   ///
@@ -1209,14 +1316,16 @@ class FrameTiming {
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [PlatformDispatcher.onReportTimings].
-  FrameTiming._(this._timestamps)
-      : assert(_timestamps.length == FramePhase.values.length + 1);
+  FrameTiming._(this._data)
+      : assert(_data.length == _dataLength);
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
-  int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
+  int timestampInMicroseconds(FramePhase phase) => _data[phase.index];
 
-  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _timestamps[phase.index]);
+  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _data[phase.index]);
+
+  int _rawInfo(_FrameTimingInfo info) => _data[FramePhase.values.length + info.index];
 
   /// The duration to build the frame on the UI thread.
   ///
@@ -1255,16 +1364,54 @@ class FrameTiming {
   /// See also [vsyncOverhead], [buildDuration] and [rasterDuration].
   Duration get totalSpan => _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
 
-  /// The frame key associated with this frame measurement.
-  int get frameNumber => _timestamps.last;
+  /// The number of layers stored in the raster cache during the frame.
+  ///
+  /// See also [layerCacheBytes], [pictureCacheCount] and [pictureCacheBytes].
+  int get layerCacheCount => _rawInfo(_FrameTimingInfo.layerCacheCount);
 
-  final List<int> _timestamps;  // in microseconds
+  /// The number of bytes of image data used to cache layers during the frame.
+  ///
+  /// See also [layerCacheCount], [layerCacheMegabytes], [pictureCacheCount] and [pictureCacheBytes].
+  int get layerCacheBytes => _rawInfo(_FrameTimingInfo.layerCacheBytes);
+
+  /// The number of megabytes of image data used to cache layers during the frame.
+  ///
+  /// See also [layerCacheCount], [layerCacheBytes], [pictureCacheCount] and [pictureCacheBytes].
+  double get layerCacheMegabytes => layerCacheBytes / 1024.0 / 1024.0;
+
+  /// The number of pictures stored in the raster cache during the frame.
+  ///
+  /// See also [layerCacheCount], [layerCacheBytes] and [pictureCacheBytes].
+  int get pictureCacheCount => _rawInfo(_FrameTimingInfo.pictureCacheCount);
+
+  /// The number of bytes of image data used to cache pictures during the frame.
+  ///
+  /// See also [layerCacheCount], [layerCacheBytes], [pictureCacheCount] and [pictureCacheMegabytes].
+  int get pictureCacheBytes => _rawInfo(_FrameTimingInfo.pictureCacheBytes);
+
+  /// The number of megabytes of image data used to cache pictures during the frame.
+  ///
+  /// See also [layerCacheCount], [layerCacheBytes], [pictureCacheCount] and [pictureCacheBytes].
+  double get pictureCacheMegabytes => pictureCacheBytes / 1024.0 / 1024.0;
+
+  /// The frame key associated with this frame measurement.
+  int get frameNumber => _data.last;
+
+  final List<int> _data;  // some elements in microseconds, some in bytes, some are counts
 
   String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
 
   @override
   String toString() {
-    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, vsyncOverhead: ${_formatMS(vsyncOverhead)}, totalSpan: ${_formatMS(totalSpan)}, frameNumber: ${_timestamps.last})';
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, '
+        'rasterDuration: ${_formatMS(rasterDuration)}, '
+        'vsyncOverhead: ${_formatMS(vsyncOverhead)}, '
+        'totalSpan: ${_formatMS(totalSpan)}, '
+        'layerCacheCount: $layerCacheCount, '
+        'layerCacheBytes: $layerCacheBytes, '
+        'pictureCacheCount: $pictureCacheCount, '
+        'pictureCacheBytes: $pictureCacheBytes, '
+        'frameNumber: ${_data.last})';
   }
 }
 
@@ -1356,6 +1503,134 @@ class WindowPadding {
   String toString() {
     return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+/// Area of the display that may be obstructed by a hardware feature.
+///
+/// This is populated only on Android.
+///
+/// The [bounds] are measured in logical pixels. On devices with two screens the
+/// coordinate system starts with [0,0] in the top-left corner of the left or top screen
+/// and expands to include both screens and the visual space between them.
+///
+/// The [type] describes the behaviour and if [DisplayFeature] obstructs the display.
+/// For example, [DisplayFeatureType.hinge] and [DisplayFeatureType.cutout] both obstruct the display,
+/// while [DisplayFeatureType.fold] does not.
+///
+/// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
+///
+/// ![Device with a fold display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_fold.png)
+///
+/// ![Device with a cutout display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_cutout.png)
+///
+/// The [state] contains information about the posture for foldable features
+/// ([DisplayFeatureType.hinge] and [DisplayFeatureType.fold]). The posture is
+/// the shape of the display, for example [DisplayFeatureState.postureFlat] or
+/// [DisplayFeatureState.postureHalfOpened]. For [DisplayFeatureType.cutout],
+/// the state is not used and has the [DisplayFeatureState.unknown] value.
+class DisplayFeature {
+  const DisplayFeature({
+    required this.bounds,
+    required this.type,
+    required this.state,
+  }) : assert(!identical(type, DisplayFeatureType.cutout) || identical(state, DisplayFeatureState.unknown));
+
+  /// The area of the flutter view occupied by this display feature, measured in logical pixels.
+  ///
+  /// On devices with two screens, the Flutter view spans from the top-left corner
+  /// of the left or top screen to the bottom-right corner of the right or bottom screen,
+  /// including the visual area occupied by any display feature. Bounds of display
+  /// features are reported in this coordinate system.
+  ///
+  /// For example, on a dual screen device in portrait mode:
+  ///
+  /// * [bounds.left] gives you the size of left screen, in logical pixels.
+  /// * [bounds.right] gives you the size of the left screen + the hinge width.
+  final Rect bounds;
+
+  /// Type of display feature, e.g. hinge, fold, cutout.
+  final DisplayFeatureType type;
+
+  /// Posture of display feature, which is populated only for folds and hinges.
+  ///
+  /// For cutouts, this is [DisplayFeatureState.unknown]
+  final DisplayFeatureState state;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is DisplayFeature && bounds == other.bounds &&
+        type == other.type && state == other.state;
+  }
+
+  @override
+  int get hashCode => hashValues(bounds, type, state);
+
+  @override
+  String toString() {
+    return 'DisplayFeature(rect: $bounds, type: $type, state: $state)';
+  }
+}
+
+/// Type of [DisplayFeature], describing the [DisplayFeature] behaviour and if
+/// it obstructs the display.
+///
+/// Some types of [DisplayFeature], like [DisplayFeatureType.fold], can be
+/// reported without actually impeding drawing on the screen. They are useful
+/// for knowing where the display is bent or has a crease. The
+/// [DisplayFeature.bounds] can be 0-width in such cases.
+///
+/// The shape formed by the screens for types [DisplayFeatureType.fold] and
+/// [DisplayFeatureType.hinge] is called the posture and is exposed in
+/// [DisplayFeature.state]. For example, the [DisplayFeatureState.postureFlat] posture
+/// means the screens form a flat surface, while [DisplayFeatureState.postureFlipped]
+/// posture means the screens are facing opposite directions.
+///
+/// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
+///
+/// ![Device with a fold display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_fold.png)
+///
+/// ![Device with a cutout display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_cutout.png)
+enum DisplayFeatureType {
+  /// [DisplayFeature] type is new and not yet known to Flutter.
+  unknown,
+  /// A fold in the flexible screen without a physical gap.
+  ///
+  /// The bounds for this display feature type indicate where the display makes a crease.
+  fold,
+  /// A physical separation with a hinge that allows two display panels to fold.
+  hinge,
+  /// A non-displaying area of the screen, usually housing cameras or sensors.
+  cutout,
+}
+
+/// State of the display feature, which contains information about the posture
+/// for foldable features.
+///
+/// The posture is the shape made by the parts of the flexible screen or
+/// physical screen panels. They are inspired by and similar to
+/// [Android Postures](https://developer.android.com/guide/topics/ui/foldables#postures).
+///
+/// * For [DisplayFeatureType.fold]s & [DisplayFeatureType.hinge]s, the state is
+///   the posture.
+/// * For [DisplayFeatureType.cutout]s, the state is not used and has the
+/// [DisplayFeatureState.unknown] value.
+enum DisplayFeatureState {
+  /// The display feature is a [DisplayFeatureType.cutout] or this state is new
+  /// and not yet known to Flutter.
+  unknown,
+  /// The foldable device is completely open.
+  ///
+  /// The screen space that is presented to the user is flat.
+  postureFlat,
+  /// Fold angle is in an intermediate position between opened and closed state.
+  ///
+  /// There is a non-flat angle between parts of the flexible screen or between
+  /// physical screen panels such that the screens start to face each other.
+  postureHalfOpened,
 }
 
 /// An identifier used to select a user's language and formatting preferences.

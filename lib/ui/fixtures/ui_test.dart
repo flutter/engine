@@ -197,7 +197,7 @@ void createPath() {
 void _validatePath(Path path) native 'ValidatePath';
 
 @pragma('vm:entry-point')
-void frameCallback(FrameInfo info) {
+void frameCallback(_Image, int) {
   print('called back');
 }
 
@@ -339,7 +339,7 @@ void hooksTests() {
     window.onMetricsChanged!();
     _callHook(
       '_updateWindowMetrics',
-      16,
+      20,
       0, // window Id
       0.1234, // device pixel ratio
       0.0,    // width
@@ -356,6 +356,10 @@ void hooksTests() {
       0.0,    // system gesture inset right
       0.0,    // system gesture inset bottom
       0.0,    // system gesture inset left
+      22.0,   // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
     );
 
     expectIdentical(originalZone, callbackZone);
@@ -402,7 +406,7 @@ void hooksTests() {
   test('Window padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
-      16,
+      20,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -410,7 +414,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       0.0, // insetBottom
@@ -419,6 +423,10 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       0.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      22.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
     );
 
     expectEquals(window.viewInsets.bottom, 0.0);
@@ -428,7 +436,7 @@ void hooksTests() {
 
     _callHook(
       '_updateWindowMetrics',
-      16,
+      20,
       0, // window Id
       1.0, // devicePixelRatio
       800.0, // width
@@ -436,7 +444,7 @@ void hooksTests() {
       50.0, // paddingTop
       0.0, // paddingRight
       40.0, // paddingBottom
-      0.0, // pattingLeft
+      0.0, // paddingLeft
       0.0, // insetTop
       0.0, // insetRight
       400.0, // insetBottom
@@ -445,12 +453,102 @@ void hooksTests() {
       0.0, // systemGestureInsetRight
       44.0, // systemGestureInsetBottom
       0.0, // systemGestureInsetLeft
+      22.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
     );
 
     expectEquals(window.viewInsets.bottom, 400.0);
     expectEquals(window.viewPadding.bottom, 40.0);
     expectEquals(window.padding.bottom, 0.0);
     expectEquals(window.systemGestureInsets.bottom, 44.0);
+  });
+
+   test('Window physical touch slop', () {
+    _callHook(
+      '_updateWindowMetrics',
+      20,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // paddingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      0.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      0.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      11.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
+    );
+
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 11.0));
+
+    _callHook(
+      '_updateWindowMetrics',
+      20,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // paddingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      400.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      44.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      -1.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
+    );
+
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: null));
+
+    _callHook(
+      '_updateWindowMetrics',
+      20,
+      0, // window Id
+      1.0, // devicePixelRatio
+      800.0, // width
+      600.0, // height
+      50.0, // paddingTop
+      0.0, // paddingRight
+      40.0, // paddingBottom
+      0.0, // paddingLeft
+      0.0, // insetTop
+      0.0, // insetRight
+      400.0, // insetBottom
+      0.0, // insetLeft
+      0.0, // systemGestureInsetTop
+      0.0, // systemGestureInsetRight
+      44.0, // systemGestureInsetBottom
+      0.0, // systemGestureInsetLeft
+      22.0, // physicalTouchSlop
+      <double>[],  // display features bounds
+      <int>[],     // display features types
+      <int>[],     // display features states
+    );
+
+    expectEquals(window.viewConfiguration.gestureSettings,
+      GestureSettings(physicalTouchSlop: 22.0));
   });
 
   test('onLocaleChanged preserves callback zone', () {
@@ -671,4 +769,8 @@ void _callHook(
   Object? arg14,
   Object? arg15,
   Object? arg16,
+  Object? arg17,
+  Object? arg18,
+  Object? arg19,
+  Object? arg20,
 ]) native 'CallHook';

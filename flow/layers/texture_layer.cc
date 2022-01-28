@@ -19,8 +19,6 @@ TextureLayer::TextureLayer(const SkPoint& offset,
       freeze_(freeze),
       sampling_(sampling) {}
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
 void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   if (!context->IsSubtreeDirty()) {
@@ -30,12 +28,17 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
     // dirty
     context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(prev));
   }
+
+  // Make sure DiffContext knows there is a TextureLayer in this subtree.
+  // This prevents ContainerLayer from skipping TextureLayer diffing when
+  // TextureLayer is inside retained layer.
+  // See ContainerLayer::DiffChildren
+  // https://github.com/flutter/flutter/issues/92925
+  context->MarkSubtreeHasTextureLayer();
   context->AddLayerBounds(SkRect::MakeXYWH(offset_.x(), offset_.y(),
                                            size_.width(), size_.height()));
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "TextureLayer::Preroll");

@@ -17,7 +17,7 @@
 #include <utility>
 
 #include "dart_component_controller.h"
-#include "flutter/fml/logging.h"
+#include "dart_component_controller_v2.h"
 #include "flutter/fml/trace_event.h"
 #include "logging.h"
 #include "runtime/dart/utils/inlines.h"
@@ -33,6 +33,7 @@ extern "C" uint8_t _kDartVmSnapshotInstructions[];
 #endif
 
 namespace dart_runner {
+
 namespace {
 
 const char* kDartVMArgs[] = {
@@ -101,18 +102,19 @@ void IsolateGroupCleanupCallback(void* isolate_group_data) {
   delete static_cast<std::shared_ptr<tonic::DartState>*>(isolate_group_data);
 }
 
-// RunApplication for a v1 component
-void RunApplication(
+// Runs the application for a V1 component.
+void RunApplicationV1(
     DartRunner* runner,
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     ::fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
   int64_t start = Dart_TimelineGetMicros();
-  DartComponentController_v1 app(std::move(package), std::move(startup_info),
-                                 runner_incoming_services,
-                                 std::move(controller));
+
+  DartComponentController app(std::move(package), std::move(startup_info),
+                              runner_incoming_services, std::move(controller));
   bool success = app.Setup();
+
   int64_t end = Dart_TimelineGetMicros();
   Dart_TimelineEvent("DartComponentController::Setup", start, end,
                      Dart_Timeline_Event_Duration, 0, NULL, NULL);
@@ -125,19 +127,21 @@ void RunApplication(
   }
 }
 
-// RunApplication for a v2 componeent
-void RunApplication2(
+// Runs the application for a V2 component.
+void RunApplicationV2(
     DartRunner* runner,
     fuchsia::component::runner::ComponentStartInfo start_info,
     std::shared_ptr<sys::ServiceDirectory> runner_incoming_services,
     fidl::InterfaceRequest<fuchsia::component::runner::ComponentController>
         controller) {
-  int64_t start = Dart_TimelineGetMicros();
-  DartComponentController_v2 app(
-      std::move(start_info), runner_incoming_services, std::move(controller));
-  bool success = app.Setup();
-  int64_t end = Dart_TimelineGetMicros();
-  Dart_TimelineEvent("DartComponentController::Setup", start, end,
+  const int64_t start = Dart_TimelineGetMicros();
+
+  DartComponentControllerV2 app(std::move(start_info), runner_incoming_services,
+                                std::move(controller));
+  const bool success = app.SetUp();
+
+  const int64_t end = Dart_TimelineGetMicros();
+  Dart_TimelineEvent("DartComponentControllerV2::Setup", start, end,
                      Dart_Timeline_Event_Duration, 0, NULL, NULL);
   if (success) {
     app.Run();
@@ -225,7 +229,7 @@ DartRunner::~DartRunner() {
 void DartRunner::StartComponent(
     fuchsia::sys::Package package,
     fuchsia::sys::StartupInfo startup_info,
-    ::fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
+    fidl::InterfaceRequest<fuchsia::sys::ComponentController> controller) {
   // TRACE_DURATION currently requires that the string data does not change
   // in the traced scope. Since |package| gets moved in the construction of
   // |thread| below, we cannot ensure that |package.resolved_url| does not
@@ -234,7 +238,7 @@ void DartRunner::StartComponent(
   // eagerly.
   std::string url_copy = package.resolved_url;
   TRACE_EVENT1("dart", "StartComponent", "url", url_copy.c_str());
-  std::thread thread(RunApplication, this, std::move(package),
+  std::thread thread(RunApplicationV1, this, std::move(package),
                      std::move(startup_info), context_->svc(),
                      std::move(controller));
   thread.detach();
@@ -246,7 +250,7 @@ void DartRunner::Start(
         controller) {
   std::string url_copy = start_info.resolved_url();
   TRACE_EVENT1("dart", "Start", "url", url_copy.c_str());
-  std::thread thread(RunApplication2, this, std::move(start_info),
+  std::thread thread(RunApplicationV2, this, std::move(start_info),
                      context_->svc(), std::move(controller));
   thread.detach();
 }

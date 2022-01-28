@@ -13,7 +13,7 @@ import 'package:web_engine_tester/golden_tester.dart';
 
 import '../../matchers.dart';
 
-final ui.Rect region = ui.Rect.fromLTWH(0, 0, 500, 100);
+const ui.Rect region = ui.Rect.fromLTWH(0, 0, 500, 100);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -76,7 +76,7 @@ Future<void> testMain() async {
     builder.pushTransform(
       Matrix4.diagonal3Values(1, -1, 1).toFloat64(),
     );
-    builder.pushClipRect(ui.Rect.fromLTRB(10, 10, 60, 60),
+    builder.pushClipRect(const ui.Rect.fromLTRB(10, 10, 60, 60),
         clipBehavior: ui.Clip.none);
     _drawTestPicture(builder);
     builder.pop();
@@ -217,7 +217,7 @@ Future<void> testMain() async {
 
     builder.pushOffset(140, 0);
     builder.pushPhysicalShape(
-      path: ui.Path()..addOval(ui.Rect.fromLTRB(10, 10, 60, 60)),
+      path: ui.Path()..addOval(const ui.Rect.fromLTRB(10, 10, 60, 60)),
       clipBehavior: ui.Clip.hardEdge,
       color: const ui.Color(0xFFA0FFFF),
       elevation: 4,
@@ -230,7 +230,7 @@ Future<void> testMain() async {
     builder.pushPhysicalShape(
       path: ui.Path()
         ..addRRect(ui.RRect.fromRectAndRadius(
-            ui.Rect.fromLTRB(10, 10, 60, 60), ui.Radius.circular(10.0))),
+            const ui.Rect.fromLTRB(10, 10, 60, 60), const ui.Radius.circular(10.0))),
       clipBehavior: ui.Clip.hardEdge,
       color: const ui.Color(0xFFA0FFFF),
       elevation: 4,
@@ -308,7 +308,7 @@ Future<void> testMain() async {
     /// Update shape from arbitrary path to rect.
     final SurfaceSceneBuilder builder4 = SurfaceSceneBuilder();
     final ui.PhysicalShapeEngineLayer oldShapeLayer4 = builder4.pushPhysicalShape(
-      path: ui.Path()..addOval(ui.Rect.fromLTRB(10, 10, 60, 60)),
+      path: ui.Path()..addOval(const ui.Rect.fromLTRB(10, 10, 60, 60)),
       clipBehavior: ui.Clip.hardEdge,
       color: const ui.Color(0xFF00FF00),
       elevation: 6,
@@ -789,7 +789,7 @@ void _testCullRectComputation() {
 
     // ignore: unused_local_variable
     final PersistedPicture picture = enumeratePictures().single;
-    // TODO(https://github.com/flutter/flutter/issues/40395):
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/40395)
     //   Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500.
     // expect(
     //   picture.optimalLocalCullRect,
@@ -818,10 +818,12 @@ void _testCullRectComputation() {
     'renders clipped text with high quality',
     () async {
       // To reproduce blurriness we need real clipping.
-      final DomParagraph paragraph =
-          (DomParagraphBuilder(EngineParagraphStyle(fontFamily: 'Roboto'))
+      final CanvasParagraph paragraph =
+          (ui.ParagraphBuilder(ui.ParagraphStyle(fontFamily: 'Roboto'))
+                // Use a decoration to force rendering in DOM mode.
+                ..pushStyle(ui.TextStyle(decoration: ui.TextDecoration.lineThrough, decorationColor: const ui.Color(0x00000000)))
                 ..addText('Am I blurry?'))
-              .build() as DomParagraph;
+              .build() as CanvasParagraph;
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       final ui.Rect canvasSize = ui.Rect.fromLTRB(
@@ -843,7 +845,7 @@ void _testCullRectComputation() {
         final RecordingCanvas canvas = recorder.beginRecording(outerClip);
         canvas.drawParagraph(paragraph, const ui.Offset(8.5, 8.5));
         final ui.Picture picture = recorder.endRecording();
-        expect(canvas.renderStrategy.hasArbitraryPaint, isFalse);
+        expect(paragraph.drawOnCanvas, isFalse);
 
         builder.addPicture(
           ui.Offset.zero,
@@ -857,7 +859,7 @@ void _testCullRectComputation() {
         final RecordingCanvas canvas = recorder.beginRecording(innerClip);
         canvas.drawParagraph(paragraph, ui.Offset(8.5, 8.5 + innerClip.top));
         final ui.Picture picture = recorder.endRecording();
-        expect(canvas.renderStrategy.hasArbitraryPaint, isFalse);
+        expect(paragraph.drawOnCanvas, isFalse);
 
         builder.addPicture(
           ui.Offset.zero,

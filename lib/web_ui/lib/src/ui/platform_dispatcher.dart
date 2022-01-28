@@ -155,6 +155,8 @@ class ViewConfiguration {
     this.viewPadding = WindowPadding.zero,
     this.systemGestureInsets = WindowPadding.zero,
     this.padding = WindowPadding.zero,
+    this.gestureSettings = const GestureSettings(),
+    this.displayFeatures = const <DisplayFeature>[],
   });
 
   ViewConfiguration copyWith({
@@ -166,6 +168,8 @@ class ViewConfiguration {
     WindowPadding? viewPadding,
     WindowPadding? systemGestureInsets,
     WindowPadding? padding,
+    GestureSettings? gestureSettings,
+    List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
       window: window ?? this.window,
@@ -176,6 +180,8 @@ class ViewConfiguration {
       viewPadding: viewPadding ?? this.viewPadding,
       systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
       padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
+      displayFeatures: displayFeatures ?? this.displayFeatures,
     );
   }
 
@@ -187,6 +193,8 @@ class ViewConfiguration {
   final WindowPadding viewPadding;
   final WindowPadding systemGestureInsets;
   final WindowPadding padding;
+  final GestureSettings gestureSettings;
+  final List<DisplayFeature> displayFeatures;
 
   @override
   String toString() {
@@ -203,6 +211,14 @@ enum FramePhase {
   rasterFinishWallTime,
 }
 
+enum _FrameTimingInfo {
+  layerCacheCount,
+  layerCacheBytes,
+  pictureCacheCount,
+  pictureCacheBytes,
+  frameNumber,
+}
+
 class FrameTiming {
   factory FrameTiming({
     required int vsyncStart,
@@ -211,6 +227,10 @@ class FrameTiming {
     required int rasterStart,
     required int rasterFinish,
     required int rasterFinishWallTime,
+    int layerCacheCount = 0,
+    int layerCacheBytes = 0,
+    int pictureCacheCount = 0,
+    int pictureCacheBytes = 0,
     int frameNumber = 1,
   }) {
     return FrameTiming._(<int>[
@@ -220,16 +240,24 @@ class FrameTiming {
       rasterStart,
       rasterFinish,
       rasterFinishWallTime,
+      layerCacheCount,
+      layerCacheBytes,
+      pictureCacheCount,
+      pictureCacheBytes,
       frameNumber,
     ]);
   }
 
-  FrameTiming._(this._timestamps)
-      : assert(_timestamps.length == FramePhase.values.length + 1);
+  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
 
-  int timestampInMicroseconds(FramePhase phase) => _timestamps[phase.index];
+  FrameTiming._(this._data)
+      : assert(_data.length == _dataLength);
 
-  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _timestamps[phase.index]);
+  int timestampInMicroseconds(FramePhase phase) => _data[phase.index];
+
+  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _data[phase.index]);
+
+  int _rawInfo(_FrameTimingInfo info) => _data[FramePhase.values.length + info.index];
 
   Duration get buildDuration =>
       _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
@@ -242,15 +270,35 @@ class FrameTiming {
   Duration get totalSpan =>
       _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
 
-  int get frameNumber => _timestamps.last;
+  int get layerCacheCount => _rawInfo(_FrameTimingInfo.layerCacheCount);
 
-  final List<int> _timestamps; // in microseconds
+  int get layerCacheBytes => _rawInfo(_FrameTimingInfo.layerCacheBytes);
+
+  double get layerCacheMegabytes => layerCacheBytes / 1024.0 / 1024.0;
+
+  int get pictureCacheCount => _rawInfo(_FrameTimingInfo.pictureCacheCount);
+
+  int get pictureCacheBytes => _rawInfo(_FrameTimingInfo.pictureCacheBytes);
+
+  double get pictureCacheMegabytes => pictureCacheBytes / 1024.0 / 1024.0;
+
+  int get frameNumber => _data.last;
+
+  final List<int> _data;  // some elements in microseconds, some in bytes, some are counts
 
   String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
 
   @override
   String toString() {
-    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, rasterDuration: ${_formatMS(rasterDuration)}, vsyncOverhead: ${_formatMS(vsyncOverhead)}, totalSpan: ${_formatMS(totalSpan)}, frameNumber: $frameNumber)';
+    return '$runtimeType(buildDuration: ${_formatMS(buildDuration)}, '
+        'rasterDuration: ${_formatMS(rasterDuration)}, '
+        'vsyncOverhead: ${_formatMS(vsyncOverhead)}, '
+        'totalSpan: ${_formatMS(totalSpan)}, '
+        'layerCacheCount: $layerCacheCount, '
+        'layerCacheBytes: $layerCacheBytes, '
+        'pictureCacheCount: $pictureCacheCount, '
+        'pictureCacheBytes: $pictureCacheBytes, '
+        'frameNumber: ${_data.last})';
   }
 }
 
@@ -279,6 +327,50 @@ abstract class WindowPadding {
   String toString() {
     return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+class DisplayFeature {
+  const DisplayFeature({
+    required this.bounds,
+    required this.type,
+    required this.state,
+  });
+
+  final Rect bounds;
+  final DisplayFeatureType type;
+  final DisplayFeatureState state;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other))
+      return true;
+    if (other.runtimeType != runtimeType)
+      return false;
+    return other is DisplayFeature && bounds == other.bounds &&
+        type == other.type && state == other.state;
+  }
+
+  @override
+  int get hashCode => hashValues(bounds, type, state);
+
+  @override
+  String toString() {
+    return 'DisplayFeature(rect: $bounds, type: $type, state: $state)';
+  }
+}
+
+enum DisplayFeatureType {
+  unknown,
+  fold,
+  hinge,
+  cutout,
+}
+
+enum DisplayFeatureState {
+  unknown,
+  postureFlat,
+  postureHalfOpened,
+  postureFlipped,
 }
 
 class Locale {

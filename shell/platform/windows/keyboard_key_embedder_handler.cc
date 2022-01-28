@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 
+#include "flutter/shell/platform/windows/keyboard_win32_common.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 
 namespace flutter {
@@ -26,12 +27,44 @@ constexpr size_t kCharacterCacheSize = 8;
 constexpr SHORT kStateMaskToggled = 0x01;
 constexpr SHORT kStateMaskPressed = 0x80;
 
+const char* empty_character = "";
+
+// Get some bits of the char, from the start'th bit from the right (excluded)
+// to the end'th bit from the right (included).
+//
+// For example, _GetBit(0x1234, 8, 4) => 0x3.
+char _GetBit(char32_t ch, size_t start, size_t end) {
+  return (ch >> end) & ((1 << (start - end)) - 1);
+}
 }  // namespace
 
+std::string ConvertChar32ToUtf8(char32_t ch) {
+  std::string result;
+  assert(0 <= ch && ch <= 0x10FFFF);
+  if (ch <= 0x007F) {
+    result.push_back(ch);
+  } else if (ch <= 0x07FF) {
+    result.push_back(0b11000000 + _GetBit(ch, 11, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  } else if (ch <= 0xFFFF) {
+    result.push_back(0b11100000 + _GetBit(ch, 16, 12));
+    result.push_back(0b10000000 + _GetBit(ch, 12, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  } else {
+    result.push_back(0b11110000 + _GetBit(ch, 21, 18));
+    result.push_back(0b10000000 + _GetBit(ch, 18, 12));
+    result.push_back(0b10000000 + _GetBit(ch, 12, 6));
+    result.push_back(0b10000000 + _GetBit(ch, 6, 0));
+  }
+  return result;
+}
+
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
-    SendEvent send_event,
+    SendEventHandler send_event,
     GetKeyStateHandler get_key_state)
-    : sendEvent_(send_event), get_key_state_(get_key_state), response_id_(1) {
+    : perform_send_event_(send_event),
+      get_key_state_(get_key_state),
+      response_id_(1) {
   InitCriticalKeys();
 }
 
@@ -114,7 +147,7 @@ uint64_t KeyboardKeyEmbedderHandler::GetLogicalKey(int key,
   return ApplyPlaneToId(toLower(key), windowsPlane);
 }
 
-void KeyboardKeyEmbedderHandler::KeyboardHook(
+void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     int key,
     int scancode,
     int action,
@@ -124,8 +157,9 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
     std::function<void(bool)> callback) {
   const uint64_t physical_key = GetPhysicalKey(scancode, extended);
   const uint64_t logical_key = GetLogicalKey(key, extended, scancode);
-  assert(action == WM_KEYDOWN || action == WM_KEYUP);
-  const bool is_physical_down = action == WM_KEYDOWN;
+  assert(action == WM_KEYDOWN || action == WM_KEYUP ||
+         action == WM_SYSKEYDOWN || action == WM_SYSKEYUP);
+  const bool is_physical_down = action == WM_KEYDOWN || action == WM_SYSKEYDOWN;
 
   auto last_logical_record_iter = pressingRecords_.find(physical_key);
   const bool had_record = last_logical_record_iter != pressingRecords_.end();
@@ -136,10 +170,12 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   FlutterKeyEventType type;
   // The resulting event's `logical_key`.
   uint64_t result_logical_key;
-  // The next value of pressingRecords_[physical_key] (or to remove it).
-  uint64_t next_logical_record;
-  bool next_has_record = true;
+  // What pressingRecords_[physical_key] should be after the KeyboardHookImpl
+  // returns (0 if the entry should be removed).
+  uint64_t eventual_logical_record;
   char character_bytes[kCharacterCacheSize];
+
+  character = UndeadChar(character);
 
   if (is_physical_down) {
     if (had_record) {
@@ -148,7 +184,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
         type = kFlutterKeyEventTypeRepeat;
         assert(had_record);
         ConvertUtf32ToUtf8_(character_bytes, character);
-        next_logical_record = last_logical_record;
+        eventual_logical_record = last_logical_record;
         result_logical_key = last_logical_record;
       } else {
         // A non-repeated key has been pressed that has the exact physical key
@@ -163,7 +199,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
       type = kFlutterKeyEventTypeDown;
       assert(!had_record);
       ConvertUtf32ToUtf8_(character_bytes, character);
-      next_logical_record = logical_key;
+      eventual_logical_record = logical_key;
       result_logical_key = logical_key;
     }
   } else {  // isPhysicalDown is false
@@ -179,21 +215,36 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
       assert(had_record);
       // Up events never have character.
       character_bytes[0] = '\0';
-      next_has_record = false;
+      eventual_logical_record = 0;
       result_logical_key = last_logical_record;
     }
   }
 
   UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
-  SynchronizeCritialToggledStates(type == kFlutterKeyEventTypeDown ? key : 0);
+  // Synchronize the toggled states of critical keys (such as whether CapsLocks
+  // is enabled). Toggled states can only be changed upon a down event, so if
+  // the recorded toggled state does not match the true state, this function
+  // will synthesize (an up event if the key is recorded pressed, then) a down
+  // event.
+  //
+  // After this function, all critical keys will have their toggled state
+  // updated to the true state, while the critical keys whose toggled state have
+  // been changed will be pressed regardless of their true pressed state.
+  // Updating the pressed state will be done by SynchronizeCritialPressedStates.
+  SynchronizeCritialToggledStates(key, type == kFlutterKeyEventTypeDown);
+  // Synchronize the pressed states of critical keys (such as whether CapsLocks
+  // is pressed).
+  //
+  // After this function, all critical keys except for the target key will have
+  // their toggled state and pressed state matched with their true states. The
+  // target key's pressed state will be updated immediately after this.
+  SynchronizeCritialPressedStates(key, type != kFlutterKeyEventTypeRepeat);
 
-  if (next_has_record) {
-    pressingRecords_[physical_key] = next_logical_record;
+  if (eventual_logical_record != 0) {
+    pressingRecords_[physical_key] = eventual_logical_record;
   } else {
     pressingRecords_.erase(last_logical_record_iter);
   }
-
-  SynchronizeCritialPressedStates();
 
   if (result_logical_key == VK_PROCESSKEY) {
     // VK_PROCESSKEY means that the key press is used by an IME. These key
@@ -233,8 +284,36 @@ void KeyboardKeyEmbedderHandler::KeyboardHook(
   };
   auto pending_ptr = std::make_unique<PendingResponse>(std::move(pending));
   pending_responses_[response_id] = std::move(pending_ptr);
-  sendEvent_(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
-             reinterpret_cast<void*>(pending_responses_[response_id].get()));
+  SendEvent(key_data, KeyboardKeyEmbedderHandler::HandleResponse,
+            reinterpret_cast<void*>(pending_responses_[response_id].get()));
+}
+
+void KeyboardKeyEmbedderHandler::KeyboardHook(
+    int key,
+    int scancode,
+    int action,
+    char32_t character,
+    bool extended,
+    bool was_down,
+    std::function<void(bool)> callback) {
+  sent_any_events = false;
+  KeyboardHookImpl(key, scancode, action, character, extended, was_down,
+                   std::move(callback));
+  if (!sent_any_events) {
+    FlutterKeyEvent empty_event{
+        .struct_size = sizeof(FlutterKeyEvent),
+        .timestamp = static_cast<double>(
+            std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::high_resolution_clock::now().time_since_epoch())
+                .count()),
+        .type = kFlutterKeyEventTypeDown,
+        .physical = 0,
+        .logical = 0,
+        .character = empty_character,
+        .synthesized = false,
+    };
+    SendEvent(empty_event, nullptr, nullptr);
+  }
 }
 
 void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
@@ -249,7 +328,8 @@ void KeyboardKeyEmbedderHandler::UpdateLastSeenCritialKey(
 }
 
 void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
-    int toggle_virtual_key) {
+    int this_virtual_key,
+    bool is_down_event) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -263,31 +343,29 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = get_key_state_(virtual_key);
 
     // Check toggling state first, because it might alter pressing state.
     if (key_info.check_toggled) {
+      SHORT state = get_key_state_(virtual_key);
       bool should_toggled = state & kStateMaskToggled;
-      if (virtual_key == toggle_virtual_key) {
+      if (virtual_key == this_virtual_key && is_down_event) {
         key_info.toggled_on = !key_info.toggled_on;
       }
       if (key_info.toggled_on != should_toggled) {
-        const char* empty_character = "";
         // If the key is pressed, release it first.
         if (pressingRecords_.find(key_info.physical_key) !=
             pressingRecords_.end()) {
-          sendEvent_(SynthesizeSimpleEvent(
-                         kFlutterKeyEventTypeUp, key_info.physical_key,
-                         key_info.logical_key, empty_character),
-                     nullptr, nullptr);
-        } else {
-          // This key will always be pressed in the following synthesized event.
-          pressingRecords_[key_info.physical_key] = key_info.logical_key;
+          SendEvent(SynthesizeSimpleEvent(
+                        kFlutterKeyEventTypeUp, key_info.physical_key,
+                        key_info.logical_key, empty_character),
+                    nullptr, nullptr);
         }
-        sendEvent_(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
-                                         key_info.physical_key,
-                                         key_info.logical_key, empty_character),
-                   nullptr, nullptr);
+        // Synchronizing toggle state always ends with the key being pressed.
+        pressingRecords_[key_info.physical_key] = key_info.logical_key;
+        SendEvent(SynthesizeSimpleEvent(kFlutterKeyEventTypeDown,
+                                        key_info.physical_key,
+                                        key_info.logical_key, empty_character),
+                  nullptr, nullptr);
       }
       key_info.toggled_on = should_toggled;
     }
@@ -295,7 +373,9 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 #endif
 }
 
-void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
+void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
+    int this_virtual_key,
+    bool pressed_state_will_change) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
@@ -309,21 +389,24 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates() {
       continue;
     }
     assert(key_info.logical_key != 0);
-    SHORT state = get_key_state_(virtual_key);
     if (key_info.check_pressed) {
+      SHORT state = get_key_state_(virtual_key);
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
       bool should_pressed = state & kStateMaskPressed;
+      if (virtual_key == this_virtual_key && pressed_state_will_change) {
+        should_pressed = !should_pressed;
+      }
       if (recorded_pressed != should_pressed) {
-        if (should_pressed) {
-          pressingRecords_[key_info.physical_key] = key_info.logical_key;
-        } else {
+        if (recorded_pressed) {
           pressingRecords_.erase(recorded_pressed_iter);
+        } else {
+          pressingRecords_[key_info.physical_key] = key_info.logical_key;
         }
         const char* empty_character = "";
-        sendEvent_(
-            SynthesizeSimpleEvent(should_pressed ? kFlutterKeyEventTypeDown
-                                                 : kFlutterKeyEventTypeUp,
+        SendEvent(
+            SynthesizeSimpleEvent(recorded_pressed ? kFlutterKeyEventTypeUp
+                                                   : kFlutterKeyEventTypeDown,
                                   key_info.physical_key, key_info.logical_key,
                                   empty_character),
             nullptr, nullptr);
@@ -385,9 +468,8 @@ void KeyboardKeyEmbedderHandler::ConvertUtf32ToUtf8_(char* out, char32_t ch) {
     out[0] = '\0';
     return;
   }
-  // TODO: Correctly handle UTF-32
-  std::wstring text({static_cast<wchar_t>(ch)});
-  strcpy_s(out, kCharacterCacheSize, Utf8FromUtf16(text).c_str());
+  std::string result = ConvertChar32ToUtf8(ch);
+  strcpy_s(out, kCharacterCacheSize, result.c_str());
 }
 
 FlutterKeyEvent KeyboardKeyEmbedderHandler::SynthesizeSimpleEvent(
@@ -407,6 +489,13 @@ FlutterKeyEvent KeyboardKeyEmbedderHandler::SynthesizeSimpleEvent(
       .character = character,
       .synthesized = true,
   };
+}
+
+void KeyboardKeyEmbedderHandler::SendEvent(const FlutterKeyEvent& event,
+                                           FlutterKeyEventCallback callback,
+                                           void* user_data) {
+  sent_any_events = true;
+  perform_send_event_(event, callback, user_data);
 }
 
 }  // namespace flutter

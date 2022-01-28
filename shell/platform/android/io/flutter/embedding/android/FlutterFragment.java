@@ -65,8 +65,6 @@ import io.flutter.util.ViewUtils;
  * io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
  * FlutterEngine} are:
  *
- * <p>
- *
  * <ul>
  *   <li>When {@code FlutterFragment} is in the first {@code Activity} displayed by the app, because
  *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in
@@ -113,6 +111,10 @@ public class FlutterFragment extends Fragment
   protected static final String ARG_HANDLE_DEEPLINKING = "handle_deeplinking";
   /** Path to Flutter's Dart code. */
   protected static final String ARG_APP_BUNDLE_PATH = "app_bundle_path";
+  /** Whether to delay the Android drawing pass till after the Flutter UI has been displayed. */
+  protected static final String ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW =
+      "should_delay_first_android_view_draw";
+
   /** Flutter shell arguments. */
   protected static final String ARG_FLUTTER_INITIALIZATION_ARGS = "initialization_args";
   /**
@@ -229,6 +231,7 @@ public class FlutterFragment extends Fragment
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
+    private boolean shouldDelayFirstAndroidViewDraw = false;
 
     /**
      * Constructs a {@code NewEngineFragmentBuilder} that is configured to construct an instance of
@@ -383,6 +386,18 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether to delay the Android drawing pass till after the Flutter UI has been displayed.
+     *
+     * <p>See {#link FlutterActivityAndFragmentDelegate#onCreateView} for more details.
+     */
+    @NonNull
+    public NewEngineFragmentBuilder shouldDelayFirstAndroidViewDraw(
+        boolean shouldDelayFirstAndroidViewDraw) {
+      this.shouldDelayFirstAndroidViewDraw = shouldDelayFirstAndroidViewDraw;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -410,6 +425,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_DESTROY_ENGINE_WITH_FRAGMENT, true);
       args.putBoolean(
           ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
+      args.putBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW, shouldDelayFirstAndroidViewDraw);
       return args;
     }
 
@@ -496,6 +512,7 @@ public class FlutterFragment extends Fragment
     private TransparencyMode transparencyMode = TransparencyMode.transparent;
     private boolean shouldAttachEngineToActivity = true;
     private boolean shouldAutomaticallyHandleOnBackPressed = false;
+    private boolean shouldDelayFirstAndroidViewDraw = false;
 
     private CachedEngineFragmentBuilder(@NonNull String engineId) {
       this(FlutterFragment.class, engineId);
@@ -622,6 +639,18 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether to delay the Android drawing pass till after the Flutter UI has been displayed.
+     *
+     * <p>See {#link FlutterActivityAndFragmentDelegate#onCreateView} for more details.
+     */
+    @NonNull
+    public CachedEngineFragmentBuilder shouldDelayFirstAndroidViewDraw(
+        @NonNull boolean shouldDelayFirstAndroidViewDraw) {
+      this.shouldDelayFirstAndroidViewDraw = shouldDelayFirstAndroidViewDraw;
+      return this;
+    }
+
+    /**
      * Creates a {@link Bundle} of arguments that are assigned to the new {@code FlutterFragment}.
      *
      * <p>Subclasses should override this method to add new properties to the {@link Bundle}.
@@ -642,6 +671,7 @@ public class FlutterFragment extends Fragment
       args.putBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, shouldAttachEngineToActivity);
       args.putBoolean(
           ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, shouldAutomaticallyHandleOnBackPressed);
+      args.putBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW, shouldDelayFirstAndroidViewDraw);
       return args;
     }
 
@@ -675,7 +705,7 @@ public class FlutterFragment extends Fragment
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
-  @VisibleForTesting /* package */ FlutterActivityAndFragmentDelegate delegate;
+  @VisibleForTesting @Nullable /* package */ FlutterActivityAndFragmentDelegate delegate;
 
   private final OnBackPressedCallback onBackPressedCallback =
       new OnBackPressedCallback(true) {
@@ -727,7 +757,11 @@ public class FlutterFragment extends Fragment
   public View onCreateView(
       LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
     return delegate.onCreateView(
-        inflater, container, savedInstanceState, /*flutterViewId=*/ FLUTTER_VIEW_ID);
+        inflater,
+        container,
+        savedInstanceState,
+        /*flutterViewId=*/ FLUTTER_VIEW_ID,
+        shouldDelayFirstAndroidViewDraw());
   }
 
   @Override
@@ -750,7 +784,9 @@ public class FlutterFragment extends Fragment
   // possible.
   @ActivityCallThrough
   public void onPostResume() {
-    delegate.onPostResume();
+    if (stillAttachedForEvent("onPostResume")) {
+      delegate.onPostResume();
+    }
   }
 
   @Override
@@ -1241,6 +1277,13 @@ public class FlutterFragment extends Fragment
     return true;
   }
 
+  @Override
+  public void updateSystemUiOverlays() {
+    if (delegate != null) {
+      delegate.updateSystemUiOverlays();
+    }
+  }
+
   /**
    * {@inheritDoc}
    *
@@ -1265,6 +1308,12 @@ public class FlutterFragment extends Fragment
     }
     // Hook for subclass. No-op if returns false.
     return false;
+  }
+
+  @VisibleForTesting
+  @NonNull
+  boolean shouldDelayFirstAndroidViewDraw() {
+    return getArguments().getBoolean(ARG_SHOULD_DELAY_FIRST_ANDROID_VIEW_DRAW);
   }
 
   private boolean stillAttachedForEvent(String event) {

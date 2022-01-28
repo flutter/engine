@@ -7,6 +7,7 @@
 
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
 
@@ -21,13 +22,15 @@ class WindowBindingHandlerDelegate {
   // Typically called by currently configured WindowBindingHandler
   virtual void OnPointerMove(double x,
                              double y,
-                             FlutterPointerDeviceKind device_kind) = 0;
+                             FlutterPointerDeviceKind device_kind,
+                             int32_t device_id) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
   // pressed. Typically called by currently configured WindowBindingHandler
   virtual void OnPointerDown(double x,
                              double y,
                              FlutterPointerDeviceKind device_kind,
+                             int32_t device_id,
                              FlutterPointerMouseButtons button) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
@@ -35,11 +38,13 @@ class WindowBindingHandlerDelegate {
   virtual void OnPointerUp(double x,
                            double y,
                            FlutterPointerDeviceKind device_kind,
+                           int32_t device_id,
                            FlutterPointerMouseButtons button) = 0;
 
   // Notifies delegate that backing window mouse pointer has left the window.
   // Typically called by currently configured WindowBindingHandler
-  virtual void OnPointerLeave(FlutterPointerDeviceKind device_kind) = 0;
+  virtual void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+                              int32_t device_id) = 0;
 
   // Notifies delegate that backing window has received text.
   // Typically called by currently configured WindowBindingHandler
@@ -88,7 +93,19 @@ class WindowBindingHandlerDelegate {
                         double y,
                         double delta_x,
                         double delta_y,
-                        int scroll_offset_multiplier) = 0;
+                        int scroll_offset_multiplier,
+                        FlutterPointerDeviceKind device_kind,
+                        int32_t device_id) = 0;
+
+  // Notifies delegate that backing window has received brightness change event.
+  virtual void OnPlatformBrightnessChanged() = 0;
+
+  // Notifies delegate that the Flutter semantics tree should be enabled or
+  // disabled.
+  virtual void OnUpdateSemanticsEnabled(bool enabled) = 0;
+
+  // Returns the root view accessibility node, or nullptr if none.
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 };
 
 }  // namespace flutter

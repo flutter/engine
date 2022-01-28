@@ -6,7 +6,9 @@ import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 
-/// Verifies Semantics flags and actions.
+// The body of this file is the same as ../../lib/web_ui/test/engine/semantics/semantics_api_test.dart
+// Please keep them in sync.
+
 void main() {
   // This must match the number of flags in lib/ui/semantics.dart
   const int numSemanticsFlags = 25;
@@ -28,5 +30,13 @@ void main() {
       expect(SemanticsAction.values[flag], isNotNull);
       expect(SemanticsAction.values[flag].toString(), startsWith('SemanticsAction.'));
     }
+  });
+
+  test('SpellOutStringAttribute.toString', () async {
+    expect(SpellOutStringAttribute(range: const TextRange(start: 2, end: 5)).toString(), 'SpellOutStringAttribute(TextRange(start: 2, end: 5))');
+  });
+
+  test('LocaleStringAttribute.toString', () async {
+    expect(LocaleStringAttribute(range: const TextRange(start: 2, end: 5), locale: const Locale('test')).toString(), 'LocaleStringAttribute(TextRange(start: 2, end: 5), test)');
   });
 }
