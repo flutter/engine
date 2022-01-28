@@ -219,9 +219,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   auto isolate_flags = flags.Get();
 
   IsolateMaker isolate_maker;
-  // TODO(74520): Remove IsRunningPrecompiledCode conditional once isolate
-  // groups are supported by JIT.
-  if (spawning_isolate && DartVM::IsRunningPrecompiledCode()) {
+  if (spawning_isolate) {
     isolate_maker = [spawning_isolate](
                         std::shared_ptr<DartIsolateGroupData>*
                             isolate_group_data,
@@ -568,7 +566,7 @@ bool DartIsolate::LoadKernel(std::shared_ptr<const fml::Mapping> mapping,
 
   tonic::DartState::Scope scope(this);
 
-  if (!child_isolate || !Dart_IsVMFlagSet("--enable-isolate-groups")) {
+  if (!child_isolate) {
     // Use root library provided by kernel in favor of one provided by snapshot.
     Dart_SetRootLibrary(Dart_Null());
 

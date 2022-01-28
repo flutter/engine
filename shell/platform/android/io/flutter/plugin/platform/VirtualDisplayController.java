@@ -65,7 +65,7 @@ class VirtualDisplayController {
   private final OnFocusChangeListener focusChangeListener;
   private VirtualDisplay virtualDisplay;
   @VisibleForTesting SingleViewPresentation presentation;
-  private Surface surface;
+  private final Surface surface;
 
   private VirtualDisplayController(
       Context context,

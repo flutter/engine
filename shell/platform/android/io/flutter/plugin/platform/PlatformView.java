@@ -70,7 +70,7 @@ public interface PlatformView {
    */
   // Default interface methods are supported on all min SDK versions of Android.
   @SuppressLint("NewApi")
-  default void onInputConnectionLocked() {};
+  default void onInputConnectionLocked() {}
 
   /**
    * Callback fired when the platform input connection has been unlocked. See also {@link
@@ -81,5 +81,5 @@ public interface PlatformView {
    */
   // Default interface methods are supported on all min SDK versions of Android.
   @SuppressLint("NewApi")
-  default void onInputConnectionUnlocked() {};
+  default void onInputConnectionUnlocked() {}
 }

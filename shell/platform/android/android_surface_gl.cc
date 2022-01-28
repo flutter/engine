@@ -126,10 +126,27 @@ bool AndroidSurfaceGL::GLContextClearCurrent() {
   return GLContextPtr()->ClearCurrent();
 }
 
-bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id) {
+SurfaceFrame::FramebufferInfo AndroidSurfaceGL::GLContextFramebufferInfo()
+    const {
+  FML_DCHECK(IsValid());
+  SurfaceFrame::FramebufferInfo res;
+  res.supports_readback = true;
+  res.supports_partial_repaint = onscreen_surface_->SupportsPartialRepaint();
+  res.existing_damage = onscreen_surface_->InitialDamage();
+  return res;
+}
+
+void AndroidSurfaceGL::GLContextSetDamageRegion(
+    const std::optional<SkIRect>& region) {
+  FML_DCHECK(IsValid());
+  onscreen_surface_->SetDamageRegion(region);
+}
+
+bool AndroidSurfaceGL::GLContextPresent(uint32_t fbo_id,
+                                        const std::optional<SkIRect>& damage) {
   FML_DCHECK(IsValid());
   FML_DCHECK(onscreen_surface_);
-  return onscreen_surface_->SwapBuffers();
+  return onscreen_surface_->SwapBuffers(damage);
 }
 
 intptr_t AndroidSurfaceGL::GLContextFBO(GLFrameInfo frame_info) const {
@@ -175,8 +192,10 @@ AndroidContextGL* AndroidSurfaceGL::GLContextPtr() const {
   return reinterpret_cast<AndroidContextGL*>(android_context_.get());
 }
 
-std::unique_ptr<Surface> AndroidSurfaceGL::CreatePbufferSurface() {
-  onscreen_surface_ = GLContextPtr()->CreatePbufferSurface();
+std::unique_ptr<Surface> AndroidSurfaceGL::CreateSnapshotSurface() {
+  if (!onscreen_surface_ || !onscreen_surface_->IsValid()) {
+    onscreen_surface_ = GLContextPtr()->CreatePbufferSurface();
+  }
   sk_sp<GrDirectContext> main_skia_context =
       GLContextPtr()->GetMainSkiaContext();
   if (!main_skia_context) {
