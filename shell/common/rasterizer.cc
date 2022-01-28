@@ -422,7 +422,7 @@ RasterStatus Rasterizer::DoDraw(
 
 // SceneDisplayLag events are disabled on Fuchsia.
 // see: https://github.com/flutter/flutter/issues/56598
-#if !defined(OS_FUCHSIA)
+#if !defined(FML_OS_FUCHSIA)
   const fml::TimePoint raster_finish_time =
       frame_timings_recorder->GetRasterEndTime();
   fml::TimePoint frame_target_time =
@@ -629,7 +629,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
       root_surface_transformation, false, true, nullptr);
   frame->Raster(*tree, true, nullptr);
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
   SkSerialProcs procs = {0};
   procs.fImageProc = SerializeImageWithoutData;
   procs.fTypefaceProc = SerializeTypefaceWithoutData;

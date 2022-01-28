@@ -16,7 +16,7 @@ namespace flutter {
 
 static constexpr const char* kVsyncFlowName = "VsyncFlow";
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 //  ________  _________  ________  ________
 // |\   ____\|\___   ___\\   __  \|\   __  \
 // \ \  \___|\|___ \  \_\ \  \|\  \ \  \|\  \

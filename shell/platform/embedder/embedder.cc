@@ -183,18 +183,18 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
   return false;
 }
 
-#if OS_LINUX || OS_WIN
+#if FML_OS_LINUX || OS_WIN
 static void* DefaultGLProcResolver(const char* name) {
   static fml::RefPtr<fml::NativeLibrary> proc_library =
-#if OS_LINUX
+#if FML_OS_LINUX
       fml::NativeLibrary::CreateForCurrentProcess();
-#elif OS_WIN  // OS_LINUX
+#elif OS_WIN  // FML_OS_LINUX
       fml::NativeLibrary::Create("opengl32.dll");
 #endif        // OS_WIN
   return static_cast<void*>(
       const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
 }
-#endif  // OS_LINUX || OS_WIN
+#endif  // FML_OS_LINUX || OS_WIN
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
@@ -284,7 +284,7 @@ InferOpenGLPlatformViewCreationCallback(
       return ptr(user_data, gl_proc_name);
     };
   } else {
-#if OS_LINUX || OS_WIN
+#if FML_OS_LINUX || OS_WIN
     gl_proc_resolver = DefaultGLProcResolver;
 #endif
   }
@@ -791,7 +791,7 @@ FlutterEngineResult FlutterEngineCreateAOTData(
       auto aot_data = std::make_unique<_FlutterEngineAOTData>();
       const char* error = nullptr;
 
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
       // TODO(gw280): https://github.com/flutter/flutter/issues/50285
       // Dart doesn't implement Dart_LoadELF on Fuchsia
       Dart_LoadedElf* loaded_elf = nullptr;
@@ -884,10 +884,11 @@ void PopulateSnapshotMappingCallbacks(
     }
   }
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#if !FML_OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
   settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#endif  // !FML_OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
+        // FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 FlutterEngineResult FlutterEngineRun(size_t version,

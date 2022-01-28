@@ -18,7 +18,7 @@ bool ValidationLayerInfoMessagesEnabled() {
 }
 
 bool ValidationErrorsFatal() {
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
   return false;
 #endif
   return true;
@@ -34,7 +34,7 @@ static std::vector<std::string> InstanceOrDeviceLayersToEnable(
 
   // NOTE: The loader is sensitive to the ordering here. Please do not rearrange
   // this list.
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
   // The other layers in the Fuchsia SDK seem to have a bug right now causing
   // crashes, so it is only recommended that we use VK_LAYER_KHRONOS_validation
   // until we have a confirmation that they are fixed.

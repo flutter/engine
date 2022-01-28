@@ -761,7 +761,7 @@ TEST_F(ShellTest, ExternalEmbedderNoThreadMerger) {
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit
 #else
        ExternalEmbedderEndFrameIsCalledWhenPostPrerollResultIsResubmit
@@ -815,7 +815,7 @@ TEST_F(ShellTest,
 }
 
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA) || defined(WINUWP)
+#if defined(FML_OS_FUCHSIA) || defined(WINUWP)
        // TODO(dworsham): https://github.com/flutter/flutter/issues/59816
        // TODO(cbracken): https://github.com/flutter/flutter/issues/90481
        DISABLED_OnPlatformViewDestroyDisablesThreadMerger
@@ -878,7 +878,7 @@ TEST_F(ShellTest,
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_OnPlatformViewDestroyAfterMergingThreads
 #else
        OnPlatformViewDestroyAfterMergingThreads
@@ -958,7 +958,7 @@ TEST_F(ShellTest,
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_OnPlatformViewDestroyWhenThreadsAreMerging
 #else
        OnPlatformViewDestroyWhenThreadsAreMerging
@@ -1039,7 +1039,7 @@ TEST_F(ShellTest,
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged
 #else
        OnPlatformViewDestroyWithThreadMergerWhileThreadsAreUnmerged
@@ -1148,7 +1148,7 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithoutRasterThreadMerger) {
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_OnPlatformViewDestroyWithStaticThreadMerging
 #else
        OnPlatformViewDestroyWithStaticThreadMerging
@@ -1213,7 +1213,7 @@ TEST_F(ShellTest,
 // TODO(https://github.com/flutter/flutter/issues/66056): Deflake on all other
 // platforms
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_SkipAndSubmitFrame
 #else
        DISABLED_SkipAndSubmitFrame
@@ -1265,7 +1265,7 @@ TEST_F(ShellTest,
 
 // TODO(https://github.com/flutter/flutter/issues/59816): Enable on fuchsia.
 TEST_F(ShellTest,
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
        DISABLED_ResubmitFrame
 #else
        ResubmitFrame
@@ -2671,7 +2671,7 @@ TEST_F(ShellTest,
   }
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 TEST_F(ShellTest, AssetManagerMultiSubdir) {
   std::string subdir_path = "subdir";
 
@@ -2732,7 +2732,7 @@ TEST_F(ShellTest, AssetManagerMultiSubdir) {
         expected_results.end());
   }
 }
-#endif  // OS_FUCHSIA
+#endif  // FML_OS_FUCHSIA
 
 TEST_F(ShellTest, Spawn) {
   auto settings = CreateSettingsForFixture();

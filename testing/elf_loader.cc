@@ -31,7 +31,7 @@ ELFAOTSymbols LoadELFSymbolFromFixturesIfNeccessary(std::string elf_filename) {
   // Must not be freed.
   const char* error = nullptr;
 
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
   // TODO(gw280): https://github.com/flutter/flutter/issues/50285
   // Dart doesn't implement Dart_LoadELF on Fuchsia
   auto loaded_elf = nullptr;
@@ -80,7 +80,7 @@ ELFAOTSymbols LoadELFSplitSymbolFromFixturesIfNeccessary(
   // Must not be freed.
   const char* error = nullptr;
 
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
   // TODO(gw280): https://github.com/flutter/flutter/issues/50285
   // Dart doesn't implement Dart_LoadELF on Fuchsia
   auto loaded_elf = nullptr;

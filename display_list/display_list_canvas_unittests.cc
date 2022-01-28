@@ -2970,9 +2970,9 @@ TEST_F(DisplayListCanvas, DrawTextBlob) {
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
   // default.
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
   GTEST_SKIP() << "Rendering comparisons require a valid default font manager";
-#endif  // OS_FUCHSIA
+#endif  // FML_OS_FUCHSIA
   sk_sp<SkTextBlob> blob =
       CanvasCompareTester::MakeTextBlob("Testing", RenderHeight * 0.33f);
   SkScalar RenderY1_3 = RenderTop + RenderHeight * 0.3;

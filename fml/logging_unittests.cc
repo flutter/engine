@@ -7,7 +7,7 @@
 #include "flutter/fml/logging.h"
 #include "gtest/gtest.h"
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 #include <lib/syslog/global.h>
 #include <lib/syslog/logger.h>
 #include <lib/syslog/wire_format.h>
@@ -39,7 +39,7 @@ TEST(LoggingTest, UnreachableKillProcessWithMacro) {
   ASSERT_DEATH({ FML_UNREACHABLE(); }, "");
 }
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 
 struct LogPacket {
   fx_log_metadata_t metadata;

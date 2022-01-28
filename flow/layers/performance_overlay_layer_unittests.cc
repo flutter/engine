@@ -86,9 +86,9 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
   // platforms.
-#if !defined(OS_LINUX)
+#if !defined(FML_OS_LINUX)
   GTEST_SKIP() << "Skipping golden tests on non-Linux OSes";
-#endif  // OS_LINUX
+#endif  // FML_OS_LINUX
   const bool golden_data_matches = golden_data->equals(snapshot_data.get());
   if (!golden_data_matches) {
     SkFILEWStream wstream(new_golden_file_path.c_str());
@@ -170,9 +170,9 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
   // default.
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
   GTEST_SKIP() << "Expectation requires a valid default font manager";
-#endif  // OS_FUCHSIA
+#endif  // FML_OS_FUCHSIA
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({MockCanvas::DrawCall{
                 0, MockCanvas::DrawTextData{overlay_text_data, text_paint,

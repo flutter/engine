@@ -404,7 +404,7 @@ void DartIsolate::SetMessageHandlingTaskRunner(
   message_handling_task_runner_ = runner;
 
   message_handler().Initialize([runner](std::function<void()> task) {
-#ifdef OS_FUCHSIA
+#ifdef FML_OS_FUCHSIA
     runner->PostTask([task = std::move(task)]() {
       TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
       task();

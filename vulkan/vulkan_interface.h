@@ -10,20 +10,20 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if OS_ANDROID
+#if FML_OS_ANDROID
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
 #define VK_USE_PLATFORM_ANDROID_KHR 1
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
 #ifndef VK_USE_PLATFORM_MAGMA_KHR
 #define VK_USE_PLATFORM_MAGMA_KHR 1
 #endif  // VK_USE_PLATFORM_MAGMA_KHR
 #ifndef VK_USE_PLATFORM_FUCHSIA
 #define VK_USE_PLATFORM_FUCHSIA 1
 #endif  // VK_USE_PLATFORM_FUCHSIA
-#endif  // OS_FUCHSIA
+#endif  // FML_OS_FUCHSIA
 
 #if !VULKAN_LINK_STATICALLY
 #define VK_NO_PROTOTYPES 1

@@ -25,7 +25,7 @@
 #include "include/core/SkSerialProcs.h"
 #include "include/core/SkTextBlob.h"
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 #include "lib/sys/cpp/component_context.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 
@@ -298,4 +298,4 @@ TEST_F(SkpWarmupTest, DISABLED_Text) {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // defined(OS_FUCHSIA)
+#endif  // defined(FML_OS_FUCHSIA)

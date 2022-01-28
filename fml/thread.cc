@@ -15,7 +15,7 @@
 
 #if defined(OS_WIN)
 #include <windows.h>
-#elif defined(OS_FUCHSIA)
+#elif defined(FML_OS_FUCHSIA)
 #include <lib/zx/thread.h>
 #else
 #include <pthread.h>
@@ -71,9 +71,9 @@ void Thread::SetCurrentThreadName(const std::string& name) {
   if (name == "") {
     return;
   }
-#if defined(OS_MACOSX)
+#if defined(FML_OS_MACOSX)
   pthread_setname_np(name.c_str());
-#elif defined(OS_LINUX) || defined(OS_ANDROID)
+#elif defined(FML_OS_LINUX) || defined(FML_OS_ANDROID)
   pthread_setname_np(pthread_self(), name.c_str());
 #elif defined(OS_WIN)
   THREADNAME_INFO info;
@@ -86,7 +86,7 @@ void Thread::SetCurrentThreadName(const std::string& name) {
                    reinterpret_cast<DWORD_PTR*>(&info));
   } __except (EXCEPTION_CONTINUE_EXECUTION) {
   }
-#elif defined(OS_FUCHSIA)
+#elif defined(FML_OS_FUCHSIA)
   zx::thread::self()->set_property(ZX_PROP_NAME, name.c_str(), name.size());
 #else
   FML_DLOG(INFO) << "Could not set the thread name to '" << name

@@ -37,7 +37,7 @@ VulkanApplication::VulkanApplication(
   if (enable_instance_debugging) {
     enabled_extensions.emplace_back(VulkanDebugReport::DebugExtensionName());
   }
-#if OS_FUCHSIA
+#if FML_OS_FUCHSIA
   if (ExtensionSupported(supported_extensions,
                          VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME)) {
     // VK_KHR_get_physical_device_properties2 is a dependency of the memory

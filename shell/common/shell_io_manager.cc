@@ -19,7 +19,7 @@ sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
 
   const auto options = MakeDefaultContextOptions(ContextType::kResource);
 
-#if !OS_FUCHSIA
+#if !FML_OS_FUCHSIA
   if (auto context = GrDirectContext::MakeGL(gl_interface, options)) {
     // Do not cache textures created by the image decoder.  These textures
     // should be deleted when they are no longer referenced by an SkImage.
@@ -48,11 +48,11 @@ ShellIOManager::ShellIOManager(
       is_gpu_disabled_sync_switch_(is_gpu_disabled_sync_switch),
       weak_factory_(this) {
   if (!resource_context_) {
-#ifndef OS_FUCHSIA
+#ifndef FML_OS_FUCHSIA
     FML_DLOG(WARNING) << "The IO manager was initialized without a resource "
                          "context. Async texture uploads will be disabled. "
                          "Expect performance degradation.";
-#endif  // OS_FUCHSIA
+#endif  // FML_OS_FUCHSIA
   }
 }
 

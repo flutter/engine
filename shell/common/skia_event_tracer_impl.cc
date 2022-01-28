@@ -16,7 +16,7 @@
 #include "third_party/skia/include/utils/SkEventTracer.h"
 #include "third_party/skia/include/utils/SkTraceEventPhase.h"
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 
 #include <algorithm>
 #include <cstring>
@@ -38,7 +38,7 @@
 #define TRACE_VALUE_TYPE_COPY_STRING (static_cast<unsigned char>(7))
 #define TRACE_VALUE_TYPE_CONVERTABLE (static_cast<unsigned char>(8))
 
-#endif  // defined(OS_FUCHSIA)
+#endif  // defined(FML_OS_FUCHSIA)
 
 namespace flutter {
 
@@ -52,15 +52,15 @@ constexpr std::string_view kTraceCategoryPrefix = "disabled-by-default-";
 constexpr std::string_view kShaderCategoryName =
     "disabled-by-default-skia.shaders";
 
-#if !defined(OS_FUCHSIA)
+#if !defined(FML_OS_FUCHSIA)
 // Argument name of the tag used by DevTools.
 constexpr char kDevtoolsTagArg[] = "devtoolsTag";
 
 // DevtoolsTag value for shader events.
 constexpr char kShadersDevtoolsTag[] = "shaders";
-#endif  // !defined(OS_FUCHSIA)
+#endif  // !defined(FML_OS_FUCHSIA)
 
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
 template <class T, class U>
 inline T BitCast(const U& u) {
   static_assert(sizeof(T) == sizeof(U));
@@ -69,7 +69,7 @@ inline T BitCast(const U& u) {
   memcpy(&t, &u, sizeof(t));
   return t;
 }
-#endif  // defined(OS_FUCHSIA)
+#endif  // defined(FML_OS_FUCHSIA)
 
 }  // namespace
 
@@ -99,7 +99,7 @@ class FlutterEventTracer : public SkEventTracer {
                                       const uint8_t* p_arg_types,
                                       const uint64_t* p_arg_values,
                                       uint8_t flags) override {
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
     static trace_site_t trace_site;
     trace_string_ref_t category_ref;
     trace_context_t* trace_context = trace_acquire_context_for_category_cached(
@@ -210,7 +210,7 @@ class FlutterEventTracer : public SkEventTracer {
 
     trace_release_context(trace_context);
 
-#else   // defined(OS_FUCHSIA)
+#else   // defined(FML_OS_FUCHSIA)
     const char* devtoolsTag = nullptr;
     if (shaders_category_flag_ &&
         category_enabled_flag == shaders_category_flag_) {
@@ -256,7 +256,7 @@ class FlutterEventTracer : public SkEventTracer {
       default:
         break;
     }
-#endif  // defined(OS_FUCHSIA)
+#endif  // defined(FML_OS_FUCHSIA)
     return 0;
   }
 
@@ -265,7 +265,7 @@ class FlutterEventTracer : public SkEventTracer {
                                 SkEventTracer::Handle handle) override {
     // This is only ever called from a scoped trace event so we will just end
     // the section.
-#if defined(OS_FUCHSIA)
+#if defined(FML_OS_FUCHSIA)
     TRACE_DURATION_END(kSkiaTag, name);
 #else
     fml::tracing::TraceEventEnd(name);
