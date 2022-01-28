@@ -8,6 +8,7 @@ import("//flutter/testing/testing.gni")
 _wrapper_includes = [
   "include/flutter/dart_project.h",
   "include/flutter/flutter_engine.h",
+  "include/flutter/flutter_task_runner.h",
   "include/flutter/flutter_view_controller.h",
   "include/flutter/flutter_view.h",
   "include/flutter/plugin_registrar_windows.h",
@@ -76,6 +77,7 @@ executable("client_wrapper_windows_unittests") {
   sources = [
     "dart_project_unittests.cc",
     "flutter_engine_unittests.cc",
+    "flutter_task_runner_unittests.cc",
     "flutter_view_controller_unittests.cc",
     "flutter_view_unittests.cc",
     "plugin_registrar_windows_unittests.cc",

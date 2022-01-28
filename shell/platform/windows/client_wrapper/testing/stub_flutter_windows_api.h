@@ -71,6 +71,17 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopViewGetHWND.
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
 
+  // Called for FlutterDesktopViewGetTaskRunner.
+  virtual FlutterDesktopTaskRunnerRef ViewGetTaskRunner() {
+    return reinterpret_cast<FlutterDesktopTaskRunnerRef>(1);
+  }
+
+  // Called for FlutterDesktopTaskRunnerPostTask.
+  virtual void TaskRunnerPostTask(VoidCallback callback, void* user_data) {}
+
+  // Called for FlutterDesktopTaskRunnerRunsTasksOnCurrentThread.
+  virtual bool TaskRunnerRunsTasksOnCurrentThread() { return true; }
+
   // Called for FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate.
   virtual void PluginRegistrarRegisterTopLevelWindowProcDelegate(
       FlutterDesktopWindowProcCallback delegate,

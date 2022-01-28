@@ -1740,11 +1740,13 @@ FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/dart_project_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_engine.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_engine_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_task_runner_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_controller.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_controller_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_unittests.cc
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/dart_project.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_engine.h
+FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_task_runner.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/flutter_view_controller.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/include/flutter/plugin_registrar_windows.h

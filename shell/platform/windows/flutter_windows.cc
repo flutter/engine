@@ -61,6 +61,18 @@ static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(registrar);
 }
 
+// Returns the task runner corresponding to the given opaque API handle.
+static flutter::TaskRunner* TaskRunnerFromHandle(
+    FlutterDesktopTaskRunnerRef ref) {
+  return reinterpret_cast<flutter::TaskRunner*>(ref);
+}
+
+// Returns the opaque API handle for the given task runner instance.
+static FlutterDesktopTaskRunnerRef HandleForTaskRunner(
+    flutter::TaskRunner* task_runner) {
+  return reinterpret_cast<FlutterDesktopTaskRunnerRef>(task_runner);
+}
+
 void FlutterDesktopViewControllerDestroy(
     FlutterDesktopViewControllerRef controller) {
   delete controller;
@@ -148,9 +160,26 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
 }
 #endif
 
+FlutterDesktopTaskRunnerRef FlutterDesktopViewGetTaskRunner(
+    FlutterDesktopViewRef view) {
+  return HandleForTaskRunner(ViewFromHandle(view)->GetEngine()->task_runner());
+}
+
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
   return HandleForView(registrar->engine->view());
+}
+
+void FlutterDesktopTaskRunnerPostTask(FlutterDesktopTaskRunnerRef task_runner,
+                                      VoidCallback callback,
+                                      void* user_data) {
+  return TaskRunnerFromHandle(task_runner)
+      ->RunNowOrPostTask([user_data, callback]() { callback(user_data); });
+}
+
+bool FlutterDesktopTaskRunnerRunsTasksOnCurrentThread(
+    FlutterDesktopTaskRunnerRef task_runner) {
+  return TaskRunnerFromHandle(task_runner)->RunsTasksOnCurrentThread();
 }
 
 void FlutterDesktopResyncOutputStreams() {

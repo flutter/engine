@@ -7,12 +7,17 @@
 
 #include <flutter_windows.h>
 
+#include "flutter_task_runner.h"
+
 namespace flutter {
 
 // A view displaying Flutter content.
 class FlutterView {
  public:
-  explicit FlutterView(FlutterDesktopViewRef view) : view_(view) {}
+  explicit FlutterView(FlutterDesktopViewRef view)
+      : view_(view),
+        platform_task_runner_(std::make_unique<FlutterTaskRunner>(
+            FlutterDesktopViewGetTaskRunner(view))) {}
 
   virtual ~FlutterView() = default;
 
@@ -30,9 +35,17 @@ class FlutterView {
   HWND GetNativeWindow() { return FlutterDesktopViewGetHWND(view_); }
 #endif
 
+  // Gets the platform task runner.
+  FlutterTaskRunner* GetPlatformTaskRunner() {
+    return platform_task_runner_.get();
+  }
+
  private:
   // Handle for interacting with the C API's view.
   FlutterDesktopViewRef view_ = nullptr;
+
+  // The task runner for this view.
+  std::unique_ptr<FlutterTaskRunner> platform_task_runner_;
 };
 
 }  // namespace flutter

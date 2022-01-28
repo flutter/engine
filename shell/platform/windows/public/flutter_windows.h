@@ -34,6 +34,10 @@ typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 struct FlutterDesktopEngine;
 typedef struct FlutterDesktopEngine* FlutterDesktopEngineRef;
 
+// Opaque reference to a Flutter platform task runner.
+struct FlutterDesktopTaskRunner;
+typedef struct FlutterDesktopTaskRunner* FlutterDesktopTaskRunnerRef;
+
 // Properties for configuring a Flutter engine instance.
 typedef struct {
   // The path to the flutter_assets folder for the application to be run.
@@ -105,8 +109,8 @@ FLUTTER_EXPORT void FlutterDesktopViewControllerDestroy(
 // Its lifetime is the same as the |controller|'s.
 FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
     FlutterDesktopViewControllerRef controller);
-// Returns the view managed by the given controller.
 
+// Returns the view managed by the given controller.
 FLUTTER_EXPORT FlutterDesktopViewRef
 FlutterDesktopViewControllerGetView(FlutterDesktopViewControllerRef controller);
 
@@ -204,6 +208,24 @@ FlutterDesktopViewGetCoreApplicationView(FlutterDesktopViewRef view);
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 #endif
+
+// Returns the task runner associated with the view.
+FLUTTER_EXPORT FlutterDesktopTaskRunnerRef
+FlutterDesktopViewGetTaskRunner(FlutterDesktopViewRef view);
+
+// ========== Task Runner ==========
+typedef void (*VoidCallback)(void* user_data);
+
+// Posts a task to the runner.
+FLUTTER_EXPORT void FlutterDesktopTaskRunnerPostTask(
+    FlutterDesktopTaskRunnerRef task_runner,
+    VoidCallback callback,
+    void* user_data);
+
+// Gets a flag indicating whether the task runner executes tasks on the current
+// thread.
+FLUTTER_EXPORT bool FlutterDesktopTaskRunnerRunsTasksOnCurrentThread(
+    FlutterDesktopTaskRunnerRef task_runner);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h

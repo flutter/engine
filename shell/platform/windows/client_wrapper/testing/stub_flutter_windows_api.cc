@@ -150,6 +150,28 @@ HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   return reinterpret_cast<HWND>(-1);
 }
 
+FlutterDesktopTaskRunnerRef FlutterDesktopViewGetTaskRunner(
+    FlutterDesktopViewRef view) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopTaskRunnerRef>(1);
+}
+
+void FlutterDesktopTaskRunnerPostTask(FlutterDesktopTaskRunnerRef task_runner,
+                                      VoidCallback callback,
+                                      void* user_data) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->TaskRunnerPostTask(callback, user_data);
+  }
+}
+
+bool FlutterDesktopTaskRunnerRunsTasksOnCurrentThread(
+    FlutterDesktopTaskRunnerRef task_runner) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->TaskRunnerRunsTasksOnCurrentThread();
+  }
+  return true;
+}
+
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef controller) {
   // The stub ignores this, so just return an arbitrary non-zero value.

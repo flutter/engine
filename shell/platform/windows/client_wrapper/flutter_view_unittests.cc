@@ -28,4 +28,12 @@ TEST(FlutterViewTest, HwndAccessPassesThrough) {
   EXPECT_EQ(view.GetNativeWindow(), reinterpret_cast<HWND>(7));
 }
 
+TEST(FlutterViewTest, GetPlatformTaskRunner) {
+  testing::ScopedStubFlutterWindowsApi scoped_api_stub(
+      std::make_unique<TestWindowsApi>());
+  auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
+  FlutterView view(reinterpret_cast<FlutterDesktopViewRef>(2));
+  EXPECT_NE(view.GetPlatformTaskRunner(), nullptr);
+}
+
 }  // namespace flutter
