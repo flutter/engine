@@ -9,8 +9,8 @@
 //  Compiler:
 //    COMPILER_MSVC / COMPILER_GCC
 //  Processor:
-//    ARCH_CPU_X86 / ARCH_CPU_X86_64 / ARCH_CPU_X86_FAMILY (X86 or X86_64)
-//    ARCH_CPU_32_BITS / ARCH_CPU_64_BITS
+//    FML_ARCH_CPU_X86 / FML_ARCH_CPU_X86_64 / FML_ARCH_CPU_X86_FAMILY (X86 or X86_64)
+//    FML_ARCH_CPU_32_BITS / FML_ARCH_CPU_64_BITS
 
 #ifndef FLUTTER_FML_BUILD_CONFIG_H_
 #define FLUTTER_FML_BUILD_CONFIG_H_
@@ -69,40 +69,28 @@
 //   http://www.agner.org/optimize/calling_conventions.pdf
 //   or with gcc, run: "echo | gcc -E -dM -"
 #if defined(_M_X64) || defined(__x86_64__)
-#define ARCH_CPU_X86_FAMILY 1
-#define ARCH_CPU_X86_64 1
-#define ARCH_CPU_64_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
+#define FML_ARCH_CPU_X86_FAMILY 1
+#define FML_ARCH_CPU_X86_64 1
+#define FML_ARCH_CPU_64_BITS 1
+#define FML_ARCH_CPU_LITTLE_ENDIAN 1
 #elif defined(_M_IX86) || defined(__i386__)
-#define ARCH_CPU_X86_FAMILY 1
-#define ARCH_CPU_X86 1
-#define ARCH_CPU_32_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
+#define FML_ARCH_CPU_X86_FAMILY 1
+#define FML_ARCH_CPU_X86 1
+#define FML_ARCH_CPU_32_BITS 1
+#define FML_ARCH_CPU_LITTLE_ENDIAN 1
 #elif defined(__ARMEL__)
-#define ARCH_CPU_ARM_FAMILY 1
-#define ARCH_CPU_ARMEL 1
-#define ARCH_CPU_32_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
+#define FML_ARCH_CPU_ARM_FAMILY 1
+#define FML_ARCH_CPU_ARMEL 1
+#define FML_ARCH_CPU_32_BITS 1
+#define FML_ARCH_CPU_LITTLE_ENDIAN 1
 #elif defined(__aarch64__)
-#define ARCH_CPU_ARM_FAMILY 1
-#define ARCH_CPU_ARM64 1
-#define ARCH_CPU_64_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
+#define FML_ARCH_CPU_ARM_FAMILY 1
+#define FML_ARCH_CPU_ARM64 1
+#define FML_ARCH_CPU_64_BITS 1
+#define FML_ARCH_CPU_LITTLE_ENDIAN 1
 #elif defined(__pnacl__)
-#define ARCH_CPU_32_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
-#elif defined(__MIPSEL__)
-#if defined(__LP64__)
-#define ARCH_CPU_MIPS64_FAMILY 1
-#define ARCH_CPU_MIPS64EL 1
-#define ARCH_CPU_64_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
-#else
-#define ARCH_CPU_MIPS_FAMILY 1
-#define ARCH_CPU_MIPSEL 1
-#define ARCH_CPU_32_BITS 1
-#define ARCH_CPU_LITTLE_ENDIAN 1
-#endif
+#define FML_ARCH_CPU_32_BITS 1
+#define FML_ARCH_CPU_LITTLE_ENDIAN 1
 #else
 #error Please add support for your architecture in flutter/fml/build_config.h
 #endif
