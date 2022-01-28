@@ -17,7 +17,7 @@
 #define FLUTTER_FML_BUILD_CONFIG_H_
 
 #if defined(__Fuchsia__)
-#define FML_OS_FUCHSIA 1
+#define OS_FUCHSIA 1
 #elif defined(ANDROID)
 #define FML_OS_ANDROID 1
 #elif defined(__APPLE__)

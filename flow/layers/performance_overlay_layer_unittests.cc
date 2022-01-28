@@ -170,9 +170,9 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
   // performance overlay can use Fuchsia's font manager instead of the empty
   // default.
-#if defined(FML_OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
   GTEST_SKIP() << "Expectation requires a valid default font manager";
-#endif  // FML_OS_FUCHSIA
+#endif  // OS_FUCHSIA
   EXPECT_EQ(mock_canvas().draw_calls(),
             std::vector({MockCanvas::DrawCall{
                 0, MockCanvas::DrawTextData{overlay_text_data, text_paint,

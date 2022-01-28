@@ -9,7 +9,7 @@
 
 #include "flutter/fml/build_config.h"
 
-#if defined(FML_OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
 
 // Forward to the system tracing mechanism on Fuchsia.
 
@@ -35,7 +35,7 @@
 #define TRACE_EVENT_INSTANT2(a, b, k1, v1, k2, v2) \
   TRACE_INSTANT(a, b, TRACE_SCOPE_THREAD, k1, v1, k2, v2)
 
-#endif  //  defined(FML_OS_FUCHSIA)
+#endif  //  defined(OS_FUCHSIA)
 
 #include <cstddef>
 #include <cstdint>
@@ -47,13 +47,13 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-#if (FLUTTER_RELEASE && !defined(FML_OS_FUCHSIA) && !defined(FML_OS_ANDROID))
+#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA) && !defined(FML_OS_ANDROID))
 #define FLUTTER_TIMELINE_ENABLED 0
 #else
 #define FLUTTER_TIMELINE_ENABLED 1
 #endif
 
-#if !defined(FML_OS_FUCHSIA)
+#if !defined(OS_FUCHSIA)
 #ifndef TRACE_EVENT_HIDE_MACROS
 
 #define __FML__TOKEN_CAT__(x, y) x##y
@@ -137,7 +137,7 @@
   ::fml::tracing::TraceEventFlowEnd0(category, name, id);
 
 #endif  // TRACE_EVENT_HIDE_MACROS
-#endif  // !defined(FML_OS_FUCHSIA)
+#endif  // !defined(OS_FUCHSIA)
 
 namespace fml {
 namespace tracing {

@@ -32,7 +32,7 @@
 namespace dart {
 namespace observatory {
 
-#if !FML_OS_FUCHSIA && !FLUTTER_RELEASE
+#if !OS_FUCHSIA && !FLUTTER_RELEASE
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
 // by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
@@ -41,7 +41,7 @@ namespace observatory {
 extern unsigned int observatory_assets_archive_len;
 extern const uint8_t* observatory_assets_archive;
 
-#endif  // !FML_OS_FUCHSIA && !FLUTTER_RELEASE
+#endif  // !OS_FUCHSIA && !FLUTTER_RELEASE
 
 }  // namespace observatory
 }  // namespace dart
@@ -160,7 +160,7 @@ void ThreadExitCallback() {}
 Dart_Handle GetVMServiceAssetsArchiveCallback() {
 #if FLUTTER_RELEASE
   return nullptr;
-#elif FML_OS_FUCHSIA
+#elif OS_FUCHSIA
   fml::UniqueFD fd = fml::OpenFile("pkg/data/observatory.tar", false,
                                    fml::FilePermission::kRead);
   fml::FileMapping mapping(fd, {fml::FileMapping::Protection::kRead});
@@ -334,11 +334,11 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   // precompiled code only in the debug product mode.
   bool enable_asserts = !settings_.disable_dart_asserts;
 
-#if !FML_OS_FUCHSIA
+#if !OS_FUCHSIA
   if (IsRunningPrecompiledCode()) {
     enable_asserts = false;
   }
-#endif  // !FML_OS_FUCHSIA
+#endif  // !OS_FUCHSIA
 
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 #if !OS_IOS && !FML_OS_MACOSX
@@ -403,7 +403,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
                 fml::size(kDartStartupTraceStreamsArgs));
   }
 
-#if defined(FML_OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
   PushBackAll(&args, kDartSystraceTraceBufferArgs,
               fml::size(kDartSystraceTraceBufferArgs));
   PushBackAll(&args, kDartSystraceTraceStreamsArgs,
@@ -413,7 +413,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     PushBackAll(&args, kDartDefaultTraceStreamsArgs,
                 fml::size(kDartDefaultTraceStreamsArgs));
   }
-#endif  // defined(FML_OS_FUCHSIA)
+#endif  // defined(OS_FUCHSIA)
 
   std::string old_gen_heap_size_args;
   if (settings_.old_gen_heap_size >= 0) {

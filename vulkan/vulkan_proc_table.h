@@ -116,7 +116,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(QueuePresentKHR);
   DEFINE_PROC(CreateAndroidSurfaceKHR);
 #endif  // FML_OS_ANDROID
-#if FML_OS_FUCHSIA
+#if OS_FUCHSIA
   DEFINE_PROC(ImportSemaphoreZirconHandleFUCHSIA);
   DEFINE_PROC(GetSemaphoreZirconHandleFUCHSIA);
   DEFINE_PROC(GetMemoryZirconHandleFUCHSIA);
@@ -124,7 +124,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(DestroyBufferCollectionFUCHSIA);
   DEFINE_PROC(SetBufferCollectionImageConstraintsFUCHSIA);
   DEFINE_PROC(GetBufferCollectionPropertiesFUCHSIA);
-#endif  // FML_OS_FUCHSIA
+#endif  // OS_FUCHSIA
 #endif  // TEST_VULKAN_PROCS
 
 #undef DEFINE_PROC

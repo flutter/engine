@@ -8,7 +8,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/time/dart_timestamp_provider.h"
 
-#if defined(FML_OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
 #include <zircon/syscalls.h>
 #else
 #include <chrono>
@@ -16,7 +16,7 @@
 
 namespace fml {
 
-#if defined(FML_OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
 
 // static
 TimePoint TimePoint::Now() {

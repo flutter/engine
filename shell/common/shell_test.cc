@@ -294,7 +294,7 @@ Settings ShellTest::CreateSettingsForFixture() {
   settings.isolate_create_callback = [this]() {
     native_resolver_->SetNativeResolverForIsolate();
   };
-#if FML_OS_FUCHSIA
+#if OS_FUCHSIA
   settings.verbose_logging = true;
 #endif
   SetSnapshotsAndAssets(settings);

@@ -13,7 +13,7 @@
 #include <android/log.h>
 #elif defined(OS_IOS)
 #include <syslog.h>
-#elif defined(FML_OS_FUCHSIA)
+#elif defined(OS_FUCHSIA)
 #include <lib/syslog/global.h>
 #endif
 
@@ -21,7 +21,7 @@ namespace fml {
 
 namespace {
 
-#if !defined(FML_OS_FUCHSIA)
+#if !defined(OS_FUCHSIA)
 const char* const kLogSeverityNames[LOG_NUM_SEVERITIES] = {"INFO", "WARNING",
                                                            "ERROR", "FATAL"};
 
@@ -55,7 +55,7 @@ LogMessage::LogMessage(LogSeverity severity,
                        int line,
                        const char* condition)
     : severity_(severity), file_(file), line_(line) {
-#if !defined(FML_OS_FUCHSIA)
+#if !defined(OS_FUCHSIA)
   stream_ << "[";
   if (severity >= LOG_INFO) {
     stream_ << GetNameForLogSeverity(severity);
@@ -72,7 +72,7 @@ LogMessage::LogMessage(LogSeverity severity,
 }
 
 LogMessage::~LogMessage() {
-#if !defined(FML_OS_FUCHSIA)
+#if !defined(OS_FUCHSIA)
   stream_ << std::endl;
 #endif
 
@@ -96,7 +96,7 @@ LogMessage::~LogMessage() {
   __android_log_write(priority, "flutter", stream_.str().c_str());
 #elif defined(OS_IOS)
   syslog(LOG_ALERT, "%s", stream_.str().c_str());
-#elif defined(FML_OS_FUCHSIA)
+#elif defined(OS_FUCHSIA)
   fx_log_severity_t fx_severity;
   switch (severity_) {
     case LOG_INFO:

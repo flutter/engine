@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   fml::CommandLine cmd = fml::CommandLineFromArgcArgv(argc, argv);
 
-#if defined(FML_OS_FUCHSIA)
+#if defined(OS_FUCHSIA)
   flutter::SetGoldenDir(cmd.GetOptionValueWithDefault(
       "golden-dir", "/pkg/data/flutter/testing/resources"));
 #else
