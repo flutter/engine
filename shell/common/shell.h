@@ -401,6 +401,8 @@ class Shell final : public PlatformView::Delegate,
   const std::shared_ptr<PlatformMessageHandler>& GetPlatformMessageHandler()
       const;
 
+  const VsyncWaiter& GetVsyncWaiter() const;
+
  private:
   using ServiceProtocolHandler =
       std::function<bool(const ServiceProtocol::Handler::ServiceProtocolMap&,
@@ -419,6 +421,7 @@ class Shell final : public PlatformView::Delegate,
   std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch_;
   std::shared_ptr<VolatilePathTracker> volatile_path_tracker_;
   std::shared_ptr<PlatformMessageHandler> platform_message_handler_;
+  std::atomic<bool> route_messages_through_platform_thread_ = false;
 
   fml::WeakPtr<Engine> weak_engine_;  // to be shared across threads
   fml::TaskRunnerAffineWeakPtr<Rasterizer>
@@ -571,7 +574,7 @@ class Shell final : public PlatformView::Delegate,
                             uint64_t frame_number) override;
 
   // |Animator::Delegate|
-  void OnAnimatorNotifyIdle(int64_t deadline) override;
+  void OnAnimatorNotifyIdle(fml::TimePoint deadline) override;
 
   // |Animator::Delegate|
   void OnAnimatorDraw(

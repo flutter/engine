@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -16,6 +17,8 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 #include <functional>
 #include <vector>
@@ -70,13 +73,15 @@ class MockKeyboardManagerWin32Delegate
   virtual ~MockKeyboardManagerWin32Delegate() {}
 
   // |WindowWin32|
-  bool OnKey(int key,
+  void OnKey(int key,
              int scancode,
              int action,
              char32_t character,
              bool extended,
-             bool was_down) override {
-    return view_->OnKey(key, scancode, action, character, extended, was_down);
+             bool was_down,
+             KeyEventCallback callback) override {
+    view_->OnKey(key, scancode, action, character, extended, was_down,
+                 callback);
   }
 
   // |WindowWin32|
@@ -87,33 +92,67 @@ class MockKeyboardManagerWin32Delegate
         map_vk_to_char == nullptr ? LayoutDefault : map_vk_to_char;
   }
 
+  int InjectPendingEvents(uint32_t redispatch_char) {
+    std::vector<Win32Message> messages;
+    int num_pending_responds = pending_responds_.size();
+    for (const KEYBDINPUT& kbdinput : pending_responds_) {
+      const UINT message =
+          (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
+      const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
+      const LPARAM lparam = CreateKeyEventLparam(
+          kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
+      // TODO(dkwingsmt): Don't check the message results for redispatched
+      // messages for now, because making them work takes non-trivial rework
+      // to our current structure.
+      // https://github.com/flutter/flutter/issues/87843 If this is resolved,
+      // change them to kWmResultDefault.
+      messages.push_back(
+          Win32Message{message, kbdinput.wVk, lparam, kWmResultDontCheck});
+      if (redispatch_char != 0 && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
+        num_pending_responds += 1;
+        messages.push_back(
+            Win32Message{WM_CHAR, redispatch_char, lparam, kWmResultDontCheck});
+      }
+    }
+
+    pending_responds_.clear();
+    InjectMessageList(messages.size(), messages.data());
+    return num_pending_responds;
+  }
+
  protected:
-  virtual BOOL Win32PeekMessage(LPMSG lpMsg,
-                                UINT wMsgFilterMin,
-                                UINT wMsgFilterMax,
-                                UINT wRemoveMsg) override {
+  BOOL Win32PeekMessage(LPMSG lpMsg,
+                        UINT wMsgFilterMin,
+                        UINT wMsgFilterMax,
+                        UINT wRemoveMsg) override {
     return MockMessageQueue::Win32PeekMessage(lpMsg, wMsgFilterMin,
                                               wMsgFilterMax, wRemoveMsg);
   }
 
-  virtual uint32_t Win32MapVkToChar(uint32_t virtual_key) override {
+  uint32_t Win32MapVkToChar(uint32_t virtual_key) override {
     return map_vk_to_char_(virtual_key);
   }
 
-  virtual LRESULT Win32SendMessage(UINT const message,
-                                   WPARAM const wparam,
-                                   LPARAM const lparam) override {
+  LRESULT Win32SendMessage(UINT const message,
+                           WPARAM const wparam,
+                           LPARAM const lparam) override {
     return keyboard_manager_->HandleMessage(message, wparam, lparam)
                ? 0
                : kWmResultDefault;
   }
 
+  UINT Win32DispatchEvent(UINT cInputs, LPINPUT pInputs, int cbSize) override {
+    for (UINT input_idx = 0; input_idx < cInputs; input_idx += 1) {
+      pending_responds_.push_back(pInputs[input_idx].ki);
+    }
+    return 1;
+  }
+
  private:
   WindowBindingHandlerDelegate* view_;
-
   std::unique_ptr<KeyboardManagerWin32> keyboard_manager_;
-
   MapVkToCharHandler map_vk_to_char_;
+  std::vector<KEYBDINPUT> pending_responds_;
 };
 
 class TestKeystate {
@@ -148,74 +187,66 @@ class TestFlutterWindowsView : public FlutterWindowsView {
 
   void OnText(const std::u16string& text) override { on_text_(text); }
 
-  int InjectPendingEvents(MockMessageQueue* queue, uint32_t redispatch_char) {
-    std::vector<Win32Message> messages;
-    int num_pending_responds = pending_responds_.size();
-    for (const KEYBDINPUT& kbdinput : pending_responds_) {
-      const UINT message =
-          (kbdinput.dwFlags & KEYEVENTF_KEYUP) ? WM_KEYUP : WM_KEYDOWN;
-      const bool is_key_up = kbdinput.dwFlags & KEYEVENTF_KEYUP;
-      const LPARAM lparam = CreateKeyEventLparam(
-          kbdinput.wScan, kbdinput.dwFlags & KEYEVENTF_EXTENDEDKEY, is_key_up);
-      // TODO(dkwingsmt): Don't check the message results for redispatched
-      // messages for now, because making them work takes non-trivial rework
-      // to our current structure.
-      // https://github.com/flutter/flutter/issues/87843 If this is resolved,
-      // change them to kWmResultDefault.
-      messages.push_back(
-          Win32Message{message, kbdinput.wVk, lparam, kWmResultDontCheck});
-      if (redispatch_char != 0 && (kbdinput.dwFlags & KEYEVENTF_KEYUP) == 0) {
-        messages.push_back(
-            Win32Message{WM_CHAR, redispatch_char, lparam, kWmResultDontCheck});
-      }
-    }
-
-    pending_responds_.clear();
-    queue->InjectMessageList(messages.size(), messages.data());
-    return num_pending_responds;
-  }
-
   void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
     key_state_.Set(key, pressed, toggled_on);
+  }
+
+  void HandleMessage(const char* channel,
+                     const char* method,
+                     const char* args) {
+    rapidjson::Document args_doc;
+    args_doc.Parse(args);
+    assert(!args_doc.HasParseError());
+
+    rapidjson::Document message_doc(rapidjson::kObjectType);
+    auto& allocator = message_doc.GetAllocator();
+    message_doc.AddMember("method", rapidjson::Value(method, allocator),
+                          allocator);
+    message_doc.AddMember("args", args_doc, allocator);
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    message_doc.Accept(writer);
+
+    std::unique_ptr<std::vector<uint8_t>> data =
+        JsonMessageCodec::GetInstance().EncodeMessage(message_doc);
+    FlutterPlatformMessageResponseHandle response_handle;
+    const FlutterPlatformMessage message = {
+        sizeof(FlutterPlatformMessage),  // struct_size
+        channel,                         // channel
+        data->data(),                    // message
+        data->size(),                    // message_size
+        &response_handle,                // response_handle
+    };
+    GetEngine()->HandlePlatformMessage(&message);
   }
 
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
-      KeyboardKeyHandler::EventDispatcher dispatch_event,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
-    return FlutterWindowsView::CreateKeyboardKeyHandler(
-        messenger,
-        [this](UINT cInputs, LPINPUT pInputs, int cbSize) -> UINT {
-          return this->SendInput(cInputs, pInputs, cbSize);
-        },
-        key_state_.Getter());
+    return FlutterWindowsView::CreateKeyboardKeyHandler(messenger,
+                                                        key_state_.Getter());
   }
 
  private:
-  UINT SendInput(UINT cInputs, LPINPUT pInputs, int cbSize) {
-    for (UINT input_idx = 0; input_idx < cInputs; input_idx += 1) {
-      pending_responds_.push_back(pInputs[input_idx].ki);
-    }
-    return 1;
-  }
-
   U16StringHandler on_text_;
-  std::vector<KEYBDINPUT> pending_responds_;
   TestKeystate key_state_;
 };
 
 typedef enum {
   kKeyCallOnKey,
   kKeyCallOnText,
+  kKeyCallTextMethodCall,
 } KeyCallType;
 
 typedef struct {
   KeyCallType type;
 
   // Only one of the following fields should be assigned.
-  FlutterKeyEvent key_event;
-  std::u16string text;
+  FlutterKeyEvent key_event;     // For kKeyCallOnKey
+  std::u16string text;           // For kKeyCallOnText
+  std::string text_method_call;  // For kKeyCallTextMethodCall
 } KeyCall;
 
 static std::vector<KeyCall> key_calls;
@@ -260,6 +291,8 @@ class KeyboardTester {
     window_ = std::make_unique<MockKeyboardManagerWin32Delegate>(view_.get());
   }
 
+  TestFlutterWindowsView& GetView() { return *view_; }
+
   void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
     view_->SetKeyState(key, pressed, toggled_on);
   }
@@ -299,7 +332,7 @@ class KeyboardTester {
   // If |redispatch_char| is not 0, then WM_KEYDOWN events will
   // also redispatch a WM_CHAR event with that value as lparam.
   int InjectPendingEvents(uint32_t redispatch_char = 0) {
-    return view_->InjectPendingEvents(window_.get(), redispatch_char);
+    return window_->InjectPendingEvents(redispatch_char);
   }
 
  private:
@@ -326,6 +359,16 @@ class KeyboardTester {
         std::make_shared<MockKeyResponseController>();
     key_response_controller->SetEmbedderResponse(
         std::move(embedder_callback_handler));
+    key_response_controller->SetTextInputResponse(
+        [](std::unique_ptr<rapidjson::Document> document) {
+          rapidjson::StringBuffer buffer;
+          rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+          document->Accept(writer);
+          key_calls.push_back(KeyCall{
+              .type = kKeyCallTextMethodCall,
+              .text_method_call = buffer.GetString(),
+          });
+        });
 
     MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
@@ -352,10 +395,14 @@ constexpr uint64_t kScanCodeDigit6 = 0x07;
 // constexpr uint64_t kScanCodeNumpad1 = 0x4f;
 // constexpr uint64_t kScanCodeNumLock = 0x45;
 constexpr uint64_t kScanCodeControl = 0x1d;
+constexpr uint64_t kScanCodeMetaLeft = 0x5b;
+constexpr uint64_t kScanCodeMetaRight = 0x5c;
 constexpr uint64_t kScanCodeAlt = 0x38;
 constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 constexpr uint64_t kScanCodeShiftRight = 0x36;
 constexpr uint64_t kScanCodeBracketLeft = 0x1a;
+constexpr uint64_t kScanCodeArrowLeft = 0x4b;
+constexpr uint64_t kScanCodeEnter = 0x1c;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
@@ -379,6 +426,10 @@ constexpr bool kNotSynthesized = false;
 #define EXPECT_CALL_IS_TEXT(_key_call, u16_string) \
   EXPECT_EQ(_key_call.type, kKeyCallOnText);       \
   EXPECT_EQ(_key_call.text, u16_string);
+
+#define EXPECT_CALL_IS_TEXT_METHOD_CALL(_key_call, json_string) \
+  EXPECT_EQ(_key_call.type, kKeyCallTextMethodCall);            \
+  EXPECT_STREQ(_key_call.text_method_call.c_str(), json_string);
 
 TEST(KeyboardTest, LowerCaseAHandled) {
   KeyboardTester tester;
@@ -430,14 +481,14 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "a", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
   clear_key_calls();
 
   tester.InjectPendingEvents('a');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release A
@@ -452,6 +503,386 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
 
   tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, ArrowLeftHandled) {
+  KeyboardTester tester;
+  tester.Responding(true);
+
+  // US Keyboard layout
+
+  // Press ArrowLeft
+  tester.InjectMessages(
+      1, WmKeyDownInfo{VK_LEFT, kScanCodeArrowLeft, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalArrowLeft, kLogicalArrowLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release ArrowLeft
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_LEFT, kScanCodeArrowLeft, kExtended}.Build(kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalArrowLeft,
+                       kLogicalArrowLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, ArrowLeftUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press ArrowLeft
+  tester.InjectMessages(
+      1, WmKeyDownInfo{VK_LEFT, kScanCodeArrowLeft, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalArrowLeft, kLogicalArrowLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release ArrowLeft
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_LEFT, kScanCodeArrowLeft, kExtended}.Build(kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalArrowLeft,
+                       kLogicalArrowLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, ShiftLeftUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press ShiftLeft
+  tester.SetKeyState(VK_LSHIFT, true, false);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalShiftLeft, kLogicalShiftLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release ShiftLeft
+  tester.SetKeyState(VK_LSHIFT, false, true);
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
+                       kLogicalShiftLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, ShiftRightUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press ShiftRight
+  tester.SetKeyState(VK_RSHIFT, true, false);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalShiftRight, kLogicalShiftRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Never redispatch ShiftRight.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  // Release ShiftRight
+  tester.SetKeyState(VK_RSHIFT, false, true);
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalShiftRight, kLogicalShiftRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+}
+
+TEST(KeyboardTest, CtrlLeftUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press CtrlLeft
+  tester.SetKeyState(VK_LCONTROL, true, false);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release CtrlLeft
+  tester.SetKeyState(VK_LCONTROL, false, true);
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_SHIFT, kScanCodeControl, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalControlLeft, kLogicalControlLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, CtrlRightUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press CtrlRight
+  tester.SetKeyState(VK_RCONTROL, true, false);
+  tester.InjectMessages(
+      1, WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalControlRight, kLogicalControlRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release CtrlRight
+  tester.SetKeyState(VK_RCONTROL, false, true);
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_CONTROL, kScanCodeControl, kExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalControlRight, kLogicalControlRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, AltLeftUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press AltLeft. AltLeft is a SysKeyDown event.
+  tester.SetKeyState(VK_LMENU, true, false);
+  tester.InjectMessages(
+      1, WmSysKeyDownInfo{VK_MENU, kScanCodeAlt, kNotExtended, kWasUp}.Build(
+             kWmResultDefault));  // Always pass to the default WndProc.
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalAltLeft,
+                       kLogicalAltLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Sys events are not redispatched.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release AltLeft. AltLeft is a SysKeyUp event.
+  tester.SetKeyState(VK_LMENU, false, true);
+  tester.InjectMessages(
+      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kNotExtended}.Build(
+             kWmResultDefault));  // Always pass to the default WndProc.
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltLeft,
+                       kLogicalAltLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Sys events are not redispatched.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, AltRightUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press AltRight. AltRight is a SysKeyDown event.
+  tester.SetKeyState(VK_RMENU, true, false);
+  tester.InjectMessages(
+      1, WmSysKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
+             kWmResultDefault));  // Always pass to the default WndProc.
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalAltRight, kLogicalAltRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Sys events are not redispatched.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release AltRight. AltRight is a SysKeyUp event.
+  tester.SetKeyState(VK_RMENU, false, true);
+  tester.InjectMessages(
+      1, WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
+             kWmResultDefault));  // Always pass to the default WndProc.
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Sys events are not redispatched.
+  EXPECT_EQ(tester.InjectPendingEvents(), 0);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, MetaLeftUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press MetaLeft
+  tester.SetKeyState(VK_LWIN, true, false);
+  tester.InjectMessages(
+      1, WmKeyDownInfo{VK_LWIN, kScanCodeMetaLeft, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalMetaLeft, kLogicalMetaLeft, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release MetaLeft
+  tester.SetKeyState(VK_LWIN, false, true);
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_LWIN, kScanCodeMetaLeft, kExtended}.Build(kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaLeft,
+                       kLogicalMetaLeft, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, MetaRightUnhandled) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press MetaRight
+  tester.SetKeyState(VK_RWIN, true, false);
+  tester.InjectMessages(
+      1, WmKeyDownInfo{VK_RWIN, kScanCodeMetaRight, kExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalMetaRight, kLogicalMetaRight, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
+
+  // Release MetaRight
+  tester.SetKeyState(VK_RWIN, false, true);
+  tester.InjectMessages(
+      1,
+      WmKeyUpInfo{VK_RWIN, kScanCodeMetaRight, kExtended}.Build(kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaRight,
+                       kLogicalMetaRight, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(tester.InjectPendingEvents(), 1);
+  EXPECT_EQ(key_calls.size(), 0);
+  clear_key_calls();
 }
 
 // Press Shift-A. This is special because Win32 gives 'A' as character for the
@@ -487,14 +918,14 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
       WmCharInfo{'A', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "A", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"A");
   clear_key_calls();
 
   tester.InjectPendingEvents('A');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"A");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release ShiftLeft
@@ -682,14 +1113,14 @@ TEST(KeyboardTest, Digit1OnFrenchLayout) {
       WmCharInfo{'&', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
                        kLogicalDigit1, "&", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"&");
   clear_key_calls();
 
   tester.InjectPendingEvents('&');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"&");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release 1
@@ -743,14 +1174,14 @@ TEST(KeyboardTest, AltGrModifiedKey) {
       WmCharInfo{'@', kScanCodeKeyQ, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyQ,
                        kLogicalKeyQ, "@", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"@");
   clear_key_calls();
 
-  EXPECT_EQ(tester.InjectPendingEvents('@'), 1);
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"@");
+  EXPECT_EQ(tester.InjectPendingEvents('@'), 2);
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release Q
@@ -955,15 +1386,15 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
       WmCharInfo{0xEA, kScanCodeKeyE, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyE,
                        kLogicalKeyE, "ê", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"ê");
   clear_key_calls();
 
   tester.InjectPendingEvents(
       0xEA);  // The redispatched event uses unmodified 'e'
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"ê");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release E
@@ -1059,15 +1490,15 @@ TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
       WmCharInfo{0xEA, kScanCodeKeyE, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyE,
                        kLogicalKeyE, "ê", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"ê");
   clear_key_calls();
 
   tester.InjectPendingEvents(
       0xEA);  // The redispatched event uses unmodified 'e'
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"ê");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release E
@@ -1135,18 +1566,14 @@ TEST(KeyboardTest, DeadKeyThatDoesNotCombine) {
       WmCharInfo{'&', kScanCodeDigit1, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(key_calls.size(), 3);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
                        kLogicalDigit1, "^", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"^");
+  EXPECT_CALL_IS_TEXT(key_calls[2], u"&");
   clear_key_calls();
 
   tester.InjectPendingEvents('&');
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"&");
-  clear_key_calls();
-
-  tester.InjectPendingEvents();
   EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
@@ -1170,7 +1597,7 @@ TEST(KeyboardTest, MultibyteCharacter) {
   tester.Responding(false);
 
   // Gothic Keyboard layout. (We need a layout that yields non-BMP characters
-  // without IME, which that is actually very rare.)
+  // without IME, which is actually very rare.)
 
   // Press key W of a US keyboard, which should yield character '𐍅'.
   tester.InjectMessages(
@@ -1184,20 +1611,24 @@ TEST(KeyboardTest, MultibyteCharacter) {
 
   const char* st = key_calls[0].key_event.character;
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyW,
                        kLogicalKeyW, "𐍅", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"𐍅");
   clear_key_calls();
 
   // Inject the redispatched high surrogate.
-  tester.InjectPendingEvents(0xd800);
+  EXPECT_EQ(tester.InjectPendingEvents(0xd800), 2);
   // Manually inject the redispatched low surrogate.
+  //
+  // TODO(dkwingsmt): The following message should return kWmResultZero.
+  // For now this is impossible since KeyboardManagerWin32 isn't passing the
+  // high surrogate messages to redispatching logic.
   tester.InjectMessages(
       1, WmCharInfo{0xdf45, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
-             kWmResultZero));
+             kWmResultDontCheck));
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"𐍅");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Release W
@@ -1238,6 +1669,33 @@ TEST(KeyboardTest, NeverRedispatchShiftRightKeyDown) {
   EXPECT_EQ(key_calls.size(), 0);
 }
 
+// Pressing modifiers during IME events should work properly by not sending any
+// events.
+//
+// Regression test for https://github.com/flutter/flutter/issues/95888 .
+TEST(KeyboardTest, ImeModifierEventsAreIgnored) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout.
+
+  // To make the keyboard into IME mode, there should have been events like
+  // letter key down with VK_PROCESSKEY. Omit them in this test since they don't
+  // seem significant.
+
+  // Press CtrlRight in IME mode.
+  tester.SetKeyState(VK_RCONTROL, true, false);
+  tester.InjectMessages(
+      1,
+      WmKeyDownInfo{VK_PROCESSKEY, kScanCodeControl, kExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
+                       kNotSynthesized);
+  clear_key_calls();
+}
+
 TEST(KeyboardTest, DisorderlyRespondedEvents) {
   KeyboardTester tester;
 
@@ -1273,7 +1731,7 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the second event first to test disordered responses.
   recorded_callbacks.back()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('b'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('b'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"b");
   clear_key_calls();
@@ -1281,7 +1739,7 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the first event.
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
@@ -1329,7 +1787,7 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
   // The first response.
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
   clear_key_calls();
@@ -1337,9 +1795,36 @@ TEST(KeyboardTest, SlowFrameworkResponse) {
   // The second response.
   recorded_callbacks.back()(false);
 
-  EXPECT_EQ(tester.InjectPendingEvents('a'), 1);
+  EXPECT_EQ(tester.InjectPendingEvents('a'), 2);
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, TextInputSubmit) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  tester.GetView().HandleMessage(
+      "flutter/textinput", "TextInput.setClient",
+      R"|([108, {"inputAction": "TextInputAction.none"}])|");
+
+  // Press Enter
+  tester.InjectMessages(
+      1, WmKeyDownInfo{VK_RETURN, kScanCodeEnter, kNotExtended, kWasUp}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalEnter,
+                       kLogicalEnter, "", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT_METHOD_CALL(
+      key_calls[1],
+      "{"
+      R"|("method":"TextInputClient.performAction",)|"
+      R"|("args":[108,"TextInputAction.none"])|"
+      "}");
   clear_key_calls();
 }
 
