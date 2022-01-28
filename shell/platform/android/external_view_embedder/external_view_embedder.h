@@ -47,9 +47,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame,
-                   const std::shared_ptr<const fml::SyncSwitch>&
-                       gpu_disable_sync_switch) override;
+                   std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
@@ -74,6 +72,8 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   bool SupportsDynamicThreadMerging() override;
+
+  void Teardown() override;
 
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.

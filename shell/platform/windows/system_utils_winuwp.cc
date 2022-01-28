@@ -10,6 +10,8 @@
 
 #include "third_party/cppwinrt/generated/winrt/Windows.Foundation.Collections.h"
 #include "third_party/cppwinrt/generated/winrt/Windows.System.UserProfile.h"
+#include "third_party/cppwinrt/generated/winrt/Windows.UI.ViewManagement.h"
+#include "third_party/cppwinrt/generated/winrt/Windows.UI.h"
 
 #include "flutter/shell/platform/windows/string_conversion.h"
 
@@ -26,9 +28,9 @@ std::vector<LanguageInfo> GetPreferredLanguageInfo() {
 
 std::vector<std::wstring> GetPreferredLanguages() {
   std::vector<std::wstring> languages;
-  auto platform_langueages = winrt::Windows::System::UserProfile::
+  auto platform_languages = winrt::Windows::System::UserProfile::
       GlobalizationPreferences::Languages();
-  for (const auto& platform_language : platform_langueages) {
+  for (const auto& platform_language : platform_languages) {
     languages.push_back(std::wstring{platform_language});
   }
   return languages;
@@ -78,6 +80,18 @@ std::wstring GetUserTimeFormat() {
 
 bool Prefer24HourTime(std::wstring time_format) {
   return time_format.find(L"H") != std::wstring::npos;
+}
+
+std::wstring GetPreferredBrightness() {
+  winrt::Windows::UI::ViewManagement::UISettings ui_settings;
+  auto background_color = ui_settings.GetColorValue(
+      winrt::Windows::UI::ViewManagement::UIColorType::Background);
+  // Assuming that Windows return `Colors::Black` when being dark theme.
+  if (background_color == winrt::Windows::UI::Colors::Black()) {
+    return kPlatformBrightnessDark;
+  } else {
+    return kPlatformBrightnessLight;
+  }
 }
 
 }  // namespace flutter

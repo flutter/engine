@@ -3,11 +3,12 @@
 // found in the LICENSE file.
 
 @TestOn('!safari')
-// TODO(nurhan): https://github.com/flutter/flutter/issues/51169
+// TODO(mdebbar): https://github.com/flutter/flutter/issues/51169
 
 import 'dart:async';
 import 'dart:html' as html;
 
+import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show window;
@@ -39,6 +40,50 @@ void main() {
 }
 
 void testMain() {
+  test('createHistoryForExistingState', () {
+    TestUrlStrategy strategy;
+    BrowserHistory history;
+
+    // No url strategy.
+    history = createHistoryForExistingState(null);
+    expect(history, isA<MultiEntriesBrowserHistory>());
+    expect(history.urlStrategy, isNull);
+
+    // Random history state.
+    strategy = TestUrlStrategy.fromEntry(
+      const TestHistoryEntry(<dynamic, dynamic>{'foo': 123}, null, '/'),
+    );
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<MultiEntriesBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+
+    // Multi-entry history state.
+    final Map<dynamic, dynamic> state = <dynamic, dynamic>{
+      'serialCount': 1,
+      'state': <dynamic, dynamic>{'foo': 123},
+    };
+    strategy = TestUrlStrategy.fromEntry(TestHistoryEntry(state, null, '/'));
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<MultiEntriesBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+
+    // Single-entry history "origin" state.
+    strategy = TestUrlStrategy.fromEntry(
+      const TestHistoryEntry(<dynamic, dynamic>{'origin': true}, null, '/'),
+    );
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<SingleEntryBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+
+    // Single-entry history "flutter" state.
+    strategy = TestUrlStrategy.fromEntry(
+      const TestHistoryEntry(<dynamic, dynamic>{'flutter': true}, null, '/'),
+    );
+    history = createHistoryForExistingState(strategy);
+    expect(history, isA<SingleEntryBrowserHistory>());
+    expect(history.urlStrategy, strategy);
+  });
+
   group('$SingleEntryBrowserHistory', () {
     final PlatformMessagesSpy spy = PlatformMessagesSpy();
 
@@ -53,7 +98,7 @@ void testMain() {
 
     test('basic setup works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/initial'),
+        const TestHistoryEntry('initial state', null, '/initial'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -74,12 +119,74 @@ void testMain() {
       // The flutter entry is the current entry.
       expect(strategy.currentEntry, flutterEntry);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
+
+    test('disposes of its listener without touching history', () async {
+      const String unwrappedOriginState = 'initial state';
+      final Map<String, dynamic> wrappedOriginState = _wrapOriginState(unwrappedOriginState);
+
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        const TestHistoryEntry(unwrappedOriginState, null, '/initial'),
+      );
+      expect(strategy.listeners, isEmpty);
+
+      await window.debugInitializeHistory(strategy, useSingle: true);
+
+
+      // There should be one `popstate` listener and two history entries.
+      expect(strategy.listeners, hasLength(1));
+      expect(strategy.history, hasLength(2));
+      expect(strategy.history[0].state, wrappedOriginState);
+      expect(strategy.history[0].url, '/initial');
+      expect(strategy.history[1].state, flutterState);
+      expect(strategy.history[1].url, '/initial');
+
+      FakeAsync().run((FakeAsync fakeAsync) {
+        window.browserHistory.dispose();
+        // The `TestUrlStrategy` implementation uses microtasks to schedule the
+        // removal of event listeners.
+        fakeAsync.flushMicrotasks();
+      });
+
+      // After disposing, there should no listeners, and the history entries
+      // remain unaffected.
+      expect(strategy.listeners, isEmpty);
+      expect(strategy.history, hasLength(2));
+      expect(strategy.history[0].state, wrappedOriginState);
+      expect(strategy.history[0].url, '/initial');
+      expect(strategy.history[1].state, flutterState);
+      expect(strategy.history[1].url, '/initial');
+
+      // An extra call to dispose should be safe.
+      FakeAsync().run((FakeAsync fakeAsync) {
+        expect(() => window.browserHistory.dispose(), returnsNormally);
+        fakeAsync.flushMicrotasks();
+      });
+
+      // Same expectations should remain true after the second dispose.
+      expect(strategy.listeners, isEmpty);
+      expect(strategy.history, hasLength(2));
+      expect(strategy.history[0].state, wrappedOriginState);
+      expect(strategy.history[0].url, '/initial');
+      expect(strategy.history[1].state, flutterState);
+      expect(strategy.history[1].url, '/initial');
+
+      // Can still teardown after being disposed.
+      await window.browserHistory.tearDown();
+      expect(strategy.history, hasLength(2));
+      expect(strategy.currentEntry.state, unwrappedOriginState);
+      expect(strategy.currentEntry.url, '/initial');
+    });
+
+    test('disposes gracefully when url strategy is null', () async {
+      await window.debugInitializeHistory(null, useSingle: true);
+      expect(() => window.browserHistory.dispose(), returnsNormally);
+    });
 
     test('browser back button pops routes correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -111,12 +218,12 @@ void testMain() {
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -179,13 +286,13 @@ void testMain() {
       // navigated past it.
       expect(originalStrategy.currentEntryIndex, -1);
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -223,12 +330,12 @@ void testMain() {
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('user types unknown url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry(null, null, '/home'),
+        const TestHistoryEntry(null, null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: true);
 
@@ -249,7 +356,7 @@ void testMain() {
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
   });
 
@@ -267,7 +374,7 @@ void testMain() {
 
     test('basic setup works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/initial'),
+        const TestHistoryEntry('initial state', null, '/initial'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -279,12 +386,68 @@ void testMain() {
       expect(taggedOriginEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(taggedOriginEntry.url, '/initial');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
+
+    test('disposes of its listener without touching history', () async {
+      const String untaggedState = 'initial state';
+      final Map<String, dynamic> taggedState = _tagStateWithSerialCount(untaggedState, 0);
+
+      final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
+        const TestHistoryEntry(untaggedState, null, '/initial'),
+      );
+      expect(strategy.listeners, isEmpty);
+
+      await window.debugInitializeHistory(strategy, useSingle: false);
+
+
+      // There should be one `popstate` listener and one history entry.
+      expect(strategy.listeners, hasLength(1));
+      expect(strategy.history, hasLength(1));
+      expect(strategy.history.single.state, taggedState);
+      expect(strategy.history.single.url, '/initial');
+
+      FakeAsync().run((FakeAsync fakeAsync) {
+        window.browserHistory.dispose();
+        // The `TestUrlStrategy` implementation uses microtasks to schedule the
+        // removal of event listeners.
+        fakeAsync.flushMicrotasks();
+      });
+
+      // After disposing, there should no listeners, and the history entries
+      // remain unaffected.
+      expect(strategy.listeners, isEmpty);
+      expect(strategy.history, hasLength(1));
+      expect(strategy.history.single.state, taggedState);
+      expect(strategy.history.single.url, '/initial');
+
+      // An extra call to dispose should be safe.
+      FakeAsync().run((FakeAsync fakeAsync) {
+        expect(() => window.browserHistory.dispose(), returnsNormally);
+        fakeAsync.flushMicrotasks();
+      });
+
+      // Same expectations should remain true after the second dispose.
+      expect(strategy.listeners, isEmpty);
+      expect(strategy.history, hasLength(1));
+      expect(strategy.history.single.state, taggedState);
+      expect(strategy.history.single.url, '/initial');
+
+      // Can still teardown after being disposed.
+      await window.browserHistory.tearDown();
+      expect(strategy.history, hasLength(1));
+      expect(strategy.history.single.state, untaggedState);
+      expect(strategy.history.single.url, '/initial');
+    });
+
+    test('disposes gracefully when url strategy is null', () async {
+      await window.debugInitializeHistory(null, useSingle: false);
+      expect(() => window.browserHistory.dispose(), returnsNormally);
+    });
 
     test('browser back button push route information correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -320,12 +483,12 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('multiple browser back clicks', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -371,13 +534,13 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge ||
             browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -417,12 +580,12 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
 
     test('forward button works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
-        TestHistoryEntry('initial state', null, '/home'),
+        const TestHistoryEntry('initial state', null, '/home'),
       );
       await window.debugInitializeHistory(strategy, useSingle: false);
 
@@ -469,7 +632,7 @@ void testMain() {
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('page2 state', 2));
       expect(strategy.currentEntry.url, '/page2');
     },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50836
+        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
         skip: browserEngine == BrowserEngine.edge);
   });
 
@@ -539,7 +702,7 @@ Future<void> systemNavigatorPop() {
   final Completer<void> completer = Completer<void>();
   window.sendPlatformMessage(
     'flutter/platform',
-    codec.encodeMethodCall(MethodCall('SystemNavigator.pop')),
+    codec.encodeMethodCall(const MethodCall('SystemNavigator.pop')),
     (_) => completer.complete(),
   );
   return completer.future;

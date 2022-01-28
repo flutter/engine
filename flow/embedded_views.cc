@@ -6,10 +6,8 @@
 
 namespace flutter {
 
-void ExternalViewEmbedder::SubmitFrame(
-    GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
+void ExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
+                                       std::unique_ptr<SurfaceFrame> frame) {
   frame->Submit();
 };
 
@@ -65,5 +63,7 @@ const std::vector<std::shared_ptr<Mutator>>::const_iterator MutatorsStack::End()
 bool ExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return false;
 }
+
+void ExternalViewEmbedder::Teardown() {}
 
 }  // namespace flutter

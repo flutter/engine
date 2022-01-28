@@ -15,6 +15,12 @@ static NSString* const kUIBackgroundMode = @"UIBackgroundModes";
 static NSString* const kRemoteNotificationCapabitiliy = @"remote-notification";
 static NSString* const kBackgroundFetchCapatibility = @"fetch";
 static NSString* const kRestorationStateAppModificationKey = @"mod-date";
+static NSString* const kApplicationDidReceiveRemoteNotificationFetchCompletionHandler =
+    @"application:didReceiveRemoteNotification:fetchCompletionHandler:";
+
+static SEL ApplicationDidReceiveRemoteNotificationFetchCompletionHandlerSelector() {
+  return NSSelectorFromString(kApplicationDidReceiveRemoteNotificationFetchCompletionHandler);
+}
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
@@ -34,6 +40,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (void)dealloc {
   [_lifeCycleDelegate release];
   [_rootFlutterViewControllerGetter release];
+  [_window release];
   [super dealloc];
 }
 
@@ -89,12 +96,6 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 }
 #pragma GCC diagnostic pop
 
-- (void)application:(UIApplication*)application
-    didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
-  [_lifeCycleDelegate application:application
-      didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
-}
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
@@ -132,22 +133,11 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   }
 }
 
-static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
-  NSNumber* isEnabled = [infoDictionary objectForKey:@"FlutterDeepLinkingEnabled"];
-  if (isEnabled) {
-    return [isEnabled boolValue];
-  } else {
-    return NO;
-  }
-}
-
-- (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
-    infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
-  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
-    return YES;
-  } else if (!IsDeepLinkingEnabled(infoPlistGetter())) {
+- (BOOL)openURL:(NSURL*)url {
+  NSNumber* isDeepLinkingEnabled =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"];
+  if (!isDeepLinkingEnabled.boolValue) {
+    // Not set or NO.
     return NO;
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
@@ -181,12 +171,10 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [self application:application
-                   openURL:url
-                   options:options
-           infoPlistGetter:^NSDictionary*() {
-             return [[NSBundle mainBundle] infoDictionary];
-           }];
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  }
+  return [self openURL:url];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -229,9 +217,12 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray* __nullable restorableObjects))restorationHandler {
 #endif
-  return [_lifeCycleDelegate application:application
-                    continueUserActivity:userActivity
-                      restorationHandler:restorationHandler];
+  if ([_lifeCycleDelegate application:application
+                 continueUserActivity:userActivity
+                   restorationHandler:restorationHandler]) {
+    return YES;
+  }
+  return [self openURL:userActivity.webpageURL];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
@@ -299,7 +290,7 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
   NSArray* backgroundModesArray =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:kUIBackgroundMode];
   NSSet* backgroundModesSet = [[[NSSet alloc] initWithArray:backgroundModesArray] autorelease];
-  if (selector == @selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)) {
+  if (selector == ApplicationDidReceiveRemoteNotificationFetchCompletionHandlerSelector()) {
     if (![backgroundModesSet containsObject:kRemoteNotificationCapabitiliy]) {
       NSLog(
           @"You've implemented -[<UIApplicationDelegate> "

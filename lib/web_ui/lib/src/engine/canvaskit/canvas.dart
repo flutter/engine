@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: public_member_api_docs
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -304,7 +305,7 @@ class CkCanvas {
   }
 
   void transform(Float32List matrix4) {
-    skCanvas.concat(toSkMatrixFromFloat32(matrix4));
+    skCanvas.concat(toSkM44FromFloat32(matrix4));
   }
 
   void translate(double dx, double dy) {
@@ -679,7 +680,7 @@ class CkTransformCommand extends CkPaintCommand {
 
   @override
   void apply(SkCanvas canvas) {
-    canvas.concat(toSkMatrixFromFloat32(matrix4));
+    canvas.concat(toSkM44FromFloat32(matrix4));
   }
 }
 

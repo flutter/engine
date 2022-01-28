@@ -9,15 +9,13 @@
 namespace flutter {
 
 DisplayListLayer::DisplayListLayer(const SkPoint& offset,
-                                   sk_sp<DisplayList> display_list,
+                                   SkiaGPUObject<DisplayList> display_list,
                                    bool is_complex,
                                    bool will_change)
     : offset_(offset),
-      display_list_(display_list),
+      display_list_(std::move(display_list)),
       is_complex_(is_complex),
       will_change_(will_change) {}
-
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
@@ -42,15 +40,19 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
-  context->AddLayerBounds(display_list_->bounds());
+#ifndef SUPPORT_FRACTIONAL_TRANSLATION
+  context->SetTransform(
+      RasterCache::GetIntegralTransCTM(context->GetTransform()));
+#endif
+  context->AddLayerBounds(display_list()->bounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
 
 bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
                                const DisplayListLayer* l1,
                                const DisplayListLayer* l2) {
-  const auto& dl1 = l1->display_list_;
-  const auto& dl2 = l2->display_list_;
+  const auto& dl1 = l1->display_list_.skia_object();
+  const auto& dl2 = l2->display_list_.skia_object();
   if (dl1.get() == dl2.get()) {
     statistics.AddSameInstancePicture();
     return true;
@@ -81,33 +83,30 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
   return res;
 }
 
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
-
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
 
   DisplayList* disp_list = display_list();
 
+  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
+
   if (auto* cache = context->raster_cache) {
     TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-
-    SkMatrix ctm = matrix;
-    ctm.preTranslate(offset_.x(), offset_.y());
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-    ctm = RasterCache::GetIntegralTransCTM(ctm);
-#endif
-    cache->Prepare(context->gr_context, disp_list, ctm,
-                   context->dst_color_space, is_complex_, will_change_);
+    if (context->cull_rect.intersects(bounds)) {
+      cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
+                     offset_);
+    } else {
+      // Don't evict raster cache entry during partial repaint
+      cache->Touch(disp_list, matrix);
+    }
   }
-
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
   set_paint_bounds(bounds);
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {
   TRACE_EVENT0("flutter", "DisplayListLayer::Paint");
-  FML_DCHECK(display_list_.get());
+  FML_DCHECK(display_list_.skia_object());
   FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);

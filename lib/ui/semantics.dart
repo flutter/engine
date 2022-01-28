@@ -278,7 +278,7 @@ class SemanticsAction {
       case _kSetText:
         return 'SemanticsAction.setText';
     }
-    assert(false, 'Unhandled index: $index');
+    assert(false, 'Unhandled index: $index (0x${index.toRadixString(8).padLeft(4, "0")})');
     return '';
   }
 }
@@ -289,6 +289,13 @@ class SemanticsAction {
 // `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
 // updated.
 class SemanticsFlag {
+  const SemanticsFlag._(this.index) : assert(index != null);
+
+  /// The numerical value for this flag.
+  ///
+  /// Each flag has one bit set in this bit field.
+  final int index;
+
   static const int _kHasCheckedStateIndex = 1 << 0;
   static const int _kIsCheckedIndex = 1 << 1;
   static const int _kIsSelectedIndex = 1 << 2;
@@ -300,7 +307,7 @@ class SemanticsFlag {
   static const int _kIsInMutuallyExclusiveGroupIndex = 1 << 8;
   static const int _kIsHeaderIndex = 1 << 9;
   static const int _kIsObscuredIndex = 1 << 10;
-  static const int _kScopesRouteIndex= 1 << 11;
+  static const int _kScopesRouteIndex = 1 << 11;
   static const int _kNamesRouteIndex = 1 << 12;
   static const int _kIsHiddenIndex = 1 << 13;
   static const int _kIsImageIndex = 1 << 14;
@@ -319,13 +326,6 @@ class SemanticsFlag {
   // please update the Flag enum in
   // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
   // and the SemanticsFlag class in lib/web_ui/lib/src/ui/semantics.dart.
-
-  const SemanticsFlag._(this.index) : assert(index != null);
-
-  /// The numerical value for this flag.
-  ///
-  /// Each flag has one bit set in this bit field.
-  final int index;
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
@@ -580,7 +580,7 @@ class SemanticsFlag {
     _kIsLinkIndex: isLink,
     _kIsSliderIndex: isSlider,
     _kIsKeyboardKeyIndex: isKeyboardKey,
-};
+  };
 
   @override
   String toString() {
@@ -636,7 +636,7 @@ class SemanticsFlag {
       case _kIsKeyboardKeyIndex:
         return 'SemanticsFlag.isKeyboardKey';
     }
-    assert(false, 'Unhandled index: $index');
+    assert(false, 'Unhandled index: $index (0x${index.toRadixString(8).padLeft(4, "0")})');
     return '';
   }
 }
@@ -646,6 +646,8 @@ class SemanticsFlag {
 //  * engine/src/flutter/lib/web_ui/lib/src/ui/semantics.dart
 //  * engine/src/flutter/lib/ui/semantics/string_attribute.h
 //  * engine/src/flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java
+//  * engine/src/flutter/lib/web_ui/test/engine/semantics/semantics_api_test.dart
+//  * engine/src/flutter/testing/dart/semantics_test.dart
 
 /// An abstract interface for string attributes that affects how assistive
 /// technologies, e.g. VoiceOver or TalkBack, treat the text.
@@ -800,6 +802,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
   /// and `decreasedValue` respectively. Their contents must not be changed during
   /// the semantics update.
   ///
+  /// The `tooltip` is a string that describe additional information when user
+  /// hover or long press on the backing widget of this semantics node.
+  ///
   /// The fields `textSelectionBase` and `textSelectionExtent` describe the
   /// currently selected text within `value`. A value of -1 indicates no
   /// current text selection base or extent.
@@ -857,15 +862,16 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     required double thickness,
     required Rect rect,
     required String label,
-    List<StringAttribute>? labelAttributes,
+    required List<StringAttribute> labelAttributes,
     required String value,
-    List<StringAttribute>? valueAttributes,
+    required List<StringAttribute> valueAttributes,
     required String increasedValue,
-    List<StringAttribute>? increasedValueAttributes,
+    required List<StringAttribute> increasedValueAttributes,
     required String decreasedValue,
-    List<StringAttribute>? decreasedValueAttributes,
+    required List<StringAttribute> decreasedValueAttributes,
     required String hint,
-    List<StringAttribute>? hintAttributes,
+    required List<StringAttribute> hintAttributes,
+    String? tooltip,
     TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
@@ -907,6 +913,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
       decreasedValueAttributes,
       hint,
       hintAttributes,
+      tooltip,
       textDirection != null ? textDirection.index + 1 : 0,
       transform,
       childrenInTraversalOrder,
@@ -935,15 +942,16 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     double elevation,
     double thickness,
     String label,
-    List<StringAttribute>? labelAttributes,
+    List<StringAttribute> labelAttributes,
     String value,
-    List<StringAttribute>? valueAttributes,
+    List<StringAttribute> valueAttributes,
     String increasedValue,
-    List<StringAttribute>? increasedValueAttributes,
+    List<StringAttribute> increasedValueAttributes,
     String decreasedValue,
-    List<StringAttribute>? decreasedValueAttributes,
+    List<StringAttribute> decreasedValueAttributes,
     String hint,
-    List<StringAttribute>? hintAttributes,
+    List<StringAttribute> hintAttributes,
+    String? tooltip,
     int textDirection,
     Float64List transform,
     Int32List childrenInTraversalOrder,

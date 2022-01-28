@@ -6,8 +6,8 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../../safe_browser_api.dart';
 import 'shader_builder.dart';
-import 'webgl_context.dart';
 
 /// Converts colors and stops to typed array of bias, scale and threshold to use
 /// in shaders.
@@ -22,9 +22,6 @@ import 'webgl_context.dart';
 ///              scale = (c2 - c1) / (t2 - t1)
 ///              bias = c1 - t1 / (t2 - t1) * (c2 - c1)
 class NormalizedGradient {
-  NormalizedGradient._(
-      this.thresholdCount, this._thresholds, this._scale, this._bias);
-
   final Float32List _thresholds;
   final Float32List _bias;
   final Float32List _scale;
@@ -99,6 +96,9 @@ class NormalizedGradient {
     }
     return NormalizedGradient._(normalizedCount, thresholds, scale, bias);
   }
+
+  NormalizedGradient._(
+      this.thresholdCount, this._thresholds, this._scale, this._bias);
 
   /// Sets uniforms for threshold, bias and scale for program.
   void setupUniforms(GlContext gl, GlProgram glProgram) {

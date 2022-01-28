@@ -36,9 +36,10 @@ class EmbedderConfigBuilder {
     kNoInitialize,
   };
 
-  EmbedderConfigBuilder(EmbedderTestContext& context,
-                        InitializationPreference preference =
-                            InitializationPreference::kSnapshotsInitialize);
+  explicit EmbedderConfigBuilder(
+      EmbedderTestContext& context,
+      InitializationPreference preference =
+          InitializationPreference::kSnapshotsInitialize);
 
   ~EmbedderConfigBuilder();
 
@@ -103,6 +104,10 @@ class EmbedderConfigBuilder {
   UniqueEngine LaunchEngine() const;
 
   UniqueEngine InitializeEngine() const;
+
+  // Sets up the callback for vsync, the callbacks needs to be specified on the
+  // text context vis `SetVsyncCallback`.
+  void SetupVsyncCallback();
 
  private:
   EmbedderTestContext& context_;

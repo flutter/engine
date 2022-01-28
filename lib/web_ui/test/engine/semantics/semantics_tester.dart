@@ -7,7 +7,7 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show domRenderer, toMatrix32;
+import 'package:ui/src/engine.dart' show flutterViewEmbedder, toMatrix32;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/host_node.dart';
 import 'package:ui/src/engine/semantics.dart';
@@ -23,7 +23,7 @@ import '../../matchers.dart';
 /// so we don't have to hardcode html.document across the test. (The host of a
 /// normal flutter app used to be html.document, but now that the app is wrapped
 /// in a Shadow DOM, that's not the case anymore.)
-HostNode get appHostNode => domRenderer.glassPaneShadow!;
+HostNode get appHostNode => flutterViewEmbedder.glassPaneShadow!;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
@@ -115,10 +115,16 @@ class SemanticsTester {
     double? thickness,
     ui.Rect? rect,
     String? label,
+    List<ui.StringAttribute>? labelAttributes,
     String? hint,
+    List<ui.StringAttribute>? hintAttributes,
     String? value,
+    List<ui.StringAttribute>? valueAttributes,
     String? increasedValue,
+    List<ui.StringAttribute>? increasedValueAttributes,
     String? decreasedValue,
+    List<ui.StringAttribute>? decreasedValueAttributes,
+    String? tooltip,
     ui.TextDirection? textDirection,
     Float64List? transform,
     Int32List? additionalActions,
@@ -306,10 +312,16 @@ class SemanticsTester {
       scrollExtentMin: scrollExtentMin ?? 0,
       rect: effectiveRect,
       label: label ?? '',
+      labelAttributes: labelAttributes ?? const <ui.StringAttribute>[],
       hint: hint ?? '',
+      hintAttributes: hintAttributes ?? const <ui.StringAttribute>[],
       value: value ?? '',
+      valueAttributes: valueAttributes ?? const <ui.StringAttribute>[],
       increasedValue: increasedValue ?? '',
+      increasedValueAttributes: increasedValueAttributes ?? const <ui.StringAttribute>[],
       decreasedValue: decreasedValue ?? '',
+      decreasedValueAttributes: decreasedValueAttributes ?? const <ui.StringAttribute>[],
+      tooltip: tooltip ?? '',
       transform: transform != null ? toMatrix32(transform) : Matrix4.identity().storage,
       elevation: elevation ?? 0,
       thickness: thickness ?? 0,

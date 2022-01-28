@@ -128,6 +128,25 @@ std::optional<std::u16string> TextInputManagerWin32::GetResultString() const {
   return GetString(GCS_RESULTSTR);
 }
 
+void TextInputManagerWin32::AbortComposing() {
+  if (window_handle_ == nullptr || !ime_active_) {
+    return;
+  }
+
+  ImmContext imm_context(window_handle_);
+  if (imm_context.IsValid()) {
+    // Cancel composing and close the candidates window.
+    ::ImmNotifyIME(imm_context.get(), NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+    ::ImmNotifyIME(imm_context.get(), NI_CLOSECANDIDATE, 0, 0);
+
+    // Clear the composing string.
+    wchar_t composition_str[] = L"";
+    wchar_t reading_str[] = L"";
+    ::ImmSetCompositionStringW(imm_context.get(), SCS_SETSTR, composition_str,
+                               sizeof(wchar_t), reading_str, sizeof(wchar_t));
+  }
+}
+
 std::optional<std::u16string> TextInputManagerWin32::GetString(int type) const {
   if (window_handle_ == nullptr || !ime_active_) {
     return std::nullopt;
@@ -138,7 +157,7 @@ std::optional<std::u16string> TextInputManagerWin32::GetString(int type) const {
     const long compose_bytes =
         ::ImmGetCompositionString(imm_context.get(), type, nullptr, 0);
     const long compose_length = compose_bytes / sizeof(wchar_t);
-    if (compose_length <= 0) {
+    if (compose_length < 0) {
       return std::nullopt;
     }
 

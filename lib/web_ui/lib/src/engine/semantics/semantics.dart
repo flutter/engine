@@ -11,7 +11,8 @@ import 'package:ui/ui.dart' as ui;
 import '../../engine.dart'  show registerHotRestartListener;
 import '../alarm_clock.dart';
 import '../browser_detection.dart';
-import '../dom_renderer.dart';
+import '../configuration.dart';
+import '../embedder.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -24,22 +25,6 @@ import 'scrollable.dart';
 import 'semantics_helper.dart';
 import 'tappable.dart';
 import 'text_field.dart';
-
-/// Set this flag to `true` to cause the engine to visualize the semantics tree
-/// on the screen for debugging.
-///
-/// This only works in profile and release modes. Debug mode does not support
-/// passing compile-time constants.
-///
-/// Example:
-///
-/// ```
-/// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
-/// ```
-const bool debugShowSemanticsNodes = bool.fromEnvironment(
-  'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
-  defaultValue: false,
-);
 
 /// Contains updates for the semantics tree.
 ///
@@ -78,15 +63,16 @@ class SemanticsNodeUpdate {
     required this.scrollExtentMin,
     required this.rect,
     required this.label,
-    this.labelAttributes,
+    required this.labelAttributes,
     required this.hint,
-    this.hintAttributes,
+    required this.hintAttributes,
     required this.value,
-    this.valueAttributes,
+    required this.valueAttributes,
     required this.increasedValue,
-    this.increasedValueAttributes,
+    required this.increasedValueAttributes,
     required this.decreasedValue,
-    this.decreasedValueAttributes,
+    required this.decreasedValueAttributes,
+    this.tooltip,
     this.textDirection,
     required this.transform,
     required this.elevation,
@@ -142,31 +128,34 @@ class SemanticsNodeUpdate {
   final String label;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final List<ui.StringAttribute>? labelAttributes;
+  final List<ui.StringAttribute> labelAttributes;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String hint;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final List<ui.StringAttribute>? hintAttributes;
+  final List<ui.StringAttribute> hintAttributes;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String value;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final List<ui.StringAttribute>? valueAttributes;
+  final List<ui.StringAttribute> valueAttributes;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String increasedValue;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final List<ui.StringAttribute>? increasedValueAttributes;
+  final List<ui.StringAttribute> increasedValueAttributes;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String decreasedValue;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final List<ui.StringAttribute>? decreasedValueAttributes;
+  final List<ui.StringAttribute> decreasedValueAttributes;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final String? tooltip;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final ui.TextDirection? textDirection;
@@ -287,7 +276,7 @@ class SemanticsObject {
     element.style.position = 'absolute';
 
     // The root node has some properties that other nodes do not.
-    if (id == 0 && !debugShowSemanticsNodes) {
+    if (id == 0 && !configuration.debugShowSemanticsNodes) {
       // Make all semantics transparent. We use `filter` instead of `opacity`
       // attribute because `filter` is stronger. `opacity` does not apply to
       // some elements, particularly on iOS, such as the slider thumb and track.
@@ -304,7 +293,7 @@ class SemanticsObject {
     // Make semantic elements visible for debugging by outlining them using a
     // green border. We do not use `border` attribute because it affects layout
     // (`outline` does not).
-    if (debugShowSemanticsNodes) {
+    if (configuration.debugShowSemanticsNodes) {
       element.style.outline = '1px solid green';
     }
   }
@@ -596,6 +585,22 @@ class SemanticsObject {
     _dirtyFields |= _additionalActionsIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get tooltip => _tooltip;
+  String? _tooltip;
+
+  /// Whether this object contains a non-empty tooltip.
+  bool get hasTooltip => _tooltip != null && _tooltip!.isNotEmpty;
+
+  static const int _tooltipIndex = 1 << 22;
+
+  /// Whether the [tooltip] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isTooltipDirty => _isDirty(_tooltipIndex);
+  void _markTooltipDirty() {
+    _dirtyFields |= _tooltipIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -808,6 +813,11 @@ class SemanticsObject {
       _markDecreasedValueDirty();
     }
 
+    if (_tooltip != update.tooltip) {
+      _tooltip = update.tooltip;
+      _markTooltipDirty();
+    }
+
     if (_textDirection != update.textDirection) {
       _textDirection = update.textDirection;
       _markTextDirectionDirty();
@@ -878,7 +888,7 @@ class SemanticsObject {
   /// Detects the roles that this semantics object corresponds to and manages
   /// the lifecycles of [SemanticsObjectRole] objects.
   void _updateRoles() {
-    _updateRole(Role.labelAndValue, (hasLabel || hasValue) && !isTextField && !isVisualOnly);
+    _updateRole(Role.labelAndValue, (hasLabel || hasValue || hasTooltip) && !isTextField && !isVisualOnly);
     _updateRole(Role.textField, isTextField);
 
     final bool shouldUseTappableRole =
@@ -1328,6 +1338,7 @@ class EngineSemanticsOwner {
   /// The top-level DOM element of the semantics DOM element tree.
   html.Element? _rootSemanticsElement;
 
+  // ignore: prefer_function_declarations_over_variables
   TimestampFunction _now = () => DateTime.now();
 
   void debugOverrideTimestampFunction(TimestampFunction value) {
@@ -1583,7 +1594,7 @@ class EngineSemanticsOwner {
     if (_rootSemanticsElement == null) {
       final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      domRenderer.semanticsHostElement!.append(root.element);
+      flutterViewEmbedder.semanticsHostElement!.append(root.element);
     }
 
     _finalizeTree();

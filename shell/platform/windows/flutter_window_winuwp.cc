@@ -4,14 +4,74 @@
 
 #include "flutter/shell/platform/windows/flutter_window_winuwp.h"
 
+#include <map>
+
 namespace flutter {
 
 // Multipler used to map controller velocity to an appropriate scroll input.
 static constexpr double kControllerScrollMultiplier = 3;
 
+// Minimum pointer ID that gets emitted by the pointer ID generator.
+static constexpr uint32_t kMinPointerId = 0;
+
+// Maximum pointer ID that gets emitted by the pointer ID generator.
+static constexpr uint32_t kMaxPointerId = 128;
+
+// Maps a Flutter cursor name to a CoreCursor.
+//
+// Returns the arrow cursor for unknown constants.
+//
+// This map must be kept in sync with Flutter framework's
+// services/mouse_cursor.dart.
+namespace {
+using winrt::Windows::UI::Core::CoreCursorType;
+
+std::map<std::string, const CoreCursorType> cursors{
+    {"allScroll", CoreCursorType::SizeAll},
+    {"basic", CoreCursorType::Arrow},
+    {"click", CoreCursorType::Hand},
+    {"forbidden", CoreCursorType::UniversalNo},
+    {"help", CoreCursorType::Help},
+    {"move", CoreCursorType::SizeAll},
+    {"noDrop", CoreCursorType::UniversalNo},
+    {"precise", CoreCursorType::Cross},
+    {"text", CoreCursorType::IBeam},
+    {"resizeColumn", CoreCursorType::SizeWestEast},
+    {"resizeDown", CoreCursorType::SizeNorthSouth},
+    {"resizeDownLeft", CoreCursorType::SizeNortheastSouthwest},
+    {"resizeDownRight", CoreCursorType::SizeNorthwestSoutheast},
+    {"resizeLeft", CoreCursorType::SizeWestEast},
+    {"resizeLeftRight", CoreCursorType::SizeWestEast},
+    {"resizeRight", CoreCursorType::SizeWestEast},
+    {"resizeRow", CoreCursorType::SizeNorthSouth},
+    {"resizeUp", CoreCursorType::SizeNorthSouth},
+    {"resizeUpDown", CoreCursorType::SizeNorthSouth},
+    {"resizeUpLeft", CoreCursorType::SizeNorthwestSoutheast},
+    {"resizeUpRight", CoreCursorType::SizeNortheastSouthwest},
+    {"resizeUpLeftDownRight", CoreCursorType::SizeNorthwestSoutheast},
+    {"resizeUpRightDownLeft", CoreCursorType::SizeNortheastSouthwest},
+    {"wait", CoreCursorType::Wait},
+};
+
+winrt::Windows::UI::Core::CoreCursor GetCursorByName(
+    const std::string& cursor_name) {
+  if (cursor_name == "none") {
+    return winrt::Windows::UI::Core::CoreCursor{nullptr};
+  } else {
+    auto cursor_type = CoreCursorType::Arrow;
+    auto it = cursors.find(cursor_name);
+    if (it != cursors.end()) {
+      cursor_type = it->second;
+    }
+    return winrt::Windows::UI::Core::CoreCursor(cursor_type, 0);
+  }
+}
+
+}  // namespace
+
 FlutterWindowWinUWP::FlutterWindowWinUWP(
-    ABI::Windows::ApplicationModel::Core::CoreApplicationView*
-        applicationview) {
+    ABI::Windows::ApplicationModel::Core::CoreApplicationView* applicationview)
+    : pointer_id_generator_(kMinPointerId, kMaxPointerId) {
   winrt::Windows::ApplicationModel::Core::CoreApplicationView cav{nullptr};
   winrt::copy_from_abi(cav, applicationview);
 
@@ -67,12 +127,16 @@ PhysicalWindowBounds FlutterWindowWinUWP::GetPhysicalWindowBounds() {
 }
 
 void FlutterWindowWinUWP::UpdateFlutterCursor(const std::string& cursor_name) {
-  // TODO(clarkezone): add support for Flutter cursors:
-  // https://github.com/flutter/flutter/issues/70199
+  window_.PointerCursor(GetCursorByName(cursor_name));
 }
 
 void FlutterWindowWinUWP::OnCursorRectUpdated(const Rect& rect) {
   // TODO(cbracken): Implement IMM candidate window positioning.
+}
+
+void FlutterWindowWinUWP::OnResetImeComposing() {
+  // TODO(cbracken): Cancel composing, close the candidates view, and clear the
+  // composing text.
 }
 
 void FlutterWindowWinUWP::OnWindowResized() {}
@@ -98,6 +162,9 @@ void FlutterWindowWinUWP::SetEventHandlers() {
   window_.PointerWheelChanged(
       {this, &FlutterWindowWinUWP::OnPointerWheelChanged});
 
+  ui_settings_.ColorValuesChanged(
+      {this, &FlutterWindowWinUWP::OnColorValuesChanged});
+
   // TODO(clarkezone) support mouse leave handling
   // https://github.com/flutter/flutter/issues/70199
 
@@ -118,7 +185,13 @@ float FlutterWindowWinUWP::GetDpiScale() {
 }
 
 bool FlutterWindowWinUWP::IsVisible() {
-  return window_.Visible();
+  // This is called from raster thread as an optimization to not wait for vsync
+  // if window is invisible. However CoreWindow is not agile so we can't call
+  // Visible() from raster thread. For now assume window is always visible.
+  // Possible solution would be to register a VisibilityChanged handler and
+  // store the visiblity state in a variable. TODO(knopp)
+  // https://github.com/flutter/flutter/issues/87870
+  return true;
 }
 
 void FlutterWindowWinUWP::OnDpiChanged(
@@ -138,10 +211,11 @@ void FlutterWindowWinUWP::OnPointerPressed(
   double x = GetPosX(args);
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  FlutterPointerMouseButtons mouse_button = GetPointerMouseButton(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerDown(
-      x, y, device_kind,
-      FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+  binding_handler_delegate_->OnPointerDown(x, y, device_kind, pointer_id,
+                                           mouse_button);
 }
 
 void FlutterWindowWinUWP::OnPointerReleased(
@@ -150,10 +224,12 @@ void FlutterWindowWinUWP::OnPointerReleased(
   double x = GetPosX(args);
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  FlutterPointerMouseButtons mouse_button = GetPointerMouseButton(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerUp(
-      x, y, device_kind,
-      FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary);
+  binding_handler_delegate_->OnPointerUp(x, y, device_kind, pointer_id,
+                                         mouse_button);
+  ReleasePointer(args);
 }
 
 void FlutterWindowWinUWP::OnPointerMoved(
@@ -162,8 +238,9 @@ void FlutterWindowWinUWP::OnPointerMoved(
   double x = GetPosX(args);
   double y = GetPosY(args);
   FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  auto pointer_id = GetPointerId(args);
 
-  binding_handler_delegate_->OnPointerMove(x, y, device_kind);
+  binding_handler_delegate_->OnPointerMove(x, y, device_kind, pointer_id);
 }
 
 void FlutterWindowWinUWP::OnPointerWheelChanged(
@@ -171,8 +248,11 @@ void FlutterWindowWinUWP::OnPointerWheelChanged(
     winrt::Windows::UI::Core::PointerEventArgs const& args) {
   double x = GetPosX(args);
   double y = GetPosY(args);
+  FlutterPointerDeviceKind device_kind = GetPointerDeviceKind(args);
+  auto pointer_id = GetPointerId(args);
   int delta = args.CurrentPoint().Properties().MouseWheelDelta();
-  binding_handler_delegate_->OnScroll(x, y, 0, -delta, 1);
+  binding_handler_delegate_->OnScroll(x, y, 0, -delta, 1, device_kind,
+                                      pointer_id);
 }
 
 double FlutterWindowWinUWP::GetPosX(
@@ -203,6 +283,41 @@ FlutterPointerDeviceKind FlutterWindowWinUWP::GetPointerDeviceKind(
       return kFlutterPointerDeviceKindTouch;
   }
   return kFlutterPointerDeviceKindMouse;
+}
+
+FlutterPointerMouseButtons FlutterWindowWinUWP::GetPointerMouseButton(
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  switch (args.CurrentPoint().Properties().PointerUpdateKind()) {
+    case winrt::Windows::UI::Input::PointerUpdateKind::LeftButtonPressed:
+    case winrt::Windows::UI::Input::PointerUpdateKind::LeftButtonReleased:
+      return kFlutterPointerButtonMousePrimary;
+    case winrt::Windows::UI::Input::PointerUpdateKind::RightButtonPressed:
+    case winrt::Windows::UI::Input::PointerUpdateKind::RightButtonReleased:
+      return kFlutterPointerButtonMouseSecondary;
+    case winrt::Windows::UI::Input::PointerUpdateKind::MiddleButtonPressed:
+    case winrt::Windows::UI::Input::PointerUpdateKind::MiddleButtonReleased:
+      return kFlutterPointerButtonMouseMiddle;
+    case winrt::Windows::UI::Input::PointerUpdateKind::XButton1Pressed:
+    case winrt::Windows::UI::Input::PointerUpdateKind::XButton1Released:
+      return kFlutterPointerButtonMouseBack;
+    case winrt::Windows::UI::Input::PointerUpdateKind::XButton2Pressed:
+    case winrt::Windows::UI::Input::PointerUpdateKind::XButton2Released:
+      return kFlutterPointerButtonMouseForward;
+    case winrt::Windows::UI::Input::PointerUpdateKind::Other:
+      return kFlutterPointerButtonMousePrimary;
+  }
+  return kFlutterPointerButtonMousePrimary;
+}
+
+void FlutterWindowWinUWP::ReleasePointer(
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  pointer_id_generator_.ReleaseNumber(args.CurrentPoint().PointerId());
+}
+
+uint32_t FlutterWindowWinUWP::GetPointerId(
+    winrt::Windows::UI::Core::PointerEventArgs const& args) {
+  // Generate a mapped ID in the interval [kMinPointerId, kMaxPointerId].
+  return pointer_id_generator_.GetGeneratedId(args.CurrentPoint().PointerId());
 }
 
 void FlutterWindowWinUWP::OnBoundsChanged(
@@ -262,6 +377,12 @@ void FlutterWindowWinUWP::OnCharacterReceived(
     std::u16string text({keycode});
     binding_handler_delegate_->OnText(text);
   }
+}
+
+void FlutterWindowWinUWP::OnColorValuesChanged(
+    winrt::Windows::Foundation::IInspectable const&,
+    winrt::Windows::Foundation::IInspectable const&) {
+  binding_handler_delegate_->OnPlatformBrightnessChanged();
 }
 
 bool FlutterWindowWinUWP::OnBitmapSurfaceUpdated(const void* allocation,

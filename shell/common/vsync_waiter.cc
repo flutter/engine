@@ -7,8 +7,10 @@
 #include "flow/frame_timings.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
+#include "fml/logging.h"
 #include "fml/message_loop_task_queues.h"
 #include "fml/task_queue_id.h"
+#include "fml/time/time_point.h"
 
 namespace flutter {
 
@@ -95,6 +97,8 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
 void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
                                fml::TimePoint frame_target_time,
                                bool pause_secondary_tasks) {
+  FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
+
   Callback callback;
   std::vector<fml::closure> secondary_callbacks;
 
@@ -129,15 +133,10 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
 
     TRACE_FLOW_BEGIN("flutter", kVsyncFlowName, flow_identifier);
 
-    fml::TaskQueueId ui_task_queue_id = fml::_kUnmerged;
-    if (pause_secondary_tasks) {
-      // Guarding `GetTaskQueueId` behind `pause_secondary_tasks` as on Fuchsia
-      // the task runners don't initialize message loop task queues.
-      // Once the migration to embedder API is done, this can be deleted.
-      ui_task_queue_id = task_runners_.GetUITaskRunner()->GetTaskQueueId();
-    }
+    fml::TaskQueueId ui_task_queue_id =
+        task_runners_.GetUITaskRunner()->GetTaskQueueId();
 
-    task_runners_.GetUITaskRunner()->PostTaskForTime(
+    task_runners_.GetUITaskRunner()->PostTask(
         [ui_task_queue_id, callback, flow_identifier, frame_start_time,
          frame_target_time, pause_secondary_tasks]() {
           FML_TRACE_EVENT("flutter", kVsyncTraceName, "StartTime",
@@ -151,8 +150,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
           if (pause_secondary_tasks) {
             ResumeDartMicroTasks(ui_task_queue_id);
           }
-        },
-        frame_start_time);
+        });
   }
 
   for (auto& secondary_callback : secondary_callbacks) {

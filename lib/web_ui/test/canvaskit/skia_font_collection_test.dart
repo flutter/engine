@@ -51,7 +51,7 @@ void testMain() {
 [
    {
       "family":"Roboto",
-      "fonts":[{"asset":"packages/ui/assets/Roboto-Regular.ttf"}]
+      "fonts":[{"asset":"/fonts/Roboto-Regular.ttf"}]
    },
    {
       "family": "BrokenFont",
@@ -72,6 +72,6 @@ void testMain() {
         ),
       );
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

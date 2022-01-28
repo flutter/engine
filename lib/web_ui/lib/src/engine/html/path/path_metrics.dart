@@ -287,8 +287,7 @@ class _PathContourMeasure {
     double distance = 0.0;
     bool haveSeenMoveTo = false;
 
-    final Function lineToHandler =
-        (double fromX, double fromY, double x, double y) {
+    void lineToHandler(double fromX, double fromY, double x, double y) {
       final double dx = fromX - x;
       final double dy = fromY - y;
       final double prevDistance = distance;
@@ -301,7 +300,8 @@ class _PathContourMeasure {
           _PathSegment(SPath.kLineVerb, distance, <double>[fromX, fromY, x, y]),
         );
       }
-    };
+    }
+
     int verb = 0;
     final Float32List points = Float32List(PathRefIterator.kMaxBufferSize);
     do {
@@ -533,7 +533,7 @@ const double _fTolerance = 0.5;
 /// the path.
 ///
 /// Implementation is based on
-/// https://github.com/google/skia/blob/master/src/core/SkContourMeasure.cpp
+/// https://github.com/google/skia/blob/main/src/core/SkContourMeasure.cpp
 /// to maintain consistency with native platforms.
 class SurfacePathMetric implements ui.PathMetric {
   SurfacePathMetric._(this._measure)
@@ -604,7 +604,7 @@ class SurfacePathMetric implements ui.PathMetric {
 ui.Offset _normalizeSlope(double dx, double dy) {
   final double length = math.sqrt(dx * dx + dy * dy);
   return length < kEpsilon
-      ? ui.Offset(0.0, 0.0)
+      ? const ui.Offset(0.0, 0.0)
       : ui.Offset(dx / length, dy / length);
 }
 

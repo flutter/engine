@@ -5,19 +5,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import '../assets.dart';
 import '../browser_detection.dart';
+import '../safe_browser_api.dart';
 import '../util.dart';
 import 'layout_service.dart';
-import 'measurement.dart';
 
 const String ahemFontFamily = 'Ahem';
-const String ahemFontUrl = 'packages/ui/assets/ahem.ttf';
+const String ahemFontUrl = '/assets/fonts/ahem.ttf';
 const String robotoFontFamily = 'Roboto';
-const String robotoTestFontUrl = 'packages/ui/assets/Roboto-Regular.ttf';
+const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 
 /// This class is responsible for registering and loading fonts.
 ///
@@ -46,7 +45,7 @@ class FontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -60,12 +59,11 @@ class FontCollection {
 
     for (final Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
-      final String? family = fontFamily['family'];
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+      final String? family = fontFamily.tryString('family');
+      final List<Map<String, dynamic>> fontAssets = fontFamily.castList<Map<String, dynamic>>('fonts');
 
-      for (final dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+      for (final Map<String, dynamic> fontAsset in fontAssets) {
+        final String asset = fontAsset.readString('asset');
         final Map<String, String> descriptors = <String, String>{};
         for (final String descriptor in fontAsset.keys) {
           if (descriptor != 'asset') {
@@ -116,11 +114,11 @@ class FontManager {
   // For example font family 'Ahem!' does not fall into this category
   // so the family name will be wrapped in quotes.
   static final RegExp notPunctuation =
-      RegExp(r"[a-z0-9\s]+", caseSensitive: false);
+      RegExp(r'[a-z0-9\s]+', caseSensitive: false);
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
-  static final RegExp startWithDigit = RegExp(r"\b\d");
+  static final RegExp startWithDigit = RegExp(r'\b\d');
 
   factory FontManager() {
     if (supportsFontLoadingApi) {
@@ -187,17 +185,7 @@ class FontManager {
     try {
       final html.FontFace fontFace = html.FontFace(family, asset, descriptors);
       _fontLoadingFutures.add(fontFace.load().then((_) {
-        // We could do:
-        // ```
-        // html.document.fonts!.add(fontFace);
-        // ```
-        // But dart:html expects the return value to be non-null, and Firefox
-        // returns null. This causes the app to crash in Firefox with a null
-        // check exception.
-        //
-        // TODO(mdebbar): Revert this once the dart:html type is fixed.
-        //                https://github.com/dart-lang/sdk/issues/45676
-        js_util.callMethod(html.document.fonts!, 'add', <dynamic>[fontFace]);
+        html.document.fonts!.add(fontFace);
       }, onError: (dynamic e) {
         printWarning('Error while trying to load font family "$family":\n$e');
       }));
@@ -216,7 +204,6 @@ class FontManager {
       // There might be paragraph measurements for this new font before it is
       // loaded. They were measured using fallback font, so we should clear the
       // cache.
-      TextMeasurementService.clearCache();
       Spanometer.clearRulersCache();
     }, onError: (dynamic exception) {
       // Failures here will throw an html.DomException which confusingly
@@ -325,9 +312,3 @@ class _PolyfillFontManager extends FontManager {
     _fontLoadingFutures.add(completer.future);
   }
 }
-
-final bool supportsFontLoadingApi =
-    js_util.hasProperty(html.window, 'FontFace');
-final bool supportsFontsClearApi =
-    js_util.hasProperty(html.document, 'fonts') &&
-        js_util.hasProperty(html.document.fonts!, 'clear');

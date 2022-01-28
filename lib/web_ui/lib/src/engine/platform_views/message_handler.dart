@@ -6,6 +6,7 @@ import 'dart:html' as html;
 import 'dart:typed_data';
 
 import '../services.dart';
+import '../util.dart';
 import 'content_manager.dart';
 
 /// The signature for a callback for a Platform Message. From the `ui` package.
@@ -38,7 +39,7 @@ typedef PlatformViewContentHandler = void Function(html.Element);
 /// some extra cleanup of its internal state, but it can do it automatically. See
 /// [HtmlViewEmbedder.disposeViews]
 class PlatformViewMessageHandler {
-  final MethodCodec _codec = StandardMethodCodec();
+  final MethodCodec _codec = const StandardMethodCodec();
 
   final PlatformViewManager _contentManager;
   final PlatformViewContentHandler? _contentHandler;
@@ -65,9 +66,9 @@ class PlatformViewMessageHandler {
     MethodCall methodCall,
     _PlatformMessageResponseCallback callback,
   ) {
-    final Map<dynamic, dynamic> args = methodCall.arguments;
-    final int viewId = args['id'];
-    final String viewType = args['viewType'];
+    final Map<dynamic, dynamic> args = methodCall.arguments as Map<dynamic, dynamic>;
+    final int viewId = args.readInt('id');
+    final String viewType = args.readString('viewType');
 
     if (!_contentManager.knowsViewType(viewType)) {
       callback(_codec.encodeErrorEnvelope(
@@ -87,7 +88,7 @@ class PlatformViewMessageHandler {
       return;
     }
 
-    // TODO: How can users add extra `args` from the HtmlElementView widget?
+    // TODO(hterkelsen): How can users add extra `args` from the HtmlElementView widget?
     final html.Element content = _contentManager.renderContent(
       viewType,
       viewId,
@@ -116,7 +117,7 @@ class PlatformViewMessageHandler {
     MethodCall methodCall,
     _PlatformMessageResponseCallback callback,
   ) {
-    final int viewId = methodCall.arguments;
+    final int viewId = methodCall.arguments as int;
 
     // The contentManager removes the slot and the contents from its internal
     // cache, and the DOM.

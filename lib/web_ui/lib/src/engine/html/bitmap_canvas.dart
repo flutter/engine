@@ -8,12 +8,10 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show NullTreeSanitizer;
 import '../browser_detection.dart';
 import '../canvas_pool.dart';
 import '../canvaskit/color_filter.dart';
 import '../color_filter.dart';
-import '../dom_renderer.dart';
 import '../engine_canvas.dart';
 import '../frame_reference.dart';
 import '../html_image_codec.dart';
@@ -105,7 +103,7 @@ class BitmapCanvas extends EngineCanvas {
 
   // Indicates the instructions following drawImage or drawParagraph that
   // a child element was created to paint.
-  // TODO(flutter_web): When childElements are created by
+  // TODO(yjbanov): When childElements are created by
   // drawImage/drawParagraph commands, compositing order is not correctly
   // handled when we interleave these with other paint commands.
   // To solve this, recording canvas will have to check the paint queue
@@ -160,7 +158,7 @@ class BitmapCanvas extends EngineCanvas {
     _canvasPositionX = _bounds.left.floor() - kPaddingPixels;
     _canvasPositionY = _bounds.top.floor() - kPaddingPixels;
     _updateRootElementTransform();
-    _canvasPool.allocateCanvas(rootElement as html.HtmlElement);
+    _canvasPool.mount(rootElement as html.HtmlElement);
     _setupInitialTransform();
   }
 
@@ -183,7 +181,8 @@ class BitmapCanvas extends EngineCanvas {
     // initial translation so the paint operations are positioned as expected.
     //
     // The flooring of the value is to ensure that canvas' top-left corner
-    // lands on the physical pixel. TODO: !This is not accurate if there are
+    // lands on the physical pixel.
+    // TODO(yjbanov): !This is not accurate if there are
     // transforms higher up in the stack.
     rootElement.style.transform =
         'translate(${_canvasPositionX}px, ${_canvasPositionY}px)';
@@ -371,7 +370,7 @@ class BitmapCanvas extends EngineCanvas {
       _renderStrategy.isInsideSvgFilterTree ||
       (_preserveImageData == false && _contains3dTransform) ||
       (_childOverdraw &&
-          _canvasPool.canvas == null &&
+          _canvasPool.isEmpty &&
           paint.maskFilter == null &&
           paint.shader == null &&
           paint.style != ui.PaintingStyle.stroke);
@@ -385,7 +384,7 @@ class BitmapCanvas extends EngineCanvas {
       ((_childOverdraw ||
               _renderStrategy.hasImageElements ||
               _renderStrategy.hasParagraphs) &&
-          _canvasPool.canvas == null &&
+          _canvasPool.isEmpty &&
           paint.maskFilter == null &&
           paint.shader == null);
 
@@ -467,7 +466,7 @@ class BitmapCanvas extends EngineCanvas {
     }
     final ui.BlendMode? blendMode = paint.blendMode;
     if (blendMode != null) {
-      element.style.mixBlendMode = stringForBlendMode(blendMode) ?? '';
+      element.style.mixBlendMode = blendModeToCssMixBlendMode(blendMode) ?? '';
     }
     // Switch to preferring DOM from now on, and close the current canvas.
     _closeCurrentCanvas();
@@ -586,7 +585,7 @@ class BitmapCanvas extends EngineCanvas {
         }
       }
       _applyFilter(svgElm, paint);
-      _drawElement(svgElm, ui.Offset(0, 0), paint);
+      _drawElement(svgElm, const ui.Offset(0, 0), paint);
     } else {
       setUpPaint(paint, paint.shader != null ? path.getBounds() : null);
       if (paint.style == null && paint.strokeWidth != null) {
@@ -668,7 +667,7 @@ class BitmapCanvas extends EngineCanvas {
       // No Blending, create an image by cloning original loaded image.
       imgElement = _reuseOrCreateImage(htmlImage);
     }
-    imgElement.style.mixBlendMode = stringForBlendMode(blendMode) ?? '';
+    imgElement.style.mixBlendMode = blendModeToCssMixBlendMode(blendMode) ?? '';
     if (_canvasPool.isClipped) {
       // Reset width/height since they may have been previously set.
       imgElement.style..removeProperty('width')..removeProperty('height');
@@ -783,8 +782,8 @@ class BitmapCanvas extends EngineCanvas {
       // left,top are set to 0 (although position is absolute) because
       // Chrome will glitch if you leave them out, reproducible with
       // canvas_image_blend_test on row 6,  MacOS / Chrome 81.04.
-      ..left = "0px"
-      ..top = "0px"
+      ..left = '0px'
+      ..top = '0px'
       ..width = widthPx
       ..height = heightPx;
     if (imageElement is! html.ImageElement) {
@@ -836,7 +835,7 @@ class BitmapCanvas extends EngineCanvas {
         style
           ..position = 'absolute'
           ..backgroundImage = "url('${image.imgElement.src}')"
-          ..backgroundBlendMode = stringForBlendMode(colorFilterBlendMode) ?? ''
+          ..backgroundBlendMode = blendModeToCssMixBlendMode(colorFilterBlendMode) ?? ''
           ..backgroundColor = colorToCssString(filterColor);
         break;
     }
@@ -850,14 +849,11 @@ class BitmapCanvas extends EngineCanvas {
       ui.BlendMode colorFilterBlendMode,
       SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
-    final String? svgFilter =
-        svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
-    final html.Element filterElement =
-        html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
-    rootElement.append(filterElement);
-    _children.add(filterElement);
+    final SvgFilter svgFilter = svgFilterFromBlendMode(filterColor, colorFilterBlendMode);
+    rootElement.append(svgFilter.element);
+    _children.add(svgFilter.element);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
-    imgElement.style.filter = 'url(#_fcf$filterIdCounter)';
+    imgElement.style.filter = 'url(#${svgFilter.id})';
     if (colorFilterBlendMode == ui.BlendMode.saturation) {
       imgElement.style.backgroundColor = colorToCssString(filterColor);
     }
@@ -868,13 +864,11 @@ class BitmapCanvas extends EngineCanvas {
   html.HtmlElement _createImageElementWithSvgColorMatrixFilter(
       HtmlImage image, List<double> matrix, SurfacePaintData paint) {
     // For srcIn blendMode, we use an svg filter to apply to image element.
-    final String? svgFilter = svgFilterFromColorMatrix(matrix);
-    final html.Element filterElement =
-        html.Element.html(svgFilter, treeSanitizer: NullTreeSanitizer());
-    rootElement.append(filterElement);
-    _children.add(filterElement);
+    final SvgFilter svgFilter = svgFilterFromColorMatrix(matrix);
+    rootElement.append(svgFilter.element);
+    _children.add(svgFilter.element);
     final html.HtmlElement imgElement = _reuseOrCreateImage(image);
-    imgElement.style.filter = 'url(#_fcf$filterIdCounter)';
+    imgElement.style.filter = 'url(#${svgFilter.id})';
     return imgElement;
   }
 
@@ -915,7 +909,7 @@ class BitmapCanvas extends EngineCanvas {
   ///
   /// The text is drawn starting at coordinates ([x], [y]). It uses the current
   /// font set by the most recent call to [setCssFont].
-  void fillText(String text, double x, double y, {List<ui.Shadow>? shadows}) {
+  void drawText(String text, double x, double y, {ui.PaintingStyle? style, List<ui.Shadow>? shadows}) {
     final html.CanvasRenderingContext2D ctx = _canvasPool.context;
     if (shadows != null) {
       ctx.save();
@@ -925,11 +919,20 @@ class BitmapCanvas extends EngineCanvas {
         ctx.shadowOffsetX = shadow.offset.dx;
         ctx.shadowOffsetY = shadow.offset.dy;
 
-        ctx.fillText(text, x, y);
+        if (style == ui.PaintingStyle.stroke) {
+          ctx.strokeText(text, x, y);
+        } else {
+          ctx.fillText(text, x, y);
+        }
       }
       ctx.restore();
     }
-    ctx.fillText(text, x, y);
+
+    if (style == ui.PaintingStyle.stroke) {
+      ctx.strokeText(text, x, y);
+    } else {
+      ctx.fillText(text, x, y);
+    }
   }
 
   @override
@@ -972,8 +975,8 @@ class BitmapCanvas extends EngineCanvas {
     _children.add(paragraphElement);
     // If there is a prior sibling such as img prevent left/top shift.
     paragraphElement.style
-      ..left = "0px"
-      ..top = "0px";
+      ..left = '0px'
+      ..top = '0px';
     _closeCurrentCanvas();
   }
 
@@ -992,7 +995,7 @@ class BitmapCanvas extends EngineCanvas {
   @override
   void drawVertices(SurfaceVertices vertices, ui.BlendMode blendMode,
       SurfacePaintData paint) {
-    // TODO(flutter_web): Implement shaders for [Paint.shader] and
+    // TODO(ferhat): Implement shaders for [Paint.shader] and
     // blendMode. https://github.com/flutter/flutter/issues/40096
     // Move rendering to OffscreenCanvas so that transform is preserved
     // as well.
@@ -1009,7 +1012,7 @@ class BitmapCanvas extends EngineCanvas {
           : convertVertexPositions(mode, vertices.positions);
       // Draw hairline for vertices if no vertex colors are specified.
       save();
-      final ui.Color color = paint.color ?? ui.Color(0xFF000000);
+      final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
       _canvasPool.contextHandle
         ..fillStyle = null
         ..strokeStyle = colorToCssString(color);
@@ -1103,7 +1106,15 @@ class BitmapCanvas extends EngineCanvas {
   }
 }
 
-String? stringForBlendMode(ui.BlendMode? blendMode) {
+/// The CSS value for the `mix-blend-mode` CSS property.
+///
+/// This list includes values supposrted by SVG, but it's not the same.
+///
+/// See also:
+///
+///  * https://developer.mozilla.org/en-US/docs/Web/CSS/mix-blend-mode
+///  * [blendModeToSvgEnum], which specializes on SVG blend modes
+String? blendModeToCssMixBlendMode(ui.BlendMode? blendMode) {
   if (blendMode == null) {
     return null;
   }
@@ -1132,7 +1143,7 @@ String? stringForBlendMode(ui.BlendMode? blendMode) {
       return 'xor';
     case ui.BlendMode.multiply:
     // Falling back to multiply, ignoring alpha channel.
-    // TODO(flutter_web): only used for debug, find better fallback for web.
+    // TODO(ferhat): only used for debug, find better fallback for web.
     case ui.BlendMode.modulate:
       return 'multiply';
     case ui.BlendMode.screen:
@@ -1166,6 +1177,140 @@ String? stringForBlendMode(ui.BlendMode? blendMode) {
     default:
       throw UnimplementedError(
           'Flutter Web does not support the blend mode: $blendMode');
+  }
+}
+
+// Source: https://www.w3.org/TR/SVG11/filters.html#InterfaceSVGFEBlendElement
+// These constant names deviate from Dart's camelCase convention on purpose to
+// make it easier to search for them in W3 specs and in Chromium sources.
+const int SVG_FEBLEND_MODE_UNKNOWN = 0;
+const int SVG_FEBLEND_MODE_NORMAL = 1;
+const int SVG_FEBLEND_MODE_MULTIPLY = 2;
+const int SVG_FEBLEND_MODE_SCREEN = 3;
+const int SVG_FEBLEND_MODE_DARKEN = 4;
+const int SVG_FEBLEND_MODE_LIGHTEN = 5;
+const int SVG_FEBLEND_MODE_OVERLAY = 6;
+const int SVG_FEBLEND_MODE_COLOR_DODGE = 7;
+const int SVG_FEBLEND_MODE_COLOR_BURN = 8;
+const int SVG_FEBLEND_MODE_HARD_LIGHT = 9;
+const int SVG_FEBLEND_MODE_SOFT_LIGHT = 10;
+const int SVG_FEBLEND_MODE_DIFFERENCE = 11;
+const int SVG_FEBLEND_MODE_EXCLUSION = 12;
+const int SVG_FEBLEND_MODE_HUE = 13;
+const int SVG_FEBLEND_MODE_SATURATION = 14;
+const int SVG_FEBLEND_MODE_COLOR = 15;
+const int SVG_FEBLEND_MODE_LUMINOSITY = 16;
+
+// Source: https://github.com/chromium/chromium/blob/e1e495b29e1178a451f65980a6c4ae017c34dc94/third_party/blink/renderer/platform/graphics/graphics_types.cc#L55
+const String kCompositeClear = 'clear';
+const String kCompositeCopy = 'copy';
+const String kCompositeSourceOver = 'source-over';
+const String kCompositeSourceIn = 'source-in';
+const String kCompositeSourceOut = 'source-out';
+const String kCompositeSourceAtop = 'source-atop';
+const String kCompositeDestinationOver = 'destination-over';
+const String kCompositeDestinationIn = 'destination-in';
+const String kCompositeDestinationOut = 'destination-out';
+const String kCompositeDestinationAtop = 'destination-atop';
+const String kCompositeXor = 'xor';
+const String kCompositeLighter = 'lighter';
+
+/// Compositing and blending operation in SVG.
+///
+/// Flutter's [BlendMode] flattens what SVG expresses as two orthogonal
+/// properties, a composite operator and blend mode. Instances of this class
+/// are returned from [blendModeToSvgEnum] by mapping Flutter's [BlendMode]
+/// enum onto the SVG equivalent.
+///
+/// See also:
+///
+///  * https://www.w3.org/TR/compositing-1
+///  * https://github.com/chromium/chromium/blob/e1e495b29e1178a451f65980a6c4ae017c34dc94/third_party/blink/renderer/platform/graphics/graphics_types.cc#L55
+///  * https://github.com/chromium/chromium/blob/e1e495b29e1178a451f65980a6c4ae017c34dc94/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc#L725
+class SvgBlendMode {
+  const SvgBlendMode(this.compositeOperator, this.blendMode);
+
+  /// The name of the SVG composite operator.
+  ///
+  /// If this mode represents a blend mode, this is set to [kCompositeSourceOver].
+  final String compositeOperator;
+
+  /// The identifier of the SVG blend mode.
+  ///
+  /// This is mode represents a compositing operation, this is set to [SVG_FEBLEND_MODE_UNKNOWN].
+  final int blendMode;
+}
+
+/// Converts Flutter's [ui.BlendMode] to SVG's <compositing operation, blend mode> pair.
+SvgBlendMode? blendModeToSvgEnum(ui.BlendMode? blendMode) {
+  if (blendMode == null) {
+    return null;
+  }
+  switch (blendMode) {
+    case ui.BlendMode.clear:
+      return const SvgBlendMode(kCompositeClear, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.srcOver:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.srcIn:
+      return const SvgBlendMode(kCompositeSourceIn, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.srcOut:
+      return const SvgBlendMode(kCompositeSourceOut, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.srcATop:
+      return const SvgBlendMode(kCompositeSourceAtop, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.dstOver:
+      return const SvgBlendMode(kCompositeDestinationOver, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.dstIn:
+      return const SvgBlendMode(kCompositeDestinationIn, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.dstOut:
+      return const SvgBlendMode(kCompositeDestinationOut, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.dstATop:
+      return const SvgBlendMode(kCompositeDestinationAtop, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.plus:
+      return const SvgBlendMode(kCompositeLighter, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.src:
+      return const SvgBlendMode(kCompositeCopy, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.xor:
+      return const SvgBlendMode(kCompositeXor, SVG_FEBLEND_MODE_UNKNOWN);
+    case ui.BlendMode.multiply:
+    // Falling back to multiply, ignoring alpha channel.
+    // TODO(ferhat): only used for debug, find better fallback for web.
+    case ui.BlendMode.modulate:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_MULTIPLY);
+    case ui.BlendMode.screen:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SCREEN);
+    case ui.BlendMode.overlay:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_OVERLAY);
+    case ui.BlendMode.darken:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_DARKEN);
+    case ui.BlendMode.lighten:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_LIGHTEN);
+    case ui.BlendMode.colorDodge:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_DODGE);
+    case ui.BlendMode.colorBurn:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_BURN);
+    case ui.BlendMode.hardLight:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_HARD_LIGHT);
+    case ui.BlendMode.softLight:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SOFT_LIGHT);
+    case ui.BlendMode.difference:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_DIFFERENCE);
+    case ui.BlendMode.exclusion:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_EXCLUSION);
+    case ui.BlendMode.hue:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_HUE);
+    case ui.BlendMode.saturation:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SATURATION);
+    case ui.BlendMode.color:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR);
+    case ui.BlendMode.luminosity:
+      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_LUMINOSITY);
+    default:
+      assert(
+        false,
+        'Flutter Web does not support the blend mode: $blendMode',
+      );
+
+    return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_NORMAL);
   }
 }
 
@@ -1217,7 +1362,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
     if (root == null) {
       root = newElement;
     } else {
-      domRenderer.append(curElement!, newElement);
+      curElement!.append(newElement);
     }
     curElement = newElement;
     final ui.Rect? rect = entry.rect;
@@ -1272,16 +1417,14 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
         curElement.style
           ..transform = matrix4ToCssTransform(newClipTransform)
           ..transformOrigin = '0 0 0';
-        final String svgClipPath =
-            createSvgClipDef(curElement as html.HtmlElement, entry.path!);
         final html.Element clipElement =
-            html.Element.html(svgClipPath, treeSanitizer: NullTreeSanitizer());
+            createSvgClipDef(curElement as html.HtmlElement, entry.path!);
         clipDefs.add(clipElement);
       }
     }
     // Reverse the transform of the clipping element so children can use
     // effective transform to render.
-    // TODO(flutter_web): When we have more than a single clip element,
+    // TODO(ferhat): When we have more than a single clip element,
     // reduce number of div nodes by merging (multiplying transforms).
     final html.Element reverseTransformDiv = html.DivElement();
     reverseTransformDiv.style.position = 'absolute';
@@ -1299,7 +1442,7 @@ List<html.Element> _clipContent(List<SaveClipEntry> clipStack,
   }
 
   root!.style.position = 'absolute';
-  domRenderer.append(curElement!, content);
+  curElement!.append(content);
   setElementTransform(
     content,
     transformWithOffset(currentTransform, offset).storage,

@@ -38,10 +38,13 @@ class ImageShader : public Shader {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
+  int width();
+  int height();
+
  private:
   ImageShader();
 
-  sk_sp<SkImage> sk_image_;
+  flutter::SkiaGPUObject<SkImage> sk_image_;
   SkTileMode tmx_;
   SkTileMode tmy_;
   SkMatrix local_matrix_;

@@ -36,24 +36,6 @@ void Window::DispatchPointerDataPacket(const PointerDataPacket& packet) {
       library_.value(), "_dispatchPointerDataPacket", {data_handle}));
 }
 
-void Window::DispatchKeyDataPacket(const KeyDataPacket& packet,
-                                   uint64_t response_id) {
-  std::shared_ptr<tonic::DartState> dart_state = library_.dart_state().lock();
-  if (!dart_state)
-    return;
-  tonic::DartState::Scope scope(dart_state);
-
-  const std::vector<uint8_t>& buffer = packet.data();
-  Dart_Handle data_handle =
-      tonic::DartByteData::Create(buffer.data(), buffer.size());
-  if (Dart_IsError(data_handle)) {
-    return;
-  }
-  tonic::LogIfError(
-      tonic::DartInvokeField(library_.value(), "_dispatchKeyData",
-                             {data_handle, tonic::ToDart(response_id)}));
-}
-
 void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
   viewport_metrics_ = metrics;
 
@@ -81,6 +63,10 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_system_gesture_inset_right),
           tonic::ToDart(metrics.physical_system_gesture_inset_bottom),
           tonic::ToDart(metrics.physical_system_gesture_inset_left),
+          tonic::ToDart(metrics.physical_touch_slop),
+          tonic::ToDart(metrics.physical_display_features_bounds),
+          tonic::ToDart(metrics.physical_display_features_type),
+          tonic::ToDart(metrics.physical_display_features_state),
       }));
 }
 

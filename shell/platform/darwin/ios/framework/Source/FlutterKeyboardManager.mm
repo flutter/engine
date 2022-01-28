@@ -4,18 +4,23 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h"
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/platform/darwin/message_loop_darwin.h"
+
+static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 
 @interface FlutterKeyboardManager ()
 
 /**
  * The primary responders added by addPrimaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
+@property(nonatomic, retain, readonly)
+    NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
 
 /**
  * The secondary responders added by addSecondaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeySecondaryResponder>>* secondaryResponders;
+@property(nonatomic, retain, readonly)
+    NSMutableArray<id<FlutterKeySecondaryResponder>>* secondaryResponders;
 
 - (void)dispatchToSecondaryResponders:(nonnull FlutterUIPressProxy*)press
                              complete:(nonnull KeyEventCompleteCallback)callback
@@ -46,6 +51,10 @@
 }
 
 - (void)dealloc {
+  // It will be destroyed and invalidate its weak pointers
+  // before any other members are destroyed.
+  _weakFactory.reset();
+
   [_primaryResponders removeAllObjects];
   [_secondaryResponders removeAllObjects];
   [_primaryResponders release];
@@ -81,7 +90,7 @@
       NSAssert([_primaryResponders count] >= 0, @"At least one primary responder must be added.");
 
       __block auto weakSelf = [self getWeakPtr];
-      __block int unreplied = [_primaryResponders count];
+      __block NSUInteger unreplied = [self.primaryResponders count];
       __block BOOL anyHandled = false;
       FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
         unreplied--;
@@ -102,7 +111,10 @@
       // framework. Once the completeCallback is called, this run loop will exit
       // and the main one will resume. The completeCallback MUST be called, or
       // the app will get stuck in this run loop indefinitely.
-      CFRunLoopRun();
+      //
+      // We need to run in this mode so that UIKit doesn't give us new
+      // events until we are done processing this one.
+      CFRunLoopRunInMode(fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode, kDistantFuture, NO);
       break;
     }
     case UIPressPhaseChanged:

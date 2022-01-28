@@ -10,6 +10,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
@@ -19,6 +21,8 @@
 #include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
+#include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
+#include "flutter/shell/platform/windows/keyboard_key_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
@@ -86,28 +90,38 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
+  // Invoked by the engine right before the engine is restarted.
+  //
+  // This should reset necessary states to as if the view has just been
+  // created. This is typically caused by a hot restart (Shift-R in CLI.)
+  void OnPreEngineRestart();
+
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x,
                      double y,
-                     FlutterPointerDeviceKind device_kind) override;
+                     FlutterPointerDeviceKind device_kind,
+                     int32_t device_id) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerDown(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
+                     int32_t device_id,
                      FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerUp(double x,
                    double y,
                    FlutterPointerDeviceKind device_kind,
+                   int32_t device_id,
                    FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerLeave(FlutterPointerDeviceKind device_kind) override;
+  void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+                      int32_t device_id = 0) override;
 
   // |WindowBindingHandlerDelegate|
   void OnText(const std::u16string&) override;
@@ -137,29 +151,57 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                 double y,
                 double delta_x,
                 double delta_y,
-                int scroll_offset_multiplier) override;
+                int scroll_offset_multiplier,
+                FlutterPointerDeviceKind device_kind,
+                int32_t device_id) override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnPlatformBrightnessChanged() override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnUpdateSemanticsEnabled(bool enabled) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
   // |TextInputPluginDelegate|
   void OnCursorRectUpdated(const Rect& rect) override;
 
+  // |TextInputPluginDelegate|
+  void OnResetImeComposing() override;
+
  protected:
   // Called to create the keyboard hook handlers.
-  virtual void RegisterKeyboardHandlers(flutter::BinaryMessenger* messenger);
+  //
+  // The provided |dispatch_event| is where to inject events into the system,
+  // while |get_key_state| is where to acquire keyboard states. They will be
+  // the system APIs in production classes, but might be replaced with mock
+  // functions in unit tests.
+  virtual void RegisterKeyboardHandlers(
+      flutter::BinaryMessenger* messenger,
+      flutter::KeyboardKeyHandler::EventDispatcher dispatch_event,
+      flutter::KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state);
 
   // Used by RegisterKeyboardHandlers to add a new keyboard hook handler.
   void AddKeyboardHandler(
       std::unique_ptr<flutter::KeyboardHandlerBase> handler);
 
  private:
-  // Struct holding the mouse state. The engine doesn't keep track of which
-  // mouse buttons have been pressed, so it's the embedding's responsibility.
-  struct MouseState {
-    // True if the last event sent to Flutter had at least one mouse button.
-    // pressed.
+  // Struct holding the state of an individual pointer. The engine doesn't keep
+  // track of which buttons have been pressed, so it's the embedding's
+  // responsibility.
+  struct PointerState {
+    // The device kind.
+    FlutterPointerDeviceKind device_kind = kFlutterPointerDeviceKindMouse;
+
+    // A virtual pointer ID that is unique across all device kinds.
+    int32_t pointer_id = 0;
+
+    // True if the last event sent to Flutter had at least one button pressed.
     bool flutter_state_is_down = false;
 
     // True if kAdd has been sent to Flutter. Used to determine whether
-    // to send a kAdd event before sending an incoming mouse event, since
+    // to send a kAdd event before sending an incoming pointer event, since
     // Flutter expects pointers to be added before events are sent for them.
     bool flutter_state_is_added = false;
 
@@ -180,29 +222,30 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
     kDone,
   };
 
+  // Initialize states related to keyboard.
+  //
+  // This is called when the view is first created, or restarted.
+  void InitializeKeyboard();
+
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
   void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;
 
   // Reports a mouse movement to Flutter engine.
-  void SendPointerMove(double x,
-                       double y,
-                       FlutterPointerDeviceKind device_kind);
+  void SendPointerMove(double x, double y, PointerState* state);
 
   // Reports mouse press to Flutter engine.
-  void SendPointerDown(double x,
-                       double y,
-                       FlutterPointerDeviceKind device_kind);
+  void SendPointerDown(double x, double y, PointerState* state);
 
   // Reports mouse release to Flutter engine.
-  void SendPointerUp(double x, double y, FlutterPointerDeviceKind device_kind);
+  void SendPointerUp(double x, double y, PointerState* state);
 
   // Reports mouse left the window client area.
   //
   // Win32 api doesn't have "mouse enter" event. Therefore, there is no
   // SendPointerEnter method. A mouse enter event is tracked then the "move"
   // event is called.
-  void SendPointerLeave(FlutterPointerDeviceKind device_kind);
+  void SendPointerLeave(PointerState* state);
 
   // Reports a keyboard character to Flutter engine.
   void SendText(const std::u16string&);
@@ -245,35 +288,27 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                   double y,
                   double delta_x,
                   double delta_y,
-                  int scroll_offset_multiplier);
+                  int scroll_offset_multiplier,
+                  FlutterPointerDeviceKind device_kind,
+                  int32_t device_id);
+
+  // Creates a PointerState object unless it already exists.
+  PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,
+                                        int32_t device_id);
 
   // Sets |event_data|'s phase to either kMove or kHover depending on the
   // current primary mouse button state.
-  void SetEventPhaseFromCursorButtonState(
-      FlutterPointerEvent* event_data) const;
+  void SetEventPhaseFromCursorButtonState(FlutterPointerEvent* event_data,
+                                          const PointerState* state) const;
 
   // Sends a pointer event to the Flutter engine based on given data.  Since
   // all input messages are passed in physical pixel values, no translation is
   // needed before passing on to engine.
-  void SendPointerEventWithData(const FlutterPointerEvent& event_data);
+  void SendPointerEventWithData(const FlutterPointerEvent& event_data,
+                                PointerState* state);
 
-  // Resets the mouse state to its default values.
-  void ResetMouseState() { mouse_state_ = MouseState(); }
-
-  // Updates the mouse state to whether the last event to Flutter had at least
-  // one mouse button pressed.
-  void SetMouseFlutterStateDown(bool is_down) {
-    mouse_state_.flutter_state_is_down = is_down;
-  }
-
-  // Updates the mouse state to whether the last event to Flutter was a kAdd
-  // event.
-  void SetMouseFlutterStateAdded(bool is_added) {
-    mouse_state_.flutter_state_is_added = is_added;
-  }
-
-  // Updates the currently pressed buttons.
-  void SetMouseButtons(uint64_t buttons) { mouse_state_.buttons = buttons; }
+  // Reports platform brightness change to Flutter engine.
+  void SendPlatformBrightnessChanged();
 
   // Currently configured WindowsRenderTarget for this view used by
   // surface_manager for creation of render surfaces and bound to the physical
@@ -283,8 +318,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // The engine associated with this view.
   std::unique_ptr<FlutterWindowsEngine> engine_;
 
-  // Keeps track of mouse state in relation to the window.
-  MouseState mouse_state_;
+  // Keeps track of pointer states in relation to the window.
+  std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<flutter::PluginRegistrar> internal_plugin_registrar_;
@@ -317,6 +352,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Target for the window width. Valid when resize_pending_ is set. Guarded by
   // resize_mutex_.
   size_t resize_target_height_ = 0;
+
+  // True when flutter's semantics tree is enabled.
+  bool semantics_enabled_ = false;
 };
 
 }  // namespace flutter

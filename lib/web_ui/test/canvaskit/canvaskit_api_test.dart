@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -26,7 +27,6 @@ void testMain() {
     _paintStyleTests();
     _strokeCapTests();
     _strokeJoinTests();
-    _filterQualityTests();
     _blurStyleTests();
     _tileModeTests();
     _fillTypeTests();
@@ -45,6 +45,8 @@ void testMain() {
     _toSkPointTests();
     _toSkColorStopsTests();
     _toSkMatrixFromFloat32Tests();
+    _toSkM44FromFloat32Tests();
+    _matrix4x4CompositionTests();
     _toSkRectTests();
     _skVerticesTests();
     _paragraphTests();
@@ -57,7 +59,7 @@ void testMain() {
     group('SkParagraph', () {
       _textStyleTests();
     });
-    // TODO: https://github.com/flutter/flutter/issues/60040
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }
 
@@ -142,21 +144,6 @@ void _strokeJoinTests() {
   });
 }
 
-void _filterQualityTests() {
-  test('filter quality mapping is correct', () {
-    expect(canvasKit.FilterQuality.None.value, ui.FilterQuality.none.index);
-    expect(canvasKit.FilterQuality.Low.value, ui.FilterQuality.low.index);
-    expect(canvasKit.FilterQuality.Medium.value, ui.FilterQuality.medium.index);
-    expect(canvasKit.FilterQuality.High.value, ui.FilterQuality.high.index);
-  });
-
-  test('ui.FilterQuality converts to SkFilterQuality', () {
-    for (final ui.FilterQuality cap in ui.FilterQuality.values) {
-      expect(toSkFilterQuality(cap).value, cap.index);
-    }
-  });
-}
-
 void _blurStyleTests() {
   test('blur style mapping is correct', () {
     expect(canvasKit.BlurStyle.Normal.value, ui.BlurStyle.normal.index);
@@ -219,13 +206,13 @@ void _pathOpTests() {
   test('Path.combine test', () {
     final ui.Path path1 = ui.Path();
     expect(path1, isA<CkPath>());
-    path1.addRect(ui.Rect.fromLTRB(0, 0, 10, 10));
-    path1.addOval(ui.Rect.fromLTRB(10, 10, 100, 100));
+    path1.addRect(const ui.Rect.fromLTRB(0, 0, 10, 10));
+    path1.addOval(const ui.Rect.fromLTRB(10, 10, 100, 100));
 
     final ui.Path path2 = ui.Path();
     expect(path2, isA<CkPath>());
-    path2.addRect(ui.Rect.fromLTRB(5, 5, 15, 15));
-    path2.addOval(ui.Rect.fromLTRB(15, 15, 105, 105));
+    path2.addRect(const ui.Rect.fromLTRB(5, 5, 15, 15));
+    path2.addOval(const ui.Rect.fromLTRB(15, 15, 105, 105));
 
     final ui.Path union = ui.Path.combine(ui.PathOperation.union, path1, path2);
     expect(union, isA<CkPath>());
@@ -415,7 +402,8 @@ void _maskFilterTests() {
   });
   test('MaskFilter.MakeBlur with NaN sigma returns null', () {
     expect(
-        canvasKit.MaskFilter.MakeBlur(canvasKit.BlurStyle.Normal, double.nan, false),
+        canvasKit.MaskFilter.MakeBlur(
+            canvasKit.BlurStyle.Normal, double.nan, false),
         isNull);
   });
 }
@@ -463,11 +451,17 @@ void _imageFilterTests() {
     );
   });
 
+  test('toSkFilterOptions', () {
+    for (final ui.FilterQuality filterQuality in ui.FilterQuality.values) {
+      expect(toSkFilterOptions(filterQuality), isNotNull);
+    }
+  });
+
   test('MakeMatrixTransform', () {
     expect(
       canvasKit.ImageFilter.MakeMatrixTransform(
         toSkMatrixFromFloat32(Matrix4.identity().storage),
-        canvasKit.FilterQuality.Medium,
+        toSkFilterOptions(ui.FilterQuality.medium),
         null,
       ),
       isNotNull,
@@ -592,14 +586,124 @@ void _toSkMatrixFromFloat32Tests() {
   });
 }
 
+void _toSkM44FromFloat32Tests() {
+  test('toSkM44FromFloat32', () {
+    final Matrix4 matrix = Matrix4.identity()
+      ..translate(1, 2, 3)
+      ..rotateZ(4);
+    expect(
+        toSkM44FromFloat32(matrix.storage),
+        Float32List.fromList(<double>[
+          -0.6536436080932617,
+          0.756802499294281,
+          0,
+          1,
+          -0.756802499294281,
+          -0.6536436080932617,
+          0,
+          2,
+          0,
+          0,
+          1,
+          3,
+          0,
+          0,
+          0,
+          1,
+        ]));
+  });
+}
+
+typedef CanvasCallback = void Function(ui.Canvas canvas);
+
+Future<ui.Image> toImage(CanvasCallback callback, int width, int height) {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(
+      recorder, ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
+  callback(canvas);
+  final ui.Picture picture = recorder.endRecording();
+  return picture.toImage(width, height);
+}
+
+/// @returns true When the images are reasonably similar.
+/// @todo Make the search actually fuzzy to a certain degree.
+Future<bool> fuzzyCompareImages(ui.Image golden, ui.Image img) async {
+  if (golden.width != img.width || golden.height != img.height) {
+    return false;
+  }
+  int getPixel(ByteData data, int x, int y) =>
+      data.getUint32((x + y * golden.width) * 4);
+  final ByteData goldenData = (await golden.toByteData())!;
+  final ByteData imgData = (await img.toByteData())!;
+  for (int y = 0; y < golden.height; y++) {
+    for (int x = 0; x < golden.width; x++) {
+      if (getPixel(goldenData, x, y) != getPixel(imgData, x, y)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void _matrix4x4CompositionTests() {
+  test('compose4x4MatrixInCanvas', () async {
+    const double rotateAroundX = pi / 6; // 30 degrees
+    const double rotateAroundY = pi / 9; // 20 degrees
+    const int width = 150;
+    const int height = 150;
+    const ui.Color black = ui.Color.fromARGB(255, 0, 0, 0);
+    const ui.Color green = ui.Color.fromARGB(255, 0, 255, 0);
+    void paint(ui.Canvas canvas, CanvasCallback rotate) {
+      canvas.translate(width * 0.5, height * 0.5);
+      rotate(canvas);
+      const double width3 = width / 3.0;
+      const double width5 = width / 5.0;
+      const double width10 = width / 10.0;
+      canvas.drawRect(const ui.Rect.fromLTRB(-width3, -width3, width3, width3),
+          ui.Paint()..color = green);
+      canvas.drawRect(
+          const ui.Rect.fromLTRB(-width5, -width5, -width10, width5),
+          ui.Paint()..color = black);
+      canvas.drawRect(
+          const ui.Rect.fromLTRB(-width5, -width5, width5, -width10),
+          ui.Paint()..color = black);
+    }
+
+    final ui.Image incrementalMatrixImage = await toImage((ui.Canvas canvas) {
+      paint(canvas, (ui.Canvas canvas) {
+        final Matrix4 matrix = Matrix4.identity();
+        matrix.setEntry(3, 2, 0.001);
+        canvas.transform(matrix.toFloat64());
+        matrix.setRotationX(rotateAroundX);
+        canvas.transform(matrix.toFloat64());
+        matrix.setRotationY(rotateAroundY);
+        canvas.transform(matrix.toFloat64());
+      });
+    }, width, height);
+    final ui.Image combinedMatrixImage = await toImage((ui.Canvas canvas) {
+      paint(canvas, (ui.Canvas canvas) {
+        final Matrix4 matrix = Matrix4.identity();
+        matrix.setEntry(3, 2, 0.001);
+        matrix.rotate(Vector3(1, 0, 0), rotateAroundX);
+        matrix.rotate(Vector3(0, 1, 0), rotateAroundY);
+        canvas.transform(matrix.toFloat64());
+      });
+    }, width, height);
+
+    final bool areEqual =
+        await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
+    expect(areEqual, true);
+  });
+}
+
 void _toSkRectTests() {
   test('toSkRect', () {
-    expect(toSkRect(ui.Rect.fromLTRB(1, 2, 3, 4)), <double>[1, 2, 3, 4]);
+    expect(toSkRect(const ui.Rect.fromLTRB(1, 2, 3, 4)), <double>[1, 2, 3, 4]);
   });
 
   test('fromSkRect', () {
     expect(fromSkRect(Float32List.fromList(<double>[1, 2, 3, 4])),
-        ui.Rect.fromLTRB(1, 2, 3, 4));
+        const ui.Rect.fromLTRB(1, 2, 3, 4));
   });
 
   test('toSkRRect', () {
@@ -609,10 +713,10 @@ void _toSkRectTests() {
         2,
         3,
         4,
-        topLeft: ui.Radius.elliptical(5, 6),
-        topRight: ui.Radius.elliptical(7, 8),
-        bottomRight: ui.Radius.elliptical(9, 10),
-        bottomLeft: ui.Radius.elliptical(11, 12),
+        topLeft: const ui.Radius.elliptical(5, 6),
+        topRight: const ui.Radius.elliptical(7, 8),
+        bottomRight: const ui.Radius.elliptical(9, 10),
+        bottomLeft: const ui.Radius.elliptical(11, 12),
       )),
       <double>[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     );
@@ -641,7 +745,7 @@ void _pathTests() {
 
   test('addArc', () {
     path.addArc(
-      toSkRect(ui.Rect.fromLTRB(10, 20, 30, 40)),
+      toSkRect(const ui.Rect.fromLTRB(10, 20, 30, 40)),
       1,
       5,
     );
@@ -649,7 +753,7 @@ void _pathTests() {
 
   test('addOval', () {
     path.addOval(
-      toSkRect(ui.Rect.fromLTRB(10, 20, 30, 40)),
+      toSkRect(const ui.Rect.fromLTRB(10, 20, 30, 40)),
       false,
       1,
     );
@@ -670,8 +774,8 @@ void _pathTests() {
 
   test('addRRect', () {
     final ui.RRect rrect = ui.RRect.fromRectAndRadius(
-      ui.Rect.fromLTRB(10, 10, 20, 20),
-      ui.Radius.circular(3),
+      const ui.Rect.fromLTRB(10, 10, 20, 20),
+      const ui.Radius.circular(3),
     );
     path.addRRect(
       toSkRRect(rrect),
@@ -680,12 +784,12 @@ void _pathTests() {
   });
 
   test('addRect', () {
-    path.addRect(toSkRect(ui.Rect.fromLTRB(1, 2, 3, 4)));
+    path.addRect(toSkRect(const ui.Rect.fromLTRB(1, 2, 3, 4)));
   });
 
   test('arcTo', () {
     path.arcToOval(
-      toSkRect(ui.Rect.fromLTRB(1, 2, 3, 4)),
+      toSkRect(const ui.Rect.fromLTRB(1, 2, 3, 4)),
       5,
       40,
       false,
@@ -800,7 +904,7 @@ void _pathTests() {
     path = _testClosedSkPath();
     path.transform(2, 0, 10, 0, 2, 10, 0, 0, 0);
     final ui.Rect transformedBounds = fromSkRect(path.getBounds());
-    expect(transformedBounds, ui.Rect.fromLTRB(30, 30, 50, 50));
+    expect(transformedBounds, const ui.Rect.fromLTRB(30, 30, 50, 50));
   });
 
   test('SkContourMeasureIter/SkContourMeasure', () {
@@ -835,7 +939,8 @@ void _pathTests() {
     //    |           |
     // 20 +-----------+
     final SkPath segment = measure1.getSegment(5, 15, true);
-    expect(fromSkRect(segment.getBounds()), ui.Rect.fromLTRB(15, 10, 20, 15));
+    expect(fromSkRect(segment.getBounds()),
+        const ui.Rect.fromLTRB(15, 10, 20, 15));
 
     final SkContourMeasure? measure2 = iter.next();
     expect(measure2, isNull);
@@ -880,8 +985,8 @@ void _canvasTests() {
 
   setUp(() {
     recorder = SkPictureRecorder();
-    canvas =
-        recorder.beginRecording(toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)));
+    canvas = recorder
+        .beginRecording(toSkRect(const ui.Rect.fromLTRB(0, 0, 100, 100)));
   });
 
   tearDown(() {
@@ -903,7 +1008,7 @@ void _canvasTests() {
   test('saveLayer', () {
     canvas.saveLayer(
       SkPaint(),
-      toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)),
+      toSkRect(const ui.Rect.fromLTRB(0, 0, 100, 100)),
       null,
       null,
     );
@@ -916,7 +1021,7 @@ void _canvasTests() {
   test('saveLayer with filter', () {
     canvas.saveLayer(
       SkPaint(),
-      toSkRect(ui.Rect.fromLTRB(0, 0, 100, 100)),
+      toSkRect(const ui.Rect.fromLTRB(0, 0, 100, 100)),
       canvasKit.ImageFilter.MakeBlur(1, 2, canvasKit.TileMode.Repeat, null),
       0,
     );
@@ -1195,7 +1300,7 @@ void _canvasTests() {
         .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
     otherCanvas.drawRect(
       Float32List.fromList(<double>[0, 0, 1, 1]),
-      SkPaint(),
+      SkPaint()..setColorInt(0xAAFFFFFF),
     );
     final CkPicture picture =
         CkPicture(otherRecorder.finishRecordingAsPicture(), null, null);
@@ -1203,6 +1308,17 @@ void _canvasTests() {
     final ByteData rawData =
         await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     expect(rawData.lengthInBytes, greaterThan(0));
+    expect(
+      rawData.buffer.asUint32List(),
+      <int>[0xAAAAAAAA],
+    );
+    final ByteData rawStraightData =
+        await image.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
+    expect(rawStraightData.lengthInBytes, greaterThan(0));
+    expect(
+      rawStraightData.buffer.asUint32List(),
+      <int>[0xAAFFFFFF],
+    );
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
@@ -1442,28 +1558,28 @@ void _paragraphTests() {
 
   test('TextHeightBehavior', () {
     expect(
-      toSkTextHeightBehavior(ui.TextHeightBehavior(
+      toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: true,
         applyHeightToLastDescent: true,
       )),
       canvasKit.TextHeightBehavior.All,
     );
     expect(
-      toSkTextHeightBehavior(ui.TextHeightBehavior(
+      toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: false,
         applyHeightToLastDescent: true,
       )),
       canvasKit.TextHeightBehavior.DisableFirstAscent,
     );
     expect(
-      toSkTextHeightBehavior(ui.TextHeightBehavior(
+      toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: true,
         applyHeightToLastDescent: false,
       )),
       canvasKit.TextHeightBehavior.DisableLastDescent,
     );
     expect(
-      toSkTextHeightBehavior(ui.TextHeightBehavior(
+      toSkTextHeightBehavior(const ui.TextHeightBehavior(
         applyHeightToFirstAscent: false,
         applyHeightToLastDescent: false,
       )),

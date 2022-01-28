@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:html' as html;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -92,7 +93,7 @@ Future<void> testMain() async {
   });
 
   test('draws paragraphs with placeholders and text align in DOM mode', () {
-    final DomCanvas canvas = DomCanvas(domRenderer.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(html.document.createElement('flt-picture'));
 
     const List<TextAlign> aligns = <TextAlign>[
       TextAlign.left,
@@ -129,7 +130,7 @@ Future<void> testMain() async {
     const Rect bounds = Rect.fromLTWH(0, 0, 420, 300);
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    Offset offset = Offset(10, 10);
+    Offset offset = const Offset(10, 10);
 
     // First paragraph with a placeholder at the beginning.
     final CanvasParagraph paragraph1 = rich(

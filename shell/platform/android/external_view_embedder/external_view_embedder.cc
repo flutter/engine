@@ -75,8 +75,7 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int view_id) const {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame,
-    const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch) {
+    std::unique_ptr<SurfaceFrame> frame) {
   TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
 
   if (!FrameHasPlatformLayers()) {
@@ -297,6 +296,11 @@ void AndroidExternalViewEmbedder::EndFrame(
 // |ExternalViewEmbedder|
 bool AndroidExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
+}
+
+// |ExternalViewEmbedder|
+void AndroidExternalViewEmbedder::Teardown() {
+  surface_pool_->DestroyLayers(jni_facade_);
 }
 
 }  // namespace flutter

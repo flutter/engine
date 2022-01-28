@@ -6,7 +6,7 @@ import 'dart:html' as html;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../dom_renderer.dart';
+import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
 import '../util.dart';
@@ -15,11 +15,13 @@ import 'paint_service.dart';
 import 'paragraph.dart';
 import 'word_breaker.dart';
 
+const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
+
 /// A paragraph made up of a flat list of text spans and placeholders.
 ///
-/// As opposed to [DomParagraph], a [CanvasParagraph] doesn't use a DOM element
-/// to represent the structure of its spans and styles. Instead it uses a flat
-/// list of [ParagraphSpan] objects.
+/// [CanvasParagraph] doesn't use a DOM element to represent the structure of
+/// its spans and styles. Instead it uses a flat list of [ParagraphSpan]
+/// objects.
 class CanvasParagraph implements EngineParagraph {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
@@ -142,7 +144,7 @@ class CanvasParagraph implements EngineParagraph {
 
   html.HtmlElement _createDomElement() {
     final html.HtmlElement rootElement =
-        domRenderer.createElement('p') as html.HtmlElement;
+        html.document.createElement('p') as html.HtmlElement;
 
     // 1. Set paragraph-level styles.
     _applyNecessaryParagraphStyles(element: rootElement, style: paragraphStyle);
@@ -179,11 +181,11 @@ class CanvasParagraph implements EngineParagraph {
     for (int i = 0; i < lines.length; i++) {
       // Insert a <BR> element before each line except the first line.
       if (i > 0) {
-        domRenderer.append(element, domRenderer.createElement('br'));
+        element.append(html.document.createElement('br'));
       }
 
       final EngineLineMetrics line = lines[i];
-      final List<RangeBox> boxes = line.boxes!;
+      final List<RangeBox> boxes = line.boxes;
       final StringBuffer buffer = StringBuffer();
 
       int j = 0;
@@ -195,27 +197,26 @@ class CanvasParagraph implements EngineParagraph {
         }
 
         if (buffer.isNotEmpty) {
-          domRenderer.appendText(element, buffer.toString());
+          element.appendText(buffer.toString());
           buffer.clear();
         }
 
         if (box is SpanBox) {
           span = box.span;
-          element = domRenderer.createElement('span') as html.HtmlElement;
+          element = html.document.createElement('span') as html.HtmlElement;
           applyTextStyleToElement(
             element: element,
             style: box.span.style,
             isSpan: true,
           );
-          domRenderer.append(rootElement, element);
+          rootElement.append(element);
           buffer.write(box.toText());
         } else if (box is PlaceholderBox) {
           span = null;
           // If there's a line-end after this placeholder, we want the <BR> to
           // be inserted in the root paragraph element.
           element = rootElement;
-          domRenderer.append(
-            rootElement,
+          rootElement.append(
             createPlaceholderElement(placeholder: box.placeholder),
           );
         } else {
@@ -224,13 +225,13 @@ class CanvasParagraph implements EngineParagraph {
       }
 
       if (buffer.isNotEmpty) {
-        domRenderer.appendText(element, buffer.toString());
+        element.appendText(buffer.toString());
         buffer.clear();
       }
 
       final String? ellipsis = line.ellipsis;
       if (ellipsis != null) {
-        domRenderer.appendText(element, ellipsis);
+        element.appendText(ellipsis);
       }
     }
 
@@ -574,7 +575,7 @@ class RootStyleNode extends StyleNode {
   final EngineParagraphStyle paragraphStyle;
 
   @override
-  final ui.Color _color = defaultTextColor;
+  final ui.Color _color = _defaultTextColor;
 
   @override
   ui.TextDecoration? get _decoration => null;
@@ -597,7 +598,7 @@ class RootStyleNode extends StyleNode {
   ui.TextBaseline? get _textBaseline => null;
 
   @override
-  String get _fontFamily => paragraphStyle.fontFamily ?? DomRenderer.defaultFontFamily;
+  String get _fontFamily => paragraphStyle.fontFamily ?? FlutterViewEmbedder.defaultFontFamily;
 
   @override
   List<String>? get _fontFamilyFallback => null;
@@ -606,7 +607,7 @@ class RootStyleNode extends StyleNode {
   List<ui.FontFeature>? get _fontFeatures => null;
 
   @override
-  double get _fontSize => paragraphStyle.fontSize ?? DomRenderer.defaultFontSize;
+  double get _fontSize => paragraphStyle.fontSize ?? FlutterViewEmbedder.defaultFontSize;
 
   @override
   double? get _letterSpacing => null;

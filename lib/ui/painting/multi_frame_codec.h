@@ -13,7 +13,7 @@ namespace flutter {
 
 class MultiFrameCodec : public Codec {
  public:
-  MultiFrameCodec(std::shared_ptr<ImageGenerator> generator);
+  explicit MultiFrameCodec(std::shared_ptr<ImageGenerator> generator);
 
   ~MultiFrameCodec() override;
 
@@ -37,7 +37,7 @@ class MultiFrameCodec : public Codec {
   // shares it with the IO task runner's decoding work, and sets the live_
   // member to false when it is destructed.
   struct State {
-    State(std::shared_ptr<ImageGenerator> generator);
+    explicit State(std::shared_ptr<ImageGenerator> generator);
 
     const std::shared_ptr<ImageGenerator> generator_;
     const int frameCount_;
@@ -54,13 +54,15 @@ class MultiFrameCodec : public Codec {
     int lastRequiredFrameIndex_ = -1;
 
     sk_sp<SkImage> GetNextFrameImage(
-        fml::WeakPtr<GrDirectContext> resourceContext);
+        fml::WeakPtr<GrDirectContext> resourceContext,
+        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch);
 
     void GetNextFrameAndInvokeCallback(
         std::unique_ptr<DartPersistentValue> callback,
         fml::RefPtr<fml::TaskRunner> ui_task_runner,
         fml::WeakPtr<GrDirectContext> resourceContext,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
+        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
         size_t trace_id);
   };
 

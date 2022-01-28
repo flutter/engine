@@ -87,9 +87,9 @@ void testMain() {
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
-  },  // TODO(nurhan): https://github.com/flutter/flutter/issues/46638
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50590
-      // TODO(nurhan): https://github.com/flutter/flutter/issues/50754
+  },  // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50754
       skip: browserEngine != BrowserEngine.blink);
 
     test('Syncs editing state from framework', () async {
@@ -117,11 +117,11 @@ void testMain() {
         value: 'hello',
         label: 'greeting',
         isFocused: true,
-        rect: ui.Rect.fromLTWH(0, 0, 10, 15),
+        rect: const ui.Rect.fromLTWH(0, 0, 10, 15),
       );
 
       final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
-      expect(html.document.activeElement, domRenderer.glassPaneElement);
+      expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
       expect((textField.editableElement as dynamic).value, 'hello');
@@ -134,7 +134,7 @@ void testMain() {
         value: 'bye',
         label: 'farewell',
         isFocused: false,
-        rect: ui.Rect.fromLTWH(0, 0, 12, 17),
+        rect: const ui.Rect.fromLTWH(0, 0, 12, 17),
       );
 
       expect(html.document.activeElement, html.document.body);
@@ -174,7 +174,7 @@ void testMain() {
 
       final TextField textField = textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       expect(textField.editableElement, strategy.domElement);
-      expect(html.document.activeElement, domRenderer.glassPaneElement);
+      expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
 
       // The input should not refocus after blur.
@@ -205,7 +205,7 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(html.document.activeElement, domRenderer.glassPaneElement);
+      expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
 
       strategy.disable();
@@ -237,7 +237,7 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(html.document.activeElement, domRenderer.glassPaneElement);
+      expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
 
       // Blur the element without telling the framework.
@@ -261,7 +261,7 @@ void testMain() {
         value: 'hello',
         isFocused: true,
       );
-      expect(html.document.activeElement, domRenderer.glassPaneElement);
+      expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
 
       strategy.disable();
@@ -286,7 +286,7 @@ void testMain() {
 
       final html.TextAreaElement textArea = strategy.domElement! as html.TextAreaElement;
 
-      expect(html.document.activeElement, domRenderer.glassPaneElement);
+      expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
 
       strategy.enable(
@@ -325,7 +325,7 @@ void testMain() {
         width: 13,
         globalTransform: Matrix4.translationValues(14, 15, 0).storage,
       );
-      final ui.Rect semanticsRect = ui.Rect.fromLTRB(0, 0, 100, 50);
+      const ui.Rect semanticsRect = ui.Rect.fromLTRB(0, 0, 100, 50);
 
       testTextEditing.acceptCommand(
         TextInputSetEditableSizeAndTransform(geometry: geometry),
@@ -361,14 +361,14 @@ void testMain() {
             isTextField: true,
             value: 'Hello',
             isFocused: focusFieldId == 1,
-            rect: ui.Rect.fromLTRB(0, 0, 50, 10),
+            rect: const ui.Rect.fromLTRB(0, 0, 50, 10),
           ),
           builder.updateNode(
             id: 2,
             isTextField: true,
             value: 'World',
             isFocused: focusFieldId == 2,
-            rect: ui.Rect.fromLTRB(0, 20, 50, 10),
+            rect: const ui.Rect.fromLTRB(0, 20, 50, 10),
           ),
         ],
       );
@@ -392,7 +392,7 @@ void testMain() {
         createTwoFieldSemantics(tester, focusFieldId: 1);
         expect(tester.apply().length, 3);
 
-        expect(html.document.activeElement, domRenderer.glassPaneElement);
+        expect(html.document.activeElement, flutterViewEmbedder.glassPaneElement);
         expect(appHostNode.activeElement, tester.getTextField(1).editableElement);
         expect(strategy.domElement, tester.getTextField(1).editableElement);
 
@@ -405,7 +405,7 @@ void testMain() {
       semantics().semanticsEnabled = false;
     });
   },
-  // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
+  // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
   skip: browserEngine == BrowserEngine.edge);
 }
 

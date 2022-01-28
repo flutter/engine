@@ -59,6 +59,16 @@ typedef void (*FlEngineUpdateSemanticsNodeHandler)(
     gpointer user_data);
 
 /**
+ * FlEngineOnPreEngineRestartHandler:
+ * @engine: an #FlEngine.
+ * @user_data: semantic node information.
+ *
+ * @user_data: (closure): data provided when registering this handler.
+ */
+typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
+                                                  gpointer user_data);
+
+/**
  * fl_engine_new:
  * @project: an #FlDartProject.
  * @renderer: an #FlRenderer.
@@ -112,6 +122,22 @@ void fl_engine_set_platform_message_handler(
 void fl_engine_set_update_semantics_node_handler(
     FlEngine* engine,
     FlEngineUpdateSemanticsNodeHandler handler,
+    gpointer user_data,
+    GDestroyNotify destroy_notify);
+
+/**
+ * fl_engine_set_on_pre_engine_restart_handler:
+ * @engine: an #FlEngine.
+ * @handler: function to call when the engine is restarted.
+ * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
+ *
+ * Registers the function called right before the engine is restarted.
+ */
+void fl_engine_set_on_pre_engine_restart_handler(
+    FlEngine* engine,
+    FlEngineOnPreEngineRestartHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
 
@@ -252,6 +278,44 @@ FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
  * Executes given Flutter task.
  */
 void fl_engine_execute_task(FlEngine* engine, FlutterTask* task);
+
+/**
+ * fl_engine_mark_texture_frame_available:
+ * @engine: an #FlEngine.
+ * @texture_id: the identifier of the texture whose frame has been updated.
+ *
+ * Tells the Flutter engine that a new texture frame is available for the given
+ * texture.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean fl_engine_mark_texture_frame_available(FlEngine* engine,
+                                                int64_t texture_id);
+
+/**
+ * fl_engine_register_external_texture:
+ * @engine: an #FlEngine.
+ * @texture_id: the identifier of the texture that is available.
+ *
+ * Tells the Flutter engine that a new external texture is available.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean fl_engine_register_external_texture(FlEngine* engine,
+                                             int64_t texture_id);
+
+/**
+ * fl_engine_unregister_external_texture:
+ * @engine: an #FlEngine.
+ * @texture_id: the identifier of the texture that is not available anymore.
+ *
+ * Tells the Flutter engine that an existing external texture is not available
+ * anymore.
+ *
+ * Returns: %TRUE on success.
+ */
+gboolean fl_engine_unregister_external_texture(FlEngine* engine,
+                                               int64_t texture_id);
 
 G_END_DECLS
 

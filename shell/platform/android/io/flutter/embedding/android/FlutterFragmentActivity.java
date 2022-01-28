@@ -326,9 +326,8 @@ public class FlutterFragmentActivity extends FragmentActivity
   private Drawable getSplashScreenFromManifest() {
     try {
       Bundle metaData = getMetaData();
-      Integer splashScreenId =
-          metaData != null ? metaData.getInt(SPLASH_SCREEN_META_DATA_KEY) : null;
-      return splashScreenId != null
+      int splashScreenId = metaData != null ? metaData.getInt(SPLASH_SCREEN_META_DATA_KEY) : 0;
+      return splashScreenId != 0
           ? ResourcesCompat.getDrawable(getResources(), splashScreenId, getTheme())
           : null;
     } catch (Resources.NotFoundException e) {
@@ -425,6 +424,7 @@ public class FlutterFragmentActivity extends FragmentActivity
         backgroundMode == BackgroundMode.opaque
             ? TransparencyMode.opaque
             : TransparencyMode.transparent;
+    final boolean shouldDelayFirstAndroidViewDraw = renderMode == RenderMode.surface;
 
     if (getCachedEngineId() != null) {
       Log.v(
@@ -448,6 +448,7 @@ public class FlutterFragmentActivity extends FragmentActivity
           .handleDeeplinking(shouldHandleDeeplinking())
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
           .destroyEngineWithFragment(shouldDestroyEngineWithHost())
+          .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
           .build();
     } else {
       Log.v(
@@ -477,6 +478,7 @@ public class FlutterFragmentActivity extends FragmentActivity
           .renderMode(renderMode)
           .transparencyMode(transparencyMode)
           .shouldAttachEngineToActivity(shouldAttachEngineToActivity())
+          .shouldDelayFirstAndroidViewDraw(shouldDelayFirstAndroidViewDraw)
           .build();
     }
   }

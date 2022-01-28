@@ -15,7 +15,7 @@ void main() {
 }
 
 /// Whether we are running on iOS Safari.
-// TODO: https://github.com/flutter/flutter/issues/66656
+// TODO(mdebbar): https://github.com/flutter/flutter/issues/66656
 bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
           operatingSystem == OperatingSystem.iOs;
 
@@ -135,5 +135,5 @@ Paragraph _createParagraphWithPlaceholder(
   );
   builder.pushStyle(TextStyle(color: blue, fontFamily: 'Roboto', fontSize: 14));
   builder.addText(after);
-  return builder.build()..layout(ParagraphConstraints(width: 200.0));
+  return builder.build()..layout(const ParagraphConstraints(width: 200.0));
 }

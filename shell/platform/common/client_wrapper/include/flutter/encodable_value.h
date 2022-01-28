@@ -63,8 +63,10 @@ class CustomEncodableValue {
   ~CustomEncodableValue() = default;
 
   // Allow implicit conversion to std::any to allow direct use of any_cast.
-  operator std::any &() { return value_; }
-  operator const std::any &() const { return value_; }
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  operator std::any&() { return value_; }
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  operator const std::any&() const { return value_; }
 
 #if defined(FLUTTER_ENABLE_RTTI) && FLUTTER_ENABLE_RTTI
   // Passthrough to std::any's type().
@@ -182,6 +184,7 @@ class EncodableValue : public internal::EncodableValueVariant {
   // to use it with EncodableValue, so the risk of unintended conversions is
   // minimal, and it avoids the need for the verbose:
   //   EncodableValue(CustomEncodableValue(...)).
+  // NOLINTNEXTLINE(google-explicit-constructor)
   EncodableValue(const CustomEncodableValue& v) : super(v) {}
 
   // Override the conversion constructors from std::variant to make them

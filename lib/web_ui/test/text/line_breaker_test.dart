@@ -170,7 +170,7 @@ void testMain() {
     test('trailing spaces and new lines', () {
       expect(
         findBreaks('foo bar  '),
-        <LineBreakResult>[
+        const <LineBreakResult>[
           LineBreakResult(4, 4, 3, LineBreakType.opportunity),
           LineBreakResult(9, 9, 7, LineBreakType.endOfText),
         ],
@@ -178,7 +178,7 @@ void testMain() {
 
       expect(
         findBreaks('foo  \nbar\nbaz   \n'),
-        <LineBreakResult>[
+        const <LineBreakResult>[
           LineBreakResult(6, 5, 3, LineBreakType.mandatory),
           LineBreakResult(10, 9, 9, LineBreakType.mandatory),
           LineBreakResult(17, 16, 13, LineBreakType.mandatory),
@@ -190,7 +190,7 @@ void testMain() {
     test('leading spaces', () {
       expect(
         findBreaks(' foo'),
-        <LineBreakResult>[
+        const <LineBreakResult>[
           LineBreakResult(1, 1, 0, LineBreakType.opportunity),
           LineBreakResult(4, 4, 4, LineBreakType.endOfText),
         ],
@@ -198,7 +198,7 @@ void testMain() {
 
       expect(
         findBreaks('   foo'),
-        <LineBreakResult>[
+        const <LineBreakResult>[
           LineBreakResult(3, 3, 0, LineBreakType.opportunity),
           LineBreakResult(6, 6, 6, LineBreakType.endOfText),
         ],
@@ -206,7 +206,7 @@ void testMain() {
 
       expect(
         findBreaks('  foo   bar'),
-        <LineBreakResult>[
+        const <LineBreakResult>[
           LineBreakResult(2, 2, 0, LineBreakType.opportunity),
           LineBreakResult(8, 8, 5, LineBreakType.opportunity),
           LineBreakResult(11, 11, 11, LineBreakType.endOfText),
@@ -215,12 +215,29 @@ void testMain() {
 
       expect(
         findBreaks('  \n   foo'),
-        <LineBreakResult>[
+        const <LineBreakResult>[
           LineBreakResult(3, 2, 0, LineBreakType.mandatory),
           LineBreakResult(6, 6, 3, LineBreakType.opportunity),
           LineBreakResult(9, 9, 9, LineBreakType.endOfText),
         ],
       );
+    });
+
+    test('whitespace before the last character', () {
+      const String text = 'Lorem sit .';
+      const LineBreakResult expectedResult =
+          LineBreakResult(10, 10, 9, LineBreakType.opportunity);
+
+      LineBreakResult result;
+
+      result = nextLineBreak(text, 6);
+      expect(result, expectedResult);
+
+      result = nextLineBreak(text, 9);
+      expect(result, expectedResult);
+
+      result = nextLineBreak(text, 9, maxEnd: 10);
+      expect(result, expectedResult);
     });
 
     test('comprehensive test', () {
@@ -269,7 +286,7 @@ void testMain() {
               reason: 'Failed at test case number $t:\n'
                   '${testCase.toString()}\n'
                   '"$text"\n'
-                  '\nUnexpected line break found at {$lastLineBreak - $i}.',
+                  '\nUnexpected line break found at {$lastLineBreak - ${result.index}}.',
             );
 
             // Since this isn't a line break, passing it as a `maxEnd` should

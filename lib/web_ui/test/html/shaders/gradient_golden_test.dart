@@ -13,7 +13,11 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../../common.dart';
 import '../paragraph/text_scuba.dart';
+
+// TODO(yjbanov): unskip Firefox tests when Firefox implements WebGL in headless mode.
+// https://github.com/flutter/flutter/issues/86623
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -62,23 +66,23 @@ Future<void> testMain() async {
     final SurfacePaint borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Color(0xFF000000);
+      ..color = const Color(0xFF000000);
 
-    final List<Color> colors = <Color>[
+    const List<Color> colors = <Color>[
       Color(0xFF000000),
       Color(0xFFFF3C38),
       Color(0xFFFF8C42),
       Color(0xFFFFF275),
       Color(0xFF6699CC),
       Color(0xFF656D78),];
-    final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+    const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-    GradientSweep sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    GradientSweep sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
 
-    final GradientSweep sweepGradientRotated = GradientSweep(Offset(0.5, 0.5),
+    final GradientSweep sweepGradientRotated = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -86,7 +90,7 @@ Future<void> testMain() async {
     const double kBoxWidth = 150;
     const double kBoxHeight = 80;
     // Gradient with default center.
-    Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
+    Rect rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
         SurfacePaint()..shader = engineGradientToShader(sweepGradient, rectBounds));
     canvas.drawRect(rectBounds, borderPaint);
@@ -98,7 +102,7 @@ Future<void> testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     // Gradient with start/endangle.
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -109,8 +113,8 @@ Future<void> testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     // Tile mode repeat
-    rectBounds = Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    rectBounds = const Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.repeated,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -121,7 +125,7 @@ Future<void> testMain() async {
 
     // Tile mode mirror
     rectBounds = rectBounds.translate(kBoxWidth + 10, 0);
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.mirror,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -131,7 +135,7 @@ Future<void> testMain() async {
 
     canvas.restore();
     await _checkScreenshot(canvas, 'sweep_gradient_rect');
-  });
+  }, skip: isFirefox);
 
   test('Paints sweep gradient ovals', () async {
     final RecordingCanvas canvas =
@@ -141,9 +145,9 @@ Future<void> testMain() async {
     final SurfacePaint borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Color(0xFF000000);
+      ..color = const Color(0xFF000000);
 
-    final List<Color> colors = <Color>[
+    const List<Color> colors = <Color>[
       Color(0xFF000000),
       Color(0xFFFF3C38),
       Color(0xFFFF8C42),
@@ -152,12 +156,12 @@ Future<void> testMain() async {
       Color(0xFF656D78),];
     final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-    GradientSweep sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    GradientSweep sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
 
-    final GradientSweep sweepGradientRotated = GradientSweep(Offset(0.5, 0.5),
+    final GradientSweep sweepGradientRotated = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -165,7 +169,7 @@ Future<void> testMain() async {
     const double kBoxWidth = 150;
     const double kBoxHeight = 80;
     // Gradient with default center.
-    Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
+    Rect rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawOval(rectBounds,
         SurfacePaint()..shader = engineGradientToShader(sweepGradient, rectBounds));
     canvas.drawRect(rectBounds, borderPaint);
@@ -177,7 +181,7 @@ Future<void> testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     // Gradient with start/endangle.
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -188,8 +192,8 @@ Future<void> testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     // Tile mode repeat
-    rectBounds = Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    rectBounds = const Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.repeated,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -200,7 +204,7 @@ Future<void> testMain() async {
 
     // Tile mode mirror
     rectBounds = rectBounds.translate(kBoxWidth + 10, 0);
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.mirror,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -210,7 +214,7 @@ Future<void> testMain() async {
 
     canvas.restore();
     await _checkScreenshot(canvas, 'sweep_gradient_oval');
-  });
+  }, skip: isFirefox);
 
   test('Paints sweep gradient paths', () async {
     final RecordingCanvas canvas =
@@ -220,23 +224,23 @@ Future<void> testMain() async {
     final SurfacePaint borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Color(0xFF000000);
+      ..color = const Color(0xFF000000);
 
-    final List<Color> colors = <Color>[
+    const List<Color> colors = <Color>[
       Color(0xFF000000),
       Color(0xFFFF3C38),
       Color(0xFFFF8C42),
       Color(0xFFFFF275),
       Color(0xFF6699CC),
       Color(0xFF656D78),];
-    final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+    const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-    GradientSweep sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    GradientSweep sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
 
-    final GradientSweep sweepGradientRotated = GradientSweep(Offset(0.5, 0.5),
+    final GradientSweep sweepGradientRotated = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -244,7 +248,7 @@ Future<void> testMain() async {
     const double kBoxWidth = 150;
     const double kBoxHeight = 80;
     // Gradient with default center.
-    Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
+    Rect rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     Path path = samplePathFromRect(rectBounds);
     canvas.drawPath(path,
         SurfacePaint()..shader = engineGradientToShader(sweepGradient, rectBounds));
@@ -258,7 +262,7 @@ Future<void> testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     // Gradient with start/endangle.
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.clamp,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -270,8 +274,8 @@ Future<void> testMain() async {
     canvas.drawRect(rectBounds, borderPaint);
 
     // Tile mode repeat
-    rectBounds = Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    rectBounds = const Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.repeated,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -283,7 +287,7 @@ Future<void> testMain() async {
 
     // Tile mode mirror
     rectBounds = rectBounds.translate(kBoxWidth + 10, 0);
-    sweepGradient = GradientSweep(Offset(0.5, 0.5),
+    sweepGradient = GradientSweep(const Offset(0.5, 0.5),
         colors, stops, TileMode.mirror,
         math.pi / 6, 3 * math.pi / 4,
         Matrix4.rotationZ(math.pi / 6.0).storage);
@@ -294,7 +298,7 @@ Future<void> testMain() async {
 
     canvas.restore();
     await _checkScreenshot(canvas, 'sweep_gradient_path');
-  });
+  }, skip: isFirefox);
 
   /// Regression test for https://github.com/flutter/flutter/issues/74137.
   test('Paints rotated and shifted linear gradient', () async {
@@ -305,34 +309,34 @@ Future<void> testMain() async {
     final SurfacePaint borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Color(0xFF000000);
+      ..color = const Color(0xFF000000);
 
-    final List<Color> colors = <Color>[
+    const List<Color> colors = <Color>[
       Color(0xFF000000),
       Color(0xFFFF3C38),
       Color(0xFFFF8C42),
       Color(0xFFFFF275),
       Color(0xFF6699CC),
       Color(0xFF656D78),];
-    final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+    const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-    GradientLinear linearGradient = GradientLinear(Offset(50, 50),
-        Offset(200,130),
+    GradientLinear linearGradient = GradientLinear(const Offset(50, 50),
+        const Offset(200,130),
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
     const double kBoxWidth = 150;
     const double kBoxHeight = 80;
     // Gradient with default center.
-    Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
+    Rect rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
         SurfacePaint()..shader = engineLinearGradientToShader(linearGradient, rectBounds));
     canvas.drawRect(rectBounds, borderPaint);
 
     // Tile mode repeat
-    rectBounds = Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
-    linearGradient = GradientLinear(Offset(50, 50),
-        Offset(200,130),
+    rectBounds = const Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
+    linearGradient = GradientLinear(const Offset(50, 50),
+        const Offset(200,130),
         colors, stops, TileMode.repeated,
         Matrix4.identity().storage);
 
@@ -342,7 +346,7 @@ Future<void> testMain() async {
 
     canvas.restore();
     await _checkScreenshot(canvas, 'linear_gradient_rect_shifted');
-  });
+  }, skip: isFirefox);
 
   /// Regression test for https://github.com/flutter/flutter/issues/82748.
   test('Paints gradient with gradient stop outside range', () async {
@@ -353,22 +357,22 @@ Future<void> testMain() async {
     final SurfacePaint borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Color(0xFF000000);
+      ..color = const Color(0xFF000000);
 
-    final List<Color> colors = <Color>[
+    const List<Color> colors = <Color>[
       Color(0xFF000000),
       Color(0xFFFF3C38)];
-    final List<double> stops = <double>[0.0, 10.0];
+    const List<double> stops = <double>[0.0, 10.0];
 
-    final GradientLinear linearGradient = GradientLinear(Offset(50, 50),
-        Offset(200,130),
+    final GradientLinear linearGradient = GradientLinear(const Offset(50, 50),
+        const Offset(200,130),
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
     const double kBoxWidth = 150;
     const double kBoxHeight = 80;
     // Gradient with default center.
-    final Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
+    const Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
         SurfacePaint()..shader = engineLinearGradientToShader(linearGradient, rectBounds));
     canvas.drawRect(rectBounds, borderPaint);
@@ -388,34 +392,34 @@ Future<void> testMain() async {
     final SurfacePaint borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..color = Color(0xFF000000);
+      ..color = const Color(0xFF000000);
 
-    final List<Color> colors = <Color>[
+    const List<Color> colors = <Color>[
       Color(0xFF000000),
       Color(0xFFFF3C38),
       Color(0xFFFF8C42),
       Color(0xFFFFF275),
       Color(0xFF6699CC),
       Color(0xFF656D78),];
-    final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+    const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-    GradientLinear linearGradient = GradientLinear(Offset(50, 50),
-        Offset(200,130),
+    GradientLinear linearGradient = GradientLinear(const Offset(50, 50),
+        const Offset(200,130),
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
     const double kBoxWidth = 150;
     const double kBoxHeight = 80;
     // Gradient with default center.
-    Rect rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
+    Rect rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
         SurfacePaint()..shader = engineLinearGradientToShader(linearGradient, rectBounds));
     canvas.drawRect(rectBounds, borderPaint);
 
     // Tile mode repeat
-    rectBounds = Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
-    linearGradient = GradientLinear(Offset(50, 50),
-        Offset(200,130),
+    rectBounds = const Rect.fromLTWH(10, 110, kBoxWidth, kBoxHeight);
+    linearGradient = GradientLinear(const Offset(50, 50),
+        const Offset(200,130),
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 

@@ -4,10 +4,11 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 
 #include <rapidjson/document.h>
+#include <windows.h>
 #include <memory>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -30,8 +31,13 @@ static std::unique_ptr<std::vector<uint8_t>> CreateResponse(bool handled) {
 
 class EmptyTextInputPluginDelegate : public TextInputPluginDelegate {
  public:
-  // Notifies delegate that the cursor position has changed.
-  void OnCursorRectUpdated(const Rect& rect) {}
+  void OnCursorRectUpdated(const Rect& rect) override {}
+  void OnResetImeComposing() override { ime_was_reset_ = true; }
+
+  bool ime_was_reset() const { return ime_was_reset_; }
+
+ private:
+  bool ime_was_reset_ = false;
 };
 }  // namespace
 
@@ -49,7 +55,7 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
   int redispatch_scancode = 0;
   TextInputPlugin handler(&messenger, &delegate);
 
-  handler.KeyboardHook(nullptr, VK_RETURN, 100, WM_KEYDOWN, '\n', false, false);
+  handler.KeyboardHook(VK_RETURN, 100, WM_KEYDOWN, '\n', false, false);
   handler.ComposeBeginHook();
   std::u16string text;
   text.push_back('\n');
@@ -57,6 +63,22 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
   handler.ComposeEndHook();
 
   // Passes if it did not crash
+}
+
+TEST(TextInputPluginTest, ClearClientResetsComposing) {
+  TestBinaryMessenger messenger([](const std::string& channel,
+                                   const uint8_t* message, size_t message_size,
+                                   BinaryReply reply) {});
+  BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
+
+  EmptyTextInputPluginDelegate delegate;
+  TextInputPlugin handler(&messenger, &delegate);
+
+  auto& codec = JsonMethodCodec::GetInstance();
+  auto message = codec.EncodeMethodCall({"TextInput.clearClient", nullptr});
+  messenger.SimulateEngineMessage("flutter/textinput", message->data(),
+                                  message->size(), reply_handler);
+  EXPECT_TRUE(delegate.ime_was_reset());
 }
 
 }  // namespace testing

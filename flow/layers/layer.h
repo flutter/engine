@@ -79,8 +79,6 @@ class Layer {
     original_layer_id_ = old_layer->original_layer_id_;
   }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
   // Used to establish link between old layer and new layer that replaces it.
   // If this method returns true, it is assumed that this layer replaces the old
   // layer in tree and is able to diff with it.
@@ -99,8 +97,6 @@ class Layer {
     // current and old region
     context->SetLayerPaintRegion(this, context->GetOldLayerPaintRegion(this));
   }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
   virtual void Preroll(PrerollContext* context, const SkMatrix& matrix);
 
@@ -157,26 +153,60 @@ class Layer {
   // draws a checkerboard over the layer if that is enabled in the PaintContext.
   class AutoSaveLayer {
    public:
-    [[nodiscard]] static AutoSaveLayer Create(const PaintContext& paint_context,
-                                              const SkRect& bounds,
-                                              const SkPaint* paint);
+    // Indicates which canvas the layer should be saved on.
+    //
+    // Usually layers are saved on the internal_nodes_canvas, so that all
+    // the canvas keep track of the current state of the layer tree.
+    // In some special cases, layers should only save on the leaf_nodes_canvas,
+    // See https:://flutter.dev/go/backdrop-filter-with-overlay-canvas for why
+    // it is the case for Backdrop filter layer.
+    enum SaveMode {
+      // The layer is saved on the internal_nodes_canvas.
+      kInternalNodesCanvas,
+      // The layer is saved on the leaf_nodes_canvas.
+      kLeafNodesCanvas
+    };
 
+    // Create a layer and save it on the canvas.
+    //
+    // The layer is restored from the canvas in destructor.
+    //
+    // By default, the layer is saved on and restored from
+    // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
+    // save the layer on other canvases.
     [[nodiscard]] static AutoSaveLayer Create(
         const PaintContext& paint_context,
-        const SkCanvas::SaveLayerRec& layer_rec);
+        const SkRect& bounds,
+        const SkPaint* paint,
+        SaveMode save_mode = SaveMode::kInternalNodesCanvas);
+    // Create a layer and save it on the canvas.
+    //
+    // The layer is restored from the canvas in destructor.
+    //
+    // By default, the layer is saved on and restored from
+    // `internal_nodes_canvas`. The `save_mode` parameter can be modified to
+    // save the layer on other canvases.
+    [[nodiscard]] static AutoSaveLayer Create(
+        const PaintContext& paint_context,
+        const SkCanvas::SaveLayerRec& layer_rec,
+        SaveMode save_mode = SaveMode::kInternalNodesCanvas);
 
     ~AutoSaveLayer();
 
    private:
     AutoSaveLayer(const PaintContext& paint_context,
                   const SkRect& bounds,
-                  const SkPaint* paint);
+                  const SkPaint* paint,
+                  SaveMode save_mode = SaveMode::kInternalNodesCanvas);
 
     AutoSaveLayer(const PaintContext& paint_context,
-                  const SkCanvas::SaveLayerRec& layer_rec);
+                  const SkCanvas::SaveLayerRec& layer_rec,
+                  SaveMode save_mode = SaveMode::kInternalNodesCanvas);
 
     const PaintContext& paint_context_;
     const SkRect bounds_;
+    // The canvas that this layer is saved on and popped from.
+    SkCanvas& canvas_;
   };
 
   virtual void Paint(PaintContext& context) const = 0;
@@ -237,8 +267,6 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
-#ifdef FLUTTER_ENABLE_DIFF_CONTEXT
-
   virtual const PictureLayer* as_picture_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;
@@ -248,8 +276,6 @@ class Layer {
     return nullptr;
   }
   virtual const testing::MockLayer* as_mock_layer() const { return nullptr; }
-
-#endif  // FLUTTER_ENABLE_DIFF_CONTEXT
 
  private:
   SkRect paint_bounds_;

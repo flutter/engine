@@ -121,8 +121,6 @@ import io.flutter.util.ViewUtils;
  * io.flutter.embedding.engine.FlutterEngine}. The two exceptions to using a cached {@link
  * FlutterEngine} are:
  *
- * <p>
- *
  * <ul>
  *   <li>When {@code FlutterActivity} is the first {@code Activity} displayed by the app, because
  *       pre-warming a {@link io.flutter.embedding.engine.FlutterEngine} would have no impact in
@@ -225,6 +223,9 @@ public class FlutterActivity extends Activity
    *
    * <p>Consider using the {@link #withCachedEngine(String)} {@link Intent} builder to control when
    * the {@link io.flutter.embedding.engine.FlutterEngine} should be created in your application.
+   *
+   * @param launchContext The launch context. e.g. An Activity.
+   * @return The default intent.
    */
   @NonNull
   public static Intent createDefaultIntent(@NonNull Context launchContext) {
@@ -236,6 +237,8 @@ public class FlutterActivity extends Activity
    * launch a {@code FlutterActivity} that internally creates a new {@link
    * io.flutter.embedding.engine.FlutterEngine} using the desired Dart entrypoint, initial route,
    * etc.
+   *
+   * @return The engine intent builder.
    */
   @NonNull
   public static NewEngineIntentBuilder withNewEngine() {
@@ -268,6 +271,9 @@ public class FlutterActivity extends Activity
     /**
      * The initial route that a Flutter app will render in this {@link FlutterFragment}, defaults to
      * "/".
+     *
+     * @param initialRoute The route.
+     * @return The engine intent builder.
      */
     @NonNull
     public NewEngineIntentBuilder initialRoute(@NonNull String initialRoute) {
@@ -290,6 +296,9 @@ public class FlutterActivity extends Activity
      * <p>A {@code FlutterActivity} that is configured with a background mode of {@link
      * BackgroundMode#transparent} must have a theme applied to it that includes the following
      * property: {@code <item name="android:windowIsTranslucent">true</item>}.
+     *
+     * @param backgroundMode The background mode.
+     * @return The engine intent builder.
      */
     @NonNull
     public NewEngineIntentBuilder backgroundMode(@NonNull BackgroundMode backgroundMode) {
@@ -300,6 +309,9 @@ public class FlutterActivity extends Activity
     /**
      * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with the
      * desired configuration.
+     *
+     * @param context The context. e.g. An Activity.
+     * @return The intent.
      */
     @NonNull
     public Intent build(@NonNull Context context) {
@@ -315,6 +327,9 @@ public class FlutterActivity extends Activity
    * to launch a {@code FlutterActivity} that internally uses an existing {@link
    * io.flutter.embedding.engine.FlutterEngine} that is cached in {@link
    * io.flutter.embedding.engine.FlutterEngineCache}.
+   *
+   * @param cachedEngineId A cached engine ID.
+   * @return The builder.
    */
   public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
     return new CachedEngineIntentBuilder(FlutterActivity.class, cachedEngineId);
@@ -341,6 +356,9 @@ public class FlutterActivity extends Activity
      * FlutterActivity} subclass, e.g.:
      *
      * <p>{@code return new CachedEngineIntentBuilder(MyFlutterActivity.class, engineId); }
+     *
+     * @param activityClass A subclass of {@code FlutterActivity}.
+     * @param engineId The engine id.
      */
     public CachedEngineIntentBuilder(
         @NonNull Class<? extends FlutterActivity> activityClass, @NonNull String engineId) {
@@ -349,10 +367,13 @@ public class FlutterActivity extends Activity
     }
 
     /**
-     * Returns true if the cached {@link io.flutter.embedding.engine.FlutterEngine} should be
-     * destroyed and removed from the cache when this {@code FlutterActivity} is destroyed.
+     * Whether the cached {@link io.flutter.embedding.engine.FlutterEngine} should be destroyed and
+     * removed from the cache when this {@code FlutterActivity} is destroyed.
      *
      * <p>The default value is {@code false}.
+     *
+     * @param destroyEngineWithActivity Whether to destroy the engine.
+     * @return The builder.
      */
     public CachedEngineIntentBuilder destroyEngineWithActivity(boolean destroyEngineWithActivity) {
       this.destroyEngineWithActivity = destroyEngineWithActivity;
@@ -374,6 +395,9 @@ public class FlutterActivity extends Activity
      * <p>A {@code FlutterActivity} that is configured with a background mode of {@link
      * BackgroundMode#transparent} must have a theme applied to it that includes the following
      * property: {@code <item name="android:windowIsTranslucent">true</item>}.
+     *
+     * @param backgroundMode The background mode
+     * @return The builder.
      */
     @NonNull
     public CachedEngineIntentBuilder backgroundMode(@NonNull BackgroundMode backgroundMode) {
@@ -384,6 +408,9 @@ public class FlutterActivity extends Activity
     /**
      * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with the
      * desired configuration.
+     *
+     * @param context The context. e.g. An Activity.
+     * @return The intent.
      */
     @NonNull
     public Intent build(@NonNull Context context) {
@@ -412,6 +439,8 @@ public class FlutterActivity extends Activity
    *
    * <p>The testing infrastructure should be upgraded to make FlutterActivity tests easy to write
    * while exercising real lifecycle methods. At such a time, this method should be removed.
+   *
+   * @param delegate The delegate.
    */
   // TODO(mattcarroll): remove this when tests allow for it
   // (https://github.com/flutter/flutter/issues/43798)
@@ -542,7 +571,8 @@ public class FlutterActivity extends Activity
         /* inflater=*/ null,
         /* container=*/ null,
         /* savedInstanceState=*/ null,
-        /*flutterViewId=*/ FLUTTER_VIEW_ID);
+        /*flutterViewId=*/ FLUTTER_VIEW_ID,
+        /*shouldDelayFirstAndroidViewDraw=*/ getRenderMode() == RenderMode.surface);
   }
 
   private void configureStatusBarForFullscreenFlutterExperience() {
@@ -892,6 +922,8 @@ public class FlutterActivity extends Activity
   /**
    * The desired window background mode of this {@code Activity}, which defaults to {@link
    * BackgroundMode#opaque}.
+   *
+   * @return The background mode.
    */
   @NonNull
   protected BackgroundMode getBackgroundMode() {
@@ -919,13 +951,21 @@ public class FlutterActivity extends Activity
   /**
    * Hook for subclasses to obtain a reference to the {@link
    * io.flutter.embedding.engine.FlutterEngine} that is owned by this {@code FlutterActivity}.
+   *
+   * @return The Flutter engine.
    */
   @Nullable
   protected FlutterEngine getFlutterEngine() {
     return delegate.getFlutterEngine();
   }
 
-  /** Retrieves the meta data specified in the AndroidManifest.xml. */
+  /**
+   * Retrieves the meta data specified in the AndroidManifest.xml.
+   *
+   * @return The meta data.
+   * @throws PackageManager.NameNotFoundException if a package with the given name cannot be found
+   *     on the system.
+   */
   @Nullable
   protected Bundle getMetaData() throws PackageManager.NameNotFoundException {
     ActivityInfo activityInfo =
@@ -1053,10 +1093,13 @@ public class FlutterActivity extends Activity
   @Override
   public void onFlutterUiDisplayed() {
     // Notifies Android that we're fully drawn so that performance metrics can be collected by
-    // Flutter performance tests.
-    // This was supported in KitKat (API 19), but has a bug around requiring
-    // permissions. See https://github.com/flutter/flutter/issues/46172
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    // Flutter performance tests. A few considerations:
+    // * reportFullyDrawn was supported in KitKat (API 19), but has a bug around requiring
+    // permissions in some Android versions.
+    // * reportFullyDrawn behavior isn't tested on pre-Q versions.
+    // See https://github.com/flutter/flutter/issues/46172, and
+    // https://github.com/flutter/flutter/issues/88767.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       reportFullyDrawn();
     }
   }
@@ -1082,6 +1125,13 @@ public class FlutterActivity extends Activity
   public boolean popSystemNavigator() {
     // Hook for subclass. No-op if returns false.
     return false;
+  }
+
+  @Override
+  public void updateSystemUiOverlays() {
+    if (delegate != null) {
+      delegate.updateSystemUiOverlays();
+    }
   }
 
   private boolean stillAttachedForEvent(String event) {

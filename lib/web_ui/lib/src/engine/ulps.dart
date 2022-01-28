@@ -20,7 +20,7 @@ import 'dart:typed_data';
 // For some good articles on the topic, see
 // https://randomascii.wordpress.com/category/floating-point/page/2/
 // Port based on:
-// https://github.com/google/skia/blob/master/include/private/SkFloatBits.h
+// https://github.com/google/skia/blob/main/include/private/SkFloatBits.h
 //
 // Here is the 32 bit IEEE representation:
 //   uint32_t mantissa : 23;
@@ -50,13 +50,14 @@ int twosComplimentToSignBit(int x) {
 class _FloatBitConverter {
   final Float32List float32List;
   final Int32List int32List;
-  _FloatBitConverter._(this.float32List, this.int32List);
 
   factory _FloatBitConverter() {
     final Float32List float32List = Float32List(1);
     return _FloatBitConverter._(
         float32List, float32List.buffer.asInt32List(0, 1));
   }
+
+  _FloatBitConverter._(this.float32List, this.int32List);
 
   int toInt(Float32List source, int index) {
     float32List[0] = source[index];

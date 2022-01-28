@@ -19,6 +19,7 @@ class AssetManager {
   /// The directory containing the assets.
   final String assetsDir;
 
+  /// Initializes [AssetManager] with path to assets relative to baseUrl.
   const AssetManager({this.assetsDir = _defaultAssetsDir});
 
   String? get _baseUrl {
@@ -53,13 +54,14 @@ class AssetManager {
     return Uri.encodeFull((_baseUrl ?? '') + '$assetsDir/$asset');
   }
 
+  /// Loads an asset using an [html.HttpRequest] and returns data as [ByteData].
   Future<ByteData> load(String asset) async {
     final String url = getAssetUrl(asset);
     try {
       final html.HttpRequest request =
           await html.HttpRequest.request(url, responseType: 'arraybuffer');
 
-      final ByteBuffer response = request.response;
+      final ByteBuffer response = request.response as ByteBuffer;
       return response.asByteData();
     } on html.ProgressEvent catch (e) {
       final html.EventTarget? target = e.target;
@@ -77,10 +79,14 @@ class AssetManager {
   }
 }
 
+/// Thrown to indicate http failure during asset loading.
 class AssetManagerException implements Exception {
+  /// Http request url for asset.
   final String url;
+  /// Http status of response.
   final int httpStatus;
 
+  /// Initializes exception with request url and http status.
   AssetManagerException(this.url, this.httpStatus);
 
   @override
@@ -89,8 +95,11 @@ class AssetManagerException implements Exception {
 
 /// An asset manager that gives fake empty responses for assets.
 class WebOnlyMockAssetManager implements AssetManager {
+  /// Mock asset directory relative to base url.
   String defaultAssetsDir = '';
+  /// Mock empty asset manifest.
   String defaultAssetManifest = '{}';
+  /// Mock font manifest overridable for unit testing.
   String defaultFontManifest = '''
   [
    {

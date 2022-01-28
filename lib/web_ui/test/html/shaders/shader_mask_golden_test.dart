@@ -12,6 +12,8 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../../common.dart';
+
 /// To debug compositing failures on browsers, set this flag to true and run
 /// flutter run -d chrome --web-renderer=html
 ///        test/golden_tests/engine/shader_mask_golden_test.dart --profile
@@ -25,16 +27,17 @@ Future<void> main() async {
   }
 }
 
-/// TODO: unskip webkit tests once flakiness is resolved. See
-/// https://github.com/flutter/flutter/issues/76713
-bool get isWebkit => browserEngine == BrowserEngine.webkit;
+// TODO(ferhat): unskip webkit tests once flakiness is resolved. See
+// https://github.com/flutter/flutter/issues/76713
+// TODO(yjbanov): unskip Firefox tests when Firefox implements WebGL in headless mode.
+// https://github.com/flutter/flutter/issues/86623
 
 Future<void> testMain() async {
   setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
     for (final html.Node scene in
-        domRenderer.sceneHostElement!.querySelectorAll('flt-scene')) {
+        flutterViewEmbedder.sceneHostElement!.querySelectorAll('flt-scene')) {
       scene.remove();
     }
     initWebGl();
@@ -47,59 +50,59 @@ Future<void> testMain() async {
   test('Renders shader mask with linear gradient BlendMode dst', () async {
     _renderCirclesScene(BlendMode.dst);
     await matchGoldenFile('shadermask_linear_dst.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   /// Should render the gradient only where circles have alpha channel.
   test('Renders shader mask with linear gradient BlendMode srcIn', () async {
     _renderCirclesScene(BlendMode.srcIn);
     await matchGoldenFile('shadermask_linear_srcin.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   test('Renders shader mask with linear gradient BlendMode color', () async {
     _renderCirclesScene(BlendMode.color);
     await matchGoldenFile('shadermask_linear_color.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   test('Renders shader mask with linear gradient BlendMode xor', () async {
     _renderCirclesScene(BlendMode.xor);
     await matchGoldenFile('shadermask_linear_xor.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   test('Renders shader mask with linear gradient BlendMode plus', () async {
     _renderCirclesScene(BlendMode.plus);
     await matchGoldenFile('shadermask_linear_plus.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   test('Renders shader mask with linear gradient BlendMode modulate', () async {
     _renderCirclesScene(BlendMode.modulate);
     await matchGoldenFile('shadermask_linear_modulate.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   test('Renders shader mask with linear gradient BlendMode overlay', () async {
     _renderCirclesScene(BlendMode.overlay);
     await matchGoldenFile('shadermask_linear_overlay.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   /// Should render the gradient opaque on top of content.
   test('Renders shader mask with linear gradient BlendMode src', () async {
     _renderCirclesScene(BlendMode.src);
     await matchGoldenFile('shadermask_linear_src.png',
-        region: Rect.fromLTWH(0, 0, 360, 200));
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
+  }, skip: isSafari || isFirefox);
 
   /// Should render text with gradient.
   test('Renders text with linear gradient shader mask', () async {
     _renderTextScene(BlendMode.srcIn);
     await matchGoldenFile('shadermask_linear_text.png',
-        region: Rect.fromLTWH(0, 0, 360, 200), maxDiffRatePercent: 2.0);
-  }, skip: isWebkit);
+        region: const Rect.fromLTWH(0, 0, 360, 200), maxDiffRatePercent: 2.0);
+  }, skip: isSafari || isFirefox);
 }
 
 Picture _drawTestPictureWithCircles(
@@ -130,13 +133,13 @@ Picture _drawTestPictureWithCircles(
 }
 
 void _renderCirclesScene(BlendMode blendMode) {
-  final Rect region = Rect.fromLTWH(0, 0, 400, 400);
+  const Rect region = Rect.fromLTWH(0, 0, 400, 400);
 
   final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
   final Picture circles1 = _drawTestPictureWithCircles(region, 10, 10);
   builder.addPicture(Offset.zero, circles1);
 
-  final List<Color> colors = <Color>[
+  const List<Color> colors = <Color>[
     Color(0xFF000000),
     Color(0xFFFF3C38),
     Color(0xFFFF8C42),
@@ -144,9 +147,9 @@ void _renderCirclesScene(BlendMode blendMode) {
     Color(0xFF6699CC),
     Color(0xFF656D78),
   ];
-  final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+  const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-  final Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
+  const Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
 
   final EngineGradient shader = GradientLinear(
       Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
@@ -159,7 +162,7 @@ void _renderCirclesScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
 
-  domRenderer.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
 }
 
 Picture _drawTestPictureWithText(
@@ -174,24 +177,24 @@ Picture _drawTestPictureWithText(
   );
 
   final CanvasParagraphBuilder builder = CanvasParagraphBuilder(paragraphStyle);
-  builder.pushStyle(EngineTextStyle.only(color: Color(0xFFFF0000)));
+  builder.pushStyle(EngineTextStyle.only(color: const Color(0xFFFF0000)));
   builder.addText(text);
   final CanvasParagraph paragraph = builder.build();
 
   const double maxWidth = 200 - 10;
-  paragraph.layout(ParagraphConstraints(width: maxWidth));
+  paragraph.layout(const ParagraphConstraints(width: maxWidth));
   canvas.drawParagraph(paragraph, Offset(offsetX, offsetY));
   return recorder.endRecording();
 }
 
 void _renderTextScene(BlendMode blendMode) {
-  final Rect region = Rect.fromLTWH(0, 0, 600, 400);
+  const Rect region = Rect.fromLTWH(0, 0, 600, 400);
 
   final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
   final Picture textPicture = _drawTestPictureWithText(region, 10, 10);
   builder.addPicture(Offset.zero, textPicture);
 
-  final List<Color> colors = <Color>[
+  const List<Color> colors = <Color>[
     Color(0xFF000000),
     Color(0xFFFF3C38),
     Color(0xFFFF8C42),
@@ -199,9 +202,9 @@ void _renderTextScene(BlendMode blendMode) {
     Color(0xFF6699CC),
     Color(0xFF656D78),
   ];
-  final List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+  const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-  final Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
+  const Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
 
   final EngineGradient shader = GradientLinear(
       Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
@@ -215,5 +218,5 @@ void _renderTextScene(BlendMode blendMode) {
   builder.addPicture(Offset.zero, textPicture2);
   builder.pop();
 
-  domRenderer.sceneHostElement!.append(builder.build().webOnlyRootElement!);
+  flutterViewEmbedder.sceneHostElement!.append(builder.build().webOnlyRootElement!);
 }

@@ -24,6 +24,8 @@ source_set("fml") {
     "file.cc",
     "file.h",
     "hash_combine.h",
+    "hex_codec.cc",
+    "hex_codec.h",
     "icu_util.cc",
     "icu_util.h",
     "log_level.h",
@@ -57,6 +59,8 @@ source_set("fml") {
     "posix_wrappers.h",
     "raster_thread_merger.cc",
     "raster_thread_merger.h",
+    "shared_thread_merger.cc",
+    "shared_thread_merger.h",
     "size.h",
     "synchronization/atomic_object.h",
     "synchronization/count_down_latch.cc",
@@ -77,6 +81,8 @@ source_set("fml") {
     "thread.h",
     "thread_local.cc",
     "thread_local.h",
+    "time/dart_timestamp_provider.cc",
+    "time/dart_timestamp_provider.h",
     "time/time_delta.h",
     "time/time_point.cc",
     "time/time_point.h",
@@ -211,10 +217,8 @@ source_set("fml") {
       "platform/win/wstring_conversion.h",
     ]
 
-    if (is_win) {
-      # For wstring_conversion. See issue #50053.
-      defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
-    }
+    # For wstring_conversion. See issue #50053.
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   } else {
     sources += [
       "platform/posix/file_posix.cc",
@@ -265,11 +269,13 @@ if (enable_unittests) {
       "command_line_unittest.cc",
       "file_unittest.cc",
       "hash_combine_unittests.cc",
+      "hex_codec_unittest.cc",
       "logging_unittests.cc",
       "mapping_unittests.cc",
       "memory/ref_counted_unittest.cc",
       "memory/task_runner_checker_unittest.cc",
       "memory/weak_ptr_unittest.cc",
+      "message_loop_impl_unittests.cc",
       "message_loop_task_queues_merge_unmerge_unittests.cc",
       "message_loop_task_queues_unittests.cc",
       "message_loop_unittests.cc",

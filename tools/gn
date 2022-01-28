@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -54,9 +54,6 @@ def get_out_dir(args):
     if args.target_os == 'fuchsia' and args.fuchsia_cpu is not None:
       target_dir.append(args.fuchsia_cpu)
 
-    if args.enable_vulkan:
-        target_dir.append('vulkan')
-
     # This exists for backwards compatibility of tests that are being run
     # on LUCI. This can be removed in coordination with a LUCI change:
     # https://github.com/flutter/flutter/issues/76547
@@ -85,13 +82,25 @@ def cpu_for_target_arch(arch):
   if arch in ['x64', 'arm64', 'simarm64', 'simdbc64', 'armsimdbc64']:
     return 'x64'
 
+def is_host_build(args):
+    # If target_os == None, then this is a host build.
+    # However, for linux arm64 builds, we cross compile from x64 hosts, so the
+    # target_os='linux' and linux-cpu='arm64'
+    # TODO(fujino): make host platform explicit
+    #   https://github.com/flutter/flutter/issues/79403
+    return args.target_os is None or (args.target_os == 'linux' and args.linux_cpu == 'arm64')
+
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
 # We can use a prebuilt Dart SDK when:
-# 1. It is a host build, or a build targeting desktop
+# 1. It is a host build, a build targeting Fuchsia, or a build targeting desktop.
 # 2. The prebuilt SDK exists under //flutter/prebuilts/$OS-$ARCH.
 def can_use_prebuilt_dart(args):
   prebuilt = None
-  if args.target_os == None:
+  # In a Fuchsia build, we can use a prebuilt Dart SDK for the host to build
+  # platform agnostic artifacts (e.g. kernel snapshots), and a Dart SDK
+  # targeting Fuchsia is not needed. So, it is safe to say that the prebuilt
+  # Dart SDK in a Fuchsia build is the host prebuilt Dart SDK.
+  if args.target_os == None or args.target_os == 'fuchsia':
     if sys.platform.startswith(('cygwin', 'win')):
       prebuilt = 'windows-x64'
     elif sys.platform == 'darwin':
@@ -112,11 +121,8 @@ def can_use_prebuilt_dart(args):
 
 def to_gn_args(args):
     if args.simulator:
-        if args.target_os == 'android':
-            raise Exception('--simulator is not supported on Android')
-
-    if args.target_os != 'android' and args.enable_vulkan:
-      raise Exception('--enable-vulkan is only supported on Android')
+        if args.target_os != 'ios':
+            raise Exception('--simulator is only supported for iOS')
 
     runtime_mode = args.runtime_mode
 
@@ -129,6 +135,8 @@ def to_gn_args(args):
         gn_args['bitcode_marker'] = True
 
     gn_args['enable_bitcode'] = args.bitcode
+    if args.enable_unittests:
+        gn_args['enable_unittests'] = args.enable_unittests
 
     # Skia GN args.
     gn_args['skia_enable_flutter_defines'] = True # Enable Flutter API guards in Skia.
@@ -185,6 +193,9 @@ def to_gn_args(args):
     elif args.target_os == 'ios':
         gn_args['target_os'] = 'ios'
         gn_args['use_ios_simulator'] = args.simulator
+    elif args.target_os == 'mac':
+        gn_args['target_os'] = 'mac'
+        gn_args['use_ios_simulator'] = False
     elif args.target_os == 'fuchsia':
         gn_args['target_os'] = 'fuchsia'
     elif args.target_os == 'winuwp':
@@ -301,11 +312,16 @@ def to_gn_args(args):
       gn_args['skia_use_metal'] = True
       gn_args['shell_enable_metal'] = True
 
-    if args.enable_vulkan:
-      # Enable vulkan in the Flutter shell.
-      gn_args['shell_enable_vulkan'] = True
-      # Configure Skia for Vulkan support.
+    # Enable Vulkan on all platforms except for Android and iOS. This is just
+    # to save on mobile binary size, as there's no reason the Vulkan embedder
+    # features can't work on these platforms.
+    if args.target_os not in ['android', 'ios']:
       gn_args['skia_use_vulkan'] = True
+      gn_args['shell_enable_vulkan'] = True
+      # Disable VMA's use of std::shared_mutex in environments where the
+      # standard library doesn't support it.
+      if args.target_os == 'ios' or sys.platform.startswith(('cygwin', 'win')):
+        gn_args['skia_disable_vma_stl_shared_mutex'] = True
 
     if sys.platform.startswith(('cygwin', 'win')):
       # The buildroot currently isn't set up to support Vulkan in the
@@ -328,13 +344,17 @@ def to_gn_args(args):
     # use it instead of building a new one.
     if args.prebuilt_dart_sdk:
       if can_use_prebuilt_dart(args):
+        print('Using prebuilt Dart SDK binary. If you are editing Dart sources '
+              'and wish to compile the Dart SDK, set `--no-prebuilt-dart-sdk`.')
         gn_args['flutter_prebuilt_dart_sdk'] = True
         gn_args['dart_sdk_output'] = 'built-dart-sdk'
-      else:
-        print('--prebuilt-dart-sdk was specified, but an appropriate prebuilt '
-              'could not be found! Try running '
-              'flutter/tools/download_dart_sdk.py manually.')
-    elif args.target_os is None or args.target_os == 'linux':
+      elif is_host_build(args):
+        print('Tried to download prebuilt Dart SDK but an appropriate version '
+                'could not be found!')
+        print('Either retry by running '
+              'flutter/tools/download_dart_sdk.py manually or compile from '
+              'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn')
+    elif is_host_build(args):
       # dart_platform_sdk is only defined for host builds, linux arm host builds
       # specify target_os=linux.
       # dart_platform_sdk=True means exclude web-related files, e.g. dart2js,
@@ -380,6 +400,17 @@ def to_gn_args(args):
     # on Android.
     gn_args['bssl_use_clang_integrated_as'] = True
 
+    # Enable pointer compression on 64-bit mobile targets.
+    if args.target_os in ['android'] and gn_args['target_cpu'] in ['x64' , 'arm64']:
+      gn_args['dart_use_compressed_pointers'] = True
+
+    if args.fuchsia_target_api_level is not None:
+      gn_args['fuchsia_target_api_level'] = args.fuchsia_target_api_level
+    elif args.target_os == 'fuchsia':
+      # Read the default target api level from a file so we can update it with a roller
+      with open(os.path.join(os.path.dirname(__file__), 'fuchsia/target_api_level')) as f:
+        gn_args['fuchsia_target_api_level'] = int(f.read().strip())
+
     return gn_args
 
 def parse_args(args):
@@ -387,6 +418,8 @@ def parse_args(args):
   parser = argparse.ArgumentParser(description='A script run` gn gen`.')
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
+
+  parser.add_argument('--enable-unittests', action='store_true', default=False)
 
   parser.add_argument('--runtime-mode', type=str, choices=['debug', 'profile', 'release', 'jit_release'], default='debug')
   parser.add_argument('--interpreter', default=False, action='store_true')
@@ -478,8 +511,12 @@ def parse_args(args):
                       help='Strip debug symbols from the output. This defaults to true and has no effect on iOS.')
   parser.add_argument('--no-stripped', dest='stripped', action='store_false')
 
-  parser.add_argument('--prebuilt-dart-sdk', default=False, action='store_true',
-                      help='Whether to use a prebuilt Dart SDK instead of building one.')
+  parser.add_argument('--prebuilt-dart-sdk', default=True, action='store_true',
+                      help='Whether to use a prebuilt Dart SDK instead of building one. This defaults to ' +
+                      'true and is enabled on CI.')
+  parser.add_argument('--no-prebuilt-dart-sdk', dest='prebuilt_dart_sdk', action='store_false')
+
+  parser.add_argument('--fuchsia-target-api-level', dest='fuchsia_target_api_level')
 
   # Sanitizers.
   parser.add_argument('--asan', default=False, action='store_true')
@@ -490,6 +527,9 @@ def parse_args(args):
 
   parser.add_argument('--trace-gn', default=False, action='store_true',
                        help='Write a GN trace log (gn_trace.json) in the Chromium tracing format in the build directory.')
+
+  # Verbose output.
+  parser.add_argument('--verbose', default=False, action='store_true')
 
   return parser.parse_args(args)
 
@@ -516,6 +556,8 @@ def main(argv):
     # On Windows, generate a Visual Studio project.
     command.append('--ide=vs')
 
+  command.append('--export-compile-commands=default')
+
   gn_args = to_command_line(to_gn_args(args))
   out_dir = get_out_dir(args)
   command.append(out_dir)
@@ -523,6 +565,9 @@ def main(argv):
 
   if args.trace_gn:
     command.append('--tracelog=%s/gn_trace.json' % out_dir)
+
+  if args.verbose:
+    command.append('-v')
 
   print("Generating GN files in: %s" % out_dir)
   try:

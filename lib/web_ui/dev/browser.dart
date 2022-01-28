@@ -26,12 +26,12 @@ abstract class BrowserEnvironment {
 
   /// Prepares the OS environment to run tests for this browser.
   ///
-  /// This may include things like staring web drivers, iOS Simulators, and/or
-  /// Android emulators.
+  /// This may include things like installing browsers, and starting web drivers,
+  /// iOS Simulators, and/or Android emulators.
   ///
   /// Typically the browser environment is prepared once and supports multiple
   /// browser instances.
-  Future<void> prepareEnvironment();
+  Future<void> prepare();
 
   /// Launches a browser instance.
   ///
@@ -130,7 +130,7 @@ abstract class Browser {
       // resolve the ambiguity is to wait a brief amount of time and see if this
       // browser is actually closed.
       if (!_closed && exitCode < 0) {
-        await Future<void>.delayed(Duration(milliseconds: 200));
+        await Future<void>.delayed(const Duration(milliseconds: 200));
       }
 
       if (!_closed && exitCode != 0) {
@@ -153,9 +153,8 @@ abstract class Browser {
       // Make sure the process dies even if the error wasn't fatal.
       _process.then((Process process) => process.kill());
 
-      if (stackTrace == null) {
-        stackTrace = Trace.current();
-      }
+      stackTrace ??= Trace.current();
+
       if (_onExitCompleter.isCompleted) {
         return;
       }

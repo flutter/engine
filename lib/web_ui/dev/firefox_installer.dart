@@ -4,49 +4,12 @@
 
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
-import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
-
-class FirefoxArgParser extends BrowserArgParser {
-  static final FirefoxArgParser _singletonInstance = FirefoxArgParser._();
-
-  /// The [FirefoxArgParser] singleton.
-  static FirefoxArgParser get instance => _singletonInstance;
-
-  late final String _version;
-
-  FirefoxArgParser._();
-
-  @override
-  void populateOptions(ArgParser argParser) {
-    final YamlMap browserLock = BrowserLock.instance.configuration;
-    final String firefoxVersion = browserLock['firefox']['version'] as String;
-
-    argParser.addOption(
-        'firefox-version',
-        defaultsTo: firefoxVersion,
-        help: 'The Firefox version to use while running tests. If the requested '
-            'version has not been installed, it will be downloaded and installed '
-            'automatically. Value "latest" will use the latest '
-            'stable build of Firefox, installing it if necessary. Value "system" '
-            'will use the manually installed version of Firefox on this computer.',
-      );
-  }
-
-  @override
-  void parseOptions(ArgResults argResults) {
-    _version = argResults['firefox-version'] as String;
-  }
-
-  @override
-  String get version => _version;
-}
 
 /// Returns the installation of Firefox, installing it if necessary.
 ///
@@ -317,7 +280,7 @@ Future<String> _findSystemFirefoxExecutable() async {
 
 /// Fetches the latest available Firefox build version on Linux.
 Future<String> fetchLatestFirefoxVersionLinux() async {
-  final RegExp forFirefoxVersion = RegExp("firefox-[0-9.]+[0-9]");
+  final RegExp forFirefoxVersion = RegExp('firefox-[0-9.]+[0-9]');
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;
@@ -332,7 +295,7 @@ Future<String> fetchLatestFirefoxVersionLinux() async {
 
 /// Fetches the latest available Firefox build version on Mac OS.
 Future<String> fetchLatestFirefoxVersionMacOS() async {
-  final RegExp forFirefoxVersion = RegExp("firefox/releases/[0-9.]+[0-9]");
+  final RegExp forFirefoxVersion = RegExp('firefox/releases/[0-9.]+[0-9]');
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;

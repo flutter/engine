@@ -51,8 +51,9 @@
 }
 
 - (void)dealloc {
-  if (_data->character != nullptr)
+  if (_data->character != nullptr) {
     delete[] _data->character;
+  }
   delete _data;
 }
 @end
@@ -264,6 +265,47 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
   [events removeAllObjects];
 }
 
+TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
+  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
+
+  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
+      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
+                          _Nullable _VoidPtr user_data) {
+        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
+                                                     callback:callback
+                                                     userData:user_data]];
+      }];
+
+  [responder handleEvent:keyEvent(NSEventTypeKeyDown, 0, @"àn", @"àn", FALSE, kKeyCodeKeyA)
+                callback:^(BOOL handled){
+                }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, 0x1400000000ull);
+  EXPECT_STREQ(event->character, "àn");
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+
+  [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0, @"a", @"a", FALSE, kKeyCodeKeyA)
+                callback:^(BOOL handled){
+                }];
+
+  EXPECT_EQ([events count], 1u);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+  EXPECT_EQ(event->physical, kPhysicalKeyA);
+  EXPECT_EQ(event->logical, 0x1400000000ull);
+  EXPECT_STREQ(event->character, nullptr);
+  EXPECT_EQ(event->synthesized, false);
+
+  [events removeAllObjects];
+}
+
 TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
   __block BOOL last_handled = TRUE;
@@ -302,8 +344,15 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
                   last_handled = handled;
                 }];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->physical, 0ull);
+  EXPECT_EQ(event->logical, 0ull);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
 
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeKeyUp, 0x100, @"a", @"a", FALSE, kKeyCodeKeyA)
@@ -327,6 +376,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateDownEvent) {
 
 TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
   __block BOOL last_handled = TRUE;
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
@@ -343,8 +393,15 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
                   last_handled = handled;
                 }];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->physical, 0ull);
+  EXPECT_EQ(event->logical, 0ull);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
 }
 
 // Press L shift, A, then release L shift then A, on an US keyboard.
@@ -735,8 +792,12 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x20102, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
+  EXPECT_EQ([events lastObject].data->physical, 0u);
+  EXPECT_EQ([events lastObject].data->logical, 0u);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
   EXPECT_EQ(last_handled, TRUE);
+  [events removeAllObjects];
 
   last_handled = FALSE;
   [responder
@@ -767,8 +828,12 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
       handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeShiftLeft)
          callback:keyEventCallback];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
+  EXPECT_EQ([events lastObject].data->physical, 0u);
+  EXPECT_EQ([events lastObject].data->logical, 0u);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
   EXPECT_EQ(last_handled, TRUE);
+  [events removeAllObjects];
 
   // Case 3:
   // In:  L down, (L up), (R down), R up
@@ -1042,6 +1107,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
 // Press the CapsLock key when CapsLock state is desynchronized
 TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
   __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
+  FlutterKeyEvent* event;
   __block BOOL last_handled = TRUE;
   id keyEventCallback = ^(BOOL handled) {
     last_handled = handled;
@@ -1056,13 +1122,20 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
       }];
 
   // In:  CapsLock down
-  // Out:
+  // Out: (empty)
   last_handled = FALSE;
   [responder handleEvent:keyEvent(NSEventTypeFlagsChanged, 0x100, @"", @"", FALSE, kKeyCodeCapsLock)
                 callback:keyEventCallback];
 
-  EXPECT_EQ([events count], 0u);
+  EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
+  event = [events lastObject].data;
+  EXPECT_EQ(event->physical, 0ull);
+  EXPECT_EQ(event->logical, 0ull);
+  EXPECT_FALSE([[events lastObject] hasCallback]);
+  EXPECT_EQ(last_handled, TRUE);
+
+  [events removeAllObjects];
 }
 
 // Press the CapsLock key when CapsLock state is desynchronized

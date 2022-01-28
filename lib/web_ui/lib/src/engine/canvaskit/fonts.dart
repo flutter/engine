@@ -20,7 +20,7 @@ const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
 // URL for the Ahem font, only used in tests.
-const String _ahemUrl = 'packages/ui/assets/ahem.ttf';
+const String _ahemUrl = '/assets/fonts/ahem.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
 class SkiaFontCollection {
@@ -84,7 +84,7 @@ class SkiaFontCollection {
     }
 
     final SkTypeface? typeface =
-        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(list);
+        canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
     if (typeface != null) {
       _registeredFonts.add(RegisteredFont(list, fontFamily, typeface));
       await ensureFontsLoaded();
@@ -109,7 +109,7 @@ class SkiaFontCollection {
     }
 
     final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
+        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -119,16 +119,16 @@ class SkiaFontCollection {
 
     for (final Map<String, dynamic> fontFamily
         in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily['family']!;
-      final List<dynamic> fontAssets = fontFamily['fonts'];
+      final String family = fontFamily.readString('family');
+      final List<dynamic> fontAssets = fontFamily.readList('fonts');
 
       if (family == 'Roboto') {
         registeredRoboto = true;
       }
 
       for (final dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
+        final Map<String, dynamic> fontAsset = fontAssetItem as Map<String, dynamic>;
+        final String asset = fontAsset.readString('asset');
         _unloadedFonts
             .add(_registerFont(assetManager.getAssetUrl(asset), family));
       }
@@ -151,7 +151,7 @@ class SkiaFontCollection {
   Future<RegisteredFont?> _registerFont(String url, String family) async {
     ByteBuffer buffer;
     try {
-      buffer = await html.window.fetch(url).then(_getArrayBuffer);
+      buffer = await httpFetch(url).then(_getArrayBuffer);
     } catch (e) {
       printWarning('Failed to load font $family at $url');
       printWarning(e.toString());
@@ -160,7 +160,7 @@ class SkiaFontCollection {
 
     final Uint8List bytes = buffer.asUint8List();
     final SkTypeface? typeface =
-        canvasKit.FontMgr.RefDefault().MakeTypefaceFromData(bytes);
+        canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
     if (typeface != null) {
       return RegisteredFont(bytes, family, typeface);
     } else {
@@ -178,8 +178,7 @@ class SkiaFontCollection {
     return actualFamily;
   }
 
-  Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
-    // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
+  Future<ByteBuffer> _getArrayBuffer(html.Body fetchResult) {
     return fetchResult
         .arrayBuffer()
         .then<ByteBuffer>((dynamic x) => x as ByteBuffer);

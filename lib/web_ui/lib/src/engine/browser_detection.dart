@@ -6,6 +6,12 @@ import 'dart:html' as html;
 
 import 'package:meta/meta.dart';
 
+// iOS 15 launched WebGL 2.0, but there's something broken about it, which
+// leads to apps failing to load. For now, we're forcing WebGL 1 on iOS.
+//
+// TODO(yjbanov): https://github.com/flutter/flutter/issues/91333
+bool get _workAroundBug91333 => operatingSystem == OperatingSystem.iOs;
+
 /// The HTML engine used by the current browser.
 enum BrowserEngine {
   /// The engine that powers Chrome, Samsung Internet Browser, UC Browser,
@@ -33,9 +39,10 @@ enum BrowserEngine {
 
 /// html webgl version qualifier constants.
 abstract class WebGLVersion {
-  // WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
+  /// WebGL 1.0 is based on OpenGL ES 2.0 / GLSL 1.00
   static const int webgl1 = 1;
-  // WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
+
+  /// WebGL 2.0 is based on OpenGL ES 3.0 / GLSL 3.00
   static const int webgl2 = 2;
 }
 
@@ -74,10 +81,14 @@ BrowserEngine _detectBrowserEngine() {
 ///    Note: SAMSUNG-SGH-I717
 ///    SPH/SCH are very old Palm models.
 bool _isSamsungBrowser(String agent) {
-  final RegExp exp = RegExp(r"SAMSUNG|SGH-[I|N|T]|GT-[I|N]|SM-[A|N|P|T|Z]|SHV-E|SCH-[I|J|R|S]|SPH-L");
+  final RegExp exp = RegExp(
+      r'SAMSUNG|SGH-[I|N|T]|GT-[I|N]|SM-[A|N|P|T|Z]|SHV-E|SCH-[I|J|R|S]|SPH-L');
   return exp.hasMatch(agent.toUpperCase());
 }
 
+/// Detects browser engine for a given vendor and agent string.
+///
+/// Used for testing this library.
 @visibleForTesting
 BrowserEngine detectBrowserEngineByVendorAgent(String vendor, String agent) {
   if (vendor == 'Google Inc.') {
@@ -149,6 +160,7 @@ OperatingSystem get operatingSystem {
 /// This is intended to be used for testing and debugging only.
 OperatingSystem? debugOperatingSystemOverride;
 
+/// Detects operating system using platform and UA used for unit testing.
 @visibleForTesting
 OperatingSystem detectOperatingSystem({
   String? overridePlatform,
@@ -215,11 +227,24 @@ bool get isMacOrIOS =>
     operatingSystem == OperatingSystem.iOs ||
     operatingSystem == OperatingSystem.macOs;
 
+/// Detect iOS 15.
+bool get isIOS15 {
+  if (debugIsIOS15 != null) {
+    return debugIsIOS15!;
+  }
+  return operatingSystem == OperatingSystem.iOs &&
+      html.window.navigator.userAgent.contains('OS 15_');
+}
+
+/// Use in tests to simulate the detection of iOS 15.
+bool? debugIsIOS15;
+
 int? _cachedWebGLVersion;
 
 /// The highest WebGL version supported by the current browser, or -1 if WebGL
 /// is not supported.
-int get webGLVersion => _cachedWebGLVersion ?? (_cachedWebGLVersion = _detectWebGLVersion());
+int get webGLVersion =>
+    _cachedWebGLVersion ?? (_cachedWebGLVersion = _detectWebGLVersion());
 
 /// Detects the highest WebGL version supported by the current browser, or
 /// -1 if WebGL is not supported.
@@ -236,6 +261,9 @@ int _detectWebGLVersion() {
     height: 1,
   );
   if (canvas.getContext('webgl2') != null) {
+    if (_workAroundBug91333) {
+      return WebGLVersion.webgl1;
+    }
     return WebGLVersion.webgl2;
   }
   if (canvas.getContext('webgl') != null) {

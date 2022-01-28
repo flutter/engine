@@ -5,7 +5,10 @@
 #ifndef FLOW_TESTING_MOCK_RASTER_CACHE_H_
 #define FLOW_TESTING_MOCK_RASTER_CACHE_H_
 
+#include "flutter/flow/layers/layer.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/testing/mock_layer.h"
+#include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
@@ -21,7 +24,7 @@ namespace testing {
  */
 class MockRasterCacheResult : public RasterCacheResult {
  public:
-  MockRasterCacheResult(SkIRect device_rect);
+  explicit MockRasterCacheResult(SkIRect device_rect);
 
   void draw(SkCanvas& canvas, const SkPaint* paint = nullptr) const override{};
 
@@ -44,6 +47,13 @@ class MockRasterCacheResult : public RasterCacheResult {
  */
 class MockRasterCache : public RasterCache {
  public:
+  explicit MockRasterCache(
+      size_t access_threshold = 3,
+      size_t picture_and_display_list_cache_limit_per_frame =
+          kDefaultPictureAndDispLayListCacheLimitPerFrame)
+      : RasterCache(access_threshold,
+                    picture_and_display_list_cache_limit_per_frame) {}
+
   std::unique_ptr<RasterCacheResult> RasterizePicture(
       SkPicture* picture,
       GrDirectContext* context,
@@ -56,7 +66,41 @@ class MockRasterCache : public RasterCache {
       Layer* layer,
       const SkMatrix& ctm,
       bool checkerboard) const override;
+
+  void AddMockLayer(int width, int height);
+  void AddMockPicture(int width, int height);
+
+ private:
+  MockCanvas mock_canvas_;
+  SkColorSpace* color_space_ = mock_canvas_.imageInfo().colorSpace();
+  MutatorsStack mutators_stack_;
+  Stopwatch raster_time_;
+  Stopwatch ui_time_;
+  TextureRegistry texture_registry_;
+  PrerollContext preroll_context_ = {
+      nullptr,           /* raster_cache */
+      nullptr,           /* gr_context */
+      nullptr,           /* external_view_embedder */
+      mutators_stack_,   /* mutators_stack */
+      color_space_,      /* color_space */
+      kGiantRect,        /* cull_rect */
+      false,             /* layer reads from surface */
+      raster_time_,      /* raster stopwatch */
+      ui_time_,          /* frame build stopwatch */
+      texture_registry_, /* texture_registry */
+      false,             /* checkerboard_offscreen_layers */
+      1.0f,              /* frame_device_pixel_ratio */
+      false,             /* has_platform_view */
+      false,             /* has_texture_layer */
+  };
 };
+
+struct PrerollContextHolder {
+  PrerollContext preroll_context;
+  sk_sp<SkColorSpace> srgb;
+};
+
+PrerollContextHolder GetSamplePrerollContextHolder();
 
 }  // namespace testing
 }  // namespace flutter

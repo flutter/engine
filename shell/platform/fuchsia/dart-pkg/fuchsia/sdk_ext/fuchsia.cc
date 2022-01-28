@@ -117,7 +117,7 @@ void Initialize(fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
   dart_state->class_library().add_provider("fuchsia",
                                            std::move(fuchsia_class_provider));
 
-  // v2 components do not use the environment
+  // V2 components do not use the environment.
   if (environment) {
     result = Dart_SetField(
         library, ToDart("_environment"),
