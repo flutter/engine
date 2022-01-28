@@ -1,4 +1,4 @@
-Signature: f11ec92833a9580b57f959c1c9b3e631
+Signature: 9949e029a3406eaa174ea0dd844423b6
 
 UNUSED LICENSES:
 
@@ -2462,7 +2462,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.data/data.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.developer.tiles/tiles.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/encoded_image.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_info.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_pipe.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/memory_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.intl/intl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/directory.fidl
@@ -2702,7 +2701,6 @@ FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/diagnostics.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/feedback_data_provider.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/power.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/proxy.dart
-FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/repository_manager.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/tiles.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/time.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/gpu_metrics.dart
