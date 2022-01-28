@@ -4,12 +4,6 @@
 
 package io.flutter.plugin.editing;
 
-import java.io.FileNotFoundException;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.HashMap;
-
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
