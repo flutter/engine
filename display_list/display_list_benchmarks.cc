@@ -80,6 +80,7 @@ constexpr size_t kRectsToDraw = 5000;
 constexpr size_t kOvalsToDraw = 1000;
 constexpr size_t kCirclesToDraw = 5000;
 constexpr size_t kRRectsToDraw = 5000;
+constexpr size_t kDRRectsToDraw = 2000;
 constexpr size_t kArcSweepSetsToDraw = 1000;
 constexpr size_t kImagesToDraw = 500;
 constexpr size_t kFixedCanvasSize = 1024;
@@ -391,7 +392,7 @@ void BM_DrawDRRect(benchmark::State& state,
   }
   rrect.setRectRadii(SkRect::MakeLTRB(0, 0, length, length), set_radii);
 
-  for (size_t i = 0; i < kRRectsToDraw; i++) {
+  for (size_t i = 0; i < kDRRectsToDraw; i++) {
     rrect.inset(0.1f * length, 0.1f * length, &rrect_2);
     builder.drawDRRect(rrect, rrect_2);
     rrect.offset(offset, offset);
