@@ -547,7 +547,7 @@ class TextEditingDeltaState {
               ),
             );
           } else {
-            actualEnd = match.end;
+            actualEnd = match.end - 1;
             textAfterMatch = _replace(
               newTextEditingDeltaState.oldText,
               newTextEditingDeltaState.deltaText,
