@@ -3974,15 +3974,24 @@ class Vertices extends NativeFieldWrapperClass1 {
 
   /// Creates a set of vertex data for use with [Canvas.drawVertices], directly
   /// using the encoding methods of [new Vertices].
+  /// Note that this constructor uses a raw typed data list,
+  /// so it runs faster than Dart list version 
+  /// because it doesn't require any conversion from Dart list.
   ///
   /// The [mode] parameter must not be null.
   ///
   /// The [positions] list is interpreted as a list of repeated pairs of x,y
   /// coordinates. It must not be null.
+  /// The [positions] parameter is a list of triangular mesh vertices(xy).
   ///
   /// The [textureCoordinates] list is interpreted as a list of repeated pairs
   /// of x,y coordinates, and must be the same length of [positions] if it
   /// is not null.
+  /// 
+  /// The [textureCoordinates] parameter is used to cutout
+  /// the image set in the image shader.
+  /// The cut part is applied to the triangular mesh.
+  /// Note that the [textureCoordinates] are the coordinates on the image.
   ///
   /// The [colors] list is interpreted as a list of RGBA encoded colors, similar
   /// to [Color.value]. It must be half length of [positions] if it is not
@@ -3990,6 +3999,8 @@ class Vertices extends NativeFieldWrapperClass1 {
   ///
   /// If the [indices] list is provided, all values in the list must be
   /// valid index values for [positions].
+  ///
+  /// e.g. The [indices] parameter for a simple triangle is [0,1,2].
   Vertices.raw(
     VertexMode mode,
     Float32List positions, {
