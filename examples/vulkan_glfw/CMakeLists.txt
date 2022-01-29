@@ -11,6 +11,23 @@ file(GLOB_RECURSE SOURCE_FILES "src/*.cc" "src/*.h")
 add_executable(${EXE_NAME} ${SOURCE_FILES})
 
 
+# Dependency: Vulkan SDK
+
+# Override the SDK location by using the VULKAN_SDK environment variable.
+# The VULKAN_SDK path should contain `include/vulkan/vulkan.hpp`.
+#
+# MacOS MoltenVK Vulkan SDK environment example:
+#  export VULKAN_SDK=~/VulkanSDK/1.2.198.1/macOS
+#  export VK_LOADER_DEBUG=all
+#  export VK_ICD_FILENAMES=$VULKAN_SDK/share/vulkan/icd.d/MoltenVK_icd.json
+#  export VK_LAYER_PATH=$VULKAN_SDK/share/vulkan/explicit_layer.d
+#  export DYLD_LIBRARY_PATH=$VULKAN_SDK/lib:$DYLD_LIBRARY_PATH
+
+find_package(Vulkan REQUIRED)
+target_include_directories(${EXE_NAME} PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(${EXE_NAME} PRIVATE Vulkan::Vulkan)
+
+
 # Dependency: GLFW
 
 set(GLFW_REPOSITORY ${CMAKE_SOURCE_DIR}/../../../third_party/glfw)
