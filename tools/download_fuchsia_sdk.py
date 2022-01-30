@@ -40,6 +40,8 @@ def DownloadFuchsiaSDKFromGCS(sdk_path, verbose):
   if os.path.isfile(dest):
     os.unlink(dest)
 
+  # Ensure destination folder exists.
+  os.makedirs(FUCHSIA_SDK_DIR, exist_ok=True)
   curl_command = [
     'curl',
     '--retry', '3',
