@@ -24,13 +24,13 @@ def eprint(*args, **kwargs):
   print(*args, file=sys.stderr, **kwargs)
 
 
-def FileNameForBucket(bucket):
+def FileNameForSdkPath(sdk_path):
   return bucket.split('/')[-1]
 
 
-def DownloadFuchsiaSDKFromGCS(bucket, verbose):
-  file = FileNameForBucket(bucket)
-  url = 'https://storage.googleapis.com/{}'.format(bucket)
+def DownloadFuchsiaSDKFromGCS(sdk_path, verbose):
+  file = FileNameForSdkPath(sdk_path)
+  url = 'https://storage.googleapis.com/{}'.format(sdk_path)
   dest = os.path.join(FUCHSIA_SDK_DIR, file)
 
   if verbose:
