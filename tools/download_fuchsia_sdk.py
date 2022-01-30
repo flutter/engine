@@ -25,7 +25,7 @@ def eprint(*args, **kwargs):
 
 
 def FileNameForSdkPath(sdk_path):
-  return bucket.split('/')[-1]
+  return sdk_path.split('/')[-1]
 
 
 def DownloadFuchsiaSDKFromGCS(sdk_path, verbose):
@@ -134,8 +134,8 @@ def Main():
   host_os = args.host_os
   fuchsia_sdk_path = args.fuchsia_sdk_path
 
-  if bucket is None:
-    eprint('Unable to find bucket in version file')
+  if fuchsia_sdk_path is None:
+    eprint('sdk_path can not be empty')
     return fail_loudly
 
   archive = DownloadFuchsiaSDKFromGCS(fuchsia_sdk_path, verbose)
