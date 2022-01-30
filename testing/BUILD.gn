@@ -181,8 +181,11 @@ if (enable_unittests) {
       ":testing",
       ":testing_fixtures",
       "//flutter/runtime:libdart",
-      "//flutter/vulkan",
     ]
+
+    if (target_os != "mac" || target_cpu == "x64") {
+      deps += [ "//flutter/vulkan" ]
+    }
 
     if (shell_enable_metal) {
       sources += [ "test_metal_surface_unittests.cc" ]
@@ -218,7 +221,7 @@ if (enable_unittests || is_ios) {
 
       # Skia's Vulkan support is enabled for all platforms (except iOS), and so parts of
       # Skia's graphics context reference Vulkan symbols.
-      if (!is_ios) {
+      if (!is_ios && target_cpu == "x64") {
         deps += [ "//flutter/vulkan" ]
       }
     }
