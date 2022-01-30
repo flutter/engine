@@ -2,6 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("display_list") {
@@ -78,7 +79,7 @@ if (enable_unittests) {
 
     defines = [ "ENABLE_SOFTWARE_BENCHMARKS" ]
 
-    if (!is_fuchsia) {
+    if (!is_fuchsia && shell_enable_gl) {
       defines += [ "ENABLE_OPENGL_BENCHMARKS" ]
       sources += [
         "display_list_benchmarks_gl.cc",

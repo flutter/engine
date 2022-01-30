@@ -4,6 +4,7 @@
 
 import("//flutter/common/config.gni")
 import("//flutter/examples/examples.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/shell/platform/config.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
@@ -145,10 +146,6 @@ group("flutter") {
     public_deps += [
       "//flutter/flow:flow_unittests",
       "//flutter/fml:fml_unittests",
-      "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
-      "//flutter/lib/spirv/test/general_shaders:spirv_compile_general_shaders",
-      "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
-      "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:no_dart_plugin_registrant_unittests",
       "//flutter/runtime:runtime_unittests",
@@ -161,6 +158,15 @@ group("flutter") {
       "//flutter/third_party/tonic/tests:tonic_unittests",
       "//flutter/third_party/txt:txt_unittests",
     ]
+
+    if (shell_enable_gl) {
+      public_deps += [
+        "//flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders",
+        "//flutter/lib/spirv/test/general_shaders:spirv_compile_general_shaders",
+        "//flutter/lib/spirv/test/supported_glsl_op_shaders:spirv_compile_supported_glsl_shaders",
+        "//flutter/lib/spirv/test/supported_op_shaders:spirv_compile_supported_op_shaders",
+      ]
+    }
 
     # The accessibility library only supports Mac and Windows at the moment.
     if (is_mac || is_win) {

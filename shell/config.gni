@@ -3,7 +3,9 @@
 # found in the LICENSE file.
 
 declare_args() {
-  shell_enable_gl = !is_fuchsia
+  # OpenGL depends on swift_shader, which doesn't support arm64
+  shell_enable_gl =
+      !is_fuchsia && !(target_os == "mac" && target_cpu == "arm64")
 
   # The logic for enabling Vulkan and Metal is in tools/gn.
   shell_enable_metal = false

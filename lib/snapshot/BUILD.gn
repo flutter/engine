@@ -13,7 +13,8 @@ group("generate_snapshot_bins") {
     ":generate_snapshot_bin",
     ":kernel_platform_files",
   ]
-  if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
+  if (host_os == "mac" && target_os == "ios" &&
+      (target_cpu == "arm" || target_cpu == "arm64")) {
     deps += [ ":create_arm_gen_snapshot" ]
   }
 }
@@ -197,7 +198,8 @@ bin_to_linkable("platform_strong_dill_linkable") {
   executable = false
 }
 
-if (host_os == "mac" && (target_cpu == "arm" || target_cpu == "arm64")) {
+if (host_os == "mac" && target_os == "ios" &&
+    (target_cpu == "arm" || target_cpu == "arm64")) {
   action("create_arm_gen_snapshot") {
     output_dir = "$root_out_dir/clang_x64"
     script = "//flutter/sky/tools/create_macos_gen_snapshots.py"
