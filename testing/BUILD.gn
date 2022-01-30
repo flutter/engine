@@ -183,7 +183,7 @@ if (enable_unittests) {
       "//flutter/runtime:libdart",
     ]
 
-    if (target_os != "mac" || target_cpu == "x64") {
+    if (shell_enable_vulkan) {
       deps += [ "//flutter/vulkan" ]
     }
 
@@ -221,7 +221,7 @@ if (enable_unittests || is_ios) {
 
       # Skia's Vulkan support is enabled for all platforms (except iOS), and so parts of
       # Skia's graphics context reference Vulkan symbols.
-      if (!is_ios && target_cpu == "x64") {
+      if (shell_enable_vulkan) {
         deps += [ "//flutter/vulkan" ]
       }
     }
