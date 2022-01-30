@@ -78,7 +78,7 @@ vars = {
   # is currently only used for the Fuchsia LSC process and is not intended for
   # local development.
   'download_fuchsia_sdk': False,
-  'fuchsia_sdk_path': ''
+  'fuchsia_sdk_path': '',
 
   # An LLVM backend needs LLVM binaries and headers. To avoid build time
   # increases we can use prebuilts. We don't want to download this on every
