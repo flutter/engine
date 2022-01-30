@@ -30,7 +30,7 @@ def FileNameForSdkPath(sdk_path):
 
 def DownloadFuchsiaSDKFromGCS(sdk_path, verbose):
   file = FileNameForSdkPath(sdk_path)
-  url = 'https://storage.googleapis.com/{}'.format(sdk_path)
+  url = 'https://storage.googleapis.com/fuchsia-artifacts/{}'.format(sdk_path)
   dest = os.path.join(FUCHSIA_SDK_DIR, file)
 
   if verbose:
