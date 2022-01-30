@@ -18,8 +18,6 @@ import sys
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FUCHSIA_SDK_DIR = os.path.join(SRC_ROOT, 'fuchsia', 'sdk')
 FLUTTER_DIR = os.path.join(SRC_ROOT, 'flutter')
-SDK_VERSION_INFO_FILE = os.path.join(FLUTTER_DIR, '.fuchsia_sdk_version')
-
 
 # Prints to stderr.
 def eprint(*args, **kwargs):
@@ -108,36 +106,6 @@ def ExtractGzipArchive(archive, host_os, verbose):
   shutil.move(extract_dest, sdk_dest)
 
 
-# Reads the version file and returns the bucket to download
-# The file is expected to live at the flutter directory and be named .fuchsia_sdk_version.
-#
-# The file is a JSON file which contains a single object with the following schema:
-# ```
-# {
-#    "protocol": "gcs",
-#    "identifiers": [
-#      {
-#        "host_os": "linux",
-#        "bucket": "fuchsia-artifacts/development/8824687191341324145/sdk/linux-amd64/core.tar.gz"
-#      }
-#    ]
-# }
-# ```
-def ReadVersionFile(host_os):
-  with open(SDK_VERSION_INFO_FILE) as f:
-    try:
-      version_obj = json.loads(f.read())
-      if version_obj['protocol'] != 'gcs':
-        eprint('The gcs protocol is the only suppoted protocl at this time')
-        return None
-      for id_obj in version_obj['identifiers']:
-        if id_obj['host_os'] == host_os:
-          return id_obj['bucket']
-    except:
-      eprint('Could not read JSON version file')
-      return None
-
-
 def Main():
   parser = argparse.ArgumentParser()
   parser.add_argument(
@@ -156,20 +124,23 @@ def Main():
     '--host-os',
     help='The host os')
 
+  parser.add_argument(
+    '--fuchsia-sdk-path',
+    help='The path in gcs to the fuchsia sdk to download')
+
   args = parser.parse_args()
   fail_loudly = 1 if args.fail_loudly else 0
   verbose = args.verbose
   host_os = args.host_os
-
-  bucket = ReadVersionFile(host_os)
+  fuchsia_sdk_path = args.fuchsia_sdk_path
 
   if bucket is None:
     eprint('Unable to find bucket in version file')
     return fail_loudly
 
-  archive = DownloadFuchsiaSDKFromGCS(bucket, verbose)
+  archive = DownloadFuchsiaSDKFromGCS(fuchsia_sdk_path, verbose)
   if archive is None:
-    eprint('Failed to download SDK from %s' % bucket)
+    eprint('Failed to download SDK from %s' % fuchsia_sdk_path)
     return fail_loudly
 
   ExtractGzipArchive(archive, host_os, verbose)
