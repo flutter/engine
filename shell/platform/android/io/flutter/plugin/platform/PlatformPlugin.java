@@ -30,9 +30,6 @@ import java.util.List;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
-  // These flags are used on API 19 to define the default layout.
-  public static final int DEFAULT_SYSTEM_UI_LEGACY =
-      View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
   private final Activity activity;
   private final PlatformChannel platformChannel;
@@ -390,7 +387,8 @@ public class PlatformPlugin {
   private void setSystemChromeEnabledSystemUIOverlaysLegacy(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
     int enabledOverlays =
-        DEFAULT_SYSTEM_UI_LEGACY
+        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             | View.SYSTEM_UI_FLAG_FULLSCREEN
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
