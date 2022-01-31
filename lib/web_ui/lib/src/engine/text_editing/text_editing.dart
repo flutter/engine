@@ -531,7 +531,10 @@ class TextEditingDeltaState {
         // 1. Find all matches for deltaText.
         // 2. Apply matches/replacement to oldText until oldText matches the
         // new editing state's text value.
-        final RegExp deltaTextPattern = RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
+        final bool isPeriodInsertion = newTextEditingDeltaState.deltaText == '. ';
+        final RegExp deltaTextPattern = isPeriodInsertion?
+                                        RegExp(r'\' + newTextEditingDeltaState.deltaText + r'')
+                                            : RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
         for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
           String textAfterMatch;
           int actualEnd;
@@ -547,7 +550,7 @@ class TextEditingDeltaState {
               ),
             );
           } else {
-            actualEnd = match.end - 1;
+            actualEnd = actualEnd = isPeriodInsertion? match.end - 1 : match.end;
             textAfterMatch = _replace(
               newTextEditingDeltaState.oldText,
               newTextEditingDeltaState.deltaText,
