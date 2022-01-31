@@ -15,9 +15,9 @@
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
 #include "vulkan/vulkan_core.h"
 
-#ifdef OS_MACOSX
+#ifdef FML_OS_MACOSX
 #define VULKAN_SO_PATH "libvk_swiftshader.dylib"
-#elif OS_WIN
+#elif FML_OS_WIN
 #define VULKAN_SO_PATH "vk_swiftshader.dll"
 #else
 #define VULKAN_SO_PATH "libvk_swiftshader.so"
