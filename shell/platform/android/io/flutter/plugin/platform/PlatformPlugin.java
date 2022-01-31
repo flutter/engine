@@ -242,8 +242,8 @@ public class PlatformPlugin {
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
     if (Build.VERSION.SDK_INT <= 19) {
       // As of API 30, the Android APIs for overlays/insets provides backwards compatibility back
-      // through
-      // API 19. Since Flutter currently supports API 19, the legacy code is used for that case.
+      // through API 19. Since Flutter currently supports API 19, the legacy code is used for
+      // that case.
       setSystemChromeEnabledSystemUIModeLegacy(systemUiMode);
     } else {
       Window window = activity.getWindow();
@@ -253,8 +253,7 @@ public class PlatformPlugin {
 
       if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
         // LEAN BACK
-        // Available starting at SDK 20, due to the backwards compatibility provided by the
-        // WindowInsetsControllerCompat class for setting the behavior of system bars.
+        // Available starting at SDK 16. Implemented for API 20+ here.
         // Should not show overlays, tap to reveal overlays, needs onChange callback
         // When the overlays come in on tap, the app does not receive the gesture and does not know
         // the system overlay has changed. The overlays cannot be dismissed, so adding the callback
@@ -266,8 +265,7 @@ public class PlatformPlugin {
         WindowCompat.setDecorFitsSystemWindows(window, false);
       } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
         // IMMERSIVE
-        // Available starting at SDK 20, due to the backwards compatibility provided by the
-        // WindowInsetsControllerCompat class for setting the behavior of system bars.
+        // Available starting at SDK 19. Implemented for API 20+ here.
         // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
         // When the overlays come in on swipe, the app does not receive the gesture and does not
         // know
@@ -280,8 +278,7 @@ public class PlatformPlugin {
         WindowCompat.setDecorFitsSystemWindows(window, false);
       } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
         // STICKY IMMERSIVE
-        // Available starting at SDK 20, due to the backwards compatibility provided by the
-        // WindowInsetsControllerCompat class for setting the behavior of system bars.
+        // Available starting at SDK 19. Implemented for API 20+ here.
         // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
         // the swipe gesture. The overlays cannot be dismissed, so adding callback support will
         // allow users to restore the system ui and dismiss the overlays.
@@ -312,6 +309,7 @@ public class PlatformPlugin {
 
     if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
+      // Available starting at SDK 16. Implemented for APIs 16-19 here.
       enabledOverlays =
           View.SYSTEM_UI_FLAG_LAYOUT_STABLE
               | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -321,6 +319,8 @@ public class PlatformPlugin {
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // IMMERSIVE
+      // Available starting at SDK 19. Implemented for API 19 here. Earlier versions will not be
+      // affected by this.
       enabledOverlays =
           View.SYSTEM_UI_FLAG_IMMERSIVE
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -331,6 +331,8 @@ public class PlatformPlugin {
     } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
         && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // STICKY IMMERSIVE
+      // Available starting at SDK 19. Implemented for API 19 here. Earlier versions will not be
+      // affected by this.
       enabledOverlays =
           View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
               | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -348,8 +350,8 @@ public class PlatformPlugin {
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
     if (Build.VERSION.SDK_INT <= 19) {
       // As of API 30, the Android APIs for overlays/insets provides backwards compatibility back
-      // through
-      // API 19. Since Flutter currently supports API 19, the legacy code is used for that case.
+      // through API 19. Since Flutter currently supports API 19, the legacy code is used
+      // for that case.
       setSystemChromeEnabledSystemUIOverlaysLegacy(overlaysToShow);
     } else {
       Window window = activity.getWindow();
@@ -396,6 +398,7 @@ public class PlatformPlugin {
     // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
     // apply it if desired.
     if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
       enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
     }
 
@@ -411,7 +414,6 @@ public class PlatformPlugin {
           break;
       }
     }
-
     activity.getWindow().getDecorView().setSystemUiVisibility(enabledOverlays);
   }
 
