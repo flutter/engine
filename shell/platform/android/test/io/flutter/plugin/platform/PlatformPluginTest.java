@@ -319,6 +319,8 @@ public class PlatformPluginTest {
   @Config(sdk = 29)
   @Test
   public void setSystemUiModeLegacy() {
+    // This test reflects the behavior under the hood of the Android overlay/inset APIs used for API
+    // 20-29 in the plugin.
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
     when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
@@ -417,6 +419,8 @@ public class PlatformPluginTest {
   @Config(sdk = 29)
   @Test
   public void showSystemOverlaysLegacy() {
+    // This test reflects the behavior under the hood of the Android overlay/inset APIs used for API
+    // 20-29 in the plugin.
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
     when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);

@@ -30,7 +30,7 @@ import java.util.List;
 
 /** Android implementation of the platform plugin. */
 public class PlatformPlugin {
-  // These flags are used on API 16-19 to define the default layout.
+  // These flags are used on API 19 to define the default layout.
   public static final int DEFAULT_SYSTEM_UI_LEGACY =
       View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 
@@ -239,50 +239,11 @@ public class PlatformPlugin {
         });
   }
 
-  private void setSystemChromeEnabledSystemUIModeLegacy(PlatformChannel.SystemUiMode systemUiMode) {
-    int enabledOverlays;
-
-    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
-      // LEAN BACK
-      enabledOverlays =
-          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      // IMMERSIVE
-      enabledOverlays =
-          View.SYSTEM_UI_FLAG_IMMERSIVE
-              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      // STICKY IMMERSIVE
-      enabledOverlays =
-          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-              | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else {
-      // When none of the conditions are matched, return without updating the system UI overlays.
-      return;
-    }
-
-    activity.getWindow().getDecorView().setSystemUiVisibility(enabledOverlays);
-  }
-
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
-    // As of API 30, controlling insets and overlays changed significantly, but provided backwards
-    // compatibility back through API 20. Flutter currently supports API 19, so the legacy code is
-    // left for that case.
     if (Build.VERSION.SDK_INT <= 19) {
+      // As of API 30, the Android APIs for overlays/insets provides backwards compatibility back
+      // through
+      // API 19. Since Flutter currently supports API 19, the legacy code is used for that case.
       setSystemChromeEnabledSystemUIModeLegacy(systemUiMode);
     } else {
       Window window = activity.getWindow();
@@ -346,6 +307,84 @@ public class PlatformPlugin {
     currentSystemUiMode = systemUiMode;
   }
 
+  private void setSystemChromeEnabledSystemUIModeLegacy(PlatformChannel.SystemUiMode systemUiMode) {
+    int enabledOverlays;
+
+    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
+      // LEAN BACK
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN;
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      // IMMERSIVE
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_IMMERSIVE
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN;
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      // STICKY IMMERSIVE
+      enabledOverlays =
+          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+              | View.SYSTEM_UI_FLAG_FULLSCREEN;
+    } else {
+      return;
+    }
+    activity.getWindow().getDecorView().setSystemUiVisibility(enabledOverlays);
+  }
+
+  private void setSystemChromeEnabledSystemUIOverlays(
+      List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
+    if (Build.VERSION.SDK_INT <= 19) {
+      // As of API 30, the Android APIs for overlays/insets provides backwards compatibility back
+      // through
+      // API 19. Since Flutter currently supports API 19, the legacy code is used for that case.
+      setSystemChromeEnabledSystemUIOverlaysLegacy(overlaysToShow);
+    } else {
+      Window window = activity.getWindow();
+      View view = window.getDecorView();
+      WindowInsetsControllerCompat windowInsetsControllerCompat =
+          new WindowInsetsControllerCompat(window, view);
+
+      // Start by assuming we want to hide all system overlays (like an immersive
+      // game).
+      windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
+      WindowCompat.setDecorFitsSystemWindows(window, false);
+
+      // We apply sticky immersive mode if desired. Available starting at SDK 20.
+      if (overlaysToShow.size() == 0) {
+        currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
+        windowInsetsControllerCompat.setSystemBarsBehavior(
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+      }
+
+      // Re-add any desired system overlays.
+      for (int i = 0; i < overlaysToShow.size(); ++i) {
+        PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
+        switch (overlayToShow) {
+          case TOP_OVERLAYS:
+            windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
+            break;
+          case BOTTOM_OVERLAYS:
+            windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
+            break;
+        }
+      }
+    }
+    currentOverlays = overlaysToShow;
+  }
+
   private void setSystemChromeEnabledSystemUIOverlaysLegacy(
       List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
     int enabledOverlays =
@@ -376,47 +415,6 @@ public class PlatformPlugin {
     activity.getWindow().getDecorView().setSystemUiVisibility(enabledOverlays);
   }
 
-  private void setSystemChromeEnabledSystemUIOverlays(
-      List<PlatformChannel.SystemUiOverlay> overlaysToShow) {
-    if (Build.VERSION.SDK_INT <= 19) {
-      // This method calls offer support for the same behaviors below for API 19 that is unsupported
-      // by Android new overlays/insets API that offers backward compatibility only up to API 20.
-      setSystemChromeEnabledSystemUIOverlaysLegacy(overlaysToShow);
-    } else {
-      Window window = activity.getWindow();
-      View view = window.getDecorView();
-      WindowInsetsControllerCompat windowInsetsControllerCompat =
-          new WindowInsetsControllerCompat(window, view);
-
-      // Start by assuming we want to hide all system overlays (like an immersive
-      // game).
-      windowInsetsControllerCompat.hide(WindowInsetsCompat.Type.systemBars());
-      WindowCompat.setDecorFitsSystemWindows(window, false);
-
-      // We apply sticky immersive mode if desired. Available starting at SDK 20.
-      if (overlaysToShow.size() == 0) {
-        currentSystemUiMode = PlatformChannel.SystemUiMode.IMMERSIVE_STICKY;
-
-        windowInsetsControllerCompat.setSystemBarsBehavior(
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-      }
-
-      // Re-add any desired system overlays.
-      for (int i = 0; i < overlaysToShow.size(); ++i) {
-        PlatformChannel.SystemUiOverlay overlayToShow = overlaysToShow.get(i);
-        switch (overlayToShow) {
-          case TOP_OVERLAYS:
-            windowInsetsControllerCompat.show(WindowInsetsCompat.Type.statusBars());
-            break;
-          case BOTTOM_OVERLAYS:
-            windowInsetsControllerCompat.show(WindowInsetsCompat.Type.navigationBars());
-            break;
-        }
-      }
-    }
-    currentOverlays = overlaysToShow;
-  }
-
   /**
    * Refreshes Android's window system UI (AKA system chrome) to match Flutter's desired {@link
    * PlatformChannel.SystemChromeStyle}.
@@ -431,24 +429,15 @@ public class PlatformPlugin {
     } else {
       if (currentSystemUiMode != null) {
         setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
-      } else if (Build.VERSION.SDK_INT <= 19) {
-        // On API 19, if there is not a system ui mode already set, we wish to restore the enabled
-        // flags to the default system ui flags defined above.
-        if (Build.VERSION.SDK_INT <= 19) {
-          activity
-              .getWindow()
-              .getDecorView()
-              .setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI_LEGACY);
-        } else {
-          WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
-          if (Build.VERSION.SDK_INT < 30) {
-            activity
-                .getWindow()
-                .getDecorView()
-                .setSystemUiVisibility(
-                    activity.getWindow().getDecorView().getSystemUiVisibility()
-                        & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-          }
+      } else {
+        Window window = activity.getWindow();
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        if (Build.VERSION.SDK_INT < 30) {
+          // This ensures that the navigation bar is not hidden for APIs 19-30,
+          // as dictated by the implementation of WindowCompat.
+          View view = window.getDecorView();
+          view.setSystemUiVisibility(
+              view.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
         }
       }
     }
