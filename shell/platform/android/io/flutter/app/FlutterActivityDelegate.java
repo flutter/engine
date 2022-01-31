@@ -24,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager.LayoutParams;
+import androidx.core.view.WindowCompat;
 import io.flutter.Log;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformPlugin;
@@ -143,6 +144,15 @@ public final class FlutterActivityDelegate
       window.setStatusBarColor(0x40000000);
       if (Build.VERSION.SDK_INT <= 19) {
         window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI_LEGACY);
+      } else {
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        if (Build.VERSION.SDK_INT < 30) {
+          window
+              .getDecorView()
+              .setSystemUiVisibility(
+                  window.getDecorView().getSystemUiVisibility()
+                      & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
       }
     }
 

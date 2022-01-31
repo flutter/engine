@@ -434,7 +434,22 @@ public class PlatformPlugin {
       } else if (Build.VERSION.SDK_INT <= 19) {
         // On API 19, if there is not a system ui mode already set, we wish to restore the enabled
         // flags to the default system ui flags defined above.
-        activity.getWindow().getDecorView().setSystemUiVisibility(DEFAULT_SYSTEM_UI_LEGACY);
+        if (Build.VERSION.SDK_INT <= 19) {
+          activity
+              .getWindow()
+              .getDecorView()
+              .setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI_LEGACY);
+        } else {
+          WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
+          if (Build.VERSION.SDK_INT < 30) {
+            activity
+                .getWindow()
+                .getDecorView()
+                .setSystemUiVisibility(
+                    activity.getWindow().getDecorView().getSystemUiVisibility()
+                        & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+          }
+        }
       }
     }
   }

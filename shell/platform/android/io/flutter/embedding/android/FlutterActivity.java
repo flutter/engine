@@ -38,6 +38,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.WindowCompat;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -592,6 +593,15 @@ public class FlutterActivity extends Activity
       window.setStatusBarColor(0x40000000);
       if (Build.VERSION.SDK_INT <= 19) {
         window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI_LEGACY);
+      } else {
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        if (Build.VERSION.SDK_INT < 30) {
+          window
+              .getDecorView()
+              .setSystemUiVisibility(
+                  window.getDecorView().getSystemUiVisibility()
+                      & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
       }
     }
   }
