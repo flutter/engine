@@ -454,7 +454,9 @@ String _replace(String originalText, String replacementText, ui.TextRange replac
 }
 
 /// The change between the last editing state and the current editing state
-/// of a text field. This is packaged into a JSON and sent to the framework
+/// of a text field.
+///
+/// This is packaged into a JSON and sent to the framework
 /// to be processed into a concrete [TextEditingDelta].
 class TextEditingDeltaState {
   TextEditingDeltaState({
@@ -521,6 +523,10 @@ class TextEditingDeltaState {
       // are accurate. What may not be accurate is the range of the delta.
       //
       // We can think of the newEditingState as our source of truth.
+      //
+      // This verification is needed for cases such as the insertion of a period
+      // after a double space, and the insertion of an accented character through
+      // a native composing menu.
       final ui.TextRange replacementRange = ui.TextRange(start: newTextEditingDeltaState.deltaStart, end: newTextEditingDeltaState.deltaEnd);
       final String textAfterDelta = _replace(
           newTextEditingDeltaState.oldText, newTextEditingDeltaState.deltaText,
@@ -531,7 +537,7 @@ class TextEditingDeltaState {
         // 1. Find all matches for deltaText.
         // 2. Apply matches/replacement to oldText until oldText matches the
         // new editing state's text value.
-        final bool isPeriodInsertion = newTextEditingDeltaState.deltaText == '. ';
+        final bool isPeriodInsertion = newTextEditingDeltaState.deltaText.contains('.');
         final RegExp deltaTextPattern = isPeriodInsertion?
                                         RegExp(r'\' + newTextEditingDeltaState.deltaText + r'')
                                             : RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
