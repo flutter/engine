@@ -426,18 +426,20 @@ public class PlatformPlugin {
   public void updateSystemUiOverlays() {
     if (currentOverlays != null) {
       setSystemChromeEnabledSystemUIOverlays(currentOverlays);
-    } else {
-      if (currentSystemUiMode != null) {
-        setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
-      } else {
-        Window window = activity.getWindow();
-        WindowCompat.setDecorFitsSystemWindows(window, false);
-        if (Build.VERSION.SDK_INT < 30) {
-          // This ensures that the navigation bar is not hidden for APIs 19-30,
-          // as dictated by the implementation of WindowCompat.
-          View view = window.getDecorView();
-          view.setSystemUiVisibility(
-              view.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+
+      if (currentOverlays.size() > 0) {
+        if (currentSystemUiMode != null) {
+          setSystemChromeEnabledSystemUIMode(currentSystemUiMode);
+        } else {
+          Window window = activity.getWindow();
+          WindowCompat.setDecorFitsSystemWindows(window, false);
+          if (Build.VERSION.SDK_INT < 30) {
+            // This ensures that the navigation bar is not hidden for APIs 19-30,
+            // as dictated by the implementation of WindowCompat.
+            View view = window.getDecorView();
+            view.setSystemUiVisibility(
+                view.getSystemUiVisibility() & ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+          }
         }
       }
     }
