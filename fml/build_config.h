@@ -4,8 +4,8 @@
 
 // This file adds defines about the platform we're currently building on.
 //  Operating System:
-//    FML_OS_WIN / FML_OS_MACOSX / FML_OS_LINUX / FML_OS_POSIX (MACOSX or LINUX) /
-//    FML_OS_NACL (NACL_SFI or NACL_NONSFI) / FML_OS_NACL_SFI /
+//    FML_OS_WIN / FML_OS_MACOSX / FML_OS_LINUX / FML_OS_POSIX (MACOSX or LINUX)
+//    / FML_OS_NACL (NACL_SFI or NACL_NONSFI) / FML_OS_NACL_SFI /
 //    FML_OS_NACL_NONSFI
 //  Compiler:
 //    COMPILER_MSVC / COMPILER_GCC

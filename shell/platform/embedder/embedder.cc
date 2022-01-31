@@ -190,7 +190,7 @@ static void* DefaultGLProcResolver(const char* name) {
       fml::NativeLibrary::CreateForCurrentProcess();
 #elif FML_OS_WIN  // FML_OS_LINUX
       fml::NativeLibrary::Create("opengl32.dll");
-#endif        // FML_OS_WIN
+#endif            // FML_OS_WIN
   return static_cast<void*>(
       const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
 }
