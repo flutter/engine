@@ -9,8 +9,8 @@
 #include "flutter/shell/common/context_options.h"
 #include "flutter/testing/test_vulkan_context.h"
 
-#include "flutter/fml/file.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/native_library.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
@@ -34,8 +34,9 @@ TestVulkanContext::TestVulkanContext() {
 
   const char* vulkan_icd = VULKAN_SO_PATH;
 
-  auto fd = fml::OpenDirectory(".", false, fml::FilePermission::kRead);
-  if (!fml::FileExists(fd, vulkan_icd)) {
+  // TODO(96949): Clean this up and pass a native library directly to
+  //              VulkanProcTable.
+  if (!fml::NativeLibrary::Create(VULKAN_SO_PATH)) {
     FML_LOG(WARNING) << "Couldn't find Vulkan ICD \"" << vulkan_icd
                      << "\", trying \"libvulkan.so\" instead.";
     vulkan_icd = "libvulkan.so";
