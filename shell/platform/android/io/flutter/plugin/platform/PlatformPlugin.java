@@ -265,8 +265,7 @@ public class PlatformPlugin {
         // Available starting at SDK 19. Implemented for API 20+ here.
         // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
         // When the overlays come in on swipe, the app does not receive the gesture and does not
-        // know
-        // the system overlay has changed. The overlays cannot be dismissed, so adding callback
+        // know the system overlay has changed. The overlays cannot be dismissed, so adding callback
         // support will allow users to restore the system ui and dismiss the overlays.
         // Not compatible with top/bottom overlays enabled.
         windowInsetsControllerCompat.setSystemBarsBehavior(
