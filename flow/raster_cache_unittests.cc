@@ -463,6 +463,7 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   auto display_list = GetSampleNestedDisplayList();
   ASSERT_EQ(display_list->op_count(), 1);
   ASSERT_EQ(display_list->op_count(true), 36);
+  ASSERT_EQ(display_list->complexity_score(), 36u);
 
   SkCanvas dummy_canvas;
 

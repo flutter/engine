@@ -164,7 +164,9 @@ class DisplayListNaiveComplexityCalculator
   }
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool with_save_layer) override {}
+                   bool with_save_layer) override {
+    complexity_score_ += picture->approximateOpCount(true);
+  }
   void drawDisplayList(const sk_sp<DisplayList> display_list) override {
     complexity_score_ += display_list->complexity_score();
   }
