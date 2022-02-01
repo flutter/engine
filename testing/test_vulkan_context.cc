@@ -28,6 +28,8 @@ namespace flutter {
 namespace testing {
 
 TestVulkanContext::TestVulkanContext() {
+  FML_LOG(ERROR) << "====bdero==== Attempting to construct TestVulkanContext.";
+
   // ---------------------------------------------------------------------------
   // Initialize basic Vulkan state using the Swiftshader ICD.
   // ---------------------------------------------------------------------------
@@ -104,6 +106,13 @@ TestVulkanContext::TestVulkanContext() {
       MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
   context_ = GrDirectContext::MakeVulkan(backend_context, options);
+
+  FML_LOG(ERROR) << "====bdero==== This message means that the "
+                    "TestVulkanContext was successfully "
+                    "constructed. This means that mandatory procs were "
+                    "successfully resolved from "
+                    "the Vulkan ICD. The ICD successfully loaded was \""
+                 << vulkan_icd << "\"!";
 }
 
 TestVulkanContext::~TestVulkanContext() {
