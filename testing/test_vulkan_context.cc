@@ -44,6 +44,8 @@ TestVulkanContext::TestVulkanContext() {
     vulkan_icd = "libvulkan.so";
   }
 
+  FML_LOG(WARNING) << "Using Vulkan ICD: " << vulkan_icd;
+
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(vulkan_icd);
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
     FML_LOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
