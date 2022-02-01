@@ -9,7 +9,8 @@
 #include "flutter/shell/common/context_options.h"
 #include "flutter/testing/test_vulkan_context.h"
 
-#include "fml/memory/ref_ptr.h"
+#include "flutter/fml/file.h"
+#include "flutter/fml/memory/ref_ptr.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
@@ -31,9 +32,18 @@ TestVulkanContext::TestVulkanContext() {
   // Initialize basic Vulkan state using the Swiftshader ICD.
   // ---------------------------------------------------------------------------
 
-  vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH);
+  const char* vulkan_icd = VULKAN_SO_PATH;
+
+  auto fd = fml::OpenDirectory(".", false, fml::FilePermission::kRead);
+  if (!fml::FileExists(fd, vulkan_icd)) {
+    FML_LOG(WARNING) << "Couldn't find Vulkan ICD \"" << vulkan_icd
+                     << "\", trying \"libvulkan.so\" instead.";
+    vulkan_icd = "libvulkan.so";
+  }
+
+  vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(vulkan_icd);
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
-    FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
+    FML_LOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
     return;
   }
 
@@ -42,17 +52,17 @@ TestVulkanContext::TestVulkanContext() {
           *vk_, "Flutter Unittests", {}, VK_MAKE_VERSION(1, 0, 0),
           VK_MAKE_VERSION(1, 0, 0), true));
   if (!application_->IsValid()) {
-    FML_DLOG(ERROR) << "Failed to initialize basic Vulkan state.";
+    FML_LOG(ERROR) << "Failed to initialize basic Vulkan state.";
     return;
   }
   if (!vk_->AreInstanceProcsSetup()) {
-    FML_DLOG(ERROR) << "Failed to acquire full proc table.";
+    FML_LOG(ERROR) << "Failed to acquire full proc table.";
     return;
   }
 
   device_ = application_->AcquireFirstCompatibleLogicalDevice();
   if (!device_ || !device_->IsValid()) {
-    FML_DLOG(ERROR) << "Failed to create compatible logical device.";
+    FML_LOG(ERROR) << "Failed to create compatible logical device.";
     return;
   }
 
