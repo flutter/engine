@@ -169,11 +169,9 @@ void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
   for (const Win32Message& message : event->session) {
     UINT result = 0;
-    if (message.action != WM_CHAR) {
-      pending_redispatches_.push_back(message);
-      result = window_delegate_->Win32DispatchMessage(
-          message.action, message.wparam, message.lparam);
-    }
+    pending_redispatches_.push_back(message);
+    result = window_delegate_->Win32DispatchMessage(
+        message.action, message.wparam, message.lparam);
     if (result != 0) {
       std::cerr << "Unable to synthesize event for keyboard event."
                 << std::endl;
@@ -192,7 +190,7 @@ bool KeyboardManagerWin32::RemoveRedispatchedMessage(UINT const action,
                                                      LPARAM const lparam) {
   for (auto iter = pending_redispatches_.begin();
        iter != pending_redispatches_.end(); ++iter) {
-    if (action == iter->action && lparam == iter->lparam) {
+    if (action == iter->action && wparam == iter->wparam) {
       pending_redispatches_.erase(iter);
       return true;
     }
