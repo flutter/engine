@@ -7,6 +7,7 @@
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/mock_raster_cache.h"
 #include "gtest/gtest.h"
+#include "include/core/SkColor.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkPicture.h"
@@ -62,6 +63,14 @@ sk_sp<DisplayList> GetSampleNestedDisplayList() {
   DisplayListBuilder outer_builder(SkRect::MakeWH(150, 100));
   outer_builder.drawDisplayList(builder.Build());
   return outer_builder.Build();
+}
+
+sk_sp<DisplayList> GetSampleDisplayList(int ops) {
+  DisplayListBuilder builder(SkRect::MakeWH(150, 100));
+  for (int i = 0; i < ops; i++) {
+    builder.drawColor(SK_ColorRED, SkBlendMode::kSrc);
+  }
+  return builder.Build();
 }
 
 }  // namespace
@@ -458,6 +467,55 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   SkCanvas dummy_canvas;
 
   PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             display_list.get(), false, false, matrix));
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+
+  cache.CleanupAfterFrame();
+  cache.PrepareNewFrame();
+
+  ASSERT_TRUE(cache.Prepare(&preroll_context_holder.preroll_context,
+                            display_list.get(), false, false, matrix));
+  ASSERT_TRUE(cache.Draw(*display_list, dummy_canvas));
+}
+
+TEST(RasterCache, NaiveComplexityScoringDisplayList) {
+  size_t threshold = 1;
+  flutter::RasterCache cache(threshold);
+
+  SkMatrix matrix = SkMatrix::I();
+
+  // Five raster ops will not be cached
+  auto display_list = GetSampleDisplayList(5);
+  ASSERT_EQ(display_list->op_count(), 5);
+  ASSERT_EQ(display_list->complexity_score(), 5u);
+  ASSERT_FALSE(display_list->should_be_cached());
+
+  SkCanvas dummy_canvas;
+
+  PrerollContextHolder preroll_context_holder = GetSamplePrerollContextHolder();
+
+  cache.PrepareNewFrame();
+
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             display_list.get(), false, false, matrix));
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+
+  cache.CleanupAfterFrame();
+  cache.PrepareNewFrame();
+
+  ASSERT_FALSE(cache.Prepare(&preroll_context_holder.preroll_context,
+                             display_list.get(), false, false, matrix));
+  ASSERT_FALSE(cache.Draw(*display_list, dummy_canvas));
+
+  // Six raster ops should be cached
+  display_list = GetSampleDisplayList(6);
+  ASSERT_EQ(display_list->op_count(), 6);
+  ASSERT_EQ(display_list->complexity_score(), 6u);
+  ASSERT_TRUE(display_list->should_be_cached());
 
   cache.PrepareNewFrame();
 

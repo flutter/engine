@@ -24,33 +24,23 @@ class DisplayListNaiveComplexityCalculator
 
   ~DisplayListNaiveComplexityCalculator() override = default;
 
-  void setAntiAlias(bool aa) override { complexity_score_++; }
-  void setDither(bool dither) override { complexity_score_++; }
-  void setInvertColors(bool invert) override { complexity_score_++; }
-  void setStrokeCap(SkPaint::Cap cap) override { complexity_score_++; }
-  void setStrokeJoin(SkPaint::Join join) override { complexity_score_++; }
-  void setStyle(SkPaint::Style style) override { complexity_score_++; }
-  void setStrokeWidth(SkScalar width) override { complexity_score_++; }
-  void setStrokeMiter(SkScalar limit) override { complexity_score_++; }
-  void setColor(SkColor color) override { complexity_score_++; }
-  void setBlendMode(SkBlendMode mode) override { complexity_score_++; }
-  void setBlender(sk_sp<SkBlender> blender) override { complexity_score_++; }
-  void setShader(sk_sp<SkShader> shader) override { complexity_score_++; }
-  void setImageFilter(sk_sp<SkImageFilter> filter) override {
-    complexity_score_++;
-  }
-  void setColorFilter(sk_sp<SkColorFilter> filter) override {
-    complexity_score_++;
-  }
-  void setPathEffect(sk_sp<SkPathEffect> effect) override {
-    complexity_score_++;
-  }
-  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {
-    complexity_score_++;
-  }
-  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {
-    complexity_score_++;
-  }
+  void setAntiAlias(bool aa) override {}
+  void setDither(bool dither) override {}
+  void setInvertColors(bool invert) override {}
+  void setStrokeCap(SkPaint::Cap cap) override {}
+  void setStrokeJoin(SkPaint::Join join) override {}
+  void setStyle(SkPaint::Style style) override {}
+  void setStrokeWidth(SkScalar width) override {}
+  void setStrokeMiter(SkScalar limit) override {}
+  void setColor(SkColor color) override {}
+  void setBlendMode(SkBlendMode mode) override {}
+  void setBlender(sk_sp<SkBlender> blender) override {}
+  void setShader(sk_sp<SkShader> shader) override {}
+  void setImageFilter(sk_sp<SkImageFilter> filter) override {}
+  void setColorFilter(sk_sp<SkColorFilter> filter) override {}
+  void setPathEffect(sk_sp<SkPathEffect> effect) override {}
+  void setMaskFilter(sk_sp<SkMaskFilter> filter) override {}
+  void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {}
 
   void translate(SkScalar tx, SkScalar ty) override { complexity_score_++; }
   void scale(SkScalar sx, SkScalar sy) override { complexity_score_++; }
