@@ -28,8 +28,6 @@ namespace flutter {
 namespace testing {
 
 TestVulkanContext::TestVulkanContext() {
-  FML_LOG(ERROR) << "====bdero==== Attempting to construct TestVulkanContext.";
-
   // ---------------------------------------------------------------------------
   // Initialize basic Vulkan state using the Swiftshader ICD.
   // ---------------------------------------------------------------------------
@@ -39,12 +37,12 @@ TestVulkanContext::TestVulkanContext() {
   // TODO(96949): Clean this up and pass a native library directly to
   //              VulkanProcTable.
   if (!fml::NativeLibrary::Create(VULKAN_SO_PATH)) {
-    FML_LOG(WARNING) << "Couldn't find Vulkan ICD \"" << vulkan_icd
-                     << "\", trying \"libvulkan.so\" instead.";
+    FML_LOG(ERROR) << "Couldn't find Vulkan ICD \"" << vulkan_icd
+                   << "\", trying \"libvulkan.so\" instead.";
     vulkan_icd = "libvulkan.so";
   }
 
-  FML_LOG(WARNING) << "Using Vulkan ICD: " << vulkan_icd;
+  FML_LOG(INFO) << "Using Vulkan ICD: " << vulkan_icd;
 
   vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(vulkan_icd);
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
@@ -108,13 +106,6 @@ TestVulkanContext::TestVulkanContext() {
       MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
   context_ = GrDirectContext::MakeVulkan(backend_context, options);
-
-  FML_LOG(ERROR) << "====bdero==== This message means that the "
-                    "TestVulkanContext was successfully "
-                    "constructed. This means that mandatory procs were "
-                    "successfully resolved from "
-                    "the Vulkan ICD. The ICD successfully loaded was \""
-                 << vulkan_icd << "\"!";
 }
 
 TestVulkanContext::~TestVulkanContext() {
