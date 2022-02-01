@@ -168,15 +168,14 @@ void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
 void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
   for (const Win32Message& message : event->session) {
-    UINT accepted = 1;
+    UINT result = 0;
     if (message.action != WM_CHAR) {
-      accepted = window_delegate_->Win32DispatchMessage(
+      pending_redispatches_.push_back(message);
+      result = window_delegate_->Win32DispatchMessage(
           message.action, message.wparam, message.lparam);
     }
-    pending_redispatches_.push_back(message);
-    if (accepted != 1) {
-      std::cerr << "Unable to synthesize event for keyboard event. ("
-                << accepted << ")"
+    if (result != 0) {
+      std::cerr << "Unable to synthesize event for keyboard event."
                 << std::endl;
     }
   }
