@@ -36,7 +36,9 @@ DisplayList::DisplayList(uint8_t* ptr,
                          size_t nested_byte_count,
                          int nested_op_count,
                          const SkRect& cull_rect,
-                         bool can_apply_group_opacity)
+                         bool can_apply_group_opacity,
+                         unsigned int complexity_score,
+                         bool should_be_cached)
     : storage_(ptr),
       byte_count_(byte_count),
       op_count_(op_count),
@@ -44,7 +46,9 @@ DisplayList::DisplayList(uint8_t* ptr,
       nested_op_count_(nested_op_count),
       bounds_({0, 0, -1, -1}),
       bounds_cull_(cull_rect),
-      can_apply_group_opacity_(can_apply_group_opacity) {
+      can_apply_group_opacity_(can_apply_group_opacity),
+      complexity_score_(complexity_score),
+      should_be_cached_(should_be_cached) {
   static std::atomic<uint32_t> nextID{1};
   do {
     unique_id_ = nextID.fetch_add(+1, std::memory_order_relaxed);

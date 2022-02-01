@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
 
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_complexity.h"
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/types.h"
@@ -396,6 +397,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   sk_sp<SkMaskFilter> current_mask_filter_;
   SkBlurStyle current_mask_style_;
   SkScalar current_mask_sigma_ = kInvalidSigma;
+
+  std::unique_ptr<DisplayListComplexityCalculator> complexity_accumulator_;
 };
 
 }  // namespace flutter

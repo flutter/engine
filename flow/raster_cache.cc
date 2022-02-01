@@ -109,7 +109,7 @@ static bool IsDisplayListWorthRasterizing(DisplayList* display_list,
 
   // TODO(abarth): We should find a better heuristic here that lets us avoid
   // wasting memory on trivial layers that are easy to re-rasterize every frame.
-  return display_list->op_count(true) > 5;
+  return display_list->should_be_cached();
 }
 
 /// @note Procedure doesn't copy all closures.

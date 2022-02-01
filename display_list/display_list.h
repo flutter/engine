@@ -194,6 +194,12 @@ class DisplayList : public SkRefCnt {
     return bounds_;
   }
 
+  // This is exposed so that we can use this value for accumulating
+  // nested DisplayList complexity scores
+  unsigned int complexity_score() const { return complexity_score_; }
+
+  bool should_be_cached() const { return should_be_cached_; }
+
   bool Equals(const DisplayList& other) const;
 
   bool can_apply_group_opacity() { return can_apply_group_opacity_; }
@@ -207,7 +213,9 @@ class DisplayList : public SkRefCnt {
               size_t nested_byte_count,
               int nested_op_count,
               const SkRect& cull_rect,
-              bool can_apply_group_opacity);
+              bool can_apply_group_opacity,
+              unsigned int complexity_score,
+              bool should_be_cached);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t byte_count_;
@@ -223,6 +231,9 @@ class DisplayList : public SkRefCnt {
   SkRect bounds_cull_;
 
   bool can_apply_group_opacity_;
+
+  unsigned int complexity_score_;
+  bool should_be_cached_;
 
   void ComputeBounds();
   void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
