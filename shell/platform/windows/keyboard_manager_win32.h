@@ -134,13 +134,27 @@ class KeyboardManagerWin32 {
   using OnKeyCallback =
       std::function<void(std::unique_ptr<PendingEvent>, bool)>;
 
+  struct PendingText {
+    bool ready;
+    std::u16string content;
+  };
+
   // Returns true if it's a new event, or false if it's a redispatched event.
   void OnKey(std::unique_ptr<PendingEvent> event, OnKeyCallback callback);
 
+  // From `pending_texts_`, pop all front elements that are ready, dispatch
+  // them to |OnText|, and remove them.
+  void DispatchReadyTexts();
+
+  // Handle the result of |OnKey|, which might dispatch the text result to
+  // |OnText|.
+  //
+  // The `pending_text` is either a valid iterator of `pending_texts`, or its
+  // end(). In the latter case, this OnKey message does not contain a text.
   void HandleOnKeyResult(std::unique_ptr<PendingEvent> event,
                          bool handled,
                          int char_action,
-                         std::u16string text);
+                         std::list<PendingText>::iterator pending_text);
 
   // Returns the type of the next WM message.
   //
@@ -159,9 +173,10 @@ class KeyboardManagerWin32 {
   WindowDelegate* window_delegate_;
 
   // Keeps track of all messages during the current session.
+  //
+  // At the end of a session, it is moved to the `PendingEvent`, which is
+  // passed to `OnKey`.
   std::vector<Win32Message> current_session_;
-
-  std::map<uint16_t, std::u16string> text_for_scancode_on_redispatch_;
 
   // Whether the last event is a CtrlLeft key down.
   //
@@ -178,7 +193,15 @@ class KeyboardManagerWin32 {
   // This is used to resolve a corner case described in |IsKeyDownAltRight|.
   bool should_synthesize_ctrl_left_up;
 
-  // The queue of key events that have been redispatched to the system but have
+  // A queue of potential texts derived from char messages.
+  //
+  // The text might or might not be ready when they're added, and they might
+  // become ready or removed later. `DispatchReadyTexts` is used to dispatch all
+  // ready texts from the front to `OnText`. This queue is used to ensure
+  // they're dispatched in their arrival order.
+  std::list<PendingText> pending_texts_;
+
+  // The queue of messages that have been redispatched to the system but have
   // not yet been received for a second time.
   std::deque<Win32Message> pending_redispatches_;
 

@@ -201,11 +201,19 @@ void KeyboardManagerWin32::OnKey(std::unique_ptr<PendingEvent> event,
                           });
 }
 
+void KeyboardManagerWin32::DispatchReadyTexts() {
+  auto front = pending_texts_.begin();
+  for (; front != pending_texts_.end() && front->ready; ++front) {
+    window_delegate_->OnText(front->content);
+  }
+  pending_texts_.erase(pending_texts_.begin(), front);
+}
+
 void KeyboardManagerWin32::HandleOnKeyResult(
     std::unique_ptr<PendingEvent> event,
     bool handled,
     int char_action,
-    std::u16string text) {
+    std::list<PendingText>::iterator pending_text) {
   // First, patch |handled|, because some key events must always be treated as
   // handled.
   //
@@ -223,6 +231,9 @@ void KeyboardManagerWin32::HandleOnKeyResult(
 
   // For handled events, that's all.
   if (real_handled) {
+    if (pending_text != pending_texts_.end()) {
+      pending_texts_.erase(pending_text);
+    }
     return;
   }
 
@@ -233,8 +244,10 @@ void KeyboardManagerWin32::HandleOnKeyResult(
   // will be incorporated into a later WM_CHAR with the full character.
   // Non-printable event characters have been filtered out before being passed
   // to OnKey.
-  if (char_action == WM_CHAR && event->character != 0) {
-    window_delegate_->OnText(text);
+  if (char_action == WM_CHAR && event->character != 0 &&
+      pending_text != pending_texts_.end()) {
+    pending_text->ready = true;
+    DispatchReadyTexts();
   }
 
   RedispatchEvent(std::move(event));
@@ -314,15 +327,20 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
             .was_down = was_down,
             .session = std::move(current_session_),
         });
+        pending_texts_.push_back(PendingText{
+          .ready = false,
+          .content = text,
+        });
+        auto pending_text = std::prev(pending_texts_.end());
         // SYS messages must not be handled by `HandleMessage` or be
         // redispatched.
         const bool is_syskey = action == WM_SYSCHAR || action == WM_SYSDEADCHAR;
         OnKey(
             std::move(event),
-            [this, char_action = action, text, is_syskey](
+            [this, char_action = action, pending_text, is_syskey](
                 std::unique_ptr<PendingEvent> event, bool handled) {
               bool real_handled = handled || is_syskey;
-              HandleOnKeyResult(std::move(event), handled, char_action, text);
+              HandleOnKeyResult(std::move(event), handled, char_action, pending_text);
             });
         return !is_syskey;
       }
@@ -338,7 +356,11 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // events for all control key shortcuts.
       current_session_.clear();
       if (action == WM_CHAR && IsPrintable(wparam)) {
-        window_delegate_->OnText(text);
+        pending_texts_.push_back(PendingText{
+          .ready = true,
+          .content = text,
+        });
+        DispatchReadyTexts();
       }
       return true;
     }
@@ -395,7 +417,7 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
           std::move(event),
           [this, is_syskey](std::unique_ptr<PendingEvent> event, bool handled) {
             bool real_handled = handled || is_syskey;
-            HandleOnKeyResult(std::move(event), handled, 0, std::u16string());
+            HandleOnKeyResult(std::move(event), handled, 0, pending_texts_.end());
           });
       return !is_syskey;
     }

@@ -1397,15 +1397,15 @@ TEST(KeyboardTest, DeadKeyTwiceThenLetter) {
           kWmResultZero));
 
   EXPECT_EQ(recorded_callbacks.size(), 1);
-  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackquote,
                        kLogicalBackquote, "`", kNotSynthesized);
-  EXPECT_CALL_IS_TEXT(key_calls[1], u"`");
   clear_key_calls();
   // Key down event responded with false.
   recorded_callbacks.front()(false);
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"`");
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"`");
   clear_key_calls();
 
   tester.Responding(false);
@@ -1540,15 +1540,15 @@ TEST(KeyboardTest, DisorderlyRespondedEvents) {
   // Resolve the second event first to test disordered responses.
   recorded_callbacks.back()(false);
 
-  EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_TEXT(key_calls[0], u"b");
+  EXPECT_EQ(key_calls.size(), 0);
   clear_key_calls();
 
   // Resolve the first event.
   recorded_callbacks.front()(false);
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"a");
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"b");
   clear_key_calls();
 }
 
