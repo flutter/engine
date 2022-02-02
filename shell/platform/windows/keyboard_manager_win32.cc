@@ -133,38 +133,6 @@ KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
       last_key_is_ctrl_left_down(false),
       should_synthesize_ctrl_left_up(false) {}
 
-void KeyboardManagerWin32::DispatchEvent(const PendingEvent& event) {
-  assert(event.action != WM_SYSKEYDOWN && event.action != WM_SYSKEYUP &&
-         "Unexpectedly dispatching a SYS event. SYS events can't be dispatched "
-         "and should have been prevented in earlier code.");
-
-  char32_t character = event.character;
-
-  INPUT input_event{
-      .type = INPUT_KEYBOARD,
-      .ki =
-          KEYBDINPUT{
-              .wVk = static_cast<WORD>(event.key),
-              .wScan = static_cast<WORD>(event.scancode),
-              .dwFlags = static_cast<WORD>(
-                  KEYEVENTF_SCANCODE |
-                  (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0) |
-                  (event.action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0)),
-          },
-  };
-
-   UINT accepted = window_delegate_->Win32DispatchEvent(1, &input_event,
-                                                       sizeof(input_event));
-  if (accepted != 1) {
-    std::cerr << "Unable to synthesize event for keyboard event with scancode "
-              << event.scancode;
-    if (character != 0) {
-      std::cerr << " (character " << character << ")";
-    }
-    std::cerr << std::endl;
-  }
-}
-
 void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
   for (const Win32Message& message : event->session) {
@@ -215,13 +183,11 @@ void KeyboardManagerWin32::OnKey(std::unique_ptr<PendingEvent> event,
   if (IsKeyUpAltRight(event->action, event->key, event->extended)) {
     if (should_synthesize_ctrl_left_up) {
       should_synthesize_ctrl_left_up = false;
-      PendingEvent ctrl_left_up{
-          .key = VK_LCONTROL,
-          .scancode = ctrl_left_scancode,
-          .action = WM_KEYUP,
-          .was_down = true,
-      };
-      DispatchEvent(ctrl_left_up);
+      const LPARAM lParam =
+          (1 /* repeat_count */ << 0) | (ctrl_left_scancode << 16) |
+          (0 /* extended */ << 24) | (1 /* prev_state */ << 30) |
+          (1 /* transition */ << 31);
+      window_delegate_->Win32DispatchMessage(WM_KEYUP, VK_LCONTROL, lParam);
     }
   }
 
@@ -349,13 +315,17 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
             .was_down = was_down,
             .session = std::move(current_session_),
         });
+        // SYS messages must not be handled by `HandleMessage` or be
+        // redispatched.
+        const bool is_syskey = action == WM_SYSCHAR || action == WM_SYSDEADCHAR;
         OnKey(
             std::move(event),
-            [this, char_action = action, text](
+            [this, char_action = action, text, is_syskey](
                 std::unique_ptr<PendingEvent> event, bool handled) {
+              bool real_handled = handled || is_syskey;
               HandleOnKeyResult(std::move(event), handled, char_action, text);
             });
-        return true;
+        return !is_syskey;
       }
 
       // If the charcter session is not preceded by a key down message, dispatch
@@ -419,12 +389,16 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
           .was_down = was_down,
           .session = std::move(current_session_),
       });
+      // SYS messages must not be handled by `HandleMessage` or be
+      // redispatched.
+      const bool is_syskey = action == WM_SYSKEYDOWN || action == WM_SYSKEYUP;
       OnKey(
           std::move(event),
-          [this](std::unique_ptr<PendingEvent> event, bool handled) {
+          [this, is_syskey](std::unique_ptr<PendingEvent> event, bool handled) {
+            bool real_handled = handled || is_syskey;
             HandleOnKeyResult(std::move(event), handled, 0, std::u16string());
           });
-      return true;
+      return !is_syskey;
     }
     default:
       assert(false);

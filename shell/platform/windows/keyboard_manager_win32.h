@@ -75,13 +75,6 @@ class KeyboardManagerWin32 {
     // Used to process key messages.
     virtual uint32_t Win32MapVkToChar(uint32_t virtual_key) = 0;
 
-    // Win32's |SendInput|.
-    //
-    // Used to synthesize key events.
-    virtual UINT Win32DispatchEvent(UINT cInputs,
-                                    LPINPUT pInputs,
-                                    int cbSize) = 0;
-
     // Win32's |SendMessage|.
     //
     // Used to synthesize key messages.
@@ -92,7 +85,7 @@ class KeyboardManagerWin32 {
 
   using KeyEventCallback = WindowDelegate::KeyEventCallback;
 
-  KeyboardManagerWin32(WindowDelegate* delegate);
+  explicit KeyboardManagerWin32(WindowDelegate* delegate);
 
   // Processes Win32 messages related to keyboard and text.
   //
@@ -109,8 +102,7 @@ class KeyboardManagerWin32 {
   bool HandleMessage(UINT const message,
                      WPARAM const wparam,
                      LPARAM const lparam);
-
- private:
+ protected:
   struct Win32Message {
     UINT action;
     WPARAM wparam;
@@ -134,12 +126,11 @@ class KeyboardManagerWin32 {
     bool was_down;
 
     std::vector<Win32Message> session;
-
-    // A value calculated out of critical event information that can be used
-    // to identify redispatched events.
-    uint64_t Hash() const { return ComputeEventHash(*this); }
   };
 
+   virtual void RedispatchEvent(std::unique_ptr<PendingEvent> event);
+
+ private:
   using OnKeyCallback =
       std::function<void(std::unique_ptr<PendingEvent>, bool)>;
 
@@ -159,14 +150,11 @@ class KeyboardManagerWin32 {
   // If there's no message, returns 0.
   UINT PeekNextMessageType(UINT wMsgFilterMin, UINT wMsgFilterMax);
 
-  void DispatchEvent(const PendingEvent& event);
-
   // Find an event in the redispatch list that matches the given one.
   //
   // If an matching event is found, removes the matching event from the
   // redispatch list, and returns true. Otherwise, returns false;
   bool RemoveRedispatchedMessage(UINT action, WPARAM wparam, LPARAM lparam);
-  void RedispatchEvent(std::unique_ptr<PendingEvent> event);
 
   WindowDelegate* window_delegate_;
 
