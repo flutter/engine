@@ -1035,11 +1035,11 @@ TEST(KeyboardTest, AltGrModifiedKey) {
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
 
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
-                       kLogicalAltRight, "", kNotSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp,
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 }
 
@@ -1090,11 +1090,11 @@ TEST(KeyboardTest, AltGrTwice) {
       1,
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
-                       kLogicalAltRight, "", kNotSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp,
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
   // 3. AltGr down (or: ControlLeft down then AltRight down.)
@@ -1125,18 +1125,20 @@ TEST(KeyboardTest, AltGrTwice) {
       1,
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(kWmResultDefault));
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
-                       kLogicalAltRight, "", kNotSynthesized);
-  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp,
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalAltRight,
+                       kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
 
   // 5. For key sequence 2: a real ControlLeft up.
   tester.InjectMessages(
       1, WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(
-             kWmResultDefault));
-  EXPECT_EQ(key_calls.size(), 0);
+             kWmResultZero));
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
+                       kNotSynthesized);
   clear_key_calls();
 }
 
