@@ -137,7 +137,6 @@ class Surface {
 
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
-    print('createOrUpdateSurface useH5vccCanvasKit is $useH5vccCanvasKit');
     if (useH5vccCanvasKit) {
       _surface ??= CkSurface(canvasKit.getH5vccSkSurface(), null);
       return _surface!;
