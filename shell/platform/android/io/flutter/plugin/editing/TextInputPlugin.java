@@ -919,12 +919,14 @@ public class TextInputPlugin
           spellCheckerSuggestionSpan += (suggestionsInfo.getSuggestionAt(j) + ",");
         }
 
-        spellCheckerSuggestionSpans.add(spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
+        spellCheckerSuggestionSpans.add(
+            spellCheckerSuggestionSpan.substring(0, spellCheckerSuggestionSpan.length() - 1));
       }
     }
 
     // Make call to update the spell checker results in the framework.
-    textInputChannel.updateSpellCheckerResults(inputTarget.id, spellCheckerSuggestionSpans, currentSpellCheckedText);
+    textInputChannel.updateSpellCheckerResults(
+        inputTarget.id, spellCheckerSuggestionSpans, currentSpellCheckedText);
   }
 
   @Override
