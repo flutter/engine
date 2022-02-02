@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_H_
 
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/types.h"
 #include "third_party/skia/include/gpu/GrTypes.h"
 
@@ -18,11 +19,11 @@ class DisplayListComplexityCalculator {
   virtual ~DisplayListComplexityCalculator() = default;
 
   // Returns a calculated complexity score for a given DisplayList object
-  virtual int compute(DisplayList* display_list) = 0;
+  virtual unsigned int compute(DisplayList* display_list) = 0;
 
   // Returns whether a given complexity score meets the threshold for
   // cacheability for this particular ComplexityCalculator
-  virtual bool should_be_cached(int complexity_score) = 0;
+  virtual bool should_be_cached(unsigned int complexity_score) = 0;
 };
 
 class DisplayListNaiveComplexityCalculator
@@ -30,12 +31,12 @@ class DisplayListNaiveComplexityCalculator
  public:
   static DisplayListComplexityCalculator* GetInstance();
 
-  int compute(DisplayList* display_list) override {
+  unsigned int compute(DisplayList* display_list) override {
     return display_list->op_count(true);
   }
 
-  bool should_be_cached(int complexity_score) override {
-    return complexity_score > 5;
+  bool should_be_cached(unsigned int complexity_score) override {
+    return complexity_score > 5u;
   }
 
  private:
