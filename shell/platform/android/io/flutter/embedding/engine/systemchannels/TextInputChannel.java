@@ -370,10 +370,10 @@ public class TextInputChannel {
 
   /** Responsible for sending spell checker results across to the framework. */
   public void updateSpellCheckerResults(
-      int inputClientId, ArrayList<HashMap<String, String>> spellCheckerResults) {
+      int inputClientId, ArrayList<String> spellCheckerResults, String spellCheckedText) {
     channel.invokeMethod(
         "TextInputClient.updateSpellCheckerResults",
-        Arrays.asList(inputClientId, spellCheckerResults));
+        Arrays.asList(inputClientId, spellCheckerResults, spellCheckedText));
   }
 
   /**
