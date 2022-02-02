@@ -109,9 +109,12 @@ TestVulkanContext::TestVulkanContext() {
 }
 
 TestVulkanContext::~TestVulkanContext() {
+  FML_LOG(ERROR) << "~TestVulkanContext begin";
   if (context_) {
     context_->releaseResourcesAndAbandonContext();
   }
+
+  FML_LOG(ERROR) << "~TestVulkanContext end";
 }
 
 std::optional<TestVulkanImage> TestVulkanContext::CreateImage(

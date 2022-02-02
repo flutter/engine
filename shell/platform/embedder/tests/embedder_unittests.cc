@@ -592,6 +592,7 @@ TEST_F(EmbedderTest, VMAndIsolateSnapshotSizesAreRedundantInAOTMode) {
 ///
 TEST_F(EmbedderTest,
        CompositorMustBeAbleToRenderKnownSceneWithSoftwareCompositor) {
+  FML_LOG(ERROR) << "====bdero==== 0 BEGIN";
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
@@ -606,8 +607,12 @@ TEST_F(EmbedderTest,
 
   auto scene_image = context.GetNextSceneImage();
 
+  FML_LOG(ERROR) << "====bdero==== 1 GetNextSceneImage";
+
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
+        FML_LOG(ERROR) << "====bdero==== Present callback BEGIN";
+
         ASSERT_EQ(layers_count, 5u);
 
         // Layer Root
@@ -693,12 +698,17 @@ TEST_F(EmbedderTest,
           ASSERT_EQ(*layers[4], layer);
         }
 
+        FML_LOG(ERROR) << "====bdero==== Present callback latch";
         latch.CountDown();
+
+        FML_LOG(ERROR) << "====bdero==== Present callback END";
       });
 
   context.GetCompositor().SetPlatformViewRendererCallback(
       [&](const FlutterLayer& layer, GrDirectContext*
           /* don't use because software compositor */) -> sk_sp<SkImage> {
+        FML_LOG(ERROR) << "====bdero==== Renderer callback BEGIN";
+
         auto surface = CreateRenderSurface(
             layer, nullptr /* null because software compositor */);
         auto canvas = surface->getCanvas();
@@ -731,6 +741,7 @@ TEST_F(EmbedderTest,
                 << "Test was asked to composite an unknown platform view.";
         }
 
+        FML_LOG(ERROR) << "====bdero==== Renderer callback END";
         return surface->makeImageSnapshot();
       });
 
@@ -739,7 +750,11 @@ TEST_F(EmbedderTest,
       CREATE_NATIVE_ENTRY(
           [&latch](Dart_NativeArguments args) { latch.CountDown(); }));
 
+  FML_LOG(ERROR) << "====bdero==== 2 Before LaunchEngine";
+
   auto engine = builder.LaunchEngine();
+
+  FML_LOG(ERROR) << "====bdero==== 3 After LaunchEngine";
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
@@ -755,12 +770,16 @@ TEST_F(EmbedderTest,
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
+  FML_LOG(ERROR) << "====bdero==== 4 Before latch";
   latch.Wait();
+  FML_LOG(ERROR) << "====bdero==== 5 After latch";
 
   ASSERT_TRUE(ImageMatchesFixture("compositor_software.png", scene_image));
 
   // There should no present calls on the root surface.
   ASSERT_EQ(context.GetSurfacePresentCount(), 0u);
+
+  FML_LOG(ERROR) << "====bdero==== 6 END";
 }
 
 //------------------------------------------------------------------------------

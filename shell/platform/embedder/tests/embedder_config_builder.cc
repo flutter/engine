@@ -201,6 +201,7 @@ void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
 
 void EmbedderConfigBuilder::SetVulkanRendererConfig(SkISize surface_size) {
 #ifdef SHELL_ENABLE_VULKAN
+  FML_LOG(ERROR) << "==== bdero ==== SetVulkanRendererConfig";
   renderer_config_.type = FlutterRendererType::kVulkan;
   renderer_config_.vulkan = vulkan_renderer_config_;
   context_.SetupSurface(surface_size);
@@ -468,9 +469,12 @@ void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
 #ifdef SHELL_ENABLE_VULKAN
 
 void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
+  FML_LOG(ERROR) << "==== bdero ==== InitializeVulkanRendererConfig";
   if (context_.GetContextType() != EmbedderTestContextType::kVulkanContext) {
+    FML_LOG(ERROR) << "==== bdero ==== InitializeVulkanRendererConfig SKIPPED";
     return;
   }
+  FML_LOG(ERROR) << "==== bdero ==== context_.GetContextType() must be Vulkan";
 
   vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
   vulkan_renderer_config_.version =
