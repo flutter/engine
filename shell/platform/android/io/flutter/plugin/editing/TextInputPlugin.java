@@ -136,8 +136,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
           }
 
           @Override
-          public void setPlatformViewClient(int platformViewId, boolean usesVirtualDisplay) {
-            setPlatformViewTextInputClient(platformViewId, usesVirtualDisplay);
+          public void setPlatformViewClient(int platformViewId) {
+            setPlatformViewTextInputClient(platformViewId);
           }
 
           @Override
@@ -429,20 +429,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     mEditable.addEditingStateListener(this);
   }
 
-  private void setPlatformViewTextInputClient(int platformViewId, boolean usesVirtualDisplay) {
-    if (usesVirtualDisplay) {
-      // We need to make sure that the Flutter view is focused so that no imm operations get short
-      // circuited.
-      // Not asking for focus here specifically manifested in a but on API 28 devices where the
-      // platform view's request to show a keyboard was ignored.
-      mView.requestFocus();
-      inputTarget = new InputTarget(InputTarget.Type.VD_PLATFORM_VIEW, platformViewId);
-      mImm.restartInput(mView);
-      mRestartInputPending = false;
-    } else {
-      inputTarget = new InputTarget(InputTarget.Type.HC_PLATFORM_VIEW, platformViewId);
-      lastInputConnection = null;
-    }
+  private void setPlatformViewTextInputClient(int platformViewId) {
+    inputTarget = new InputTarget(InputTarget.Type.HC_PLATFORM_VIEW, platformViewId);
+    lastInputConnection = null;
   }
 
   private static boolean composingChanged(

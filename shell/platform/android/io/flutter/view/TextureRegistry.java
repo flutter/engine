@@ -27,7 +27,8 @@ public interface TextureRegistry {
    *
    * @return A SurfaceTextureEntry.
    */
-  SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap);
+  SurfaceTextureEntry registerSurfaceTexture(
+      @NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap);
 
   /** A registry entry for a managed SurfaceTexture. */
   interface SurfaceTextureEntry {

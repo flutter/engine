@@ -43,7 +43,6 @@ import io.flutter.plugin.localization.LocalizationPluginTest;
 import io.flutter.plugin.mouse.MouseCursorPluginTest;
 import io.flutter.plugin.platform.PlatformPluginTest;
 import io.flutter.plugin.platform.PlatformViewsControllerTest;
-import io.flutter.plugin.platform.SingleViewPresentationTest;
 import io.flutter.util.PreconditionsTest;
 import io.flutter.view.AccessibilityBridgeTest;
 import org.junit.runner.RunWith;
@@ -96,7 +95,6 @@ import test.io.flutter.embedding.engine.PluginComponentTest;
   RenderingComponentTest.class,
   RestorationChannelTest.class,
   ShimPluginRegistryTest.class,
-  SingleViewPresentationTest.class,
   SmokeTest.class,
   StandardMessageCodecTest.class,
   StandardMethodCodecTest.class,

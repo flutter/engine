@@ -50,6 +50,7 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureState;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureType;
+import io.flutter.embedding.engine.renderer.FlutterRenderer.ViewportMetrics;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
@@ -769,7 +770,25 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     sendViewportMetricsToFlutter();
 
+    for (ViewportMetricsListener listener : sViewportMetricsListeners) {
+      listener.onMetricsChanged(viewportMetrics);
+    }
     return newInsets;
+  }
+
+  public interface ViewportMetricsListener {
+    public void onMetricsChanged(ViewportMetrics metrics);
+  }
+
+  private Set<ViewportMetricsListener> sViewportMetricsListeners =
+      new HashSet<ViewportMetricsListener>();
+
+  public void addViewportMetricsListener(ViewportMetricsListener l) {
+    sViewportMetricsListeners.add(l);
+  }
+
+  public void removeViewportMetricsListener(ViewportMetricsListener l) {
+    sViewportMetricsListeners.remove(l);
   }
 
   /**
@@ -842,21 +861,6 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
 
     return textInputPlugin.createInputConnection(this, keyboardManager, outAttrs);
-  }
-
-  /**
-   * Allows a {@code View} that is not currently the input connection target to invoke commands on
-   * the {@link android.view.inputmethod.InputMethodManager}, which is otherwise disallowed.
-   *
-   * <p>Returns true to allow non-input-connection-targets to invoke methods on {@code
-   * InputMethodManager}, or false to exclusively allow the input connection target to invoke such
-   * methods.
-   */
-  @Override
-  public boolean checkInputConnectionProxy(View view) {
-    return flutterEngine != null
-        ? flutterEngine.getPlatformViewsController().checkInputConnectionProxy(view)
-        : super.checkInputConnectionProxy(view);
   }
 
   /**

@@ -108,7 +108,8 @@ public class FlutterRenderer implements TextureRegistry {
    * available to Flutter code.
    */
   @Override
-  public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
+  public SurfaceTextureEntry registerSurfaceTexture(
+      @NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture, bitmap);
@@ -123,7 +124,8 @@ public class FlutterRenderer implements TextureRegistry {
     private boolean released;
     private Bitmap bitmap;
 
-    SurfaceTextureRegistryEntry(long id, @NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
+    SurfaceTextureRegistryEntry(
+        long id, @NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
       this.id = id;
       this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture);
       this.bitmap = bitmap;
