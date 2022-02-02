@@ -7,6 +7,7 @@ package io.flutter.plugin.platform;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -63,8 +64,7 @@ class PlatformViewWrapper extends FrameLayout {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       // Fill the entire canvas with a transparent color.
       // As a result, the background color of the platform view container is displayed
-      // to the user
-      // until the platform view draws its first frame.
+      // to the user until the platform view draws its first frame.
       final Canvas canvas = sSurface.lockHardwareCanvas();
       canvas.drawColor(Color.TRANSPARENT);
       sSurface.unlockCanvasAndPost(canvas);
@@ -139,6 +139,9 @@ class PlatformViewWrapper extends FrameLayout {
     // Override the canvas that this subtree of views will use to draw.
     final Canvas surfaceCanvas = sSurface.lockHardwareCanvas();
     try {
+      // Clear the current pixels in the canvas.
+      // This helps when a WebView renders an HTML document with transparent background.
+      surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
       super.draw(surfaceCanvas);
     } finally {
       sSurface.unlockCanvasAndPost(surfaceCanvas);
@@ -175,7 +178,6 @@ class PlatformViewWrapper extends FrameLayout {
 
   public void setOnDescendantFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {
     unsetOnDescendantFocusChangeListener();
-
     final ViewTreeObserver observer = getViewTreeObserver();
     if (observer.isAlive() && activeFocusListener == null) {
       activeFocusListener =
