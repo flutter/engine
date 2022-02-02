@@ -111,7 +111,9 @@ typedef struct WmCharInfo {
 
   uint16_t repeat_count = 1;
 
-  // Some messages are sent with bit25. It's meaning is unknown.
+  // The 25th bit of the LParam.
+  //
+  // Some messages are sent bit25 set. It's meaning is yet unknown.
   bool bit25 = 0;
 
   Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
