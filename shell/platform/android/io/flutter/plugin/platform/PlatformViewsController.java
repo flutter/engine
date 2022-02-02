@@ -13,6 +13,7 @@ import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -215,7 +216,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (viewWrappers.contains(viewId)) {
             final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
             viewWrapper.unsetOnDescendantFocusChangeListener();
-            flutterView.removeView(viewWrapper);
+
+            ((ViewGroup) viewWrapper.getParent()).removeView(viewWrapper);
             viewWrappers.remove(viewId);
             return;
           }
@@ -223,7 +225,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           if (platformViewParent.contains(viewId)) {
             final FlutterMutatorView parentView = platformViewParent.get(viewId);
             parentView.unsetOnDescendantFocusChangeListener();
-            flutterView.removeView(parentView);
+            ((ViewGroup) parentView.getParent()).removeView(parentView);
             platformViewParent.remove(viewId);
           }
         }
