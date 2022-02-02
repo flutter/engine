@@ -156,12 +156,12 @@ class PlatformViewWrapper extends FrameLayout {
       case MotionEvent.ACTION_DOWN:
         sPrevLeft = sLeft;
         sPrevTop = sTop;
-        screenMatrix.postTranslate(sPrevLeft, sPrevTop);
+        screenMatrix.postTranslate(sLeft, sTop);
         break;
       case MotionEvent.ACTION_MOVE:
         // While the view is dragged, use the left and top positions as
         // they were at the moment the touch event fired.
-        screenMatrix.postTranslate(sPrevTop, sPrevTop);
+        screenMatrix.postTranslate(sPrevLeft, sPrevTop);
         sPrevLeft = sLeft;
         sPrevTop = sTop;
         break;

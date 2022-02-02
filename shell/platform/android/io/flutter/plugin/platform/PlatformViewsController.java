@@ -240,7 +240,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               (FrameLayout.LayoutParams) view.getLayoutParams();
           layoutParams.topMargin = physicalTop;
           layoutParams.leftMargin = physicalLeft;
-          view.requestLayout();
+          view.setLayoutParams(layoutParams);
         }
 
         @Override
@@ -268,7 +268,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
               (FrameLayout.LayoutParams) view.getLayoutParams();
           layoutParams.width = newWidth;
           layoutParams.height = newHeight;
-          view.requestLayout();
+          view.setLayoutParams(layoutParams);
         }
 
         @Override
