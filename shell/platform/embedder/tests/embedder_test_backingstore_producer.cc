@@ -25,7 +25,7 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
 #endif
 #ifdef SHELL_ENABLE_VULKAN
       ,
-      test_vulkan_context_(fml::MakeRefCounted<TestVulkanContext>())
+      test_vulkan_context_(nullptr)
 #endif
 {
 }
@@ -241,6 +241,10 @@ bool EmbedderTestBackingStoreProducer::CreateVulkanImage(
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
 #ifdef SHELL_ENABLE_VULKAN
+  if (!test_vulkan_context_) {
+    test_vulkan_context_ = fml::MakeRefCounted<TestVulkanContext>();
+  }
+
   auto surface_size = SkISize::Make(config->size.width, config->size.height);
   TestVulkanImage* test_image = new TestVulkanImage(
       std::move(test_vulkan_context_->CreateImage(surface_size).value()));
