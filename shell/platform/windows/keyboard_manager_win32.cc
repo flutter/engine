@@ -287,7 +287,6 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // OnText if the key down event is not handled.
       if (current_session_.front().IsGeneralKeyDown()) {
         const Win32Message first_message = current_session_.front();
-        current_session_.clear();
         const uint8_t scancode = (lparam >> 16) & 0xff;
         const uint16_t key_code = first_message.wparam;
         const bool extended = ((lparam >> 24) & 0x01) == 0x01;

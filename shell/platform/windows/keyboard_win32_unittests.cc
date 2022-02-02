@@ -91,7 +91,7 @@ class MockKeyboardManagerWin32Delegate
   }
   virtual ~MockKeyboardManagerWin32Delegate() {}
 
-  // |WindowWin32|
+  // |KeyboardManagerWin32::WindowDelegate|
   void OnKey(int key,
              int scancode,
              int action,
@@ -103,7 +103,7 @@ class MockKeyboardManagerWin32Delegate
                  callback);
   }
 
-  // |WindowWin32|
+  // |KeyboardManagerWin32::WindowDelegate|
   void OnText(const std::u16string& text) override { view_->OnText(text); }
 
   void SetLayout(MapVkToCharHandler map_vk_to_char) {
@@ -369,6 +369,7 @@ class KeyboardTester {
   }
 };
 
+constexpr uint64_t kScanCodeBackquote = 0x29;
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeKeyB = 0x30;
 constexpr uint64_t kScanCodeKeyE = 0x12;
@@ -1338,6 +1339,86 @@ TEST(KeyboardTest, DeadKeyThatDoesNotCombine) {
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit1,
                        kLogicalDigit1, "", kNotSynthesized);
+  clear_key_calls();
+}
+
+// This tests dead key `, then dead key `, then e.
+//
+// It should output ``e, instead of `è.
+TEST(KeyboardTest, DeadKeyTwiceThenLetter) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US INTL layout.
+
+  // Press `
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{0xC0, kScanCodeBackquote, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmDeadCharInfo{'`', kScanCodeBackquote, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalBackquote, kLogicalBackquote, "`",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Release `
+  tester.InjectMessages(
+      1, WmKeyUpInfo{0xC0, kScanCodeBackquote, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalBackquote, kLogicalBackquote, "",
+                       kNotSynthesized);
+  clear_key_calls();
+
+  // Press ` again.
+  // The response should be slow.
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
+  tester.LateResponding(
+      [&recorded_callbacks](
+          const FlutterKeyEvent* event,
+          MockKeyResponseController::ResponseCallback callback) {
+        recorded_callbacks.push_back(callback);
+      });
+
+  tester.InjectMessages(
+      3,
+      WmKeyDownInfo{0xC0, kScanCodeBackquote, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'`', kScanCodeBackquote, kNotExtended, kWasUp,
+                     kBeingReleased, kNoContext, 1, /*bit25*/ true}
+          .Build(kWmResultZero),
+      WmCharInfo{'`', kScanCodeBackquote, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(recorded_callbacks.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackquote,
+                       kLogicalBackquote, "`", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"`");
+  clear_key_calls();
+  // Key down event responded with false.
+  recorded_callbacks.front()(false);
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"`");
+  clear_key_calls();
+
+  tester.Responding(false);
+
+  // Release `
+  tester.InjectMessages(
+      1, WmKeyUpInfo{0xC0, kScanCodeBackquote, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
+                       kPhysicalBackquote, kLogicalBackquote, "",
+                       kNotSynthesized);
   clear_key_calls();
 }
 

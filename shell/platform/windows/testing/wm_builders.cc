@@ -34,7 +34,8 @@ Win32Message WmKeyUpInfo::Build(LRESULT expected_result, HWND hWnd) {
 
 Win32Message WmCharInfo::Build(LRESULT expected_result, HWND hWnd) {
   uint32_t lParam = (repeat_count << 0) | (scan_code << 16) | (extended << 24) |
-                    (context << 30) | (prev_state << 30) | (transition << 31);
+                    (bit25 << 25) | (context << 29) | (prev_state << 30) |
+                    (transition << 31);
   return Win32Message{
       .message = WM_CHAR,
       .wParam = char_code,
@@ -72,7 +73,8 @@ Win32Message WmSysKeyUpInfo::Build(LRESULT expected_result, HWND hWnd) {
 
 Win32Message WmDeadCharInfo::Build(LRESULT expected_result, HWND hWnd) {
   uint32_t lParam = (repeat_count << 0) | (scan_code << 16) | (extended << 24) |
-                    (context << 30) | (prev_state << 30) | (transition << 31);
+                    (context << 30) | (prev_state << 30) |
+                    (transition << 31);
   return Win32Message{
       .message = WM_DEADCHAR,
       .wParam = char_code,
