@@ -126,7 +126,7 @@ class MockFlutterWindowWin32 : public FlutterWindowWin32 {
   MOCK_METHOD0(OnResetImeComposing, void());
   MOCK_METHOD3(Win32DispatchMessage, UINT(UINT, WPARAM, LPARAM));
   MOCK_METHOD4(Win32PeekMessage, BOOL(LPMSG, UINT, UINT, UINT));
-  MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t ));
+  MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
 
  protected:
   // |KeyboardManagerWin32::WindowDelegate|

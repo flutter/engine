@@ -49,7 +49,9 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   virtual uint32_t Win32MapVkToChar(uint32_t virtual_key) override;
 
   // |KeyboardManagerWin32::WindowDelegate|
-  virtual UINT Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) override;
+  virtual UINT Win32DispatchMessage(UINT Msg,
+                                    WPARAM wParam,
+                                    LPARAM lParam) override;
 
  protected:
   // Converts a c string to a wide unicode string.
