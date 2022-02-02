@@ -100,10 +100,6 @@ Future<void> _downloadCanvasKitJs({String? canvasKitBase}) {
 SkiaFontCollection get skiaFontCollection => _skiaFontCollection!;
 SkiaFontCollection? _skiaFontCollection;
 
-void debugSetSkiaFontCollection(SkiaFontCollection? value) {
-  _skiaFontCollection = value;
-}
-
 /// Initializes [skiaFontCollection].
 void ensureSkiaFontCollectionInitialized() {
   _skiaFontCollection ??= SkiaFontCollection();
