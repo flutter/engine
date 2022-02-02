@@ -25,7 +25,6 @@ std::string EmbedderTest::GetFixturesDirectory() const {
 
 EmbedderTestContext& EmbedderTest::GetEmbedderContext(
     EmbedderTestContextType type) {
-  FML_LOG(ERROR) << "==== bdero ==== GetEmbedderContext";
   // Setup the embedder context lazily instead of in the constructor because we
   // don't to do all the work if the test won't end up using context.
   if (!embedder_contexts_[type]) {
@@ -37,9 +36,6 @@ EmbedderTestContext& EmbedderTest::GetEmbedderContext(
         break;
 #ifdef SHELL_ENABLE_VULKAN
       case EmbedderTestContextType::kVulkanContext:
-
-        FML_LOG(ERROR) << "==== bdero ==== GetEmbedderContext: "
-                          "EmbedderTestContextVulkan was constructed";
         embedder_contexts_[type] =
             std::make_unique<EmbedderTestContextVulkan>(GetFixturesDirectory());
         break;
