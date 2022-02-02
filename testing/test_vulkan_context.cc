@@ -109,7 +109,9 @@ TestVulkanContext::TestVulkanContext() {
 }
 
 TestVulkanContext::~TestVulkanContext() {
-  context_->releaseResourcesAndAbandonContext();
+  if (context_) {
+    context_->releaseResourcesAndAbandonContext();
+  }
 }
 
 std::optional<TestVulkanImage> TestVulkanContext::CreateImage(

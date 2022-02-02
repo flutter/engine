@@ -65,8 +65,12 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
 }
 
 EmbedderSurfaceVulkan::~EmbedderSurfaceVulkan() {
-  main_context_->releaseResourcesAndAbandonContext();
-  resource_context_->releaseResourcesAndAbandonContext();
+  if (main_context_) {
+    main_context_->releaseResourcesAndAbandonContext();
+  }
+  if (resource_context_) {
+    resource_context_->releaseResourcesAndAbandonContext();
+  }
 }
 
 // |GPUSurfaceVulkanDelegate|
