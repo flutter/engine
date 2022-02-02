@@ -6,8 +6,6 @@ import static org.mockito.Mockito.*;
 
 import android.graphics.Matrix;
 import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import org.junit.Test;
@@ -79,49 +77,6 @@ public class FlutterMutatorViewTest {
       screenMatrix.postTranslate(7, 8);
       assertTrue(matrixCaptor.getValue().equals(screenMatrix));
     }
-  }
-
-  @Test
-  public void childHasFocus_rootHasFocus() {
-    final View rootView = mock(View.class);
-    when(rootView.hasFocus()).thenReturn(true);
-    assertTrue(FlutterMutatorView.childHasFocus(rootView));
-  }
-
-  @Test
-  public void childHasFocus_rootDoesNotHaveFocus() {
-    final View rootView = mock(View.class);
-    when(rootView.hasFocus()).thenReturn(false);
-    assertFalse(FlutterMutatorView.childHasFocus(rootView));
-  }
-
-  @Test
-  public void childHasFocus_rootIsNull() {
-    assertFalse(FlutterMutatorView.childHasFocus(null));
-  }
-
-  @Test
-  public void childHasFocus_childHasFocus() {
-    final View childView = mock(View.class);
-    when(childView.hasFocus()).thenReturn(true);
-
-    final ViewGroup rootView = mock(ViewGroup.class);
-    when(rootView.getChildCount()).thenReturn(1);
-    when(rootView.getChildAt(0)).thenReturn(childView);
-
-    assertTrue(FlutterMutatorView.childHasFocus(rootView));
-  }
-
-  @Test
-  public void childHasFocus_childDoesNotHaveFocus() {
-    final View childView = mock(View.class);
-    when(childView.hasFocus()).thenReturn(false);
-
-    final ViewGroup rootView = mock(ViewGroup.class);
-    when(rootView.getChildCount()).thenReturn(1);
-    when(rootView.getChildAt(0)).thenReturn(childView);
-
-    assertFalse(FlutterMutatorView.childHasFocus(rootView));
   }
 
   @Test

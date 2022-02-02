@@ -50,7 +50,6 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureState;
 import io.flutter.embedding.engine.renderer.FlutterRenderer.DisplayFeatureType;
-import io.flutter.embedding.engine.renderer.FlutterRenderer.ViewportMetrics;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.RenderSurface;
 import io.flutter.embedding.engine.systemchannels.SettingsChannel;
@@ -769,26 +768,7 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
             + viewportMetrics.viewInsetBottom);
 
     sendViewportMetricsToFlutter();
-
-    for (ViewportMetricsListener listener : sViewportMetricsListeners) {
-      listener.onMetricsChanged(viewportMetrics);
-    }
     return newInsets;
-  }
-
-  public interface ViewportMetricsListener {
-    public void onMetricsChanged(ViewportMetrics metrics);
-  }
-
-  private Set<ViewportMetricsListener> sViewportMetricsListeners =
-      new HashSet<ViewportMetricsListener>();
-
-  public void addViewportMetricsListener(ViewportMetricsListener l) {
-    sViewportMetricsListeners.add(l);
-  }
-
-  public void removeViewportMetricsListener(ViewportMetricsListener l) {
-    sViewportMetricsListeners.remove(l);
   }
 
   /**

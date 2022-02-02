@@ -864,12 +864,12 @@ public class FlutterView extends SurfaceView
   @Override
   public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
     final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
-    return registerSurfaceTexture(surfaceTexture, null);
+    return registerSurfaceTexture(surfaceTexture);
   }
 
   @Override
   public TextureRegistry.SurfaceTextureEntry registerSurfaceTexture(
-      @NonNull SurfaceTexture surfaceTexture, @NonNull Bitmap bitmap) {
+      @NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
         new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
@@ -930,11 +930,6 @@ public class FlutterView extends SurfaceView
     @Override
     public long id() {
       return id;
-    }
-
-    @Override
-    public Bitmap bitmap() {
-      return null;
     }
 
     @Override
