@@ -462,7 +462,6 @@ TEST(RasterCache, NestedOpCountMetricUsedForDisplayList) {
   auto display_list = GetSampleNestedDisplayList();
   ASSERT_EQ(display_list->op_count(), 1);
   ASSERT_EQ(display_list->op_count(true), 36);
-  ASSERT_EQ(display_list->complexity_score(), 36u);
 
   SkCanvas dummy_canvas;
 
@@ -491,8 +490,6 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   // Five raster ops will not be cached
   auto display_list = GetSampleDisplayList(5);
   ASSERT_EQ(display_list->op_count(), 5);
-  ASSERT_EQ(display_list->complexity_score(), 5u);
-  ASSERT_FALSE(display_list->should_be_cached());
 
   SkCanvas dummy_canvas;
 
@@ -514,8 +511,6 @@ TEST(RasterCache, NaiveComplexityScoringDisplayList) {
   // Six raster ops should be cached
   display_list = GetSampleDisplayList(6);
   ASSERT_EQ(display_list->op_count(), 6);
-  ASSERT_EQ(display_list->complexity_score(), 6u);
-  ASSERT_TRUE(display_list->should_be_cached());
 
   cache.PrepareNewFrame();
 
