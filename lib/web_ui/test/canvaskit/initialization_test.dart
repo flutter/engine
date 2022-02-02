@@ -25,5 +25,18 @@ void testMain() {
       expect(html.document.body!.attributes['flt-build-mode'], 'debug');
     });
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+
+    test('does not include getH5vccSkSurface', () {
+      expect(canvasKit.getH5vccSkSurface, isNull);
+    }, testOn: 'chrome');
   }, skip: isIosSafari);
+
+  group('Patched h5vcc CanvasKit', () {
+    patchH5vccCanvasKit();
+    setUpCanvasKitTest();
+
+    test('includes patched getH5vccSkSurface', () {
+      expect(canvasKit.getH5vccSkSurface, isNotNull);
+    });
+  }, testOn: 'chrome');
 }
