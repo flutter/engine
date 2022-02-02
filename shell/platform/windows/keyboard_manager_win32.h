@@ -102,6 +102,7 @@ class KeyboardManagerWin32 {
   bool HandleMessage(UINT const message,
                      WPARAM const wparam,
                      LPARAM const lparam);
+
  protected:
   struct Win32Message {
     UINT action;
@@ -128,7 +129,7 @@ class KeyboardManagerWin32 {
     std::vector<Win32Message> session;
   };
 
-   virtual void RedispatchEvent(std::unique_ptr<PendingEvent> event);
+  virtual void RedispatchEvent(std::unique_ptr<PendingEvent> event);
 
  private:
   using OnKeyCallback =

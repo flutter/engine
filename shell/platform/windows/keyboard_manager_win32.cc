@@ -328,20 +328,20 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
             .session = std::move(current_session_),
         });
         pending_texts_.push_back(PendingText{
-          .ready = false,
-          .content = text,
+            .ready = false,
+            .content = text,
         });
         auto pending_text = std::prev(pending_texts_.end());
         // SYS messages must not be handled by `HandleMessage` or be
         // redispatched.
         const bool is_syskey = action == WM_SYSCHAR || action == WM_SYSDEADCHAR;
-        OnKey(
-            std::move(event),
-            [this, char_action = action, pending_text, is_syskey](
-                std::unique_ptr<PendingEvent> event, bool handled) {
-              bool real_handled = handled || is_syskey;
-              HandleOnKeyResult(std::move(event), handled, char_action, pending_text);
-            });
+        OnKey(std::move(event),
+              [this, char_action = action, pending_text, is_syskey](
+                  std::unique_ptr<PendingEvent> event, bool handled) {
+                bool real_handled = handled || is_syskey;
+                HandleOnKeyResult(std::move(event), handled, char_action,
+                                  pending_text);
+              });
         return !is_syskey;
       }
 
@@ -357,8 +357,8 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       current_session_.clear();
       if (action == WM_CHAR && IsPrintable(wparam)) {
         pending_texts_.push_back(PendingText{
-          .ready = true,
-          .content = text,
+            .ready = true,
+            .content = text,
         });
         DispatchReadyTexts();
       }
@@ -413,12 +413,12 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // SYS messages must not be handled by `HandleMessage` or be
       // redispatched.
       const bool is_syskey = action == WM_SYSKEYDOWN || action == WM_SYSKEYUP;
-      OnKey(
-          std::move(event),
-          [this, is_syskey](std::unique_ptr<PendingEvent> event, bool handled) {
-            bool real_handled = handled || is_syskey;
-            HandleOnKeyResult(std::move(event), handled, 0, pending_texts_.end());
-          });
+      OnKey(std::move(event), [this, is_syskey](
+                                  std::unique_ptr<PendingEvent> event,
+                                  bool handled) {
+        bool real_handled = handled || is_syskey;
+        HandleOnKeyResult(std::move(event), handled, 0, pending_texts_.end());
+      });
       return !is_syskey;
     }
     default:

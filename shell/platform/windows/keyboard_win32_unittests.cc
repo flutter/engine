@@ -1367,13 +1367,12 @@ TEST(KeyboardTest, DeadKeyTwiceThenLetter) {
 
   // Release `
   tester.InjectMessages(
-      1, WmKeyUpInfo{0xC0, kScanCodeBackquote, kNotExtended}.Build(
-             kWmResultZero));
+      1,
+      WmKeyUpInfo{0xC0, kScanCodeBackquote, kNotExtended}.Build(kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalBackquote, kLogicalBackquote, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalBackquote,
+                       kLogicalBackquote, "", kNotSynthesized);
   clear_key_calls();
 
   // Press ` again.
@@ -1390,16 +1389,17 @@ TEST(KeyboardTest, DeadKeyTwiceThenLetter) {
       3,
       WmKeyDownInfo{0xC0, kScanCodeBackquote, kNotExtended, kWasUp}.Build(
           kWmResultZero),
-      WmCharInfo{'`', kScanCodeBackquote, kNotExtended, kWasUp,
-                     kBeingReleased, kNoContext, 1, /*bit25*/ true}
+      WmCharInfo{'`', kScanCodeBackquote, kNotExtended, kWasUp, kBeingReleased,
+                 kNoContext, 1, /*bit25*/ true}
           .Build(kWmResultZero),
       WmCharInfo{'`', kScanCodeBackquote, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
   EXPECT_EQ(recorded_callbacks.size(), 1);
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackquote,
-                       kLogicalBackquote, "`", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalBackquote, kLogicalBackquote, "`",
+                       kNotSynthesized);
   clear_key_calls();
   // Key down event responded with false.
   recorded_callbacks.front()(false);
@@ -1412,13 +1412,12 @@ TEST(KeyboardTest, DeadKeyTwiceThenLetter) {
 
   // Release `
   tester.InjectMessages(
-      1, WmKeyUpInfo{0xC0, kScanCodeBackquote, kNotExtended}.Build(
-             kWmResultZero));
+      1,
+      WmKeyUpInfo{0xC0, kScanCodeBackquote, kNotExtended}.Build(kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 1);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp,
-                       kPhysicalBackquote, kLogicalBackquote, "",
-                       kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalBackquote,
+                       kLogicalBackquote, "", kNotSynthesized);
   clear_key_calls();
 }
 
