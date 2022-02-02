@@ -136,9 +136,8 @@ KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
 void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
   for (const Win32Message& message : event->session) {
-    UINT result = 0;
     pending_redispatches_.push_back(message);
-    result = window_delegate_->Win32DispatchMessage(
+    UINT result = window_delegate_->Win32DispatchMessage(
         message.action, message.wparam, message.lparam);
     if (result != 0) {
       std::cerr << "Unable to synthesize event for keyboard event."
