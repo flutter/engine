@@ -1696,8 +1696,11 @@ TEST(KeyboardTest, TextInputSubmit) {
 
   // Press Enter
   tester.InjectMessages(
-      1, WmKeyDownInfo{VK_RETURN, kScanCodeEnter, kNotExtended, kWasUp}.Build(
-             kWmResultZero));
+      2,
+      WmKeyDownInfo{VK_RETURN, kScanCodeEnter, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'\n', kScanCodeEnter, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
 
   EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalEnter,
@@ -1708,6 +1711,16 @@ TEST(KeyboardTest, TextInputSubmit) {
       R"|("method":"TextInputClient.performAction",)|"
       R"|("args":[108,"TextInputAction.none"])|"
       "}");
+  clear_key_calls();
+
+  // Release Enter
+  tester.InjectMessages(
+      1, WmKeyUpInfo{VK_RETURN, kScanCodeEnter, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalEnter,
+                       kLogicalEnter, "", kNotSynthesized);
   clear_key_calls();
 
   // Make sure OnText is not obstructed after pressing Enter.
@@ -1722,9 +1735,10 @@ TEST(KeyboardTest, TextInputSubmit) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero));
 
-  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_EQ(key_calls.size(), 2);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "a", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
   clear_key_calls();
 
   // Release A
