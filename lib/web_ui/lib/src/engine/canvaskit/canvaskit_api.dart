@@ -31,7 +31,7 @@ late CanvasKit canvasKit;
 /// Cobalt may use this object to expose a native implementation of the
 /// CanvasKit bindings. If this exists, use it instead of using the normal
 /// downloaded CanvasKit library.
-bool get useH5vccCanvasKit => h5vcc != null;
+final bool useH5vccCanvasKit = h5vcc != null;
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
 /// static APIs.

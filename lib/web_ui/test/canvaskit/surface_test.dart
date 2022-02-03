@@ -180,20 +180,4 @@ void testMain() {
       expect(surface.htmlCanvas!.style.height, '32px');
     });
   }, skip: isIosSafari);
-
-  group('with H5vcc', () {
-    int getH5vccSkSurfaceCalledCount = 0;
-
-    patchH5vccCanvasKit(onGetH5vccSkSurfaceCalled: () {
-      getH5vccSkSurfaceCalledCount++;
-    });
-    setUpCanvasKitTest();
-
-    test('Surface acquireFrame uses getH5vccSkSurface', () {
-      final Surface surface = SurfaceFactory.instance.getSurface();
-      surface.acquireFrame(ui.Size.zero);
-      expect(getH5vccSkSurfaceCalledCount, 1);
-    });
-  }, testOn: 'chrome');
-
 }

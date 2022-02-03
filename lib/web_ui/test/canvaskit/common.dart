@@ -266,19 +266,6 @@ void patchH5vccCanvasKit({Function? onGetH5vccSkSurfaceCalled}) {
   SkiaFontCollection? existingSkiaFontCollection;
 
   setUpAll(() async {
-    // Clear out any existing windowFlutterCanvasKit. This ensures that in the
-    // call to [initializeCanvasKit], no cached value is used.
-    existingCanvasKit = windowFlutterCanvasKit;
-    windowFlutterCanvasKit = null;
-
-    // Clear out any existing skiaFontCollection. If a SkiaFontCollection was
-    // previously initialized with a non-h5vcc-patched CanvasKit, it is
-    // incompatible with the h5vcc-patched CanvasKit we create in this function.
-    // The next call to [ensureSkiaFontCollectionInitialized] will create a new
-    // SkiaFontCollection.
-    existingSkiaFontCollection = skiaFontCollection;
-    debugSetSkiaFontCollection(null);
-
     // Set `window.h5vcc` to _PatchedH5vcc which uses a downloaded CanvasKit.
     final CanvasKit downloadedCanvasKit = await downloadCanvasKit();
     debugH5vccSetter = _PatchedH5vcc(downloadedCanvasKit);
@@ -294,14 +281,5 @@ void patchH5vccCanvasKit({Function? onGetH5vccSkSurfaceCalled}) {
         'dispose': () {}
       });
     };
-  });
-
-  tearDownAll(() {
-    // Unset `window.h5vcc`.
-    debugH5vccSetter = null;
-
-    // Reset original windowFlutterCanvasKit and skiaFontCollection values.
-    windowFlutterCanvasKit = existingCanvasKit;
-    debugSetSkiaFontCollection(existingSkiaFontCollection);
   });
 }
