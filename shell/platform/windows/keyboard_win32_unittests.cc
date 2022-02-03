@@ -1709,6 +1709,34 @@ TEST(KeyboardTest, TextInputSubmit) {
       R"|("args":[108,"TextInputAction.none"])|"
       "}");
   clear_key_calls();
+
+  // Make sure OnText is not obstructed after pressing Enter.
+  //
+  // Regression test for https://github.com/flutter/flutter/issues/97706.
+
+  // Press A
+  tester.InjectMessages(
+      2,
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "a", kNotSynthesized);
+  clear_key_calls();
+
+  // Release A
+  tester.InjectMessages(
+      1, WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+             kWmResultZero));
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
+  clear_key_calls();
+
 }
 
 }  // namespace testing
