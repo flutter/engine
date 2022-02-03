@@ -31,7 +31,11 @@ vars = {
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
+<<<<<<< HEAD
   'canvaskit_cipd_instance': 'CQJGaIvKwSuYCIi4hxn3jdY-Pcrdkcnnu65ZVt18oW8C',
+=======
+  'canvaskit_cipd_instance': '8MSYGWVWzrTJIoVL00ZquruZs-weuwLBy1kt1AawJiIC',
+>>>>>>> 98340f9b01 ([web] roll CanvasKit to 0.33.0 (#31240))
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
