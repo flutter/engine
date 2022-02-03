@@ -17,6 +17,11 @@ apply plugin: "com.android.library"
 
 rootProject.buildDir = project.property("build_dir")
 
+gradle.projectsEvaluated {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:deprecation"
+    }
+}
 
 android {
   compileSdkVersion 31
