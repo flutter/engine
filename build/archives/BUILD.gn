@@ -77,7 +77,8 @@ zip_bundle("flutter_patched_sdk") {
 # the zip file we are just copying the original file to the artifacts location.
 if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
   copy("dart_sdk_archive") {
-    sources = [ prebuilt_dart_sdk ]
-    outputs = [ "$root_out_dir/zip_archives/dart-sdk-$host_os-$target_cpu.zip" ]
+    sources = [ prebuilt_dart_sdk_archive ]
+    outputs =
+        [ "$root_out_dir/zip_archives/dart-sdk-$prebuilt_dart_sdk_config" ]
   }
 }
