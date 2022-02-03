@@ -1750,7 +1750,6 @@ TEST(KeyboardTest, TextInputSubmit) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
-
 }
 
 }  // namespace testing

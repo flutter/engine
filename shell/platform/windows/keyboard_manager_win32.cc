@@ -416,12 +416,12 @@ bool KeyboardManagerWin32::HandleMessage(UINT const action,
       // SYS messages must not be handled by `HandleMessage` or be
       // redispatched.
       const bool is_syskey = action == WM_SYSKEYDOWN || action == WM_SYSKEYUP;
-      OnKey(std::move(event), [this, is_syskey](
-                                  std::unique_ptr<PendingEvent> event,
-                                  bool handled) {
-        bool real_handled = handled || is_syskey;
-        HandleOnKeyResult(std::move(event), handled, pending_texts_.end());
-      });
+      OnKey(
+          std::move(event),
+          [this, is_syskey](std::unique_ptr<PendingEvent> event, bool handled) {
+            bool real_handled = handled || is_syskey;
+            HandleOnKeyResult(std::move(event), handled, pending_texts_.end());
+          });
       return !is_syskey;
     }
     default:
