@@ -347,8 +347,8 @@ PointerState PointerDataPacketConverter::EnsurePointerState(
   state.is_pan_zoom_active = false;
   state.physical_x = pointer_data.physical_x;
   state.physical_y = pointer_data.physical_y;
-  state.pan_x = pointer_data.pan_x;
-  state.pan_y = pointer_data.pan_y;
+  state.pan_x = 0;
+  state.pan_y = 0;
   states_[pointer_data.device] = state;
   return state;
 }

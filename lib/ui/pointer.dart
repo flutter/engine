@@ -285,22 +285,26 @@ class PointerData {
 
   /// For events with change of PointerChange.panZoomUpdate:
   ///
-  /// The current panning magnitude of the pan/zoom in the x direction, in physical pixels.
+  /// The current panning magnitude of the pan/zoom in the x direction, in
+  /// physical pixels.
   final double panX;
 
   /// For events with change of PointerChange.panZoomUpdate:
   ///
-  /// The current panning magnitude of the pan/zoom in the x direction, in physical pixels.
+  /// The current panning magnitude of the pan/zoom in the x direction, in
+  /// physical pixels.
   final double panY;
 
   /// For events with change of PointerChange.panZoomUpdate:
   ///
-  /// The difference in panning of the pan/zoom in the x direction since the latest panZoomUpdate event, in physical pixels.
+  /// The difference in panning of the pan/zoom in the x direction since the
+  /// latest panZoomUpdate event, in physical pixels.
   final double panDeltaX;
 
   /// For events with change of PointerChange.panZoomUpdate:
   ///
-  /// The difference in panning of the pan/zoom in the y direction since the last panZoomUpdate event, in physical pixels.
+  /// The difference in panning of the pan/zoom in the y direction since the
+  /// last panZoomUpdate event, in physical pixels.
   final double panDeltaY;
 
   /// For events with change of PointerChange.panZoomUpdate:
