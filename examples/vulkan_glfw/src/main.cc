@@ -14,7 +14,8 @@
 #include "vulkan/vulkan.hpp"
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
-auto d = &vk::defaultDispatchLoaderDynamic;
+// Convenient reference to vulkan.hpp's global proc table.
+auto& d = vk::defaultDispatchLoaderDynamic;
 
 // GLFW needs to be included after Vulkan.
 #include "GLFW/glfw3.h"
@@ -140,10 +141,10 @@ void PrintUsage() {
 bool InitializeSwapchain() {
   if (g_state.resize_pending) {
     g_state.resize_pending = false;
-    d->vkDestroySwapchainKHR(g_state.device, g_state.swapchain, nullptr);
+    d.vkDestroySwapchainKHR(g_state.device, g_state.swapchain, nullptr);
 
-    d->vkQueueWaitIdle(g_state.queue);
-    d->vkResetCommandPool(g_state.device, g_state.swapchain_command_pool,
+    d.vkQueueWaitIdle(g_state.queue);
+    d.vkResetCommandPool(g_state.device, g_state.swapchain_command_pool,
                           VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
   }
 
@@ -153,10 +154,10 @@ bool InitializeSwapchain() {
   /// --------------------------------------------------------------------------
 
   uint32_t format_count;
-  d->vkGetPhysicalDeviceSurfaceFormatsKHR(
+  d.vkGetPhysicalDeviceSurfaceFormatsKHR(
       g_state.physical_device, g_state.surface, &format_count, nullptr);
   std::vector<VkSurfaceFormatKHR> formats(format_count);
-  d->vkGetPhysicalDeviceSurfaceFormatsKHR(
+  d.vkGetPhysicalDeviceSurfaceFormatsKHR(
       g_state.physical_device, g_state.surface, &format_count, formats.data());
   assert(!formats.empty());  // Shouldn't be possible.
 
@@ -176,7 +177,7 @@ bool InitializeSwapchain() {
   VkExtent2D extent;
 
   VkSurfaceCapabilitiesKHR surface_capabilities;
-  d->vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+  d.vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
       g_state.physical_device, g_state.surface, &surface_capabilities);
 
   if (surface_capabilities.currentExtent.width != UINT32_MAX) {
@@ -208,10 +209,10 @@ bool InitializeSwapchain() {
   /// --------------------------------------------------------------------------
 
   uint32_t mode_count;
-  d->vkGetPhysicalDeviceSurfacePresentModesKHR(
+  d.vkGetPhysicalDeviceSurfacePresentModesKHR(
       g_state.physical_device, g_state.surface, &mode_count, nullptr);
   std::vector<VkPresentModeKHR> modes(mode_count);
-  d->vkGetPhysicalDeviceSurfacePresentModesKHR(
+  d.vkGetPhysicalDeviceSurfacePresentModesKHR(
       g_state.physical_device, g_state.surface, &mode_count, modes.data());
   assert(!formats.empty());  // Shouldn't be possible.
 
@@ -245,7 +246,7 @@ bool InitializeSwapchain() {
       .presentMode = present_mode,
       .clipped = true,
   };
-  if (d->vkCreateSwapchainKHR(g_state.device, &info, nullptr,
+  if (d.vkCreateSwapchainKHR(g_state.device, &info, nullptr,
                               &g_state.swapchain) != VK_SUCCESS) {
     return false;
   }
@@ -255,10 +256,10 @@ bool InitializeSwapchain() {
   /// --------------------------------------------------------------------------
 
   uint32_t image_count;
-  d->vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
+  d.vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
                              nullptr);
   g_state.swapchain_images.resize(image_count);
-  d->vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
+  d.vkGetSwapchainImagesKHR(g_state.device, g_state.swapchain, &image_count,
                              g_state.swapchain_images.data());
 
   /// --------------------------------------------------------------------------
@@ -275,7 +276,7 @@ bool InitializeSwapchain() {
       .commandBufferCount =
           static_cast<uint32_t>(g_state.present_transition_buffers.size()),
   };
-  d->vkAllocateCommandBuffers(g_state.device, &buffers_info,
+  d.vkAllocateCommandBuffers(g_state.device, &buffers_info,
                               g_state.present_transition_buffers.data());
 
   for (size_t i = 0; i < g_state.swapchain_images.size(); i++) {
@@ -284,7 +285,7 @@ bool InitializeSwapchain() {
 
     VkCommandBufferBeginInfo begin_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    d->vkBeginCommandBuffer(buffer, &begin_info);
+    d.vkBeginCommandBuffer(buffer, &begin_info);
 
     // Flutter Engine hands back the image after writing to it
     VkImageMemoryBarrier barrier = {
@@ -303,7 +304,7 @@ bool InitializeSwapchain() {
             .baseArrayLayer = 0,
             .layerCount = 1,
         }};
-    d->vkCmdPipelineBarrier(
+    d.vkCmdPipelineBarrier(
         buffer,                                         // commandBuffer
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,  // srcStageMask
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,           // dstStageMask
@@ -316,7 +317,7 @@ bool InitializeSwapchain() {
         &barrier  // pImageMemoryBarriers
     );
 
-    d->vkEndCommandBuffer(buffer);
+    d.vkEndCommandBuffer(buffer);
   }
 
   return true;  // \o/
@@ -331,16 +332,16 @@ FlutterVulkanImage FlutterGetNextImageCallback(
     InitializeSwapchain();
   }
 
-  d->vkAcquireNextImageKHR(g_state.device, g_state.swapchain, UINT64_MAX,
+  d.vkAcquireNextImageKHR(g_state.device, g_state.swapchain, UINT64_MAX,
                            nullptr, g_state.image_ready_fence,
                            &g_state.last_image_index);
 
   // Flutter Engine expects the image to be available for transitioning and
   // attaching immediately, and so we need to force a host sync here before
   // returning.
-  d->vkWaitForFences(g_state.device, 1, &g_state.image_ready_fence, true,
+  d.vkWaitForFences(g_state.device, 1, &g_state.image_ready_fence, true,
                      UINT64_MAX);
-  d->vkResetFences(g_state.device, 1, &g_state.image_ready_fence);
+  d.vkResetFences(g_state.device, 1, &g_state.image_ready_fence);
 
   return {
       .struct_size = sizeof(FlutterVulkanImage),
@@ -364,7 +365,7 @@ bool FlutterPresentCallback(void* user_data, const FlutterVulkanImage* image) {
       .signalSemaphoreCount = 1,
       .pSignalSemaphores = &g_state.present_transition_semaphore,
   };
-  d->vkQueueSubmit(g_state.queue, 1, &submit_info, nullptr);
+  d.vkQueueSubmit(g_state.queue, 1, &submit_info, nullptr);
 
   VkPresentInfoKHR present_info = {
       .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -374,14 +375,14 @@ bool FlutterPresentCallback(void* user_data, const FlutterVulkanImage* image) {
       .pSwapchains = &g_state.swapchain,
       .pImageIndices = &g_state.last_image_index,
   };
-  VkResult result = d->vkQueuePresentKHR(g_state.queue, &present_info);
+  VkResult result = d.vkQueuePresentKHR(g_state.queue, &present_info);
 
   // If the swapchain is no longer compatible with the surface, discard the
   // swapchain and create a new one.
   if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
     InitializeSwapchain();
   }
-  d->vkQueueWaitIdle(g_state.queue);
+  d.vkQueueWaitIdle(g_state.queue);
 
   return result == VK_SUCCESS;
 }
@@ -503,7 +504,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    if (d->vkCreateInstance(&info, nullptr, &g_state.instance) != VK_SUCCESS) {
+    if (d.vkCreateInstance(&info, nullptr, &g_state.instance) != VK_SUCCESS) {
       std::cerr << "Failed to create Vulkan instance." << std::endl;
       return EXIT_FAILURE;
     }
@@ -528,9 +529,9 @@ int main(int argc, char** argv) {
 
   {
     uint32_t count;
-    d->vkEnumeratePhysicalDevices(g_state.instance, &count, nullptr);
+    d.vkEnumeratePhysicalDevices(g_state.instance, &count, nullptr);
     std::vector<VkPhysicalDevice> physical_devices(count);
-    d->vkEnumeratePhysicalDevices(g_state.instance, &count,
+    d.vkEnumeratePhysicalDevices(g_state.instance, &count,
                                   physical_devices.data());
 
     std::cout << "Enumerating " << count << " physical device(s)." << std::endl;
@@ -539,8 +540,8 @@ int main(int argc, char** argv) {
     for (const auto& pdevice : physical_devices) {
       VkPhysicalDeviceProperties properties;
       VkPhysicalDeviceFeatures features;
-      d->vkGetPhysicalDeviceProperties(pdevice, &properties);
-      d->vkGetPhysicalDeviceFeatures(pdevice, &features);
+      d.vkGetPhysicalDeviceProperties(pdevice, &properties);
+      d.vkGetPhysicalDeviceFeatures(pdevice, &features);
 
       std::cout << "Checking device: " << properties.deviceName << std::endl;
 
@@ -548,9 +549,9 @@ int main(int argc, char** argv) {
       std::vector<const char*> supported_extensions;
 
       uint32_t qfp_count;
-      d->vkGetPhysicalDeviceQueueFamilyProperties(pdevice, &qfp_count, nullptr);
+      d.vkGetPhysicalDeviceQueueFamilyProperties(pdevice, &qfp_count, nullptr);
       std::vector<VkQueueFamilyProperties> qfp(qfp_count);
-      d->vkGetPhysicalDeviceQueueFamilyProperties(pdevice, &qfp_count,
+      d.vkGetPhysicalDeviceQueueFamilyProperties(pdevice, &qfp_count,
                                                   qfp.data());
       std::optional<uint32_t> graphics_queue_family;
       for (uint32_t i = 0; i < qfp.size(); i++) {
@@ -558,7 +559,7 @@ int main(int argc, char** argv) {
         // Graphics queues that can't present are rare if not nonexistent, but
         // the spec allows for this, so check it anyways.
         VkBool32 surface_present_supported;
-        d->vkGetPhysicalDeviceSurfaceSupportKHR(pdevice, i, g_state.surface,
+        d.vkGetPhysicalDeviceSurfaceSupportKHR(pdevice, i, g_state.surface,
                                                 &surface_present_supported);
 
         if (!graphics_queue_family.has_value() &&
@@ -581,10 +582,10 @@ int main(int argc, char** argv) {
       }
 
       uint32_t extension_count;
-      d->vkEnumerateDeviceExtensionProperties(pdevice, nullptr,
+      d.vkEnumerateDeviceExtensionProperties(pdevice, nullptr,
                                               &extension_count, nullptr);
       std::vector<VkExtensionProperties> available_extensions(extension_count);
-      d->vkEnumerateDeviceExtensionProperties(
+      d.vkEnumerateDeviceExtensionProperties(
           pdevice, nullptr, &extension_count, available_extensions.data());
 
       bool supports_swapchain = false;
@@ -673,14 +674,14 @@ int main(int argc, char** argv) {
     device_info.queueCreateInfoCount = 1;
     device_info.pQueueCreateInfos = &graphics_queue;
 
-    if (d->vkCreateDevice(g_state.physical_device, &device_info, nullptr,
+    if (d.vkCreateDevice(g_state.physical_device, &device_info, nullptr,
                           &g_state.device) != VK_SUCCESS) {
       std::cerr << "Failed to create Vulkan logical device." << std::endl;
       return EXIT_FAILURE;
     }
   }
 
-  d->vkGetDeviceQueue(g_state.device, g_state.queue_family_index, 0,
+  d.vkGetDeviceQueue(g_state.device, g_state.queue_family_index, 0,
                       &g_state.queue);
 
   /// --------------------------------------------------------------------------
@@ -690,19 +691,19 @@ int main(int argc, char** argv) {
 
   {
     VkFenceCreateInfo f_info = {.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-    d->vkCreateFence(g_state.device, &f_info, nullptr,
+    d.vkCreateFence(g_state.device, &f_info, nullptr,
                      &g_state.image_ready_fence);
 
     VkSemaphoreCreateInfo s_info = {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    d->vkCreateSemaphore(g_state.device, &s_info, nullptr,
+    d.vkCreateSemaphore(g_state.device, &s_info, nullptr,
                          &g_state.present_transition_semaphore);
 
     VkCommandPoolCreateInfo pool_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .queueFamilyIndex = g_state.queue_family_index,
     };
-    d->vkCreateCommandPool(g_state.device, &pool_info, nullptr,
+    d.vkCreateCommandPool(g_state.device, &pool_info, nullptr,
                            &g_state.swapchain_command_pool);
   }
 
@@ -786,15 +787,15 @@ int main(int argc, char** argv) {
     std::cerr << "Flutter Engine shutdown failed." << std::endl;
   }
 
-  d->vkDestroyCommandPool(g_state.device, g_state.swapchain_command_pool,
+  d.vkDestroyCommandPool(g_state.device, g_state.swapchain_command_pool,
                           nullptr);
-  d->vkDestroySemaphore(g_state.device, g_state.present_transition_semaphore,
+  d.vkDestroySemaphore(g_state.device, g_state.present_transition_semaphore,
                         nullptr);
-  d->vkDestroyFence(g_state.device, g_state.image_ready_fence, nullptr);
+  d.vkDestroyFence(g_state.device, g_state.image_ready_fence, nullptr);
 
-  d->vkDestroyDevice(g_state.device, nullptr);
-  d->vkDestroySurfaceKHR(g_state.instance, g_state.surface, nullptr);
-  d->vkDestroyInstance(g_state.instance, nullptr);
+  d.vkDestroyDevice(g_state.device, nullptr);
+  d.vkDestroySurfaceKHR(g_state.instance, g_state.surface, nullptr);
+  d.vkDestroyInstance(g_state.instance, nullptr);
 
   glfwDestroyWindow(g_state.window);
   glfwTerminate();
