@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js' as js;
 
 import 'package:test/test.dart';
 
@@ -245,41 +244,4 @@ CkParagraph makeSimpleText(String text, {
   final CkParagraph paragraph = builder.build();
   paragraph.layout(const ui.ParagraphConstraints(width: 10000));
   return paragraph;
-}
-
-class _PatchedH5vcc implements H5vcc {
-  @override
-  final CanvasKit canvasKit;
-
-  _PatchedH5vcc(this.canvasKit);
-}
-
-/// Test setup to initialize `window.h5vcc` with a patched H5vcc implementation.
-///
-/// The patched H5vcc implementation uses a downloaded CanvasKit implementation
-/// monkey-patched with a fake getH5vccSkSurface function.
-///
-/// This function should be called before initialization, i.e. before
-/// [setUpCanvasKitTest].
-void patchH5vccCanvasKit({Function? onGetH5vccSkSurfaceCalled}) {
-  CanvasKit? existingCanvasKit;
-  SkiaFontCollection? existingSkiaFontCollection;
-
-  setUpAll(() async {
-    // Set `window.h5vcc` to _PatchedH5vcc which uses a downloaded CanvasKit.
-    final CanvasKit downloadedCanvasKit = await downloadCanvasKit();
-    debugH5vccSetter = _PatchedH5vcc(downloadedCanvasKit);
-
-    // Monkey-patch the getH5vccSkSurface function of `window.h5vcc.canvasKit`.
-    js.context['h5vcc']['canvasKit']['getH5vccSkSurface'] = () {
-      if (onGetH5vccSkSurfaceCalled != null) {
-        onGetH5vccSkSurfaceCalled();
-      }
-
-      // Returns a fake [SkSurface] object with a minimal implementation.
-      return js.JsObject.jsify(<String, dynamic>{
-        'dispose': () {}
-      });
-    };
-  });
 }
