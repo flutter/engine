@@ -42,7 +42,7 @@ struct {
   GLFWwindow* window;
 
   std::vector<const char*> enabled_instance_extensions;
-  vk::Instance instance;
+  VkInstance instance;
   VkSurfaceKHR surface;
 
   VkPhysicalDevice physical_device;
@@ -503,9 +503,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    vk::Result result;
-    std::tie(result, g_state.instance) = vk::createInstance(info);
-    if (result != vk::Result::eSuccess) {
+    if (d->vkCreateInstance(&info, nullptr, &g_state.instance) != VK_SUCCESS) {
       std::cerr << "Failed to create Vulkan instance." << std::endl;
       return EXIT_FAILURE;
     }
