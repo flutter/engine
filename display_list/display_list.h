@@ -78,6 +78,10 @@ namespace flutter {
   V(ClearShader)                    \
   V(SetColorFilter)                 \
   V(ClearColorFilter)               \
+  V(SetBlendColorFilter)            \
+  V(SetMatrixColorFilter)           \
+  V(SetSrgbToLinearColorFilter)     \
+  V(SetLinearToSrgbColorFilter)     \
   V(SetImageFilter)                 \
   V(ClearImageFilter)               \
   V(SetPathEffect)                  \
@@ -146,6 +150,15 @@ namespace flutter {
 #define DL_OP_TO_ENUM_VALUE(name) k##name,
 enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 #undef DL_OP_TO_ENUM_VALUE
+
+enum ColorFilterType {
+  kNone,
+  kBlend,
+  kMatrix,
+  kSrgbToLinear,
+  kLinearToSrgb,
+  kUnknown,
+};
 
 class Dispatcher;
 class DisplayListBuilder;

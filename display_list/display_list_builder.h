@@ -98,6 +98,39 @@ class DisplayListBuilder final : public virtual Dispatcher,
       onSetColorFilter(std::move(filter));
     }
   }
+  void setBlendColorFilter(SkColor color, SkBlendMode mode) override {
+    if (current_color_filter_) {
+      SkColor filter_color;
+      SkBlendMode filter_mode;
+      if (current_color_filter_->asAColorMode(&filter_color, &filter_mode)) {
+        if (color == filter_color && mode == filter_mode) {
+          return;
+        }
+      }
+    }
+    onSetBlendColorFilter(color, mode);
+  }
+  void setMatrixColorFilter(const float matrix[20]) override {
+    if (current_color_filter_) {
+      float filter_matrix[20];
+      if (current_color_filter_->asAColorMatrix(filter_matrix)) {
+        if (memcmp(matrix, filter_matrix, sizeof(filter_matrix)) == 0) {
+          return;
+        }
+      }
+    }
+    onSetMatrixColorFilter(matrix);
+  }
+  void setSrgbToLinearGammaColorFilter() override {
+    if (current_color_filter_type_ != kSrgbToLinear) {
+      onSetSrgbToLinearGammaColorFilter();
+    }
+  }
+  void setLinearToSrgbGammaColorFilter() override {
+    if (current_color_filter_type_ != kLinearToSrgb) {
+      onSetLinearToSrgbGammaColorFilter();
+    }
+  }
   void setPathEffect(sk_sp<SkPathEffect> effect) override {
     if (current_path_effect_ != effect) {
       onSetPathEffect(std::move(effect));
@@ -372,6 +405,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void onSetShader(sk_sp<SkShader> shader);
   void onSetImageFilter(sk_sp<SkImageFilter> filter);
   void onSetColorFilter(sk_sp<SkColorFilter> filter);
+  void onSetBlendColorFilter(SkColor color, SkBlendMode mode);
+  void onSetMatrixColorFilter(const float matrix[20]);
+  void onSetSrgbToLinearGammaColorFilter();
+  void onSetLinearToSrgbGammaColorFilter();
   void onSetPathEffect(sk_sp<SkPathEffect> effect);
   void onSetMaskFilter(sk_sp<SkMaskFilter> filter);
   void onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma);
@@ -390,6 +427,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
   SkBlendMode current_blend_mode_ = SkBlendMode::kSrcOver;
   sk_sp<SkBlender> current_blender_;
   sk_sp<SkShader> current_shader_;
+  ColorFilterType current_color_filter_type_ = kNone;
   sk_sp<SkColorFilter> current_color_filter_;
   sk_sp<SkImageFilter> current_image_filter_;
   sk_sp<SkPathEffect> current_path_effect_;

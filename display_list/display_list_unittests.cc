@@ -95,10 +95,12 @@ static const sk_sp<SkImageFilter> TestImageFilter1 =
     SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr, nullptr);
 static const sk_sp<SkImageFilter> TestImageFilter2 =
     SkImageFilters::Blur(5.0, 5.0, SkTileMode::kClamp, nullptr, nullptr);
-static const sk_sp<SkColorFilter> TestColorFilter1 =
-    SkColorFilters::Matrix(rotate_color_matrix);
-static const sk_sp<SkColorFilter> TestColorFilter2 =
-    SkColorFilters::Matrix(invert_color_matrix);
+static const sk_sp<SkColorFilter> TestColorFilter1 = SkColorFilters::Compose(
+    SkColorFilters::Matrix(rotate_color_matrix),
+    SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcIn));
+static const sk_sp<SkColorFilter> TestColorFilter2 = SkColorFilters::Compose(
+    SkColorFilters::Matrix(invert_color_matrix),
+    SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcIn));
 static const sk_sp<SkPathEffect> TestPathEffect1 =
     SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
 static const sk_sp<SkPathEffect> TestPathEffect2 =
@@ -343,6 +345,13 @@ std::vector<DisplayListInvocationGroup> allGroups = {
   { "SetColorFilter", {
       {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(TestColorFilter1);}},
       {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(TestColorFilter2);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlendColorFilter(SK_ColorRED, SkBlendMode::kSrcIn);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlendColorFilter(SK_ColorRED, SkBlendMode::kDstIn);}},
+      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlendColorFilter(SK_ColorBLUE, SkBlendMode::kSrcIn);}},
+      {0, 88, 0, 0, [](DisplayListBuilder& b) {b.setMatrixColorFilter(rotate_color_matrix);}},
+      {0, 88, 0, 0, [](DisplayListBuilder& b) {b.setMatrixColorFilter(invert_color_matrix);}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setSrgbToLinearGammaColorFilter();}},
+      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setLinearToSrgbGammaColorFilter();}},
       {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(nullptr);}},
     }
   },
@@ -1230,8 +1239,9 @@ TEST(DisplayList, DisplayListColorFilterRefHandling) {
     bool ref_is_unique() const override { return color_filter->unique(); }
 
    private:
-    sk_sp<SkColorFilter> color_filter =
-        SkColorFilters::Blend(SK_ColorBLUE, SkBlendMode::kSrcIn);
+    sk_sp<SkColorFilter> color_filter = SkColorFilters::Compose(
+        SkColorFilters::Matrix(rotate_color_matrix),
+        SkColorFilters::Blend(SK_ColorBLUE, SkBlendMode::kSrcIn));
   };
 
   ColorFilterRefTester tester;

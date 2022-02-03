@@ -40,32 +40,37 @@ fml::RefPtr<ColorFilter> ColorFilter::Create() {
 }
 
 void ColorFilter::initMode(int color, int blend_mode) {
-  filter_ = SkColorFilters::Blend(static_cast<SkColor>(color),
-                                  static_cast<SkBlendMode>(blend_mode));
+  type_ = kBlend;
+  color_ = static_cast<SkColor>(color);
+  mode_ = static_cast<SkBlendMode>(blend_mode);
+  filter_ = SkColorFilters::Blend(color_, mode_);
 }
 
 sk_sp<SkColorFilter> ColorFilter::MakeColorMatrixFilter255(
     const float array[20]) {
-  float tmp[20];
-  memcpy(tmp, array, sizeof(tmp));
-  tmp[4] *= 1.0f / 255;
-  tmp[9] *= 1.0f / 255;
-  tmp[14] *= 1.0f / 255;
-  tmp[19] *= 1.0f / 255;
-  return SkColorFilters::Matrix(tmp);
+  memcpy(matrix_, array, sizeof(matrix_));
+  matrix_[4] *= 1.0f / 255;
+  matrix_[9] *= 1.0f / 255;
+  matrix_[14] *= 1.0f / 255;
+  matrix_[19] *= 1.0f / 255;
+  return SkColorFilters::Matrix(matrix_);
 }
 
 void ColorFilter::initMatrix(const tonic::Float32List& color_matrix) {
   FML_CHECK(color_matrix.num_elements() == 20);
 
+  type_ = kMatrix;
+  // MakeColorMatrixFilter255 will transfer the data to |matrix_|
   filter_ = MakeColorMatrixFilter255(color_matrix.data());
 }
 
 void ColorFilter::initLinearToSrgbGamma() {
+  type_ = kLinearToSrgb;
   filter_ = SkColorFilters::LinearToSRGBGamma();
 }
 
 void ColorFilter::initSrgbToLinearGamma() {
+  type_ = kSrgbToLinear;
   filter_ = SkColorFilters::SRGBToLinearGamma();
 }
 

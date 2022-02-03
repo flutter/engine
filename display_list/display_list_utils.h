@@ -57,6 +57,10 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setShader(sk_sp<SkShader> shader) override {}
   void setImageFilter(sk_sp<SkImageFilter> filter) override {}
   void setColorFilter(sk_sp<SkColorFilter> filter) override {}
+  void setBlendColorFilter(SkColor color, SkBlendMode mode) override {}
+  void setMatrixColorFilter(const float matrix[20]) override {}
+  void setSrgbToLinearGammaColorFilter() override {}
+  void setLinearToSrgbGammaColorFilter() override {}
   void setPathEffect(sk_sp<SkPathEffect> effect) override {}
   void setMaskFilter(sk_sp<SkMaskFilter> filter) override {}
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {}
@@ -113,6 +117,10 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setStrokeJoin(SkPaint::Join join) override;
   void setShader(sk_sp<SkShader> shader) override;
   void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setBlendColorFilter(SkColor color, SkBlendMode mode) override;
+  void setMatrixColorFilter(const float matrix[20]) override;
+  void setSrgbToLinearGammaColorFilter() override;
+  void setLinearToSrgbGammaColorFilter() override;
   void setInvertColors(bool invert) override;
   void setBlendMode(SkBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
@@ -319,6 +327,10 @@ class DisplayListBoundsCalculator final
   void setBlender(sk_sp<SkBlender> blender) override;
   void setImageFilter(sk_sp<SkImageFilter> filter) override;
   void setColorFilter(sk_sp<SkColorFilter> filter) override;
+  void setBlendColorFilter(SkColor color, SkBlendMode mode) override;
+  void setMatrixColorFilter(const float matrix[20]) override;
+  void setSrgbToLinearGammaColorFilter() override;
+  void setLinearToSrgbGammaColorFilter() override;
   void setPathEffect(sk_sp<SkPathEffect> effect) override;
   void setMaskFilter(sk_sp<SkMaskFilter> filter) override;
   void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override;

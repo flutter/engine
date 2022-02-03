@@ -135,9 +135,52 @@ void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
       : Push<ClearImageFilterOp>(0, 0);
 }
 void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
-  (current_color_filter_ = filter)  //
-      ? Push<SetColorFilterOp>(0, 0, std::move(filter))
-      : Push<ClearColorFilterOp>(0, 0);
+  current_color_filter_ = filter;
+  if (!filter) {
+    current_color_filter_type_ = kNone;
+    Push<ClearColorFilterOp>(0, 0);
+  } else {
+    SkColor color;
+    SkBlendMode mode;
+    if (filter->asAColorMode(&color, &mode)) {
+      current_color_filter_type_ = kBlend;
+      Push<SetBlendColorFilterOp>(0, 0, color, mode);
+    } else {
+      float matrix[20];
+      if (filter->asAColorMatrix(matrix)) {
+        current_color_filter_type_ = kMatrix;
+        Push<SetMatrixColorFilterOp>(0, 0, matrix);
+      } else {
+        current_color_filter_type_ = kUnknown;
+        Push<SetColorFilterOp>(0, 0, std::move(filter));
+      }
+    }
+  }
+  UpdateCurrentOpacityCompatibility();
+}
+void DisplayListBuilder::onSetBlendColorFilter(SkColor color,
+                                               SkBlendMode mode) {
+  current_color_filter_type_ = kBlend;
+  current_color_filter_ = SkColorFilters::Blend(color, mode);
+  Push<SetBlendColorFilterOp>(0, 0, color, mode);
+  UpdateCurrentOpacityCompatibility();
+}
+void DisplayListBuilder::onSetMatrixColorFilter(const float matrix[20]) {
+  current_color_filter_type_ = kMatrix;
+  current_color_filter_ = SkColorFilters::Matrix(matrix);
+  Push<SetMatrixColorFilterOp>(0, 0, matrix);
+  UpdateCurrentOpacityCompatibility();
+}
+void DisplayListBuilder::onSetSrgbToLinearGammaColorFilter() {
+  current_color_filter_type_ = kSrgbToLinear;
+  current_color_filter_ = SkColorFilters::SRGBToLinearGamma();
+  Push<SetSrgbToLinearColorFilterOp>(0, 0);
+  UpdateCurrentOpacityCompatibility();
+}
+void DisplayListBuilder::onSetLinearToSrgbGammaColorFilter() {
+  current_color_filter_type_ = kLinearToSrgb;
+  current_color_filter_ = SkColorFilters::LinearToSRGBGamma();
+  Push<SetLinearToSrgbColorFilterOp>(0, 0);
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {

@@ -43,6 +43,10 @@ class Dispatcher {
   // It is not reset by |setColorFilter|, but instead composed with that
   // filter so that the color inversion happens after the ColorFilter.
   virtual void setInvertColors(bool invert) = 0;
+  virtual void setBlendColorFilter(SkColor color, SkBlendMode mode) = 0;
+  virtual void setMatrixColorFilter(const float matrix[20]) = 0;
+  virtual void setSrgbToLinearGammaColorFilter() = 0;
+  virtual void setLinearToSrgbGammaColorFilter() = 0;
   virtual void setBlendMode(SkBlendMode mode) = 0;
   virtual void setBlender(sk_sp<SkBlender> blender) = 0;
   virtual void setPathEffect(sk_sp<SkPathEffect> effect) = 0;

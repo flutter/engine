@@ -182,6 +182,60 @@ DEFINE_SET_CLEAR_SKREF_OP(MaskFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_SKREF_OP
 
+// 4 byte header + 8 byte payload uses 16 bytes (4 bytes unused)
+struct SetBlendColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetBlendColorFilter;
+
+  explicit SetBlendColorFilterOp(SkColor color, SkBlendMode mode)
+      : color(color), mode(mode) {}
+
+  SkColor color;
+  SkBlendMode mode;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setBlendColorFilter(color, mode);
+  }
+};
+
+// 4 byte header + 80 byte payload uses 88 bytes (4 bytes unused)
+struct SetMatrixColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetMatrixColorFilter;
+
+  explicit SetMatrixColorFilterOp(const float matrix[20]) {
+    memcpy(this->matrix, matrix, sizeof(this->matrix));
+  }
+
+  float matrix[20];
+
+  void dispatch(Dispatcher& dispatcher) const {
+    float matrix_copy[20];
+    memcpy(matrix_copy, matrix, sizeof(matrix));
+    dispatcher.setMatrixColorFilter(matrix_copy);
+  }
+};
+
+// 4 byte header with no payload uses 8 bytes (4 bytes unused)
+struct SetSrgbToLinearColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetSrgbToLinearColorFilter;
+
+  SetSrgbToLinearColorFilterOp() {}
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setSrgbToLinearGammaColorFilter();
+  }
+};
+
+// 4 byte header with no payload uses 8 bytes (4 bytes unused)
+struct SetLinearToSrgbColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetLinearToSrgbColorFilter;
+
+  SetLinearToSrgbColorFilterOp() {}
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setLinearToSrgbGammaColorFilter();
+  }
+};
+
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 // Note that the "blur style" is packed into the OpType to prevent
 // needing an additional 8 bytes for a 4-value enum.

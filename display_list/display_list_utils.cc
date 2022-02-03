@@ -93,6 +93,19 @@ void SkPaintDispatchHelper::setColorFilter(sk_sp<SkColorFilter> filter) {
   color_filter_ = filter;
   paint_.setColorFilter(makeColorFilter());
 }
+void SkPaintDispatchHelper::setBlendColorFilter(SkColor color,
+                                                SkBlendMode mode) {
+  setColorFilter(SkColorFilters::Blend(color, mode));
+}
+void SkPaintDispatchHelper::setMatrixColorFilter(const float matrix[20]) {
+  setColorFilter(SkColorFilters::Matrix(matrix));
+}
+void SkPaintDispatchHelper::setSrgbToLinearGammaColorFilter() {
+  setColorFilter(SkColorFilters::SRGBToLinearGamma());
+}
+void SkPaintDispatchHelper::setLinearToSrgbGammaColorFilter() {
+  setColorFilter(SkColorFilters::LinearToSRGBGamma());
+}
 void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
   paint_.setPathEffect(effect);
 }
@@ -278,6 +291,19 @@ void DisplayListBoundsCalculator::setImageFilter(sk_sp<SkImageFilter> filter) {
 }
 void DisplayListBoundsCalculator::setColorFilter(sk_sp<SkColorFilter> filter) {
   color_filter_ = std::move(filter);
+}
+void DisplayListBoundsCalculator::setBlendColorFilter(SkColor color,
+                                                      SkBlendMode mode) {
+  color_filter_ = SkColorFilters::Blend(color, mode);
+}
+void DisplayListBoundsCalculator::setMatrixColorFilter(const float matrix[20]) {
+  color_filter_ = SkColorFilters::Matrix(matrix);
+}
+void DisplayListBoundsCalculator::setSrgbToLinearGammaColorFilter() {
+  color_filter_ = SkColorFilters::SRGBToLinearGamma();
+}
+void DisplayListBoundsCalculator::setLinearToSrgbGammaColorFilter() {
+  color_filter_ = SkColorFilters::LinearToSRGBGamma();
 }
 void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
   path_effect_ = std::move(effect);
