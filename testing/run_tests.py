@@ -326,7 +326,7 @@ def JavaBin():
   return os.path.join(JavaHome(), 'bin', 'java.exe' if IsWindows() else 'java')
 
 
-def RunJavaTests(filter, android_variant='android_debug_unopt'):
+def RunJavaTests(filter, android_variant='android_debug_unopt', showDeprecations=False):
   """Runs the Java JUnit unit tests for the Android embedding"""
   test_runner_dir = os.path.join(buildroot_dir, 'flutter', 'shell', 'platform', 'android', 'test_runner')
   gradle_bin = os.path.join(buildroot_dir, 'gradle', 'bin', 'gradle.bat' if IsWindows() else 'gradle')
@@ -336,10 +336,13 @@ def RunJavaTests(filter, android_variant='android_debug_unopt'):
   gradle_cache_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', '.gradle')
 
   test_class = filter if filter else 'io.flutter.FlutterTestSuite'
+  show_deprecations = 'true' if showDeprecations else ''
+
   command = [
     gradle_bin,
     '-Pflutter_jar=%s' % flutter_jar,
     '-Pbuild_dir=%s' % build_dir,
+    '-PshowDeprecations=%s' % show_deprecations,
     'testDebugUnitTest',
     '--tests=%s' % test_class,
     '--rerun-tasks',
@@ -567,6 +570,8 @@ def main():
       default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
   parser.add_argument('--adb-path', dest='adb_path', action='store',
       default=None, help='Provide the path of adb used for android tests. By default it looks on $PATH.')
+  parser.add_argument('--showDeprecations', help='Whether or not to show usage of deprecated APIs (currently supported on Android)',
+      action="store_true")
 
   args = parser.parse_args()
 
@@ -613,7 +618,7 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter, args.android_variant)
+    RunJavaTests(java_filter, args.android_variant, args.showDeprecations)
 
   if 'android' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
