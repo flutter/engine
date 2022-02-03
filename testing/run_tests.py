@@ -570,7 +570,7 @@ def main():
       default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
   parser.add_argument('--adb-path', dest='adb_path', action='store',
       default=None, help='Provide the path of adb used for android tests. By default it looks on $PATH.')
-  parser.add_argument('--showDeprecations', help='Whether or not to show usage of deprecated APIs (currently supported on Android)',
+  parser.add_argument('--showDeprecations', help='Show warnings concerning usage of deprecated APIs when running Android tests',
       action="store_true")
 
   args = parser.parse_args()
