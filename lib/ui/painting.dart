@@ -3974,12 +3974,12 @@ class Vertices extends NativeFieldWrapperClass1 {
   /// Creates a set of vertex data for use with [Canvas.drawVertices], directly
   /// using the encoding methods of [new Vertices].
   /// Note that this constructor uses raw typed data lists,
-  /// so it runs faster than the [Vertices()] constructor 
+  /// so it runs faster than the [Vertices()] constructor
   /// because it doesn't require any conversion from Dart lists.
   ///
   /// The [mode] parameter must not be null.
   ///
-  /// The [positions] parameter is a list of triangular mesh vertices and 
+  /// The [positions] parameter is a list of triangular mesh vertices and
   /// is interpreted as a list of repeated pairs of x,y coordinates.
   /// It must not be null.
   ///
