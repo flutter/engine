@@ -1596,7 +1596,8 @@ TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
 
 TEST(DisplayList, SetBlendColorFilterMatchesSetColorFilter) {
   DisplayListBuilder builder1;
-  builder1.setColorFilter(SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kHue));
+  builder1.setColorFilter(
+      SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kHue));
   sk_sp<DisplayList> display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
