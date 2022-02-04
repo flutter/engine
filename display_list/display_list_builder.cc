@@ -239,6 +239,18 @@ void DisplayListBuilder::restore() {
     Push<RestoreOp>(0, 1);
     if (layer_info.has_layer) {
       if (layer_info.is_group_opacity_compatible()) {
+        // We are now going to go back and modify the matching saveLayer
+        // call to add the option indicating it can distribute an opacity
+        // value to its children.
+        //
+        // Note that this operation cannot and does not change the size
+        // or structure of the SaveLayerOp record. It only sets an option
+        // flag on an existing field.
+        //
+        // Note that these kinds of modification operations on data already
+        // in the DisplayList are only allowed *during* the build phase.
+        // Once built, the DisplayList records must remain read only to
+        // ensure consistency of rendering and |Equals()| behavior.
         SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
             storage_.get() + layer_info.save_layer_offset);
         op->options = op->options.with_can_distribute_opacity();

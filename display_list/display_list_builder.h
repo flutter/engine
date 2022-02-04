@@ -287,7 +287,14 @@ class DisplayListBuilder final : public virtual Dispatcher,
           cannot_inherit_opacity(false),
           has_compatible_op(false) {}
 
+    // The offset into the memory buffer where the saveLayer DLOp record
+    // for this saveLayer() call is placed. This may be needed if the
+    // eventual restore() call has discovered important information about
+    // the records inside the saveLayer that may impact how the saveLayer
+    // is handled (e.g., |cannot_inherit_opacity| == false).
+    // This offset is only valid if |has_layer| is true.
     size_t save_layer_offset;
+
     bool has_layer;
     bool cannot_inherit_opacity;
     bool has_compatible_op;
