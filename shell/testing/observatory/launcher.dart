@@ -33,13 +33,13 @@ class ShellProcess {
     return _observatoryUriCompleter.future;
   }
 
-  Uri _extractVMServiceUri(String str) {
+  Uri? _extractVMServiceUri(String str) {
     final listeningMessageRegExp = RegExp(
       r'(?:Observatory|Dart VM Service) listening on ((http|//)[a-zA-Z0-9:/=_\-\.\[\]]+)',
     );
     final match = listeningMessageRegExp.firstMatch(str);
     if (match != null) {
-      return Uri.parse(match[1]);
+      return Uri.parse(match[1]!);
     }
     return null;
   }
