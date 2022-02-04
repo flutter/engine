@@ -19,9 +19,23 @@ void testMain() {
   group('H5vcc patched CanvasKit', () {
     int getH5vccSkSurfaceCalledCount = 0;
 
-    patchH5vccCanvasKit(onGetH5vccSkSurfaceCalled: () {
-      getH5vccSkSurfaceCalledCount++;
+    setUpAll(() async {
+      // Set `window.h5vcc` to PatchedH5vcc which uses a downloaded CanvasKit.
+      final CanvasKit downloadedCanvasKit = await downloadCanvasKit();
+      debugH5vccSetter = PatchedH5vcc(downloadedCanvasKit);
+
+      // Monkey-patch the getH5vccSkSurface function of
+      // `window.h5vcc.canvasKit`.
+      js.context['h5vcc']['canvasKit']['getH5vccSkSurface'] = () {
+        getH5vccSkSurfaceCalledCount++;
+
+        // Returns a fake [SkSurface] object with a minimal implementation.
+        return js.JsObject.jsify(<String, dynamic>{
+          'dispose': () {}
+        });
+      };
     });
+
     setUpCanvasKitTest();
 
     setUp(() {
@@ -49,31 +63,4 @@ class PatchedH5vcc implements H5vcc {
   final CanvasKit canvasKit;
 
   PatchedH5vcc(this.canvasKit);
-}
-
-/// Test setup to initialize `window.h5vcc` with a patched H5vcc implementation.
-///
-/// The patched H5vcc implementation uses a downloaded CanvasKit implementation
-/// monkey-patched with a fake getH5vccSkSurface function.
-void patchH5vccCanvasKit({Function? onGetH5vccSkSurfaceCalled}) {
-  CanvasKit? existingCanvasKit;
-  SkiaFontCollection? existingSkiaFontCollection;
-
-  setUpAll(() async {
-    // Set `window.h5vcc` to PatchedH5vcc which uses a downloaded CanvasKit.
-    final CanvasKit downloadedCanvasKit = await downloadCanvasKit();
-    debugH5vccSetter = PatchedH5vcc(downloadedCanvasKit);
-
-    // Monkey-patch the getH5vccSkSurface function of `window.h5vcc.canvasKit`.
-    js.context['h5vcc']['canvasKit']['getH5vccSkSurface'] = () {
-      if (onGetH5vccSkSurfaceCalled != null) {
-        onGetH5vccSkSurfaceCalled();
-      }
-
-      // Returns a fake [SkSurface] object with a minimal implementation.
-      return js.JsObject.jsify(<String, dynamic>{
-        'dispose': () {}
-      });
-    };
-  });
 }
