@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_COMMON_THREAD_HOST_H_
 
 #include <memory>
+#include <string>
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/thread.h"
@@ -22,6 +23,20 @@ struct ThreadHost {
     Profiler = 1 << 4,
   };
 
+  using ThreadConfig = std::unique_ptr<fml::Thread::ThreadConfig>;
+  /// The collection of all the thread configures, and we create custom thread
+  /// configure in engine to info the thread.
+  struct ThreadHostConfig {
+    ThreadConfig platform_configure;
+    ThreadConfig ui_configure;
+    ThreadConfig raster_configure;
+    ThreadConfig io_configure;
+    ThreadConfig profiler_configure;
+
+    static std::string MakeThreadName(Type type,
+                                      const std::string& prefix = "");
+  };
+
   std::string name_prefix;
   std::unique_ptr<fml::Thread> platform_thread;
   std::unique_ptr<fml::Thread> ui_thread;
@@ -35,9 +50,14 @@ struct ThreadHost {
 
   ThreadHost& operator=(ThreadHost&&) = default;
 
-  ThreadHost(std::string name_prefix, uint64_t type_mask);
+  ThreadHost(std::string name_prefix,
+             uint64_t type_mask,
+             ThreadHostConfig configure_host = ThreadHostConfig());
 
   ~ThreadHost();
+
+ private:
+  std::unique_ptr<fml::Thread> CreateThread(Type type, ThreadConfig configure);
 };
 
 }  // namespace flutter

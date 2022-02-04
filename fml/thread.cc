@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/message_loop.h"
@@ -23,17 +24,32 @@
 
 namespace fml {
 
-Thread::Thread(const std::string& name) : joined_(false) {
+Thread::ThreadConfig::ThreadConfig(const std::string& name,
+                                   ThreadPriority priority)
+    : thread_name_(name), thread_priority_(priority) {}
+
+void Thread::ThreadConfig::SetCurrentThreadName() const {
+  Thread::SetCurrentThreadName(thread_name_);
+}
+
+void Thread::ThreadConfig::SetCurrentThreadPriority() const {}
+
+Thread::Thread(const std::string& name)
+    : Thread(ThreadConfig::MakeDefaultConfigure(name)) {}
+
+Thread::Thread(std::unique_ptr<ThreadConfig> config) : joined_(false) {
   fml::AutoResetWaitableEvent latch;
   fml::RefPtr<fml::TaskRunner> runner;
-  thread_ = std::make_unique<std::thread>([&latch, &runner, name]() -> void {
-    SetCurrentThreadName(name);
-    fml::MessageLoop::EnsureInitializedForCurrentThread();
-    auto& loop = MessageLoop::GetCurrent();
-    runner = loop.GetTaskRunner();
-    latch.Signal();
-    loop.Run();
-  });
+  thread_ = std::make_unique<std::thread>(
+      [&latch, &runner, threadConfig = std::move(config)]() -> void {
+        threadConfig->SetCurrentThreadName();
+        threadConfig->SetCurrentThreadPriority();
+        fml::MessageLoop::EnsureInitializedForCurrentThread();
+        auto& loop = MessageLoop::GetCurrent();
+        runner = loop.GetTaskRunner();
+        latch.Signal();
+        loop.Run();
+      });
   latch.Wait();
   task_runner_ = runner;
 }
