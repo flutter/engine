@@ -24,6 +24,7 @@ FLUTTER_ASSERT_ARC
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
+- (id<FlutterTextInputDelegate>)textInputDelegate;
 
 @end
 
@@ -64,6 +65,7 @@ FLUTTER_ASSERT_ARC
                 delayRemoval:(BOOL)delayRemoval;
 - (NSArray<UIView*>*)textInputViews;
 - (UIView*)hostView;
+- (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr;
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
 @end
 
@@ -75,15 +77,16 @@ FLUTTER_ASSERT_ARC
   NSDictionary* _passwordTemplate;
   id engine;
   FlutterTextInputPlugin* textInputPlugin;
+
   FlutterViewController* viewController;
 }
 
 - (void)setUp {
   [super setUp];
-
   engine = OCMClassMock([FlutterEngine class]);
-  textInputPlugin = [[FlutterTextInputPlugin alloc] init];
-  textInputPlugin.textInputDelegate = engine;
+
+  textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
+
   viewController = [FlutterViewController new];
   textInputPlugin.viewController = viewController;
 
@@ -92,9 +95,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)tearDown {
-  for (FlutterTextInputView* autofillView in textInputPlugin.autofillContext.allValues) {
-    autofillView.textInputDelegate = nil;
-  }
+  textInputPlugin = nil;
   engine = nil;
   [textInputPlugin.autofillContext removeAllObjects];
   [textInputPlugin cleanUpViewHierarchy:YES clearText:YES delayRemoval:NO];
@@ -176,6 +177,43 @@ FLUTTER_ASSERT_ARC
   }
 }
 
+- (void)testNoDanglingEnginePointer {
+  __weak FlutterTextInputPlugin* weakFlutterTextInputPlugin;
+  FlutterViewController* flutterViewController = [FlutterViewController new];
+  __weak FlutterEngine* weakFlutterEngine;
+
+  FlutterTextInputView* currentView;
+
+  // The engine instance will be deallocated after the autorelease pool is drained.
+  @autoreleasepool {
+    FlutterEngine* flutterEngine = OCMClassMock([FlutterEngine class]);
+    weakFlutterEngine = flutterEngine;
+    NSAssert(weakFlutterEngine, @"flutter engine must not be nil");
+    FlutterTextInputPlugin* flutterTextInputPlugin = [[FlutterTextInputPlugin alloc]
+        initWithDelegate:(id<FlutterTextInputDelegate>)flutterEngine];
+    weakFlutterTextInputPlugin = flutterTextInputPlugin;
+    flutterTextInputPlugin.viewController = flutterViewController;
+
+    // Set client so the text input plugin has an active view.
+    NSDictionary* config = self.mutableTemplateCopy;
+    FlutterMethodCall* setClientCall =
+        [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                          arguments:@[ [NSNumber numberWithInt:123], config ]];
+    [flutterTextInputPlugin handleMethodCall:setClientCall
+                                      result:^(id _Nullable result){
+                                      }];
+    currentView = flutterTextInputPlugin.activeView;
+  }
+
+  NSAssert(!weakFlutterEngine, @"flutter engine must be nil");
+  NSAssert(currentView, @"current view must not be nil");
+
+  XCTAssertNil(weakFlutterTextInputPlugin);
+  // Verify that the view can no longer access the deallocated engine/text input plugin
+  // instance.
+  XCTAssertNil(currentView.textInputDelegate);
+}
+
 - (void)testSecureInput {
   NSDictionary* config = self.mutableTemplateCopy;
   [config setValue:@"YES" forKey:@"obscureText"];
@@ -235,8 +273,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testAutocorrectionPromptRectAppears {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView firstRectForRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 1)]];
 
   // Verify behavior.
@@ -248,8 +285,7 @@ FLUTTER_ASSERT_ARC
 
 - (void)testAutocorrectionPromptRectDoesNotAppearDuringScribble {
   if (@available(iOS 14.0, *)) {
-    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
-    inputView.textInputDelegate = engine;
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
     __block int callCount = 0;
     OCMStub([engine flutterTextInputView:inputView
@@ -299,7 +335,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testTextRangeFromPositionMatchesUITextViewBehavior {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithFrame:CGRectZero];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   FlutterTextPosition* fromPosition = [[FlutterTextPosition alloc] initWithIndex:2];
   FlutterTextPosition* toPosition = [[FlutterTextPosition alloc] initWithIndex:0];
 
@@ -370,7 +406,8 @@ FLUTTER_ASSERT_ARC
 
 - (void)testNoZombies {
   // Regression test for https://github.com/flutter/flutter/issues/62501.
-  FlutterSecureTextInputView* passwordView = [[FlutterSecureTextInputView alloc] init];
+  FlutterSecureTextInputView* passwordView =
+      [[FlutterSecureTextInputView alloc] initWithOwner:textInputPlugin];
 
   @autoreleasepool {
     // Initialize the lazy textField.
@@ -382,12 +419,11 @@ FLUTTER_ASSERT_ARC
 - (void)testInputViewCrash {
   FlutterTextInputView* activeView = nil;
   @autoreleasepool {
-    FlutterTextInputPlugin* inputPlugin = [[FlutterTextInputPlugin alloc] init];
-    activeView = inputPlugin.activeView;
     FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
-    activeView.textInputDelegate = (id<FlutterTextInputDelegate>)flutterEngine;
+    FlutterTextInputPlugin* inputPlugin = [[FlutterTextInputPlugin alloc]
+        initWithDelegate:(id<FlutterTextInputDelegate>)flutterEngine];
+    activeView = inputPlugin.activeView;
   }
-  XCTAssert(!activeView.textInputDelegate);
   [activeView updateEditingState];
 }
 
@@ -402,48 +438,79 @@ FLUTTER_ASSERT_ARC
   XCTAssertNotEqual(currentView, textInputPlugin.activeView);
 }
 
-- (void)testNoDanglingEnginePointer {
-  NSDictionary* config = self.mutableTemplateCopy;
-  [self setClientId:123 configuration:config];
-
-  // We'll hold onto the current view and try to access the engine
-  // after changing the active view.
-  FlutterTextInputView* currentView = textInputPlugin.activeView;
-  [self setClientId:456 configuration:config];
-  XCTAssertNotNil(currentView);
-  XCTAssertNotNil(textInputPlugin.activeView);
-  XCTAssertNotEqual(currentView, textInputPlugin.activeView);
-
-  // Verify that the view can no longer access the engine
-  // instance.
-  XCTAssertNil(currentView.textInputDelegate);
-}
-
 - (void)ensureOnlyActiveViewCanBecomeFirstResponder {
   for (FlutterTextInputView* inputView in self.installedInputViews) {
     XCTAssertEqual(inputView.canBecomeFirstResponder, inputView == textInputPlugin.activeView);
   }
 }
 
-- (void)testPropagatePressEventsToNextResponder {
+- (void)testPropagatePressEventsToViewController {
+  FlutterViewController* mockViewController = OCMPartialMock(viewController);
+  OCMStub([mockViewController pressesBegan:[OCMArg isNotNil] withEvent:[OCMArg isNotNil]]);
+  OCMStub([mockViewController pressesEnded:[OCMArg isNotNil] withEvent:[OCMArg isNotNil]]);
+
+  textInputPlugin.viewController = mockViewController;
+
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
-
   FlutterTextInputView* currentView = textInputPlugin.activeView;
-  UIView* mockCurrentView = OCMPartialMock(currentView);
+  [self setTextInputShow];
 
-  [mockCurrentView pressesBegan:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
-                      withEvent:OCMClassMock([UIPressesEvent class])];
+  [currentView pressesBegan:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
+                  withEvent:OCMClassMock([UIPressesEvent class])];
 
-  // The event should be propagated to the next responder instead
-  // of the engine.
-  OCMVerify([mockCurrentView nextResponder]);
+  OCMVerify(times(1), [mockViewController pressesBegan:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+  OCMVerify(times(0), [mockViewController pressesEnded:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+
+  [currentView pressesEnded:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
+                  withEvent:OCMClassMock([UIPressesEvent class])];
+
+  OCMVerify(times(1), [mockViewController pressesBegan:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+  OCMVerify(times(1), [mockViewController pressesEnded:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+}
+
+- (void)testPropagatePressEventsToViewController2 {
+  FlutterViewController* mockViewController = OCMPartialMock(viewController);
+  OCMStub([mockViewController pressesBegan:[OCMArg isNotNil] withEvent:[OCMArg isNotNil]]);
+  OCMStub([mockViewController pressesEnded:[OCMArg isNotNil] withEvent:[OCMArg isNotNil]]);
+
+  textInputPlugin.viewController = mockViewController;
+
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  [self setTextInputShow];
+  FlutterTextInputView* currentView = textInputPlugin.activeView;
+
+  [currentView pressesBegan:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
+                  withEvent:OCMClassMock([UIPressesEvent class])];
+
+  OCMVerify(times(1), [mockViewController pressesBegan:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+  OCMVerify(times(0), [mockViewController pressesEnded:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+
+  // Switch focus to a different view.
+  [self setClientId:321 configuration:config];
+  [self setTextInputShow];
+  NSAssert(textInputPlugin.activeView, @"active view must not be nil");
+  NSAssert(textInputPlugin.activeView != currentView, @"active view must change");
+  currentView = textInputPlugin.activeView;
+  [currentView pressesEnded:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
+                  withEvent:OCMClassMock([UIPressesEvent class])];
+
+  OCMVerify(times(1), [mockViewController pressesBegan:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
+  OCMVerify(times(1), [mockViewController pressesEnded:[OCMArg isNotNil]
+                                             withEvent:[OCMArg isNotNil]]);
 }
 
 #pragma mark - TextEditingDelta tests
 - (void)testTextEditingDeltasAreGeneratedOnTextInput {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
@@ -546,8 +613,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextReplacement {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
@@ -581,8 +647,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextInsertion {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
@@ -616,8 +681,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testTextEditingDeltasAreGeneratedOnSetMarkedTextDeletion {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
@@ -653,8 +717,7 @@ FLUTTER_ASSERT_ARC
 #pragma mark - EditingState tests
 
 - (void)testUITextInputCallsUpdateEditingStateOnce {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
   __block int updateCount = 0;
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
@@ -684,8 +747,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testUITextInputCallsUpdateEditingStateWithDeltaOnce {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
@@ -716,8 +778,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testTextChangesDoNotTriggerUpdateEditingClient {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
   __block int updateCount = 0;
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
@@ -757,8 +818,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testTextChangesDoNotTriggerUpdateEditingClientWithDelta {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   inputView.enableDeltaModel = YES;
 
   __block int updateCount = 0;
@@ -799,8 +859,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testUITextInputAvoidUnnecessaryUndateEditingClientCalls {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
   __block int updateCount = 0;
   OCMStub([engine flutterTextInputView:inputView updateEditingClient:0 withState:[OCMArg isNotNil]])
@@ -823,8 +882,7 @@ FLUTTER_ASSERT_ARC
 
 - (void)testSetMarkedTextDuringScribbleDoesNotTriggerUpdateEditingClient {
   if (@available(iOS 14.0, *)) {
-    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-    inputView.textInputDelegate = engine;
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
     __block int updateCount = 0;
     OCMStub([engine flutterTextInputView:inputView
@@ -872,8 +930,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testUpdateEditingClientNegativeSelection {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
   [inputView.text setString:@"SELECTION"];
   inputView.markedTextRange = nil;
@@ -916,8 +973,7 @@ FLUTTER_ASSERT_ARC
 
 - (void)testUpdateEditingClientSelectionClamping {
   // Regression test for https://github.com/flutter/flutter/issues/62992.
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
   [inputView.text setString:@"SELECTION"];
   inputView.markedTextRange = nil;
@@ -977,7 +1033,7 @@ FLUTTER_ASSERT_ARC
 #pragma mark - UITextInput methods - Tests
 
 - (void)testUpdateFirstRectForRange {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
 
@@ -1022,7 +1078,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFirstRectForRangeReturnsCorrectSelectionRect {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
 
   FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
@@ -1040,7 +1096,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testClosestPositionToPoint {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
 
   // Minimize the vertical distance from the center of the rects first
@@ -1088,7 +1144,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testSelectionRectsForRange {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
 
   CGRect testRect0 = CGRectMake(100, 100, 100, 100);
@@ -1115,7 +1171,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testClosestPositionToPointWithinRange {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
 
   // Do not return a position before the start of the range
@@ -1149,14 +1205,14 @@ FLUTTER_ASSERT_ARC
 
 - (void)testInputViewsHaveUIInteractions {
   if (@available(iOS 13.0, *)) {
-    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+    FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
     XCTAssertGreaterThan(inputView.interactions.count, 0ul);
   }
 }
 
 - (void)testFloatingCursorDoesNotThrow {
   // The keyboard implementation may send unbalanced calls to the input view.
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
   [inputView beginFloatingCursorAtPoint:CGPointMake(123, 321)];
   [inputView endFloatingCursor];
@@ -1165,7 +1221,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testBoundsForFloatingCursor {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
 
   CGRect initialBounds = inputView.bounds;
   // Make sure the initial bounds.size is not as large.
@@ -1205,7 +1261,7 @@ FLUTTER_ASSERT_ARC
 #pragma mark - UIKeyInput Overrides - Tests
 
 - (void)testInsertTextAddsPlaceholderSelectionRects {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView
       setTextInputState:@{@"text" : @"test", @"selectionBase" : @1, @"selectionExtent" : @1}];
 
@@ -1619,7 +1675,6 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testInitialActiveViewCantAccessTextInputDelegate {
-  textInputPlugin.activeView.textInputDelegate = engine;
   // Before the framework sends the first text input configuration,
   // the dummy "activeView" we use should never have access to
   // its textInputDelegate.
@@ -1629,6 +1684,8 @@ FLUTTER_ASSERT_ARC
 #pragma mark - Accessibility - Tests
 
 - (void)testUITextInputAccessibilityNotHiddenWhenShowed {
+  [self setClientId:123 configuration:self.mutableTemplateCopy];
+
   // Send show text input method call.
   [self setTextInputShow];
   // Find all the FlutterTextInputViews we created.
@@ -1647,8 +1704,8 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputViewDirectFocusToBackingTextInput {
-  FlutterTextInputViewSpy* inputView = [[FlutterTextInputViewSpy alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputViewSpy* inputView =
+      [[FlutterTextInputViewSpy alloc] initWithOwner:textInputPlugin];
   UIView* container = [[UIView alloc] init];
   UIAccessibilityElement* backing =
       [[UIAccessibilityElement alloc] initWithAccessibilityContainer:container];
@@ -1662,8 +1719,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTokenizerCanParseLines {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] init];
-  inputView.textInputDelegate = engine;
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
 
   // The tokenizer returns zero range When text is empty.
@@ -1700,8 +1756,7 @@ FLUTTER_ASSERT_ARC
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
   FlutterViewController* flutterViewController = [FlutterViewController new];
-  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
-  myInputPlugin.textInputDelegate = engine;
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
   myInputPlugin.viewController = flutterViewController;
 
   __weak UIView* activeView;
@@ -1727,7 +1782,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginHostViewNilCrash {
-  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] init];
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
   myInputPlugin.viewController = nil;
   XCTAssertThrows([myInputPlugin hostView], @"Throws exception if host view is nil");
 }
