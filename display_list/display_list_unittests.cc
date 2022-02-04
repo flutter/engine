@@ -1594,5 +1594,77 @@ TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
 }
 
+TEST(DisplayList, SetBlendColorFilterMatchesSetColorFilter) {
+  DisplayListBuilder builder1;
+  builder1.setColorFilter(SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kHue));
+  sk_sp<DisplayList> display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.setBlendColorFilter(SK_ColorRED, SkBlendMode::kHue);
+  sk_sp<DisplayList> display_list2 = builder2.Build();
+
+  EXPECT_EQ(display_list1->bounds(), display_list2->bounds());
+  EXPECT_EQ(display_list1->op_count(true), display_list2->op_count(true));
+  EXPECT_EQ(display_list1->op_count(false), display_list2->op_count(false));
+  EXPECT_EQ(display_list1->bytes(true), display_list2->bytes(true));
+  EXPECT_EQ(display_list1->bytes(false), display_list2->bytes(false));
+  EXPECT_TRUE(display_list1->Equals(*display_list2));
+}
+
+TEST(DisplayList, SetMatrixColorFilterMatchesSetColorFilter) {
+  DisplayListBuilder builder1;
+  builder1.setColorFilter(SkColorFilters::Matrix(rotate_color_matrix));
+  sk_sp<DisplayList> display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.setMatrixColorFilter(rotate_color_matrix);
+  sk_sp<DisplayList> display_list2 = builder2.Build();
+
+  EXPECT_EQ(display_list1->bounds(), display_list2->bounds());
+  EXPECT_EQ(display_list1->op_count(true), display_list2->op_count(true));
+  EXPECT_EQ(display_list1->op_count(false), display_list2->op_count(false));
+  EXPECT_EQ(display_list1->bytes(true), display_list2->bytes(true));
+  EXPECT_EQ(display_list1->bytes(false), display_list2->bytes(false));
+  EXPECT_TRUE(display_list1->Equals(*display_list2));
+}
+
+TEST(DisplayList, SetSrgbToLinearColorFilterMatchesSetColorFilter) {
+  DisplayListBuilder builder1;
+  builder1.setColorFilter(SkColorFilters::SRGBToLinearGamma());
+  sk_sp<DisplayList> display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.setSrgbToLinearGammaColorFilter();
+  sk_sp<DisplayList> display_list2 = builder2.Build();
+
+  EXPECT_EQ(display_list1->bounds(), display_list2->bounds());
+  EXPECT_EQ(display_list1->op_count(true), display_list2->op_count(true));
+  EXPECT_EQ(display_list1->op_count(false), display_list2->op_count(false));
+  // Unfortunately, until we can recapture these gamma shifting ColorFilters
+  // from their Skia objects, the following tests will fail
+  // EXPECT_EQ(display_list1->bytes(true), display_list2->bytes(true));
+  // EXPECT_EQ(display_list1->bytes(false), display_list2->bytes(false));
+  // EXPECT_TRUE(display_list1->Equals(*display_list2));
+}
+
+TEST(DisplayList, SetLinearToSrgbColorFilterMatchesSetColorFilter) {
+  DisplayListBuilder builder1;
+  builder1.setColorFilter(SkColorFilters::LinearToSRGBGamma());
+  sk_sp<DisplayList> display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.setLinearToSrgbGammaColorFilter();
+  sk_sp<DisplayList> display_list2 = builder2.Build();
+
+  EXPECT_EQ(display_list1->bounds(), display_list2->bounds());
+  EXPECT_EQ(display_list1->op_count(true), display_list2->op_count(true));
+  EXPECT_EQ(display_list1->op_count(false), display_list2->op_count(false));
+  // Unfortunately, until we can recapture these gamma shifting ColorFilters
+  // from their Skia objects, the following tests will fail
+  // EXPECT_EQ(display_list1->bytes(true), display_list2->bytes(true));
+  // EXPECT_EQ(display_list1->bytes(false), display_list2->bytes(false));
+  // EXPECT_TRUE(display_list1->Equals(*display_list2));
+}
+
 }  // namespace testing
 }  // namespace flutter
