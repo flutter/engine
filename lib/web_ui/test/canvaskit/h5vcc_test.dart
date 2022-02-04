@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:html' as html;
 import 'dart:js' as js;
 
 import 'package:test/bootstrap/browser.dart';
@@ -50,10 +51,16 @@ void testMain() {
       expect(canvasKit.getH5vccSkSurface, isNotNull);
     });
 
-    test('Surface scquireFrame uses getH5vccSkSurface', () {
+    test('Surface acquireFrame uses getH5vccSkSurface', () {
       final Surface surface = SurfaceFactory.instance.getSurface();
       surface.acquireFrame(ui.Size.zero);
       expect(getH5vccSkSurfaceCalledCount, 1);
+
+      // No <canvas> element should be created.
+      expect(
+        flutterViewEmbedder.glassPaneElement!.querySelectorAll<html.Element>('canvas'),
+        isEmpty,
+      );
     });
   }, testOn: 'chrome');
 }
