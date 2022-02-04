@@ -17,10 +17,10 @@ apply plugin: "com.android.library"
 
 rootProject.buildDir = project.property("build_dir")
 
-// Shows warnings for usage of deprecated API usages if specified.
-def showDeprecations = project.findProperty('show-deprecations')
+// Shows warnings for usage of deprecated API usages unless otherwise specified.
+def ignoreDeprecations = project.findProperty('ignore-deprecations')
 gradle.projectsEvaluated {
-  if (showDeprecations) {
+  if (!ignoreDeprecations.toBoolean()) {
     tasks.withType(JavaCompile) {
         options.compilerArgs << "-Xlint:deprecation"
     }
