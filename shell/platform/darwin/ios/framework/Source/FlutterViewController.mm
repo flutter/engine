@@ -1460,7 +1460,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (BOOL)captureTextFromCameraEnabled {
-  /// TODO
+  /// TODO(luckysmg):How can we know this device supports OCR or not?
   return YES;
 }
 
