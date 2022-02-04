@@ -86,9 +86,11 @@ static bool IsPictureWorthRasterizing(SkPicture* picture,
   return picture->approximateOpCount(true) > 5;
 }
 
-static bool IsDisplayListWorthRasterizing(DisplayList* display_list,
-                                          bool will_change,
-                                          bool is_complex) {
+static bool IsDisplayListWorthRasterizing(
+    DisplayList* display_list,
+    bool will_change,
+    bool is_complex,
+    DisplayListComplexityCalculator* complexity_calculator) {
   if (will_change) {
     // If the display list is going to change in the future, there is no point
     // in doing to extra work to rasterize.
@@ -109,7 +111,8 @@ static bool IsDisplayListWorthRasterizing(DisplayList* display_list,
 
   // TODO(abarth): We should find a better heuristic here that lets us avoid
   // wasting memory on trivial layers that are easy to re-rasterize every frame.
-  return display_list->op_count(true) > 5;
+  unsigned int complexity_score = complexity_calculator->compute(display_list);
+  return complexity_calculator->should_be_cached(complexity_score);
 }
 
 /// @note Procedure doesn't copy all closures.
@@ -273,7 +276,13 @@ bool RasterCache::Prepare(PrerollContext* context,
     return false;
   }
 
-  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex)) {
+  DisplayListComplexityCalculator* complexity_calculator =
+      context->gr_context ? DisplayListComplexityCalculator::GetForBackend(
+                                context->gr_context->backend())
+                          : DisplayListComplexityCalculator::GetForSoftware();
+
+  if (!IsDisplayListWorthRasterizing(display_list, will_change, is_complex,
+                                     complexity_calculator)) {
     // We only deal with display lists that are worthy of rasterization.
     return false;
   }
@@ -341,7 +350,9 @@ void RasterCache::Touch(DisplayList* display_list,
   }
 }
 
-bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
+bool RasterCache::Draw(const SkPicture& picture,
+                       SkCanvas& canvas,
+                       const SkPaint* paint) const {
   PictureRasterCacheKey cache_key(picture.uniqueID(), canvas.getTotalMatrix());
   auto it = picture_cache_.find(cache_key);
   if (it == picture_cache_.end()) {
@@ -353,7 +364,7 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
   entry.used_this_frame = true;
 
   if (entry.image) {
-    entry.image->draw(canvas, nullptr);
+    entry.image->draw(canvas, paint);
     return true;
   }
 
@@ -361,7 +372,8 @@ bool RasterCache::Draw(const SkPicture& picture, SkCanvas& canvas) const {
 }
 
 bool RasterCache::Draw(const DisplayList& display_list,
-                       SkCanvas& canvas) const {
+                       SkCanvas& canvas,
+                       const SkPaint* paint) const {
   DisplayListRasterCacheKey cache_key(display_list.unique_id(),
                                       canvas.getTotalMatrix());
   auto it = display_list_cache_.find(cache_key);
@@ -374,7 +386,7 @@ bool RasterCache::Draw(const DisplayList& display_list,
   entry.used_this_frame = true;
 
   if (entry.image) {
-    entry.image->draw(canvas, nullptr);
+    entry.image->draw(canvas, paint);
     return true;
   }
 
@@ -383,7 +395,7 @@ bool RasterCache::Draw(const DisplayList& display_list,
 
 bool RasterCache::Draw(const Layer* layer,
                        SkCanvas& canvas,
-                       SkPaint* paint) const {
+                       const SkPaint* paint) const {
   LayerRasterCacheKey cache_key(layer->unique_id(), canvas.getTotalMatrix());
   auto it = layer_cache_.find(cache_key);
   if (it == layer_cache_.end()) {

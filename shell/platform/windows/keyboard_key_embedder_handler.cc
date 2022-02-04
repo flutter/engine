@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 
+#include "flutter/shell/platform/windows/keyboard_win32_common.h"
 #include "flutter/shell/platform/windows/string_conversion.h"
 
 namespace flutter {
@@ -27,17 +28,6 @@ constexpr SHORT kStateMaskToggled = 0x01;
 constexpr SHORT kStateMaskPressed = 0x80;
 
 const char* empty_character = "";
-
-// Revert the "character" for a dead key to its normal value, or the argument
-// unchanged otherwise.
-//
-// When a dead key is pressed, the WM_KEYDOWN's lParam is mapped to a special
-// value: the "normal character" | 0x80000000.  For example, when pressing
-// "dead key caret" (one that makes the following e into ê), its mapped
-// character is 0x8000005E. "Reverting" it gives 0x5E, which is character '^'.
-uint32_t _UndeadChar(uint32_t ch) {
-  return ch & ~0x80000000;
-}
 
 // Get some bits of the char, from the start'th bit from the right (excluded)
 // to the end'th bit from the right (included).
@@ -136,6 +126,10 @@ uint64_t KeyboardKeyEmbedderHandler::GetPhysicalKey(int scancode,
 uint64_t KeyboardKeyEmbedderHandler::GetLogicalKey(int key,
                                                    bool extended,
                                                    int scancode) {
+  if (key == VK_PROCESSKEY) {
+    return VK_PROCESSKEY;
+  }
+
   // Normally logical keys should only be derived from key codes, but since some
   // key codes are either 0 or ambiguous (multiple keys using the same key
   // code), these keys are resolved by scan codes.
@@ -185,7 +179,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   uint64_t eventual_logical_record;
   char character_bytes[kCharacterCacheSize];
 
-  character = _UndeadChar(character);
+  character = UndeadChar(character);
 
   if (is_physical_down) {
     if (had_record) {
@@ -230,6 +224,15 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
     }
   }
 
+  if (result_logical_key == VK_PROCESSKEY) {
+    // VK_PROCESSKEY means that the key press is used by an IME. These key
+    // presses are considered handled and not sent to Flutter. These events must
+    // be filtered by result_logical_key because the key up event of such
+    // presses uses the "original" logical key.
+    callback(true);
+    return;
+  }
+
   UpdateLastSeenCritialKey(key, physical_key, result_logical_key);
   // Synchronize the toggled states of critical keys (such as whether CapsLocks
   // is enabled). Toggled states can only be changed upon a down event, so if
@@ -253,16 +256,9 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   if (eventual_logical_record != 0) {
     pressingRecords_[physical_key] = eventual_logical_record;
   } else {
-    pressingRecords_.erase(last_logical_record_iter);
-  }
-
-  if (result_logical_key == VK_PROCESSKEY) {
-    // VK_PROCESSKEY means that the key press is used by an IME. These key
-    // presses are considered handled and not sent to Flutter. These events must
-    // be filtered by result_logical_key because the key up event of such
-    // presses uses the "original" logical key.
-    callback(true);
-    return;
+    auto record_iter = pressingRecords_.find(physical_key);
+    assert(record_iter != pressingRecords_.end());
+    pressingRecords_.erase(record_iter);
   }
 
   FlutterKeyEvent key_data{

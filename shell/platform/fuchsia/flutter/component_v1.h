@@ -26,6 +26,7 @@
 
 #include "engine.h"
 #include "flutter_runner_product_configuration.h"
+#include "program_metadata.h"
 #include "unique_fdio_ns.h"
 
 namespace flutter_runner {
@@ -69,10 +70,8 @@ class ComponentV1 final : public Engine::Delegate,
   // may be collected after.
   ~ComponentV1();
 
-  static void ParseProgramMetadata(
-      const fidl::VectorPtr<fuchsia::sys::ProgramMetadata>& program_metadata,
-      std::string* data_path,
-      std::string* assets_path);
+  static ProgramMetadata ParseProgramMetadata(
+      const fidl::VectorPtr<fuchsia::sys::ProgramMetadata>& program_metadata);
 
   const std::string& GetDebugLabel() const;
 
@@ -131,6 +130,7 @@ class ComponentV1 final : public Engine::Delegate,
   fml::RefPtr<flutter::DartSnapshot> isolate_snapshot_;
   std::set<std::unique_ptr<Engine>> shell_holders_;
   std::pair<bool, uint32_t> last_return_code_;
+  std::vector<std::string> dart_entrypoint_args_;
   fml::WeakPtrFactory<ComponentV1> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(ComponentV1);
 };

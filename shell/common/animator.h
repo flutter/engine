@@ -34,7 +34,7 @@ class Animator final {
     virtual void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                                       uint64_t frame_number) = 0;
 
-    virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;
+    virtual void OnAnimatorNotifyIdle(fml::TimePoint deadline) = 0;
 
     virtual void OnAnimatorDraw(
         std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
@@ -54,6 +54,8 @@ class Animator final {
 
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
 
+  const VsyncWaiter& GetVsyncWaiter() const;
+
   //--------------------------------------------------------------------------
   /// @brief    Schedule a secondary callback to be executed right after the
   ///           main `VsyncWaiter::AsyncWaitForVsync` callback (which is added
@@ -71,12 +73,6 @@ class Animator final {
   /// @see      `PointerDataDispatcher::ScheduleSecondaryVsyncCallback`.
   void ScheduleSecondaryVsyncCallback(uintptr_t id,
                                       const fml::closure& callback);
-
-  void Start();
-
-  void Stop();
-
-  void SetDimensionChangePending();
 
   // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The flow event will be
   // ended at either the next frame, or the next vsync interval with no active
@@ -110,11 +106,9 @@ class Animator final {
   std::shared_ptr<LayerTreePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
   LayerTreePipeline::ProducerContinuation producer_continuation_;
-  bool paused_ = true;
   bool regenerate_layer_tree_ = false;
   bool frame_scheduled_ = false;
   int notify_idle_task_id_ = 0;
-  bool dimension_change_pending_ = false;
   SkISize last_layer_tree_size_ = {0, 0};
   std::deque<uint64_t> trace_flow_ids_;
   bool has_rendered_ = false;

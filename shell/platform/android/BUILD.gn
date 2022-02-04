@@ -46,7 +46,6 @@ executable("flutter_shell_native_unittests") {
   public_configs = [ "//flutter:config" ]
   deps = [
     ":flutter_shell_native_src",
-    "//flutter/fml",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
   ]
@@ -535,16 +534,6 @@ zip_bundle("flutter_jar_zip") {
   ]
 
   deps = [ ":android_jar" ]
-
-  if (current_cpu == "x86" || current_cpu == "x64") {
-    files += [
-      {
-        source = "$root_build_dir/lib.stripped/libflutter.so"
-        destination = "libflutter.so"
-      },
-    ]
-    deps += [ ":flutter_shell_native" ]
-  }
 }
 
 action("gen_android_javadoc") {

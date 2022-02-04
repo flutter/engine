@@ -3,8 +3,8 @@ package io.flutter.embedding.android;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -28,6 +28,7 @@ import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
 import android.os.Build;
+import android.provider.Settings;
 import android.view.DisplayCutout;
 import android.view.Surface;
 import android.view.View;
@@ -76,7 +77,7 @@ public class FlutterViewTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     when(mockFlutterJni.isAttached()).thenReturn(true);
   }
 
@@ -136,6 +137,50 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void detachFromFlutterEngine_removeImageView() {
+    FlutterView flutterView = new FlutterView(RuntimeEnvironment.application);
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+    flutterView.convertToImageView();
+    assertEquals(flutterView.getChildCount(), 2);
+    View view = flutterView.getChildAt(1);
+    assertTrue(view instanceof FlutterImageView);
+
+    flutterView.detachFromFlutterEngine();
+    assertEquals(flutterView.getChildCount(), 1);
+    view = flutterView.getChildAt(0);
+    assertFalse(view instanceof FlutterImageView);
+  }
+
+  @Test
+  public void detachFromFlutterEngine_closesImageView() {
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+
+    FlutterRenderer flutterRenderer = spy(new FlutterRenderer(mockFlutterJni));
+    when(flutterEngine.getRenderer()).thenReturn(flutterRenderer);
+
+    FlutterImageView imageViewMock = mock(FlutterImageView.class);
+    when(imageViewMock.getAttachedRenderer()).thenReturn(flutterRenderer);
+
+    FlutterView flutterView = spy(new FlutterView(RuntimeEnvironment.application));
+    when(flutterView.createImageView()).thenReturn(imageViewMock);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    assertFalse(flutterView.renderSurface == imageViewMock);
+
+    flutterView.convertToImageView();
+    assertTrue(flutterView.renderSurface == imageViewMock);
+
+    flutterView.detachFromFlutterEngine();
+    assertFalse(flutterView.renderSurface == imageViewMock);
+    verify(imageViewMock, times(1)).closeImageReader();
+  }
+
+  @Test
   public void onConfigurationChanged_fizzlesWhenNullEngine() {
     FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
     FlutterEngine flutterEngine =
@@ -169,6 +214,8 @@ public class FlutterViewTest {
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
     SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenAnswer(
@@ -218,6 +265,8 @@ public class FlutterViewTest {
     SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
     SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenAnswer(
@@ -239,6 +288,77 @@ public class FlutterViewTest {
 
     // Verify results.
     assertEquals(SettingsChannel.PlatformBrightness.dark, reportedBrightness.get());
+  }
+
+  @Test
+  public void itSendsTextShowPasswordToFrameworkOnAttach() {
+    // Setup test.
+    AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
+
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    Settings.System.putInt(
+        flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1);
+
+    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
+    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
+    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenAnswer(
+            new Answer<SettingsChannel.MessageBuilder>() {
+              @Override
+              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
+                  throws Throwable {
+                reportedShowPassword.set((Boolean) invocation.getArguments()[0]);
+                return fakeMessageBuilder;
+              }
+            });
+    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
+    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    // Verify results.
+    assertTrue(reportedShowPassword.get());
+  }
+
+  public void itSendsTextHidePasswordToFrameworkOnAttach() {
+    // Setup test.
+    AtomicReference<Boolean> reportedShowPassword = new AtomicReference<>();
+
+    FlutterView flutterView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterEngine flutterEngine =
+        spy(new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni));
+    Settings.System.putInt(
+        flutterView.getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 0);
+
+    SettingsChannel fakeSettingsChannel = mock(SettingsChannel.class);
+    SettingsChannel.MessageBuilder fakeMessageBuilder = mock(SettingsChannel.MessageBuilder.class);
+    when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
+        .thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setUse24HourFormat(any(Boolean.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
+        .thenAnswer(
+            new Answer<SettingsChannel.MessageBuilder>() {
+              @Override
+              public SettingsChannel.MessageBuilder answer(InvocationOnMock invocation)
+                  throws Throwable {
+                reportedShowPassword.set((Boolean) invocation.getArguments()[0]);
+                return fakeMessageBuilder;
+              }
+            });
+    when(fakeSettingsChannel.startMessage()).thenReturn(fakeMessageBuilder);
+    when(flutterEngine.getSettingsChannel()).thenReturn(fakeSettingsChannel);
+
+    flutterView.attachToFlutterEngine(flutterEngine);
+
+    // Verify results.
+    assertFalse(reportedShowPassword.get());
   }
 
   // This test uses the API 30+ Algorithm for window insets. The legacy algorithm is
@@ -652,7 +772,7 @@ public class FlutterViewTest {
     flutterView.onAttachedToWindow();
 
     // Then the WindowManager callback is registered
-    verify(windowInfoRepo, times(1)).addWindowLayoutInfoListener(any(), any());
+    verify(windowInfoRepo, times(1)).addWindowLayoutInfoListener(any(), any(), any());
 
     // When the FlutterView is detached from the window
     flutterView.onDetachedFromWindow();
@@ -695,7 +815,7 @@ public class FlutterViewTest {
     flutterView.onAttachedToWindow();
     ArgumentCaptor<Consumer<WindowLayoutInfo>> wmConsumerCaptor =
         ArgumentCaptor.forClass((Class) Consumer.class);
-    verify(windowInfoRepo).addWindowLayoutInfoListener(any(), wmConsumerCaptor.capture());
+    verify(windowInfoRepo).addWindowLayoutInfoListener(any(), any(), wmConsumerCaptor.capture());
     Consumer<WindowLayoutInfo> wmConsumer = wmConsumerCaptor.getValue();
     wmConsumer.accept(testWindowLayout);
 
@@ -838,6 +958,22 @@ public class FlutterViewTest {
   }
 
   @Test
+  public void flutterImageView_closesReader() {
+    final ImageReader mockReader = mock(ImageReader.class);
+    when(mockReader.getMaxImages()).thenReturn(1);
+
+    final FlutterImageView imageView =
+        spy(
+            new FlutterImageView(
+                RuntimeEnvironment.application,
+                mockReader,
+                FlutterImageView.SurfaceKind.background));
+
+    imageView.closeImageReader();
+    verify(mockReader, times(1)).close();
+  }
+
+  @Test
   public void flutterSurfaceView_GathersTransparentRegion() {
     final Region mockRegion = mock(Region.class);
     final FlutterSurfaceView surfaceView = new FlutterSurfaceView(RuntimeEnvironment.application);
@@ -893,6 +1029,14 @@ public class FlutterViewTest {
     Integer accessibilityViewId = (Integer) getAccessibilityViewIdMethod.invoke(flutterView);
 
     assertEquals(null, flutterView.findViewByAccessibilityIdTraversal(accessibilityViewId));
+  }
+
+  @Test
+  public void flutterSplashView_itDoesNotCrashOnRestoreInstanceState() {
+    final FlutterSplashView splashView = new FlutterSplashView(RuntimeEnvironment.application);
+    splashView.onRestoreInstanceState(View.BaseSavedState.EMPTY_STATE);
+    // It should not crash and "splashScreenState" should be null.
+    assertEquals(null, splashView.splashScreenState);
   }
 
   public void ViewportMetrics_initializedPhysicalTouchSlop() {

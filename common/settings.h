@@ -126,11 +126,6 @@ struct Settings {
 
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
-  // Arguments passed as a List<String> to Dart's entrypoint function.
-  // TODO(93459): Remove it when it is no longer used.
-  // https://github.com/flutter/flutter/issues/93459
-  std::vector<std::string> dart_entrypoint_args;
-
   // Isolate settings
   bool enable_checked_mode = false;
   bool start_paused = false;
@@ -145,6 +140,7 @@ struct Settings {
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
+  bool enable_serial_gc = false;
 
   // Whether embedder only allows secure connections.
   bool may_insecurely_connect_to_all_domains = true;
@@ -212,6 +208,10 @@ struct Settings {
   // shells in the platform (via their embedding APIs) should cooperate to make
   // sure this flag is never set if they want the VM to shutdown and free all
   // associated resources.
+  // It can be customized by application, more detail:
+  // https://github.com/flutter/flutter/issues/95903
+  // TODO(eggfly): Should it be set to false by default?
+  // https://github.com/flutter/flutter/issues/96843
   bool leak_vm = true;
 
   // Engine settings

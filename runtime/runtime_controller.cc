@@ -48,7 +48,15 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data) const {
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    fml::WeakPtr<IOManager> io_manager,
+    fml::WeakPtr<ImageDecoder> image_decoder) const {
+  UIDartState::Context spawned_context{
+      context_.task_runners,         context_.snapshot_delegate,
+      std::move(io_manager),         context_.unref_queue,
+      std::move(image_decoder),      context_.image_generator_registry,
+      advisory_script_uri,           advisory_script_entrypoint,
+      context_.volatile_path_tracker};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -58,8 +66,9 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
                                           p_isolate_create_callback,     //
                                           p_isolate_shutdown_callback,   //
                                           p_persistent_isolate_data,     //
-                                          context_);                     //
+                                          spawned_context);              //
   result->spawning_isolate_ = root_isolate_;
+  result->platform_data_.viewport_metrics = ViewportMetrics();
   return result;
 }
 
@@ -196,7 +205,7 @@ bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
   return false;
 }
 
-bool RuntimeController::NotifyIdle(int64_t deadline) {
+bool RuntimeController::NotifyIdle(fml::TimePoint deadline) {
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (!root_isolate) {
     return false;
@@ -204,12 +213,12 @@ bool RuntimeController::NotifyIdle(int64_t deadline) {
 
   tonic::DartState::Scope scope(root_isolate);
 
-  Dart_NotifyIdle(deadline);
+  Dart_NotifyIdle(deadline.ToEpochDelta().ToMicroseconds());
 
   // Idle notifications being in isolate scope are part of the contract.
   if (idle_notification_callback_) {
     TRACE_EVENT0("flutter", "EmbedderIdleNotification");
-    idle_notification_callback_(deadline);
+    idle_notification_callback_(deadline.ToEpochDelta().ToMicroseconds());
   }
   return true;
 }

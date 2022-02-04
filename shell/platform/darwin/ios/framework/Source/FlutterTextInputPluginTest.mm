@@ -163,6 +163,19 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Tests
 
+- (void)testCaptureTextFromCamera {
+  FlutterTextInputView* activeView = textInputPlugin.activeView;
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.startCapturingTextFromCamera"
+                                        arguments:nil];
+  [textInputPlugin handleMethodCall:methodCall
+                             result:^(id _Nullable result){
+                             }];
+  if (@available(iOS 15.0, *)) {
+    OCMVerify([activeView captureTextFromCamera:nil]);
+  }
+}
+
 - (void)testSecureInput {
   NSDictionary* config = self.mutableTemplateCopy;
   [config setValue:@"YES" forKey:@"obscureText"];
@@ -409,19 +422,6 @@ FLUTTER_ASSERT_ARC
 - (void)ensureOnlyActiveViewCanBecomeFirstResponder {
   for (FlutterTextInputView* inputView in self.installedInputViews) {
     XCTAssertEqual(inputView.canBecomeFirstResponder, inputView == textInputPlugin.activeView);
-  }
-}
-
-- (void)testCaptureTextFromCamera {
-  FlutterTextInputView* activeView = textInputPlugin.activeView;
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"TextInput.startCapturingTextFromCamera"
-                                        arguments:nil];
-  [textInputPlugin handleMethodCall:methodCall
-                             result:^(id _Nullable result){
-                             }];
-  if (@available(iOS 15.0, *)) {
-    OCMVerify([activeView captureTextFromCamera:nil]);
   }
 }
 

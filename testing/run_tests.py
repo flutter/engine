@@ -387,7 +387,7 @@ def RunObjcTests(ios_variant='ios_debug_sim_unopt', test_filter=None):
     'xcodebuild '
     '-sdk iphonesimulator '
     '-scheme IosUnitTests '
-    "-destination platform='iOS Simulator,name=iPhone 8' "
+    "-destination platform='iOS Simulator,name=iPhone 11' "
     'test '
     'FLUTTER_ENGINE=' + ios_variant
   ]
@@ -403,12 +403,12 @@ def RunDartTests(build_dir, filter, verbose_dart_snapshot):
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
   EnsureDebugUnoptSkyPackagesAreBuilt()
 
-  # Now that we have the Sky packages at the hardcoded location, run `pub get`.
+  # Now that we have the Sky packages at the hardcoded location, run `dart pub get`.
   RunEngineExecutable(
     build_dir,
-    os.path.join('dart-sdk', 'bin', 'pub'),
+    os.path.join('dart-sdk', 'bin', 'dart'),
     None,
-    flags=['get', '--offline'],
+    flags=['pub', 'get', '--offline'],
     cwd=dart_tests_dir,
   )
 
@@ -538,16 +538,17 @@ def RunClangTidyTests(build_dir):
 
 def main():
   parser = argparse.ArgumentParser()
+  all_types = ['engine', 'dart', 'benchmarks', 'java', 'android', 'objc', 'font-subset']
 
   parser.add_argument('--variant', dest='variant', action='store',
       default='host_debug_unopt', help='The engine build variant to run the tests for.')
-  parser.add_argument('--type', type=str, default='all')
+  parser.add_argument('--type', type=str, default='all', help='A list of test types, default is "all" (equivalent to "%s")' % (','.join(all_types)))
   parser.add_argument('--engine-filter', type=str, default='',
       help='A list of engine test executables to run.')
   parser.add_argument('--dart-filter', type=str, default='',
       help='A list of Dart test scripts to run.')
   parser.add_argument('--java-filter', type=str, default='',
-      help='A single Java test class to run.')
+      help='A single Java test class to run (example: "io.flutter.SmokeTest")')
   parser.add_argument('--android-variant', dest='android_variant', action='store',
       default='android_debug_unopt',
       help='The engine build variant to run java or android tests for')
@@ -565,12 +566,12 @@ def main():
   parser.add_argument('--use-sanitizer-suppressions', dest='sanitizer_suppressions', action='store_true',
       default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
   parser.add_argument('--adb-path', dest='adb_path', action='store',
-      default=None, help='Provide the path of adb used for android tests.  By default it looks on $PATH.')
+      default=None, help='Provide the path of adb used for android tests. By default it looks on $PATH.')
 
   args = parser.parse_args()
 
   if args.type == 'all':
-    types = ['engine', 'dart', 'benchmarks', 'java', 'objc', 'font-subset']
+    types = all_types
   else:
     types = args.type.split(',')
 

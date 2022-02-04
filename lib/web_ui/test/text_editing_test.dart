@@ -10,7 +10,7 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
-import 'package:ui/src/engine.dart' show domRenderer;
+import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
@@ -76,7 +76,7 @@ void testMain() {
       testTextEditing.debugTextEditingStrategyOverride = editingStrategy;
       testTextEditing.configuration = singlelineConfig;
       // Ensure the glass-pane and its shadow root exist.
-      domRenderer.reset();
+      flutterViewEmbedder.reset();
     });
 
     test('Creates element when enabled and removes it when disabled', () {
@@ -101,7 +101,7 @@ void testMain() {
       final Element input = defaultTextEditingRoot.querySelector('input')!;
       // Now the editing element should have focus.
 
-      expect(document.activeElement, domRenderer.glassPaneElement);
+      expect(document.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(defaultTextEditingRoot.activeElement, input);
 
       expect(editingStrategy!.domElement, input);
@@ -549,6 +549,40 @@ void testMain() {
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
+    });
+
+    test('setClient, setEditingState, setSizeAndTransform, show - input element is put into the DOM', () {
+      editingStrategy = SafariDesktopTextEditingStrategy(textEditing!);
+      textEditing!.debugTextEditingStrategyOverride = editingStrategy;
+      final MethodCall setClient = MethodCall(
+          'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall setEditingState =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      // Editing shouldn't have started yet.
+      expect(document.activeElement, document.body);
+
+      // The "setSizeAndTransform" message has to be here before we call
+      // checkInputEditingState, since on some platforms (e.g. Desktop Safari)
+      // we don't put the input element into the DOM until we get its correct
+      // dimensions from the framework.
+      final MethodCall setSizeAndTransform =
+          configureSetSizeAndTransformMethodCall(150, 50,
+              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      expect(defaultTextEditingRoot.activeElement,
+          textEditing!.strategy.domElement);
     });
 
     test('setClient, setEditingState, show, updateConfig, clearClient', () {
@@ -2147,8 +2181,7 @@ KeyboardEvent dispatchKeyboardEvent(
   String type, {
   required int keyCode,
 }) {
-  // ignore: implicit_dynamic_function
-  final Function jsKeyboardEvent = js_util.getProperty(window, 'KeyboardEvent') as Function;
+  final Function jsKeyboardEvent = js_util.getProperty<Function>(window, 'KeyboardEvent');
   final List<dynamic> eventArgs = <dynamic>[
     type,
     <String, dynamic>{
@@ -2156,9 +2189,10 @@ KeyboardEvent dispatchKeyboardEvent(
       'cancelable': true,
     }
   ];
-  final KeyboardEvent event =
-      // ignore: implicit_dynamic_function
-      js_util.callConstructor(jsKeyboardEvent, js_util.jsify(eventArgs) as List<Object?>?) as KeyboardEvent;
+  final KeyboardEvent event = js_util.callConstructor<KeyboardEvent>(
+    jsKeyboardEvent,
+    js_util.jsify(eventArgs) as List<Object?>?,
+  );
   target.dispatchEvent(event);
 
   return event;

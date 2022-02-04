@@ -152,7 +152,7 @@ void ShellTest::SetViewportMetrics(Shell* shell, double width, double height) {
   latch.Wait();
 }
 
-void ShellTest::NotifyIdle(Shell* shell, int64_t deadline) {
+void ShellTest::NotifyIdle(Shell* shell, fml::TimePoint deadline) {
   fml::AutoResetWaitableEvent latch;
   shell->GetTaskRunners().GetUITaskRunner()->PostTask(
       [&latch, engine = shell->weak_engine_, deadline]() {
@@ -385,21 +385,13 @@ void ShellTest::DestroyShell(std::unique_ptr<Shell> shell,
   latch.Wait();
 }
 
-bool ShellTest::IsAnimatorRunning(Shell* shell) {
-  fml::AutoResetWaitableEvent latch;
-  bool running = false;
-  if (!shell) {
-    return running;
-  }
-  fml::TaskRunner::RunNowOrPostTask(
-      shell->GetTaskRunners().GetUITaskRunner(), [shell, &running, &latch]() {
-        if (shell && shell->engine_ && shell->engine_->animator_) {
-          running = !shell->engine_->animator_->paused_;
-        }
-        latch.Signal();
+size_t ShellTest::GetLiveTrackedPathCount(
+    std::shared_ptr<VolatilePathTracker> tracker) {
+  return std::count_if(
+      tracker->paths_.begin(), tracker->paths_.end(),
+      [](std::weak_ptr<VolatilePathTracker::TrackedPath> path) {
+        return path.lock();
       });
-  latch.Wait();
-  return running;
 }
 
 }  // namespace testing

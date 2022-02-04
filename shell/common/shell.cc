@@ -20,7 +20,6 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
@@ -151,6 +150,7 @@ std::unique_ptr<Shell> Shell::Create(
   return CreateWithSnapshot(std::move(platform_data),            //
                             std::move(task_runners),             //
                             /*parent_merger=*/nullptr,           //
+                            /*parent_io_manager=*/nullptr,       //
                             std::move(settings),                 //
                             std::move(vm),                       //
                             std::move(isolate_snapshot),         //
@@ -162,6 +162,7 @@ std::unique_ptr<Shell> Shell::Create(
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
     DartVMRef vm,
     fml::RefPtr<fml::RasterThreadMerger> parent_merger,
+    std::shared_ptr<ShellIOManager> parent_io_manager,
     TaskRunners task_runners,
     const PlatformData& platform_data,
     Settings settings,
@@ -216,7 +217,7 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   // first because it has state that the other subsystems depend on. It must
   // first be booted and the necessary references obtained to initialize the
   // other subsystems.
-  std::promise<std::unique_ptr<ShellIOManager>> io_manager_promise;
+  std::promise<std::shared_ptr<ShellIOManager>> io_manager_promise;
   auto io_manager_future = io_manager_promise.get_future();
   std::promise<fml::WeakPtr<ShellIOManager>> weak_io_manager_promise;
   auto weak_io_manager_future = weak_io_manager_promise.get_future();
@@ -224,28 +225,31 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
   auto unref_queue_future = unref_queue_promise.get_future();
   auto io_task_runner = shell->GetTaskRunners().GetIOTaskRunner();
 
-  // TODO(gw280): The WeakPtr here asserts that we are derefing it on the
-  // same thread as it was created on. We are currently on the IO thread
-  // inside this lambda but we need to deref the PlatformView, which was
-  // constructed on the platform thread.
-  //
-  // https://github.com/flutter/flutter/issues/42948
+  // The platform_view will be stored into shell's platform_view_ in
+  // shell->Setup(std::move(platform_view), ...) at the end.
+  PlatformView* platform_view_ptr = platform_view.get();
   fml::TaskRunner::RunNowOrPostTask(
       io_task_runner,
       [&io_manager_promise,                                               //
        &weak_io_manager_promise,                                          //
+       &parent_io_manager,                                                //
        &unref_queue_promise,                                              //
-       platform_view = platform_view->GetWeakPtr(),                       //
+       platform_view_ptr,                                                 //
        io_task_runner,                                                    //
        is_backgrounded_sync_switch = shell->GetIsGpuDisabledSyncSwitch()  //
   ]() {
         TRACE_EVENT0("flutter", "ShellSetupIOSubsystem");
-        auto io_manager = std::make_unique<ShellIOManager>(
-            platform_view.getUnsafe()->CreateResourceContext(),
-            is_backgrounded_sync_switch, io_task_runner);
+        std::shared_ptr<ShellIOManager> io_manager;
+        if (parent_io_manager) {
+          io_manager = parent_io_manager;
+        } else {
+          io_manager = std::make_shared<ShellIOManager>(
+              platform_view_ptr->CreateResourceContext(),
+              is_backgrounded_sync_switch, io_task_runner);
+        }
         weak_io_manager_promise.set_value(io_manager->GetWeakPtr());
         unref_queue_promise.set_value(io_manager->GetSkiaUnrefQueue());
-        io_manager_promise.set_value(std::move(io_manager));
+        io_manager_promise.set_value(io_manager);
       });
 
   // Send dispatcher_maker to the engine constructor because shell won't have
@@ -305,6 +309,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
     const PlatformData& platform_data,
     TaskRunners task_runners,
     fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
+    std::shared_ptr<ShellIOManager> parent_io_manager,
     Settings settings,
     DartVMRef vm,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
@@ -331,6 +336,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
           [&latch,                                                        //
            &shell,                                                        //
            parent_thread_merger,                                          //
+           parent_io_manager,                                             //
            task_runners = std::move(task_runners),                        //
            platform_data = std::move(platform_data),                      //
            settings = std::move(settings),                                //
@@ -343,6 +349,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
             shell = CreateShellOnPlatformThread(
                 std::move(vm),                       //
                 parent_thread_merger,                //
+                parent_io_manager,                   //
                 std::move(task_runners),             //
                 std::move(platform_data),            //
                 std::move(settings),                 //
@@ -490,9 +497,9 @@ std::unique_ptr<Shell> Shell::Spawn(
       fml::SyncSwitch::Handlers()
           .SetIfFalse([&is_gpu_disabled] { is_gpu_disabled = false; })
           .SetIfTrue([&is_gpu_disabled] { is_gpu_disabled = true; }));
-  std::unique_ptr<Shell> result = (CreateWithSnapshot(
+  std::unique_ptr<Shell> result = CreateWithSnapshot(
       PlatformData{}, task_runners_, rasterizer_->GetRasterThreadMerger(),
-      GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
+      io_manager_, GetSettings(), vm_, vm_->GetVMData()->GetIsolateSnapshot(),
       on_create_platform_view, on_create_rasterizer,
       [engine = this->engine_.get(), initial_route](
           Engine::Delegate& delegate,
@@ -508,9 +515,10 @@ std::unique_ptr<Shell> Shell::Spawn(
                              /*dispatcher_maker=*/dispatcher_maker,
                              /*settings=*/settings,
                              /*animator=*/std::move(animator),
-                             /*initial_route=*/initial_route);
+                             /*initial_route=*/initial_route,
+                             /*io_manager=*/std::move(io_manager));
       },
-      is_gpu_disabled));
+      is_gpu_disabled);
   result->shared_resource_context_ = io_manager_->GetSharedResourceContext();
   result->RunEngine(std::move(run_configuration));
   return result;
@@ -613,7 +621,7 @@ bool Shell::IsSetup() const {
 bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
                   std::unique_ptr<Engine> engine,
                   std::unique_ptr<Rasterizer> rasterizer,
-                  std::unique_ptr<ShellIOManager> io_manager) {
+                  std::shared_ptr<ShellIOManager> io_manager) {
   if (is_setup_) {
     return false;
   }
@@ -624,9 +632,16 @@ bool Shell::Setup(std::unique_ptr<PlatformView> platform_view,
 
   platform_view_ = std::move(platform_view);
   platform_message_handler_ = platform_view_->GetPlatformMessageHandler();
+  route_messages_through_platform_thread_.store(true);
+  task_runners_.GetPlatformTaskRunner()->PostTask(
+      [self = weak_factory_.GetWeakPtr()] {
+        if (self) {
+          self->route_messages_through_platform_thread_.store(false);
+        }
+      });
   engine_ = std::move(engine);
   rasterizer_ = std::move(rasterizer);
-  io_manager_ = std::move(io_manager);
+  io_manager_ = io_manager;
 
   // Set the external view embedder for the rasterizer.
   auto view_embedder = platform_view_->CreateExternalViewEmbedder();
@@ -747,12 +762,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         waiting_for_first_frame.store(true);
       });
 
-  // TODO(91717): This probably isn't necessary. The engine should be able to
-  // handle things here via normal lifecycle messages.
-  // https://github.com/flutter/flutter/issues/91717
   auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
-      engine->OnOutputSurfaceCreated();
+      engine->ScheduleFrame();
     }
   };
 
@@ -848,28 +860,20 @@ void Shell::OnPlatformViewDestroyed() {
       rasterizer->EnableThreadMergerIfNeeded();
       rasterizer->Teardown();
     }
-    // Step 3: Tell the IO thread to complete its remaining work.
+    // Step 2: Tell the IO thread to complete its remaining work.
     fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
 
-  // TODO(91717): This probably isn't necessary. The engine should be able to
-  // handle things here via normal lifecycle messages.
-  // https://github.com/flutter/flutter/issues/91717
-  auto ui_task = [engine = engine_->GetWeakPtr()]() {
-    if (engine) {
-      engine->OnOutputSurfaceDestroyed();
-    }
-  };
-
-  // Step 1: Post a task onto the UI thread to tell the engine that its output
-  // surface is about to go away.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
-
-  // Step 2: Post a task to the Raster thread (possibly this thread) to tell the
+  // Step 1: Post a task to the Raster thread (possibly this thread) to tell the
   // rasterizer the output surface is going away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();
+  // On Android, the external view embedder posts a task to the platform thread,
+  // and waits until it completes.
+  // As a result, the platform thread must not be blocked prior to calling
+  // this method.
+  rasterizer_->TeardownExternalViewEmbedder();
 }
 
 // |PlatformView::Delegate|
@@ -1076,7 +1080,7 @@ void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
+void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
@@ -1175,7 +1179,30 @@ void Shell::OnEngineHandlePlatformMessage(
   }
 
   if (platform_message_handler_) {
-    platform_message_handler_->HandlePlatformMessage(std::move(message));
+    if (route_messages_through_platform_thread_) {
+      // We route messages through the platform thread temporarily when the
+      // shell is being initialized to be backwards compatible with setting
+      // message handlers in the same event as starting the isolate, but after
+      // it is started.
+      auto ui_task_runner = task_runners_.GetUITaskRunner();
+      task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
+          [weak_platform_message_handler =
+               std::weak_ptr<PlatformMessageHandler>(platform_message_handler_),
+           message = std::move(message), ui_task_runner]() mutable {
+            ui_task_runner->PostTask(fml::MakeCopyable(
+                [weak_platform_message_handler, message = std::move(message),
+                 ui_task_runner]() mutable {
+                  auto platform_message_handler =
+                      weak_platform_message_handler.lock();
+                  if (platform_message_handler) {
+                    platform_message_handler->HandlePlatformMessage(
+                        std::move(message));
+                  }
+                }));
+          }));
+    } else {
+      platform_message_handler_->HandlePlatformMessage(std::move(message));
+    }
   } else {
     task_runners_.GetPlatformTaskRunner()->PostTask(
         fml::MakeCopyable([view = platform_view_->GetWeakPtr(),
@@ -1862,6 +1889,10 @@ fml::TimePoint Shell::GetCurrentTimePoint() {
 const std::shared_ptr<PlatformMessageHandler>&
 Shell::GetPlatformMessageHandler() const {
   return platform_message_handler_;
+}
+
+const VsyncWaiter& Shell::GetVsyncWaiter() const {
+  return engine_->GetVsyncWaiter();
 }
 
 }  // namespace flutter

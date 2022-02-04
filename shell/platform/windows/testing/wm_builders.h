@@ -111,9 +111,36 @@ typedef struct WmCharInfo {
 
   uint16_t repeat_count = 1;
 
+  // The 25th bit of the LParam.
+  //
+  // Some messages are sent with bit25 set. Its meaning is yet unknown.
+  bool bit25 = 0;
+
   Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
                      HWND hWnd = NULL);
 } WmCharInfo;
+
+// WM_SYSKEYDOWN  messages.
+//
+// See https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-syskeydown.
+typedef struct WmSysKeyDownInfo {
+  uint32_t key;
+
+  uint8_t scan_code;
+
+  WmFieldExtended extended;
+
+  WmFieldPrevState prev_state;
+
+  // WmFieldTransitionState transition; // Always 0.
+
+  WmFieldContext context;
+
+  uint16_t repeat_count;
+
+  Win32Message Build(LRESULT expected_result = kWmResultDontCheck,
+                     HWND hWnd = NULL);
+} WmSysKeyDownInfo;
 
 // WM_SYSKEYUP  messages.
 //

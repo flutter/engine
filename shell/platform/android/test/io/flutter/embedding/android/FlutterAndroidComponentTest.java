@@ -1,8 +1,8 @@
 package io.flutter.embedding.android;
 
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -305,6 +305,12 @@ public class FlutterAndroidComponentTest {
       return "main";
     }
 
+    @Nullable
+    @Override
+    public String getDartEntrypointLibraryUri() {
+      return null;
+    }
+
     @NonNull
     @Override
     public String getAppBundlePath() {
@@ -327,6 +333,11 @@ public class FlutterAndroidComponentTest {
     @Override
     public TransparencyMode getTransparencyMode() {
       return TransparencyMode.transparent;
+    }
+
+    @Override
+    public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
+      return null;
     }
 
     @Nullable

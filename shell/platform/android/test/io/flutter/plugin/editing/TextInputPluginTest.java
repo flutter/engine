@@ -5,13 +5,13 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.AdditionalMatchers.gt;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNotNull;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.notNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -89,7 +89,7 @@ public class TextInputPluginTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     when(mockFlutterJni.isAttached()).thenReturn(true);
   }
 
@@ -181,6 +181,25 @@ public class TextInputPluginTest {
     assertTrue(textInputPlugin.getEditable().toString().equals("more update from the framework"));
     verify(textInputChannel, times(0))
         .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
+  }
+
+  @Test
+  public void setTextInputEditingState_willNotThrowWithoutSetTextInputClient() {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm =
+        Shadow.extract(
+            RuntimeEnvironment.application.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(RuntimeEnvironment.application);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+
+    // Here's no textInputPlugin.setTextInputClient()
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("initial input from framework", 0, 0, -1, -1));
+    assertTrue(textInputPlugin.getEditable().toString().equals("initial input from framework"));
   }
 
   @Test
@@ -1126,11 +1145,9 @@ public class TextInputPluginTest {
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    verify(textInputChannel, times(1))
-        .setTextInputMethodHandler(notNull(TextInputChannel.TextInputMethodHandler.class));
+    verify(textInputChannel, times(1)).setTextInputMethodHandler(isNotNull());
     textInputPlugin.destroy();
-    verify(textInputChannel, times(1))
-        .setTextInputMethodHandler(isNull(TextInputChannel.TextInputMethodHandler.class));
+    verify(textInputChannel, times(1)).setTextInputMethodHandler(isNull());
   }
 
   @Test

@@ -7,7 +7,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if OS_MACOSX
+#if FML_OS_MACOSX
 #include <dispatch/dispatch.h>
 
 namespace fml {
@@ -28,6 +28,13 @@ class PlatformSemaphore {
   }
 
   bool IsValid() const { return _sem != nullptr; }
+
+  bool Wait() {
+    if (_sem == nullptr) {
+      return false;
+    }
+    return dispatch_semaphore_wait(_sem, DISPATCH_TIME_FOREVER) == 0;
+  }
 
   bool TryWait() {
     if (_sem == nullptr) {
@@ -52,7 +59,7 @@ class PlatformSemaphore {
 
 }  // namespace fml
 
-#elif OS_WIN
+#elif FML_OS_WIN
 #include <windows.h>
 
 namespace fml {
@@ -70,6 +77,14 @@ class PlatformSemaphore {
   }
 
   bool IsValid() const { return _sem != nullptr; }
+
+  bool Wait() {
+    if (_sem == nullptr) {
+      return false;
+    }
+
+    return WaitForSingleObject(_sem, INFINITE) == WAIT_OBJECT_0;
+  }
 
   bool TryWait() {
     if (_sem == nullptr) {
@@ -116,6 +131,14 @@ class PlatformSemaphore {
 
   bool IsValid() const { return valid_; }
 
+  bool Wait() {
+    if (!valid_) {
+      return false;
+    }
+
+    return FML_HANDLE_EINTR(::sem_wait(&sem_)) == 0;
+  }
+
   bool TryWait() {
     if (!valid_) {
       return false;
@@ -153,6 +176,10 @@ Semaphore::~Semaphore() = default;
 
 bool Semaphore::IsValid() const {
   return _impl->IsValid();
+}
+
+bool Semaphore::Wait() {
+  return _impl->Wait();
 }
 
 bool Semaphore::TryWait() {

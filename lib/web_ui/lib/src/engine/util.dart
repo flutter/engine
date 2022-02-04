@@ -2,19 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@JS()
 library util;
 
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'safe_browser_api.dart';
 import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
@@ -395,8 +393,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
 bool isNsErrorFailureException(Object e) {
-  // ignore: implicit_dynamic_function
-  return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
+  return getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
 /// From: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
@@ -648,28 +645,6 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 }
 
-typedef JsParseFloat = num? Function(String source);
-
-@JS('parseFloat')
-external JsParseFloat get _jsParseFloat;
-
-/// Parses a string [source] into a double.
-///
-/// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
-/// because the latter can't parse strings like "20px".
-///
-/// Returns null if it fails to parse.
-num? parseFloat(String source) {
-  // Using JavaScript's `parseFloat` here because it can parse values
-  // like "20px", while Dart's `double.tryParse` fails.
-  final num? result = _jsParseFloat(source);
-
-  if (result == null || result.isNaN) {
-    return null;
-  }
-  return result;
-}
-
 /// Prints a list of bytes in hex format.
 ///
 /// Bytes are separated by one space and are padded on the left to always show
@@ -681,4 +656,78 @@ num? parseFloat(String source) {
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
   return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
+}
+
+/// Sets a style property on [element].
+///
+/// [name] is the name of the property. [value] is the value of the property.
+/// If [value] is null, removes the style property.
+void setElementStyle(
+    html.Element element, String name, String? value) {
+  if (value == null) {
+    element.style.removeProperty(name);
+  } else {
+    element.style.setProperty(name, value);
+  }
+}
+
+void setClipPath(html.Element element, String? value) {
+  if (browserEngine == BrowserEngine.webkit) {
+    if (value == null) {
+      element.style.removeProperty('-webkit-clip-path');
+    } else {
+      element.style.setProperty('-webkit-clip-path', value);
+    }
+  }
+  if (value == null) {
+    element.style.removeProperty('clip-path');
+  } else {
+    element.style.setProperty('clip-path', value);
+  }
+}
+
+void setThemeColor(ui.Color color) {
+  html.MetaElement? theme =
+      html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
+  if (theme == null) {
+    theme = html.MetaElement()
+      ..id = 'flutterweb-theme'
+      ..name = 'theme-color';
+    html.document.head!.append(theme);
+  }
+  theme.content = colorToCssString(color)!;
+}
+
+bool? _ellipseFeatureDetected;
+
+/// Draws CanvasElement ellipse with fallback.
+void drawEllipse(
+    html.CanvasRenderingContext2D context,
+    double centerX,
+    double centerY,
+    double radiusX,
+    double radiusY,
+    double rotation,
+    double startAngle,
+    double endAngle,
+    bool antiClockwise) {
+  _ellipseFeatureDetected ??= getJsProperty<Object?>(context, 'ellipse') != null;
+  if (_ellipseFeatureDetected!) {
+    context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+        endAngle, antiClockwise);
+  } else {
+    context.save();
+    context.translate(centerX, centerY);
+    context.rotate(rotation);
+    context.scale(radiusX, radiusY);
+    context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
+    context.restore();
+  }
+}
+
+/// Removes all children of a DOM node.
+void removeAllChildren(html.Node node) {
+  while (node.lastChild != null) {
+    node.lastChild!.remove();
+  }
 }

@@ -1013,7 +1013,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   g_mutators_stack_push_cliprrect_method = env->GetMethodID(
       g_mutators_stack_class->obj(), "pushClipRRect", "(IIII[F)V");
-  if (g_mutators_stack_push_cliprect_method == nullptr) {
+  if (g_mutators_stack_push_cliprrect_method == nullptr) {
     FML_LOG(ERROR)
         << "Could not locate FlutterMutatorsStack.pushClipRRect method";
     return false;
@@ -1595,13 +1595,14 @@ double PlatformViewAndroidJNIImpl::GetDisplayRefreshRate() {
     return kUnknownDisplayRefreshRate;
   }
 
-  jclass clazz = env->GetObjectClass(java_object.obj());
-  if (clazz == nullptr) {
+  fml::jni::ScopedJavaLocalRef<jclass> clazz(
+      env, env->GetObjectClass(java_object.obj()));
+  if (clazz.is_null()) {
     return kUnknownDisplayRefreshRate;
   }
 
-  jfieldID fid = env->GetStaticFieldID(clazz, "refreshRateFPS", "F");
-  return static_cast<double>(env->GetStaticFloatField(clazz, fid));
+  jfieldID fid = env->GetStaticFieldID(clazz.obj(), "refreshRateFPS", "F");
+  return static_cast<double>(env->GetStaticFloatField(clazz.obj(), fid));
 }
 
 bool PlatformViewAndroidJNIImpl::RequestDartDeferredLibrary(

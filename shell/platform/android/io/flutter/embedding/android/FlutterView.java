@@ -9,9 +9,13 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
 import android.util.SparseArray;
@@ -38,12 +42,12 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import androidx.core.util.Consumer;
-import androidx.window.java.layout.WindowInfoRepositoryCallbackAdapter;
+import androidx.window.java.layout.WindowInfoTrackerCallbackAdapter;
 import androidx.window.layout.DisplayFeature;
 import androidx.window.layout.FoldingFeature;
 import androidx.window.layout.FoldingFeature.OcclusionType;
 import androidx.window.layout.FoldingFeature.State;
-import androidx.window.layout.WindowInfoRepository;
+import androidx.window.layout.WindowInfoTracker;
 import androidx.window.layout.WindowLayoutInfo;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -57,6 +61,7 @@ import io.flutter.plugin.editing.TextInputPlugin;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.mouse.MouseCursorPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
+import io.flutter.util.ViewUtils;
 import io.flutter.view.AccessibilityBridge;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -136,6 +141,25 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         public void onAccessibilityChanged(
             boolean isAccessibilityEnabled, boolean isTouchExplorationEnabled) {
           resetWillNotDraw(isAccessibilityEnabled, isTouchExplorationEnabled);
+        }
+      };
+
+  private final ContentObserver systemSettingsObserver =
+      new ContentObserver(new Handler(Looper.getMainLooper())) {
+        @Override
+        public void onChange(boolean selfChange) {
+          super.onChange(selfChange);
+          if (flutterEngine == null) {
+            return;
+          }
+          Log.v(TAG, "System settings changed. Sending user settings to Flutter.");
+          sendUserSettingsToFlutter();
+        }
+
+        @Override
+        public boolean deliverSelfNotifications() {
+          // The Flutter app may change system settings.
+          return true;
         }
       };
 
@@ -454,8 +478,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   protected WindowInfoRepositoryCallbackAdapterWrapper createWindowInfoRepo() {
     try {
       return new WindowInfoRepositoryCallbackAdapterWrapper(
-          new WindowInfoRepositoryCallbackAdapter(
-              WindowInfoRepository.getOrCreate((Activity) getContext())));
+          new WindowInfoTrackerCallbackAdapter(
+              WindowInfoTracker.Companion.getOrCreate(getContext())));
     } catch (NoClassDefFoundError noClassDefFoundError) {
       // Testing environment uses gn/javac, which does not work with aar files. This is why aar
       // are converted to jar files, losing resources and other android-specific files.
@@ -470,22 +494,23 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   /**
    * Invoked when this is attached to the window.
    *
-   * <p>We register for {@link androidx.window.layout.WindowInfoRepository} updates.
+   * <p>We register for {@link androidx.window.layout.WindowInfoTracker} updates.
    */
   @Override
   protected void onAttachedToWindow() {
     super.onAttachedToWindow();
     this.windowInfoRepo = createWindowInfoRepo();
-    if (windowInfoRepo != null) {
+    Activity activity = ViewUtils.getActivity(getContext());
+    if (windowInfoRepo != null && activity != null) {
       windowInfoRepo.addWindowLayoutInfoListener(
-          ContextCompat.getMainExecutor(getContext()), windowInfoListener);
+          activity, ContextCompat.getMainExecutor(getContext()), windowInfoListener);
     }
   }
 
   /**
    * Invoked when this is detached from the window.
    *
-   * <p>We unregister from {@link androidx.window.layout.WindowInfoRepository} updates.
+   * <p>We unregister from {@link androidx.window.layout.WindowInfoTracker} updates.
    */
   @Override
   protected void onDetachedFromWindow() {
@@ -497,20 +522,20 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   }
 
   /**
-   * Refresh {@link androidx.window.layout.WindowInfoRepository} and {@link
-   * android.view.DisplayCutout} display features. Fold, hinge and cutout areas are populated here.
+   * Refresh {@link androidx.window.layout.WindowInfoTracker} and {@link android.view.DisplayCutout}
+   * display features. Fold, hinge and cutout areas are populated here.
    */
   @TargetApi(28)
   protected void setWindowInfoListenerDisplayFeatures(WindowLayoutInfo layoutInfo) {
     List<DisplayFeature> displayFeatures = layoutInfo.getDisplayFeatures();
     List<FlutterRenderer.DisplayFeature> result = new ArrayList<>();
 
-    // Data from WindowInfoRepository display features. Fold and hinge areas are
+    // Data from WindowInfoTracker display features. Fold and hinge areas are
     // populated here.
     for (DisplayFeature displayFeature : displayFeatures) {
       Log.v(
           TAG,
-          "WindowInfoRepository Display Feature reported with bounds = "
+          "WindowInfoTracker Display Feature reported with bounds = "
               + displayFeature.getBounds().toString()
               + " and type = "
               + displayFeature.getClass().getSimpleName());
@@ -1147,6 +1172,13 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
 
     // Push View and Context related information from Android to Flutter.
     sendUserSettingsToFlutter();
+    getContext()
+        .getContentResolver()
+        .registerContentObserver(
+            Settings.System.getUriFor(Settings.System.TEXT_SHOW_PASSWORD),
+            false,
+            systemSettingsObserver);
+
     localizationPlugin.sendLocalesToFlutter(getResources().getConfiguration());
     sendViewportMetricsToFlutter();
 
@@ -1188,10 +1220,12 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       listener.onFlutterEngineDetachedFromFlutterView();
     }
 
+    getContext().getContentResolver().unregisterContentObserver(systemSettingsObserver);
+
     flutterEngine.getPlatformViewsController().detachFromView();
 
     // Disconnect the FlutterEngine's PlatformViewsController from the AccessibilityBridge.
-    flutterEngine.getPlatformViewsController().detachAccessibiltyBridge();
+    flutterEngine.getPlatformViewsController().detachAccessibilityBridge();
 
     // Disconnect and clean up the AccessibilityBridge.
     accessibilityBridge.release();
@@ -1222,7 +1256,14 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
     renderSurface.detachFromRenderer();
 
-    flutterImageView = null;
+    if (flutterImageView != null) {
+      flutterImageView.closeImageReader();
+      // Remove the FlutterImageView that was previously added by {@code convertToImageView} to
+      // avoid leaks when this FlutterView is reused later in the scenario where multiple
+      // FlutterActivitiy/FlutterFragment share one engine.
+      removeView(flutterImageView);
+      flutterImageView = null;
+    }
     previousRenderSurface = null;
     flutterEngine = null;
   }
@@ -1385,6 +1426,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
         .getSettingsChannel()
         .startMessage()
         .setTextScaleFactor(getResources().getConfiguration().fontScale)
+        .setBrieflyShowPassword(
+            Settings.System.getInt(
+                    getContext().getContentResolver(), Settings.System.TEXT_SHOW_PASSWORD, 1)
+                == 1)
         .setUse24HourFormat(DateFormat.is24HourFormat(getContext()))
         .setPlatformBrightness(brightness)
         .send();

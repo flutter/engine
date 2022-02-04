@@ -102,7 +102,9 @@ class RuntimeController : public PlatformConfigurationClient {
       const std::function<void(int64_t)>& idle_notification_callback,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data) const;
+      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      fml::WeakPtr<IOManager> io_manager,
+      fml::WeakPtr<ImageDecoder> image_decoder) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -348,13 +350,12 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @bug        The `deadline` argument must be converted to `std::chrono`
   ///             instead of a raw integer.
   ///
-  /// @param[in]  deadline  The deadline measures in microseconds against the
-  ///             system's monotonic time. The clock can be accessed via
-  ///             `Dart_TimelineGetMicros`.
+  /// @param[in]  deadline  The deadline is used by the VM to determine if the
+  ///             corresponding sweep can be performed within the deadline.
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  virtual bool NotifyIdle(int64_t deadline);
+  virtual bool NotifyIdle(fml::TimePoint deadline);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
@@ -530,6 +531,10 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   void RequestDartDeferredLibrary(intptr_t loading_unit_id) override;
+
+  // |PlatformConfigurationClient|
+  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
+
   const fml::WeakPtr<IOManager>& GetIOManager() const {
     return context_.io_manager;
   }
@@ -610,9 +615,6 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   void SetNeedsReportTimings(bool value) override;
-
-  // |PlatformConfigurationClient|
-  std::shared_ptr<const fml::Mapping> GetPersistentIsolateData() override;
 
   // |PlatformConfigurationClient|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocale(
