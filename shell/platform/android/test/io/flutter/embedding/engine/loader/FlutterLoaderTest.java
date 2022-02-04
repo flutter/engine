@@ -21,11 +21,8 @@ import static org.robolectric.Shadows.shadowOf;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
-<<<<<<< HEAD
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-=======
 import android.os.Bundle;
->>>>>>> upstream/master
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import java.util.Arrays;
 import java.util.List;
