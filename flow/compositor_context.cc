@@ -43,15 +43,18 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
   }
 }
 
-CompositorContext::CompositorContext(fml::Milliseconds frame_budget)
-    : raster_time_(frame_budget), ui_time_(frame_budget) {}
+CompositorContext::CompositorContext()
+    : raster_time_(fixed_refresh_rate_updater_),
+      ui_time_(fixed_refresh_rate_updater_) {}
+
+CompositorContext::CompositorContext(Stopwatch::RefreshRateUpdater& updater)
+    : raster_time_(updater), ui_time_(updater) {}
 
 CompositorContext::~CompositorContext() = default;
 
 void CompositorContext::BeginFrame(ScopedFrame& frame,
                                    bool enable_instrumentation) {
   if (enable_instrumentation) {
-    frame_count_.Increment();
     raster_time_.Start();
   }
 }

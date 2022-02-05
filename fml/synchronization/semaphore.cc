@@ -7,7 +7,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if OS_MACOSX
+#if FML_OS_MACOSX
 #include <dispatch/dispatch.h>
 
 namespace fml {
@@ -59,7 +59,7 @@ class PlatformSemaphore {
 
 }  // namespace fml
 
-#elif OS_WIN
+#elif FML_OS_WIN
 #include <windows.h>
 
 namespace fml {
