@@ -1069,9 +1069,9 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalKeyQ, "", kNotSynthesized);
   clear_key_calls();
 
-  // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead
-  // Flutter will dispatch one. The AltGr is a system key, therefore
-  // will be handled by Win32's default WndProc.
+  // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead Flutter will
+  // dispatch one. The AltGr is a system key, therefore will be handled by
+  // Win32's default WndProc.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LCONTROL, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
@@ -1105,8 +1105,8 @@ TEST(KeyboardTest, AltGrTwice) {
 
   // 1. AltGr down.
 
-  // The key down event causes a ControlLeft down and a AltRight
-  // (extended AltLeft) down.
+  // The key down event causes a ControlLeft down and a AltRight (extended
+  // AltLeft) down.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
@@ -1457,11 +1457,10 @@ TEST(KeyboardTest, MultibyteCharacter) {
   KeyboardTester tester;
   tester.Responding(false);
 
-  // Gothic Keyboard layout. (We need a layout that yields non-BMP
-  // characters without IME, which is actually very rare.)
+  // Gothic Keyboard layout. (We need a layout that yields non-BMP characters
+  // without IME, which is actually very rare.)
 
-  // Press key W of a US keyboard, which should yield character
-  // '𐍅'.
+  // Press key W of a US keyboard, which should yield character '𐍅'.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       WmKeyDownInfo{kVirtualKeyW, kScanCodeKeyW, kNotExtended, kWasUp}.Build(
           kWmResultZero),
@@ -1517,9 +1516,9 @@ TEST(KeyboardTest, ImeModifierEventsAreIgnored) {
 
   // US Keyboard layout.
 
-  // To make the keyboard into IME mode, there should have been
-  // events like letter key down with VK_PROCESSKEY. Omit them in
-  // this test since they don't seem significant.
+  // To make the keyboard into IME mode, there should have been events like
+  // letter key down with VK_PROCESSKEY. Omit them in this test since they don't
+  // seem significant.
 
   // Press CtrlRight in IME mode.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1747,8 +1746,7 @@ TEST(KeyboardTest, TextInputSubmit) {
 
   // Make sure OnText is not obstructed after pressing Enter.
   //
-  // Regression test for
-  // https://github.com/flutter/flutter/issues/97706.
+  // Regression test for https://github.com/flutter/flutter/issues/97706.
 
   // Press A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
