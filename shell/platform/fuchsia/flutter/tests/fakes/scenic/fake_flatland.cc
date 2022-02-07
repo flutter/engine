@@ -7,11 +7,15 @@
 #include <zircon/types.h>
 
 #include <algorithm>  // For std::remove_if
+#include <cmath>
 #include <memory>
 
 #include "flutter/fml/logging.h"
 
 namespace flutter_runner::testing {
+
+const fuchsia::math::Rect kUnclippedBounds = {-INT_MAX / 2, -INT_MAX / 2,
+                                              INT_MAX, INT_MAX};
 
 FakeFlatland::FakeFlatland()
     : allocator_binding_(this),
@@ -234,27 +238,32 @@ void FakeFlatland::SetOrientation(
   transform->orientation = orientation;
 }
 
-void FakeFlatland::SetClipBounds(
+void FakeFlatland::SetClipBoundary(
     fuchsia::ui::composition::TransformId transform_id,
-    fuchsia::math::Rect clip_bounds) {
+    std::unique_ptr<fuchsia::math::Rect> bounds) {
   if (transform_id.value == 0) {
     // TODO(fxb/85619): Raise a FlatlandError here
     FML_CHECK(false)
-        << "FakeFlatland::SetClipBounds: TransformId 0 is invalid.";
+        << "FakeFlatland::SetClipBoundary: TransformId 0 is invalid.";
     return;
   }
 
   auto found_transform = pending_graph_.transform_map.find(transform_id.value);
   if (found_transform == pending_graph_.transform_map.end()) {
     // TODO(fxb/85619): Raise a FlatlandError here
-    FML_CHECK(false) << "FakeFlatland::SetClipBounds: TransformId "
+    FML_CHECK(false) << "FakeFlatland::SetClipBoundary: TransformId "
                      << transform_id.value << " does not exist.";
     return;
   }
 
   auto& transform = found_transform->second;
   FML_CHECK(transform);
-  transform->clip_bounds = clip_bounds;
+  if (bounds == nullptr) {
+    transform->clip_bounds = kUnclippedBounds;
+    return;
+  }
+
+  transform->clip_bounds = *bounds.get();
 }
 
 // TODO(fxbug.dev/89111): Re-enable once SDK rolls.
