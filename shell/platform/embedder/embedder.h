@@ -2374,6 +2374,15 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
     const FlutterEngineDisplay* displays,
     size_t display_count);
 
+//------------------------------------------------------------------------------
+/// @brief  TODO
+///
+/// @return the result of the call made to the engine.
+///
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                   engine);
+
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
 // Typedefs for the function pointers in FlutterEngineProcTable.
@@ -2490,6 +2499,8 @@ typedef FlutterEngineResult (*FlutterEngineNotifyDisplayUpdateFnPtr)(
     FlutterEngineDisplaysUpdateType update_type,
     const FlutterEngineDisplay* displays,
     size_t display_count);
+typedef FlutterEngineResult (*FlutterEngineScheduleFrameFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
@@ -2534,6 +2545,7 @@ typedef struct {
   FlutterEnginePostCallbackOnAllNativeThreadsFnPtr
       PostCallbackOnAllNativeThreads;
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
+  FlutterEngineScheduleFrameFnPtr ScheduleFrame;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------
