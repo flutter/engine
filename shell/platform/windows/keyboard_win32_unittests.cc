@@ -81,6 +81,25 @@ class TestKeyboardManagerWin32 : public KeyboardManagerWin32 {
   bool during_redispatch_ = false;
 };
 
+struct KeyboardStateChange {
+  uint32_t key;
+  bool pressed;
+  bool toggled_on;
+};
+
+class TestKeystate {
+ public:
+  void Set(uint32_t virtual_key, bool pressed, bool toggled_on = false) {
+    state_[virtual_key] = (pressed ? kStateMaskPressed : 0) |
+                          (toggled_on ? kStateMaskToggled : 0);
+  }
+
+  SHORT Get(uint32_t virtual_key) { return state_[virtual_key]; }
+
+ private:
+  std::map<uint32_t, SHORT> state_;
+};
+
 class MockKeyboardManagerWin32Delegate
     : public KeyboardManagerWin32::WindowDelegate,
       public MockMessageQueue {
@@ -109,6 +128,22 @@ class MockKeyboardManagerWin32Delegate
   void SetLayout(MapVkToCharHandler map_vk_to_char) {
     map_vk_to_char_ =
         map_vk_to_char == nullptr ? LayoutDefault : map_vk_to_char;
+  }
+
+  void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
+    key_state_.Set(key, pressed, toggled_on);
+  }
+
+  SHORT GetKeyState(int virtual_key) {
+    return key_state_.Get(virtual_key);
+  }
+
+  void PushBackMessage(const flutter::testing::Win32Message* message) {
+    PushBack(message);
+  }
+
+  LRESULT DispatchFrontMessage() {
+    return DispatchFront();
   }
 
  protected:
@@ -148,23 +183,7 @@ class MockKeyboardManagerWin32Delegate
   WindowBindingHandlerDelegate* view_;
   std::unique_ptr<TestKeyboardManagerWin32> keyboard_manager_;
   MapVkToCharHandler map_vk_to_char_;
-};
-
-class TestKeystate {
- public:
-  void Set(uint32_t virtual_key, bool pressed, bool toggled_on = false) {
-    state_[virtual_key] = (pressed ? kStateMaskPressed : 0) |
-                          (toggled_on ? kStateMaskToggled : 0);
-  }
-
-  SHORT Get(uint32_t virtual_key) { return state_[virtual_key]; }
-
-  KeyboardKeyEmbedderHandler::GetKeyStateHandler Getter() {
-    return [this](uint32_t virtual_key) { return Get(virtual_key); };
-  }
-
- private:
-  std::map<uint32_t, SHORT> state_;
+  TestKeystate key_state_;
 };
 
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
@@ -173,18 +192,17 @@ class TestFlutterWindowsView : public FlutterWindowsView {
  public:
   typedef std::function<void(const std::u16string& text)> U16StringHandler;
 
-  TestFlutterWindowsView(U16StringHandler on_text)
+  TestFlutterWindowsView(
+      U16StringHandler on_text,
+      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_keyboard_state)
       // The WindowBindingHandler is used for window size and such, and doesn't
       // affect keyboard.
       : FlutterWindowsView(
             std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
+        get_keyboard_state_(std::move(get_keyboard_state)),
         on_text_(std::move(on_text)) {}
 
   void OnText(const std::u16string& text) override { on_text_(text); }
-
-  void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
-    key_state_.Set(key, pressed, toggled_on);
-  }
 
   void HandleMessage(const char* channel,
                      const char* method,
@@ -220,13 +238,17 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
-    return FlutterWindowsView::CreateKeyboardKeyHandler(messenger,
-                                                        key_state_.Getter());
+    assert(get_keyboard_state_);
+    return FlutterWindowsView::CreateKeyboardKeyHandler(
+        messenger,
+        [this](int virtual_key) {
+          return get_keyboard_state_(virtual_key);
+        });
   }
 
  private:
   U16StringHandler on_text_;
-  TestKeystate key_state_;
+  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_keyboard_state_;
 };
 
 typedef enum {
@@ -261,6 +283,26 @@ class KeyboardTester {
   using ResponseHandler =
       std::function<void(MockKeyResponseController::ResponseCallback)>;
 
+  struct KeyboardChange {
+    KeyboardChange(Win32Message message) : type(kMessage) {
+      content.message = message;
+    }
+
+    KeyboardChange(KeyboardStateChange change) : type(kStateChange) {
+      content.state_change = change;
+    }
+
+    enum Type {
+      kMessage,
+      kStateChange,
+    } type;
+
+    union {
+      Win32Message message;
+      KeyboardStateChange state_change;
+    } content;
+  };
+
   explicit KeyboardTester() : callback_handler_(RespondValue(false)) {
     view_ = std::make_unique<TestFlutterWindowsView>(
         [](const std::u16string& text) {
@@ -268,6 +310,12 @@ class KeyboardTester {
               .type = kKeyCallOnText,
               .text = text,
           });
+        },
+        [this](int virtual_key) -> SHORT {
+          if (!window_) {
+            return 0;
+          }
+          return window_->GetKeyState(virtual_key);
         });
     view_->SetEngine(GetTestEngine(
         [&callback_handler = callback_handler_](
@@ -287,11 +335,13 @@ class KeyboardTester {
   }
 
   TestFlutterWindowsView& GetView() { return *view_; }
+  MockKeyboardManagerWin32Delegate& GetWindow() { return *window_; }
 
   void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
-    view_->SetKeyState(key, pressed, toggled_on);
+    window_->SetKeyState(key, pressed, toggled_on);
   }
 
+  // Set all events to be handled (true) or unhandled (false).
   void Responding(bool response) { callback_handler_ = RespondValue(response); }
 
   // Manually handle event callback of the onKeyData embedder API.
@@ -308,15 +358,42 @@ class KeyboardTester {
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
   void InjectMessages(int count, Win32Message message1, ...) {
-    Win32Message messages[count];
-    messages[0] = message1;
+    std::vector<KeyboardChange> messages;
+    messages.push_back(message1);
     va_list args;
     va_start(args, message1);
     for (int i = 1; i < count; i += 1) {
-      messages[i] = va_arg(args, Win32Message);
+      messages.push_back(va_arg(args, Win32Message));
     }
     va_end(args);
-    window_->InjectMessageList(count, messages);
+    InjectKeyboardChanges(messages);
+  }
+
+  void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
+    for (const KeyboardChange& change : changes) {
+      switch (change.type) {
+        case KeyboardChange::kMessage:
+          window_->PushBackMessage(&change.content.message);
+          break;
+        default:
+          break;
+      }
+    }
+    for (const KeyboardChange& change : changes) {
+      switch (change.type) {
+        case KeyboardChange::kMessage:
+          window_->DispatchFrontMessage();
+          break;
+        case KeyboardChange::kStateChange: {
+          const KeyboardStateChange& state_change =
+              change.content.state_change;
+          SetKeyState(state_change.key, state_change.pressed, state_change.toggled_on);
+          break;
+        }
+        default:
+          assert(false);
+      }
+    }
   }
 
  private:
