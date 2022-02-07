@@ -80,7 +80,6 @@ constexpr uint64_t kScanCodeShiftLeft = 0x2a;
 constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
-constexpr uint64_t kVirtualAltLeft = 0xa4;
 
 using namespace ::flutter::testing::keycodes;
 }  // namespace
@@ -1021,8 +1020,9 @@ TEST(KeyboardKeyEmbedderHandlerTest, SysKeyPress) {
           key_state.Getter());
 
   // Press KeyAltLeft.
+  key_state.Set(VK_LMENU, true);
   handler->KeyboardHook(
-      kVirtualAltLeft, kScanCodeAltLeft, WM_SYSKEYDOWN, 0, false, false,
+      VK_LMENU, kScanCodeAltLeft, WM_SYSKEYDOWN, 0, false, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
   EXPECT_EQ(results.size(), 1);
@@ -1036,11 +1036,11 @@ TEST(KeyboardKeyEmbedderHandlerTest, SysKeyPress) {
   event->callback(true, event->user_data);
   EXPECT_EQ(last_handled, true);
   results.clear();
-  key_state.Set(kVirtualAltLeft, true);
 
   // Release KeyAltLeft.
+  key_state.Set(VK_LMENU, false);
   handler->KeyboardHook(
-      kVirtualAltLeft, kScanCodeAltLeft, WM_SYSKEYUP, 0, false, true,
+      VK_LMENU, kScanCodeAltLeft, WM_SYSKEYUP, 0, false, true,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(results.size(), 1);
   event = results.data();

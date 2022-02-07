@@ -22,6 +22,7 @@
 
 #include <functional>
 #include <vector>
+#include <list>
 
 using testing::_;
 using testing::Invoke;
@@ -70,10 +71,22 @@ class TestKeyboardManagerWin32 : public KeyboardManagerWin32 {
   bool during_redispatch_ = false;
 };
 
+// Injecting this kind of keyboard change means that a key state (the true
+// state for a key, typically a modifier) should be changed.
 struct KeyStateChange {
   uint32_t key;
   bool pressed;
   bool toggled_on;
+};
+
+// Injecting this kind of keyboard change means that a forged event is expected,
+// and `KeyStateChange`s after this will be applied only after the forged event.
+//
+// See `IsKeyDownAltRight` for explaination for foged events.
+struct ExpectForgedMessage {
+  explicit ExpectForgedMessage(Win32Message message) : message(message){};
+
+  Win32Message message;
 };
 
 struct KeyboardChange {
@@ -87,14 +100,21 @@ struct KeyboardChange {
     content.key_state_change = change;
   }
 
+  KeyboardChange(ExpectForgedMessage forged_message)
+      : type(kExpectForgedMessage) {
+    content.expected_forged_message = forged_message.message;
+  }
+
   enum Type {
     kMessage,
     kKeyStateChange,
+    kExpectForgedMessage,
   } type;
 
   union {
     Win32Message message;
     KeyStateChange key_state_change;
+    Win32Message expected_forged_message;
   } content;
 };
 
@@ -144,6 +164,7 @@ class MockKeyboardManagerWin32Delegate
   SHORT GetKeyState(int virtual_key) { return key_state_.Get(virtual_key); }
 
   void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
+    // First queue all messages for peeking to work.
     for (const KeyboardChange& change : changes) {
       switch (change.type) {
         case KeyboardChange::kMessage:
@@ -158,10 +179,20 @@ class MockKeyboardManagerWin32Delegate
         case KeyboardChange::kMessage:
           DispatchFront();
           break;
+        case KeyboardChange::kExpectForgedMessage:
+          forged_message_expectations_.push_back(ForgedMessageExpectation{
+              .message = change.content.expected_forged_message,
+          });
+          break;
         case KeyboardChange::kKeyStateChange: {
           const KeyStateChange& state_change = change.content.key_state_change;
-          key_state_.Set(state_change.key, state_change.pressed,
+          if (forged_message_expectations_.empty()) {
+            key_state_.Set(state_change.key, state_change.pressed,
                           state_change.toggled_on);
+          } else {
+            forged_message_expectations_.back()
+                .state_changes_afterwards.push_back(state_change);
+          }
           break;
         }
         default:
@@ -194,18 +225,40 @@ class MockKeyboardManagerWin32Delegate
   }
 
   // This method is called when the keyboard manager redispatches messages
-  // or dispatches CtrlLeft up for AltGr.
+  // or forges messages (such as CtrlLeft up right before AltGr up).
   UINT Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) override {
     bool handled = keyboard_manager_->HandleMessage(Msg, wParam, lParam);
     if (keyboard_manager_->DuringRedispatch()) {
       EXPECT_FALSE(handled);
+    } else {
+      EXPECT_FALSE(forged_message_expectations_.empty());
+      ForgedMessageExpectation expectation =
+          forged_message_expectations_.front();
+      forged_message_expectations_.pop_front();
+      EXPECT_EQ(expectation.message.message, Msg);
+      EXPECT_EQ(expectation.message.wParam, wParam & 0xffffffff);
+      EXPECT_EQ(expectation.message.lParam, lParam & 0xffffffff);
+      if (expectation.message.expected_result != kWmResultDontCheck) {
+        EXPECT_EQ(expectation.message.expected_result,
+                  handled ? kWmResultZero : kWmResultDefault);
+      }
+      for (const KeyStateChange& change :
+           expectation.state_changes_afterwards) {
+        key_state_.Set(change.key, change.pressed, change.toggled_on);
+      }
     }
     return 0;
   }
 
  private:
+  struct ForgedMessageExpectation {
+    Win32Message message;
+    std::list<KeyStateChange> state_changes_afterwards;
+  };
+
   WindowBindingHandlerDelegate* view_;
   std::unique_ptr<TestKeyboardManagerWin32> keyboard_manager_;
+  std::list<ForgedMessageExpectation> forged_message_expectations_;
   MapVkToCharHandler map_vk_to_char_;
   TestKeystate key_state_;
 };
@@ -1016,6 +1069,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
       KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
+      KeyStateChange{VK_RMENU, true, true},
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -1052,10 +1106,14 @@ TEST(KeyboardTest, AltGrModifiedKey) {
   clear_key_calls();
 
   // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead Flutter will
-  // dispatch one. The AltGr is a system key, therefore will be handled by
-  // Win32's default WndProc.
+  // forge one. The AltGr is a system key, therefore will be handled by Win32's
+  // default WndProc.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LCONTROL, false, true},
+      ExpectForgedMessage{
+          WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(
+              kWmResultZero)},
+      KeyStateChange{VK_RMENU, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});
 
@@ -1093,6 +1151,7 @@ TEST(KeyboardTest, AltGrTwice) {
       KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
+      KeyStateChange{VK_RMENU, true, true},
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -1110,6 +1169,9 @@ TEST(KeyboardTest, AltGrTwice) {
   // The key up event only causes a AltRight (extended AltLeft) up.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LCONTROL, false, true},
+      ExpectForgedMessage{
+          WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(
+              kWmResultZero)},
       KeyStateChange{VK_RMENU, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});
@@ -1127,6 +1189,7 @@ TEST(KeyboardTest, AltGrTwice) {
       KeyStateChange{VK_LCONTROL, true, false},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
+      KeyStateChange{VK_RMENU, true, true},
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -1143,8 +1206,11 @@ TEST(KeyboardTest, AltGrTwice) {
 
   // The key up event only causes a AltRight (extended AltLeft) up.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
-      KeyStateChange{VK_RMENU, false, false},
       KeyStateChange{VK_LCONTROL, false, false},
+      ExpectForgedMessage{
+          WmKeyUpInfo{VK_LCONTROL, kScanCodeControl, kNotExtended}.Build(
+              kWmResultZero)},
+      KeyStateChange{VK_RMENU, false, false},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});
   EXPECT_EQ(key_calls.size(), 2);
