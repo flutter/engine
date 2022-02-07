@@ -7,7 +7,6 @@
 #include <zircon/types.h>
 
 #include <algorithm>  // For std::remove_if
-#include <cmath>
 #include <memory>
 
 #include "flutter/fml/logging.h"
