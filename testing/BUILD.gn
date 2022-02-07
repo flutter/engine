@@ -185,7 +185,7 @@ if (enable_unittests) {
 # is exercised on platforms where Metal itself is available.
 #
 # On iOS, this is enabled to allow for Metal tests to run within a test app
-if (enable_unittests || is_ios) {
+if (is_mac || is_ios) {
   source_set("metal") {
     if (shell_enable_metal) {
       sources = [
