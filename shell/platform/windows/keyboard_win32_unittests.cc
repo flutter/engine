@@ -36,17 +36,6 @@ namespace {
 constexpr SHORT kStateMaskToggled = 0x01;
 constexpr SHORT kStateMaskPressed = 0x80;
 
-static LPARAM CreateKeyEventLparam(USHORT scancode,
-                                   bool extended,
-                                   bool was_down,
-                                   USHORT repeat_count = 1,
-                                   bool context_code = 0,
-                                   bool transition_state = 0) {
-  return ((LPARAM(transition_state) << 31) | (LPARAM(was_down) << 30) |
-          (LPARAM(context_code) << 29) | (LPARAM(extended ? 0x1 : 0x0) << 24) |
-          (LPARAM(scancode) << 16) | LPARAM(repeat_count));
-}
-
 typedef uint32_t (*MapVkToCharHandler)(uint32_t virtual_key);
 
 uint32_t LayoutDefault(uint32_t virtual_key) {
@@ -94,18 +83,18 @@ struct KeyboardChange {
     content.message = message;
   }
 
-  KeyboardChange(KeyStateChange change) : type(kStateChange) {
-    content.state_change = change;
+  KeyboardChange(KeyStateChange change) : type(kKeyStateChange) {
+    content.key_state_change = change;
   }
 
   enum Type {
     kMessage,
-    kStateChange,
+    kKeyStateChange,
   } type;
 
   union {
     Win32Message message;
-    KeyStateChange state_change;
+    KeyStateChange key_state_change;
   } content;
 };
 
@@ -169,8 +158,8 @@ class MockKeyboardManagerWin32Delegate
         case KeyboardChange::kMessage:
           DispatchFront();
           break;
-        case KeyboardChange::kStateChange: {
-          const KeyStateChange& state_change = change.content.state_change;
+        case KeyboardChange::kKeyStateChange: {
+          const KeyStateChange& state_change = change.content.key_state_change;
           key_state_.Set(state_change.key, state_change.pressed,
                           state_change.toggled_on);
           break;
