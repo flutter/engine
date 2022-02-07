@@ -161,7 +161,7 @@ class MockKeyboardManagerWin32Delegate
         case KeyboardChange::kKeyStateChange: {
           const KeyStateChange& state_change = change.content.key_state_change;
           key_state_.Set(state_change.key, state_change.pressed,
-                          state_change.toggled_on);
+                         state_change.toggled_on);
           break;
         }
         default:
