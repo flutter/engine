@@ -388,10 +388,10 @@ public class PlatformViewsChannel {
 
   /** The platform view buffer size. */
   public static class PlatformViewBufferSize {
-    /** The width of the buffer size. */
+    /** The width of the screen buffer. */
     public final int width;
 
-    /** The height of the buffer size. */
+    /** The height of the screen buffer. */
     public final int height;
 
     public PlatformViewBufferSize(int width, int height) {
