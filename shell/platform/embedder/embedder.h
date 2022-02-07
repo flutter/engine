@@ -2375,7 +2375,9 @@ FlutterEngineResult FlutterEngineNotifyDisplayUpdate(
     size_t display_count);
 
 //------------------------------------------------------------------------------
-/// @brief  TODO
+/// @brief      Schedule a new frame to redraw the content.
+///
+/// @param[in]  engine     A running engine instance.
 ///
 /// @return the result of the call made to the engine.
 ///

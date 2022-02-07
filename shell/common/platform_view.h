@@ -72,7 +72,10 @@ class PlatformView {
     ///
     virtual void OnPlatformViewDestroyed() = 0;
 
-    /// TODO
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform needs to schedule a
+    ///             frame to regenerate the layer tree and redraw the surface.
+    ///
     virtual void OnPlatformViewScheduleFrame() = 0;
 
     //--------------------------------------------------------------------------
@@ -480,7 +483,10 @@ class PlatformView {
   ///
   virtual void NotifyDestroyed();
 
-  /// TODO
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to schedule a frame. In response to this
+  ///             call, the framework may need to start generating a new frame.
+  ///
   void ScheduleFrame();
 
   //----------------------------------------------------------------------------
