@@ -1,4 +1,4 @@
-Signature: 4c525ff949987c4d3da4b13f2d928eef
+Signature: 8e64feedd8c3a0dc71619d4560ead567
 
 UNUSED LICENSES:
 
@@ -486,6 +486,46 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: libjxl
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go + ../../../LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go
+FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types_test.go
+FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/skpbench_flags.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/make_lotties_with_assets/make_lotties_with_assets.go
+FILE: ../../../third_party/skia/third_party/libjxl/jxl/jxl_export.h
+----------------------------------------------------------------------------------------------------
+Copyright 2021 The Chromium Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: skcms
 LIBRARY: vulkan
 ORIGIN: ../../../third_party/skia/include/third_party/skcms/LICENSE
@@ -642,6 +682,7 @@ FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/main.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/shared.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/worker.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/sampling_types/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/spreadsheet/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/spiralshader.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/textapi_utils.js
@@ -671,6 +712,7 @@ FILE: ../../../third_party/skia/experimental/docs/jsonbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/svgBackend.js
 FILE: ../../../third_party/skia/experimental/docs/svgbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/utilities.js
+FILE: ../../../third_party/skia/experimental/ffmpeg/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/graphite/include/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/graphite/include/private/BUILD.bazel
@@ -833,9 +875,9 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SK_CPU_LIMIT_SSE41.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SafeStack.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SwiftShader_MSAN.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-SwiftShader_TSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-TSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-Tidy.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-Vulkan_TSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Debug-Wuffs.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-ANGLE.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-Clang-x86_64-Release-ASAN.json
@@ -856,8 +898,6 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.ex
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-GCC-x86_64-Release-NoGPU_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian10-GCC-x86_64-Release-Shared_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-arm-Release-Flutter_Android_Docker.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Debug-Chromebook_GLES_Docker.json
-FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Debian9-Clang-x86_64-Release-Chromebook_GLES_Docker.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Android_Vulkan.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/build/examples/full.expected/Build-Mac-Clang-arm64-Debug-Graphite_NoGpu.json
@@ -893,6 +933,7 @@ FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.e
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-NVIDIA_Shield-CPU-TegraX1-arm64-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-Nexus5x-GPU-Adreno418-arm64-Debug-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-Pixel2XL-GPU-Adreno540-arm64-Release-All-Android_Skpbench_Mskp.json
+FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Android-Clang-Pixel6-GPU-Adreno620-arm64-Release-All-Android.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-ChromeOS-Clang-SamsungChromebookPlus-GPU-MaliT860-arm-Release-All.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Debian10-Clang-GCE-CPU-AVX2-x86_64-Debug-All-MSAN.json
 FILE: ../../../third_party/skia/infra/bots/recipe_modules/flavor/examples/full.expected/Perf-Debian10-Clang-GCE-CPU-AVX2-x86_64-Release-All-ASAN.json
@@ -1070,6 +1111,9 @@ FILE: ../../../third_party/skia/modules/canvaskit/skp.js
 FILE: ../../../third_party/skia/modules/canvaskit/util.js
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/gms.html
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/viewer.html
+FILE: ../../../third_party/skia/modules/particles/BUILD.bazel
+FILE: ../../../third_party/skia/modules/particles/include/BUILD.bazel
+FILE: ../../../third_party/skia/modules/particles/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/pathkit/chaining.js
 FILE: ../../../third_party/skia/modules/pathkit/externs.js
 FILE: ../../../third_party/skia/modules/pathkit/helper.js
@@ -1081,6 +1125,17 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/effects.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/path.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
+FILE: ../../../third_party/skia/modules/skottie/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/fuzz/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/gm/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/include/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/animator/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/effects/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/layers/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/text/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/utils/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/bench/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/gm/BUILD.bazel
@@ -1123,8 +1178,13 @@ FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/modules/skparagraph/utils/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/utils/TestFontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/utils/TestFontCollection.h
+FILE: ../../../third_party/skia/modules/skresources/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skresources/include/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skresources/src/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/include/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/samples/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skshaper/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skshaper/include/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skshaper/src/BUILD.bazel
@@ -5564,6 +5624,8 @@ FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeImage.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGFeLightSource.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGImage.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGMask.cpp
+FILE: ../../../third_party/skia/src/codec/SkJpegxlCodec.cpp
+FILE: ../../../third_party/skia/src/codec/SkJpegxlCodec.h
 FILE: ../../../third_party/skia/src/gpu/GrDrawIndirectCommand.h
 FILE: ../../../third_party/skia/src/gpu/GrRenderTaskCluster.cpp
 FILE: ../../../third_party/skia/src/gpu/GrRenderTaskCluster.h
@@ -6040,11 +6102,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/experimental/graphite/src/GlobalCache.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/GlobalCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Log.h
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.h
+FILE: ../../../third_party/skia/experimental/graphite/src/RecorderPriv.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/RecorderPriv.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.h
+FILE: ../../../third_party/skia/experimental/graphite/src/ResourceCache.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ResourceCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h
@@ -6108,8 +6176,8 @@ FILE: ../../../third_party/skia/experimental/sorttoy/sorttypes.h
 FILE: ../../../third_party/skia/gm/batchedconvexpaths.cpp
 FILE: ../../../third_party/skia/gm/destcolor.cpp
 FILE: ../../../third_party/skia/gm/dsl_processor_test.cpp
-FILE: ../../../third_party/skia/include/core/SkStringView.h
 FILE: ../../../third_party/skia/include/private/SkSLProgramKind.h
+FILE: ../../../third_party/skia/include/private/SkStringView.h
 FILE: ../../../third_party/skia/include/private/SkTOptional.h
 FILE: ../../../third_party/skia/include/private/chromium/SkChromeRemoteGlyphCache.h
 FILE: ../../../third_party/skia/include/sksl/DSLBlock.h
@@ -6121,7 +6189,6 @@ FILE: ../../../third_party/skia/include/sksl/DSLStatement.h
 FILE: ../../../third_party/skia/include/sksl/DSLWrapper.h
 FILE: ../../../third_party/skia/include/sksl/SkSLDebugTrace.h
 FILE: ../../../third_party/skia/include/sksl/SkSLErrorReporter.h
-FILE: ../../../third_party/skia/src/core/SkStringView.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.cpp
 FILE: ../../../third_party/skia/src/gpu/GrVertexChunkArray.h
 FILE: ../../../third_party/skia/src/gpu/effects/GrModulateAtlasCoverageEffect.cpp
@@ -6183,44 +6250,6 @@ met:
   * Neither the name of the copyright holder nor the names of its
     contributors may be used to endorse or promote products derived
     from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-====================================================================================================
-
-====================================================================================================
-LIBRARY: skia
-ORIGIN: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go + ../../../LICENSE
-TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types.go
-FILE: ../../../third_party/skia/experimental/tskit/go/gen_types/gen_types_test.go
-FILE: ../../../third_party/skia/infra/bots/gen_tasks_logic/skpbench_flags.go
-FILE: ../../../third_party/skia/infra/bots/task_drivers/perf_puppeteer_skottie_frames/make_lotties_with_assets/make_lotties_with_assets.go
-----------------------------------------------------------------------------------------------------
-Copyright 2021 The Chromium Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -6464,6 +6493,43 @@ FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSKSL2SPIRV.cpp
 FILE: ../../../third_party/skia/fuzz/oss_fuzz/FuzzSkDescriptorDeserialize.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 Google, LLC
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2022 Google Inc.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -7875,4 +7941,4 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ====================================================================================================
-Total license count: 67
+Total license count: 68

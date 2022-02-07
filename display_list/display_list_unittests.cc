@@ -5,6 +5,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_utils.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -213,7 +214,7 @@ static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");
 typedef const std::function<void(DisplayListBuilder&)> DlInvoker;
 
 struct DisplayListInvocation {
-  int op_count_;
+  unsigned int op_count_;
   size_t byte_count_;
 
   // in some cases, running the sequence through an SkCanvas will result
@@ -226,7 +227,8 @@ struct DisplayListInvocation {
   bool supports_group_opacity_ = false;
 
   bool sk_version_matches() {
-    return (op_count_ == sk_op_count_ && byte_count_ == sk_byte_count_);
+    return (static_cast<int>(op_count_) == sk_op_count_ &&
+            byte_count_ == sk_byte_count_);
   }
 
   // A negative sk_op_count means "do not test this op".
@@ -240,7 +242,7 @@ struct DisplayListInvocation {
 
   bool supports_group_opacity() { return supports_group_opacity_; }
 
-  int op_count() { return op_count_; }
+  unsigned int op_count() { return op_count_; }
   // byte count for the individual ops, no DisplayList overhead
   size_t raw_byte_count() { return byte_count_; }
   // byte count for the ops with DisplayList overhead, comparable
@@ -362,12 +364,47 @@ std::vector<DisplayListInvocationGroup> allGroups = {
     }
   },
   { "Save(Layer)+Restore", {
-      // cv.save/restore are ignored if there are no draw calls between them
-      {2, 16, 0, 0, [](DisplayListBuilder& b) {b.save(); b.restore();}},
-      {2, 16, 2, 16, [](DisplayListBuilder& b) {b.saveLayer(nullptr, false); b.restore(); }},
-      {2, 16, 2, 16, [](DisplayListBuilder& b) {b.saveLayer(nullptr, true); b.restore(); }},
-      {2, 32, 2, 32, [](DisplayListBuilder& b) {b.saveLayer(&TestBounds, false); b.restore(); }},
-      {2, 32, 2, 32, [](DisplayListBuilder& b) {b.saveLayer(&TestBounds, true); b.restore(); }},
+    // There are many reasons that save and restore can elide content, including
+    // whether or not there are any draw operations between them, whether or not
+    // there are any state changes to restore, and whether group rendering (opacity)
+    // optimizations can allow attributes to be distributed to the children.
+    // To prevent those cases we include at least one clip operation and 2 overlapping
+    // rendering primitives between each save/restore pair.
+      {5, 88, 5, 88, [](DisplayListBuilder& b) {
+        b.save();
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 88, 5, 88, [](DisplayListBuilder& b) {
+        b.saveLayer(nullptr, false);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 88, 5, 88, [](DisplayListBuilder& b) {
+        b.saveLayer(nullptr, true);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 104, 5, 104, [](DisplayListBuilder& b) {
+        b.saveLayer(&TestBounds, false);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
+      {5, 104, 5, 104, [](DisplayListBuilder& b) {
+        b.saveLayer(&TestBounds, true);
+        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+        b.drawRect({5, 5, 15, 15});
+        b.drawRect({10, 10, 20, 20});
+        b.restore();
+      }},
     }
   },
   { "Translate", {
@@ -797,7 +834,8 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
       dl->RenderTo(&recorder);
       sk_sp<DisplayList> sk_copy = recorder.Build();
       auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
-      EXPECT_EQ(sk_copy->op_count(false), group.variants[i].sk_op_count())
+      EXPECT_EQ(static_cast<int>(sk_copy->op_count(false)),
+                group.variants[i].sk_op_count())
           << desc;
       EXPECT_EQ(sk_copy->bytes(false), group.variants[i].sk_byte_count())
           << desc;
@@ -861,8 +899,8 @@ TEST(DisplayList, FullRotationsAreNop) {
   sk_sp<DisplayList> dl = builder.Build();
   ASSERT_EQ(dl->bytes(false), sizeof(DisplayList));
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
-  ASSERT_EQ(dl->op_count(false), 0);
-  ASSERT_EQ(dl->op_count(true), 0);
+  ASSERT_EQ(dl->op_count(false), 0u);
+  ASSERT_EQ(dl->op_count(true), 0u);
 }
 
 TEST(DisplayList, AllBlendModeNops) {
@@ -872,13 +910,13 @@ TEST(DisplayList, AllBlendModeNops) {
   sk_sp<DisplayList> dl = builder.Build();
   ASSERT_EQ(dl->bytes(false), sizeof(DisplayList));
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
-  ASSERT_EQ(dl->op_count(false), 0);
-  ASSERT_EQ(dl->op_count(true), 0);
+  ASSERT_EQ(dl->op_count(false), 0u);
+  ASSERT_EQ(dl->op_count(true), 0u);
 }
 
 static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
   DisplayListBuilder builder;
-  int op_count = 0;
+  unsigned int op_count = 0;
   size_t byte_count = 0;
   for (size_t i = 0; i < allGroups.size(); i++) {
     DisplayListInvocationGroup& group = allGroups[i];
@@ -1128,18 +1166,20 @@ TEST(DisplayList, NestedOpCountMetricsSameAsSkPicture) {
   outer_builder.drawDisplayList(builder.Build());
 
   auto display_list = outer_builder.Build();
-  ASSERT_EQ(display_list->op_count(), 1);
-  ASSERT_EQ(display_list->op_count(true), 36);
+  ASSERT_EQ(display_list->op_count(), 1u);
+  ASSERT_EQ(display_list->op_count(true), 36u);
 
-  ASSERT_EQ(picture->approximateOpCount(), display_list->op_count());
-  ASSERT_EQ(picture->approximateOpCount(true), display_list->op_count(true));
+  ASSERT_EQ(picture->approximateOpCount(),
+            static_cast<int>(display_list->op_count()));
+  ASSERT_EQ(picture->approximateOpCount(true),
+            static_cast<int>(display_list->op_count(true)));
 
   DisplayListCanvasRecorder dl_recorder(SkRect::MakeWH(150, 100));
   picture->playback(&dl_recorder);
 
   auto sk_display_list = dl_recorder.Build();
-  ASSERT_EQ(display_list->op_count(), 1);
-  ASSERT_EQ(display_list->op_count(true), 36);
+  ASSERT_EQ(display_list->op_count(), 1u);
+  ASSERT_EQ(display_list->op_count(true), 36u);
 }
 
 class AttributeRefTester {
@@ -1375,7 +1415,7 @@ TEST(DisplayList, SetMaskBlurSigmaZeroResetsMaskFilter) {
   EXPECT_EQ(builder.getMaskFilter(), nullptr);
   builder.drawRect({30, 30, 40, 40});
   sk_sp<DisplayList> display_list = builder.Build();
-  ASSERT_EQ(display_list->op_count(), 2);
+  ASSERT_EQ(display_list->op_count(), 2u);
   ASSERT_EQ(display_list->bytes(), sizeof(DisplayList) + 8u + 24u + 8u + 24u);
 }
 
@@ -1387,7 +1427,7 @@ TEST(DisplayList, SetMaskFilterNullResetsMaskFilter) {
   EXPECT_EQ(builder.getMaskFilter(), nullptr);
   builder.drawRect({30, 30, 40, 40});
   sk_sp<DisplayList> display_list = builder.Build();
-  ASSERT_EQ(display_list->op_count(), 2);
+  ASSERT_EQ(display_list->op_count(), 2u);
   ASSERT_EQ(display_list->bytes(), sizeof(DisplayList) + 8u + 24u + 8u + 24u);
 }
 
@@ -1578,6 +1618,212 @@ TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
   builder.restore();
   SkRect bounds = builder.Build()->bounds();
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
+}
+
+class SaveLayerOptionsExpector : public virtual Dispatcher,
+                                 public IgnoreAttributeDispatchHelper,
+                                 public IgnoreClipDispatchHelper,
+                                 public IgnoreTransformDispatchHelper,
+                                 public IgnoreDrawDispatchHelper {
+ public:
+  explicit SaveLayerOptionsExpector(SaveLayerOptions expected) {
+    expected_.push_back(expected);
+  }
+
+  explicit SaveLayerOptionsExpector(std::vector<SaveLayerOptions> expected)
+      : expected_(expected) {}
+
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options) override {
+    EXPECT_EQ(options, expected_[save_layer_count_]);
+    save_layer_count_++;
+  }
+
+  int save_layer_count() { return save_layer_count_; }
+
+ private:
+  std::vector<SaveLayerOptions> expected_;
+  int save_layer_count_ = 0;
+};
+
+TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
+  SaveLayerOptions expected =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerNoAttributesSupportsOpacityOptimization) {
+  SaveLayerOptions expected =
+      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.saveLayer(nullptr, false);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerTwoOverlappingOpsPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.drawRect({10, 10, 20, 20});
+  builder.drawRect({15, 15, 25, 25});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, NestedSaveLayersMightSupportOpacityOptimization) {
+  SaveLayerOptions expected1 =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
+  SaveLayerOptions expected2 = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptions expected3 =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
+  SaveLayerOptionsExpector expector({expected1, expected2, expected3});
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, true);
+  builder.drawRect({10, 10, 20, 20});
+  builder.saveLayer(nullptr, true);
+  builder.drawRect({15, 15, 25, 25});
+  builder.restore();
+  builder.restore();
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 3);
+}
+
+TEST(DisplayList, NestedSaveLayersCanBothSupportOpacityOptimization) {
+  SaveLayerOptions expected1 =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
+  SaveLayerOptions expected2 =
+      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
+  SaveLayerOptionsExpector expector({expected1, expected2});
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.saveLayer(nullptr, false);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 2);
+}
+
+TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.setImageFilter(TestImageFilter1);
+  builder.saveLayer(nullptr, true);
+  builder.setImageFilter(nullptr);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.setColorFilter(TestColorFilter1);
+  builder.saveLayer(nullptr, true);
+  builder.setColorFilter(nullptr);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.saveLayer(nullptr, true);
+  builder.setBlendMode(SkBlendMode::kSrcOver);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
+  SaveLayerOptions expected =
+      SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.setImageFilter(TestImageFilter1);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.setColorFilter(TestColorFilter1);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
+}
+
+TEST(DisplayList, SaveLayerSrcBlendOnChildPreventsOpacityOptimization) {
+  SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
+  SaveLayerOptionsExpector expector(expected);
+
+  DisplayListBuilder builder;
+  builder.setColor(SkColorSetARGB(127, 255, 255, 255));
+  builder.saveLayer(nullptr, true);
+  builder.setBlendMode(SkBlendMode::kSrc);
+  builder.drawRect({10, 10, 20, 20});
+  builder.restore();
+
+  builder.Build()->Dispatch(expector);
+  EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
 }  // namespace testing
