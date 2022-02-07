@@ -332,10 +332,6 @@ class KeyboardTester {
   TestFlutterWindowsView& GetView() { return *view_; }
   MockKeyboardManagerWin32Delegate& GetWindow() { return *window_; }
 
-  void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
-    window_->SetKeyState(key, pressed, toggled_on);
-  }
-
   // Set all events to be handled (true) or unhandled (false).
   void Responding(bool response) { callback_handler_ = RespondValue(response); }
 
@@ -369,8 +365,8 @@ class KeyboardTester {
           break;
         case KeyboardChange::kStateChange: {
           const KeyStateChange& state_change = change.content.state_change;
-          SetKeyState(state_change.key, state_change.pressed,
-                      state_change.toggled_on);
+          window_->SetKeyState(state_change.key, state_change.pressed,
+                               state_change.toggled_on);
           break;
         }
         default:
@@ -598,8 +594,8 @@ TEST(KeyboardTest, ShiftLeftUnhandled) {
   // US Keyboard layout
 
   // Press ShiftLeft
-  tester.SetKeyState(VK_LSHIFT, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LSHIFT, true, false},
       WmKeyDownInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -610,8 +606,8 @@ TEST(KeyboardTest, ShiftLeftUnhandled) {
   clear_key_calls();
 
   // Release ShiftLeft
-  tester.SetKeyState(VK_LSHIFT, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LSHIFT, false, true},
       WmKeyUpInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -628,8 +624,8 @@ TEST(KeyboardTest, ShiftRightUnhandled) {
   // US Keyboard layout
 
   // Press ShiftRight
-  tester.SetKeyState(VK_RSHIFT, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RSHIFT, true, false},
       WmKeyDownInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -640,8 +636,8 @@ TEST(KeyboardTest, ShiftRightUnhandled) {
   clear_key_calls();
 
   // Release ShiftRight
-  tester.SetKeyState(VK_RSHIFT, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RSHIFT, false, true},
       WmKeyUpInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -659,8 +655,8 @@ TEST(KeyboardTest, CtrlLeftUnhandled) {
   // US Keyboard layout
 
   // Press CtrlLeft
-  tester.SetKeyState(VK_LCONTROL, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, true, false},
       WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -671,8 +667,8 @@ TEST(KeyboardTest, CtrlLeftUnhandled) {
   clear_key_calls();
 
   // Release CtrlLeft
-  tester.SetKeyState(VK_LCONTROL, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, false, true},
       WmKeyUpInfo{VK_SHIFT, kScanCodeControl, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -690,8 +686,8 @@ TEST(KeyboardTest, CtrlRightUnhandled) {
   // US Keyboard layout
 
   // Press CtrlRight
-  tester.SetKeyState(VK_RCONTROL, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RCONTROL, true, false},
       WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -702,8 +698,8 @@ TEST(KeyboardTest, CtrlRightUnhandled) {
   clear_key_calls();
 
   // Release CtrlRight
-  tester.SetKeyState(VK_RCONTROL, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RCONTROL, false, true},
       WmKeyUpInfo{VK_CONTROL, kScanCodeControl, kExtended}.Build(
           kWmResultZero)});
 
@@ -721,8 +717,8 @@ TEST(KeyboardTest, AltLeftUnhandled) {
   // US Keyboard layout
 
   // Press AltLeft. AltLeft is a SysKeyDown event.
-  tester.SetKeyState(VK_LMENU, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LMENU, true, false},
       WmSysKeyDownInfo{VK_MENU, kScanCodeAlt, kNotExtended, kWasUp}.Build(
           kWmResultDefault)});  // Always pass to the default WndProc.
 
@@ -732,8 +728,8 @@ TEST(KeyboardTest, AltLeftUnhandled) {
   clear_key_calls();
 
   // Release AltLeft. AltLeft is a SysKeyUp event.
-  tester.SetKeyState(VK_LMENU, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LMENU, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kNotExtended}.Build(
           kWmResultDefault)});  // Always pass to the default WndProc.
 
@@ -750,8 +746,8 @@ TEST(KeyboardTest, AltRightUnhandled) {
   // US Keyboard layout
 
   // Press AltRight. AltRight is a SysKeyDown event.
-  tester.SetKeyState(VK_RMENU, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RMENU, true, false},
       WmSysKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
           kWmResultDefault)});  // Always pass to the default WndProc.
 
@@ -762,8 +758,8 @@ TEST(KeyboardTest, AltRightUnhandled) {
   clear_key_calls();
 
   // Release AltRight. AltRight is a SysKeyUp event.
-  tester.SetKeyState(VK_RMENU, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RMENU, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});  // Always pass to the default WndProc.
 
@@ -780,8 +776,8 @@ TEST(KeyboardTest, MetaLeftUnhandled) {
   // US Keyboard layout
 
   // Press MetaLeft
-  tester.SetKeyState(VK_LWIN, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LWIN, true, false},
       WmKeyDownInfo{VK_LWIN, kScanCodeMetaLeft, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -792,8 +788,8 @@ TEST(KeyboardTest, MetaLeftUnhandled) {
   clear_key_calls();
 
   // Release MetaLeft
-  tester.SetKeyState(VK_LWIN, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LWIN, false, true},
       WmKeyUpInfo{VK_LWIN, kScanCodeMetaLeft, kExtended}.Build(kWmResultZero)});
 
   EXPECT_EQ(key_calls.size(), 1);
@@ -809,8 +805,8 @@ TEST(KeyboardTest, MetaRightUnhandled) {
   // US Keyboard layout
 
   // Press MetaRight
-  tester.SetKeyState(VK_RWIN, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RWIN, true, false},
       WmKeyDownInfo{VK_RWIN, kScanCodeMetaRight, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -821,8 +817,8 @@ TEST(KeyboardTest, MetaRightUnhandled) {
   clear_key_calls();
 
   // Release MetaRight
-  tester.SetKeyState(VK_RWIN, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RWIN, false, true},
       WmKeyUpInfo{VK_RWIN, kScanCodeMetaRight, kExtended}.Build(
           kWmResultZero)});
 
@@ -841,8 +837,8 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
   // US Keyboard layout
 
   // Press ShiftLeft
-  tester.SetKeyState(VK_LSHIFT, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LSHIFT, true, true},
       WmKeyDownInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -866,8 +862,8 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
   clear_key_calls();
 
   // Release ShiftLeft
-  tester.SetKeyState(VK_LSHIFT, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LSHIFT, false, true},
       WmKeyUpInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -896,8 +892,8 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
   // US Keyboard layout
 
   // Press ControlLeft
-  tester.SetKeyState(VK_LCONTROL, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -930,8 +926,8 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
   clear_key_calls();
 
   // Release ControlLeft
-  tester.SetKeyState(VK_LCONTROL, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, false, true},
       WmKeyUpInfo{VK_CONTROL, kScanCodeControl, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -950,8 +946,8 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
   // US Keyboard layout
 
   // Press ControlLeft
-  tester.SetKeyState(VK_LCONTROL, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_CONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -982,8 +978,8 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
   clear_key_calls();
 
   // Release ControlLeft
-  tester.SetKeyState(VK_LCONTROL, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, false, true},
       WmKeyUpInfo{VK_CONTROL, kScanCodeControl, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -1034,8 +1030,8 @@ TEST(KeyboardTest, AltGrModifiedKey) {
   // German Keyboard layout
 
   // Press AltGr, which Win32 precedes with a ContrlLeft down.
-  tester.SetKeyState(VK_LCONTROL, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
@@ -1076,8 +1072,8 @@ TEST(KeyboardTest, AltGrModifiedKey) {
   // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead
   // Flutter will dispatch one. The AltGr is a system key, therefore
   // will be handled by Win32's default WndProc.
-  tester.SetKeyState(VK_LCONTROL, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});
 
@@ -1111,8 +1107,8 @@ TEST(KeyboardTest, AltGrTwice) {
 
   // The key down event causes a ControlLeft down and a AltRight
   // (extended AltLeft) down.
-  tester.SetKeyState(VK_LCONTROL, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, true, true},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
@@ -1130,9 +1126,9 @@ TEST(KeyboardTest, AltGrTwice) {
   // 2. AltGr up.
 
   // The key up event only causes a AltRight (extended AltLeft) up.
-  tester.SetKeyState(VK_RMENU, false, true);
-  tester.SetKeyState(VK_LCONTROL, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, false, true},
+      KeyStateChange{VK_RMENU, false, true},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});
   EXPECT_EQ(key_calls.size(), 2);
@@ -1145,8 +1141,8 @@ TEST(KeyboardTest, AltGrTwice) {
 
   // 3. AltGr down (or: ControlLeft down then AltRight down.)
 
-  tester.SetKeyState(VK_LCONTROL, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LCONTROL, true, false},
       WmKeyDownInfo{VK_LCONTROL, kScanCodeControl, kNotExtended, kWasUp}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_MENU, kScanCodeAlt, kExtended, kWasUp}.Build(
@@ -1164,9 +1160,9 @@ TEST(KeyboardTest, AltGrTwice) {
   // 4. AltGr up.
 
   // The key up event only causes a AltRight (extended AltLeft) up.
-  tester.SetKeyState(VK_RMENU, false, false);
-  tester.SetKeyState(VK_LCONTROL, false, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RMENU, false, false},
+      KeyStateChange{VK_LCONTROL, false, false},
       WmSysKeyUpInfo{VK_MENU, kScanCodeAlt, kExtended}.Build(
           kWmResultDefault)});
   EXPECT_EQ(key_calls.size(), 2);
@@ -1253,8 +1249,8 @@ TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
   tester.Responding(false);
 
   // Press ShiftLeft
-  tester.SetKeyState(VK_LSHIFT, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LSHIFT, true, true},
       WmKeyDownInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -1286,8 +1282,8 @@ TEST(KeyboardTest, DeadKeyWithoutDeadMaskThatCombines) {
   clear_key_calls();
 
   // Release ShiftLeft
-  tester.SetKeyState(VK_LSHIFT, false, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_LSHIFT, false, true},
       WmKeyUpInfo{VK_SHIFT, kScanCodeShiftLeft, kNotExtended}.Build(
           kWmResultZero)});
 
@@ -1502,8 +1498,8 @@ TEST(KeyboardTest, NeverRedispatchShiftRightKeyDown) {
   tester.Responding(false);
 
   // Press ShiftRight and the delegate responds false.
-  tester.SetKeyState(VK_RSHIFT, true, true);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RSHIFT, true, true},
       WmKeyDownInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
@@ -1526,8 +1522,8 @@ TEST(KeyboardTest, ImeModifierEventsAreIgnored) {
   // this test since they don't seem significant.
 
   // Press CtrlRight in IME mode.
-  tester.SetKeyState(VK_RCONTROL, true, false);
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RCONTROL, true, false},
       WmKeyDownInfo{VK_PROCESSKEY, kScanCodeControl, kExtended, kWasUp}.Build(
           kWmResultZero)});
 
