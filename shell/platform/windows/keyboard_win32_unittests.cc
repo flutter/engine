@@ -134,17 +134,13 @@ class MockKeyboardManagerWin32Delegate
     key_state_.Set(key, pressed, toggled_on);
   }
 
-  SHORT GetKeyState(int virtual_key) {
-    return key_state_.Get(virtual_key);
-  }
+  SHORT GetKeyState(int virtual_key) { return key_state_.Get(virtual_key); }
 
   void PushBackMessage(const flutter::testing::Win32Message* message) {
     PushBack(message);
   }
 
-  LRESULT DispatchFrontMessage() {
-    return DispatchFront();
-  }
+  LRESULT DispatchFrontMessage() { return DispatchFront(); }
 
  protected:
   BOOL Win32PeekMessage(LPMSG lpMsg,
@@ -241,9 +237,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
     assert(get_keyboard_state_);
     return FlutterWindowsView::CreateKeyboardKeyHandler(
         messenger,
-        [this](int virtual_key) {
-          return get_keyboard_state_(virtual_key);
-        });
+        [this](int virtual_key) { return get_keyboard_state_(virtual_key); });
   }
 
  private:
@@ -385,9 +379,9 @@ class KeyboardTester {
           window_->DispatchFrontMessage();
           break;
         case KeyboardChange::kStateChange: {
-          const KeyStateChange& state_change =
-              change.content.state_change;
-          SetKeyState(state_change.key, state_change.pressed, state_change.toggled_on);
+          const KeyStateChange& state_change = change.content.state_change;
+          SetKeyState(state_change.key, state_change.pressed,
+                      state_change.toggled_on);
           break;
         }
         default:
