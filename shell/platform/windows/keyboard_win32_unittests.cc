@@ -81,7 +81,7 @@ class TestKeyboardManagerWin32 : public KeyboardManagerWin32 {
   bool during_redispatch_ = false;
 };
 
-struct KeyboardStateChange {
+struct KeyStateChange {
   uint32_t key;
   bool pressed;
   bool toggled_on;
@@ -288,7 +288,7 @@ class KeyboardTester {
       content.message = message;
     }
 
-    KeyboardChange(KeyboardStateChange change) : type(kStateChange) {
+    KeyboardChange(KeyStateChange change) : type(kStateChange) {
       content.state_change = change;
     }
 
@@ -299,7 +299,7 @@ class KeyboardTester {
 
     union {
       Win32Message message;
-      KeyboardStateChange state_change;
+      KeyStateChange state_change;
     } content;
   };
 
@@ -385,7 +385,7 @@ class KeyboardTester {
           window_->DispatchFrontMessage();
           break;
         case KeyboardChange::kStateChange: {
-          const KeyboardStateChange& state_change =
+          const KeyStateChange& state_change =
               change.content.state_change;
           SetKeyState(state_change.key, state_change.pressed, state_change.toggled_on);
           break;
