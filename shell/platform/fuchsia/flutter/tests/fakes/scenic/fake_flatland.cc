@@ -14,8 +14,7 @@
 
 namespace flutter_runner::testing {
 
-const fuchsia::math::Rect kUnclippedBounds = {-INT_MAX / 2, -INT_MAX / 2,
-                                              INT_MAX, INT_MAX};
+const fuchsia::math::Rect kUnclippedBounds = {0, 0, INT_MAX, INT_MAX};
 
 FakeFlatland::FakeFlatland()
     : allocator_binding_(this),
