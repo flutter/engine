@@ -124,7 +124,7 @@ class TestKeystate {
 
 class MockKeyboardManagerWin32Delegate
     : public KeyboardManagerWin32::WindowDelegate,
-      public MockMessageQueue {
+      protected MockMessageQueue {
  public:
   MockKeyboardManagerWin32Delegate(WindowBindingHandlerDelegate* view)
       : view_(view), map_vk_to_char_(LayoutDefault) {
