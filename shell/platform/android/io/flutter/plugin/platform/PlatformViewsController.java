@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
@@ -175,14 +176,14 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final PlatformView platformView = viewFactory.create(context, viewId, createParams);
           platformViews.put(viewId, platformView);
 
-          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
-          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
+          final PlatformViewWrapper wrapperView = new PlatformViewWrapper(context);
           final TextureRegistry.SurfaceTextureEntry textureEntry =
               textureRegistry.createSurfaceTexture();
-
-          final PlatformViewWrapper wrapperView = new PlatformViewWrapper(context);
           wrapperView.setTexture(textureEntry.surfaceTexture());
-          wrapperView.setDefaultBufferSize(physicalWidth, physicalHeight);
+
+          final int physicalWidth = toPhysicalPixels(request.logicalWidth);
+          final int physicalHeight = toPhysicalPixels(request.logicalHeight);
+          wrapperView.setBufferSize(physicalWidth, physicalHeight);
           wrapperView.setTouchProcessor(androidTouchProcessor);
 
           final FrameLayout.LayoutParams layoutParams =
@@ -233,6 +234,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         @Override
         public void offset(int viewId, double top, double left) {
           if (!viewWrappers.contains(viewId)) {
+            Log.e(TAG, "Setting offset for unknown platform view with id: " + viewId);
             return;
           }
           final int physicalTop = toPhysicalPixels(top);
@@ -246,13 +248,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void resize(@NonNull PlatformViewsChannel.PlatformViewResizeRequest request) {
+        public PlatformViewsChannel.PlatformViewBufferSize resize(
+            @NonNull PlatformViewsChannel.PlatformViewResizeRequest request) {
           final int viewId = request.viewId;
           if (!viewWrappers.contains(viewId)) {
-            return;
+            Log.e(TAG, "Resizing unknown platform view with id: " + viewId);
+            return null;
           }
-          int newWidth = toPhysicalPixels(request.newLogicalWidth);
-          int newHeight = toPhysicalPixels(request.newLogicalHeight);
+          final int newWidth = toPhysicalPixels(request.newLogicalWidth);
+          final int newHeight = toPhysicalPixels(request.newLogicalHeight);
 
           final PlatformViewWrapper view = viewWrappers.get(viewId);
           // Resize the buffer only when the current buffer size is smaller than the new size.
@@ -263,14 +267,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Resizing the texture causes pixel stretching since the size of the GL texture used in
           // the engine
           // is set by the framework, but the texture buffer size is set by the platform down below.
-          if (newWidth > view.getBufferWidth() || newHeight > view.getBufferHeight()) {
-            view.setDefaultBufferSize(newWidth, newHeight);
+          if (newWidth > view.getBufferSize().width || newHeight > view.getBufferSize().height) {
+            view.setBufferSize(newWidth, newHeight);
           }
           final FrameLayout.LayoutParams layoutParams =
               (FrameLayout.LayoutParams) view.getLayoutParams();
           layoutParams.width = newWidth;
           layoutParams.height = newHeight;
           view.setLayoutParams(layoutParams);
+          return view.getBufferSize();
         }
 
         @Override

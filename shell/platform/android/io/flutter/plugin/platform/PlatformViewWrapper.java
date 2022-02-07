@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.platform;
 
+import static io.flutter.embedding.engine.systemchannels.PlatformViewsChannel.PlatformViewBufferSize;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -29,16 +31,15 @@ import io.flutter.util.ViewUtils;
 class PlatformViewWrapper extends FrameLayout {
   private static final String TAG = "PlatformViewWrapper";
 
-  private int sPrevLeft;
-  private int sPrevTop;
-  private int sLeft;
-  private int sTop;
-  private int sWidth;
-  private int sHeight;
-  private SurfaceTexture sTx;
-  private Surface sSurface;
-  private AndroidTouchProcessor sTouchProcessor;
+  private int prevLeft;
+  private int prevTop;
+  private int left;
+  private int top;
+  private SurfaceTexture tx;
+  private Surface surface;
+  private AndroidTouchProcessor touchProcessor;
 
+  private @Nullable PlatformViewBufferSize bufferSize;
   @Nullable @VisibleForTesting ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener;
 
   public PlatformViewWrapper(@NonNull Context context) {
@@ -47,27 +48,27 @@ class PlatformViewWrapper extends FrameLayout {
   }
 
   public void setTouchProcessor(@Nullable AndroidTouchProcessor touchProcessor) {
-    sTouchProcessor = touchProcessor;
+    this.touchProcessor = touchProcessor;
   }
 
   public void setTexture(@Nullable SurfaceTexture tx) {
-    if (sTx != null) {
-      sTx.release();
+    if (tx != null) {
+      tx.release();
     }
-    sTx = tx;
+    this.tx = tx;
 
-    if (sSurface != null) {
-      sSurface.release();
+    if (surface != null) {
+      surface.release();
     }
-    sSurface = new Surface(sTx);
+    surface = new Surface(tx);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       // Fill the entire canvas with a transparent color.
       // As a result, the background color of the platform view container is displayed
       // to the user until the platform view draws its first frame.
-      final Canvas canvas = sSurface.lockHardwareCanvas();
+      final Canvas canvas = surface.lockHardwareCanvas();
       canvas.drawColor(Color.TRANSPARENT);
-      sSurface.unlockCanvasAndPost(canvas);
+      surface.unlockCanvasAndPost(canvas);
     } else {
       Log.e(TAG, "Platform views cannot be displayed below API level 23.");
     }
@@ -76,39 +77,36 @@ class PlatformViewWrapper extends FrameLayout {
   public void setLayoutParams(@NonNull FrameLayout.LayoutParams params) {
     super.setLayoutParams(params);
 
-    sLeft = params.leftMargin;
-    sTop = params.topMargin;
+    left = params.leftMargin;
+    top = params.topMargin;
   }
 
-  public void setDefaultBufferSize(int width, int height) {
-    sWidth = width;
-    sHeight = height;
-    if (sTx != null) {
-      sTx.setDefaultBufferSize(sWidth, sHeight);
+  public void setBufferSize(int width, int height) {
+    bufferSize = new PlatformViewBufferSize(width, height);
+    if (tx != null) {
+      tx.setDefaultBufferSize(width, height);
     }
   }
 
-  public int getBufferWidth() {
-    return sWidth;
-  }
-
-  public int getBufferHeight() {
-    return sHeight;
+  /** Returns the size of the buffer where the platform view pixels are written to. */
+  @Nullable
+  public PlatformViewBufferSize getBufferSize() {
+    return bufferSize;
   }
 
   @Nullable
   public SurfaceTexture getTexture() {
-    return sTx;
+    return tx;
   }
 
   public void release() {
-    if (sTx != null) {
-      sTx.release();
-      sTx = null;
+    if (tx != null) {
+      tx.release();
+      tx = null;
     }
-    if (sSurface != null) {
-      sSurface.release();
-      sSurface = null;
+    if (surface != null) {
+      surface.release();
+      surface = null;
     }
   }
 
@@ -124,11 +122,11 @@ class PlatformViewWrapper extends FrameLayout {
 
   @Override
   public void draw(Canvas canvas) {
-    if (sSurface == null || !sSurface.isValid()) {
+    if (surface == null || !surface.isValid()) {
       Log.e(TAG, "Invalid surface. The platform view cannot be displayed.");
       return;
     }
-    if (sTx == null || sTx.isReleased()) {
+    if (tx == null || tx.isReleased()) {
       Log.e(TAG, "Invalid texture. The platform view cannot be displayed.");
       return;
     }
@@ -137,43 +135,43 @@ class PlatformViewWrapper extends FrameLayout {
       return;
     }
     // Override the canvas that this subtree of views will use to draw.
-    final Canvas surfaceCanvas = sSurface.lockHardwareCanvas();
+    final Canvas surfaceCanvas = surface.lockHardwareCanvas();
     try {
       // Clear the current pixels in the canvas.
       // This helps when a WebView renders an HTML document with transparent background.
       surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
       super.draw(surfaceCanvas);
     } finally {
-      sSurface.unlockCanvasAndPost(surfaceCanvas);
+      surface.unlockCanvasAndPost(surfaceCanvas);
     }
   }
 
   @Override
   @SuppressLint("ClickableViewAccessibility")
   public boolean onTouchEvent(@NonNull MotionEvent event) {
-    if (sTouchProcessor == null) {
+    if (touchProcessor == null) {
       return super.onTouchEvent(event);
     }
     final Matrix screenMatrix = new Matrix();
     switch (event.getAction()) {
       case MotionEvent.ACTION_DOWN:
-        sPrevLeft = sLeft;
-        sPrevTop = sTop;
-        screenMatrix.postTranslate(sLeft, sTop);
+        prevLeft = left;
+        prevTop = top;
+        screenMatrix.postTranslate(left, top);
         break;
       case MotionEvent.ACTION_MOVE:
         // While the view is dragged, use the left and top positions as
         // they were at the moment the touch event fired.
-        screenMatrix.postTranslate(sPrevLeft, sPrevTop);
-        sPrevLeft = sLeft;
-        sPrevTop = sTop;
+        screenMatrix.postTranslate(prevLeft, prevTop);
+        prevLeft = left;
+        prevTop = top;
         break;
       case MotionEvent.ACTION_UP:
       default:
-        screenMatrix.postTranslate(sLeft, sTop);
+        screenMatrix.postTranslate(left, top);
         break;
     }
-    return sTouchProcessor.onTouchEvent(event, screenMatrix);
+    return touchProcessor.onTouchEvent(event, screenMatrix);
   }
 
   public void setOnDescendantFocusChangeListener(@NonNull OnFocusChangeListener userFocusListener) {

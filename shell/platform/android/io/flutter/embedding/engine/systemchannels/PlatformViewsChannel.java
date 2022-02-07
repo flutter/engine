@@ -14,6 +14,7 @@ import io.flutter.plugin.common.StandardMethodCodec;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -136,8 +137,11 @@ public class PlatformViewsChannel {
                   (double) resizeArgs.get("width"),
                   (double) resizeArgs.get("height"));
           try {
-            handler.resize(resizeRequest);
-            result.success(null);
+            final PlatformViewBufferSize sz = handler.resize(resizeRequest);
+            final Map<String, Object> response = new HashMap<>();
+            response.put("width", sz.width);
+            response.put("height", sz.height);
+            result.success(response);
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
           }
@@ -276,8 +280,13 @@ public class PlatformViewsChannel {
     /** The Flutter application would like to dispose of an existing Android {@code View}. */
     void dispose(int viewId);
 
-    /** The Flutter application would like to resize an existing Android {@code View}. */
-    void resize(@NonNull PlatformViewResizeRequest request);
+    /**
+     * The Flutter application would like to resize an existing Android {@code View}.
+     *
+     * @param request The request to resize the platform view.
+     * @return The buffer size where the platform view pixels are written to.
+     */
+    PlatformViewBufferSize resize(@NonNull PlatformViewResizeRequest request);
 
     /** The Flutter application would like to change the offset an existing Android {@code View}. */
     void offset(int viewId, double top, double left);
@@ -370,6 +379,20 @@ public class PlatformViewsChannel {
       this.viewId = viewId;
       this.newLogicalWidth = newLogicalWidth;
       this.newLogicalHeight = newLogicalHeight;
+    }
+  }
+
+  /** The platform view buffer size. */
+  public static class PlatformViewBufferSize {
+    /** The width of the buffer size. */
+    public final int width;
+
+    /** The height of the buffer size. */
+    public final int height;
+
+    public PlatformViewBufferSize(int width, int height) {
+      this.width = width;
+      this.height = height;
     }
   }
 
