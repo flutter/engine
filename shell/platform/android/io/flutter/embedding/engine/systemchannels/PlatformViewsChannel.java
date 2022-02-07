@@ -138,10 +138,14 @@ public class PlatformViewsChannel {
                   (double) resizeArgs.get("height"));
           try {
             final PlatformViewBufferSize sz = handler.resize(resizeRequest);
-            final Map<String, Object> response = new HashMap<>();
-            response.put("width", sz.width);
-            response.put("height", sz.height);
-            result.success(response);
+            if (sz == null) {
+              result.error("error", "Failed to resize the platform view", null);
+            } else {
+              final Map<String, Object> response = new HashMap<>();
+              response.put("width", sz.width);
+              response.put("height", sz.height);
+              result.success(response);
+            }
           } catch (IllegalStateException exception) {
             result.error("error", detailedExceptionString(exception), null);
           }
