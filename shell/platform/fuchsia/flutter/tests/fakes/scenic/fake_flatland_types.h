@@ -165,10 +165,6 @@ struct FakeTransform {
   bool operator==(const FakeTransform& other) const;
 
   constexpr static fuchsia::math::Vec kDefaultTranslation{.x = 0, .y = 0};
-  constexpr static fuchsia::math::Rect kDefaultClipBounds{.x = 0,
-                                                          .y = 0,
-                                                          .width = 0,
-                                                          .height = 0};
   constexpr static fuchsia::ui::composition::Orientation kDefaultOrientation{
       fuchsia::ui::composition::Orientation::CCW_0_DEGREES};
 
