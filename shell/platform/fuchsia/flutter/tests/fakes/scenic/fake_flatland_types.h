@@ -175,7 +175,7 @@ struct FakeTransform {
   fuchsia::ui::composition::TransformId id{kInvalidTransformId};
 
   fuchsia::math::Vec translation{kDefaultTranslation};
-  fuchsia::math::Rect clip_bounds{kDefaultClipBounds};
+  std::optional<fuchsia::math::Rect> clip_bounds;
   fuchsia::ui::composition::Orientation orientation{kDefaultOrientation};
 
   std::vector<std::shared_ptr<FakeTransform>> children;

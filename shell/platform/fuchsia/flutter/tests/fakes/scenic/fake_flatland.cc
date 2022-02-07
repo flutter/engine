@@ -14,12 +14,6 @@
 
 namespace flutter_runner::testing {
 
-// Rects are defined in terms of their origin point (x,y), which is located
-// on the top-left, and their size (width, height). The default unclipped
-// region has its top-left origin point at the origin, and a width and
-// height of INT_MAX.
-const fuchsia::math::Rect kUnclippedBounds = {0, 0, INT_MAX, INT_MAX};
-
 FakeFlatland::FakeFlatland()
     : allocator_binding_(this),
       flatland_binding_(this),
@@ -262,7 +256,7 @@ void FakeFlatland::SetClipBoundary(
   auto& transform = found_transform->second;
   FML_CHECK(transform);
   if (bounds == nullptr) {
-    transform->clip_bounds = kUnclippedBounds;
+    transform->clip_bounds = std::nullopt;
     return;
   }
 

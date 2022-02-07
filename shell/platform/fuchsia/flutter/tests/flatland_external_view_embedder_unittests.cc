@@ -215,7 +215,8 @@ Matcher<FakeGraph> IsFlutterGraph(
       /*content_map*/ _, /*transform_map*/ _,
       Pointee(FieldsAre(
           /*id*/ _, FakeTransform::kDefaultTranslation,
-          FakeTransform::kDefaultClipBounds, FakeTransform::kDefaultOrientation,
+          ::testing::Optional(FakeTransform::kDefaultClipBounds),
+          FakeTransform::kDefaultOrientation,
           /*children*/ ElementsAreArray(layer_matchers),
           /*content*/ Eq(nullptr), /*num_hit_regions*/ _)),
       Eq(FakeView{
@@ -236,7 +237,8 @@ Matcher<std::shared_ptr<FakeTransform>> IsImageLayer(
     size_t num_hit_regions) {
   return Pointee(FieldsAre(
       /*id*/ _, FakeTransform::kDefaultTranslation,
-      FakeTransform::kDefaultClipBounds, FakeTransform::kDefaultOrientation,
+      ::testing::Optional(FakeTransform::kDefaultClipBounds),
+      FakeTransform::kDefaultOrientation,
       /*children*/ IsEmpty(),
       /*content*/
       Pointee(VariantWith<FakeImage>(FieldsAre(
@@ -252,7 +254,8 @@ Matcher<std::shared_ptr<FakeTransform>> IsViewportLayer(
     const fuchsia::math::SizeU& view_logical_size,
     const fuchsia::math::Vec& view_transform) {
   return Pointee(
-      FieldsAre(_ /* id */, view_transform, FakeTransform::kDefaultClipBounds,
+      FieldsAre(_ /* id */, view_transform,
+                ::testing::Optional(FakeTransform::kDefaultClipBounds),
                 FakeTransform::kDefaultOrientation,
                 /*children*/ IsEmpty(),
                 /*content*/
