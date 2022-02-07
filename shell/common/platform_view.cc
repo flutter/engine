@@ -16,7 +16,6 @@ namespace flutter {
 PlatformView::PlatformView(Delegate& delegate, TaskRunners task_runners)
     : delegate_(delegate),
       task_runners_(std::move(task_runners)),
-      size_(SkISize::Make(0, 0)),
       weak_factory_(this) {}
 
 PlatformView::~PlatformView() = default;
@@ -37,12 +36,6 @@ void PlatformView::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
   delegate_.OnPlatformViewDispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
-}
-
-void PlatformView::DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                                         KeyDataResponse callback) {
-  delegate_.OnPlatformViewDispatchKeyDataPacket(std::move(packet),
-                                                std::move(callback));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t id,
@@ -113,8 +106,9 @@ void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
-  if (auto response = message->response())
+  if (auto response = message->response()) {
     response->CompleteEmpty();
+  }
 }
 
 void PlatformView::OnPreEngineRestart() const {}

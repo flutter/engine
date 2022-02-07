@@ -194,7 +194,10 @@ FLUTTER_ASSERT_ARC
 - (void)testSpawn {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
   [engine run];
-  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil libraryURI:nil initialRoute:nil];
+  FlutterEngine* spawn = [engine spawnWithEntrypoint:nil
+                                          libraryURI:nil
+                                        initialRoute:nil
+                                      entrypointArgs:nil];
   XCTAssertNotNil(spawn);
 }
 
@@ -213,6 +216,29 @@ FLUTTER_ASSERT_ARC
   }
   [self waitForExpectationsWithTimeout:1 handler:nil];
   [center removeObserver:observer];
+}
+
+- (void)testSetHandlerAfterRun {
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar"];
+  XCTestExpectation* gotMessage = [self expectationWithDescription:@"gotMessage"];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    NSObject<FlutterPluginRegistrar>* registrar = [engine registrarForPlugin:@"foo"];
+    fml::AutoResetWaitableEvent latch;
+    [engine run];
+    flutter::Shell& shell = engine.shell;
+    engine.shell.GetTaskRunners().GetUITaskRunner()->PostTask([&latch, &shell] {
+      flutter::Engine::Delegate& delegate = shell;
+      auto message = std::make_unique<flutter::PlatformMessage>("foo", nullptr);
+      delegate.OnEngineHandlePlatformMessage(std::move(message));
+      latch.Signal();
+    });
+    latch.Wait();
+    [registrar.messenger setMessageHandlerOnChannel:@"foo"
+                               binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                                 [gotMessage fulfill];
+                               }];
+  });
+  [self waitForExpectationsWithTimeout:1 handler:nil];
 }
 
 @end

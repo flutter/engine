@@ -61,6 +61,7 @@
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",
     @"--pointer-events" : @"pointer_events",
+    @"--platform-view-scrolling-under-widget" : @"platform_view_scrolling_under_widget"
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -91,7 +92,7 @@
     FlutterEngine* spawner = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest"
                                                          project:nil];
     [spawner run];
-    return [spawner spawnWithEntrypoint:nil libraryURI:nil initialRoute:nil];
+    return [spawner spawnWithEntrypoint:nil libraryURI:nil initialRoute:nil entrypointArgs:nil];
   } else {
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"FlutterControllerTest"
                                                         project:nil];

@@ -111,7 +111,11 @@ public class FlutterNativeView implements BinaryMessenger {
     if (applicationIsRunning)
       throw new AssertionError("This Flutter engine instance is already running an application");
     mFlutterJNI.runBundleAndSnapshotFromLibrary(
-        args.bundlePath, args.entrypoint, args.libraryPath, mContext.getResources().getAssets());
+        args.bundlePath,
+        args.entrypoint,
+        args.libraryPath,
+        mContext.getResources().getAssets(),
+        null);
 
     applicationIsRunning = true;
   }
@@ -126,8 +130,8 @@ public class FlutterNativeView implements BinaryMessenger {
 
   @Override
   @UiThread
-  public TaskQueue makeBackgroundTaskQueue() {
-    return dartExecutor.getBinaryMessenger().makeBackgroundTaskQueue();
+  public TaskQueue makeBackgroundTaskQueue(TaskQueueOptions options) {
+    return dartExecutor.getBinaryMessenger().makeBackgroundTaskQueue(options);
   }
 
   @Override

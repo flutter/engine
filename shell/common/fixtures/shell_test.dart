@@ -55,6 +55,7 @@ void onBeginFrameMain() {
   PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
     nativeOnBeginFrame(beginTime.inMicroseconds);
   };
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
@@ -246,4 +247,18 @@ void canAccessResourceFromAssetDir() async {
       notifyCanAccessResource(byteData != null);
     },
   );
+}
+
+void notifyNativeWhenEngineRun(bool success) native 'NotifyNativeWhenEngineRun';
+
+void notifyNativeWhenEngineSpawn(bool success) native 'NotifyNativeWhenEngineSpawn';
+
+@pragma('vm:entry-point')
+void canReceiveArgumentsWhenEngineRun(List<String> args) {
+  notifyNativeWhenEngineRun(args.length == 2 && args[0] == 'foo' && args[1] == 'bar');
+}
+
+@pragma('vm:entry-point')
+void canReceiveArgumentsWhenEngineSpawn(List<String> args) {
+  notifyNativeWhenEngineSpawn(args.length == 2 && args[0] == 'arg1' && args[1] == 'arg2');
 }

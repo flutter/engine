@@ -14,13 +14,12 @@
 #include "flutter/shell/platform/android/android_external_texture_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
-#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
-#include "flutter/shell/platform/android/surface/android_surface.h"
-#include "flutter/shell/platform/android/surface/snapshot_surface_producer.h"
-
 #include "flutter/shell/platform/android/context/android_context.h"
+#include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_message_response_android.h"
+#include "flutter/shell/platform/android/surface/android_surface.h"
+#include "flutter/shell/platform/android/surface/snapshot_surface_producer.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
 namespace flutter {
@@ -46,13 +45,14 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 }
 
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
-    bool use_software_rendering) {
+    bool use_software_rendering,
+    const flutter::TaskRunners task_runners) {
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   return std::make_unique<AndroidContextGL>(
       AndroidRenderingAPI::kOpenGLES,
-      fml::MakeRefCounted<AndroidEnvironmentGL>());
+      fml::MakeRefCounted<AndroidEnvironmentGL>(), task_runners);
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -60,10 +60,11 @@ PlatformViewAndroid::PlatformViewAndroid(
     flutter::TaskRunners task_runners,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool use_software_rendering)
-    : PlatformViewAndroid(delegate,
-                          std::move(task_runners),
-                          std::move(jni_facade),
-                          CreateAndroidContext(use_software_rendering)) {}
+    : PlatformViewAndroid(
+          delegate,
+          std::move(task_runners),
+          std::move(jni_facade),
+          CreateAndroidContext(use_software_rendering, task_runners)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
@@ -75,8 +76,6 @@ PlatformViewAndroid::PlatformViewAndroid(
       android_context_(std::move(android_context)),
       platform_view_android_delegate_(jni_facade),
       platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
-  // TODO(dnfield): always create a pbuffer surface for background use to
-  // resolve https://github.com/flutter/flutter/issues/73675
   if (android_context_) {
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";
@@ -247,14 +246,15 @@ std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
   if (!android_surface_) {
     return nullptr;
   }
-  return android_surface_->CreateGPUSurface();
+  return android_surface_->CreateGPUSurface(
+      android_context_->GetMainSkiaContext().get());
 }
 
 // |PlatformView|
 std::shared_ptr<ExternalViewEmbedder>
 PlatformViewAndroid::CreateExternalViewEmbedder() {
   return std::make_shared<AndroidExternalViewEmbedder>(
-      *android_context_, jni_facade_, surface_factory_);
+      *android_context_, jni_facade_, surface_factory_, task_runners_);
 }
 
 // |PlatformView|

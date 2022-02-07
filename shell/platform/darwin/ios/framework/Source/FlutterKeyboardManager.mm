@@ -13,12 +13,14 @@ static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 /**
  * The primary responders added by addPrimaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
+@property(nonatomic, retain, readonly)
+    NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
 
 /**
  * The secondary responders added by addSecondaryResponder.
  */
-@property(nonatomic) NSMutableArray<id<FlutterKeySecondaryResponder>>* secondaryResponders;
+@property(nonatomic, retain, readonly)
+    NSMutableArray<id<FlutterKeySecondaryResponder>>* secondaryResponders;
 
 - (void)dispatchToSecondaryResponders:(nonnull FlutterUIPressProxy*)press
                              complete:(nonnull KeyEventCompleteCallback)callback
@@ -49,6 +51,10 @@ static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 }
 
 - (void)dealloc {
+  // It will be destroyed and invalidate its weak pointers
+  // before any other members are destroyed.
+  _weakFactory.reset();
+
   [_primaryResponders removeAllObjects];
   [_secondaryResponders removeAllObjects];
   [_primaryResponders release];
@@ -84,7 +90,7 @@ static constexpr CFTimeInterval kDistantFuture = 1.0e10;
       NSAssert([_primaryResponders count] >= 0, @"At least one primary responder must be added.");
 
       __block auto weakSelf = [self getWeakPtr];
-      __block int unreplied = [_primaryResponders count];
+      __block NSUInteger unreplied = [self.primaryResponders count];
       __block BOOL anyHandled = false;
       FlutterAsyncKeyCallback replyCallback = ^(BOOL handled) {
         unreplied--;

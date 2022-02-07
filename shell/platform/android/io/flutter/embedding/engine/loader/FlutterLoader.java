@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.view.Display;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,6 +39,19 @@ public class FlutterLoader {
       "io.flutter.embedding.android.OldGenHeapSize";
   private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
       "io.flutter.embedding.android.EnableSkParagraph";
+
+  /**
+   * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
+   * meta-data in <application /> in AndroidManifest.xml. Set it to true in to leave the Dart VM,
+   * set it to false to destroy VM.
+   *
+   * <p>If your want to let your app destroy the last shell and re-create shells more quickly, set
+   * it to true, otherwise if you want to clean up the memory of the leak VM, set it to false.
+   *
+   * <p>TODO(eggfly): Should it be set to false by default?
+   * https://github.com/flutter/flutter/issues/96843
+   */
+  private static final String LEAK_VM_META_DATA_KEY = "io.flutter.embedding.android.LeakVM";
 
   // Must match values in flutter::switches
   static final String AOT_SHARED_LIBRARY_NAME = "aot-shared-library-name";
@@ -148,18 +160,19 @@ public class FlutterLoader {
       initStartTimestampMillis = SystemClock.uptimeMillis();
       flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
 
-      float fps;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        final DisplayManager dm = appContext.getSystemService(DisplayManager.class);
-        final Display primaryDisplay = dm.getDisplay(Display.DEFAULT_DISPLAY);
-        fps = primaryDisplay.getRefreshRate();
+      VsyncWaiter waiter;
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 /* 17 */) {
+        final DisplayManager dm =
+            (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
+        waiter = VsyncWaiter.getInstance(dm, flutterJNI);
       } else {
-        fps =
+        float fps =
             ((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
                 .getDefaultDisplay()
                 .getRefreshRate();
+        waiter = VsyncWaiter.getInstance(fps, flutterJNI);
       }
-      VsyncWaiter.getInstance(fps).init();
+      waiter.init();
 
       // Use a background thread for initialization tasks that require disk access.
       Callable<InitResult> initTask =
@@ -295,9 +308,13 @@ public class FlutterLoader {
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData != null && metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY)) {
+      if (metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true)) {
+
         shellArgs.add("--enable-skparagraph");
       }
+
+      final String leakVM = isLeakVM(metaData) ? "true" : "false";
+      shellArgs.add("--leak-vm=" + leakVM);
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
@@ -316,6 +333,14 @@ public class FlutterLoader {
     } finally {
       Trace.endSection();
     }
+  }
+
+  private static boolean isLeakVM(@Nullable Bundle metaData) {
+    final boolean leakVMDefaultValue = true;
+    if (metaData == null) {
+      return leakVMDefaultValue;
+    }
+    return metaData.getBoolean(LEAK_VM_META_DATA_KEY, leakVMDefaultValue);
   }
 
   /**

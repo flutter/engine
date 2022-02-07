@@ -13,7 +13,8 @@ Layer::Layer()
     : paint_bounds_(SkRect::MakeEmpty()),
       unique_id_(NextUniqueID()),
       original_layer_id_(unique_id_),
-      subtree_has_platform_view_(false) {}
+      subtree_has_platform_view_(false),
+      layer_can_inherit_opacity_(false) {}
 
 Layer::~Layer() = default;
 
@@ -65,6 +66,7 @@ Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
       canvas_(save_mode == SaveMode::kInternalNodesCanvas
                   ? *(paint_context.internal_nodes_canvas)
                   : *(paint_context.leaf_nodes_canvas)) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_.saveLayer(bounds_, paint);
 }
 
@@ -76,6 +78,7 @@ Layer::AutoSaveLayer::AutoSaveLayer(const PaintContext& paint_context,
       canvas_(save_mode == SaveMode::kInternalNodesCanvas
                   ? *(paint_context.internal_nodes_canvas)
                   : *(paint_context.leaf_nodes_canvas)) {
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   canvas_.saveLayer(layer_rec);
 }
 

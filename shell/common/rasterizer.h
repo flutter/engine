@@ -42,7 +42,8 @@ namespace flutter {
 /// and the on-screen render surface. The compositor context has all the GPU
 /// state necessary to render frames to the render surface.
 ///
-class Rasterizer final : public SnapshotDelegate {
+class Rasterizer final : public SnapshotDelegate,
+                         public Stopwatch::RefreshRateUpdater {
  public:
   //----------------------------------------------------------------------------
   /// @brief      Used to forward events from the rasterizer to interested
@@ -105,7 +106,7 @@ class Rasterizer final : public SnapshotDelegate {
   ///
   /// @param[in]  delegate                   The rasterizer delegate.
   ///
-  Rasterizer(Delegate& delegate);
+  explicit Rasterizer(Delegate& delegate);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the rasterizer. This must happen on the raster task
@@ -139,6 +140,13 @@ class Rasterizer final : public SnapshotDelegate {
   ///             surface. Calling a teardown without a setup is user error.
   ///
   void Teardown();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Releases any resource used by the external view embedder.
+  ///             For example, overlay surfaces or Android views.
+  ///             On Android, this method post a task to the platform thread,
+  ///             and waits until it completes.
+  void TeardownExternalViewEmbedder();
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the rasterizer that there is a low memory situation
@@ -448,22 +456,6 @@ class Rasterizer final : public SnapshotDelegate {
   void DisableThreadMergerIfNeeded();
 
  private:
-  Delegate& delegate_;
-  std::unique_ptr<Surface> surface_;
-  std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
-  std::unique_ptr<flutter::CompositorContext> compositor_context_;
-  // This is the last successfully rasterized layer tree.
-  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
-  // Set when we need attempt to rasterize the layer tree again. This layer_tree
-  // has not successfully rasterized. This can happen due to the change in the
-  // thread configuration. This will be inserted to the front of the pipeline.
-  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
-  fml::closure next_frame_callback_;
-  bool user_override_resource_cache_bytes_;
-  std::optional<size_t> max_cache_bytes_;
-  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
-  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
-  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
   // |SnapshotDelegate|
   sk_sp<SkImage> MakeRasterSnapshot(
       std::function<void(SkCanvas*)> draw_callback,
@@ -475,6 +467,12 @@ class Rasterizer final : public SnapshotDelegate {
 
   // |SnapshotDelegate|
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
+
+  // |Stopwatch::Delegate|
+  /// Time limit for a smooth frame.
+  ///
+  /// See: `DisplayManager::GetMainDisplayRefreshRate`.
+  fml::Milliseconds GetFrameBudget() const override;
 
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
       flutter::LayerTree* tree,
@@ -499,7 +497,26 @@ class Rasterizer final : public SnapshotDelegate {
   void FireNextFrameCallbackIfPresent();
 
   static bool NoDiscard(const flutter::LayerTree& layer_tree) { return false; }
+  static bool ShouldResubmitFrame(const RasterStatus& raster_status);
 
+  Delegate& delegate_;
+  std::unique_ptr<Surface> surface_;
+  std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
+  std::unique_ptr<flutter::CompositorContext> compositor_context_;
+  // This is the last successfully rasterized layer tree.
+  std::unique_ptr<flutter::LayerTree> last_layer_tree_;
+  // Set when we need attempt to rasterize the layer tree again. This layer_tree
+  // has not successfully rasterized. This can happen due to the change in the
+  // thread configuration. This will be inserted to the front of the pipeline.
+  std::unique_ptr<flutter::LayerTree> resubmitted_layer_tree_;
+  fml::closure next_frame_callback_;
+  bool user_override_resource_cache_bytes_;
+  std::optional<size_t> max_cache_bytes_;
+  fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
+  std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
+
+  // WeakPtrFactory must be the last member.
+  fml::TaskRunnerAffineWeakPtrFactory<Rasterizer> weak_factory_;
   FML_DISALLOW_COPY_AND_ASSIGN(Rasterizer);
 };
 

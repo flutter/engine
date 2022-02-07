@@ -7,6 +7,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -27,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
 import io.flutter.TestUtils;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
@@ -45,14 +47,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterActivityTest {
+  boolean isDelegateAttached;
+
   @Before
   public void setUp() {
     FlutterInjector.reset();
@@ -92,6 +95,7 @@ public class FlutterActivityTest {
     flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
 
     assertEquals("main", flutterActivity.getDartEntrypointFunctionName());
+    assertNull(flutterActivity.getDartEntrypointLibraryUri());
     assertEquals("/", flutterActivity.getInitialRoute());
     assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
@@ -265,6 +269,11 @@ public class FlutterActivityTest {
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
+
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+
     flutterActivity.setDelegate(mockDelegate);
     flutterActivity.onStart();
     flutterActivity.onResume();
@@ -292,6 +301,20 @@ public class FlutterActivityTest {
     // 1 time same as before.
     verify(mockDelegate, times(1)).onDestroyView();
     verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, times(1)).release();
+  }
+
+  @Test
+  public void itReturnsExclusiveAppComponent() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    FlutterActivityAndFragmentDelegate delegate =
+        new FlutterActivityAndFragmentDelegate(flutterActivity);
+    flutterActivity.setDelegate(delegate);
+
+    assertEquals(flutterActivity.getExclusiveAppComponent(), delegate);
   }
 
   @Test
@@ -365,6 +388,62 @@ public class FlutterActivityTest {
     SplashScreen splashScreen = flutterActivity.provideSplashScreen();
     // It should quietly return a null and not crash.
     assertNull(splashScreen);
+  }
+
+  @Test
+  public void itDoesNotReleaseEnginewhenDetachFromFlutterEngine() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+    FlutterEngine mockEngine = mock(FlutterEngine.class);
+    FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
+
+    Intent intent =
+        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    flutterActivity.setDelegate(mockDelegate);
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    flutterActivity.onPause();
+
+    assertTrue(mockDelegate.isAttached());
+    flutterActivity.detachFromFlutterEngine();
+    verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, never()).release();
+    assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
+  public void itReleaseEngineWhenOnDestroy() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+    FlutterEngine mockEngine = mock(FlutterEngine.class);
+    FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
+
+    Intent intent =
+        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    flutterActivity.setDelegate(mockDelegate);
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    flutterActivity.onPause();
+
+    assertTrue(mockDelegate.isAttached());
+    flutterActivity.onDestroy();
+    verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, times(1)).release();
+    assertFalse(mockDelegate.isAttached());
   }
 
   @Test

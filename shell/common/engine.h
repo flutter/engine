@@ -364,9 +364,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Create a Engine that shares as many resources as
   ///             possible with the calling Engine such that together
   ///             they occupy less memory and be created faster.
-  /// @details    This method ultimately calls DartIsolate::SpawnIsolate to make
-  ///             sure resources are shared.  This should only be called on
-  ///             running Engines.
+  /// @details    This should only be called on running Engines.
   /// @return     A new Engine with a running isolate.
   /// @see        Engine::Engine
   /// @see        DartIsolate::SpawnIsolate
@@ -376,7 +374,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
       const PointerDataDispatcherMaker& dispatcher_maker,
       Settings settings,
       std::unique_ptr<Animator> animator,
-      const std::string& initial_route) const;
+      const std::string& initial_route,
+      fml::WeakPtr<IOManager> io_manager) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -540,15 +539,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             collection, just gives the Dart VM more hints about opportune
   ///             moments to perform collections.
   ///
-  //  TODO(chinmaygarde): This should just use fml::TimePoint instead of having
-  //  to remember that the unit is microseconds (which is no used anywhere else
-  //  in the engine).
   ///
-  /// @param[in]  deadline  The deadline as a timepoint in microseconds measured
-  ///                       against the system monotonic clock. Use
-  ///                       `Dart_TimelineGetMicros()`, for consistency.
+  /// @param[in]  deadline  The deadline is used by the VM to determine if the
+  ///                       corresponding sweep can be performed within the
+  ///                       deadline.
   ///
-  void NotifyIdle(int64_t deadline);
+  void NotifyIdle(fml::TimePoint deadline);
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -663,36 +659,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::optional<uint32_t> GetUIIsolateReturnCode();
 
   //----------------------------------------------------------------------------
-  /// @brief      Indicates to the Flutter application that it has obtained a
-  ///             rendering surface. This is a good opportunity for the engine
-  ///             to start servicing any outstanding frame requests from the
-  ///             Flutter applications. Flutter application that have no
-  ///             rendering concerns may never get a rendering surface. In such
-  ///             cases, while their root isolate can perform as normal, any
-  ///             frame requests made by them will never be serviced and layer
-  ///             trees produced outside of frame workloads will be dropped.
-  ///
-  ///             Very close to when this call is made, the application can
-  ///             expect the updated viewport metrics. Rendering only begins
-  ///             when the Flutter application gets an output surface and a
-  ///             valid set of viewport metrics.
-  ///
-  /// @see        `OnOutputSurfaceDestroyed`
-  ///
-  void OnOutputSurfaceCreated();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Indicates to the Flutter application that a previously
-  ///             acquired rendering surface has been lost. Further frame
-  ///             requests will no longer be serviced and any layer tree
-  ///             submitted for rendering will be dropped. If/when a new surface
-  ///             is acquired, a new layer tree must be generated.
-  ///
-  /// @see        `OnOutputSurfaceCreated`
-  ///
-  void OnOutputSurfaceDestroyed();
-
-  //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for the currently running Flutter
   ///             application. The viewport metrics detail the size of the
   ///             rendering viewport in texels as well as edge insets if
@@ -734,21 +700,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet,
                                  uint64_t trace_flow_id);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Notifies the engine that the embedder has sent it a key data
-  ///             packet. A key data packet contains one key event. This call
-  ///             originates in the platform view and the shell has forwarded
-  ///             the same to the engine on the UI task runner here. The engine
-  ///             will decide whether to handle this event, and send the
-  ///             result using `callback`, which will be called exactly once.
-  ///
-  /// @param[in]  packet    The key data packet.
-  /// @param[in]  callback  Called when the framework has decided whether
-  ///                       to handle this key data.
-  ///
-  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                             KeyDataResponse callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that the embedder encountered an
@@ -806,6 +757,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // Return the asset manager associated with the current engine, or nullptr.
   std::shared_ptr<AssetManager> GetAssetManager();
 
+  // Return the weak_ptr of ImageDecoder.
+  fml::WeakPtr<ImageDecoder> GetImageDecoderWeakPtr();
+
   //----------------------------------------------------------------------------
   /// @brief      Get the `ImageGeneratorRegistry` associated with the current
   ///             engine.
@@ -833,6 +787,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             RunConfiguration when |Engine::Run| was called.
   ///
   const std::string& GetLastEntrypointLibrary() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the last Entrypoint Arguments that was used in the
+  ///             RunConfiguration when |Engine::Run| was called.This is only
+  ///             valid in debug mode.
+  ///
+  const std::vector<std::string>& GetLastEntrypointArgs() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Getter for the initial route.  This can be set with a platform
@@ -909,30 +870,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     return runtime_controller_.get();
   }
 
+  const VsyncWaiter& GetVsyncWaiter() const;
+
  private:
-  Engine::Delegate& delegate_;
-  const Settings settings_;
-  std::unique_ptr<Animator> animator_;
-  std::unique_ptr<RuntimeController> runtime_controller_;
-
-  // The pointer_data_dispatcher_ depends on animator_ and runtime_controller_.
-  // So it should be defined after them to ensure that pointer_data_dispatcher_
-  // is destructed first.
-  std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
-
-  std::string last_entry_point_;
-  std::string last_entry_point_library_;
-  std::string initial_route_;
-  ViewportMetrics viewport_metrics_;
-  std::shared_ptr<AssetManager> asset_manager_;
-  bool activity_running_;
-  bool have_surface_;
-  std::shared_ptr<FontCollection> font_collection_;
-  ImageDecoder image_decoder_;
-  ImageGeneratorRegistry image_generator_registry_;
-  TaskRunners task_runners_;
-  fml::WeakPtrFactory<Engine> weak_factory_;
-
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 
@@ -962,10 +902,6 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   void SetNeedsReportTimings(bool value) override;
 
-  void StopAnimator();
-
-  void StartAnimatorIfPossible();
-
   bool HandleLifecyclePlatformMessage(PlatformMessage* message);
 
   bool HandleNavigationPlatformMessage(
@@ -981,6 +917,26 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   friend class testing::ShellTest;
 
+  Engine::Delegate& delegate_;
+  const Settings settings_;
+  std::unique_ptr<Animator> animator_;
+  std::unique_ptr<RuntimeController> runtime_controller_;
+
+  // The pointer_data_dispatcher_ depends on animator_ and runtime_controller_.
+  // So it should be defined after them to ensure that pointer_data_dispatcher_
+  // is destructed first.
+  std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+
+  std::string last_entry_point_;
+  std::string last_entry_point_library_;
+  std::vector<std::string> last_entry_point_args_;
+  std::string initial_route_;
+  std::shared_ptr<AssetManager> asset_manager_;
+  std::shared_ptr<FontCollection> font_collection_;
+  ImageDecoder image_decoder_;
+  ImageGeneratorRegistry image_generator_registry_;
+  TaskRunners task_runners_;
+  fml::WeakPtrFactory<Engine> weak_factory_;  // Must be the last member.
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);
 };
 

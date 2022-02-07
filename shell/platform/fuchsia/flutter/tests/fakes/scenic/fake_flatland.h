@@ -230,9 +230,10 @@ class FakeFlatland
   void SetClipBounds(fuchsia::ui::composition::TransformId transform_id,
                      fuchsia::math::Rect clip_bounds) override;
 
-  // |fuchsia::ui::composition::Flatland|
-  void SetOpacity(fuchsia::ui::composition::TransformId transform_id,
-                  float opacity) override;
+  // TODO(fxbug.dev/89111): Re-enable once SDK rolls.
+  //   // |fuchsia::ui::composition::Flatland|
+  //   void SetImageOpacity(fuchsia::ui::composition::ContentId image_id,
+  //                        float opacity) override;
 
   // |fuchsia::ui::composition::Flatland|
   void AddChild(
@@ -276,6 +277,11 @@ class FakeFlatland
                                fuchsia::math::SizeU size) override;
 
   // |fuchsia::ui::composition::Flatland|
+  void SetImageBlendingFunction(
+      fuchsia::ui::composition::ContentId image_id,
+      fuchsia::ui::composition::BlendMode blend_mode) override;
+
+  // |fuchsia::ui::composition::Flatland|
   void SetViewportProperties(
       fuchsia::ui::composition::ContentId viewport_id,
       fuchsia::ui::composition::ViewportProperties properties) override;
@@ -290,6 +296,11 @@ class FakeFlatland
 
   // |fuchsia::ui::composition::Flatland|
   void ReleaseImage(fuchsia::ui::composition::ContentId image_id) override;
+
+  // |fuchsia::ui::composition::Flatland|
+  void SetHitRegions(
+      fuchsia::ui::composition::TransformId transform_id,
+      std::vector<fuchsia::ui::composition::HitRegion> regions) override;
 
   // |fuchsia::ui::composition::Flatland|
   void Clear() override;
