@@ -265,6 +265,7 @@ struct FfiDispatcher;
 
 // Concatenate the FFI representation of each argument to the stream,
 // serialising them into a comma separated list.
+// Example: "Handle, Bool, Uint64"
 template <typename Arg, typename... Args>
 void WriteFfiArguments(std::ostringstream* stream) {
   *stream << tonic::DartConverter<typename std::remove_const<
@@ -277,6 +278,7 @@ void WriteFfiArguments(std::ostringstream* stream) {
 
 // Concatenate the Dart representation of each argument to the stream,
 // serialising them into a comma separated list.
+// Example: "Object, bool, int"
 template <typename Arg, typename... Args>
 void WriteDartArguments(std::ostringstream* stream) {
   *stream << tonic::DartConverter<

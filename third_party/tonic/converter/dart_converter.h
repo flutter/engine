@@ -118,20 +118,17 @@ struct DartConverterInteger {
   static const char* GetDartRepresentation() { return kDartRepresentation; }
   // Note: Returns the correct bit-width for the host architecture.
   static const char* GetFfiRepresentation() {
-    if (std::is_signed<T>()) {
-      if (sizeof(T) == 4) {
-        return "Int32";
-      } else if (sizeof(T) == 8) {
-        return "Int64";
-      }
-      return "Int";
-    }
     if (sizeof(T) == 4) {
+      if (std::is_signed<T>()) {
+        return "Int32";
+      }
       return "Uint32";
-    } else if (sizeof(T) == 8) {
-      return "Uint64";
     }
-    return "Uint";
+    TONIC_DCHECK(sizeof(T) == 8);
+    if (std::is_signed<T>()) {
+      return "Int64";
+    }
+    return "Uint64";
   }
   static bool AllowedInLeafCall() { return kAllowedInLeafCall; }
 };
