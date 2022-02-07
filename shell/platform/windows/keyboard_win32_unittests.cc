@@ -152,17 +152,34 @@ class MockKeyboardManagerWin32Delegate
         map_vk_to_char == nullptr ? LayoutDefault : map_vk_to_char;
   }
 
-  void SetKeyState(uint32_t key, bool pressed, bool toggled_on) {
-    key_state_.Set(key, pressed, toggled_on);
-  }
-
   SHORT GetKeyState(int virtual_key) { return key_state_.Get(virtual_key); }
 
-  void PushBackMessage(const flutter::testing::Win32Message* message) {
-    PushBack(message);
+  void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
+    for (const KeyboardChange& change : changes) {
+      switch (change.type) {
+        case KeyboardChange::kMessage:
+          PushBack(&change.content.message);
+          break;
+        default:
+          break;
+      }
+    }
+    for (const KeyboardChange& change : changes) {
+      switch (change.type) {
+        case KeyboardChange::kMessage:
+          DispatchFront();
+          break;
+        case KeyboardChange::kStateChange: {
+          const KeyStateChange& state_change = change.content.state_change;
+          key_state_.Set(state_change.key, state_change.pressed,
+                          state_change.toggled_on);
+          break;
+        }
+        default:
+          assert(false);
+      }
+    }
   }
-
-  LRESULT DispatchFrontMessage() { return DispatchFront(); }
 
  protected:
   BOOL Win32PeekMessage(LPMSG lpMsg,
@@ -348,30 +365,7 @@ class KeyboardTester {
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
   void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
-    for (const KeyboardChange& change : changes) {
-      switch (change.type) {
-        case KeyboardChange::kMessage:
-          window_->PushBackMessage(&change.content.message);
-          break;
-        default:
-          break;
-      }
-    }
-    for (const KeyboardChange& change : changes) {
-      switch (change.type) {
-        case KeyboardChange::kMessage:
-          window_->DispatchFrontMessage();
-          break;
-        case KeyboardChange::kStateChange: {
-          const KeyStateChange& state_change = change.content.state_change;
-          window_->SetKeyState(state_change.key, state_change.pressed,
-                               state_change.toggled_on);
-          break;
-        }
-        default:
-          assert(false);
-      }
-    }
+    window_->InjectKeyboardChanges(changes);
   }
 
  private:
