@@ -256,7 +256,6 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
       BinaryMessenger* messenger,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state) override {
-    assert(get_keyboard_state_);
     return FlutterWindowsView::CreateKeyboardKeyHandler(
         messenger,
         [this](int virtual_key) { return get_keyboard_state_(virtual_key); });
