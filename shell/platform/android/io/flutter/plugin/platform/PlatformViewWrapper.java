@@ -70,7 +70,7 @@ class PlatformViewWrapper extends FrameLayout {
       // As a result, the background color of the platform view container is displayed
       // to the user until the platform view draws its first frame.
       final Canvas canvas = surface.lockHardwareCanvas();
-      canvas.drawColor(Color.TRANSPARENT);
+      canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
       surface.unlockCanvasAndPost(canvas);
     } else {
       Log.e(TAG, "Platform views cannot be displayed below API level 23.");
