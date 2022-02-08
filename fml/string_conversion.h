@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FML_PLATFORM_WIN_WSTRING_CONVERSION_H_
-#define FLUTTER_FML_PLATFORM_WIN_WSTRING_CONVERSION_H_
+#ifndef FLUTTER_FML_STRING_CONVERSION_H_
+#define FLUTTER_FML_STRING_CONVERSION_H_
 
 #include <string>
 
 namespace fml {
 
 // Returns a UTF-8 encoded equivalent of a UTF-16 encoded input string.
-std::string WideStringToUtf8(const std::wstring_view str);
+std::string Utf16ToUtf8(const std::u16string_view string);
 
 // Returns a UTF-16 encoded equivalent of a UTF-8 encoded input string.
-std::wstring Utf8ToWideString(const std::string_view str);
+std::u16string Utf8ToUtf16(const std::string_view string);
 
 }  // namespace fml
 
-#endif  // FLUTTER_FML_PLATFORM_WIN_WSTRING_CONVERSION_H_
+#endif  // FLUTTER_FML_STRING_CONVERSION_H_
