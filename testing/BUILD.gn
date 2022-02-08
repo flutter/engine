@@ -214,11 +214,8 @@ if (is_mac || is_ios) {
 
 # We only use SwiftShader on unittests and
 # SwiftShader only supports x86/x86_64
-if (enable_unittests && (target_cpu == "x86" || target_cpu == "x64")) {
-  use_swiftshader = true
-} else {
-  use_swiftshader = false
-}
+use_swiftshader =
+    enable_unittests && (target_cpu == "x86" || target_cpu == "x64")
 
 source_set("opengl") {
   testonly = true

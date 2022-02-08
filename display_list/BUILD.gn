@@ -83,8 +83,10 @@ source_set("display_list_benchmarks_source") {
       "EGL",
       "GLESv2",
     ]
-  } else {
-    # We only do software benchmarks on non-mobile platforms
+  }
+
+  # We only do software benchmarks on non-mobile platforms
+  if (!is_android && !is_ios) {
     sources += [
       "display_list_benchmarks_software.cc",
       "display_list_benchmarks_software.h",
