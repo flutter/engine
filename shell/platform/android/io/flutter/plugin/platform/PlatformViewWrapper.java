@@ -93,7 +93,10 @@ class PlatformViewWrapper extends FrameLayout {
       canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
       surface.unlockCanvasAndPost(canvas);
     } else {
-      Log.e(TAG, "Platform views cannot be displayed below API level 23.");
+      Log.e(
+          TAG,
+          "Platform views cannot be displayed below API level 23. "
+              + "You can prevent this issue by setting minCompileSdk: 23 in build.gradle.");
     }
   }
 
