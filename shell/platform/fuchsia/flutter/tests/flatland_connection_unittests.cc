@@ -7,6 +7,7 @@
 #include <fuchsia/scenic/scheduling/cpp/fidl.h>
 #include <fuchsia/ui/composition/cpp/fidl.h>
 #include <lib/async-testing/test_loop.h>
+#include <lib/async/cpp/task.h>
 
 #include <string>
 #include <vector>
@@ -352,15 +353,18 @@ TEST_F(FlatlandConnectionTest, PresentCreditExhaustion) {
   // This test uses a fire callback that triggers Present() with a single
   // acquire and release fence in order to approximate the behavior of the real
   // flutter fire callback and let us drive presents with ONFBs
-  auto fire_callback = [&flatland_connection](fml::TimePoint frame_start,
-                                              fml::TimePoint frame_end) {
-    zx::event acquire_fence;
-    zx::event::create(0, &acquire_fence);
-    zx::event release_fence;
-    zx::event::create(0, &release_fence);
-    flatland_connection.EnqueueAcquireFence(std::move(acquire_fence));
-    flatland_connection.EnqueueReleaseFence(std::move(release_fence));
-    flatland_connection.Present();
+  auto fire_callback = [dispatcher = loop().dispatcher(), &flatland_connection](
+                           fml::TimePoint frame_start,
+                           fml::TimePoint frame_end) {
+    async::PostTask(dispatcher, [&flatland_connection]() {
+      zx::event acquire_fence;
+      zx::event::create(0, &acquire_fence);
+      zx::event release_fence;
+      zx::event::create(0, &release_fence);
+      flatland_connection.EnqueueAcquireFence(std::move(acquire_fence));
+      flatland_connection.EnqueueReleaseFence(std::move(release_fence));
+      flatland_connection.Present();
+    });
   };
 
   // Call Await Vsync with a callback that triggers Present and consumes the one
