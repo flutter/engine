@@ -25,6 +25,16 @@ import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
 
+/**
+ * Wraps a platform view to intercept gestures and project this view onto a {@link SurfaceTexture}.
+ *
+ * <p>An Android platform view is composed by the Flutter Engine using a TextureLayer. The view is
+ * embeded to the Android view hierarchy like a normal view, but it's projected onto a {@link
+ * SurfaceTexture}, so it can be efficiently composed by the Flutter Engine.
+ *
+ * <p>Since the view is in the Android view hierarchy, keyboard and accessibility interactions
+ * behave normally.
+ */
 @TargetApi(Build.VERSION_CODES.M)
 class PlatformViewWrapper extends FrameLayout {
   private static final String TAG = "PlatformViewWrapper";
@@ -46,10 +56,20 @@ class PlatformViewWrapper extends FrameLayout {
     setWillNotDraw(false);
   }
 
+  /**
+   * Sets the touch processor that allows to intercept gestures.
+   *
+   * @param newTouchProcessor The touch processor.
+   */
   public void setTouchProcessor(@Nullable AndroidTouchProcessor newTouchProcessor) {
     touchProcessor = newTouchProcessor;
   }
 
+  /**
+   * Sets the texture where the view is projected onto.
+   *
+   * @param newTx The texture where the view is projected onto.
+   */
   public void setTexture(@Nullable SurfaceTexture newTx) {
     if (tx != null) {
       tx.release();
@@ -77,6 +97,11 @@ class PlatformViewWrapper extends FrameLayout {
     }
   }
 
+  /**
+   * Sets the layout parameters for this view.
+   *
+   * @param params The new parameters.
+   */
   public void setLayoutParams(@NonNull FrameLayout.LayoutParams params) {
     super.setLayoutParams(params);
 
@@ -84,6 +109,12 @@ class PlatformViewWrapper extends FrameLayout {
     top = params.topMargin;
   }
 
+  /**
+   * Sets the size of the image buffer.
+   *
+   * @param width The width of the screen buffer.
+   * @param height The height of the screen buffer.
+   */
   public void setBufferSize(int width, int height) {
     bufferWidth = width;
     bufferHeight = height;
@@ -92,12 +123,12 @@ class PlatformViewWrapper extends FrameLayout {
     }
   }
 
-  /** Returns the screen buffer width. */
+  /** Returns the image buffer width. */
   public int getBufferWidth() {
     return bufferWidth;
   }
 
-  /** Returns the screen buffer height. */
+  /** Returns the image buffer height. */
   public int getBufferHeight() {
     return bufferHeight;
   }
@@ -107,6 +138,7 @@ class PlatformViewWrapper extends FrameLayout {
     return tx;
   }
 
+  /** Releases the texture and surface. */
   public void release() {
     if (tx != null) {
       tx.release();
