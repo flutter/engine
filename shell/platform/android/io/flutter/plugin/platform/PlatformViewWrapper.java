@@ -92,12 +92,12 @@ class PlatformViewWrapper extends FrameLayout {
     }
   }
 
-  /** Returns the screen buffer width where the platform view pixels are written to. */
+  /** Returns the screen buffer width. */
   public int getBufferWidth() {
     return bufferWidth;
   }
 
-  /** Returns the screen buffer height where the platform view pixels are written to. */
+  /** Returns the screen buffer height. */
   public int getBufferHeight() {
     return bufferHeight;
   }
