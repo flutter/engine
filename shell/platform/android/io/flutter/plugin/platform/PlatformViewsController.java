@@ -180,11 +180,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           final TextureRegistry.SurfaceTextureEntry textureEntry =
               textureRegistry.createSurfaceTexture();
           wrapperView.setTexture(textureEntry.surfaceTexture());
+          wrapperView.setTouchProcessor(androidTouchProcessor);
 
           final int physicalWidth = toPhysicalPixels(request.logicalWidth);
           final int physicalHeight = toPhysicalPixels(request.logicalHeight);
           wrapperView.setBufferSize(physicalWidth, physicalHeight);
-          wrapperView.setTouchProcessor(androidTouchProcessor);
 
           final FrameLayout.LayoutParams layoutParams =
               new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
@@ -216,6 +216,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // The platform view is displayed using a TextureLayer.
           if (viewWrappers.contains(viewId)) {
             final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
+            viewWrapper.release();
             viewWrapper.unsetOnDescendantFocusChangeListener();
 
             ((ViewGroup) viewWrapper.getParent()).removeView(viewWrapper);
@@ -267,15 +268,18 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // Resizing the texture causes pixel stretching since the size of the GL texture used in
           // the engine
           // is set by the framework, but the texture buffer size is set by the platform down below.
-          if (newWidth > view.getBufferSize().width || newHeight > view.getBufferSize().height) {
+          if (newWidth > view.getBufferWidth() || newHeight > view.getBufferHeight()) {
             view.setBufferSize(newWidth, newHeight);
           }
+
           final FrameLayout.LayoutParams layoutParams =
               (FrameLayout.LayoutParams) view.getLayoutParams();
           layoutParams.width = newWidth;
           layoutParams.height = newHeight;
           view.setLayoutParams(layoutParams);
-          return view.getBufferSize();
+
+          return new PlatformViewsChannel.PlatformViewBufferSize(
+              toLogicalPixels(view.getBufferWidth()), toLogicalPixels(view.getBufferHeight()));
         }
 
         @Override
@@ -594,6 +598,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private int toPhysicalPixels(double logicalPixels) {
     return (int) Math.round(logicalPixels * getDisplayDensity());
+  }
+
+  private int toLogicalPixels(double physicalPixels) {
+    return (int) Math.round(physicalPixels / getDisplayDensity());
   }
 
   private void flushAllViews() {

@@ -4,8 +4,6 @@
 
 package io.flutter.plugin.platform;
 
-import static io.flutter.embedding.engine.systemchannels.PlatformViewsChannel.PlatformViewBufferSize;
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -35,11 +33,12 @@ class PlatformViewWrapper extends FrameLayout {
   private int prevTop;
   private int left;
   private int top;
+  private int bufferWidth;
+  private int bufferHeight;
   private SurfaceTexture tx;
   private Surface surface;
   private AndroidTouchProcessor touchProcessor;
 
-  private @Nullable PlatformViewBufferSize bufferSize;
   @Nullable @VisibleForTesting ViewTreeObserver.OnGlobalFocusChangeListener activeFocusListener;
 
   public PlatformViewWrapper(@NonNull Context context) {
@@ -47,20 +46,24 @@ class PlatformViewWrapper extends FrameLayout {
     setWillNotDraw(false);
   }
 
-  public void setTouchProcessor(@Nullable AndroidTouchProcessor touchProcessor) {
-    this.touchProcessor = touchProcessor;
+  public void setTouchProcessor(@Nullable AndroidTouchProcessor newTouchProcessor) {
+    touchProcessor = newTouchProcessor;
   }
 
-  public void setTexture(@Nullable SurfaceTexture tx) {
+  public void setTexture(@Nullable SurfaceTexture newTx) {
     if (tx != null) {
       tx.release();
     }
-    this.tx = tx;
+    tx = newTx;
+
+    if (bufferWidth > 0 && bufferHeight > 0) {
+      tx.setDefaultBufferSize(bufferWidth, bufferHeight);
+    }
 
     if (surface != null) {
       surface.release();
     }
-    surface = new Surface(tx);
+    surface = new Surface(newTx);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       // Fill the entire canvas with a transparent color.
@@ -82,16 +85,21 @@ class PlatformViewWrapper extends FrameLayout {
   }
 
   public void setBufferSize(int width, int height) {
-    bufferSize = new PlatformViewBufferSize(width, height);
+    bufferWidth = width;
+    bufferHeight = height;
     if (tx != null) {
       tx.setDefaultBufferSize(width, height);
     }
   }
 
-  /** Returns the size of the buffer where the platform view pixels are written to. */
-  @Nullable
-  public PlatformViewBufferSize getBufferSize() {
-    return bufferSize;
+  /** Returns the screen buffer width where the platform view pixels are written to. */
+  public int getBufferWidth() {
+    return bufferWidth;
+  }
+
+  /** Returns the screen buffer height where the platform view pixels are written to. */
+  public int getBufferHeight() {
+    return bufferHeight;
   }
 
   @Nullable
