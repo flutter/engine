@@ -377,7 +377,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     // setTextInputClient will be followed by a call to setTextInputEditingState.
     // Do a restartInput at that time.
     mRestartInputPending = true;
-    unlockPlatformViewInputConnection();
     lastClientRect = null;
     mEditable.addEditingStateListener(this);
   }
@@ -479,7 +478,6 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     notifyViewExited();
     updateAutofillConfigurationIfNeeded(null);
     inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
-    unlockPlatformViewInputConnection();
     lastClientRect = null;
   }
 

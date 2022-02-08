@@ -87,17 +87,21 @@ public class PlatformViewsChannel {
 
         private void create(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           Map<String, Object> createArgs = call.arguments();
-          // TODO(egarciad): The word "hybrid" is misleading.
+          // TODO(egarciad): Remove the "hybrid" case.
           boolean usesPlatformViewLayer =
               createArgs.containsKey("hybrid") && (boolean) createArgs.get("hybrid");
           // In hybrid mode, the size of the view is determined by the size of the Flow layer.
           double width = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("width");
           double height = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("height");
+          double top = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("top");
+          double left = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("left");
 
           PlatformViewCreationRequest request =
               new PlatformViewCreationRequest(
                   (int) createArgs.get("id"),
                   (String) createArgs.get("viewType"),
+                  top,
+                  left,
                   width,
                   height,
                   (int) createArgs.get("direction"),
@@ -336,6 +340,12 @@ public class PlatformViewsChannel {
     /** The density independent height to display the platform view. */
     public final double logicalHeight;
 
+    /** The density independent top position to display the platform view. */
+    public final double logicalTop;
+
+    /** The density independent left position to display the platform view. */
+    public final double logicalLeft;
+
     /**
      * The layout direction of the new platform view.
      *
@@ -351,12 +361,16 @@ public class PlatformViewsChannel {
     public PlatformViewCreationRequest(
         int viewId,
         @NonNull String viewType,
+        double logicalTop,
+        double logicalLeft,
         double logicalWidth,
         double logicalHeight,
         int direction,
         @Nullable ByteBuffer params) {
       this.viewId = viewId;
       this.viewType = viewType;
+      this.logicalTop = logicalTop;
+      this.logicalLeft = logicalLeft;
       this.logicalWidth = logicalWidth;
       this.logicalHeight = logicalHeight;
       this.direction = direction;

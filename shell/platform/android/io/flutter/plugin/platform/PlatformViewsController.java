@@ -188,6 +188,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
           final FrameLayout.LayoutParams layoutParams =
               new FrameLayout.LayoutParams(physicalWidth, physicalHeight);
+
+          final int physicalTop = toPhysicalPixels(request.logicalTop);
+          final int physicalLeft = toPhysicalPixels(request.logicalLeft);
+          layoutParams.topMargin = physicalTop;
+          layoutParams.leftMargin = physicalLeft;
           wrapperView.setLayoutParams(layoutParams);
 
           wrapperView.setLayoutDirection(request.direction);
@@ -305,10 +310,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           final float density = context.getResources().getDisplayMetrics().density;
           final MotionEvent event = toMotionEvent(density, touch);
-          final View view = platformView.getView();
-          if (view != null) {
-            view.dispatchTouchEvent(event);
-          }
+          platformView.getView().dispatchTouchEvent(event);
         }
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
