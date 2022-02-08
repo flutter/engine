@@ -37,6 +37,10 @@ FlatlandConnection::~FlatlandConnection() = default;
 
 // This method is called from the raster thread.
 void FlatlandConnection::Present() {
+  if (!threadsafe_state_.first_present_called_) {
+    std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
+    threadsafe_state_.first_present_called_ = true;
+  }
   if (present_credits_ > 0) {
     DoPresent();
   } else {
@@ -67,13 +71,19 @@ void FlatlandConnection::DoPresent() {
 
 // This method is called from the UI thread.
 void FlatlandConnection::AwaitVsync(FireCallbackCallback callback) {
-  if (first_call_to_await_vsync_) {
+  // Immediately fire callbacks until the first Present. We might receive
+  // multiple requests for AwaitVsync() until the first Present, which relies on
+  // receiving size on FlatlandPlatformView::OnGetLayout() at an uncertain time.
+  bool first_present_called;
+  {
+    std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
+    first_present_called = threadsafe_state_.first_present_called_;
+  }
+  if (!first_present_called) {
     fml::TimePoint now = fml::TimePoint::Now();
     callback(now, now + kDefaultFlatlandPresentationInterval);
-    first_call_to_await_vsync_ = false;
     return;
   }
-
   {
     std::scoped_lock<std::mutex> lock(threadsafe_state_.mutex_);
     threadsafe_state_.fire_callback_ = callback;
