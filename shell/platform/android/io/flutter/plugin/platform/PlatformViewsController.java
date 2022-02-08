@@ -151,7 +151,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         public long createForTextureLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           final int viewId = request.viewId;
-          if (viewWrappers.contains(viewId)) {
+          if (viewWrappers.get(viewId) != null) {
             throw new IllegalStateException(
                 "Trying to create an already created platform view, view id: " + viewId);
           }
@@ -218,8 +218,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             platformView.dispose();
           }
           // The platform view is displayed using a TextureLayer.
-          if (viewWrappers.contains(viewId)) {
-            final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
+          final PlatformViewWrapper viewWrapper = viewWrappers.get(viewId);
+          if (viewWrapper != null) {
             viewWrapper.release();
             viewWrapper.unsetOnDescendantFocusChangeListener();
 
@@ -232,8 +232,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           // The platform view is displayed using a PlatformViewLayer.
           // TODO(egarciad): Eliminate this case.
-          if (platformViewParent.contains(viewId)) {
-            final FlutterMutatorView parentView = platformViewParent.get(viewId);
+          final FlutterMutatorView parentView = platformViewParent.get(viewId);
+          if (parentView != null) {
             parentView.unsetOnDescendantFocusChangeListener();
 
             final ViewGroup mutatorViewParent = (ViewGroup) parentView.getParent();
@@ -246,32 +246,32 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void offset(int viewId, double top, double left) {
-          if (!viewWrappers.contains(viewId)) {
+          final PlatformViewWrapper wrapper = viewWrappers.get(viewId);
+          if (wrapper == null) {
             Log.e(TAG, "Setting offset for unknown platform view with id: " + viewId);
             return;
           }
           final int physicalTop = toPhysicalPixels(top);
           final int physicalLeft = toPhysicalPixels(left);
-          final PlatformViewWrapper view = viewWrappers.get(viewId);
           final FrameLayout.LayoutParams layoutParams =
-              (FrameLayout.LayoutParams) view.getLayoutParams();
+              (FrameLayout.LayoutParams) wrapper.getLayoutParams();
           layoutParams.topMargin = physicalTop;
           layoutParams.leftMargin = physicalLeft;
-          view.setLayoutParams(layoutParams);
+          wrapper.setLayoutParams(layoutParams);
         }
 
         @Override
         public PlatformViewsChannel.PlatformViewBufferSize resize(
             @NonNull PlatformViewsChannel.PlatformViewResizeRequest request) {
           final int viewId = request.viewId;
-          if (!viewWrappers.contains(viewId)) {
+          final PlatformViewWrapper view = viewWrappers.get(viewId);
+          if (view == null) {
             Log.e(TAG, "Resizing unknown platform view with id: " + viewId);
             return null;
           }
           final int newWidth = toPhysicalPixels(request.newLogicalWidth);
           final int newHeight = toPhysicalPixels(request.newLogicalHeight);
 
-          final PlatformViewWrapper view = viewWrappers.get(viewId);
           // Resize the buffer only when the current buffer size is smaller than the new size.
           // This is required to prevent a situation when smooth keyboard animation
           // resizes the texture too often, such that the GPU and the platform thread don't agree on
@@ -297,13 +297,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
           final int viewId = touch.viewId;
-          if (!platformViews.contains(viewId)) {
-            throw new IllegalStateException("Sending touch to an unknown view with id: " + viewId);
+          final PlatformView platformView = platformViews.get(viewId);
+          if (platformView == null) {
+            Log.e(TAG, "Sending touch to an unknown view with id: " + viewId);
+            return;
           }
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           final float density = context.getResources().getDisplayMetrics().density;
           final MotionEvent event = toMotionEvent(density, touch);
-          final View view = platformViews.get(viewId).getView();
+          final View view = platformView.getView();
           if (view != null) {
             view.dispatchTouchEvent(event);
           }
@@ -320,9 +322,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + viewId
                     + ")");
           }
-          if (!platformViews.contains(viewId)) {
-            throw new IllegalStateException(
-                "Setting direction to an unknown view with id: " + viewId);
+          final PlatformView platformView = platformViews.get(viewId);
+          if (platformView == null) {
+            Log.e(TAG, "Setting direction to an unknown view with id: " + viewId);
+            return;
           }
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
           platformViews.get(viewId).getView().setLayoutDirection(direction);
@@ -330,10 +333,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void clearFocus(int viewId) {
-          if (!platformViews.contains(viewId)) {
-            throw new IllegalStateException("Clearing focus on an unknown view with id: " + viewId);
-          }
           final PlatformView platformView = platformViews.get(viewId);
+          if (platformView == null) {
+            Log.e(TAG, "Clearing focus on an unknown view with id: " + viewId);
+            return;
+          }
           platformView.getView().clearFocus();
         }
 
@@ -549,10 +553,11 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   @Override
   public View getPlatformViewById(int viewId) {
-    if (!platformViews.contains(viewId)) {
+    final PlatformView platformView = platformViews.get(viewId);
+    if (platformView == null) {
       return null;
     }
-    return platformViews.get(viewId).getView();
+    return platformView.getView();
   }
 
   private static boolean validateDirection(int direction) {

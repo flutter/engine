@@ -35,7 +35,7 @@ import io.flutter.util.ViewUtils;
  * <p>Since the view is in the Android view hierarchy, keyboard and accessibility interactions
  * behave normally.
  */
-@TargetApi(Build.VERSION_CODES.M)
+@TargetApi(23)
 class PlatformViewWrapper extends FrameLayout {
   private static final String TAG = "PlatformViewWrapper";
 
@@ -70,7 +70,16 @@ class PlatformViewWrapper extends FrameLayout {
    *
    * @param newTx The texture where the view is projected onto.
    */
+  @SuppressLint("NewApi")
   public void setTexture(@Nullable SurfaceTexture newTx) {
+    if (Build.VERSION.SDK_INT < 23) {
+      Log.e(
+          TAG,
+          "Platform views cannot be displayed below API level 23. "
+              + "You can prevent this issue by setting `minSdkVersion: 23` in build.gradle.");
+      return;
+    }
+
     if (tx != null) {
       tx.release();
     }
@@ -85,18 +94,18 @@ class PlatformViewWrapper extends FrameLayout {
     }
     surface = new Surface(newTx);
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      // Fill the entire canvas with a transparent color.
-      // As a result, the background color of the platform view container is displayed
-      // to the user until the platform view draws its first frame.
-      final Canvas canvas = surface.lockHardwareCanvas();
-      canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
+    // Fill the entire canvas with a transparent color.
+    // As a result, the background color of the platform view container is displayed
+    // to the user until the platform view draws its first frame.
+    final Canvas canvas = surface.lockHardwareCanvas();
+    try {
+      if (Build.VERSION.SDK_INT >= 29) {
+        canvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
+      } else {
+        canvas.drawColor(Color.TRANSPARENT);
+      }
+    } finally {
       surface.unlockCanvasAndPost(canvas);
-    } else {
-      Log.e(
-          TAG,
-          "Platform views cannot be displayed below API level 23. "
-              + "You can prevent this issue by setting minCompileSdk: 23 in build.gradle.");
     }
   }
 
@@ -161,10 +170,12 @@ class PlatformViewWrapper extends FrameLayout {
 
   @Override
   public void onDescendantInvalidated(@NonNull View child, @NonNull View target) {
+    super.onDescendantInvalidated(child, target);
     invalidate();
   }
 
   @Override
+  @SuppressLint("NewApi")
   public void draw(Canvas canvas) {
     if (surface == null || !surface.isValid()) {
       Log.e(TAG, "Invalid surface. The platform view cannot be displayed.");
@@ -174,19 +185,16 @@ class PlatformViewWrapper extends FrameLayout {
       Log.e(TAG, "Invalid texture. The platform view cannot be displayed.");
       return;
     }
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      Log.e(
-          TAG,
-          "Platform views cannot be displayed below API level 23. "
-              + "You can prevent this issue by setting minCompileSdk: 23 in build.gradle.");
-      return;
-    }
     // Override the canvas that this subtree of views will use to draw.
     final Canvas surfaceCanvas = surface.lockHardwareCanvas();
     try {
       // Clear the current pixels in the canvas.
       // This helps when a WebView renders an HTML document with transparent background.
-      surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
+      if (Build.VERSION.SDK_INT >= 29) {
+        surfaceCanvas.drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
+      } else {
+        surfaceCanvas.drawColor(Color.TRANSPARENT);
+      }
       super.draw(surfaceCanvas);
     } finally {
       surface.unlockCanvasAndPost(surfaceCanvas);
