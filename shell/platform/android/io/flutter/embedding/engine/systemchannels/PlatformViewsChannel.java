@@ -347,7 +347,7 @@ public class PlatformViewsChannel {
     /** Custom parameters that are unique to the desired platform view. */
     @Nullable public final ByteBuffer params;
 
-    /** Creates a request to construct a platform view that uses a virtual display. */
+    /** Creates a request to construct a platform view. */
     public PlatformViewCreationRequest(
         int viewId,
         @NonNull String viewType,
@@ -364,11 +364,7 @@ public class PlatformViewsChannel {
     }
   }
 
-  /**
-   * Request sent from Flutter to resize a platform view.
-   *
-   * <p>This only applies to platform views that use virtual displays.
-   */
+  /** Request sent from Flutter to resize a platform view. */
   public static class PlatformViewResizeRequest {
     /** The ID of the platform view as seen by the Flutter side. */
     public final int viewId;
