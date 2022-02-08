@@ -210,6 +210,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         public void dispose(int viewId) {
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView != null) {
+            final ViewGroup pvParent = (ViewGroup) platformView.getView().getParent();
+            if (pvParent != null) {
+              pvParent.removeView(platformView.getView());
+            }
             platformViews.remove(viewId);
             platformView.dispose();
           }
@@ -219,15 +223,23 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             viewWrapper.release();
             viewWrapper.unsetOnDescendantFocusChangeListener();
 
-            ((ViewGroup) viewWrapper.getParent()).removeView(viewWrapper);
+            final ViewGroup wrapperParent = (ViewGroup) viewWrapper.getParent();
+            if (wrapperParent != null) {
+              wrapperParent.removeView(viewWrapper);
+            }
             viewWrappers.remove(viewId);
             return;
           }
           // The platform view is displayed using a PlatformViewLayer.
+          // TODO(egarciad): Eliminate this case.
           if (platformViewParent.contains(viewId)) {
             final FlutterMutatorView parentView = platformViewParent.get(viewId);
             parentView.unsetOnDescendantFocusChangeListener();
-            ((ViewGroup) parentView.getParent()).removeView(parentView);
+
+            final ViewGroup mutatorViewParent = (ViewGroup) parentView.getParent();
+            if (mutatorViewParent != null) {
+              mutatorViewParent.removeView(parentView);
+            }
             platformViewParent.remove(viewId);
           }
         }

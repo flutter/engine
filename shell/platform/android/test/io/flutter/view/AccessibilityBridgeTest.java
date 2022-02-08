@@ -1553,33 +1553,6 @@ public class AccessibilityBridgeTest {
   }
 
   @Test
-  public void itProducesPlatformViewNodeForVirtualDisplay() {
-    PlatformViewsAccessibilityDelegate accessibilityDelegate =
-        mock(PlatformViewsAccessibilityDelegate.class);
-    AccessibilityViewEmbedder accessibilityViewEmbedder = mock(AccessibilityViewEmbedder.class);
-    AccessibilityBridge accessibilityBridge =
-        setUpBridge(
-            /*rootAccessibilityView=*/ null,
-            /*accessibilityChannel=*/ null,
-            /*accessibilityManager=*/ null,
-            /*contentResolver=*/ null,
-            accessibilityViewEmbedder,
-            accessibilityDelegate);
-
-    TestSemanticsNode platformView = new TestSemanticsNode();
-    platformView.platformViewId = 1;
-
-    TestSemanticsUpdate testSemanticsUpdate = platformView.toUpdate();
-    testSemanticsUpdate.sendUpdateToBridge(accessibilityBridge);
-
-    View embeddedView = mock(View.class);
-    when(accessibilityDelegate.getPlatformViewById(1)).thenReturn(embeddedView);
-
-    accessibilityBridge.createAccessibilityNodeInfo(0);
-    verify(accessibilityViewEmbedder).getRootNode(eq(embeddedView), eq(0), any(Rect.class));
-  }
-
-  @Test
   public void releaseDropsChannelMessageHandler() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
     AccessibilityManager mockManager = mock(AccessibilityManager.class);

@@ -17,7 +17,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewParent;
-import android.widget.FrameLayout.LayoutParams;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
@@ -55,54 +54,6 @@ import org.robolectric.shadows.ShadowSurfaceView;
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewsControllerTest {
-
-  @Test
-  public void itUsesActionEventTypeFromFrameworkEventForVirtualDisplays() {
-    MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
-    PlatformViewsController platformViewsController = new PlatformViewsController();
-
-    MotionEvent original =
-        MotionEvent.obtain(
-            100, // downTime
-            100, // eventTime
-            1, // action
-            0, // x
-            0, // y
-            0 // metaState
-            );
-
-    // track an event that will later get passed to us from framework
-    MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
-
-    PlatformViewTouch frameWorkTouch =
-        new PlatformViewTouch(
-            0, // viewId
-            original.getDownTime(),
-            original.getEventTime(),
-            2, // action
-            1, // pointerCount
-            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
-            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
-            original.getMetaState(),
-            original.getButtonState(),
-            original.getXPrecision(),
-            original.getYPrecision(),
-            original.getDeviceId(),
-            original.getEdgeFlags(),
-            original.getSource(),
-            original.getFlags(),
-            motionEventId.getId());
-
-    MotionEvent resolvedEvent =
-        platformViewsController.toMotionEvent(
-            1, // density
-            frameWorkTouch,
-            true // usingVirtualDisplays
-            );
-
-    assertEquals(resolvedEvent.getAction(), frameWorkTouch.action);
-    assertNotEquals(resolvedEvent.getAction(), original.getAction());
-  }
 
   @Ignore
   @Test
@@ -143,11 +94,7 @@ public class PlatformViewsControllerTest {
             motionEventId.getId());
 
     MotionEvent resolvedEvent =
-        platformViewsController.toMotionEvent(
-            1, // density
-            frameWorkTouch,
-            false // usingVirtualDisplays
-            );
+        platformViewsController.toMotionEvent(/*density=*/ 1, frameWorkTouch);
 
     assertNotEquals(resolvedEvent.getAction(), frameWorkTouch.action);
     assertEquals(resolvedEvent.getAction(), original.getAction());
@@ -229,66 +176,6 @@ public class PlatformViewsControllerTest {
         () -> {
           platformViewsController.initializePlatformViewIfNeeded(platformViewId);
         });
-  }
-
-  @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void onDetachedFromJNI_clearsPlatformViewContext() {
-    PlatformViewsController platformViewsController = new PlatformViewsController();
-
-    int platformViewId = 0;
-    assertNull(platformViewsController.getPlatformViewById(platformViewId));
-
-    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
-    PlatformView platformView = mock(PlatformView.class);
-
-    View pv = mock(View.class);
-    when(pv.getLayoutParams()).thenReturn(new LayoutParams(1, 1));
-
-    when(platformView.getView()).thenReturn(pv);
-    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
-    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
-
-    FlutterJNI jni = new FlutterJNI();
-    attach(jni, platformViewsController);
-
-    // Simulate create call from the framework.
-    createPlatformView(
-        jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
-
-    assertFalse(platformViewsController.contextToPlatformView.isEmpty());
-    platformViewsController.onDetachedFromJNI();
-    assertTrue(platformViewsController.contextToPlatformView.isEmpty());
-  }
-
-  @Test
-  @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
-  public void onPreEngineRestart_clearsPlatformViewContext() {
-    PlatformViewsController platformViewsController = new PlatformViewsController();
-
-    int platformViewId = 0;
-    assertNull(platformViewsController.getPlatformViewById(platformViewId));
-
-    PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
-    PlatformView platformView = mock(PlatformView.class);
-
-    View pv = mock(View.class);
-    when(pv.getLayoutParams()).thenReturn(new LayoutParams(1, 1));
-
-    when(platformView.getView()).thenReturn(pv);
-    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
-    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
-
-    FlutterJNI jni = new FlutterJNI();
-    attach(jni, platformViewsController);
-
-    // Simulate create call from the framework.
-    createPlatformView(
-        jni, platformViewsController, platformViewId, "testType", /* hybrid=*/ false);
-
-    assertFalse(platformViewsController.contextToPlatformView.isEmpty());
-    platformViewsController.onDetachedFromJNI();
-    assertTrue(platformViewsController.contextToPlatformView.isEmpty());
   }
 
   @Test
