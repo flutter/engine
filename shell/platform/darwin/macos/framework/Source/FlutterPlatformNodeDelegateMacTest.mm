@@ -220,7 +220,12 @@ TEST(FlutterPlatformNodeDelegateMac, TextFieldUsesFlutterTextField) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
   [viewController loadView];
   [engine setViewController:viewController];
+
+  // Unit test localization is unnecessary.
+  // NOLINTBEGIN(clang-analyzer-optin.osx.cocoa.localizability.NonLocalizedStringChecker)
   viewController.textInputPlugin.string = @"textfield";
+  // NOLINTEND(clang-analyzer-optin.osx.cocoa.localizability.NonLocalizedStringChecker)
+
   // Creates a NSWindow so that the native text field can become first responder.
   NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                  styleMask:NSBorderlessWindowMask
@@ -291,4 +296,4 @@ TEST(FlutterPlatformNodeDelegateMac, TextFieldUsesFlutterTextField) {
   EXPECT_EQ([native_text_field.stringValue isEqualToString:@"textfield"], YES);
 }
 
-}  // flutter::testing
+}  // namespace flutter::testing

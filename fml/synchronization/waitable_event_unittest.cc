@@ -4,6 +4,7 @@
 
 #include "flutter/fml/synchronization/waitable_event.h"
 
+#include <stdlib.h>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -31,7 +32,7 @@ void SleepFor(TimeDelta duration) {
 
 void EpsilonRandomSleep() {
   TimeDelta duration =
-      TimeDelta::FromMilliseconds(static_cast<unsigned>(rand()) % 20u);
+      TimeDelta::FromMilliseconds(static_cast<unsigned>(arc4random()) % 20u);
   SleepFor(duration);
 }
 
@@ -73,7 +74,7 @@ TEST(AutoResetWaitableEventTest, MultipleWaiters) {
     std::vector<std::thread> threads;
     for (size_t j = 0u; j < 4u; j++) {
       threads.push_back(std::thread([&ev, &wake_count]() {
-        if (rand() % 2 == 0) {
+        if (arc4random() % 2 == 0) {
           ev.Wait();
         } else {
           EXPECT_FALSE(ev.WaitWithTimeout(kActionTimeout));
@@ -158,7 +159,7 @@ TEST(ManualResetWaitableEventTest, SignalMultiple) {
         threads.push_back(std::thread([&ev]() {
           EpsilonRandomSleep();
 
-          if (rand() % 2 == 0) {
+          if (arc4random() % 2 == 0) {
             ev.Wait();
           } else {
             EXPECT_FALSE(ev.WaitWithTimeout(kActionTimeout));
