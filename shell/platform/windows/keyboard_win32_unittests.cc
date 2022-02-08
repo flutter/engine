@@ -79,8 +79,10 @@ struct KeyStateChange {
   bool toggled_on;
 };
 
-// Injecting this kind of keyboard change means that a forged event is expected,
-// and `KeyStateChange`s after this will be applied only after the forged event.
+// Injecting this kind of keyboard change does not make any changes to the
+// keyboard system, but indicates that a forged event is expected here, and
+// that `KeyStateChange`s after this will be applied only after the forged
+// event.
 //
 // See `IsKeyDownAltRight` for explaination for foged events.
 struct ExpectForgedMessage {
