@@ -92,7 +92,7 @@ class PlatformViewWrapper extends FrameLayout {
     if (surface != null) {
       surface.release();
     }
-    surface = new Surface(newTx);
+    surface = createSurface(newTx);
 
     // Fill the entire canvas with a transparent color.
     // As a result, the background color of the platform view container is displayed
@@ -107,6 +107,12 @@ class PlatformViewWrapper extends FrameLayout {
     } finally {
       surface.unlockCanvasAndPost(canvas);
     }
+  }
+
+  @NonNull
+  @VisibleForTesting
+  protected Surface createSurface(@NonNull SurfaceTexture tx) {
+    return new Surface(tx);
   }
 
   /** Returns the texture where the view is projected. */
