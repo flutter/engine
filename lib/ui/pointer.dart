@@ -37,13 +37,13 @@ enum PointerChange {
   /// The pointer has stopped making contact with the device.
   up,
 
-  /// A pan/zoom has started on this pointer
+  /// A pan/zoom has started on this pointer.
   panZoomStart,
 
-  /// The pan/zoom on this pointer has updated
+  /// The pan/zoom on this pointer has updated.
   panZoomUpdate,
 
-  /// The pan/zoom on this pointer has ended
+  /// The pan/zoom on this pointer has ended.
   panZoomEnd,
 }
 
@@ -291,7 +291,7 @@ class PointerData {
 
   /// For events with change of PointerChange.panZoomUpdate:
   ///
-  /// The current panning magnitude of the pan/zoom in the x direction, in
+  /// The current panning magnitude of the pan/zoom in the y direction, in
   /// physical pixels.
   final double panY;
 

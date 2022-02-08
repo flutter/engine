@@ -717,11 +717,11 @@ typedef enum {
   kRemove,
   /// The pointer moved while up.
   kHover,
-  /// A pan/zoom started on this pointer
+  /// A pan/zoom started on this pointer.
   kPanZoomStart,
-  /// The pan/zoom updated
+  /// The pan/zoom updated.
   kPanZoomUpdate,
-  /// The pan/zoom ended
+  /// The pan/zoom ended.
   kPanZoomEnd,
 } FlutterPointerPhase;
 
