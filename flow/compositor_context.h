@@ -138,7 +138,9 @@ class CompositorContext {
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
 
-  CompositorContext(fml::Milliseconds frame_budget = fml::kDefaultFrameBudget);
+  CompositorContext();
+
+  explicit CompositorContext(Stopwatch::RefreshRateUpdater& updater);
 
   virtual ~CompositorContext();
 
@@ -159,8 +161,6 @@ class CompositorContext {
 
   TextureRegistry& texture_registry() { return texture_registry_; }
 
-  const Counter& frame_count() const { return frame_count_; }
-
   const Stopwatch& raster_time() const { return raster_time_; }
 
   Stopwatch& ui_time() { return ui_time_; }
@@ -168,9 +168,11 @@ class CompositorContext {
  private:
   RasterCache raster_cache_;
   TextureRegistry texture_registry_;
-  Counter frame_count_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
+
+  /// Only used by default constructor of `CompositorContext`.
+  FixedRefreshRateUpdater fixed_refresh_rate_updater_;
 
   void BeginFrame(ScopedFrame& frame, bool enable_instrumentation);
 

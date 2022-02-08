@@ -5,15 +5,16 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertArrayEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartMessenger.DartMessengerTaskQueue;
 import io.flutter.plugin.common.BinaryMessenger;
@@ -28,11 +29,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class DartMessengerTest {
   SynchronousTaskQueue synchronousTaskQueue = new SynchronousTaskQueue();
 
@@ -311,6 +311,7 @@ public class DartMessengerTest {
     verify(fakeFlutterJni).invokePlatformMessageEmptyResponseCallback(replyId);
   }
 
+  @Test
   public void testSerialTaskQueue() throws InterruptedException {
     final FlutterJNI fakeFlutterJni = mock(FlutterJNI.class);
     final DartMessenger messenger = new DartMessenger(fakeFlutterJni);

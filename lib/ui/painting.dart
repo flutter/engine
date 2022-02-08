@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 // @dart = 2.14
 part of dart.ui;
 
@@ -26,15 +25,6 @@ part of dart.ui;
 /// platform API supports decoding the image Flutter will be able to render it.
 /// {@endtemplate}
 
-// TODO(gspencergoog): remove this template block once the framework templates
-// are renamed to not reference it.
-/// {@template flutter.dart:ui.imageFormats}
-/// JPEG, PNG, GIF, Animated GIF, WebP, Animated WebP, BMP, and WBMP. Additional
-/// formats may be supported by the underlying platform. Flutter will
-/// attempt to call platform API to decode unrecognized formats, and if the
-/// platform API supports decoding the image Flutter will be able to render it.
-/// {@endtemplate}
-
 bool _rectIsValid(Rect rect) {
   assert(rect != null, 'Rect argument was null.');
   assert(!rect.hasNaN, 'Rect argument contained a NaN value.');
@@ -49,20 +39,23 @@ bool _rrectIsValid(RRect rrect) {
 
 bool _offsetIsValid(Offset offset) {
   assert(offset != null, 'Offset argument was null.');
-  assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
+  assert(!offset.dx.isNaN && !offset.dy.isNaN,
+      'Offset argument contained a NaN value.');
   return true;
 }
 
 bool _matrix4IsValid(Float64List matrix4) {
   assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
-  assert(matrix4.every((double value) => value.isFinite), 'Matrix4 entries must be finite.');
+  assert(matrix4.every((double value) => value.isFinite),
+      'Matrix4 entries must be finite.');
   return true;
 }
 
 bool _radiusIsValid(Radius radius) {
   assert(radius != null, 'Radius argument was null.');
-  assert(!radius.x.isNaN && !radius.y.isNaN, 'Radius argument contained a NaN value.');
+  assert(!radius.x.isNaN && !radius.y.isNaN,
+      'Radius argument contained a NaN value.');
   return true;
 }
 
@@ -132,11 +125,12 @@ class Color {
   ///
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
-  const Color.fromARGB(int a, int r, int g, int b) :
-    value = (((a & 0xff) << 24) |
-             ((r & 0xff) << 16) |
-             ((g & 0xff) << 8)  |
-             ((b & 0xff) << 0)) & 0xFFFFFFFF;
+  const Color.fromARGB(int a, int r, int g, int b)
+      : value = (((a & 0xff) << 24) |
+                ((r & 0xff) << 16) |
+                ((g & 0xff) << 8) |
+                ((b & 0xff) << 0)) &
+            0xFFFFFFFF;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -149,11 +143,12 @@ class Color {
   /// Out of range values are brought into range using modulo 255.
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
-  const Color.fromRGBO(int r, int g, int b, double opacity) :
-    value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-              ((r                    & 0xff) << 16) |
-              ((g                    & 0xff) << 8)  |
-              ((b                    & 0xff) << 0)) & 0xFFFFFFFF;
+  const Color.fromRGBO(int r, int g, int b, double opacity)
+      : value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
+                ((r & 0xff) << 16) |
+                ((g & 0xff) << 8) |
+                ((b & 0xff) << 0)) &
+            0xFFFFFFFF;
 
   /// A 32 bit value representing this color.
   ///
@@ -229,8 +224,7 @@ class Color {
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
   static double _linearizeColorComponent(double component) {
-    if (component <= 0.03928)
-      return component / 12.92;
+    if (component <= 0.03928) return component / 12.92;
     return math.pow((component + 0.055) / 1.055, 2.4) as double;
   }
 
@@ -302,19 +296,22 @@ class Color {
   /// overlay each other: instead, just paint one with the combined color.
   static Color alphaBlend(Color foreground, Color background) {
     final int alpha = foreground.alpha;
-    if (alpha == 0x00) { // Foreground completely transparent.
+    if (alpha == 0x00) {
+      // Foreground completely transparent.
       return background;
     }
     final int invAlpha = 0xff - alpha;
     int backAlpha = background.alpha;
-    if (backAlpha == 0xff) { // Opaque background case
+    if (backAlpha == 0xff) {
+      // Opaque background case
       return Color.fromARGB(
         0xff,
         (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
         (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
         (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
       );
-    } else { // General case
+    } else {
+      // General case
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
       final int outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
@@ -337,12 +334,9 @@ class Color {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is Color
-        && other.value == value;
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+    return other is Color && other.value == value;
   }
 
   @override
@@ -615,7 +609,7 @@ enum BlendMode {
   ///    destination image.
   ///  * [hardLight], which combines [modulate] and [screen] to favor the
   ///    source image.
-  screen,  // The last coeff mode.
+  screen, // The last coeff mode.
 
   /// Multiply the components of the source and destination images after
   /// adjusting them to favor the destination.
@@ -750,7 +744,7 @@ enum BlendMode {
   /// channel, consider [modulate].
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_multiply.png)
-  multiply,  // The last separable mode.
+  multiply, // The last separable mode.
 
   /// Take the hue of the source image, and the saturation and luminosity of the
   /// destination image.
@@ -1021,7 +1015,6 @@ enum PaintingStyle {
   stroke,
 }
 
-
 /// Different ways to clip a widget's content.
 enum Clip {
   /// No clip at all.
@@ -1141,7 +1134,8 @@ class Paint {
   static const int _kStrokeMiterLimitOffset = _kStrokeMiterLimitIndex << 2;
   static const int _kFilterQualityOffset = _kFilterQualityIndex << 2;
   static const int _kMaskFilterOffset = _kMaskFilterIndex << 2;
-  static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
+  static const int _kMaskFilterBlurStyleOffset =
+      _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
   static const int _kDitherOffset = _kDitherIndex << 2;
@@ -1152,13 +1146,15 @@ class Paint {
   List<dynamic>? _objects;
 
   List<dynamic> _ensureObjectsInitialized() {
-    return _objects ??= List<dynamic>.filled(_kObjectCount, null, growable: false);
+    return _objects ??=
+        List<dynamic>.filled(_kObjectCount, null, growable: false);
   }
 
   static const int _kShaderIndex = 0;
   static const int _kColorFilterIndex = 1;
   static const int _kImageFilterIndex = 2;
-  static const int _kObjectCount = 3; // Must be one larger than the largest index.
+  static const int _kObjectCount =
+      3; // Must be one larger than the largest index.
 
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
@@ -1175,6 +1171,7 @@ class Paint {
   bool get isAntiAlias {
     return _data.getInt32(_kIsAntiAliasOffset, _kFakeHostEndian) == 0;
   }
+
   set isAntiAlias(bool value) {
     // We encode true as zero and false as one because the default value, which
     // we always encode as zero, is true.
@@ -1201,6 +1198,7 @@ class Paint {
     final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
     return Color(encoded ^ _kColorDefault);
   }
+
   set color(Color value) {
     assert(value != null);
     final int encoded = value.value ^ _kColorDefault;
@@ -1232,6 +1230,7 @@ class Paint {
     final int encoded = _data.getInt32(_kBlendModeOffset, _kFakeHostEndian);
     return BlendMode.values[encoded ^ _kBlendModeDefault];
   }
+
   set blendMode(BlendMode value) {
     assert(value != null);
     final int encoded = value.index ^ _kBlendModeDefault;
@@ -1242,8 +1241,10 @@ class Paint {
   ///
   /// Defaults to [PaintingStyle.fill].
   PaintingStyle get style {
-    return PaintingStyle.values[_data.getInt32(_kStyleOffset, _kFakeHostEndian)];
+    return PaintingStyle
+        .values[_data.getInt32(_kStyleOffset, _kFakeHostEndian)];
   }
+
   set style(PaintingStyle value) {
     assert(value != null);
     final int encoded = value.index;
@@ -1258,6 +1259,7 @@ class Paint {
   double get strokeWidth {
     return _data.getFloat32(_kStrokeWidthOffset, _kFakeHostEndian);
   }
+
   set strokeWidth(double value) {
     assert(value != null);
     final double encoded = value;
@@ -1269,8 +1271,10 @@ class Paint {
   ///
   /// Defaults to [StrokeCap.butt], i.e. no caps.
   StrokeCap get strokeCap {
-    return StrokeCap.values[_data.getInt32(_kStrokeCapOffset, _kFakeHostEndian)];
+    return StrokeCap
+        .values[_data.getInt32(_kStrokeCapOffset, _kFakeHostEndian)];
   }
+
   set strokeCap(StrokeCap value) {
     assert(value != null);
     final int encoded = value.index;
@@ -1303,8 +1307,10 @@ class Paint {
   ///  * [strokeCap] to control what is drawn at the ends of the stroke.
   ///  * [StrokeJoin] for the definitive list of stroke joins.
   StrokeJoin get strokeJoin {
-    return StrokeJoin.values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
+    return StrokeJoin
+        .values[_data.getInt32(_kStrokeJoinOffset, _kFakeHostEndian)];
   }
+
   set strokeJoin(StrokeJoin value) {
     assert(value != null);
     final int encoded = value.index;
@@ -1343,6 +1349,7 @@ class Paint {
   double get strokeMiterLimit {
     return _data.getFloat32(_kStrokeMiterLimitOffset, _kFakeHostEndian);
   }
+
   set strokeMiterLimit(double value) {
     assert(value != null);
     final double encoded = value - _kStrokeMiterLimitDefault;
@@ -1359,22 +1366,27 @@ class Paint {
         return null;
       case MaskFilter._TypeBlur:
         return MaskFilter.blur(
-          BlurStyle.values[_data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
+          BlurStyle.values[
+              _data.getInt32(_kMaskFilterBlurStyleOffset, _kFakeHostEndian)],
           _data.getFloat32(_kMaskFilterSigmaOffset, _kFakeHostEndian),
         );
     }
     return null;
   }
+
   set maskFilter(MaskFilter? value) {
     if (value == null) {
-      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeNone, _kFakeHostEndian);
+      _data.setInt32(
+          _kMaskFilterOffset, MaskFilter._TypeNone, _kFakeHostEndian);
       _data.setInt32(_kMaskFilterBlurStyleOffset, 0, _kFakeHostEndian);
       _data.setFloat32(_kMaskFilterSigmaOffset, 0.0, _kFakeHostEndian);
     } else {
       // For now we only support one kind of MaskFilter, so we don't need to
       // check what the type is if it's not null.
-      _data.setInt32(_kMaskFilterOffset, MaskFilter._TypeBlur, _kFakeHostEndian);
-      _data.setInt32(_kMaskFilterBlurStyleOffset, value._style.index, _kFakeHostEndian);
+      _data.setInt32(
+          _kMaskFilterOffset, MaskFilter._TypeBlur, _kFakeHostEndian);
+      _data.setInt32(
+          _kMaskFilterBlurStyleOffset, value._style.index, _kFakeHostEndian);
       _data.setFloat32(_kMaskFilterSigmaOffset, value._sigma, _kFakeHostEndian);
     }
   }
@@ -1386,8 +1398,10 @@ class Paint {
   /// Defaults to [FilterQuality.none].
   // TODO(ianh): verify that the image drawing methods actually respect this
   FilterQuality get filterQuality {
-    return FilterQuality.values[_data.getInt32(_kFilterQualityOffset, _kFakeHostEndian)];
+    return FilterQuality
+        .values[_data.getInt32(_kFilterQualityOffset, _kFakeHostEndian)];
   }
+
   set filterQuality(FilterQuality value) {
     assert(value != null);
     final int encoded = value.index;
@@ -1407,6 +1421,7 @@ class Paint {
   Shader? get shader {
     return _objects?[_kShaderIndex] as Shader?;
   }
+
   set shader(Shader? value) {
     _ensureObjectsInitialized()[_kShaderIndex] = value;
   }
@@ -1479,6 +1494,7 @@ class Paint {
   bool get invertColors {
     return _data.getInt32(_kInvertColorOffset, _kFakeHostEndian) == 1;
   }
+
   set invertColors(bool value) {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
@@ -1486,6 +1502,7 @@ class Paint {
   bool get _dither {
     return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
   }
+
   set _dither(bool value) {
     _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
   }
@@ -1521,11 +1538,11 @@ class Paint {
         result.write(' ${strokeWidth.toStringAsFixed(1)}');
       else
         result.write(' hairline');
-      if (strokeCap != StrokeCap.butt)
-        result.write(' $strokeCap');
+      if (strokeCap != StrokeCap.butt) result.write(' $strokeCap');
       if (strokeJoin == StrokeJoin.miter) {
         if (strokeMiterLimit != _kStrokeMiterLimitDefault)
-          result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+          result.write(
+              ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
       } else {
         result.write(' $strokeJoin');
       }
@@ -1563,10 +1580,8 @@ class Paint {
       result.write('${semicolon}imageFilter: $imageFilter');
       semicolon = '; ';
     }
-    if (invertColors)
-      result.write('${semicolon}invert: $invertColors');
-    if (_dither)
-      result.write('${semicolon}dither: $_dither');
+    if (invertColors) result.write('${semicolon}invert: $invertColors');
+    if (_dither) result.write('${semicolon}dither: $_dither');
     result.write(')');
     return result.toString();
   }
@@ -1574,6 +1589,10 @@ class Paint {
 
 /// The format in which image bytes should be returned when using
 /// [Image.toByteData].
+// We do not expect to add more encoding formats to the ImageByteFormat enum,
+// considering the binary size of the engine after LTO optimization. You can
+// use the third-party pure dart image library to encode other formats.
+// See: https://github.com/flutter/flutter/issues/16635 for more details.
 enum ImageByteFormat {
   /// Raw RGBA format.
   ///
@@ -1674,6 +1693,7 @@ class Image {
   }
 
   bool _disposed = false;
+
   /// Release this handle's claim on the underlying Image. This handle is no
   /// longer usable after this method is called.
   ///
@@ -1705,7 +1725,9 @@ class Image {
       disposed = _disposed;
       return true;
     }());
-    return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
+    return disposed ??
+        (throw StateError(
+            'Image.debugDisposed is only available when asserts are enabled.'));
   }
 
   /// Converts the [Image] object into a byte array.
@@ -1715,7 +1737,12 @@ class Image {
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
-  Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
+  // We do not expect to add more encoding formats to the ImageByteFormat enum,
+  // considering the binary size of the engine after LTO optimization. You can
+  // use the third-party pure dart image library to encode other formats.
+  // See: https://github.com/flutter/flutter/issues/16635 for more details.
+  Future<ByteData?> toByteData(
+      {ImageByteFormat format = ImageByteFormat.rawRgba}) {
     assert(!_disposed && !_image._disposed);
     return _image.toByteData(format: format);
   }
@@ -1727,7 +1754,8 @@ class Image {
   List<StackTrace>? debugGetOpenHandleStackTraces() {
     List<StackTrace>? stacks;
     assert(() {
-      stacks = _image._handles.map((Image handle) => handle._debugStack!).toList();
+      stacks =
+          _image._handles.map((Image handle) => handle._debugStack!).toList();
       return true;
     }());
     return stacks;
@@ -1809,12 +1837,10 @@ class Image {
   /// is the last remaining handle.
   Image clone() {
     if (_disposed) {
-      throw StateError(
-        'Cannot clone a disposed image.\n'
-        'The clone() method of a previously-disposed Image was called. Once an '
-        'Image object has been disposed, it can no longer be used to create '
-        'handles, as the underlying data may have been released.'
-      );
+      throw StateError('Cannot clone a disposed image.\n'
+          'The clone() method of a previously-disposed Image was called. Once an '
+          'Image object has been disposed, it can no longer be used to create '
+          'handles, as the underlying data may have been released.');
     }
     assert(!_image._disposed);
     return Image._(_image);
@@ -1851,7 +1877,8 @@ class _Image extends NativeFieldWrapperClass1 {
   @FfiNative<Int32 Function(Pointer<Void>)>('Image::height', isLeaf: true)
   external int get height;
 
-  Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
+  Future<ByteData?> toByteData(
+      {ImageByteFormat format = ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
       return _toByteData(format.index, (Uint8List? encoded) {
         callback(encoded!.buffer.asByteData());
@@ -1947,7 +1974,6 @@ class FrameInfo {
   /// A zero duration indicates that the frame should be shown indefinitely.
   final Duration duration;
 
-
   /// The [Image] object for this frame.
   ///
   /// This object must be disposed by the recipient of this frame info.
@@ -2004,9 +2030,11 @@ class Codec extends NativeFieldWrapperClass1 {
   /// [FrameInfo.image] on the returned object.
   Future<FrameInfo> getNextFrame() async {
     final Completer<FrameInfo> completer = Completer<FrameInfo>.sync();
-    final String? error = _getNextFrame((_Image? image, int durationMilliseconds) {
+    final String? error =
+        _getNextFrame((_Image? image, int durationMilliseconds) {
       if (image == null) {
-        completer.completeError(Exception('Codec failed to produce an image, possibly due to invalid image data.'));
+        completer.completeError(Exception(
+            'Codec failed to produce an image, possibly due to invalid image data.'));
       } else {
         completer.complete(FrameInfo._(
           image: Image._(image),
@@ -2093,8 +2121,8 @@ void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
 
-Future<void> _decodeImageFromListAsync(Uint8List list,
-                                       ImageDecoderCallback callback) async {
+Future<void> _decodeImageFromListAsync(
+    Uint8List list, ImageDecoderCallback callback) async {
   final Codec codec = await instantiateImageCodec(list);
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
@@ -2141,41 +2169,39 @@ void decodeImageFromPixels(
     assert(allowUpscaling || targetHeight <= height);
   }
 
-  ImmutableBuffer.fromUint8List(pixels)
-    .then((ImmutableBuffer buffer) {
-      final ImageDescriptor descriptor = ImageDescriptor.raw(
-        buffer,
-        width: width,
-        height: height,
-        rowBytes: rowBytes,
-        pixelFormat: format,
-      );
+  ImmutableBuffer.fromUint8List(pixels).then((ImmutableBuffer buffer) {
+    final ImageDescriptor descriptor = ImageDescriptor.raw(
+      buffer,
+      width: width,
+      height: height,
+      rowBytes: rowBytes,
+      pixelFormat: format,
+    );
 
-      if (!allowUpscaling) {
-        if (targetWidth != null && targetWidth! > descriptor.width) {
-          targetWidth = descriptor.width;
-        }
-        if (targetHeight != null && targetHeight! > descriptor.height) {
-          targetHeight = descriptor.height;
-        }
+    if (!allowUpscaling) {
+      if (targetWidth != null && targetWidth! > descriptor.width) {
+        targetWidth = descriptor.width;
       }
+      if (targetHeight != null && targetHeight! > descriptor.height) {
+        targetHeight = descriptor.height;
+      }
+    }
 
-      descriptor
+    descriptor
         .instantiateCodec(
-          targetWidth: targetWidth,
-          targetHeight: targetHeight,
-        )
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+    )
         .then((Codec codec) {
-          final Future<FrameInfo> frameInfo = codec.getNextFrame();
-          codec.dispose();
-          return frameInfo;
-        })
-        .then((FrameInfo frameInfo) {
-          buffer.dispose();
-          descriptor.dispose();
+      final Future<FrameInfo> frameInfo = codec.getNextFrame();
+      codec.dispose();
+      return frameInfo;
+    }).then((FrameInfo frameInfo) {
+      buffer.dispose();
+      descriptor.dispose();
 
-          return callback(frameInfo.image);
-        });
+      return callback(frameInfo.image);
+    });
   });
 }
 
@@ -2221,6 +2247,7 @@ enum PathOperation {
   ///  * [reverseDifference], which is the same but subtracting the first path
   ///    from the second.
   difference,
+
   /// Create a new path that is the intersection of the two paths, leaving the
   /// overlapping pieces of the path.
   ///
@@ -2231,12 +2258,14 @@ enum PathOperation {
   /// See also:
   ///  * [xor], which is the inverse of this operation
   intersect,
+
   /// Create a new path that is the union (inclusive-or) of the two paths.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
   /// but differing centers, the result would be a figure-eight like shape
   /// matching the outer boundaries of both circles.
   union,
+
   /// Create a new path that is the exclusive-or of the two paths, leaving
   /// everything but the overlapping pieces of the path.
   ///
@@ -2246,6 +2275,7 @@ enum PathOperation {
   /// See also:
   ///  * [intersect], which is the inverse of this operation
   xor,
+
   /// Subtract the first path from the second path.
   ///
   /// For example, if the two paths are overlapping circles of equal diameter
@@ -2307,7 +2337,9 @@ class EngineLayer extends NativeFieldWrapperClass1 {
 class Path extends NativeFieldWrapperClass1 {
   /// Create a new empty [Path] object.
   @pragma('vm:entry-point')
-  Path() { _constructor(); }
+  Path() {
+    _constructor();
+  }
 
   @FfiNative<Void Function(Handle)>('Path::CreateOrThrow')
   external void _constructor();
@@ -2395,7 +2427,7 @@ class Path extends NativeFieldWrapperClass1 {
   /// to the point at the offset (x3,y3) from the current point, using
   /// the control points at the offsets (x1,y1) and (x2,y2) from the
   /// current point.
-@FfiNative<
+  @FfiNative<
       Void Function(Pointer<Void>, Float, Float, Float, Float, Float,
           Float)>('Path::relativeCubicTo', isLeaf: true)
   external void relativeCubicTo(
@@ -2439,9 +2471,11 @@ class Path extends NativeFieldWrapperClass1 {
   ///
   /// The line segment added if `forceMoveTo` is false starts at the
   /// current point and ends at the start of the arc.
-  void arcTo(Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
+  void arcTo(
+      Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
     assert(_rectIsValid(rect));
-    _arcTo(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, forceMoveTo);
+    _arcTo(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle,
+        forceMoveTo);
   }
 
   @FfiNative<
@@ -2451,7 +2485,7 @@ class Path extends NativeFieldWrapperClass1 {
       double startAngle, double sweepAngle, bool forceMoveTo);
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
-  /// and rotated by `rotation`.
+  /// and rotated by `rotation` (measured in degrees and clockwise).
   ///
   /// The first curve begins from the last point in the path and the last ends
   /// at `arcEnd`. The curves follow a path in a direction determined by
@@ -2462,7 +2496,8 @@ class Path extends NativeFieldWrapperClass1 {
   /// point in the path is `arcEnd`. The radii are scaled to fit the last path
   /// point if both are greater than zero but too small to describe an arc.
   ///
-  void arcToPoint(Offset arcEnd, {
+  void arcToPoint(
+    Offset arcEnd, {
     Radius radius = Radius.zero,
     double rotation = 0.0,
     bool largeArc = false,
@@ -2470,8 +2505,8 @@ class Path extends NativeFieldWrapperClass1 {
   }) {
     assert(_offsetIsValid(arcEnd));
     assert(_radiusIsValid(radius));
-    _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, rotation,
-                largeArc, clockwise);
+    _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, rotation, largeArc,
+        clockwise);
   }
 
   @FfiNative<
@@ -2480,9 +2515,8 @@ class Path extends NativeFieldWrapperClass1 {
   external void _arcToPoint(double arcEndX, double arcEndY, double radiusX,
       double radiusY, double rotation, bool largeArc, bool clockwise);
 
-
   /// Appends up to four conic curves weighted to describe an oval of `radius`
-  /// and rotated by `rotation`.
+  /// and rotated by `rotation` (measured in degrees and clockwise).
   ///
   /// The last path point is described by (px, py).
   ///
@@ -2495,7 +2529,8 @@ class Path extends NativeFieldWrapperClass1 {
   /// `arcEndDelta.dx` and `arcEndDelta.dy` are zero. The radii are scaled to
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
-  void relativeArcToPoint(Offset arcEndDelta, {
+  void relativeArcToPoint(
+    Offset arcEndDelta, {
     Radius radius = Radius.zero,
     double rotation = 0.0,
     bool largeArc = false,
@@ -2504,7 +2539,7 @@ class Path extends NativeFieldWrapperClass1 {
     assert(_offsetIsValid(arcEndDelta));
     assert(_radiusIsValid(radius));
     _relativeArcToPoint(arcEndDelta.dx, arcEndDelta.dy, radius.x, radius.y,
-                        rotation, largeArc, clockwise);
+        rotation, largeArc, clockwise);
   }
 
   @FfiNative<
@@ -2556,7 +2591,8 @@ class Path extends NativeFieldWrapperClass1 {
   /// oval.
   void addArc(Rect oval, double startAngle, double sweepAngle) {
     assert(_rectIsValid(oval));
-    _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
+    _addArc(
+        oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
   }
 
   @FfiNative<
@@ -2585,7 +2621,7 @@ class Path extends NativeFieldWrapperClass1 {
   /// argument.
   void addRRect(RRect rrect) {
     assert(_rrectIsValid(rrect));
-    _addRRect(rrect._value32);
+    _addRRect(rrect._getValue32());
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle)>('Path::addRRect')
@@ -2634,6 +2670,7 @@ class Path extends NativeFieldWrapperClass1 {
       _extendWithPath(path, offset.dx, offset.dy);
     }
   }
+
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>(
       'Path::extendWithPath')
   external void _extendWithPath(Path path, double dx, double dy);
@@ -2693,7 +2730,8 @@ class Path extends NativeFieldWrapperClass1 {
     return path;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transformHandle')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>(
+      'Path::transformHandle')
   external void _transform(Path outPath, Float64List matrix4);
 
   /// Computes the bounding rectangle for this path.
@@ -2732,7 +2770,8 @@ class Path extends NativeFieldWrapperClass1 {
     if (path._op(path1, path2, operation.index)) {
       return path;
     }
-    throw StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
+    throw StateError(
+        'Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
   }
 
   @FfiNative<Bool Function(Pointer<Void>, Pointer<Void>, Pointer<Void>, Int32)>(
@@ -2784,8 +2823,8 @@ class Tangent {
   ///
   /// The arguments must not be null.
   const Tangent(this.position, this.vector)
-    : assert(position != null),
-      assert(vector != null);
+      : assert(position != null),
+        assert(vector != null);
 
   /// Creates a [Tangent] based on the angle rather than the vector.
   ///
@@ -2839,8 +2878,8 @@ class Tangent {
 /// multiple times, or who need to randomly access elements of the list, should
 /// use [toList] on this object.
 class PathMetrics extends collection.IterableBase<PathMetric> {
-  PathMetrics._(Path path, bool forceClosed) :
-    _iterator = PathMetricIterator._(_PathMeasure(path, forceClosed));
+  PathMetrics._(Path path, bool forceClosed)
+      : _iterator = PathMetricIterator._(_PathMeasure(path, forceClosed));
 
   final Iterator<PathMetric> _iterator;
 
@@ -2861,10 +2900,9 @@ class PathMetricIterator implements Iterator<PathMetric> {
     final PathMetric? currentMetric = _pathMetric;
     if (currentMetric == null) {
       throw RangeError(
-        'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
-        '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
-        '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".'
-      );
+          'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
+          '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
     }
     return currentMetric;
   }
@@ -2895,10 +2933,10 @@ class PathMetricIterator implements Iterator<PathMetric> {
 /// the path.
 class PathMetric {
   PathMetric._(this._measure)
-    : assert(_measure != null),
-      length = _measure.length(_measure.currentContourIndex),
-      isClosed = _measure.isClosed(_measure.currentContourIndex),
-      contourIndex = _measure.currentContourIndex;
+      : assert(_measure != null),
+        length = _measure.length(_measure.currentContourIndex),
+        isClosed = _measure.isClosed(_measure.currentContourIndex),
+        contourIndex = _measure.currentContourIndex;
 
   /// Return the total length of the current contour.
   final double length;
@@ -2927,7 +2965,6 @@ class PathMetric {
 
   final _PathMeasure _measure;
 
-
   /// Computes the position of the current contour at the given offset, and the
   /// angle of the path at that point.
   ///
@@ -2947,11 +2984,13 @@ class PathMetric {
   /// `start` and `end` are clamped to legal values (0..[length])
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
   Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
-    return _measure.extractPath(contourIndex, start, end, startWithMoveTo: startWithMoveTo);
+    return _measure.extractPath(contourIndex, start, end,
+        startWithMoveTo: startWithMoveTo);
   }
 
   @override
-  String toString() => '$runtimeType{length: $length, isClosed: $isClosed, contourIndex:$contourIndex}';
+  String toString() =>
+      '$runtimeType{length: $length, isClosed: $isClosed, contourIndex:$contourIndex}';
 }
 
 class _PathMeasure extends NativeFieldWrapperClass1 {
@@ -2964,7 +3003,8 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
   external void _constructor(Path path, bool forceClosed);
 
   double length(int contourIndex) {
-    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    assert(contourIndex <= currentContourIndex,
+        'Iterator must be advanced before index $contourIndex can be used.');
     return _length(contourIndex);
   }
 
@@ -2973,16 +3013,15 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
   external double _length(int contourIndex);
 
   Tangent? getTangentForOffset(int contourIndex, double distance) {
-    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    assert(contourIndex <= currentContourIndex,
+        'Iterator must be advanced before index $contourIndex can be used.');
     final Float32List posTan = _getPosTan(contourIndex, distance);
     // first entry == 0 indicates that Skia returned false
     if (posTan[0] == 0.0) {
       return null;
     } else {
       return Tangent(
-        Offset(posTan[1], posTan[2]),
-        Offset(posTan[3], posTan[4])
-      );
+          Offset(posTan[1], posTan[2]), Offset(posTan[3], posTan[4]));
     }
   }
 
@@ -2990,8 +3029,10 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
       'PathMeasure::getPosTan')
   external Float32List _getPosTan(int contourIndex, double distance);
 
-  Path extractPath(int contourIndex, double start, double end, {bool startWithMoveTo = true}) {
-    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+  Path extractPath(int contourIndex, double start, double end,
+      {bool startWithMoveTo = true}) {
+    assert(contourIndex <= currentContourIndex,
+        'Iterator must be advanced before index $contourIndex can be used.');
     final Path path = Path._();
     _extractPath(path, contourIndex, start, end, startWithMoveTo);
     return path;
@@ -3003,7 +3044,8 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
       double end, bool startWithMoveTo);
 
   bool isClosed(int contourIndex) {
-    assert(contourIndex <= currentContourIndex, 'Iterator must be advanced before index $contourIndex can be used.');
+    assert(contourIndex <= currentContourIndex,
+        'Iterator must be advanced before index $contourIndex can be used.');
     return _isClosed(contourIndex);
   }
 
@@ -3084,8 +3126,8 @@ class MaskFilter {
   const MaskFilter.blur(
     this._style,
     this._sigma,
-  ) : assert(_style != null),
-      assert(_sigma != null);
+  )   : assert(_style != null),
+        assert(_sigma != null);
 
   final BlurStyle _style;
   final double _sigma;
@@ -3097,9 +3139,9 @@ class MaskFilter {
 
   @override
   bool operator ==(Object other) {
-    return other is MaskFilter
-        && other._style == _style
-        && other._sigma == _sigma;
+    return other is MaskFilter &&
+        other._style == _style &&
+        other._sigma == _sigma;
   }
 
   @override
@@ -3252,13 +3294,12 @@ class ColorFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is ColorFilter
-        && other._type == _type
-        && _listEquals<double>(other._matrix, _matrix)
-        && other._color == _color
-        && other._blendMode == _blendMode;
+    if (other.runtimeType != runtimeType) return false;
+    return other is ColorFilter &&
+        other._type == _type &&
+        _listEquals<double>(other._matrix, _matrix) &&
+        other._color == _color &&
+        other._blendMode == _blendMode;
   }
 
   @override
@@ -3305,28 +3346,28 @@ class ColorFilter implements ImageFilter {
 /// avoid repainting.
 class _ColorFilter extends NativeFieldWrapperClass1 {
   _ColorFilter.mode(this.creator)
-    : assert(creator != null),
-      assert(creator._type == ColorFilter._kTypeMode) {
+      : assert(creator != null),
+        assert(creator._type == ColorFilter._kTypeMode) {
     _constructor();
     _initMode(creator._color!.value, creator._blendMode!.index);
   }
 
   _ColorFilter.matrix(this.creator)
-    : assert(creator != null),
-      assert(creator._type == ColorFilter._kTypeMatrix) {
+      : assert(creator != null),
+        assert(creator._type == ColorFilter._kTypeMatrix) {
     _constructor();
     _initMatrix(Float32List.fromList(creator._matrix!));
   }
   _ColorFilter.linearToSrgbGamma(this.creator)
-    : assert(creator != null),
-      assert(creator._type == ColorFilter._kTypeLinearToSrgbGamma) {
+      : assert(creator != null),
+        assert(creator._type == ColorFilter._kTypeLinearToSrgbGamma) {
     _constructor();
     _initLinearToSrgbGamma();
   }
 
   _ColorFilter.srgbToLinearGamma(this.creator)
-    : assert(creator != null),
-      assert(creator._type == ColorFilter._kTypeSrgbToLinearGamma) {
+      : assert(creator != null),
+        assert(creator._type == ColorFilter._kTypeSrgbToLinearGamma) {
     _constructor();
     _initSrgbToLinearGamma();
   }
@@ -3367,11 +3408,15 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
 ///    this class as a child layer filter.
 abstract class ImageFilter {
   /// Creates an image filter that applies a Gaussian blur.
-  factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp }) {
+  factory ImageFilter.blur(
+      {double sigmaX = 0.0,
+      double sigmaY = 0.0,
+      TileMode tileMode = TileMode.clamp}) {
     assert(sigmaX != null);
     assert(sigmaY != null);
     assert(tileMode != null);
-    return _GaussianBlurImageFilter(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
+    return _GaussianBlurImageFilter(
+        sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
   }
 
   /// Creates an image filter that applies a matrix transformation.
@@ -3379,12 +3424,13 @@ abstract class ImageFilter {
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   factory ImageFilter.matrix(Float64List matrix4,
-                     { FilterQuality filterQuality = FilterQuality.low }) {
+      {FilterQuality filterQuality = FilterQuality.low}) {
     assert(matrix4 != null);
     assert(filterQuality != null);
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
-    return _MatrixImageFilter(data: Float64List.fromList(matrix4), filterQuality: filterQuality);
+    return _MatrixImageFilter(
+        data: Float64List.fromList(matrix4), filterQuality: filterQuality);
   }
 
   /// Composes the `inner` filter with `outer`, to combine their effects.
@@ -3392,8 +3438,9 @@ abstract class ImageFilter {
   /// Creates a single [ImageFilter] that when applied, has the same effect as
   /// subsequently applying `inner` and `outer`, i.e.,
   /// result = outer(inner(source)).
-  factory ImageFilter.compose({ required ImageFilter outer, required ImageFilter inner }) {
-    assert (inner != null && outer != null);
+  factory ImageFilter.compose(
+      {required ImageFilter outer, required ImageFilter inner}) {
+    assert(inner != null && outer != null);
     return _ComposeImageFilter(innerFilter: inner, outerFilter: outer);
   }
 
@@ -3407,7 +3454,7 @@ abstract class ImageFilter {
 }
 
 class _MatrixImageFilter implements ImageFilter {
-  _MatrixImageFilter({ required this.data, required this.filterQuality });
+  _MatrixImageFilter({required this.data, required this.filterQuality});
 
   final Float64List data;
   final FilterQuality filterQuality;
@@ -3425,11 +3472,10 @@ class _MatrixImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is _MatrixImageFilter
-        && other.filterQuality == filterQuality
-        && _listEquals<double>(other.data, data);
+    if (other.runtimeType != runtimeType) return false;
+    return other is _MatrixImageFilter &&
+        other.filterQuality == filterQuality &&
+        _listEquals<double>(other.data, data);
   }
 
   @override
@@ -3437,7 +3483,8 @@ class _MatrixImageFilter implements ImageFilter {
 }
 
 class _GaussianBlurImageFilter implements ImageFilter {
-  _GaussianBlurImageFilter({ required this.sigmaX, required this.sigmaY, required this.tileMode });
+  _GaussianBlurImageFilter(
+      {required this.sigmaX, required this.sigmaY, required this.tileMode});
 
   final double sigmaX;
   final double sigmaY;
@@ -3449,11 +3496,15 @@ class _GaussianBlurImageFilter implements ImageFilter {
   _ImageFilter _toNativeImageFilter() => nativeFilter;
 
   String get _modeString {
-    switch(tileMode) {
-      case TileMode.clamp: return 'clamp';
-      case TileMode.mirror: return 'mirror';
-      case TileMode.repeated: return 'repeated';
-      case TileMode.decal: return 'decal';
+    switch (tileMode) {
+      case TileMode.clamp:
+        return 'clamp';
+      case TileMode.mirror:
+        return 'mirror';
+      case TileMode.repeated:
+        return 'repeated';
+      case TileMode.decal:
+        return 'decal';
     }
   }
 
@@ -3465,12 +3516,11 @@ class _GaussianBlurImageFilter implements ImageFilter {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is _GaussianBlurImageFilter
-        && other.sigmaX == sigmaX
-        && other.sigmaY == sigmaY
-        && other.tileMode == tileMode;
+    if (other.runtimeType != runtimeType) return false;
+    return other is _GaussianBlurImageFilter &&
+        other.sigmaX == sigmaX &&
+        other.sigmaY == sigmaY &&
+        other.tileMode == tileMode;
   }
 
   @override
@@ -3478,7 +3528,7 @@ class _GaussianBlurImageFilter implements ImageFilter {
 }
 
 class _ComposeImageFilter implements ImageFilter {
-  _ComposeImageFilter({ required this.innerFilter, required this.outerFilter });
+  _ComposeImageFilter({required this.innerFilter, required this.outerFilter});
 
   final ImageFilter innerFilter;
   final ImageFilter outerFilter;
@@ -3489,18 +3539,19 @@ class _ComposeImageFilter implements ImageFilter {
   _ImageFilter _toNativeImageFilter() => nativeFilter;
 
   @override
-  String get _shortDescription => '${innerFilter._shortDescription} -> ${outerFilter._shortDescription}';
+  String get _shortDescription =>
+      '${innerFilter._shortDescription} -> ${outerFilter._shortDescription}';
 
   @override
-  String toString() => 'ImageFilter.compose(source -> $_shortDescription -> result)';
+  String toString() =>
+      'ImageFilter.compose(source -> $_shortDescription -> result)';
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is _ComposeImageFilter
-        && other.innerFilter == innerFilter
-        && other.outerFilter == outerFilter;
+    if (other.runtimeType != runtimeType) return false;
+    return other is _ComposeImageFilter &&
+        other.innerFilter == innerFilter &&
+        other.outerFilter == outerFilter;
   }
 
   @override
@@ -3518,8 +3569,9 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
 
   /// Creates an image filter that applies a Gaussian blur.
   _ImageFilter.blur(_GaussianBlurImageFilter filter)
-    : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      : assert(filter != null),
+        creator = filter {
+    // ignore: prefer_initializing_formals
     _constructor();
     _initBlur(filter.sigmaX, filter.sigmaY, filter.tileMode.index);
   }
@@ -3534,8 +3586,9 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   _ImageFilter.matrix(_MatrixImageFilter filter)
-    : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      : assert(filter != null),
+        creator = filter {
+    // ignore: prefer_initializing_formals
     if (filter.data.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
     _constructor();
@@ -3548,8 +3601,9 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
 
   /// Converts a color filter to an image filter.
   _ImageFilter.fromColorFilter(ColorFilter filter)
-    : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      : assert(filter != null),
+        creator = filter {
+    // ignore: prefer_initializing_formals
     _constructor();
     final _ColorFilter? nativeFilter = filter._toNativeColorFilter();
     _initColorFilter(nativeFilter);
@@ -3561,12 +3615,15 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
 
   /// Composes `_innerFilter` with `_outerFilter`.
   _ImageFilter.composed(_ComposeImageFilter filter)
-    : assert(filter != null),
-      creator = filter {    // ignore: prefer_initializing_formals
+      : assert(filter != null),
+        creator = filter {
+    // ignore: prefer_initializing_formals
     _constructor();
-    final _ImageFilter nativeFilterInner = filter.innerFilter._toNativeImageFilter();
-    final _ImageFilter nativeFilterOuter = filter.outerFilter._toNativeImageFilter();
-    _initComposed(nativeFilterOuter,  nativeFilterInner);
+    final _ImageFilter nativeFilterInner =
+        filter.innerFilter._toNativeImageFilter();
+    final _ImageFilter nativeFilterOuter =
+        filter.outerFilter._toNativeImageFilter();
+    _initComposed(nativeFilterOuter, nativeFilterInner);
   }
 
   @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Pointer<Void>)>(
@@ -3681,8 +3738,7 @@ enum TileMode {
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
-  for (int i = 0; i < colorCount; ++i)
-    result[i] = colors[i].value;
+  for (int i = 0; i < colorCount; ++i) result[i] = colors[i].value;
   return result;
 }
 
@@ -3754,18 +3810,20 @@ class Gradient extends Shader {
     List<double>? colorStops,
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
-  ]) : assert(_offsetIsValid(from)),
-       assert(_offsetIsValid(to)),
-       assert(colors != null),
-       assert(tileMode != null),
-       assert(matrix4 == null || _matrix4IsValid(matrix4)),
-       super._() {
+  ])  : assert(_offsetIsValid(from)),
+        assert(_offsetIsValid(to)),
+        assert(colors != null),
+        assert(tileMode != null),
+        assert(matrix4 == null || _matrix4IsValid(matrix4)),
+        super._() {
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
     final Int32List colorsBuffer = _encodeColorList(colors);
-    final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
+    final Float32List? colorStopsBuffer =
+        colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
-    _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+    _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index,
+        matrix4);
   }
 
   @FfiNative<
@@ -3804,33 +3862,34 @@ class Gradient extends Shader {
   /// circle and `focalRadius` being the radius of that circle. If `focal` is
   /// provided and not equal to `center`, at least one of the two offsets must
   /// not be equal to [Offset.zero].
-  Gradient.radial(
-    Offset center,
-    double radius,
-    List<Color> colors, [
-    List<double>? colorStops,
-    TileMode tileMode = TileMode.clamp,
-    Float64List? matrix4,
-    Offset? focal,
-    double focalRadius = 0.0
-  ]) : assert(_offsetIsValid(center)),
-       assert(colors != null),
-       assert(tileMode != null),
-       assert(matrix4 == null || _matrix4IsValid(matrix4)),
-       super._() {
+  Gradient.radial(Offset center, double radius, List<Color> colors,
+      [List<double>? colorStops,
+      TileMode tileMode = TileMode.clamp,
+      Float64List? matrix4,
+      Offset? focal,
+      double focalRadius = 0.0])
+      : assert(_offsetIsValid(center)),
+        assert(colors != null),
+        assert(tileMode != null),
+        assert(matrix4 == null || _matrix4IsValid(matrix4)),
+        super._() {
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
-    final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
+    final Float32List? colorStopsBuffer =
+        colorStops == null ? null : Float32List.fromList(colorStops);
 
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       _constructor();
-      _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+      _initRadial(center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer,
+          tileMode.index, matrix4);
     } else {
-      assert(center != Offset.zero || focal != Offset.zero); // will result in exception(s) in Skia side
+      assert(center != Offset.zero ||
+          focal != Offset.zero); // will result in exception(s) in Skia side
       _constructor();
-      _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy, radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
+      _initConical(focal.dx, focal.dy, focalRadius, center.dx, center.dy,
+          radius, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
     }
   }
 
@@ -3906,19 +3965,21 @@ class Gradient extends Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) : assert(_offsetIsValid(center)),
-       assert(colors != null),
-       assert(tileMode != null),
-       assert(startAngle != null),
-       assert(endAngle != null),
-       assert(startAngle < endAngle),
-       assert(matrix4 == null || _matrix4IsValid(matrix4)),
-       super._() {
+  ])  : assert(_offsetIsValid(center)),
+        assert(colors != null),
+        assert(tileMode != null),
+        assert(startAngle != null),
+        assert(endAngle != null),
+        assert(startAngle < endAngle),
+        assert(matrix4 == null || _matrix4IsValid(matrix4)),
+        super._() {
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
-    final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
+    final Float32List? colorStopsBuffer =
+        colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
-    _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
+    _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer,
+        tileMode.index, startAngle, endAngle, matrix4);
   }
 
   @FfiNative<
@@ -3934,13 +3995,16 @@ class Gradient extends Shader {
       double endAngle,
       Float64List? matrix);
 
-  static void _validateColorStops(List<Color> colors, List<double>? colorStops) {
+  static void _validateColorStops(
+      List<Color> colors, List<double>? colorStops) {
     if (colorStops == null) {
       if (colors.length != 2)
-        throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
+        throw ArgumentError(
+            '"colors" must have length 2 if "colorStops" is omitted.');
     } else {
       if (colors.length != colorStops.length)
-        throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
+        throw ArgumentError(
+            '"colors" and "colorStops" arguments must have equal length.');
     }
   }
 }
@@ -3955,18 +4019,22 @@ class ImageShader extends Shader {
   /// at construction time it will be deduced from the environment where it is used,
   /// such as from [Paint.filterQuality].
   @pragma('vm:entry-point')
-  ImageShader(Image image, TileMode tmx, TileMode tmy, Float64List matrix4, {
+  ImageShader(
+    Image image,
+    TileMode tmx,
+    TileMode tmy,
+    Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) :
-    assert(image != null), // image is checked on the engine side
-    assert(tmx != null),
-    assert(tmy != null),
-    assert(matrix4 != null),
-    super._() {
+  })  : assert(image != null), // image is checked on the engine side
+        assert(tmx != null),
+        assert(tmy != null),
+        assert(matrix4 != null),
+        super._() {
     if (matrix4.length != 16)
       throw ArgumentError('"matrix4" must have 16 entries.');
     _constructor();
-    _initWithImage(image._image, tmx.index, tmy.index, filterQuality?.index ?? -1, matrix4);
+    _initWithImage(image._image, tmx.index, tmy.index,
+        filterQuality?.index ?? -1, matrix4);
   }
 
   @FfiNative<Void Function(Handle)>('ImageShader::CreateOrThrow')
@@ -3987,7 +4055,6 @@ class ImageShader extends Shader {
 /// [A current specification of valid SPIR-V is here.](https://github.com/flutter/engine/blob/main/lib/spirv/README.md)
 ///
 class FragmentProgram extends NativeFieldWrapperClass1 {
-
   /// Creates a fragment program from SPIR-V byte data as an input.
   ///
   /// One instance should be created per SPIR-V input. The constructed object
@@ -4000,7 +4067,8 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     required ByteBuffer spirv,
     bool debugPrint = false,
   }) {
-    return Future<FragmentProgram>(() => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
+    return Future<FragmentProgram>(
+        () => FragmentProgram._(spirv: spirv, debugPrint: debugPrint));
   }
 
   @pragma('vm:entry-point')
@@ -4015,9 +4083,11 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     );
     _init(result.src, debugPrint);
     _uniformFloatCount = result.uniformFloatCount;
+    _samplerCount = result.samplerCount;
   }
 
   late final int _uniformFloatCount;
+  late final int _samplerCount;
 
   @FfiNative<Void Function(Handle)>('FragmentProgram::CreateOrThrow')
   external void _constructor();
@@ -4025,9 +4095,6 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>(
       'FragmentProgram::init')
   external void _init(String sksl, bool debugPrint);
-
-  // TODO(chriscraws): Add `List<ImageShader>? children` as a parameter to [build].
-  // https://github.com/flutter/flutter/issues/85240
 
   /// Constructs a [Shader] object suitable for use by [Paint.shader] with
   /// the given uniforms.
@@ -4063,26 +4130,51 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// c: [4, 5, 6]
   /// d: [7, 8, 9, 10] // 2x2 matrix in column-major order
   ///
+  /// `imageSamplers` must also be sized correctly, matching the number of UniformConstant
+  /// variables of type SampledImage specified in the SPIR-V code.
+  ///
+  /// Consider the following snippit of GLSL code.
+  ///
+  /// ```
+  /// layout (location = 0) uniform sampler2D a;
+  /// layout (location = 1) uniform sampler2D b;
+  /// ```
+  ///
+  /// After being compiled to SPIR-V  `imageSamplers` must have a length
+  /// of 2.
+  ///
   /// Once a [Shader] is built, uniform values cannot be changed. Instead,
   /// [shader] must be called again with new uniform values.
   Shader shader({
     Float32List? floatUniforms,
+    List<ImageShader>? samplerUniforms,
   }) {
     if (floatUniforms == null) {
       floatUniforms = Float32List(_uniformFloatCount);
     }
     if (floatUniforms.length != _uniformFloatCount) {
       throw ArgumentError(
-        'FragmentShader floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
+          'floatUniforms size: ${floatUniforms.length} must match given shader uniform count: $_uniformFloatCount.');
     }
-    final _FragmentShader shader = _FragmentShader(this, Float32List.fromList(floatUniforms));
-    _shader(shader, floatUniforms);
+    if (_samplerCount > 0 &&
+        (samplerUniforms == null || samplerUniforms.length != _samplerCount)) {
+      throw ArgumentError('samplerUniforms must have length $_samplerCount');
+    }
+    if (samplerUniforms == null) {
+      samplerUniforms = <ImageShader>[];
+    } else {
+      samplerUniforms = <ImageShader>[...samplerUniforms];
+    }
+    final _FragmentShader shader = _FragmentShader(
+        this, Float32List.fromList(floatUniforms), samplerUniforms);
+    _shader(shader, floatUniforms, samplerUniforms);
     return shader;
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle, Handle)>(
+  @FfiNative<Handle Function(Pointer<Void>, Handle, Handle, Handle)>(
       'FragmentProgram::shader')
-  external Handle _shader(_FragmentShader shader, Float32List floatUniforms);
+  external Handle _shader(_FragmentShader shader, Float32List floatUniforms,
+      List<ImageShader> samplerUniforms);
 }
 
 @pragma('vm:entry-point')
@@ -4091,24 +4183,29 @@ class _FragmentShader extends Shader {
   /// or extended directly.
   ///
   /// To create a [_FragmentShader], use a [FragmentProgram].
-  _FragmentShader(this._builder, this._floatUniforms) : super._();
+  _FragmentShader(
+    this._builder,
+    this._floatUniforms,
+    this._samplerUniforms,
+  ) : super._();
 
   final FragmentProgram _builder;
   final Float32List _floatUniforms;
+  final List<ImageShader> _samplerUniforms;
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    if (other.runtimeType != runtimeType)
-      return false;
-    return other is _FragmentShader
-        && other._builder == _builder
-        && _listEquals<double>(other._floatUniforms, _floatUniforms);
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+    return other is _FragmentShader &&
+        other._builder == _builder &&
+        _listEquals<double>(other._floatUniforms, _floatUniforms) &&
+        _listEquals<ImageShader>(other._samplerUniforms, _samplerUniforms);
   }
 
   @override
-  int get hashCode => hashValues(_builder, hashList(_floatUniforms));
+  int get hashCode => hashValues(
+      _builder, hashList(_floatUniforms), hashList(_samplerUniforms));
 }
 
 /// Defines how a list of points is interpreted when drawing a set of triangles.
@@ -4131,76 +4228,100 @@ class Vertices extends NativeFieldWrapperClass1 {
   /// Creates a set of vertex data for use with [Canvas.drawVertices].
   ///
   /// The [mode] and [positions] parameters must not be null.
+  /// The [positions] parameter is a list of triangular mesh vertices(xy).
   ///
   /// If the [textureCoordinates] or [colors] parameters are provided, they must
   /// be the same length as [positions].
   ///
+  /// The [textureCoordinates] parameter is used to cutout
+  /// the image set in the image shader.
+  /// The cut part is applied to the triangular mesh.
+  /// Note that the [textureCoordinates] are the coordinates on the image.
+  ///
   /// If the [indices] parameter is provided, all values in the list must be
   /// valid index values for [positions].
+  /// e.g. The [indices] parameter for a simple triangle is [0,1,2].
   Vertices(
     VertexMode mode,
     List<Offset> positions, {
     List<Offset>? textureCoordinates,
     List<Color>? colors,
     List<int>? indices,
-  }) : assert(mode != null),
-       assert(positions != null) {
-    if (textureCoordinates != null && textureCoordinates.length != positions.length)
-      throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
+  })  : assert(mode != null),
+        assert(positions != null) {
+    if (textureCoordinates != null &&
+        textureCoordinates.length != positions.length)
+      throw ArgumentError(
+          '"positions" and "textureCoordinates" lengths must match.');
     if (colors != null && colors.length != positions.length)
       throw ArgumentError('"positions" and "colors" lengths must match.');
-    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
-      throw ArgumentError('"indices" values must be valid indices in the positions list.');
+    if (indices != null &&
+        indices.any((int i) => i < 0 || i >= positions.length))
+      throw ArgumentError(
+          '"indices" values must be valid indices in the positions list.');
 
     final Float32List encodedPositions = _encodePointList(positions);
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
-      ? _encodePointList(textureCoordinates)
-      : null;
-    final Int32List? encodedColors = colors != null
-      ? _encodeColorList(colors)
-      : null;
-    final Uint16List? encodedIndices = indices != null
-      ? Uint16List.fromList(indices)
-      : null;
+        ? _encodePointList(textureCoordinates)
+        : null;
+    final Int32List? encodedColors =
+        colors != null ? _encodeColorList(colors) : null;
+    final Uint16List? encodedIndices =
+        indices != null ? Uint16List.fromList(indices) : null;
 
-    if (!_init(this, mode.index, encodedPositions, encodedTextureCoordinates, encodedColors, encodedIndices))
+    if (!_init(this, mode.index, encodedPositions, encodedTextureCoordinates,
+        encodedColors, encodedIndices))
       throw ArgumentError('Invalid configuration for vertices.');
   }
 
   /// Creates a set of vertex data for use with [Canvas.drawVertices], directly
   /// using the encoding methods of [new Vertices].
+  /// Note that this constructor uses raw typed data lists,
+  /// so it runs faster than the [Vertices()] constructor
+  /// because it doesn't require any conversion from Dart lists.
   ///
   /// The [mode] parameter must not be null.
   ///
-  /// The [positions] list is interpreted as a list of repeated pairs of x,y
-  /// coordinates. It must not be null.
+  /// The [positions] parameter is a list of triangular mesh vertices and
+  /// is interpreted as a list of repeated pairs of x,y coordinates.
+  /// It must not be null.
   ///
   /// The [textureCoordinates] list is interpreted as a list of repeated pairs
   /// of x,y coordinates, and must be the same length of [positions] if it
   /// is not null.
+  /// The [textureCoordinates] parameter is used to cutout
+  /// the image set in the image shader.
+  /// The cut part is applied to the triangular mesh.
+  /// Note that the [textureCoordinates] are the coordinates on the image.
   ///
-  /// The [colors] list is interpreted as a list of RGBA encoded colors, similar
+  /// The [colors] list is interpreted as a list of ARGB encoded colors, similar
   /// to [Color.value]. It must be half length of [positions] if it is not
   /// null.
   ///
   /// If the [indices] list is provided, all values in the list must be
   /// valid index values for [positions].
+  /// e.g. The [indices] parameter for a simple triangle is [0,1,2].
   Vertices.raw(
     VertexMode mode,
     Float32List positions, {
     Float32List? textureCoordinates,
     Int32List? colors,
     Uint16List? indices,
-  }) : assert(mode != null),
-       assert(positions != null) {
-    if (textureCoordinates != null && textureCoordinates.length != positions.length)
-      throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
+  })  : assert(mode != null),
+        assert(positions != null) {
+    if (textureCoordinates != null &&
+        textureCoordinates.length != positions.length)
+      throw ArgumentError(
+          '"positions" and "textureCoordinates" lengths must match.');
     if (colors != null && colors.length * 2 != positions.length)
       throw ArgumentError('"positions" and "colors" lengths must match.');
-    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length))
-      throw ArgumentError('"indices" values must be valid indices in the positions list.');
+    if (indices != null &&
+        indices.any((int i) => i < 0 || i >= positions.length))
+      throw ArgumentError(
+          '"indices" values must be valid indices in the positions list.');
 
-    if (!_init(this, mode.index, positions, textureCoordinates, colors, indices))
+    if (!_init(
+        this, mode.index, positions, textureCoordinates, colors, indices))
       throw ArgumentError('Invalid configuration for vertices.');
   }
 
@@ -4289,23 +4410,23 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// To end the recording, call [PictureRecorder.endRecording] on the
   /// given recorder.
   @pragma('vm:entry-point')
-  Canvas(PictureRecorder recorder, [ Rect? cullRect ]) : assert(recorder != null) {
+  Canvas(PictureRecorder recorder, [Rect? cullRect])
+      : assert(recorder != null) {
     if (recorder.isRecording)
-      throw ArgumentError('"recorder" must not already be associated with another Canvas.');
+      throw ArgumentError(
+          '"recorder" must not already be associated with another Canvas.');
     _recorder = recorder;
     _recorder!._canvas = this;
     cullRect ??= Rect.largest;
-    _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
+    _constructor(
+        recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
 
   @FfiNative<
       Void Function(Handle, Pointer<Void>, Double, Double, Double,
           Double)>('Canvas::CreateOrThrow')
-  external void _constructor(PictureRecorder recorder,
-                    double left,
-                    double top,
-                    double right,
-                    double bottom);
+  external void _constructor(PictureRecorder recorder, double left, double top,
+      double right, double bottom);
 
   // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
   // The Canvas holds a reference to the PictureRecorder to prevent the recorder from being
@@ -4439,7 +4560,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     } else {
       assert(_rectIsValid(bounds));
       _saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom,
-                 paint._objects, paint._data);
+          paint._objects, paint._data);
     }
   }
 
@@ -4451,12 +4572,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   @FfiNative<
       Void Function(Pointer<Void>, Double, Double, Double, Double, Handle,
           Handle)>('Canvas::saveLayerHandle')
-  external void _saveLayer(double left,
-                  double top,
-                  double right,
-                  double bottom,
-                  List<dynamic>? paintObjects,
-                  ByteData paintData);
+  external void _saveLayer(double left, double top, double right, double bottom,
+      List<dynamic>? paintObjects, ByteData paintData);
 
   /// Pops the current save stack, if there is anything to pop.
   /// Otherwise, does nothing.
@@ -4532,11 +4649,13 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// Use [ClipOp.difference] to subtract the provided rectangle from the
   /// current clip.
-  void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
+  void clipRect(Rect rect,
+      {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true}) {
     assert(_rectIsValid(rect));
     assert(clipOp != null);
     assert(doAntiAlias != null);
-    _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
+    _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index,
+        doAntiAlias);
   }
 
   @FfiNative<
@@ -4556,7 +4675,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void clipRRect(RRect rrect, {bool doAntiAlias = true}) {
     assert(_rrectIsValid(rrect));
     assert(doAntiAlias != null);
-    _clipRRect(rrect._value32, doAntiAlias);
+    _clipRRect(rrect._getValue32(), doAntiAlias);
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('Canvas::clipRRect')
@@ -4628,8 +4747,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom,
-              paint._objects, paint._data);
+    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects,
+        paint._data);
   }
 
   @FfiNative<
@@ -4643,7 +4762,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawRRect(RRect rrect, Paint paint) {
     assert(_rrectIsValid(rrect));
     assert(paint != null);
-    _drawRRect(rrect._value32, paint._objects, paint._data);
+    _drawRRect(rrect._getValue32(), paint._objects, paint._data);
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>(
@@ -4660,7 +4779,8 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(_rrectIsValid(outer));
     assert(_rrectIsValid(inner));
     assert(paint != null);
-    _drawDRRect(outer._value32, inner._value32, paint._objects, paint._data);
+    _drawDRRect(
+        outer._getValue32(), inner._getValue32(), paint._objects, paint._data);
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>(
@@ -4674,8 +4794,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom,
-              paint._objects, paint._data);
+    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects,
+        paint._data);
   }
 
   @FfiNative<
@@ -4711,11 +4831,12 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// not closed, forming a circle segment.
   ///
   /// This method is optimized for drawing arcs and should be faster than [Path.arcTo].
-  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter, Paint paint) {
+  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter,
+      Paint paint) {
     assert(_rectIsValid(rect));
     assert(paint != null);
     _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle,
-             sweepAngle, useCenter, paint._objects, paint._data);
+        sweepAngle, useCenter, paint._objects, paint._data);
   }
 
   @FfiNative<
@@ -4754,7 +4875,8 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(image != null); // image is checked on the engine side
     assert(_offsetIsValid(offset));
     assert(paint != null);
-    _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data, paint.filterQuality.index);
+    _drawImage(image._image, offset.dx, offset.dy, paint._objects, paint._data,
+        paint.filterQuality.index);
   }
 
   @FfiNative<
@@ -4777,18 +4899,19 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(_rectIsValid(src));
     assert(_rectIsValid(dst));
     assert(paint != null);
-    _drawImageRect(image._image,
-                   src.left,
-                   src.top,
-                   src.right,
-                   src.bottom,
-                   dst.left,
-                   dst.top,
-                   dst.right,
-                   dst.bottom,
-                   paint._objects,
-                   paint._data,
-                   paint.filterQuality.index);
+    _drawImageRect(
+        image._image,
+        src.left,
+        src.top,
+        src.right,
+        src.bottom,
+        dst.left,
+        dst.top,
+        dst.right,
+        dst.bottom,
+        paint._objects,
+        paint._data,
+        paint.filterQuality.index);
   }
 
   @FfiNative<
@@ -4838,18 +4961,19 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(_rectIsValid(center));
     assert(_rectIsValid(dst));
     assert(paint != null);
-    _drawImageNine(image._image,
-                   center.left,
-                   center.top,
-                   center.right,
-                   center.bottom,
-                   dst.left,
-                   dst.top,
-                   dst.right,
-                   dst.bottom,
-                   paint._objects,
-                   paint._data,
-                   paint.filterQuality.index);
+    _drawImageNine(
+        image._image,
+        center.left,
+        center.top,
+        center.right,
+        center.bottom,
+        dst.left,
+        dst.top,
+        dst.right,
+        dst.bottom,
+        paint._objects,
+        paint._data,
+        paint.filterQuality.index);
   }
 
   @FfiNative<
@@ -4929,7 +5053,8 @@ class Canvas extends NativeFieldWrapperClass1 {
     assert(pointMode != null);
     assert(points != null);
     assert(paint != null);
-    _drawPoints(paint._objects, paint._data, pointMode.index, _encodePointList(points));
+    _drawPoints(
+        paint._objects, paint._data, pointMode.index, _encodePointList(points));
   }
 
   /// Draws a sequence of points according to the given [PointMode].
@@ -4957,14 +5082,25 @@ class Canvas extends NativeFieldWrapperClass1 {
 
   /// Draws the set of [Vertices] onto the canvas.
   ///
+  /// The [blendMode] parameter is used to control how the colors in
+  /// the [vertices] are combined with the colors in the [paint].
+  /// If there are no colors specified in [vertices] then the [blendMode] has
+  /// no effect. If there are colors in the [vertices],
+  /// then the color taken from the [Shader] or [Color] in the [paint] is
+  /// blended with the colors specified in the [vertices] using
+  /// the [blendMode] parameter.
+  /// For purposes of this blending,
+  /// the colors from the [paint] are considered the source and the colors from
+  /// the [vertices] are considered the destination.
+  ///
   /// All parameters must not be null.
   ///
   /// See also:
   ///   * [new Vertices], which creates a set of vertices to draw on the canvas.
   ///   * [Vertices.raw], which creates the vertices using typed data lists
   ///     rather than unencoded lists.
+  ///   * [paint], Image shaders can be used to draw images on a triangular mesh.
   void drawVertices(Vertices vertices, BlendMode blendMode, Paint paint) {
-
     assert(vertices != null); // vertices is checked on the engine side
     assert(paint != null);
     assert(blendMode != null);
@@ -5104,13 +5240,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   ///  * [drawRawAtlas], which takes its arguments as typed data lists rather
   ///    than objects.
-  void drawAtlas(Image atlas,
-                 List<RSTransform> transforms,
-                 List<Rect> rects,
-                 List<Color>? colors,
-                 BlendMode? blendMode,
-                 Rect? cullRect,
-                 Paint paint) {
+  void drawAtlas(Image atlas, List<RSTransform> transforms, List<Rect> rects,
+      List<Color>? colors, BlendMode? blendMode, Rect? cullRect, Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
     assert(transforms != null);
     assert(rects != null);
@@ -5121,7 +5252,8 @@ class Canvas extends NativeFieldWrapperClass1 {
     if (transforms.length != rectCount)
       throw ArgumentError('"transforms" and "rects" lengths must match.');
     if (colors != null && colors.isNotEmpty && colors.length != rectCount)
-      throw ArgumentError('If non-null, "colors" length must match that of "transforms" and "rects".');
+      throw ArgumentError(
+          'If non-null, "colors" length must match that of "transforms" and "rects".');
 
     final Float32List rstTransformBuffer = Float32List(rectCount * 4);
     final Float32List rectBuffer = Float32List(rectCount * 4);
@@ -5144,14 +5276,21 @@ class Canvas extends NativeFieldWrapperClass1 {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
-    final Float32List? cullRectBuffer = cullRect?._value32;
+    final Int32List? colorBuffer =
+        (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
+    final Float32List? cullRectBuffer = cullRect?._getValue32();
     final int qualityIndex = paint.filterQuality.index;
 
     _drawAtlas(
-      paint._objects, paint._data, qualityIndex, atlas._image, rstTransformBuffer, rectBuffer,
-      colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
-    );
+        paint._objects,
+        paint._data,
+        qualityIndex,
+        atlas._image,
+        rstTransformBuffer,
+        rectBuffer,
+        colorBuffer,
+        (blendMode ?? BlendMode.src).index,
+        cullRectBuffer);
   }
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
@@ -5295,13 +5434,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   ///  * [drawAtlas], which takes its arguments as objects rather than typed
   ///    data lists.
-  void drawRawAtlas(Image atlas,
-                    Float32List rstTransforms,
-                    Float32List rects,
-                    Int32List? colors,
-                    BlendMode? blendMode,
-                    Rect? cullRect,
-                    Paint paint) {
+  void drawRawAtlas(Image atlas, Float32List rstTransforms, Float32List rects,
+      Int32List? colors, BlendMode? blendMode, Rect? cullRect, Paint paint) {
     assert(atlas != null); // atlas is checked on the engine side
     assert(rstTransforms != null);
     assert(rects != null);
@@ -5312,15 +5446,23 @@ class Canvas extends NativeFieldWrapperClass1 {
     if (rstTransforms.length != rectCount)
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
     if (rectCount % 4 != 0)
-      throw ArgumentError('"rstTransforms" and "rects" lengths must be a multiple of four.');
+      throw ArgumentError(
+          '"rstTransforms" and "rects" lengths must be a multiple of four.');
     if (colors != null && colors.length * 4 != rectCount)
-      throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+      throw ArgumentError(
+          'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
     final int qualityIndex = paint.filterQuality.index;
 
     _drawAtlas(
-      paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms, rects,
-      colors, (blendMode ?? BlendMode.src).index, cullRect?._value32
-    );
+        paint._objects,
+        paint._data,
+        qualityIndex,
+        atlas._image,
+        rstTransforms,
+        rects,
+        colors,
+        (blendMode ?? BlendMode.src).index,
+        cullRect?._getValue32());
   }
 
   @FfiNative<
@@ -5343,7 +5485,8 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// is not opaque.
   ///
   /// The arguments must not be null.
-  void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
+  void drawShadow(
+      Path path, Color color, double elevation, bool transparentOccluder) {
     assert(path != null); // path is checked on the engine side
     assert(color != null);
     assert(transparentOccluder != null);
@@ -5381,8 +5524,7 @@ class Picture extends NativeFieldWrapperClass1 {
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
   Future<Image> toImage(int width, int height) {
-    if (width <= 0 || height <= 0)
-      throw Exception('Invalid image dimensions.');
+    if (width <= 0 || height <= 0) throw Exception('Invalid image dimensions.');
     return _futurize(
       (_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
         if (image == null) {
@@ -5425,7 +5567,9 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
   /// [Canvas] constructor.
   @pragma('vm:entry-point')
-  PictureRecorder() { _constructor(); }
+  PictureRecorder() {
+    _constructor();
+  }
 
   @FfiNative<Void Function(Handle)>('PictureRecorder::CreateOrThrow')
   external void _constructor();
@@ -5479,9 +5623,10 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  }) : assert(color != null, 'Text shadow color was null.'),
-       assert(offset != null, 'Text shadow offset was null.'),
-       assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
+  })  : assert(color != null, 'Text shadow color was null.'),
+        assert(offset != null, 'Text shadow offset was null.'),
+        assert(blurRadius >= 0.0,
+            'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
   // Constants for shadow encoding.
@@ -5595,8 +5740,7 @@ class Shadow {
   /// {@macro dart.ui.shadow.lerp}
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
     assert(t != null);
-    if (a == null && b == null)
-      return null;
+    if (a == null && b == null) return null;
     a ??= <Shadow>[];
     b ??= <Shadow>[];
     final List<Shadow> result = <Shadow>[];
@@ -5605,19 +5749,17 @@ class Shadow {
       result.add(Shadow.lerp(a[i], b[i], t)!);
     for (int i = commonLength; i < a.length; i += 1)
       result.add(a[i].scale(1.0 - t));
-    for (int i = commonLength; i < b.length; i += 1)
-      result.add(b[i].scale(t));
+    for (int i = commonLength; i < b.length; i += 1) result.add(b[i].scale(t));
     return result;
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
-      return true;
-    return other is Shadow
-        && other.color == color
-        && other.offset == offset
-        && other.blurRadius == blurRadius;
+    if (identical(this, other)) return true;
+    return other is Shadow &&
+        other.color == color &&
+        other.offset == offset &&
+        other.blurRadius == blurRadius;
   }
 
   @override
@@ -5627,8 +5769,7 @@ class Shadow {
   // the beginning indicating the number of shadows, followed by _kBytesPerShadow
   // bytes for each shadow.
   static ByteData _encodeShadows(List<Shadow>? shadows) {
-    if (shadows == null)
-      return ByteData(0);
+    if (shadows == null) return ByteData(0);
 
     final int byteCount = shadows.length * _kBytesPerShadow;
     final ByteData shadowsData = ByteData(byteCount);
@@ -5643,17 +5784,17 @@ class Shadow {
         shadowOffset = shadowIndex * _kBytesPerShadow;
 
         shadowsData.setInt32(_kColorOffset + shadowOffset,
-          shadow.color.value ^ Shadow._kColorDefault, _kFakeHostEndian);
+            shadow.color.value ^ Shadow._kColorDefault, _kFakeHostEndian);
 
-        shadowsData.setFloat32(_kXOffset + shadowOffset,
-          shadow.offset.dx, _kFakeHostEndian);
+        shadowsData.setFloat32(
+            _kXOffset + shadowOffset, shadow.offset.dx, _kFakeHostEndian);
 
-        shadowsData.setFloat32(_kYOffset + shadowOffset,
-          shadow.offset.dy, _kFakeHostEndian);
+        shadowsData.setFloat32(
+            _kYOffset + shadowOffset, shadow.offset.dy, _kFakeHostEndian);
 
         final double blurSigma = Shadow.convertRadiusToSigma(shadow.blurRadius);
-        shadowsData.setFloat32(_kBlurOffset + shadowOffset,
-          blurSigma, _kFakeHostEndian);
+        shadowsData.setFloat32(
+            _kBlurOffset + shadowOffset, blurSigma, _kFakeHostEndian);
       }
     }
 
@@ -5899,7 +6040,6 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
       completer.complete(t);
     }
   });
-  if (error != null)
-    throw Exception(error);
+  if (error != null) throw Exception(error);
   return completer.future;
 }

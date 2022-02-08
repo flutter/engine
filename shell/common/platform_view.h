@@ -25,7 +25,6 @@
 #include "flutter/shell/common/platform_message_handler.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -126,20 +125,6 @@ class PlatformView {
     ///
     virtual void OnPlatformViewDispatchPointerDataPacket(
         std::unique_ptr<PointerDataPacket> packet) = 0;
-
-    //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate that the platform view has encountered
-    ///             a key event. This key event and the callback needs to be
-    ///             forwarded to the running root isolate hosted by the engine
-    ///             on the UI thread.
-    ///
-    /// @param[in]  packet    The key data packet containing one key event.
-    /// @param[in]  callback  Called when the framework has decided whether
-    ///                       to handle this key data.
-    ///
-    virtual void OnPlatformViewDispatchKeyDataPacket(
-        std::unique_ptr<KeyDataPacket> packet,
-        std::function<void(bool /* handled */)> callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -591,17 +576,6 @@ class PlatformView {
   ///
   void DispatchPointerDataPacket(std::unique_ptr<PointerDataPacket> packet);
 
-  //----------------------------------------------------------------------------
-  /// @brief      Dispatches key events from the embedder to the framework. Each
-  ///             key data packet contains one physical event and multiple
-  ///             logical key events. Each call to this method wakes up the UI
-  ///             thread.
-  ///
-  /// @param[in]  packet  The key data packet to dispatch to the framework.
-  ///
-  void DispatchKeyDataPacket(std::unique_ptr<KeyDataPacket> packet,
-                             Delegate::KeyDataResponse callback);
-
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to specify a texture that it wants the
   ///             rasterizer to composite within the Flutter layer tree. All
@@ -823,15 +797,13 @@ class PlatformView {
       const;
 
  protected:
-  PlatformView::Delegate& delegate_;
-  const TaskRunners task_runners_;
-
-  PointerDataPacketConverter pointer_data_packet_converter_;
-  SkISize size_;
-  fml::WeakPtrFactory<PlatformView> weak_factory_;
-
   // This is the only method called on the raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
+
+  PlatformView::Delegate& delegate_;
+  const TaskRunners task_runners_;
+  PointerDataPacketConverter pointer_data_packet_converter_;
+  fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);

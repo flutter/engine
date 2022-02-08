@@ -34,6 +34,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (void)dealloc {
   [_lifeCycleDelegate release];
   [_rootFlutterViewControllerGetter release];
+  [_window release];
   [super dealloc];
 }
 
@@ -93,6 +94,12 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken {
   [_lifeCycleDelegate application:application
       didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  [_lifeCycleDelegate application:application
+      didFailToRegisterForRemoteNotificationsWithError:error];
 }
 
 #pragma GCC diagnostic push

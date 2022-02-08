@@ -39,6 +39,9 @@ class ImageShader : public Shader {
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
+  int width();
+  int height();
+
  private:
   ImageShader();
 

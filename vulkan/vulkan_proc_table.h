@@ -8,6 +8,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/native_library.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
 #include "vulkan_handle.h"
@@ -25,7 +26,7 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
    public:
     using Proto = T;
 
-    Proc(T proc = nullptr) : proc_(proc) {}
+    explicit Proc(T proc = nullptr) : proc_(proc) {}
 
     ~Proc() { proc_ = nullptr; }
 
@@ -39,13 +40,19 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
       return *this;
     }
 
-    operator bool() const { return proc_ != nullptr; }
+    explicit operator bool() const { return proc_ != nullptr; }
 
-    operator T() const { return proc_; }
+    operator T() const { return proc_; }  // NOLINT(google-explicit-constructor)
 
    private:
     T proc_;
   };
+
+  VulkanProcTable();
+  explicit VulkanProcTable(const char* so_path);
+  explicit VulkanProcTable(
+      std::function<void*(VkInstance, const char*)> get_instance_proc_addr);
+  ~VulkanProcTable();
 
   bool HasAcquiredMandatoryProcAddresses() const;
 
@@ -60,6 +67,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   bool SetupDeviceProcAddresses(const VulkanHandle<VkDevice>& device);
 
   GrVkGetProc CreateSkiaGetProc() const;
+
+  std::function<void*(VkInstance, const char*)> GetInstanceProcAddr = nullptr;
 
 #define DEFINE_PROC(name) Proc<PFN_vk##name> name;
 
@@ -97,7 +106,6 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(GetDeviceProcAddr);
   DEFINE_PROC(GetDeviceQueue);
   DEFINE_PROC(GetImageMemoryRequirements);
-  DEFINE_PROC(GetInstanceProcAddr);
   DEFINE_PROC(GetPhysicalDeviceFeatures);
   DEFINE_PROC(GetPhysicalDeviceQueueFamilyProperties);
   DEFINE_PROC(QueueSubmit);
@@ -105,7 +113,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(ResetCommandBuffer);
   DEFINE_PROC(ResetFences);
   DEFINE_PROC(WaitForFences);
-#if OS_ANDROID
+#ifndef TEST_VULKAN_PROCS
+#if FML_OS_ANDROID
   DEFINE_PROC(GetPhysicalDeviceSurfaceCapabilitiesKHR);
   DEFINE_PROC(GetPhysicalDeviceSurfaceFormatsKHR);
   DEFINE_PROC(GetPhysicalDeviceSurfacePresentModesKHR);
@@ -113,28 +122,28 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   DEFINE_PROC(GetSwapchainImagesKHR);
   DEFINE_PROC(QueuePresentKHR);
   DEFINE_PROC(CreateAndroidSurfaceKHR);
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 #if OS_FUCHSIA
   DEFINE_PROC(ImportSemaphoreZirconHandleFUCHSIA);
   DEFINE_PROC(GetSemaphoreZirconHandleFUCHSIA);
   DEFINE_PROC(GetMemoryZirconHandleFUCHSIA);
-  DEFINE_PROC(CreateBufferCollectionFUCHSIAX);
-  DEFINE_PROC(DestroyBufferCollectionFUCHSIAX);
-  DEFINE_PROC(SetBufferCollectionConstraintsFUCHSIAX);
-  DEFINE_PROC(GetBufferCollectionPropertiesFUCHSIAX);
+  DEFINE_PROC(CreateBufferCollectionFUCHSIA);
+  DEFINE_PROC(DestroyBufferCollectionFUCHSIA);
+  DEFINE_PROC(SetBufferCollectionImageConstraintsFUCHSIA);
+  DEFINE_PROC(GetBufferCollectionPropertiesFUCHSIA);
 #endif  // OS_FUCHSIA
+#endif  // TEST_VULKAN_PROCS
 
 #undef DEFINE_PROC
 
  private:
-  void* handle_;
+  fml::RefPtr<fml::NativeLibrary> handle_;
   bool acquired_mandatory_proc_addresses_;
   VulkanHandle<VkInstance> instance_;
   VulkanHandle<VkDevice> device_;
 
-  VulkanProcTable();
-  ~VulkanProcTable();
-  bool OpenLibraryHandle();
+  bool OpenLibraryHandle(const char* path);
+  bool SetupGetInstanceProcAddress();
   bool SetupLoaderProcAddresses();
   bool CloseLibraryHandle();
   PFN_vkVoidFunction AcquireProc(

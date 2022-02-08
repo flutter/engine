@@ -1,10 +1,12 @@
 package io.flutter.embedding.engine.systemchannels;
 
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.res.AssetManager;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
@@ -13,12 +15,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class PlatformChannelTest {
   @Test
   public void platformChannel_hasStringsMessage() {
@@ -40,6 +40,6 @@ public class PlatformChannelTest {
       expected.put("value", returnValue);
     } catch (JSONException e) {
     }
-    verify(mockResult).success(Matchers.refEq(expected));
+    verify(mockResult).success(refEq(expected));
   }
 }

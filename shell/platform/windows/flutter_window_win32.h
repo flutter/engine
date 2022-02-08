@@ -67,12 +67,13 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
   void OnText(const std::u16string& text) override;
 
   // |WindowWin32|
-  bool OnKey(int key,
+  void OnKey(int key,
              int scancode,
              int action,
              char32_t character,
              bool extended,
-             bool was_down) override;
+             bool was_down,
+             KeyEventCallback callback) override;
 
   // |WindowWin32|
   void OnComposeBegin() override;
@@ -100,6 +101,9 @@ class FlutterWindowWin32 : public WindowWin32, public WindowBindingHandler {
                 double delta_y,
                 FlutterPointerDeviceKind device_kind,
                 int32_t device_id) override;
+
+  // |WindowWin32|
+  gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
   // |FlutterWindowBindingHandler|
   void SetView(WindowBindingHandlerDelegate* view) override;

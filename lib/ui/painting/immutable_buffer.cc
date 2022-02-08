@@ -11,7 +11,7 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 
-#if OS_ANDROID
+#if FML_OS_ANDROID
 #include <sys/mman.h>
 #endif
 
@@ -61,7 +61,7 @@ size_t ImmutableBuffer::GetAllocationSize() const {
   return sizeof(ImmutableBuffer) + data_->size();
 }
 
-#if OS_ANDROID
+#if FML_OS_ANDROID
 
 // Compressed image buffers are allocated on the UI thread but are deleted on a
 // decoder worker thread.  Android's implementation of malloc appears to
@@ -104,6 +104,6 @@ sk_sp<SkData> ImmutableBuffer::MakeSkDataWithCopy(const void* data,
   return SkData::MakeWithCopy(data, length);
 }
 
-#endif  // OS_ANDROID
+#endif  // FML_OS_ANDROID
 
 }  // namespace flutter

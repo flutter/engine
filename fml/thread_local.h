@@ -10,7 +10,8 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 
-#define FML_THREAD_LOCAL_PTHREADS OS_MACOSX || OS_LINUX || OS_ANDROID
+#define FML_THREAD_LOCAL_PTHREADS \
+  FML_OS_MACOSX || FML_OS_LINUX || FML_OS_ANDROID
 
 #if FML_THREAD_LOCAL_PTHREADS
 #include <pthread.h>
@@ -26,7 +27,7 @@ namespace internal {
 
 class ThreadLocalPointer {
  public:
-  ThreadLocalPointer(void (*destroy)(void*));
+  explicit ThreadLocalPointer(void (*destroy)(void*));
   ~ThreadLocalPointer();
 
   void* get() const;

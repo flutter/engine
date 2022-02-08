@@ -66,6 +66,7 @@ source_set("common") {
     "canvas_spy.h",
     "context_options.cc",
     "context_options.h",
+    "display.cc",
     "display.h",
     "display_manager.cc",
     "display_manager.h",
@@ -95,6 +96,9 @@ source_set("common") {
     "switches.h",
     "thread_host.cc",
     "thread_host.h",
+    "variable_refresh_rate_display.cc",
+    "variable_refresh_rate_display.h",
+    "variable_refresh_rate_reporter.h",
     "vsync_waiter.cc",
     "vsync_waiter.h",
     "vsync_waiter_fallback.cc",
@@ -220,7 +224,7 @@ if (enable_unittests) {
       ":shell_unittests_gpu_configuration_config",
     ]
 
-    # SwiftShader only supports x86/x64_64
+    # SwiftShader only supports x86/x86_64
     if (target_cpu == "x86" || target_cpu == "x64") {
       if (test_enable_gl) {
         sources += [
@@ -265,6 +269,7 @@ if (enable_unittests) {
       "shell_unittests.cc",
       "skp_shader_warmup_unittests.cc",
       "switches_unittests.cc",
+      "variable_refresh_rate_display_unittests.cc",
     ]
 
     deps = [

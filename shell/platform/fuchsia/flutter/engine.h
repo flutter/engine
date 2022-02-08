@@ -31,7 +31,7 @@
 #include "gfx_external_view_embedder.h"
 #include "gfx_session_connection.h"
 #include "isolate_configurator.h"
-#include "vulkan_surface_producer.h"
+#include "surface_producer.h"
 
 namespace flutter_runner {
 
@@ -60,7 +60,9 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         FlutterRunnerProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config,
+         const std::vector<std::string>& dart_entrypoint_args,
+         bool for_v1_component);
 
   // Flatland connection ctor.
   Engine(Delegate& delegate,
@@ -72,7 +74,9 @@ class Engine final : public fuchsia::memorypressure::Watcher {
          scenic::ViewRefPair view_ref_pair,
          UniqueFDIONS fdio_ns,
          fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-         FlutterRunnerProductConfiguration product_config);
+         FlutterRunnerProductConfiguration product_config,
+         const std::vector<std::string>& dart_entrypoint_args,
+         bool for_v1_component);
 
   ~Engine();
 
@@ -93,17 +97,19 @@ class Engine final : public fuchsia::memorypressure::Watcher {
       flutter::Settings settings,
       UniqueFDIONS fdio_ns,
       fidl::InterfaceRequest<fuchsia::io::Directory> directory_request,
-      FlutterRunnerProductConfiguration product_config);
+      FlutterRunnerProductConfiguration product_config,
+      const std::vector<std::string>& dart_entrypoint_args,
+      bool for_v1_component);
 
   static void WarmupSkps(
       fml::BasicTaskRunner* concurrent_task_runner,
       fml::BasicTaskRunner* raster_task_runner,
-      VulkanSurfaceProducer& surface_producer,
-      uint64_t width,
-      uint64_t height,
+      std::shared_ptr<SurfaceProducer> surface_producer,
+      SkISize size,
       std::shared_ptr<flutter::AssetManager> asset_manager,
       std::optional<const std::vector<std::string>> skp_names,
-      std::optional<std::function<void(uint32_t)>> completion_callback);
+      std::optional<std::function<void(uint32_t)>> completion_callback,
+      bool synchronous = false);
 
   void OnMainIsolateStart();
 
@@ -151,7 +157,7 @@ class Engine final : public fuchsia::memorypressure::Watcher {
       session_connection_;  // Must come before surface_producer_
   std::shared_ptr<FlatlandConnection>
       flatland_connection_;  // Must come before surface_producer_
-  std::optional<VulkanSurfaceProducer> surface_producer_;
+  std::shared_ptr<SurfaceProducer> surface_producer_;
   std::shared_ptr<GfxExternalViewEmbedder> external_view_embedder_;
   std::shared_ptr<FlatlandExternalViewEmbedder> flatland_view_embedder_;
 
@@ -171,7 +177,6 @@ class Engine final : public fuchsia::memorypressure::Watcher {
   bool intercept_all_input_ = false;
 
   fml::WeakPtrFactory<Engine> weak_factory_;
-
   friend class testing::EngineTest;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Engine);

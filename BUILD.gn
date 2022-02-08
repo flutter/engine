@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/common/config.gni")
+import("//flutter/examples/examples.gni")
 import("//flutter/shell/platform/config.gni")
 import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
@@ -36,7 +37,7 @@ if (flutter_prebuilt_dart_sdk) {
       {
         target = "copy_dart_sdk"
         visibility = [ ":dart_sdk" ]
-        source = target_prebuilt_dart_sdk
+        source = prebuilt_dart_sdk
         dest = "$root_out_dir/dart-sdk"
         ignore_patterns = "{}"
       },
@@ -53,7 +54,7 @@ _build_engine_artifacts =
     (is_linux && !is_chromeos && current_cpu != "arm") || is_mac
 
 group("dart_sdk") {
-  if (_build_engine_artifacts) {
+  if (build_engine_artifacts) {
     if (flutter_prebuilt_dart_sdk) {
       public_deps = [ ":copy_dart_sdk" ]
     } else {
@@ -70,6 +71,14 @@ group("flutter") {
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
   ]
+
+  # Ensure the example for a sample embedder compiles.
+  if (build_embedder_examples) {
+    public_deps += [
+      "//flutter/examples/glfw",
+      "//flutter/examples/vulkan_glfw",
+    ]
+  }
 
   # If enbaled, compile the SDK / snapshot.
   if (!is_fuchsia) {
@@ -103,6 +112,7 @@ group("flutter") {
   # Compile all benchmark targets if enabled.
   if (enable_unittests && !is_win) {
     public_deps += [
+      "//flutter/display_list:display_list_benchmarks",
       "//flutter/fml:fml_benchmarks",
       "//flutter/lib/ui:ui_benchmarks",
       "//flutter/shell/common:shell_benchmarks",
@@ -158,8 +168,10 @@ group("flutter") {
     }
 
     if (is_mac) {
-      public_deps +=
-          [ "//flutter/shell/platform/darwin:flutter_channels_unittests" ]
+      public_deps += [
+        "//flutter/impeller:impeller_unittests",
+        "//flutter/shell/platform/darwin:flutter_channels_unittests",
+      ]
     }
 
     if (!is_win && !is_fuchsia) {

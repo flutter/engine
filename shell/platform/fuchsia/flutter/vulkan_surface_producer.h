@@ -7,6 +7,8 @@
 #include <lib/async/cpp/time.h>
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
+#include <lib/ui/scenic/cpp/resources.h>
+#include <lib/ui/scenic/cpp/session.h>
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -14,8 +16,8 @@
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_proc_table.h"
 #include "flutter/vulkan/vulkan_provider.h"
-#include "lib/ui/scenic/cpp/resources.h"
-#include "lib/ui/scenic/cpp/session.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+
 #include "logging.h"
 #include "vulkan_surface.h"
 #include "vulkan_surface_pool.h"
@@ -30,10 +32,12 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
 
   bool IsValid() const { return valid_; }
 
-  GrDirectContext* gr_context() const { return context_.get(); }
+  // |SurfaceProducer|
+  GrDirectContext* gr_context() const override { return context_.get(); }
 
+  // |SurfaceProducer|
   std::unique_ptr<SurfaceProducerSurface> ProduceOffscreenSurface(
-      const SkISize& size);
+      const SkISize& size) override;
 
   // |SurfaceProducer|
   std::unique_ptr<SurfaceProducerSurface> ProduceSurface(
@@ -56,6 +60,14 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
   bool TransitionSurfacesToExternal(
       const std::vector<std::unique_ptr<SurfaceProducerSurface>>& surfaces);
 
+  // Keep track of the last time we produced a surface.  This is used to
+  // determine whether it is safe to shrink |surface_pool_| or not.
+  zx::time last_produce_time_ = async::Now(async_get_default_dispatcher());
+
+  // Disallow copy and assignment.
+  VulkanSurfaceProducer(const VulkanSurfaceProducer&) = delete;
+  VulkanSurfaceProducer& operator=(const VulkanSurfaceProducer&) = delete;
+
   // Note: the order here is very important. The proctable must be destroyed
   // last because it contains the function pointers for VkDestroyDevice and
   // VkDestroyInstance.
@@ -66,14 +78,8 @@ class VulkanSurfaceProducer final : public SurfaceProducer,
   std::unique_ptr<VulkanSurfacePool> surface_pool_;
   bool valid_ = false;
 
-  // Keep track of the last time we produced a surface.  This is used to
-  // determine whether it is safe to shrink |surface_pool_| or not.
-  zx::time last_produce_time_ = async::Now(async_get_default_dispatcher());
+  // WeakPtrFactory must be the last member.
   fml::WeakPtrFactory<VulkanSurfaceProducer> weak_factory_{this};
-
-  // Disallow copy and assignment.
-  VulkanSurfaceProducer(const VulkanSurfaceProducer&) = delete;
-  VulkanSurfaceProducer& operator=(const VulkanSurfaceProducer&) = delete;
 };
 
 }  // namespace flutter_runner

@@ -104,6 +104,7 @@ class CanvasKit {
 
   external SkFontMgrNamespace get FontMgr;
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
+  external SkTypefaceFactory get Typeface;
   external int GetWebGLContext(
       html.CanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
@@ -122,10 +123,14 @@ class CanvasKit {
   /// Typically pixel data is obtained using [SkImage.readPixels]. The
   /// parameters specified in [SkImageInfo] passed [SkImage.readPixels] must
   /// match [info].
-  external SkImage MakeImage(
+  external SkImage? MakeImage(
     SkImageInfo info,
     Uint8List pixels,
     int bytesPerRow,
+  );
+  external SkImage? MakeLazyImageFromTextureSource(
+    Object src,
+    SkPartialImageInfo info,
   );
 }
 
@@ -753,9 +758,14 @@ class SkColorType {
 class SkAnimatedImage {
   external int getFrameCount();
 
-  /// Returns duration in milliseconds.
   external int getRepetitionCount();
+
+  /// Returns duration in milliseconds.
+  external int currentFrameDuration();
+
+  /// Advances to the next frame and returns its duration in milliseconds.
   external int decodeNextFrame();
+
   external SkImage makeImageAtCurrentFrame();
   external int width();
   external int height();
@@ -1869,12 +1879,17 @@ class SkTonalColors {
 class SkFontMgrNamespace {
   // TODO(yjbanov): can this be made non-null? It returns null in our unit-tests right now.
   external SkFontMgr? FromData(List<Uint8List> fonts);
-  external SkFontMgr RefDefault();
 }
 
 @JS()
 class TypefaceFontProviderNamespace {
   external TypefaceFontProvider Make();
+}
+
+@JS()
+@anonymous
+class SkTypefaceFactory {
+  external SkTypeface? MakeFreeTypeFaceFromData(ByteBuffer fontData);
 }
 
 /// Collects Skia objects that are no longer necessary.
@@ -2134,4 +2149,82 @@ class SkImageInfo {
   external SkImageInfo makeColorSpace(ColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
   external SkImageInfo makeWH(int width, int height);
+}
+
+@JS()
+@anonymous
+class SkPartialImageInfo {
+  external factory SkPartialImageInfo({
+    required int width,
+    required int height,
+    required SkColorType colorType,
+    required SkAlphaType alphaType,
+    required ColorSpace colorSpace,
+  });
+  external SkAlphaType get alphaType;
+  external ColorSpace get colorSpace;
+  external SkColorType get colorType;
+  external int get height;
+  external int get width;
+}
+
+/// Monkey-patch the top-level `module` and `exports` objects so that
+/// CanvasKit doesn't attempt to register itself as an anonymous module.
+///
+/// The idea behind making these fake `exports` and `module` objects is
+/// that `canvaskit.js` contains the following lines of code:
+///
+///     if (typeof exports === 'object' && typeof module === 'object')
+///       module.exports = CanvasKitInit;
+///     else if (typeof define === 'function' && define['amd'])
+///       define([], function() { return CanvasKitInit; });
+///
+/// We need to avoid hitting the case where CanvasKit defines an anonymous
+/// module, since this breaks RequireJS, which DDC and some plugins use.
+/// Temporarily removing the `define` function won't work because RequireJS
+/// could load in between this code running and the CanvasKit code running.
+/// Also, we cannot monkey-patch the `define` function because it is
+/// non-configurable (it is a top-level 'var').
+// TODO(hterkelsen): Rather than this monkey-patch hack, we should
+// build CanvasKit ourselves. See:
+// https://github.com/flutter/flutter/issues/52588
+void patchCanvasKitModule(html.ScriptElement canvasKitScript) {
+  // First check if `exports` and `module` are already defined. If so, then
+  // CommonJS is being used, and we shouldn't have any problems.
+  final js.JsFunction objectConstructor = js.context['Object'] as js.JsFunction;
+  if (js.context['exports'] == null) {
+    final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
+      'get': allowInterop(() {
+        if (html.document.currentScript == canvasKitScript) {
+          return js.JsObject(objectConstructor);
+        } else {
+          return js.context['_flutterWebCachedExports'];
+        }
+      }),
+      'set': allowInterop((dynamic value) {
+        js.context['_flutterWebCachedExports'] = value;
+      }),
+      'configurable': true,
+    });
+    objectConstructor.callMethod(
+        'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
+  }
+  if (js.context['module'] == null) {
+    final js.JsObject moduleAccessor = js.JsObject.jsify(<String, dynamic>{
+      'get': allowInterop(() {
+        if (html.document.currentScript == canvasKitScript) {
+          return js.JsObject(objectConstructor);
+        } else {
+          return js.context['_flutterWebCachedModule'];
+        }
+      }),
+      'set': allowInterop((dynamic value) {
+        js.context['_flutterWebCachedModule'] = value;
+      }),
+      'configurable': true,
+    });
+    objectConstructor.callMethod(
+        'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+  }
+  html.document.head!.append(canvasKitScript);
 }

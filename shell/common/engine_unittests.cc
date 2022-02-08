@@ -71,7 +71,7 @@ class MockRuntimeController : public RuntimeController {
   MOCK_METHOD3(LoadDartDeferredLibraryError,
                void(intptr_t, const std::string, bool));
   MOCK_CONST_METHOD0(GetDartVM, DartVM*());
-  MOCK_METHOD1(NotifyIdle, bool(int64_t));
+  MOCK_METHOD1(NotifyIdle, bool(fml::TimePoint));
 };
 
 std::unique_ptr<PlatformMessage> MakePlatformMessage(
@@ -269,7 +269,7 @@ TEST_F(EngineTest, SpawnSharesFontLibrary) {
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
     auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
-                               std::string());
+                               std::string(), io_manager_);
     EXPECT_TRUE(spawn != nullptr);
     EXPECT_EQ(&engine->GetFontCollection(), &spawn->GetFontCollection());
   });
@@ -294,10 +294,84 @@ TEST_F(EngineTest, SpawnWithCustomInitialRoute) {
         /*font_collection=*/std::make_shared<FontCollection>(),
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
-    auto spawn =
-        engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr, "/foo");
+    auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
+                               "/foo", io_manager_);
     EXPECT_TRUE(spawn != nullptr);
     ASSERT_EQ("/foo", spawn->InitialRoute());
+  });
+}
+
+TEST_F(EngineTest, SpawnResetsViewportMetrics) {
+  PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    auto vm_ref = DartVMRef::Create(settings_);
+    EXPECT_CALL(*mock_runtime_controller, GetDartVM())
+        .WillRepeatedly(::testing::Return(vm_ref.get()));
+    ViewportMetrics old_viewport_metrics = ViewportMetrics();
+    const double kViewWidth = 768;
+    const double kViewHeight = 1024;
+    old_viewport_metrics.physical_width = kViewWidth;
+    old_viewport_metrics.physical_height = kViewHeight;
+    mock_runtime_controller->SetViewportMetrics(old_viewport_metrics);
+    auto engine = std::make_unique<Engine>(
+        /*delegate=*/delegate_,
+        /*dispatcher_maker=*/dispatcher_maker_,
+        /*image_decoder_task_runner=*/image_decoder_task_runner_,
+        /*task_runners=*/task_runners_,
+        /*settings=*/settings_,
+        /*animator=*/std::move(animator_),
+        /*io_manager=*/io_manager_,
+        /*font_collection=*/std::make_shared<FontCollection>(),
+        /*runtime_controller=*/std::move(mock_runtime_controller));
+
+    auto& old_platform_data = engine->GetRuntimeController()->GetPlatformData();
+    EXPECT_EQ(old_platform_data.viewport_metrics.physical_width, kViewWidth);
+    EXPECT_EQ(old_platform_data.viewport_metrics.physical_height, kViewHeight);
+
+    auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
+                               std::string(), io_manager_);
+    EXPECT_TRUE(spawn != nullptr);
+    auto& new_viewport_metrics =
+        spawn->GetRuntimeController()->GetPlatformData().viewport_metrics;
+    EXPECT_EQ(new_viewport_metrics.physical_width, 0);
+    EXPECT_EQ(new_viewport_metrics.physical_height, 0);
+  });
+}
+
+TEST_F(EngineTest, SpawnWithCustomSettings) {
+  PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    auto vm_ref = DartVMRef::Create(settings_);
+    EXPECT_CALL(*mock_runtime_controller, GetDartVM())
+        .WillRepeatedly(::testing::Return(vm_ref.get()));
+    auto engine = std::make_unique<Engine>(
+        /*delegate=*/delegate_,
+        /*dispatcher_maker=*/dispatcher_maker_,
+        /*image_decoder_task_runner=*/image_decoder_task_runner_,
+        /*task_runners=*/task_runners_,
+        /*settings=*/settings_,
+        /*animator=*/std::move(animator_),
+        /*io_manager=*/io_manager_,
+        /*font_collection=*/std::make_shared<FontCollection>(),
+        /*runtime_controller=*/std::move(mock_runtime_controller));
+
+    Settings custom_settings = settings_;
+    custom_settings.persistent_isolate_data =
+        std::make_shared<fml::DataMapping>("foo");
+    auto spawn = engine->Spawn(delegate_, dispatcher_maker_, custom_settings,
+                               nullptr, std::string(), io_manager_);
+    EXPECT_TRUE(spawn != nullptr);
+    auto new_persistent_isolate_data =
+        const_cast<RuntimeController*>(spawn->GetRuntimeController())
+            ->GetPersistentIsolateData();
+    EXPECT_EQ(custom_settings.persistent_isolate_data->GetMapping(),
+              new_persistent_isolate_data->GetMapping());
+    EXPECT_EQ(custom_settings.persistent_isolate_data->GetSize(),
+              new_persistent_isolate_data->GetSize());
   });
 }
 

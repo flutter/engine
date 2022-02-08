@@ -378,7 +378,7 @@ void testMain() {
     converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
   });
 
-  test('Duplicate down is ignored', () {
+  test('Duplicate down is preceded with synthesized up', () {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
@@ -392,15 +392,26 @@ void testMain() {
     );
     expect(preventedDefault, isTrue);
     preventedDefault = false;
-    // A KeyUp of ShiftLeft is missed due to loss of focus.
+    // A KeyUp of ShiftLeft is missed.
 
     keyDataList.clear();
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
       ..onPreventDefault = onPreventDefault
     );
-    expect(keyDataList, hasLength(1));
-    expect(keyDataList[0].physical, 0);
-    expect(keyDataList[0].logical, 0);
+    expect(keyDataList, hasLength(2));
+    expectKeyData(keyDataList.first,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShiftLeft,
+      character: null,
+      synthesized: true,
+    );
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalShiftLeft,
+      logical: kLogicalShiftLeft,
+      character: null,
+    );
     expect(preventedDefault, isTrue);
 
     keyDataList.clear();
@@ -604,12 +615,12 @@ void testMain() {
     );
   });
 
-  testFakeAsync('Key guards: key down events are guarded', (FakeAsync async) {
+  testFakeAsync('Key guards: key down events are guarded on macOS', (FakeAsync async) {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, onMacOs: true);
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
@@ -628,7 +639,7 @@ void testMain() {
 
     async.elapse(const Duration(milliseconds: 2500));
     expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 1200),
+      timeStamp: const Duration(milliseconds: 2200),
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
@@ -673,7 +684,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, onMacOs: true);
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
@@ -689,9 +700,9 @@ void testMain() {
 
     // Keyup of KeyA is omitted due to being a shortcut.
 
-    async.elapse(const Duration(milliseconds: 2500));
+    async.elapse(const Duration(milliseconds: 2000));
     expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 1700),
+      timeStamp: const Duration(milliseconds: 2700),
       type: ui.KeyEventType.up,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
@@ -786,6 +797,30 @@ void testMain() {
       logical: kLogicalKeyA,
       character: null,
     );
+  });
+
+  testFakeAsync('Key guards: key down events are not guarded on non-macOS', (FakeAsync async) {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, onMacOs: false);
+
+    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
+    async.elapse(const Duration(milliseconds: 100));
+
+    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 200),
+      type: ui.KeyEventType.down,
+      physical: kPhysicalKeyA,
+      logical: kLogicalKeyA,
+      character: 'a',
+    );
+    keyDataList.clear();
+
+    async.elapse(const Duration(milliseconds: 2500));
+    expect(keyDataList, isEmpty);
   });
 
   testFakeAsync('Lock flags of other keys', (FakeAsync async) {

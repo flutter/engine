@@ -23,6 +23,8 @@ namespace flutter {
 /// This can be used in conjunction to unique_ptr to provide better guarantees
 /// about the lifespan of the `EGLSurface` object.
 ///
+class AndroidEGLSurfaceDamage;
+
 class AndroidEGLSurface {
  public:
   AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
@@ -44,12 +46,34 @@ class AndroidEGLSurface {
   bool MakeCurrent() const;
 
   //----------------------------------------------------------------------------
+  ///
+  /// @return     Whether target surface supports partial repaint.
+  ///
+  bool SupportsPartialRepaint() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      This is the minimal area that needs to be repainted to get
+  ///             correct result.
+  ///
+  /// With double or triple buffering this buffer content may lag behind
+  /// current front buffer and the rect accounts for accumulated damage.
+  ///
+  /// @return     The area of current surface where it is behind front buffer.
+  ///
+  std::optional<SkIRect> InitialDamage();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Sets the damage region for current surface. Corresponds to
+  //              eglSetDamageRegionKHR
+  void SetDamageRegion(const std::optional<SkIRect>& buffer_damage);
+
+  //----------------------------------------------------------------------------
   /// @brief      This only applies to on-screen surfaces such as those created
   ///             by `AndroidContextGL::CreateOnscreenSurface`.
   ///
   /// @return     Whether the EGL surface color buffer was swapped.
   ///
-  bool SwapBuffers();
+  bool SwapBuffers(const std::optional<SkIRect>& surface_damage);
 
   //----------------------------------------------------------------------------
   /// @return     The size of an `EGLSurface`.
@@ -60,6 +84,7 @@ class AndroidEGLSurface {
   const EGLSurface surface_;
   const EGLDisplay display_;
   const EGLContext context_;
+  std::unique_ptr<AndroidEGLSurfaceDamage> damage_;
 };
 
 //------------------------------------------------------------------------------
@@ -72,7 +97,8 @@ class AndroidEGLSurface {
 class AndroidContextGL : public AndroidContext {
  public:
   AndroidContextGL(AndroidRenderingAPI rendering_api,
-                   fml::RefPtr<AndroidEnvironmentGL> environment);
+                   fml::RefPtr<AndroidEnvironmentGL> environment,
+                   const TaskRunners& taskRunners);
 
   ~AndroidContextGL();
 
@@ -131,6 +157,7 @@ class AndroidContextGL : public AndroidContext {
   EGLContext context_;
   EGLContext resource_context_;
   bool valid_ = false;
+  TaskRunners task_runners_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGL);
 };

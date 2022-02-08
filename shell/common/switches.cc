@@ -79,7 +79,7 @@ static const std::string gAllowedDartFlags[] = {
 // Define symbols for the ICU data that is linked into the Flutter library on
 // Android.  This is a workaround for crashes seen when doing dynamic lookups
 // of the engine's own symbols on some older versions of Android.
-#if OS_ANDROID
+#if FML_OS_ANDROID
 extern uint8_t _binary_icudtl_dat_start[];
 extern uint8_t _binary_icudtl_dat_end[];
 
@@ -168,10 +168,14 @@ static std::vector<std::string> ParseCommaDelimited(const std::string& input) {
 static bool IsAllowedDartVMFlag(const std::string& flag) {
   for (uint32_t i = 0; i < fml::size(gAllowedDartFlags); ++i) {
     const std::string& allowed = gAllowedDartFlags[i];
-    // Check that the prefix of the flag matches one of the allowed flags.
+    // Check that the prefix of the flag matches one of the allowed flags. This
+    // is to handle cases where flags take arguments, such as in
+    // "--max_profile_depth 1".
+    //
     // We don't need to worry about cases like "--safe --sneaky_dangerous" as
     // the VM will discard these as a single unrecognized flag.
-    if (std::equal(allowed.begin(), allowed.end(), flag.begin())) {
+    if (flag.length() >= allowed.length() &&
+        std::equal(allowed.begin(), allowed.end(), flag.begin())) {
       return true;
     }
   }
@@ -200,7 +204,7 @@ static bool GetSwitchValue(const fml::CommandLine& command_line,
 
 std::unique_ptr<fml::Mapping> GetSymbolMapping(std::string symbol_prefix,
                                                std::string native_lib_path) {
-  const uint8_t* mapping;
+  const uint8_t* mapping = nullptr;
   intptr_t size;
 
   auto lookup_symbol = [&mapping, &size, symbol_prefix](
@@ -296,6 +300,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.trace_startup =
       command_line.HasOption(FlagForSwitch(Switch::TraceStartup));
 
+  settings.enable_serial_gc =
+      command_line.HasOption(FlagForSwitch(Switch::EnableSerialGC));
+
 #if !FLUTTER_RELEASE
   settings.trace_skia = true;
 
@@ -380,6 +387,10 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   command_line.GetOptionValue(FlagForSwitch(Switch::CacheDirPath),
                               &settings.temp_directory_path);
 
+  bool leak_vm = "true" == command_line.GetOptionValueWithDefault(
+                               FlagForSwitch(Switch::LeakVM), "true");
+  settings.leak_vm = leak_vm;
+
   if (settings.icu_initialization_required) {
     command_line.GetOptionValue(FlagForSwitch(Switch::ICUDataFilePath),
                                 &settings.icu_data_path);
@@ -390,7 +401,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       command_line.GetOptionValue(FlagForSwitch(Switch::ICUNativeLibPath),
                                   &native_lib_path);
 
-#if OS_ANDROID
+#if FML_OS_ANDROID
       settings.icu_mapper = GetICUStaticMapping;
 #else
       settings.icu_mapper = [icu_symbol_prefix, native_lib_path] {
@@ -403,8 +414,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.use_test_fonts =
       command_line.HasOption(FlagForSwitch(Switch::UseTestFonts));
 
-  settings.enable_skparagraph =
-      command_line.HasOption(FlagForSwitch(Switch::EnableSkParagraph));
+  std::string enable_skparagraph = command_line.GetOptionValueWithDefault(
+      FlagForSwitch(Switch::EnableSkParagraph), "");
+  settings.enable_skparagraph = enable_skparagraph != "false";
 
   settings.prefetched_default_font_manager = command_line.HasOption(
       FlagForSwitch(Switch::PrefetchedDefaultFontManager));
