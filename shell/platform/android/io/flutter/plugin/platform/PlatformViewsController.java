@@ -102,9 +102,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Next available unique ID for use in overlayLayerViews.
   private int nextOverlayLayerId = 0;
 
-  // Tracks whether the flutterView has been converted to use a FlutterImageView.
-  private boolean flutterViewConvertedToImageView = false;
-
   // When adding platform views using Hybrid Composition, the engine converts the render surface
   // to a FlutterImageView to help improve animation synchronization on Android. This flag allows
   // disabling this conversion through the PlatformView platform channel.
@@ -510,7 +507,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     destroyOverlaySurfaces();
     removeOverlaySurfaces();
     this.flutterView = null;
-    flutterViewConvertedToImageView = false;
 
     // Inform all existing platform views that they are no longer associated with
     // a Flutter View.
@@ -726,9 +722,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   private void initializeRootImageViewIfNeeded() {
-    if (synchronizeToNativeViewHierarchy && !flutterViewConvertedToImageView) {
+    if (synchronizeToNativeViewHierarchy) {
       flutterView.convertToImageView();
-      flutterViewConvertedToImageView = true;
     }
   }
 
@@ -863,8 +858,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // then revert the image view surface and use the previous surface.
     //
     // Otherwise, acquire the latest image.
-    if (flutterViewConvertedToImageView && currentFrameUsedPlatformViewIds.isEmpty()) {
-      flutterViewConvertedToImageView = false;
+    if (flutterView.hasConvertedToImageView() && currentFrameUsedPlatformViewIds.isEmpty()) {
       flutterView.revertImageView(
           () -> {
             // Destroy overlay surfaces once the surface reversion is completed.
@@ -882,7 +876,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // dropped.
     // For example, a toolbar widget painted by Flutter may not be rendered.
     final boolean isFrameRenderedUsingImageReaders =
-        flutterViewConvertedToImageView && flutterView.acquireLatestImageViewFrame();
+        flutterView.hasConvertedToImageView() && flutterView.acquireLatestImageViewFrame();
     finishFrame(isFrameRenderedUsingImageReaders);
   }
 
@@ -899,7 +893,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         // If the background surface isn't rendered by the image view, then the
         // overlay surfaces can be detached from the rendered.
         // This releases resources used by the ImageReader.
-        if (!flutterViewConvertedToImageView) {
+        if (!flutterView.hasConvertedToImageView()) {
           overlayView.detachFromRenderer();
         }
         // Hide overlay surfaces that aren't rendered in the current frame.

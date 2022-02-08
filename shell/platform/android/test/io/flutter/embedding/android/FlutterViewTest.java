@@ -131,9 +131,11 @@ public class FlutterViewTest {
 
     flutterView.convertToImageView();
     assertTrue(flutterView.renderSurface instanceof FlutterImageView);
+    assertTrue(flutterView.hasConvertedToImageView());
 
     flutterView.detachFromFlutterEngine();
     assertFalse(flutterView.renderSurface instanceof FlutterImageView);
+    assertFalse(flutterView.hasConvertedToImageView());
   }
 
   @Test

@@ -135,6 +135,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
   private final FlutterRenderer.ViewportMetrics viewportMetrics =
       new FlutterRenderer.ViewportMetrics();
 
+  // Tracks whether the flutterView has been converted to use a FlutterImageView.
+  private boolean hasConvertedToImageView = false;
   private final AccessibilityBridge.OnAccessibilityChangeListener onAccessibilityChangeListener =
       new AccessibilityBridge.OnAccessibilityChangeListener() {
         @Override
@@ -404,6 +406,15 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    */
   public boolean hasRenderedFirstFrame() {
     return isFlutterUiDisplayed;
+  }
+
+  /**
+   * Whether this {@code FlutterView} has been converted to use a {@link FlutterImageView}.
+   *
+   * <p>Returns ture if the surface is rendered by a {@link FlutterImageView}.
+   */
+  public boolean hasConvertedToImageView() {
+    return hasConvertedToImageView;
   }
 
   /**
@@ -1264,6 +1275,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
       removeView(flutterImageView);
       flutterImageView = null;
     }
+
+    hasConvertedToImageView = false;
     previousRenderSurface = null;
     flutterEngine = null;
   }
@@ -1280,6 +1293,10 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
    * Otherwise, it resizes the {@link FlutterImageView} based on the current view size.
    */
   public void convertToImageView() {
+    if (hasConvertedToImageView) {
+      return;
+    }
+
     renderSurface.pause();
 
     if (flutterImageView == null) {
@@ -1294,6 +1311,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     if (flutterEngine != null) {
       renderSurface.attachToRenderer(flutterEngine.getRenderer());
     }
+
+    hasConvertedToImageView = true;
   }
 
   /**
@@ -1314,6 +1333,8 @@ public class FlutterView extends FrameLayout implements MouseCursorPlugin.MouseC
     }
     renderSurface = previousRenderSurface;
     previousRenderSurface = null;
+    hasConvertedToImageView = false;
+
     if (flutterEngine == null) {
       flutterImageView.detachFromRenderer();
       onDone.run();
