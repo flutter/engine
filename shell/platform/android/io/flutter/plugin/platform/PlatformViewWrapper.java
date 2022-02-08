@@ -171,7 +171,10 @@ class PlatformViewWrapper extends FrameLayout {
       return;
     }
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      Log.e(TAG, "Platform views cannot be displayed below API level 23.");
+      Log.e(
+          TAG,
+          "Platform views cannot be displayed below API level 23. "
+              + "You can prevent this issue by setting minCompileSdk: 23 in build.gradle.");
       return;
     }
     // Override the canvas that this subtree of views will use to draw.
