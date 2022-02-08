@@ -86,33 +86,39 @@ public class PlatformViewsChannel {
         }
 
         private void create(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-          Map<String, Object> createArgs = call.arguments();
+          final Map<String, Object> createArgs = call.arguments();
           // TODO(egarciad): Remove the "hybrid" case.
-          boolean usesPlatformViewLayer =
+          final boolean usesPlatformViewLayer =
               createArgs.containsKey("hybrid") && (boolean) createArgs.get("hybrid");
-          // In hybrid mode, the size of the view is determined by the size of the Flow layer.
-          double width = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("width");
-          double height = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("height");
-          double top = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("top");
-          double left = (usesPlatformViewLayer) ? 0 : (double) createArgs.get("left");
-
-          PlatformViewCreationRequest request =
-              new PlatformViewCreationRequest(
-                  (int) createArgs.get("id"),
-                  (String) createArgs.get("viewType"),
-                  top,
-                  left,
-                  width,
-                  height,
-                  (int) createArgs.get("direction"),
-                  createArgs.containsKey("params")
-                      ? ByteBuffer.wrap((byte[]) createArgs.get("params"))
-                      : null);
+          final ByteBuffer additionalParams =
+              createArgs.containsKey("params")
+                  ? ByteBuffer.wrap((byte[]) createArgs.get("params"))
+                  : null;
           try {
             if (usesPlatformViewLayer) {
+              final PlatformViewCreationRequest request =
+                  new PlatformViewCreationRequest(
+                      (int) createArgs.get("id"),
+                      (String) createArgs.get("viewType"),
+                      0,
+                      0,
+                      0,
+                      0,
+                      (int) createArgs.get("direction"),
+                      additionalParams);
               handler.createForPlatformViewLayer(request);
               result.success(null);
             } else {
+              final PlatformViewCreationRequest request =
+                  new PlatformViewCreationRequest(
+                      (int) createArgs.get("id"),
+                      (String) createArgs.get("viewType"),
+                      (double) createArgs.get("top"),
+                      (double) createArgs.get("left"),
+                      (double) createArgs.get("width"),
+                      (double) createArgs.get("height"),
+                      (int) createArgs.get("direction"),
+                      additionalParams);
               long textureId = handler.createForTextureLayer(request);
               result.success(textureId);
             }
