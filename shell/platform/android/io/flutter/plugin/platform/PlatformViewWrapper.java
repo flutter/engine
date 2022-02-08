@@ -100,6 +100,12 @@ class PlatformViewWrapper extends FrameLayout {
     }
   }
 
+  /** Returns the texture where the view is projected. */
+  @Nullable
+  public SurfaceTexture getTexture() {
+    return tx;
+  }
+
   /**
    * Sets the layout parameters for this view.
    *
@@ -134,11 +140,6 @@ class PlatformViewWrapper extends FrameLayout {
   /** Returns the image buffer height. */
   public int getBufferHeight() {
     return bufferHeight;
-  }
-
-  @Nullable
-  public SurfaceTexture getTexture() {
-    return tx;
   }
 
   /** Releases the texture and surface. */
