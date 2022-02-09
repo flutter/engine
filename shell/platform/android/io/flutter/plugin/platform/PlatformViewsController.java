@@ -163,6 +163,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
                     + viewId
                     + ")");
           }
+          if (textureRegistry == null) {
+            throw new IllegalStateException(
+                "Texture registry is null. This means that platform views controller was detached, view id: "
+                    + viewId);
+          }
+          if (flutterView == null) {
+            throw new IllegalStateException(
+                "Flutter view is null. This means the platform views controller doesn't have an attached view, view id: "
+                    + viewId);
+          }
           final PlatformViewFactory viewFactory = registry.getFactory(request.viewType);
           if (viewFactory == null) {
             throw new IllegalStateException(
@@ -471,8 +481,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * This {@code PlatformViewsController} and its {@code FlutterEngine} is now attached to an
    * Android {@code View} that renders a Flutter UI.
    */
-  public void attachToView(@NonNull FlutterView flutterView) {
-    this.flutterView = flutterView;
+  public void attachToView(@NonNull FlutterView newFlutterView) {
+    flutterView = newFlutterView;
 
     // Inform all existing platform views that they are now associated with
     // a Flutter View.
@@ -497,7 +507,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // TODO(egarciad): Remove this.
     destroyOverlaySurfaces();
     removeOverlaySurfaces();
-    this.flutterView = null;
+    flutterView = null;
     flutterViewConvertedToImageView = false;
   }
 

@@ -28,9 +28,9 @@ import io.flutter.util.ViewUtils;
 /**
  * Wraps a platform view to intercept gestures and project this view onto a {@link SurfaceTexture}.
  *
- * <p>An Android platform view is composed by the Flutter Engine using a TextureLayer. The view is
+ * <p>An Android platform view is composed by the engine using a {@code TextureLayer}. The view is
  * embeded to the Android view hierarchy like a normal view, but it's projected onto a {@link
- * SurfaceTexture}, so it can be efficiently composed by the Flutter Engine.
+ * SurfaceTexture}, so it can be efficiently composed by the engine.
  *
  * <p>Since the view is in the Android view hierarchy, keyboard and accessibility interactions
  * behave normally.
@@ -68,6 +68,12 @@ class PlatformViewWrapper extends FrameLayout {
   /**
    * Sets the texture where the view is projected onto.
    *
+   * <p>{@link PlatformViewWrapper} doesn't take ownership of the {@link SurfaceTexture}. As a
+   * result, the caller is responsible for releasing the texture.
+   *
+   * <p>{@link io.flutter.view.TextureRegistry} is responsible for creating and registering textures
+   * in the engine. Therefore, the engine is responsible for also releasing the texture.
+   *
    * @param newTx The texture where the view is projected onto.
    */
   @SuppressLint("NewApi")
@@ -80,9 +86,6 @@ class PlatformViewWrapper extends FrameLayout {
       return;
     }
 
-    if (tx != null) {
-      tx.release();
-    }
     tx = newTx;
 
     if (bufferWidth > 0 && bufferHeight > 0) {
@@ -157,12 +160,10 @@ class PlatformViewWrapper extends FrameLayout {
     return bufferHeight;
   }
 
-  /** Releases the texture and surface. */
+  /** Releases the surface. */
   public void release() {
-    if (tx != null) {
-      tx.release();
-      tx = null;
-    }
+    // Don't release the texture.
+    tx = null;
     if (surface != null) {
       surface.release();
       surface = null;

@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import android.content.Context;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -13,6 +14,7 @@ import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,8 +28,9 @@ public class PlatformViewWrapperTest {
   @Test
   public void setTexture_writesToBuffer() {
     final Surface surface = mock(Surface.class);
+    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           protected Surface createSurface(@NonNull SurfaceTexture tx) {
             return surface;
@@ -54,32 +57,27 @@ public class PlatformViewWrapperTest {
   @Test
   public void draw_writesToBuffer() {
     final Surface surface = mock(Surface.class);
+    final Context ctx = ApplicationProvider.getApplicationContext();
     final PlatformViewWrapper wrapper =
-        new PlatformViewWrapper(RuntimeEnvironment.application) {
+        new PlatformViewWrapper(ctx) {
           @Override
           protected Surface createSurface(@NonNull SurfaceTexture tx) {
             return surface;
           }
-
-          @Override
-          protected void onDraw(Canvas canvas) {
-            System.out.println("CANVAS DRAWN");
-          }
         };
-    
+
     wrapper.addView(
-        new View(RuntimeEnvironment.application) {
+        new View(ctx) {
           @Override
           public void draw(Canvas canvas) {
+            super.draw(canvas);
             canvas.drawColor(Color.RED);
           }
         });
 
-
     final int size = 100;
     wrapper.measure(size, size);
     wrapper.layout(0, 0, size, size);
-
 
     final SurfaceTexture tx = mock(SurfaceTexture.class);
     when(tx.isReleased()).thenReturn(false);
@@ -96,14 +94,46 @@ public class PlatformViewWrapperTest {
 
     // Test.
     wrapper.invalidate();
-    wrapper.draw(null);
+    wrapper.draw(new Canvas());
 
     // Verify.
-    verify(surface, times(1)).unlockCanvasAndPost(canvas);
     verify(canvas, times(1)).drawColor(Color.TRANSPARENT, BlendMode.CLEAR);
-    verify(canvas, times(1)).drawColor(Color.RED);
+    verify(surface, times(1)).isValid();
+    verify(surface, times(1)).lockHardwareCanvas();
+    verify(surface, times(1)).unlockCanvasAndPost(canvas);
     verifyNoMoreInteractions(surface);
     verifyNoMoreInteractions(canvas);
+  }
+
+  @Test
+  public void release() {
+    final Surface surface = mock(Surface.class);
+    final Context ctx = ApplicationProvider.getApplicationContext();
+    final PlatformViewWrapper wrapper =
+        new PlatformViewWrapper(ctx) {
+          @Override
+          protected Surface createSurface(@NonNull SurfaceTexture tx) {
+            return surface;
+          }
+        };
+
+    final SurfaceTexture tx = mock(SurfaceTexture.class);
+    when(tx.isReleased()).thenReturn(false);
+
+    final Canvas canvas = mock(Canvas.class);
+    when(surface.lockHardwareCanvas()).thenReturn(canvas);
+
+    wrapper.setTexture(tx);
+    reset(surface);
+    reset(tx);
+
+    // Test.
+    wrapper.release();
+
+    // Verify.
+    verify(surface, times(1)).release();
+    verifyNoMoreInteractions(surface);
+    verifyNoMoreInteractions(tx);
   }
 
   @Test

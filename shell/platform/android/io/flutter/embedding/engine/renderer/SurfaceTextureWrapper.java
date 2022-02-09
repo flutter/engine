@@ -62,7 +62,11 @@ public class SurfaceTextureWrapper {
   // Called by native.
   @SuppressWarnings("unused")
   public void detachFromGLContext() {
-    surfaceTexture.detachFromGLContext();
+    synchronized (this) {
+      if (!released) {
+        surfaceTexture.detachFromGLContext();
+      }
+    }
   }
 
   // Called by native.
