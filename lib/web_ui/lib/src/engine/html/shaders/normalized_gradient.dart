@@ -35,7 +35,7 @@ class NormalizedGradient {
     stops ??= const <double>[0.0, 1.0];
     final int colorCount = colors.length;
     int normalizedCount = colorCount;
-    bool isOpaque = !colors.any((c) => c.alpha < 1.0);
+    final bool isOpaque = !colors.any((ui.Color c) => c.alpha < 1.0);
     final bool addFirst = stops[0] != 0.0;
     final bool addLast = stops.last != 1.0;
     if (addFirst) {
