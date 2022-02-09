@@ -19,7 +19,7 @@ integration tests in other repos.
    `FlutterTestSuite.java`. This makes sure the test is actually executed at
    run time.
 4. Write your test.
-5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>] [--ignore-android-deprecations]`.
+5. Build and run with `testing/run_tests.py [--type=java] [--java-filter=<test_class_name>]`.
 
 ## Q&A
 

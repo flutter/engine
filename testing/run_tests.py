@@ -326,7 +326,7 @@ def JavaBin():
   return os.path.join(JavaHome(), 'bin', 'java.exe' if IsWindows() else 'java')
 
 
-def RunJavaTests(filter, android_variant='android_debug_unopt', ignore_android_deprecations=False):
+def RunJavaTests(filter, android_variant='android_debug_unopt'):
   """Runs the Java JUnit unit tests for the Android embedding"""
   test_runner_dir = os.path.join(buildroot_dir, 'flutter', 'shell', 'platform', 'android', 'test_runner')
   gradle_bin = os.path.join(buildroot_dir, 'gradle', 'bin', 'gradle.bat' if IsWindows() else 'gradle')
@@ -336,12 +336,10 @@ def RunJavaTests(filter, android_variant='android_debug_unopt', ignore_android_d
   gradle_cache_dir = os.path.join(out_dir, android_variant, 'robolectric_tests', '.gradle')
 
   test_class = filter if filter else 'io.flutter.FlutterTestSuite'
-
   command = [
     gradle_bin,
     '-Pflutter_jar=%s' % flutter_jar,
     '-Pbuild_dir=%s' % build_dir,
-    '-Pignore-deprecations=%s' % ignore_android_deprecations,
     'testDebugUnitTest',
     '--tests=%s' % test_class,
     '--rerun-tasks',
@@ -569,8 +567,6 @@ def main():
       default=False, help='Provide the sanitizer suppressions lists to the via environment to the tests.')
   parser.add_argument('--adb-path', dest='adb_path', action='store',
       default=None, help='Provide the path of adb used for android tests. By default it looks on $PATH.')
-  parser.add_argument('--ignore-android-deprecations', dest='ignore_android_deprecations', help='Hide warnings concerning usage of deprecated APIs when running Android tests',
-      action="store_true", default=False)
 
   args = parser.parse_args()
 
@@ -617,7 +613,7 @@ def main():
     if ',' in java_filter or '*' in java_filter:
       print('Can only filter JUnit4 tests by single entire class name, eg "io.flutter.SmokeTest". Ignoring filter=' + java_filter)
       java_filter = None
-    RunJavaTests(java_filter, args.android_variant, args.ignore_android_deprecations)
+    RunJavaTests(java_filter, args.android_variant)
 
   if 'android' in types:
     assert not IsWindows(), "Android engine files can't be compiled on Windows."
