@@ -327,14 +327,12 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_keyboard_state_;
 };
 
-typedef enum {
-  kKeyCallOnKey,
-  kKeyCallOnText,
-  kKeyCallTextMethodCall,
-} KeyCallType;
-
-typedef struct {
-  KeyCallType type;
+struct {
+  enum {
+    kKeyCallOnKey,
+    kKeyCallOnText,
+    kKeyCallTextMethodCall,
+  } type;
 
   // Only one of the following fields should be assigned.
   FlutterKeyEvent key_event;     // For kKeyCallOnKey
@@ -346,7 +344,7 @@ static std::vector<KeyCall> key_calls;
 
 void clear_key_calls() {
   for (KeyCall& key_call : key_calls) {
-    if (key_call.type == kKeyCallOnKey &&
+    if (key_call.type == KeyCall::kKeyCallOnKey &&
         key_call.key_event.character != nullptr) {
       delete[] key_call.key_event.character;
     }
@@ -363,7 +361,7 @@ class KeyboardTester {
     view_ = std::make_unique<TestFlutterWindowsView>(
         [](const std::u16string& text) {
           key_calls.push_back(KeyCall{
-              .type = kKeyCallOnText,
+              .type = KeyCall::kKeyCallOnText,
               .text = text,
           });
         },
@@ -381,7 +379,7 @@ class KeyboardTester {
                                       ? nullptr
                                       : clone_string(event->character);
           key_calls.push_back(KeyCall{
-              .type = kKeyCallOnKey,
+              .type = KeyCall::kKeyCallOnKey,
               .key_event = clone_event,
           });
           callback_handler(event, callback);
@@ -442,7 +440,7 @@ class KeyboardTester {
           rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
           document->Accept(writer);
           key_calls.push_back(KeyCall{
-              .type = kKeyCallTextMethodCall,
+              .type = KeyCall::kKeyCallTextMethodCall,
               .text_method_call = buffer.GetString(),
           });
         });
@@ -466,6 +464,8 @@ constexpr uint64_t kScanCodeBackquote = 0x29;
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeKeyB = 0x30;
 constexpr uint64_t kScanCodeKeyE = 0x12;
+constexpr uint64_t kScanCodeKeyF = 0x21;
+constexpr uint64_t kScanCodeKeyO = 0x18;
 constexpr uint64_t kScanCodeKeyQ = 0x10;
 constexpr uint64_t kScanCodeKeyW = 0x11;
 constexpr uint64_t kScanCodeDigit1 = 0x02;
@@ -481,11 +481,14 @@ constexpr uint64_t kScanCodeShiftRight = 0x36;
 constexpr uint64_t kScanCodeBracketLeft = 0x1a;
 constexpr uint64_t kScanCodeArrowLeft = 0x4b;
 constexpr uint64_t kScanCodeEnter = 0x1c;
+constexpr uint64_t kScanCodeBackspace = 0x0e;
 
 constexpr uint64_t kVirtualDigit1 = 0x31;
 constexpr uint64_t kVirtualKeyA = 0x41;
 constexpr uint64_t kVirtualKeyB = 0x42;
 constexpr uint64_t kVirtualKeyE = 0x45;
+constexpr uint64_t kVirtualKeyF = 0x46;
+constexpr uint64_t kVirtualKeyO = 0x4f;
 constexpr uint64_t kVirtualKeyQ = 0x51;
 constexpr uint64_t kVirtualKeyW = 0x57;
 
@@ -498,15 +501,15 @@ constexpr bool kNotSynthesized = false;
 // stacktrace wouldn't print where the function is called in the unit tests.
 
 #define EXPECT_CALL_IS_EVENT(_key_call, ...) \
-  EXPECT_EQ(_key_call.type, kKeyCallOnKey);  \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey);  \
   EXPECT_EVENT_EQUALS(_key_call.key_event, __VA_ARGS__);
 
 #define EXPECT_CALL_IS_TEXT(_key_call, u16_string) \
-  EXPECT_EQ(_key_call.type, kKeyCallOnText);       \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnText);       \
   EXPECT_EQ(_key_call.text, u16_string);
 
 #define EXPECT_CALL_IS_TEXT_METHOD_CALL(_key_call, json_string) \
-  EXPECT_EQ(_key_call.type, kKeyCallTextMethodCall);            \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallTextMethodCall);            \
   EXPECT_STREQ(_key_call.text_method_call.c_str(), json_string);
 
 TEST(KeyboardTest, LowerCaseAHandled) {
@@ -1820,6 +1823,182 @@ TEST(KeyboardTest, TextInputSubmit) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+}
+
+TEST(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
+  // In this test, the user presses the folloing keys:
+  //
+  //   Key         Current text
+  //  ===========================
+  //   A           a
+  //   F           à
+  //
+  // And the Backspace event is responded immediately.
+
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press A
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "a", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
+  clear_key_calls();
+
+  // Release A
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+          kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
+  clear_key_calls();
+
+  // Press F, which is translated to:
+  //
+  // Backspace down, char & up, then VK_PACKET('à').
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyDownInfo{VK_BACK, kScanCodeBackspace, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{0x8, kScanCodeBackspace, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyUpInfo{VK_BACK, kScanCodeBackspace, kNotExtended}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_PACKET, 0, kNotExtended, kWasUp}.Build(kWmResultDefault),
+      WmCharInfo{0xe0/*'à'*/, 0, kNotExtended, kWasUp}.Build(kWmResultZero),
+      WmKeyUpInfo{VK_PACKET, 0, kNotExtended}.Build(kWmResultDefault)
+  });
+
+  EXPECT_EQ(key_calls.size(), 3);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackspace,
+                       kLogicalBackspace, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalBackspace,
+                       kLogicalBackspace, "", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[2], u"à");
+  clear_key_calls();
+
+  // Release F
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyUpInfo{kVirtualKeyF, kScanCodeKeyF, kNotExtended,
+      /* overwrite_prev_state_0 */ true}.Build(kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
+                       kNotSynthesized);
+  clear_key_calls();
+}
+
+void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
+  // In this test, the user presses the folloing keys:
+  //
+  //   Key         Current text
+  //  ===========================
+  //   A           a
+  //   F           à
+  //
+  // And the Backspace down event is responded slowly with `backspace_response`.
+
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // US Keyboard layout
+
+  // Press A
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyDownInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
+          kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
+                       kLogicalKeyA, "a", kNotSynthesized);
+  EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
+  clear_key_calls();
+
+  // Release A
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyUpInfo{kVirtualKeyA, kScanCodeKeyA, kNotExtended}.Build(
+          kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
+                       kLogicalKeyA, "", kNotSynthesized);
+  clear_key_calls();
+
+  std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
+  tester.LateResponding(
+      [&recorded_callbacks](
+          const FlutterKeyEvent* event,
+          MockKeyResponseController::ResponseCallback callback) {
+        recorded_callbacks.push_back(callback);
+      });
+
+  // Press F, which is translated to:
+  //
+  // Backspace down, char & up, VK_PACKET('à').
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyDownInfo{VK_BACK, kScanCodeBackspace, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmCharInfo{0x8, kScanCodeBackspace, kNotExtended, kWasUp}.Build(
+          kWmResultZero),
+      WmKeyUpInfo{VK_BACK, kScanCodeBackspace, kNotExtended}.Build(
+          kWmResultZero),
+      WmKeyDownInfo{VK_PACKET, 0, kNotExtended, kWasUp}.Build(kWmResultDefault),
+      WmCharInfo{0xe0/*'à'*/, 0, kNotExtended, kWasUp}.Build(kWmResultZero),
+      WmKeyUpInfo{VK_PACKET, 0, kNotExtended}.Build(kWmResultDefault)
+  });
+
+  // The Backspace event has not responded yet, therefore the char message must
+  // hold. This is because when the framework is handling the Backspace event,
+  // it will send a setEditingState message that updates the text state that has
+  // the last character deleted  (denoted by `string1`). Processing the char
+  // message before then will cause the final text to set to `string1`.
+  EXPECT_EQ(key_calls.size(), 2);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackspace,
+                       kLogicalBackspace, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalBackspace,
+                       kLogicalBackspace, "", kNotSynthesized);
+  clear_key_calls();
+
+  EXPECT_EQ(recorded_callbacks.size(), 2);
+  recorded_callbacks[0](true);
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_TEXT(key_calls[0], u"à");
+  clear_key_calls();
+
+  recorded_callbacks[1](backspace_response);
+  EXPECT_EQ(key_calls.size(), 0);
+
+  tester.Responding(false);
+
+  // Release F
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      WmKeyUpInfo{kVirtualKeyF, kScanCodeKeyF, kNotExtended,
+      /* overwrite_prev_state_0 */ true}.Build(kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 1);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
+                       kNotSynthesized);
+  clear_key_calls();
+}
+
+TEST(KeyboardTest, VietnameseTelexAddDiacriticWithSlowFalseResponse) {
+  VietnameseTelexAddDiacriticWithSlowResponse(false);
+}
+
+TEST(KeyboardTest, VietnameseTelexAddDiacriticWithSlowTrueResponse) {
+  VietnameseTelexAddDiacriticWithSlowResponse(true);
 }
 
 }  // namespace testing
