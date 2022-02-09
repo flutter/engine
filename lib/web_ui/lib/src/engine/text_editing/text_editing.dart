@@ -474,32 +474,32 @@ class TextEditingDeltaState {
   /// and the last editing state.
   ///
   /// For a deletion we calculate the length of the deleted text by comparing the new
-  /// and last editing states. We subtract this from the deltaEnd that we set when beforeinput
-  /// was fired to determine out deltaStart.
+  /// and last editing states. We subtract this from the `deltaEnd` that we set when beforeinput
+  /// was fired to determine the `deltaStart`.
   ///
-  /// For a replacement at a selection we set the deltaStart to be the beginning of the selection
+  /// For a replacement at a selection we set the `deltaStart` to be the beginning of the selection
   /// from the last editing state.
   ///
   /// For the composing region we check if a composing range was captured by the compositionupdate event,
-  /// we have a non empty deltaText, and that we did not have an active selection. An active selection
+  /// we have a non empty `deltaText`, and that we did not have an active selection. An active selection
   /// would mean we are not composing.
   ///
   /// We then verify that the delta we collected results in the text contained within the new editing state
   /// when applied to the last editing state. If it is not then we use our new editing state as the source of truth,
-  /// and use regex to find the correct deltaStart and deltaEnd.
+  /// and use regex to find the correct `deltaStart` and `deltaEnd`.
   static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState lastTextEditingDeltaState) {
     final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState.copyWith();
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
+    final bool isTextBeingRemoved = newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1;
+    final bool isTextBeingChangedAtActiveSelection = newTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed;
 
-    if (newTextEditingDeltaState.deltaText.isEmpty && newTextEditingDeltaState.deltaEnd != -1) {
-      // We are removing text.
+    if (isTextBeingRemoved) {
       // When text is deleted outside of the composing region or is cut using the native toolbar,
       // we calculate the length of the deleted text by comparing the new and old editing state lengths.
       // This value is then subtracted from the end position of the delta to capture the deleted range.
       final int deletedLength = newTextEditingDeltaState.oldText.length - newEditingState.text!.length;
       newTextEditingDeltaState.deltaStart = newTextEditingDeltaState.deltaEnd - deletedLength;
-    } else if (newTextEditingDeltaState.deltaText.isNotEmpty && !previousSelectionWasCollapsed) {
-      // We are replacing text at a selection.
+    } else if (isTextBeingChangedAtActiveSelection) {
       // When a selection of text is replaced by a copy/paste operation we set the starting range
       // of the delta to be the beginning of the selection of the previous editing state.
       newTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
@@ -538,9 +538,7 @@ class TextEditingDeltaState {
         // 2. Apply matches/replacement to oldText until oldText matches the
         // new editing state's text value.
         final bool isPeriodInsertion = newTextEditingDeltaState.deltaText.contains('.');
-        final RegExp deltaTextPattern = isPeriodInsertion?
-                                        RegExp(r'\' + newTextEditingDeltaState.deltaText + r'')
-                                            : RegExp(r'' + newTextEditingDeltaState.deltaText + r'');
+        final RegExp deltaTextPattern = RegExp(RegExp.escape(newTextEditingDeltaState.deltaText));
         for (final Match match in deltaTextPattern.allMatches(newEditingState.text!)) {
           String textAfterMatch;
           int actualEnd;
