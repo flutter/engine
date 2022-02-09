@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.BlendMode;
 import android.graphics.Canvas;
@@ -23,6 +24,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
+@TargetApi(31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
   @Test

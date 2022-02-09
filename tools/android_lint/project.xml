@@ -11,7 +11,6 @@
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/PreconditionsTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/util/FakeKeyEvent.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugins/GeneratedPluginRegistrant.java" />
-    <src file="../../../flutter/shell/platform/android/test/io/flutter/FlutterTestSuite.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/FlutterActivityTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/KeyChannelResponderTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/android/FlutterTextureViewTest.java" />
@@ -40,12 +39,14 @@
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/TextInputChannelTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/DeferredComponentChannelTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/PlatformChannelTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/AccessibilityChannelTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/KeyEventChannelTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/systemchannels/RestorationChannelTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/FlutterShellArgsTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManagerTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/platform/PlatformPluginTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/platform/PlatformViewsControllerTest.java" />
+    <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/platform/PlatformViewWrapperTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/mouse/MouseCursorPluginTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/common/StandardMessageCodecTest.java" />
     <src file="../../../flutter/shell/platform/android/test/io/flutter/plugin/common/BinaryCodecTest.java" />
