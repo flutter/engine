@@ -137,8 +137,8 @@ class DiffContext {
   // clip_alignment controls the alignment of resulting frame and surface
   // damage.
   Damage ComputeDamage(const SkIRect& additional_damage,
-                       int horizontal_clip_alignment = 1,
-                       int vertical_clip_alignment = 1) const;
+                       int horizontal_clip_alignment = 0,
+                       int vertical_clip_alignment = 0) const;
 
   double frame_device_pixel_ratio() const { return frame_device_pixel_ratio_; };
 

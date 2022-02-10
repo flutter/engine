@@ -83,8 +83,8 @@ void DiffContext::AlignRect(SkIRect& rect,
   if (right % horizontal_alignment != 0) {
     right += horizontal_alignment - right % horizontal_alignment;
   }
-  if (bottom % horizontal_alignment != 0) {
-    bottom += horizontal_alignment - bottom % horizontal_alignment;
+  if (bottom % vertical_alignment != 0) {
+    bottom += vertical_alignment - bottom % vertical_alignment;
   }
   right = std::min(right, frame_size_.width());
   bottom = std::min(bottom, frame_size_.height());
