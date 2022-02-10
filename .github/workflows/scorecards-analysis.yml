@@ -2,8 +2,6 @@ name: Scorecards supply-chain security
 on:
   # Only the default branch is supported.
   branch_protection_rule:
-  schedule:
-    - cron: '26 8 * * 2'
   push:
     branches: [ main ]
 
@@ -14,6 +12,7 @@ jobs:
   analysis:
     name: Scorecards analysis
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'flutter/engine' }}
     permissions:
       # Needed to upload the results to code-scanning dashboard.
       security-events: write

@@ -40,6 +40,9 @@
 #include "flutter/vulkan/vulkan_application.h"  // nogncheck
 #endif
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 namespace testing {
 
@@ -1907,6 +1910,7 @@ TEST_F(ShellTest, CanConvertToAndFromMappings) {
   const size_t buffer_size = 2 << 20;
 
   uint8_t* buffer = static_cast<uint8_t*>(::malloc(buffer_size));
+  // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
   ASSERT_TRUE(buffer != nullptr);
   ASSERT_TRUE(MemsetPatternSetOrCheck(
       buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
@@ -3206,8 +3210,8 @@ TEST_F(ShellTest, CanCreateShellsWithGLBackend) {
       );
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
-  PlatformViewNotifyCreated(shell.get());
   auto configuration = RunConfiguration::InferFromSettings(settings);
+  PlatformViewNotifyCreated(shell.get());
   configuration.SetEntrypoint("emptyMain");
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
@@ -3230,8 +3234,8 @@ TEST_F(ShellTest, CanCreateShellsWithVulkanBackend) {
       );
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
-  PlatformViewNotifyCreated(shell.get());
   auto configuration = RunConfiguration::InferFromSettings(settings);
+  PlatformViewNotifyCreated(shell.get());
   configuration.SetEntrypoint("emptyMain");
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
@@ -3254,8 +3258,8 @@ TEST_F(ShellTest, CanCreateShellsWithMetalBackend) {
       );
   ASSERT_NE(shell, nullptr);
   ASSERT_TRUE(shell->IsSetup());
-  PlatformViewNotifyCreated(shell.get());
   auto configuration = RunConfiguration::InferFromSettings(settings);
+  PlatformViewNotifyCreated(shell.get());
   configuration.SetEntrypoint("emptyMain");
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
@@ -3444,3 +3448,5 @@ TEST_F(ShellTest, UsesPlatformMessageHandler) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

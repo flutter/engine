@@ -18,6 +18,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewParent;
 import android.widget.FrameLayout.LayoutParams;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.android.FlutterImageView;
 import io.flutter.embedding.android.FlutterView;
 import io.flutter.embedding.android.MotionEventTracker;
@@ -45,7 +46,6 @@ import java.util.Map;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
@@ -53,7 +53,7 @@ import org.robolectric.annotation.Implements;
 import org.robolectric.shadows.ShadowSurfaceView;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class PlatformViewsControllerTest {
 
   @Ignore
@@ -657,17 +657,13 @@ public class PlatformViewsControllerTest {
 
     platformViewsController.detach();
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          platformViewsController.onDisplayOverlaySurface(
-              overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
-        });
+    verify(overlayImageView, times(1)).closeImageReader();
+    verify(overlayImageView, times(1)).detachFromRenderer();
   }
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void detachFromView__removesOverlaySurfaces() {
+  public void detachFromView__removesAndDestroysOverlayViews() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -683,6 +679,9 @@ public class PlatformViewsControllerTest {
     final FlutterJNI jni = new FlutterJNI();
     jni.attachToNative();
     attach(jni, platformViewsController);
+
+    final FlutterView flutterView = mock(FlutterView.class);
+    platformViewsController.attachToView(flutterView);
 
     final FlutterImageView overlayImageView = mock(FlutterImageView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
@@ -695,17 +694,14 @@ public class PlatformViewsControllerTest {
 
     platformViewsController.detachFromView();
 
-    assertThrows(
-        IllegalStateException.class,
-        () -> {
-          platformViewsController.onDisplayOverlaySurface(
-              overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
-        });
+    verify(overlayImageView, times(1)).closeImageReader();
+    verify(overlayImageView, times(1)).detachFromRenderer();
+    verify(flutterView, times(1)).removeView(overlayImageView);
   }
 
   @Test
   @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
-  public void destroyOverlaySurfaces__doesNotThrowIfControllerIsDetached() {
+  public void destroyOverlaySurfaces__doesNotThrowIfFlutterViewIsDetached() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
     final int platformViewId = 0;
@@ -721,6 +717,9 @@ public class PlatformViewsControllerTest {
     final FlutterJNI jni = new FlutterJNI();
     jni.attachToNative();
     attach(jni, platformViewsController);
+
+    final FlutterView flutterView = mock(FlutterView.class);
+    platformViewsController.attachToView(flutterView);
 
     final FlutterImageView overlayImageView = mock(FlutterImageView.class);
     when(overlayImageView.acquireLatestImage()).thenReturn(true);
@@ -735,6 +734,42 @@ public class PlatformViewsControllerTest {
 
     platformViewsController.destroyOverlaySurfaces();
     verify(overlayImageView, times(1)).closeImageReader();
+    verify(overlayImageView, times(1)).detachFromRenderer();
+  }
+
+  @Test
+  @Config(shadows = {ShadowFlutterSurfaceView.class, ShadowFlutterJNI.class})
+  public void destroyOverlaySurfaces__doesNotRemoveOverlayView() {
+    final PlatformViewsController platformViewsController = new PlatformViewsController();
+
+    final int platformViewId = 0;
+    assertNull(platformViewsController.getPlatformViewById(platformViewId));
+
+    final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
+    final PlatformView platformView = mock(PlatformView.class);
+    when(platformView.getView()).thenReturn(mock(View.class));
+    when(viewFactory.create(any(), eq(platformViewId), any())).thenReturn(platformView);
+
+    platformViewsController.getRegistry().registerViewFactory("testType", viewFactory);
+
+    final FlutterJNI jni = new FlutterJNI();
+    jni.attachToNative();
+    attach(jni, platformViewsController);
+
+    final FlutterView flutterView = mock(FlutterView.class);
+    platformViewsController.attachToView(flutterView);
+
+    final FlutterImageView overlayImageView = mock(FlutterImageView.class);
+    when(overlayImageView.acquireLatestImage()).thenReturn(true);
+
+    final FlutterOverlaySurface overlaySurface =
+        platformViewsController.createOverlaySurface(overlayImageView);
+
+    platformViewsController.onDisplayOverlaySurface(
+        overlaySurface.getId(), /* x=*/ 0, /* y=*/ 0, /* width=*/ 10, /* height=*/ 10);
+
+    platformViewsController.destroyOverlaySurfaces();
+    verify(flutterView, never()).removeView(overlayImageView);
   }
 
   @Test
