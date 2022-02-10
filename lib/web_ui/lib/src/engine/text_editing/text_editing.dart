@@ -464,10 +464,10 @@ class TextEditingDeltaState {
     this.deltaText = '',
     this.deltaStart = -1,
     this.deltaEnd = -1,
-    this.baseOffset = -1,
-    this.extentOffset = -1,
-    this.composingOffset = -1,
-    this.composingExtent = -1,
+    this.baseOffset,
+    this.extentOffset,
+    this.composingOffset,
+    this.composingExtent,
   });
 
   /// Infers the correct delta values based on information from the new editing state
@@ -507,10 +507,10 @@ class TextEditingDeltaState {
 
     // If we are composing then set the delta range to the composing region we
     // captured in compositionupdate.
-    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != -1 && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
+    final bool isCurrentlyComposing = newTextEditingDeltaState.composingOffset != null && newTextEditingDeltaState.composingOffset != newTextEditingDeltaState.composingExtent;
     if (newTextEditingDeltaState.deltaText.isNotEmpty && previousSelectionWasCollapsed && isCurrentlyComposing) {
-      newTextEditingDeltaState.deltaStart = newTextEditingDeltaState.composingOffset;
-      newTextEditingDeltaState.deltaEnd = newTextEditingDeltaState.composingExtent;
+      newTextEditingDeltaState.deltaStart = newTextEditingDeltaState.composingOffset!;
+      newTextEditingDeltaState.deltaEnd = newTextEditingDeltaState.composingExtent!;
     }
 
     final bool isDeltaRangeEmpty = newTextEditingDeltaState.deltaStart == -1 && newTextEditingDeltaState.deltaStart == newTextEditingDeltaState.deltaEnd;
@@ -596,16 +596,16 @@ class TextEditingDeltaState {
   int deltaEnd;
 
   /// The updated starting position of the selection in the text field.
-  int baseOffset;
+  int? baseOffset;
 
   /// The updated terminating position of the selection in the text field.
-  int extentOffset;
+  int? extentOffset;
 
   /// The starting position of the composing region.
-  int composingOffset;
+  int? composingOffset;
 
   /// The terminating position of the composing region.
-  int composingExtent;
+  int? composingExtent;
 
   Map<String, dynamic> toFlutter() => <String, dynamic>{
     'deltas': <Map<String, dynamic>>[
