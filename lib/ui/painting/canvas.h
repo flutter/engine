@@ -180,7 +180,8 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
       return;
     }
     Paint paint(paint_objects, paint_data);
-    canvas_->drawCircle(x, y, radius, *paint.paint());
+    SkPaint sk_paint;
+    canvas_->drawCircle(x, y, radius, *paint.paint(sk_paint));
   }
 
   void drawArc(double left,

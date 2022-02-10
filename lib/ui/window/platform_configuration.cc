@@ -22,11 +22,8 @@ namespace flutter {
 namespace {
 
 void _DefaultRouteName(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  std::string routeName = UIDartState::Current()
-                              ->platform_configuration()
-                              ->client()
-                              ->DefaultRouteName();
+  std::string routeName =
+      PlatformConfigurationClient::DefaultRouteNameOrThrow();
   Dart_SetReturnValue(args, tonic::StdStringToDart(routeName));
 }
 
@@ -106,11 +103,13 @@ void ReportUnhandledException(Dart_NativeArguments args) {
 }
 
 void _SendPlatformMessage(Dart_NativeArguments args) {
-  tonic::DartCallStatic(&PlatformConfiguration::SendPlatformMessage, args);
+  tonic::DartCallStatic(&PlatformConfigurationClient::SendPlatformMessage,
+                        args);
 }
 
 void _RespondToPlatformMessage(Dart_NativeArguments args) {
-  tonic::DartCallStatic(&PlatformConfiguration::RespondToPlatformMessage, args);
+  tonic::DartCallStatic(&PlatformConfigurationClient::RespondToPlatformMessage,
+                        args);
 }
 
 void GetPersistentIsolateData(Dart_NativeArguments args) {
@@ -378,24 +377,10 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-Dart_Handle ComputePlatformResolvedLocale(Dart_Handle supportedLocalesHandle) {
-  std::vector<std::string> supportedLocales =
-      tonic::DartConverter<std::vector<std::string>>::FromDart(
-          supportedLocalesHandle);
-
-  std::vector<std::string> results =
-      *UIDartState::Current()
-           ->platform_configuration()
-           ->client()
-           ->ComputePlatformResolvedLocale(supportedLocales);
-
-  return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
-}
-
 static void _ComputePlatformResolvedLocale(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  Dart_Handle result = PlatformConfiguration::ComputePlatformResolvedLocale(
-      Dart_GetNativeArgument(args, 1));
+  Dart_Handle result =
+      PlatformConfigurationClient::ComputePlatformResolvedLocaleOrThrow(
+          Dart_GetNativeArgument(args, 1));
   Dart_SetReturnValue(args, result);
 }
 
@@ -423,12 +408,12 @@ void PlatformConfiguration::RegisterNatives(
   });
 }
 
-void PlatformConfiguration::RenderOrThrow(Scene* scene) {
+void PlatformConfigurationClient::RenderOrThrow(Scene* scene) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->Render(scene);
 }
 
-void PlatformConfiguration::ReportUnhandledExceptionOrThrow(
+void PlatformConfigurationClient::ReportUnhandledExceptionOrThrow(
     std::string error_name,
     std::string stack_trace) {
   UIDartState::ThrowIfUIOperationsProhibited();
@@ -436,13 +421,7 @@ void PlatformConfiguration::ReportUnhandledExceptionOrThrow(
                                                    std::move(stack_trace));
 }
 
-void PlatformConfiguration::RespondToKeyData(uint64_t response_id,
-                                             bool handled) {
-  UIDartState::Current()->platform_configuration()->CompleteKeyDataResponse(
-      response_id, handled);
-}
-
-void PlatformConfiguration::SetNeedsReportTimingsOrThrow(bool value) {
+void PlatformConfigurationClient::SetNeedsReportTimingsOrThrow(bool value) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()
       ->platform_configuration()
@@ -450,7 +429,7 @@ void PlatformConfiguration::SetNeedsReportTimingsOrThrow(bool value) {
       ->SetNeedsReportTimings(value);
 }
 
-Dart_Handle PlatformConfiguration::SendPlatformMessage(
+Dart_Handle PlatformConfigurationClient::SendPlatformMessage(
     const std::string& name,
     Dart_Handle callback,
     Dart_Handle data_handle) {
@@ -482,7 +461,7 @@ Dart_Handle PlatformConfiguration::SendPlatformMessage(
   return Dart_Null();
 }
 
-void PlatformConfiguration::RespondToPlatformMessage(
+void PlatformConfigurationClient::RespondToPlatformMessage(
     int response_id,
     const tonic::DartByteData& data) {
   if (Dart_IsNull(data.dart_handle())) {
@@ -500,12 +479,13 @@ void PlatformConfiguration::RespondToPlatformMessage(
   }
 }
 
-void PlatformConfiguration::SetIsolateDebugNameOrThrow(const std::string name) {
+void PlatformConfigurationClient::SetIsolateDebugNameOrThrow(
+    const std::string name) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->SetDebugName(name);
 }
 
-Dart_Handle PlatformConfiguration::GetPersistentIsolateDataOrThrow() {
+Dart_Handle PlatformConfigurationClient::GetPersistentIsolateDataOrThrow() {
   UIDartState::ThrowIfUIOperationsProhibited();
 
   auto persistent_isolate_data = UIDartState::Current()
@@ -521,19 +501,21 @@ Dart_Handle PlatformConfiguration::GetPersistentIsolateDataOrThrow() {
                                      persistent_isolate_data->GetSize());
 }
 
-void PlatformConfiguration::ScheduleFrameOrThrow() {
+void PlatformConfigurationClient::ScheduleFrameOrThrow() {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
-void PlatformConfiguration::UpdateSemanticsOrThrow(SemanticsUpdate* update) {
+void PlatformConfigurationClient::UpdateSemanticsOrThrow(
+    SemanticsUpdate* update) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->UpdateSemantics(
       update);
 }
 
-Dart_Handle PlatformConfiguration::ComputePlatformResolvedLocale(
+Dart_Handle PlatformConfigurationClient::ComputePlatformResolvedLocaleOrThrow(
     Dart_Handle supportedLocalesHandle) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   std::vector<std::string> supportedLocales =
       tonic::DartConverter<std::vector<std::string>>::FromDart(
           supportedLocalesHandle);
@@ -547,7 +529,7 @@ Dart_Handle PlatformConfiguration::ComputePlatformResolvedLocale(
   return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
 }
 
-std::string PlatformConfiguration::DefaultRouteName() {
+std::string PlatformConfigurationClient::DefaultRouteNameOrThrow() {
   UIDartState::ThrowIfUIOperationsProhibited();
   return UIDartState::Current()
       ->platform_configuration()

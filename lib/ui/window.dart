@@ -267,7 +267,7 @@ abstract class FlutterView {
   void render(Scene scene) => _render(scene);
 
   @FfiNative<Void Function(Pointer<Void>)>(
-      'PlatformConfiguration::RenderOrThrow')
+      'PlatformConfigurationClient::RenderOrThrow')
   external static void _render(Scene scene);
 }
 
