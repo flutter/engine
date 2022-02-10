@@ -341,6 +341,10 @@ if (enable_unittests) {
       ]
     }
 
+    if (is_win) {
+      sources += [ "platform/win/wstring_conversion_unittests.cc" ]
+    }
+
     deps = [
       ":fml_fixtures",
       "//flutter/fml",

@@ -11,7 +11,6 @@
 #include <iostream>
 #include <string>
 
-#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/windows/keyboard_win32_common.h"
 
 namespace flutter {

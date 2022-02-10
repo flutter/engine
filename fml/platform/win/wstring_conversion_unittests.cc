@@ -6,7 +6,7 @@
 
 #include "gtest/gtest.h"
 
-namespace flutter {
+namespace fml {
 namespace testing {
 
 TEST(StringConversion, Utf16ToWideStringEmpty) {
@@ -34,4 +34,4 @@ TEST(StringConversion, WideStringToUtf8Unicode) {
 }
 
 }  // namespace testing
-}  // namespace flutter
+}  // namespace fml

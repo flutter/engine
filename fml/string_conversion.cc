@@ -22,13 +22,11 @@ namespace fml {
 using Utf16StringConverter =
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>;
 
-// Returns a UTF-8 encoded equivalent of a UTF-16 encoded input string.
 std::string Utf16ToUtf8(const std::u16string_view string) {
   Utf16StringConverter converter;
   return converter.to_bytes(string.data());
 }
 
-// Returns a UTF-16 encoded equivalent of a UTF-8 encoded input string.
 std::u16string Utf8ToUtf16(const std::string_view string) {
   Utf16StringConverter converter;
   return converter.from_bytes(string.data());
