@@ -231,7 +231,6 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
   DartArgIterator it(args);
   using Indices = typename IndicesForSignature<Sig>::type;
   using Wrappable = typename DartDispatcher<Indices, Sig>::CtorResultType;
-  // Call native Create function to construct native obj.
   Wrappable wrappable;
   {
     DartDispatcher<Indices, Sig> decoder(&it);
@@ -240,16 +239,12 @@ void DartCallConstructor(Sig func, Dart_NativeArguments args) {
     wrappable = decoder.DispatchCtor(func);
   }
 
-  // Get first arg which is the Handle for the Dart object being constructed.
   Dart_Handle wrapper = Dart_GetNativeArgument(args, 0);
   TONIC_CHECK(!LogIfError(wrapper));
 
-  // There's only one field which is the native object reference.
   intptr_t native_fields[DartWrappable::kNumberOfNativeFields];
-  // Copy native field into array.
   TONIC_CHECK(!LogIfError(Dart_GetNativeFieldsOfArgument(
       args, 0, DartWrappable::kNumberOfNativeFields, native_fields)));
-  // Check the native reference .. is null?
   TONIC_CHECK(!native_fields[DartWrappable::kPeerIndex]);
 
   wrappable->AssociateWithDartWrapper(wrapper);
