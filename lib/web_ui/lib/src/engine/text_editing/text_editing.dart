@@ -448,9 +448,7 @@ String _replace(String originalText, String replacementText, ui.TextRange replac
 
   final ui.TextRange normalizedRange = ui.TextRange(start: math.min(replacedRange.start, replacedRange.end), end: math.max(replacedRange.start, replacedRange.end));
 
-  final String newText = normalizedRange.textBefore(originalText) + replacementText + normalizedRange.textAfter(originalText);
-
-  return newText;
+  return normalizedRange.textBefore(originalText) + replacementText + normalizedRange.textAfter(originalText);
 }
 
 /// The change between the last editing state and the current editing state
