@@ -136,7 +136,7 @@ SurfaceFrame::FramebufferInfo AndroidSurfaceGL::GLContextFramebufferInfo()
   // Some devices (Pixel2 XL) needs EGL_KHR_partial_update rect aligned to 4,
   // otherwise there are glitches
   // (https://github.com/flutter/flutter/issues/97482#)
-  // Larger alignment might be beneficial for tile base renderers.
+  // Larger alignment might also be beneficial for tile base renderers.
   res.horizontal_clip_alignment = 32;
   res.vertical_clip_alignment = 32;
 
