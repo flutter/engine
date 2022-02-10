@@ -474,19 +474,19 @@ class TextEditingDeltaState {
   /// and the last editing state.
   ///
   /// For a deletion we calculate the length of the deleted text by comparing the new
-  /// and last editing states. We subtract this from the `deltaEnd` that we set when beforeinput
-  /// was fired to determine the `deltaStart`.
+  /// and last editing states. We subtract this from the [deltaEnd] that we set when beforeinput
+  /// was fired to determine the [deltaStart].
   ///
-  /// For a replacement at a selection we set the `deltaStart` to be the beginning of the selection
+  /// For a replacement at a selection we set the [deltaStart] to be the beginning of the selection
   /// from the last editing state.
   ///
   /// For the composing region we check if a composing range was captured by the compositionupdate event,
-  /// we have a non empty `deltaText`, and that we did not have an active selection. An active selection
+  /// we have a non empty [deltaText], and that we did not have an active selection. An active selection
   /// would mean we are not composing.
   ///
   /// We then verify that the delta we collected results in the text contained within the new editing state
   /// when applied to the last editing state. If it is not then we use our new editing state as the source of truth,
-  /// and use regex to find the correct `deltaStart` and `deltaEnd`.
+  /// and use regex to find the correct [deltaStart] and [deltaEnd].
   static TextEditingDeltaState inferDeltaState(EditingState newEditingState, EditingState? lastEditingState, TextEditingDeltaState lastTextEditingDeltaState) {
     final TextEditingDeltaState newTextEditingDeltaState = lastTextEditingDeltaState.copyWith();
     final bool previousSelectionWasCollapsed = lastEditingState?.baseOffset == lastEditingState?.extentOffset;
@@ -590,9 +590,13 @@ class TextEditingDeltaState {
   String deltaText;
 
   /// The position in the text field where the change begins.
+  ///
+  /// Has a default value of -1 to signify an empty range.
   int deltaStart;
 
   /// The position in the text field where the change ends.
+  /// 
+  /// Has a default value of -1 to signify an empty range.
   int deltaEnd;
 
   /// The updated starting position of the selection in the text field.
