@@ -595,7 +595,7 @@ class TextEditingDeltaState {
   int deltaStart;
 
   /// The position in the text field where the change ends.
-  /// 
+  ///
   /// Has a default value of -1 to signify an empty range.
   int deltaEnd;
 
