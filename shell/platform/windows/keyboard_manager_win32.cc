@@ -75,23 +75,6 @@ static bool IsKeyDownCtrlLeft(int action, int virtual_key) {
 #endif
 }
 
-// Returns true if this key is a key down event of ShiftRight.
-//
-// This is a temporary solution to
-// https://github.com/flutter/flutter/issues/81674, and forces ShiftRight
-// KeyDown events to not be redispatched regardless of the framework's response.
-//
-// If a ShiftRight KeyDown event is not handled by the framework and is
-// redispatched, Win32 will not send its following KeyUp event and keeps
-// recording ShiftRight as being pressed.
-static bool IsKeyDownShiftRight(int virtual_key, bool was_down) {
-#ifdef WINUWP
-  return false;
-#else
-  return virtual_key == VK_RSHIFT && !was_down;
-#endif
-}
-
 // Returns if a character sent by Win32 is a dead key.
 static bool IsDeadKey(uint32_t ch) {
   return (ch & kDeadKeyCharMask) != 0;
@@ -219,13 +202,12 @@ void KeyboardManagerWin32::HandleOnKeyResult(
   // and redispatches a normal character without combining it with the
   // next letter key.
   //
-  // Redispatching sys events is impossible due to the limitation of
-  // |SendInput|.
+  // Never redispatch sys keys, because their original messages are always
+  // passed to the system default processor.
   const bool is_syskey =
       event->action == WM_SYSKEYDOWN || event->action == WM_SYSKEYUP;
   const bool real_handled = handled || IsDeadKey(event->character) ||
-                            is_syskey ||
-                            IsKeyDownShiftRight(event->key, event->was_down);
+                            is_syskey;
 
   // For handled events, that's all.
   // For unhandled events, dispatch them to OnText.
@@ -445,14 +427,6 @@ UINT KeyboardManagerWin32::PeekNextMessageType(UINT wMsgFilterMin,
     return 0;
   }
   return next_message.message;
-}
-
-uint64_t KeyboardManagerWin32::ComputeEventHash(const PendingEvent& event) {
-  // Calculate a key event ID based on the scan code of the key pressed,
-  // and the flags we care about.
-  return event.scancode | (((event.action == WM_KEYUP ? KEYEVENTF_KEYUP : 0x0) |
-                            (event.extended ? KEYEVENTF_EXTENDEDKEY : 0x0))
-                           << 16);
 }
 
 }  // namespace flutter

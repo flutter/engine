@@ -203,6 +203,10 @@ class MockKeyboardManagerWin32Delegate
     }
   }
 
+  std::list<Win32Message>& RedispatchedMessages() {
+    return redispatched_messages_;
+  }
+
  protected:
   BOOL Win32PeekMessage(LPMSG lpMsg,
                         UINT wMsgFilterMin,
@@ -231,6 +235,11 @@ class MockKeyboardManagerWin32Delegate
   UINT Win32DispatchMessage(UINT Msg, WPARAM wParam, LPARAM lParam) override {
     bool handled = keyboard_manager_->HandleMessage(Msg, wParam, lParam);
     if (keyboard_manager_->DuringRedispatch()) {
+      redispatched_messages_.push_back(Win32Message{
+        .message = Msg,
+        .wParam = wParam,
+        .lParam = lParam,
+      });
       EXPECT_FALSE(handled);
     } else {
       EXPECT_FALSE(forged_message_expectations_.empty());
@@ -263,6 +272,7 @@ class MockKeyboardManagerWin32Delegate
   std::list<ForgedMessageExpectation> forged_message_expectations_;
   MapVkToCharHandler map_vk_to_char_;
   TestKeystate key_state_;
+  std::list<Win32Message> redispatched_messages_;
 };
 
 // A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
@@ -410,6 +420,13 @@ class KeyboardTester {
     window_->InjectKeyboardChanges(changes);
   }
 
+  size_t RedispatchedMessageCountAndClear() {
+    auto& messages = window_->RedispatchedMessages();
+    size_t count = messages.size();
+    messages.clear();
+    return count;
+  }
+
  private:
   std::unique_ptr<TestFlutterWindowsView> view_;
   std::unique_ptr<MockKeyboardManagerWin32Delegate> window_;
@@ -529,6 +546,7 @@ TEST(KeyboardTest, LowerCaseAHandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "a", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   // Release A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -539,6 +557,7 @@ TEST(KeyboardTest, LowerCaseAHandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 TEST(KeyboardTest, LowerCaseAUnhandled) {
@@ -559,6 +578,7 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
                        kLogicalKeyA, "a", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -569,6 +589,7 @@ TEST(KeyboardTest, LowerCaseAUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, ArrowLeftHandled) {
@@ -587,6 +608,7 @@ TEST(KeyboardTest, ArrowLeftHandled) {
                        kPhysicalArrowLeft, kLogicalArrowLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   // Release ArrowLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -597,6 +619,7 @@ TEST(KeyboardTest, ArrowLeftHandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalArrowLeft,
                        kLogicalArrowLeft, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 TEST(KeyboardTest, ArrowLeftUnhandled) {
@@ -615,6 +638,7 @@ TEST(KeyboardTest, ArrowLeftUnhandled) {
                        kPhysicalArrowLeft, kLogicalArrowLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release ArrowLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -625,6 +649,7 @@ TEST(KeyboardTest, ArrowLeftUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalArrowLeft,
                        kLogicalArrowLeft, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, ShiftLeftUnhandled) {
@@ -644,6 +669,7 @@ TEST(KeyboardTest, ShiftLeftUnhandled) {
                        kPhysicalShiftLeft, kLogicalShiftLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release ShiftLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -655,6 +681,7 @@ TEST(KeyboardTest, ShiftLeftUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
                        kLogicalShiftLeft, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, ShiftRightUnhandled) {
@@ -674,6 +701,7 @@ TEST(KeyboardTest, ShiftRightUnhandled) {
                        kPhysicalShiftRight, kLogicalShiftRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release ShiftRight
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -686,6 +714,7 @@ TEST(KeyboardTest, ShiftRightUnhandled) {
                        kPhysicalShiftRight, kLogicalShiftRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, CtrlLeftUnhandled) {
@@ -705,6 +734,7 @@ TEST(KeyboardTest, CtrlLeftUnhandled) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release CtrlLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -717,6 +747,7 @@ TEST(KeyboardTest, CtrlLeftUnhandled) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, CtrlRightUnhandled) {
@@ -736,6 +767,7 @@ TEST(KeyboardTest, CtrlRightUnhandled) {
                        kPhysicalControlRight, kLogicalControlRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release CtrlRight
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -748,6 +780,7 @@ TEST(KeyboardTest, CtrlRightUnhandled) {
                        kPhysicalControlRight, kLogicalControlRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, AltLeftUnhandled) {
@@ -766,6 +799,8 @@ TEST(KeyboardTest, AltLeftUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalAltLeft,
                        kLogicalAltLeft, "", kNotSynthesized);
   clear_key_calls();
+  // Don't redispatch sys messages.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   // Release AltLeft. AltLeft is a SysKeyUp event.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -777,6 +812,8 @@ TEST(KeyboardTest, AltLeftUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltLeft,
                        kLogicalAltLeft, "", kNotSynthesized);
   clear_key_calls();
+  // Don't redispatch sys messages.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 TEST(KeyboardTest, AltRightUnhandled) {
@@ -796,6 +833,8 @@ TEST(KeyboardTest, AltRightUnhandled) {
                        kPhysicalAltRight, kLogicalAltRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  // Don't redispatch sys messages.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   // Release AltRight. AltRight is a SysKeyUp event.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -807,6 +846,8 @@ TEST(KeyboardTest, AltRightUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
                        kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
+  // Don't redispatch sys messages.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 TEST(KeyboardTest, MetaLeftUnhandled) {
@@ -826,6 +867,7 @@ TEST(KeyboardTest, MetaLeftUnhandled) {
                        kPhysicalMetaLeft, kLogicalMetaLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release MetaLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -836,6 +878,7 @@ TEST(KeyboardTest, MetaLeftUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaLeft,
                        kLogicalMetaLeft, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 TEST(KeyboardTest, MetaRightUnhandled) {
@@ -855,6 +898,7 @@ TEST(KeyboardTest, MetaRightUnhandled) {
                        kPhysicalMetaRight, kLogicalMetaRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release MetaRight
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -866,6 +910,7 @@ TEST(KeyboardTest, MetaRightUnhandled) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaRight,
                        kLogicalMetaRight, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // Press Shift-A. This is special because Win32 gives 'A' as character for the
@@ -887,6 +932,7 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
                        kPhysicalShiftLeft, kLogicalShiftLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Press A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -900,6 +946,7 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
                        kLogicalKeyA, "A", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"A");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release ShiftLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -911,6 +958,7 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
                        kLogicalShiftLeft, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -921,6 +969,7 @@ TEST(KeyboardTest, ShiftLeftKeyA) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // Press Ctrl-A. This is special because Win32 gives 0x01 as character for the
@@ -942,6 +991,7 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Press A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -954,6 +1004,7 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -964,6 +1015,7 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release ControlLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -976,6 +1028,7 @@ TEST(KeyboardTest, CtrlLeftKeyA) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // Press Ctrl-1. This is special because it yields no WM_CHAR for the 1.
@@ -996,6 +1049,7 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Press 1
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1006,6 +1060,7 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalDigit1,
                        kLogicalDigit1, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release 1
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1016,6 +1071,7 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit1,
                        kLogicalDigit1, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release ControlLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1028,6 +1084,7 @@ TEST(KeyboardTest, CtrlLeftDigit1) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // Press 1 on a French keyboard. This is special because it yields WM_CHAR
@@ -1050,6 +1107,7 @@ TEST(KeyboardTest, Digit1OnFrenchLayout) {
                        kLogicalDigit1, "&", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"&");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release 1
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1060,6 +1118,7 @@ TEST(KeyboardTest, Digit1OnFrenchLayout) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalDigit1,
                        kLogicalDigit1, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // This tests AltGr-Q on a German keyboard, which should print '@'.
@@ -1086,6 +1145,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kPhysicalAltRight, kLogicalAltRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Press Q
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1099,6 +1159,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
                        kLogicalKeyQ, "@", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"@");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release Q
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1109,6 +1170,7 @@ TEST(KeyboardTest, AltGrModifiedKey) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyQ,
                        kLogicalKeyQ, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Release AltGr. Win32 doesn't dispatch ControlLeft up. Instead Flutter will
   // forge one. The AltGr is a system key, therefore will be handled by Win32's
@@ -1129,6 +1191,8 @@ TEST(KeyboardTest, AltGrModifiedKey) {
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalAltRight,
                        kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
+  // The sys key up must not be redispatched. The forged ControlLeft up will.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // Test the following two key sequences at the same time:
@@ -1168,6 +1232,7 @@ TEST(KeyboardTest, AltGrTwice) {
                        kPhysicalAltRight, kLogicalAltRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // 2. AltGr up.
 
@@ -1187,6 +1252,8 @@ TEST(KeyboardTest, AltGrTwice) {
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalAltRight,
                        kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
+  // The sys key up must not be redispatched. The forged ControlLeft up will.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // 3. AltGr down (or: ControlLeft down then AltRight down.)
 
@@ -1206,6 +1273,7 @@ TEST(KeyboardTest, AltGrTwice) {
                        kPhysicalAltRight, kLogicalAltRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // 4. AltGr up.
 
@@ -1225,6 +1293,8 @@ TEST(KeyboardTest, AltGrTwice) {
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalAltRight,
                        kLogicalAltRight, "", kNotSynthesized);
   clear_key_calls();
+  // The sys key up must not be redispatched. The forged ControlLeft up will.
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // 5. For key sequence 2: a real ControlLeft up.
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1234,6 +1304,7 @@ TEST(KeyboardTest, AltGrTwice) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 // This tests dead key ^ then E on a French keyboard, which should be combined
@@ -1256,6 +1327,7 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
                        kPhysicalBracketLeft, kLogicalBracketRight, "^",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release ^¨
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1267,6 +1339,7 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
                        kPhysicalBracketLeft, kLogicalBracketRight, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // Press E
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1280,6 +1353,7 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
                        kLogicalKeyE, "ê", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"ê");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release E
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1290,6 +1364,7 @@ TEST(KeyboardTest, DeadKeyThatCombines) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyE,
                        kLogicalKeyE, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // This tests dead key ^ then E on a US INTL keyboard, which should be combined
