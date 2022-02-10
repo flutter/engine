@@ -66,6 +66,7 @@ DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect)
     : cull_rect_(cull_rect) {
   layer_stack_.emplace_back();
   current_layer_ = &layer_stack_.back();
+  current_color_filter_.reset(new DlNoColorFilter());
 }
 
 DisplayListBuilder::~DisplayListBuilder() {
@@ -134,10 +135,76 @@ void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
       ? Push<SetImageFilterOp>(0, 0, std::move(filter))
       : Push<ClearImageFilterOp>(0, 0);
 }
-void DisplayListBuilder::onSetColorFilter(sk_sp<SkColorFilter> filter) {
-  (current_color_filter_ = filter)  //
-      ? Push<SetColorFilterOp>(0, 0, std::move(filter))
-      : Push<ClearColorFilterOp>(0, 0);
+void DisplayListBuilder::setColorFilter(sk_sp<SkColorFilter> filter) {
+  if (filter == nullptr) {
+    if (current_color_filter_->type() != DlColorFilter::kNone) {
+      onSetColorFilter(&DlNoColorFilter::instance);
+    }
+    return;
+  }
+  {
+    SkColor color;
+    SkBlendMode mode;
+    if (filter->asAColorMode(&color, &mode)) {
+      DlBlendColorFilter blend_filter(color, mode);
+      onSetColorFilter(&blend_filter);
+      return;
+    }
+  }
+  {
+    float matrix[20];
+    if (filter->asAColorMatrix(matrix)) {
+      DlMatrixColorFilter matrix_filter(matrix);
+      onSetColorFilter(&matrix_filter);
+      return;
+    }
+  }
+  DlUnknownColorFilter unknown_filter(std::move(filter));
+  onSetColorFilter(&unknown_filter);
+}
+void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
+  if (filter == nullptr) {
+    filter = &DlNoColorFilter::instance;
+  }
+  void* pod;
+  switch (filter->type()) {
+    case DlColorFilter::kNone:
+      current_color_filter_.reset(new DlNoColorFilter());
+      Push<ClearColorFilterOp>(0, 0);
+      break;
+    case DlColorFilter::kBlend: {
+      const DlBlendColorFilter* blend_filter = filter->asABlendFilter();
+      FML_DCHECK(blend_filter);
+      current_color_filter_.reset(new DlBlendColorFilter(blend_filter));
+      pod = Push<SetColorFilterOp>(blend_filter->size(), 0);
+      new (pod) DlBlendColorFilter(blend_filter);
+      break;
+    }
+    case DlColorFilter::kMatrix: {
+      const DlMatrixColorFilter* matrix_filter = filter->asAMatrixFilter();
+      FML_DCHECK(matrix_filter);
+      current_color_filter_.reset(new DlMatrixColorFilter(matrix_filter));
+      pod = Push<SetColorFilterOp>(matrix_filter->size(), 0);
+      new (pod) DlMatrixColorFilter(matrix_filter->asAMatrixFilter());
+      break;
+    }
+    case DlColorFilter::kSrgbToLinearGamma:
+      current_color_filter_.reset(new DlSrgbToLinearGammaColorFilter());
+      pod = Push<SetColorFilterOp>(filter->size(), 0);
+      new (pod) DlSrgbToLinearGammaColorFilter();
+      break;
+    case DlColorFilter::kLinearToSrgbGamma:
+      current_color_filter_.reset(new DlLinearToSrgbGammaColorFilter());
+      pod = Push<SetColorFilterOp>(filter->size(), 0);
+      new (pod) DlLinearToSrgbGammaColorFilter();
+      break;
+    case DlColorFilter::kUnknown: {
+      const sk_sp<SkColorFilter> sk_filter = filter->sk_filter();
+      current_color_filter_.reset(new DlUnknownColorFilter(sk_filter));
+      Push<SetSkColorFilterOp>(0, 0, sk_filter);
+      break;
+    }
+  }
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetPathEffect(sk_sp<SkPathEffect> effect) {

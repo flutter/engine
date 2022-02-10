@@ -177,10 +177,42 @@ struct SetBlendModeOp final : DLOp {
 DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
 DEFINE_SET_CLEAR_SKREF_OP(Shader, shader)
 DEFINE_SET_CLEAR_SKREF_OP(ImageFilter, filter)
-DEFINE_SET_CLEAR_SKREF_OP(ColorFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(MaskFilter, filter)
 DEFINE_SET_CLEAR_SKREF_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_SKREF_OP
+
+struct ClearColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kClearColorFilter;
+
+  ClearColorFilterOp() {}
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorFilter(&DlNoColorFilter::instance);
+  }
+};
+
+struct SetColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetColorFilter;
+
+  SetColorFilterOp() {}
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorFilter(reinterpret_cast<const DlColorFilter*>(this + 1));
+  }
+};
+
+struct SetSkColorFilterOp final : DLOp {
+  static const auto kType = DisplayListOpType::kSetSkColorFilter;
+
+  SetSkColorFilterOp(sk_sp<SkColorFilter> filter)
+      : filter(std::make_unique<DlUnknownColorFilter>(filter)) {}
+
+  std::unique_ptr<const DlUnknownColorFilter> filter;
+
+  void dispatch(Dispatcher& dispatcher) const {
+    dispatcher.setColorFilter(filter.get());
+  }
+};
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 // Note that the "blur style" is packed into the OpType to prevent
