@@ -183,7 +183,7 @@ typedef CanvasPath Path;
   V(ColorFilter, initSrgbToLinearGamma, 1)             \
   V(EngineLayer, dispose, 1)                           \
   V(FragmentProgram, init, 3)                          \
-  V(FragmentProgram, shader, 3)                        \
+  V(FragmentProgram, shader, 4)                        \
   V(Gradient, initLinear, 6)                           \
   V(Gradient, initRadial, 8)                           \
   V(Gradient, initSweep, 9)                            \
