@@ -23,20 +23,21 @@ namespace tonic {
 
 template <>
 struct DartConverter<flutter::RRect> {
+  using NativeType = flutter::RRect;
   using FfiType = Dart_Handle;
-  static constexpr const char* kFfiSig = "Handle";
-  static constexpr const char* kDartSig = "Object";
-  static constexpr bool kAllowedInLeaf = false;
+  static constexpr const char* kFfiRepresentation = "Handle";
+  static constexpr const char* kDartRepresentation = "Object";
+  static constexpr bool kAllowedInLeafCall = false;
 
-  static flutter::RRect FromDart(Dart_Handle handle);
-  static flutter::RRect FromArguments(Dart_NativeArguments args,
-                                      int index,
-                                      Dart_Handle& exception);
+  static NativeType FromDart(Dart_Handle handle);
+  static NativeType FromArguments(Dart_NativeArguments args,
+                                  int index,
+                                  Dart_Handle& exception);
 
-  static flutter::RRect FromFfi(FfiType val) { return FromDart(val); }
-  static const char* ToFfiSig() { return kFfiSig; }
-  static const char* ToDartSig() { return kDartSig; }
-  static bool AllowedInLeaf() { return kAllowedInLeaf; }
+  static NativeType FromFfi(FfiType val) { return FromDart(val); }
+  static const char* GetFfiRepresentation() { return kFfiRepresentation; }
+  static const char* GetDartRepresentation() { return kDartRepresentation; }
+  static bool AllowedInLeafCall() { return kAllowedInLeafCall; }
 };
 
 }  // namespace tonic

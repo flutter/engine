@@ -103,9 +103,9 @@ struct DartConverter<
     typename std::enable_if<
         std::is_convertible<T*, const DartWrappable*>::value>::type> {
   using FfiType = T*;
-  static constexpr const char* kFfiSig = "Pointer";
-  static constexpr const char* kDartSig = "Pointer";
-  static constexpr bool kAllowedInLeaf = false;
+  static constexpr const char* kFfiRepresentation = "Pointer";
+  static constexpr const char* kDartRepresentation = "Pointer";
+  static constexpr bool kAllowedInLeafCall = true;
 
   static Dart_Handle ToDart(DartWrappable* val) {
     if (!val) {
@@ -156,9 +156,9 @@ struct DartConverter<
 
   static T* FromFfi(FfiType val) { return val; }
   static FfiType ToFfi(T* val) { return val; }
-  static const char* ToFfiSig() { return kFfiSig; }
-  static const char* ToDartSig() { return kDartSig; }
-  static bool AllowedInLeaf() { return kAllowedInLeaf; }
+  static const char* GetFfiRepresentation() { return kFfiRepresentation; }
+  static const char* GetDartRepresentation() { return kDartRepresentation; }
+  static bool AllowedInLeafCall() { return kAllowedInLeafCall; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,11 +169,10 @@ struct DartConverter<
 template <template <typename T> class PTR, typename T>
 struct DartConverter<PTR<T>> {
   using NativeType = PTR<T>;
-  // TODO(cskau): Does the type depend on T?
   using FfiType = Dart_Handle;
-  static constexpr const char* kFfiSig = "Handle";
-  static constexpr const char* kDartSig = "Object";
-  static constexpr bool kAllowedInLeaf = false;
+  static constexpr const char* kFfiRepresentation = "Handle";
+  static constexpr const char* kDartRepresentation = "Object";
+  static constexpr bool kAllowedInLeafCall = false;
 
   static Dart_Handle ToDart(const NativeType& val) {
     return DartConverter<T*>::ToDart(val.get());
@@ -199,9 +198,9 @@ struct DartConverter<PTR<T>> {
 
   static NativeType FromFfi(FfiType val) { return FromDart(val); }
   static FfiType ToFfi(const NativeType& val) { return ToDart(val); }
-  static const char* ToFfiSig() { return kFfiSig; }
-  static const char* ToDartSig() { return kDartSig; }
-  static bool AllowedInLeaf() { return kAllowedInLeaf; }
+  static const char* GetFfiRepresentation() { return kFfiRepresentation; }
+  static const char* GetDartRepresentation() { return kDartRepresentation; }
+  static bool AllowedInLeafCall() { return kAllowedInLeafCall; }
 };
 
 template <typename T>
