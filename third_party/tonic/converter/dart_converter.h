@@ -134,30 +134,20 @@ struct DartConverterInteger {
 };
 
 template <>
-struct DartConverter<int> : public DartConverterInteger<int> {
-  static const char* ToFfiSig() { return ToIntStr(); }
-};
+struct DartConverter<int> : public DartConverterInteger<int> {};
 
 template <>
-struct DartConverter<long int> : public DartConverterInteger<long int> {
-  static const char* ToFfiSig() { return ToIntStr(); }
-};
+struct DartConverter<long int> : public DartConverterInteger<long int> {};
 
 template <>
-struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {
-  static const char* ToFfiSig() { return ToUintStr(); }
-};
+struct DartConverter<unsigned> : public DartConverterInteger<unsigned> {};
 
 template <>
-struct DartConverter<long long> : public DartConverterInteger<long long> {
-  static const char* ToFfiSig() { return ToIntStr(); }
-};
+struct DartConverter<long long> : public DartConverterInteger<long long> {};
 
 template <>
 struct DartConverter<unsigned long>
-    : public DartConverterInteger<unsigned long> {
-  static const char* ToFfiSig() { return ToUintStr(); }
-};
+    : public DartConverterInteger<unsigned long> {};
 
 template <>
 struct DartConverter<unsigned long long> {
