@@ -135,7 +135,6 @@ typedef CanvasPath Path;
   V(DartRuntimeHooks::GetCallbackHandle, 1)                               \
   V(DartRuntimeHooks::GetCallbackFromHandle, 1)                           \
   V(Vertices::init, 6)
-// V(PlatformConfigurationClient::RespondToKeyData, 2)                \
 
 // Instance methods.
 #define FFI_METHOD_LIST(V)                             \
