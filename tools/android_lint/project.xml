@@ -68,6 +68,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/app/FlutterApplication.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/app/FlutterActivityDelegate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/Preconditions.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/util/ThreadUtils.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/ViewUtils.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/Predicate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/util/PathUtils.java" />

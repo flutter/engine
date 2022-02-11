@@ -671,23 +671,22 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
   embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
 }
 
-TEST(AndroidExternalViewEmbedder, DoesNotCallJNIPlatformThreadOnlyMethods) {
+TEST(AndroidExternalViewEmbedder, JNICanBeCalledFromAnyThread) {
   auto jni_mock = std::make_shared<JNIMock>();
 
   auto android_context = AndroidContext(AndroidRenderingAPI::kSoftware);
   auto embedder = std::make_unique<AndroidExternalViewEmbedder>(
       android_context, jni_mock, nullptr, GetTaskRunnersForFixture());
 
-  // While on the raster thread, don't make JNI calls as these methods can only
-  // run on the platform thread.
+  // JNI called from the raster thread also works.
   fml::Thread platform_thread("platform");
   auto raster_thread_merger = GetThreadMergerFromRasterThread(&platform_thread);
 
-  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(1);
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0,
                        raster_thread_merger);
 
-  EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(0);
+  EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(1);
   embedder->EndFrame(/*should_resubmit_frame=*/false, raster_thread_merger);
 }
 
@@ -858,7 +857,9 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
   }
 
   EXPECT_CALL(*jni_mock, FlutterViewDestroyOverlaySurfaces()).Times(1);
-  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
+
+  // JNI called from the raster thread also works.
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(1);
 
   fml::Thread platform_thread("platform");
   embedder->BeginFrame(SkISize::Make(30, 40), nullptr, 1.0,
@@ -886,7 +887,7 @@ TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
   // The shell may disable the thread merger during `OnPlatformViewDestroyed`.
   raster_thread_merger->Disable();
 
-  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(0);
+  EXPECT_CALL(*jni_mock, FlutterViewBeginFrame()).Times(1);
 
   embedder->BeginFrame(SkISize::Make(10, 20), nullptr, 1.0,
                        raster_thread_merger);
@@ -897,7 +898,7 @@ TEST(AndroidExternalViewEmbedder, DisableThreadMerger) {
   auto postpreroll_result = embedder->PostPrerollAction(raster_thread_merger);
   ASSERT_EQ(PostPrerollResult::kSkipAndRetryFrame, postpreroll_result);
 
-  EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(0);
+  EXPECT_CALL(*jni_mock, FlutterViewEndFrame()).Times(1);
   embedder->EndFrame(/*should_resubmit_frame=*/true, raster_thread_merger);
 
   ASSERT_FALSE(raster_thread_merger->IsMerged());

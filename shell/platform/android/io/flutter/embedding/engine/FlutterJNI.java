@@ -31,6 +31,7 @@ import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Preconditions;
+import io.flutter.util.ThreadUtils;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -1127,56 +1129,72 @@ public class FlutterJNI {
   @SuppressWarnings("unused")
   @UiThread
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to position an overlay surface");
-    }
-    platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+    ThreadUtils.runOnUiThread(
+        () -> {
+          ensureRunningOnMainThread();
+          if (platformViewsController == null) {
+            throw new RuntimeException(
+                "platformViewsController must be set before attempting to position an overlay surface");
+          }
+          platformViewsController.onDisplayOverlaySurface(id, x, y, width, height);
+        });
   }
 
   @SuppressWarnings("unused")
   @UiThread
   public void onBeginFrame() {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to begin the frame");
-    }
-    platformViewsController.onBeginFrame();
+    ThreadUtils.runOnUiThread(
+        () -> {
+          ensureRunningOnMainThread();
+          if (platformViewsController == null) {
+            throw new RuntimeException(
+                "platformViewsController must be set before attempting to begin the frame");
+          }
+          platformViewsController.onBeginFrame();
+        });
   }
 
   @SuppressWarnings("unused")
   @UiThread
   public void onEndFrame() {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to end the frame");
-    }
-    platformViewsController.onEndFrame();
+    ThreadUtils.runOnUiThread(
+        () -> {
+          ensureRunningOnMainThread();
+          if (platformViewsController == null) {
+            throw new RuntimeException(
+                "platformViewsController must be set before attempting to end the frame");
+          }
+          platformViewsController.onEndFrame();
+        });
   }
 
   @SuppressWarnings("unused")
   @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to position an overlay surface");
-    }
-    return platformViewsController.createOverlaySurface();
+    return ThreadUtils.runOnUiThreadBlockingNoException(
+        (Callable<FlutterOverlaySurface>)
+            () -> {
+              ensureRunningOnMainThread();
+              if (platformViewsController == null) {
+                throw new RuntimeException(
+                    "platformViewsController must be set before attempting to position an overlay surface");
+              }
+              return platformViewsController.createOverlaySurface();
+            });
   }
 
   @SuppressWarnings("unused")
   @UiThread
   public void destroyOverlaySurfaces() {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to destroy an overlay surface");
-    }
-    platformViewsController.destroyOverlaySurfaces();
+    ThreadUtils.runOnUiThread(
+        () -> {
+          ensureRunningOnMainThread();
+          if (platformViewsController == null) {
+            throw new RuntimeException(
+                "platformViewsController must be set before attempting to destroy an overlay surface");
+          }
+          platformViewsController.destroyOverlaySurfaces();
+        });
   }
   // ----- End Engine Lifecycle Support ----
 
@@ -1362,13 +1380,16 @@ public class FlutterJNI {
       int viewWidth,
       int viewHeight,
       FlutterMutatorsStack mutatorsStack) {
-    ensureRunningOnMainThread();
-    if (platformViewsController == null) {
-      throw new RuntimeException(
-          "platformViewsController must be set before attempting to position a platform view");
-    }
-    platformViewsController.onDisplayPlatformView(
-        viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
+    ThreadUtils.runOnUiThread(
+        () -> {
+          ensureRunningOnMainThread();
+          if (platformViewsController == null) {
+            throw new RuntimeException(
+                "platformViewsController must be set before attempting to position a platform view");
+          }
+          platformViewsController.onDisplayPlatformView(
+              viewId, x, y, width, height, viewWidth, viewHeight, mutatorsStack);
+        });
   }
 
   // TODO(mattcarroll): determine if this is nonull or nullable
