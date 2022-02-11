@@ -1849,6 +1849,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [copiedRects release];
   _selectionAffinity = _kTextAffinityDownstream;
   [self replaceRange:_selectedTextRange withText:text];
+  [self ensureUndoEnabled];
 }
 
 - (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size API_AVAILABLE(ios(13.0)) {
@@ -1894,6 +1895,8 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (!_selectedTextRange.isEmpty) {
     [self replaceRange:_selectedTextRange withText:@""];
   }
+
+  [self ensureUndoEnabled];
 }
 
 - (void)postAccessibilityNotification:(UIAccessibilityNotifications)notification target:(id)target {
@@ -1940,6 +1943,26 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 - (void)pressesCancelled:(NSSet<UIPress*>*)presses
                withEvent:(UIPressesEvent*)event API_AVAILABLE(ios(9.0)) {
   [_textInputPlugin.get().viewController pressesCancelled:presses withEvent:event];
+}
+
+#pragma mark - Undo/Redo support
+- (void)ensureUndoEnabled {
+  if (@available(iOS 9.0, *)) {
+    if (![self.undoManager canUndo]) {
+      self.undoManager.groupsByEvent = NO;
+      [self.undoManager beginUndoGrouping];
+      [self.undoManager registerUndoWithTarget:self
+                                       handler:^(id target){
+
+                                       }];
+      [self.undoManager endUndoGrouping];
+      self.undoManager.groupsByEvent = YES;
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.01 * (double)NSEC_PER_SEC),
+                     dispatch_get_main_queue(), ^{
+                       [self.undoManager removeAllActionsWithTarget:self];
+                     });
+    }
+  }
 }
 
 @end
