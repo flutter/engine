@@ -59,6 +59,9 @@ class Thread {
 
   static void SetCurrentThreadName(const ThreadConfig& config);
 
+  // Gets the current thread name, which may be useful for logging purposes.
+  static std::string GetName();
+
  private:
   std::unique_ptr<std::thread> thread_;
 

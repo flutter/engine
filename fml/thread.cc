@@ -13,6 +13,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/fml/thread_local.h"
 
 #if defined(FML_OS_WIN)
 #include <windows.h>
@@ -23,6 +24,8 @@
 #endif
 
 namespace fml {
+
+FML_THREAD_LOCAL ThreadLocalUniquePtr<std::string> tls_thread_name;
 
 #if defined(FML_OS_WIN)
 // The information on how to set the thread name comes from
@@ -37,9 +40,12 @@ typedef struct tagTHREADNAME_INFO {
 #endif
 
 void SetThreadName(const std::string& name) {
+  tls_thread_name.reset(new std::string(name));
+
   if (name == "") {
     return;
   }
+
 #if defined(FML_OS_MACOSX)
   pthread_setname_np(name.c_str());
 #elif defined(FML_OS_LINUX) || defined(FML_OS_ANDROID)
@@ -65,6 +71,10 @@ void SetThreadName(const std::string& name) {
 
 void Thread::SetCurrentThreadName(const Thread::ThreadConfig& config) {
   SetThreadName(config.name);
+}
+
+std::string Thread::GetName() {
+  return *(tls_thread_name.get());
 }
 
 Thread::Thread(const std::string& name)
