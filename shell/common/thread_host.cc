@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -30,49 +31,46 @@ std::string ThreadHost::ThreadHostConfig::MakeThreadName(
 
 std::unique_ptr<fml::Thread> ThreadHost::CreateThread(
     Type type,
-    ThreadHost::ThreadConfig configure) {
-  std::string name = ThreadHostConfig::MakeThreadName(type, name_prefix);
-  if (configure != nullptr) {
-    return std::make_unique<fml::Thread>(std::move(configure));
+    std::optional<ThreadConfig> thread_config,
+    const ThreadHostConfig& host_config) const {
+  /// if not specified ThreadConfig, create a ThreadConfig.
+  if (!thread_config.has_value()) {
+    thread_config = ThreadConfig(
+        ThreadHostConfig::MakeThreadName(type, host_config.name_prefix));
   }
-  return std::make_unique<fml::Thread>(
-      fml::Thread::ThreadConfig::MakeDefaultConfigure(name));
+  return std::make_unique<fml::Thread>(host_config.config_setter,
+                                       thread_config.value());
 }
 
 ThreadHost::ThreadHost() = default;
 
 ThreadHost::ThreadHost(ThreadHost&&) = default;
 
-ThreadHost::ThreadHost(std::string name_prefix_arg,
-                       uint64_t mask,
-                       ThreadHostConfig configure_host)
-    : name_prefix(name_prefix_arg) {
-  if (mask & ThreadHost::Type::Platform) {
+ThreadHost::ThreadHost(const std::string name_prefix, uint64_t mask)
+    : ThreadHost(ThreadHostConfig(name_prefix, mask)) {}
+
+ThreadHost::ThreadHost(const ThreadHostConfig& host_config) {
+  if (host_config.isThreadNeeded(ThreadHost::Type::Platform)) {
     platform_thread =
-        CreateThread(ThreadHost::Type::Platform,
-                     std::move(configure_host.platform_configure));
+        CreateThread(Type::Platform, host_config.platform_config, host_config);
   }
 
-  if (mask & ThreadHost::Type::UI) {
-    ui_thread = CreateThread(ThreadHost::Type::UI,
-                             std::move(configure_host.ui_configure));
+  if (host_config.isThreadNeeded(ThreadHost::Type::UI)) {
+    ui_thread = CreateThread(Type::UI, host_config.ui_config, host_config);
   }
 
-  if (mask & ThreadHost::Type::RASTER) {
-    raster_thread = CreateThread(ThreadHost::Type::RASTER,
-                                 std::move(configure_host.raster_configure));
+  if (host_config.isThreadNeeded(ThreadHost::Type::RASTER)) {
+    raster_thread =
+        CreateThread(Type::RASTER, host_config.raster_config, host_config);
   }
 
-  if (mask & ThreadHost::Type::IO) {
-    io_thread = CreateThread(ThreadHost::Type::IO,
-                             std::move(configure_host.io_configure));
+  if (host_config.isThreadNeeded(ThreadHost::Type::IO)) {
+    io_thread = CreateThread(Type::IO, host_config.io_config, host_config);
   }
 
-  if (mask & ThreadHost::Type::Profiler) {
+  if (host_config.isThreadNeeded(ThreadHost::Type::Profiler)) {
     profiler_thread =
-        CreateThread(ThreadHost::Type::Profiler,
-                     std::move(configure_host.profiler_configure));
-    ;
+        CreateThread(Type::Profiler, host_config.profiler_config, host_config);
   }
 }
 

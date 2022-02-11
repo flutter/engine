@@ -35,36 +35,35 @@
 #include "flutter/shell/profiling/sampling_profiler.h"
 
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
-class PlatformIOSThreadConfig : public fml::Thread::ThreadConfig {
- public:
-  using fml::Thread::ThreadConfig::ThreadConfig;
+/// Using iOS platform thread API to configure thread priority
+static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
+  // set thread name
+  fml::Thread::SetCurrentThreadName(config);
 
-  /// Using iOS platform thread API to configure thread priority
-  void SetCurrentThreadPriority() const override {
-    switch (GetThreadPriority()) {
-      case fml::Thread::ThreadPriority::BACKGROUND: {
-        [[NSThread currentThread] setThreadPriority:0];
-        break;
+  // set thread priority
+  switch (config.priority) {
+    case fml::Thread::ThreadPriority::BACKGROUND: {
+      [[NSThread currentThread] setThreadPriority:0];
+      break;
+    }
+    case fml::Thread::ThreadPriority::NORMAL: {
+      [[NSThread currentThread] setThreadPriority:0.5];
+      break;
+    }
+    case fml::Thread::ThreadPriority::RASTER:
+    case fml::Thread::ThreadPriority::DISPLAY: {
+      [[NSThread currentThread] setThreadPriority:1.0];
+      sched_param param;
+      int policy;
+      pthread_t thread = pthread_self();
+      if (!pthread_getschedparam(thread, &policy, &param)) {
+        param.sched_priority = 50;
+        pthread_setschedparam(thread, policy, &param);
       }
-      case fml::Thread::ThreadPriority::NORMAL: {
-        [[NSThread currentThread] setThreadPriority:0.5];
-        break;
-      }
-      case fml::Thread::ThreadPriority::RASTER:
-      case fml::Thread::ThreadPriority::DISPLAY: {
-        [[NSThread currentThread] setThreadPriority:1.0];
-        sched_param param;
-        int policy;
-        pthread_t thread = pthread_self();
-        if (!pthread_getschedparam(thread, &policy, &param)) {
-          param.sched_priority = 50;
-          pthread_setschedparam(thread, policy, &param);
-        }
-        break;
-      }
+      break;
     }
   }
-};
+}
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 NSString* const FlutterDefaultInitialRoute = nil;
@@ -649,20 +648,25 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if ([FlutterEngine isProfilerEnabled]) {
     threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
   }
-  auto ui_thread_name = flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-      flutter::ThreadHost::Type::UI, threadLabel.UTF8String);
-  auto raster_thread_name = flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-      flutter::ThreadHost::Type::RASTER, threadLabel.UTF8String);
-  auto io_thread_name = flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-      flutter::ThreadHost::Type::IO, threadLabel.UTF8String);
-  return (flutter::ThreadHost){threadLabel.UTF8String, threadHostType,
-                               (flutter::ThreadHost::ThreadHostConfig){
-                                   .ui_configure = std::make_unique<PlatformIOSThreadConfig>(
-                                       ui_thread_name, fml::Thread::ThreadPriority::DISPLAY),
-                                   .raster_configure = std::make_unique<PlatformIOSThreadConfig>(
-                                       raster_thread_name, fml::Thread::ThreadPriority::RASTER),
-                                   .io_configure = std::make_unique<PlatformIOSThreadConfig>(
-                                       io_thread_name, fml::Thread::ThreadPriority::BACKGROUND)}};
+
+  flutter::ThreadHost::ThreadHostConfig host_config(threadHostType, IOSPlatformThreadConfigSetter);
+
+  host_config.ui_config =
+      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                    flutter::ThreadHost::Type::UI, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::DISPLAY);
+
+  host_config.raster_config =
+      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                    flutter::ThreadHost::Type::RASTER, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::RASTER);
+
+  host_config.io_config =
+      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                    flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::BACKGROUND);
+
+  return (flutter::ThreadHost){host_config};
 }
 
 static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSString* libraryURI) {

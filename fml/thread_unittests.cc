@@ -4,13 +4,15 @@
 
 #include "flutter/fml/thread.h"
 
-#define FLUTTER_PTHREAD_SUPPORTED \
-  defined(OS_MACOSX) || defined(OS_LINUX) || defined(OS_ANDROID)
+#if defined(OS_MACOSX) || defined(OS_LINUX) || defined(OS_ANDROID)
+#define FLUTTER_PTHREAD_SUPPORTED 1
+#else
+#define FLUTTER_PTHREAD_SUPPORTED 0
+#endif
 
-#ifdef FLUTTER_PTHREAD_SUPPORTED
+#if FLUTTER_PTHREAD_SUPPORTED
 #include <pthread.h>
 #else
-#error "Doesn't has pthead.h"
 #endif
 
 #include <memory>
@@ -35,71 +37,70 @@ TEST(Thread, HasARunningMessageLoop) {
   ASSERT_TRUE(done);
 }
 
-#ifdef FLUTTER_PTHREAD_SUPPORTED
+#if FLUTTER_PTHREAD_SUPPORTED
 TEST(Thread, ThreadNameCreatedWithConfig) {
   const std::string name = "Thread1";
-  fml::Thread thread(fml::Thread::ThreadConfig::MakeDefaultConfigure(name));
+  fml::Thread thread(name);
 
   bool done = false;
-  constexpr int NAMELEN = 8;
   thread.GetTaskRunner()->PostTask([&done, &name]() {
     done = true;
-    char thread_name[NAMELEN];
+    char thread_name[8];
     pthread_t current_thread = pthread_self();
-    pthread_getname_np(current_thread, thread_name, NAMELEN);
+    pthread_getname_np(current_thread, thread_name, 8);
     ASSERT_EQ(thread_name, name);
   });
   thread.Join();
   ASSERT_TRUE(done);
 }
 
-class MockThreadConfig : public fml::Thread::ThreadConfig {
- public:
-  using fml::Thread::ThreadConfig::ThreadConfig;
+static void MockThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
+  // set thread name
+  fml::Thread::SetCurrentThreadName(config);
 
-  void SetCurrentThreadPriority() const override {
-    pthread_t tid = pthread_self();
-    struct sched_param param;
-    int policy = SCHED_OTHER;
-    switch (GetThreadPriority()) {
-      case fml::Thread::ThreadPriority::DISPLAY:
-        param.sched_priority = 10;
-        break;
-      default:
-        param.sched_priority = 1;
-    }
-    pthread_setschedparam(tid, policy, &param);
+  pthread_t tid = pthread_self();
+  struct sched_param param;
+  int policy = SCHED_OTHER;
+  switch (config.priority) {
+    case fml::Thread::ThreadPriority::DISPLAY:
+      param.sched_priority = 10;
+      break;
+    default:
+      param.sched_priority = 1;
   }
-};
+  pthread_setschedparam(tid, policy, &param);
+}
 
 TEST(Thread, ThreadPriorityCreatedWithConfig) {
   const std::string thread1_name = "Thread1";
   const std::string thread2_name = "Thread2";
-  fml::Thread thread(std::make_unique<MockThreadConfig>(
-      thread1_name, fml::Thread::ThreadPriority::NORMAL));
 
+  fml::Thread thread(MockThreadConfigSetter,
+                     fml::Thread::ThreadConfig(
+                         thread1_name, fml::Thread::ThreadPriority::NORMAL));
   bool done = false;
-  constexpr int NAMELEN = 8;
+
   struct sched_param param;
   int policy;
   thread.GetTaskRunner()->PostTask([&]() {
     done = true;
-    char thread_name[NAMELEN];
+    char thread_name[8];
     pthread_t current_thread = pthread_self();
-    pthread_getname_np(current_thread, thread_name, NAMELEN);
+    pthread_getname_np(current_thread, thread_name, 8);
     pthread_getschedparam(current_thread, &policy, &param);
     ASSERT_EQ(thread_name, thread1_name);
     ASSERT_EQ(policy, SCHED_OTHER);
     ASSERT_EQ(param.sched_priority, 1);
   });
 
-  fml::Thread thread2(std::make_unique<MockThreadConfig>(
-      thread2_name, fml::Thread::ThreadPriority::DISPLAY));
+  fml::Thread thread2(MockThreadConfigSetter,
+                      fml::Thread::ThreadConfig(
+                          thread2_name, fml::Thread::ThreadPriority::DISPLAY));
   thread2.GetTaskRunner()->PostTask([&]() {
     done = true;
-    char thread_name[NAMELEN];
+    char thread_name[8];
     pthread_t current_thread = pthread_self();
-    pthread_getname_np(current_thread, thread_name, NAMELEN);
+    pthread_getname_np(current_thread, thread_name, 8);
     pthread_getschedparam(current_thread, &policy, &param);
     ASSERT_EQ(thread_name, thread2_name);
     ASSERT_EQ(policy, SCHED_OTHER);

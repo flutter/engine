@@ -6,6 +6,7 @@
 #define FLUTTER_FML_THREAD_H_
 
 #include <atomic>
+#include <functional>
 #include <memory>
 #include <string>
 #include <thread>
@@ -29,40 +30,26 @@ class Thread {
     RASTER,
   };
 
-  /// The ThreadConfig is used for setting thread perorities.
-  class ThreadConfig {
-   public:
-    explicit ThreadConfig(const std::string& name = "",
-                          ThreadPriority priority = ThreadPriority::NORMAL);
+  /// The ThreadConfig is the thread info include thread name, thread priority.
+  struct ThreadConfig {
+    ThreadConfig(const std::string& name, ThreadPriority priority)
+        : name(name), priority(priority) {}
 
-    static std::unique_ptr<ThreadConfig> MakeDefaultConfigure(
-        const std::string& name = "") {
-      return std::make_unique<ThreadConfig>(name);
-    }
+    explicit ThreadConfig(const std::string& name)
+        : ThreadConfig(name, ThreadPriority::NORMAL) {}
 
-    ThreadPriority GetThreadPriority() const { return thread_priority_; }
+    ThreadConfig() : ThreadConfig("", ThreadPriority::NORMAL) {}
 
-    const std::string& GetThreadName() const { return thread_name_; }
-
-    /// Set current thread name.
-    virtual void SetCurrentThreadName() const;
-
-    /// default do nothing, which mean user can use platform api to set priority
-    /// example: iOS might use pthread_qos set thread priority, Android might
-    /// use ::setPriority set thread priority
-    virtual void SetCurrentThreadPriority() const;
-
-    virtual ~ThreadConfig() = default;
-
-   private:
-    const std::string thread_name_;
-    ThreadPriority thread_priority_;
+    std::string name;
+    ThreadPriority priority;
   };
 
-  explicit Thread(const std::string& name);
+  using ThreadConfigSetter = std::function<void(const ThreadConfig&)>;
 
-  explicit Thread(std::unique_ptr<ThreadConfig> config =
-                      ThreadConfig::MakeDefaultConfigure());
+  explicit Thread(const std::string& name = "");
+
+  explicit Thread(const ThreadConfigSetter& setter,
+                  const ThreadConfig& config = ThreadConfig());
 
   ~Thread();
 
@@ -70,11 +57,13 @@ class Thread {
 
   void Join();
 
-  static void SetCurrentThreadName(const std::string& name);
+  static void SetCurrentThreadName(const ThreadConfig& config);
 
  private:
   std::unique_ptr<std::thread> thread_;
+
   fml::RefPtr<fml::TaskRunner> task_runner_;
+
   std::atomic_bool joined_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Thread);

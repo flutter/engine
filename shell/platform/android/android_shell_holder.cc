@@ -34,45 +34,43 @@ namespace flutter {
 
 /// Inheriting ThreadConfigurer and use Android platform thread API to configure
 /// the thread priorities
-class PlatformAndroidThreadConfig : public fml::Thread::ThreadConfig {
- public:
-  using fml::Thread::ThreadConfig::ThreadConfig;
-
-  void SetCurrentThreadPriority() const override {
-    switch (GetThreadPriority()) {
-      case fml::Thread::ThreadPriority::BACKGROUND: {
-        if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
-          FML_LOG(ERROR) << "Failed to set IO task runner priority";
-        }
-        break;
+static void AndroidPlatformThreadConfigSetter(
+    const fml::Thread::ThreadConfig& config) {
+  // set thread name
+  fml::Thread::SetCurrentThreadName(config);
+  // set thread priority
+  switch (config.priority) {
+    case fml::Thread::ThreadPriority::BACKGROUND: {
+      if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
+        FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
-      case fml::Thread::ThreadPriority::DISPLAY: {
-        if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
-          FML_LOG(ERROR) << "Failed to set UI task runner priority";
-        }
-        break;
-      }
-      case fml::Thread::ThreadPriority::RASTER: {
-        // Android describes -8 as "most important display threads, for
-        // compositing the screen and retrieving input events". Conservatively
-        // set the raster thread to slightly lower priority than it.
-        if (::setpriority(PRIO_PROCESS, 0, -5) != 0) {
-          // Defensive fallback. Depending on the OEM, it may not be possible
-          // to set priority to -5.
-          if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
-            FML_LOG(ERROR) << "Failed to set raster task runner priority";
-          }
-        }
-        break;
-      }
-      default:
-        if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
-          FML_LOG(ERROR) << "Failed to set priority";
-        }
+      break;
     }
+    case fml::Thread::ThreadPriority::DISPLAY: {
+      if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
+        FML_LOG(ERROR) << "Failed to set UI task runner priority";
+      }
+      break;
+    }
+    case fml::Thread::ThreadPriority::RASTER: {
+      // Android describes -8 as "most important display threads, for
+      // compositing the screen and retrieving input events". Conservatively
+      // set the raster thread to slightly lower priority than it.
+      if (::setpriority(PRIO_PROCESS, 0, -5) != 0) {
+        // Defensive fallback. Depending on the OEM, it may not be possible
+        // to set priority to -5.
+        if (::setpriority(PRIO_PROCESS, 0, -2) != 0) {
+          FML_LOG(ERROR) << "Failed to set raster task runner priority";
+        }
+      }
+      break;
+    }
+    default:
+      if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
+        FML_LOG(ERROR) << "Failed to set priority";
+      }
   }
-};
-
+}
 static PlatformData GetDefaultPlatformData() {
   PlatformData platform_data;
   platform_data.lifecycle_state = "AppLifecycleState.detached";
@@ -86,24 +84,25 @@ AndroidShellHolder::AndroidShellHolder(
   static size_t thread_host_count = 1;
   auto thread_label = std::to_string(thread_host_count++);
 
-  auto ui_thread_name = flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-      flutter::ThreadHost::Type::UI, thread_label);
-  auto raster_thread_name =
-      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::RASTER, thread_label);
-  auto io_thread_name = flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-      flutter::ThreadHost::Type::IO, thread_label);
+  auto mask =
+      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO;
 
-  thread_host_ = std::make_shared<ThreadHost>(
-      thread_label,
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO,
-      (flutter::ThreadHost::ThreadHostConfig){
-          .ui_configure = std::make_unique<PlatformAndroidThreadConfig>(
-              ui_thread_name, fml::Thread::ThreadPriority::DISPLAY),
-          .raster_configure = std::make_unique<PlatformAndroidThreadConfig>(
-              raster_thread_name, fml::Thread::ThreadPriority::RASTER),
-          .io_configure = std::make_unique<PlatformAndroidThreadConfig>(
-              io_thread_name, fml::Thread::ThreadPriority::BACKGROUND)});
+  flutter::ThreadHost::ThreadHostConfig host_config(
+      mask, AndroidPlatformThreadConfigSetter);
+  host_config.ui_config = fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+          flutter::ThreadHost::Type::UI, thread_label),
+      fml::Thread::ThreadPriority::DISPLAY);
+  host_config.raster_config = fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+          flutter::ThreadHost::Type::RASTER, thread_label),
+      fml::Thread::ThreadPriority::RASTER);
+  host_config.io_config = fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+          flutter::ThreadHost::Type::IO, thread_label),
+      fml::Thread::ThreadPriority::BACKGROUND);
+
+  thread_host_ = std::make_shared<ThreadHost>(host_config);
 
   fml::WeakPtr<PlatformViewAndroid> weak_platform_view;
   Shell::CreateCallback<PlatformView> on_create_platform_view =
