@@ -7,6 +7,9 @@
 
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/display_list/display_list_dispatcher.h"
+#include "flutter/display_list/display_list_utils.h"
+
+namespace flutter {
 
 class DisplayListMetalComplexityCalculator
     : public DisplayListComplexityCalculator {
@@ -14,17 +17,21 @@ class DisplayListMetalComplexityCalculator
   static DisplayListComplexityCalculator* GetInstance();
 
   unsigned int compute(DisplayList* display_list) override {
-    display_list->render_to(helper_);
+    MetalHelper helper;
+    display_list->Dispatch(helper);
+    return helper.ComplexityScore();
   }
 
   bool should_be_cached(unsigned int complexity_score) override {
-    return complexity_score > 5u;
+    // Set cache threshold at 1ms
+    return complexity_score > 200000u;
   }
 
  private:
   class MetalHelper : public virtual Dispatcher,
                       public virtual IgnoreClipDispatchHelper,
                       public virtual IgnoreTransformDispatchHelper {
+   public:
     MetalHelper();
 
     void setDither(bool dither) override {}
@@ -42,14 +49,21 @@ class DisplayListMetalComplexityCalculator
     void setMaskFilter(sk_sp<SkMaskFilter> filter) override {}
     void setMaskBlurFilter(SkBlurStyle style, SkScalar sigma) override {}
 
+    void save() override {}
+    // We accumulate the cost of restoring a saveLayer() in saveLayer()
+    void restore() override {}
+
+    // This API shouldn't be used
+    void drawPicture(const sk_sp<SkPicture> picture,
+                     const SkMatrix* matrix,
+                     bool render_with_attributes) override {}
+
     void setAntiAlias(bool aa) override;
     void setStyle(SkPaint::Style style) override;
     void setStrokeWidth(SkScalar width) override;
 
-    void save() override;
     void saveLayer(const SkRect* bounds,
-                  const SaveLayerOptions options) override;
-    void restore() override;
+                   const SaveLayerOptions options) override;
     void drawColor(SkColor color, SkBlendMode mode) override;
     void drawPaint() override;
     void drawLine(const SkPoint& p0, const SkPoint& p1) override;
@@ -60,46 +74,43 @@ class DisplayListMetalComplexityCalculator
     void drawDRRect(const SkRRect& outer, const SkRRect& inner) override;
     void drawPath(const SkPath& path) override;
     void drawArc(const SkRect& oval_bounds,
-                SkScalar start_degrees,
-                SkScalar sweep_degrees,
-                bool use_center) override;
+                 SkScalar start_degrees,
+                 SkScalar sweep_degrees,
+                 bool use_center) override;
     void drawPoints(SkCanvas::PointMode mode,
                     uint32_t count,
                     const SkPoint points[]) override;
     void drawVertices(const sk_sp<SkVertices> vertices,
                       SkBlendMode mode) override;
     void drawImage(const sk_sp<SkImage> image,
-                  const SkPoint point,
-                  const SkSamplingOptions& sampling,
-                  bool render_with_attributes) override;
+                   const SkPoint point,
+                   const SkSamplingOptions& sampling,
+                   bool render_with_attributes) override;
     void drawImageRect(const sk_sp<SkImage> image,
-                      const SkRect& src,
-                      const SkRect& dst,
-                      const SkSamplingOptions& sampling,
-                      bool render_with_attributes,
-                      SkCanvas::SrcRectConstraint constraint) override;
+                       const SkRect& src,
+                       const SkRect& dst,
+                       const SkSamplingOptions& sampling,
+                       bool render_with_attributes,
+                       SkCanvas::SrcRectConstraint constraint) override;
     void drawImageNine(const sk_sp<SkImage> image,
-                      const SkIRect& center,
-                      const SkRect& dst,
-                      SkFilterMode filter,
-                      bool render_with_attributes) override;
+                       const SkIRect& center,
+                       const SkRect& dst,
+                       SkFilterMode filter,
+                       bool render_with_attributes) override;
     void drawImageLattice(const sk_sp<SkImage> image,
                           const SkCanvas::Lattice& lattice,
                           const SkRect& dst,
                           SkFilterMode filter,
                           bool render_with_attributes) override;
     void drawAtlas(const sk_sp<SkImage> atlas,
-                  const SkRSXform xform[],
-                  const SkRect tex[],
-                  const SkColor colors[],
-                  int count,
-                  SkBlendMode mode,
-                  const SkSamplingOptions& sampling,
-                  const SkRect* cull_rect,
-                  bool render_with_attributes) override;
-    void drawPicture(const sk_sp<SkPicture> picture,
-                    const SkMatrix* matrix,
-                    bool render_with_attributes) override;
+                   const SkRSXform xform[],
+                   const SkRect tex[],
+                   const SkColor colors[],
+                   int count,
+                   SkBlendMode mode,
+                   const SkSamplingOptions& sampling,
+                   const SkRect* cull_rect,
+                   bool render_with_attributes) override;
     void drawDisplayList(const sk_sp<DisplayList> display_list) override;
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
@@ -109,26 +120,35 @@ class DisplayListMetalComplexityCalculator
                     const SkScalar elevation,
                     bool transparent_occluder,
                     SkScalar dpr) override;
-  private:
-    bool isAntiAliased() { return paint_stack_.top().isAntiAlias(); }
-    bool isHairline() { return paint_stack_.top().getStrokeWidth() == 0.0f; }
-    SkPaint::Style style() { return paint_stack_.top().getStyle(); }
 
-    typedef enum {
-      kSaveLayer,
-      kSave
-    } SaveType;
+    // This method finalizes the complexity score calculation and returns it
+    unsigned int ComplexityScore();
 
-    std::stack<SkPaint> paint_stack_;
-    std::stack<SaveType> save_types_;
+   private:
+    void ImageRect(const SkISize& size,
+                   bool texture_backed,
+                   bool render_with_attributes,
+                   SkCanvas::SrcRectConstraint constraint);
 
+    bool IsAntiAliased() { return current_paint_.isAntiAlias(); }
+    bool IsHairline() { return current_paint_.getStrokeWidth() == 0.0f; }
+    SkPaint::Style Style() { return current_paint_.getStyle(); }
+
+    void AccumulateComplexity(unsigned int complexity);
+
+    SkPaint current_paint_;
+
+    // If we overflow the complexity score, then set this to true.
+    bool is_complex_;
+
+    unsigned int save_layer_count_;
     unsigned int complexity_score_;
   };
 
-  std::unique_ptr<MetalHelper> helper_;
-
-  DisplayListMetalComplexityCalculator();
+  DisplayListMetalComplexityCalculator() {}
   static DisplayListMetalComplexityCalculator* instance_;
 };
 
-#endif // FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_METAL_H_
+}  // namespace flutter
+
+#endif  // FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_METAL_H_
