@@ -63,9 +63,7 @@ bool ShellTestPlatformViewGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool ShellTestPlatformViewGL::GLContextPresent(
-    uint32_t fbo_id,
-    const std::optional<SkIRect>& damage) {
+bool ShellTestPlatformViewGL::GLContextPresent(uint32_t fbo_id) {
   return gl_surface_.Present();
 }
 

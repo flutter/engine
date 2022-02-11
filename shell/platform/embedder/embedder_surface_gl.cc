@@ -45,8 +45,7 @@ bool EmbedderSurfaceGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool EmbedderSurfaceGL::GLContextPresent(uint32_t fbo_id,
-                                         const std::optional<SkIRect>& damage) {
+bool EmbedderSurfaceGL::GLContextPresent(uint32_t fbo_id) {
   return gl_dispatch_table_.gl_present_callback(fbo_id);
 }
 

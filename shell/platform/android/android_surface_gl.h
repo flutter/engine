@@ -58,14 +58,7 @@ class AndroidSurfaceGL final : public GPUSurfaceGLDelegate,
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
-
-  // |GPUSurfaceGLDelegate|
-  void GLContextSetDamageRegion(const std::optional<SkIRect>& region) override;
-
-  // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id,
-                        const std::optional<SkIRect>& damage) override;
+  bool GLContextPresent(uint32_t fbo_id) override;
 
   // |GPUSurfaceGLDelegate|
   intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
