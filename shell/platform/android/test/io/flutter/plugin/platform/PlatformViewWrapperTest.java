@@ -21,9 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.annotation.Config;
 
-@Config(manifest = Config.NONE)
 @TargetApi(31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
