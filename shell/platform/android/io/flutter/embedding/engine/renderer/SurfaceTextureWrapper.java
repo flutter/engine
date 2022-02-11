@@ -66,7 +66,7 @@ public class SurfaceTextureWrapper {
         surfaceTexture.detachFromGLContext();
         attached = false;
       }
-      if (!released) {
+      if (!attached && !released) {
         surfaceTexture.attachToGLContext(texName);
         attached = true;
       }
@@ -77,7 +77,7 @@ public class SurfaceTextureWrapper {
   @SuppressWarnings("unused")
   public void detachFromGLContext() {
     synchronized (this) {
-      if (!released) {
+      if (attached && !released) {
         surfaceTexture.detachFromGLContext();
         attached = false;
       }

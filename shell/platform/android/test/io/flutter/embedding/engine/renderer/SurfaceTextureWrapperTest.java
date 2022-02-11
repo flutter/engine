@@ -65,4 +65,19 @@ public class SurfaceTextureWrapperTest {
     verifyNoMoreInteractions(tx);
   }
 
+  @Test
+  public void release() {
+    final SurfaceTexture tx = mock(SurfaceTexture.class);
+    final SurfaceTextureWrapper wrapper = new SurfaceTextureWrapper(tx);
+
+    wrapper.attachToGLContext(0);
+    wrapper.release();
+
+    verify(tx, times(1)).release();
+    reset(tx);
+
+    wrapper.detachFromGLContext();
+    wrapper.attachToGLContext(0);
+    verifyNoMoreInteractions(tx);
+  }
 }
