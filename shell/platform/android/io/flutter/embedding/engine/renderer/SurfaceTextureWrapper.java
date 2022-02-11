@@ -55,6 +55,9 @@ public class SurfaceTextureWrapper {
   @SuppressWarnings("unused")
   public void attachToGLContext(int texName) {
     synchronized (this) {
+      if (released) {
+        return;
+      }
       // When the rasterizer tasks run on a different thread, the GrContext is re-created.
       // This causes the texture to be in an uninitialized state.
       // This should *not* be an issue once platform views are always rendered as TextureLayers
@@ -64,12 +67,9 @@ public class SurfaceTextureWrapper {
       // https://github.com/flutter/flutter/issues/98155
       if (attached) {
         surfaceTexture.detachFromGLContext();
-        attached = false;
       }
-      if (!attached && !released) {
-        surfaceTexture.attachToGLContext(texName);
-        attached = true;
-      }
+      surfaceTexture.attachToGLContext(texName);
+      attached = true;
     }
   }
 
