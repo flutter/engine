@@ -64,4 +64,5 @@ public class SurfaceTextureWrapperTest {
     verify(tx, times(1)).detachFromGLContext();
     verifyNoMoreInteractions(tx);
   }
+
 }
