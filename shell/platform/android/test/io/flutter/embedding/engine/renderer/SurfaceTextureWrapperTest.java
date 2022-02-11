@@ -11,8 +11,6 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class SurfaceTextureWrapperTest {
 
-  private SurfaceTextureWrapper textureWrapper;
-
   @Test
   public void attachToGLContext() {
     final SurfaceTexture tx = mock(SurfaceTexture.class);
