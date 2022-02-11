@@ -70,7 +70,6 @@ public class SurfaceTextureWrapperTest {
     final SurfaceTexture tx = mock(SurfaceTexture.class);
     final SurfaceTextureWrapper wrapper = new SurfaceTextureWrapper(tx);
 
-    wrapper.attachToGLContext(0);
     wrapper.release();
 
     verify(tx, times(1)).release();
