@@ -25,6 +25,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
@@ -77,6 +78,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @end
 
 @interface FlutterEngine () <FlutterIndirectScribbleDelegate,
+                             FlutterUndoManagerDelegate,
                              FlutterTextInputDelegate,
                              FlutterBinaryMessenger>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
@@ -565,6 +567,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
   _textInputPlugin.reset(textInputPlugin);
   textInputPlugin.indirectScribbleDelegate = self;
+  textInputPlugin.undoManagerDelegate = self;
   [textInputPlugin setupIndirectScribbleInteraction:self.viewController];
 
   _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
@@ -955,6 +958,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
        removeTextPlaceholder:(int)client {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.removeTextPlaceholder"
                               arguments:@[ @(client) ]];
+}
+
+#pragma mark - Undo Manager Delegate
+
+- (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
+                    handleUndo:(FlutterUndoRedoDirection)direction {
+  NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.handleUndo" arguments:@[ action ]];
 }
 
 #pragma mark - Screenshot Delegate

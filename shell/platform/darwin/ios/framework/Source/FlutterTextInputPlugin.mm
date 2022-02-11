@@ -45,6 +45,9 @@ static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
+static NSString* const kSetSelectionRects = @"TextInput.setSelectionRects";
+static NSString* const kRegisterUndo = @"TextInput.registerUndo";
+static NSString* const kResetUndoManager = @"TextInput.resetUndoManager";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -1946,6 +1949,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 #pragma mark - Undo/Redo support
+
 - (void)ensureUndoEnabled {
   if (@available(iOS 9.0, *)) {
     if (![self.undoManager canUndo]) {
@@ -2108,12 +2112,41 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
-  } else if ([method isEqualToString:@"TextInput.setSelectionRects"]) {
+  } else if ([method isEqualToString:kSetSelectionRects]) {
     [self setSelectionRects:args];
+    result(nil);
+  } else if ([method isEqualToString:kRegisterUndo]) {
+    [self registerUndoWithDirection:FlutterUndoRedoDirectionUndo];
+    result(nil);
+  } else if ([method isEqualToString:kResetUndoManager]) {
+    [self resetUndoManager];
     result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
+}
+
+- (void)resetUndoManager {
+  [_viewController.undoManager removeAllActionsWithTarget:self];
+}
+
+- (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction {
+  _viewController.undoManager.groupsByEvent = NO;
+  [_viewController.undoManager beginUndoGrouping];
+  [_viewController.undoManager
+      registerUndoWithTarget:self
+                     handler:^(id target) {
+                       // register undo with opposite direction
+                       FlutterUndoRedoDirection newDirection =
+                           (direction == FlutterUndoRedoDirectionRedo)
+                               ? FlutterUndoRedoDirectionUndo
+                               : FlutterUndoRedoDirectionRedo;
+                       [target registerUndoWithDirection:newDirection];
+                       // invoke method on delegate
+                       [_undoManagerDelegate flutterTextInputPlugin:self handleUndo:direction];
+                     }];
+  [_viewController.undoManager endUndoGrouping];
+  _viewController.undoManager.groupsByEvent = YES;
 }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
