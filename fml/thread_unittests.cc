@@ -37,15 +37,15 @@ TEST(Thread, HasARunningMessageLoop) {
   ASSERT_TRUE(done);
 }
 
-TEST(Thread, GetName) {
+TEST(Thread, GetCurrentName) {
   const std::string name = "Thread1";
   fml::Thread thread(name);
 
   thread.GetTaskRunner()->PostTask([&name]() {
-    ASSERT_EQ(fml::Thread::GetName(), name);
+    ASSERT_EQ(fml::Thread::GetCurrentName(), name);
     const std::string new_name = "Thread2";
     fml::Thread::SetCurrentThreadName(fml::Thread::ThreadConfig(new_name));
-    ASSERT_EQ(fml::Thread::GetName(), new_name);
+    ASSERT_EQ(fml::Thread::GetCurrentName(), new_name);
   });
   thread.Join();
 }
@@ -62,7 +62,7 @@ TEST(Thread, ThreadNameCreatedWithConfig) {
     pthread_t current_thread = pthread_self();
     pthread_getname_np(current_thread, thread_name, 8);
     ASSERT_EQ(thread_name, name);
-    ASSERT_EQ(fml::Thread::GetName(), thread_name);
+    ASSERT_EQ(fml::Thread::GetCurrentName(), thread_name);
   });
   thread.Join();
   ASSERT_TRUE(done);
@@ -103,6 +103,7 @@ TEST(Thread, ThreadPriorityCreatedWithConfig) {
     pthread_getname_np(current_thread, thread_name, 8);
     pthread_getschedparam(current_thread, &policy, &param);
     ASSERT_EQ(thread_name, thread1_name);
+    ASSERT_EQ(fml::Thread::GetCurrentName(), thread_name);
     ASSERT_EQ(policy, SCHED_OTHER);
     ASSERT_EQ(param.sched_priority, 1);
   });
@@ -117,6 +118,7 @@ TEST(Thread, ThreadPriorityCreatedWithConfig) {
     pthread_getname_np(current_thread, thread_name, 8);
     pthread_getschedparam(current_thread, &policy, &param);
     ASSERT_EQ(thread_name, thread2_name);
+    ASSERT_EQ(fml::Thread::GetCurrentName(), thread_name);
     ASSERT_EQ(policy, SCHED_OTHER);
     ASSERT_EQ(param.sched_priority, 10);
   });

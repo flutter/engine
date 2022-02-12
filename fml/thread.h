@@ -16,6 +16,8 @@
 
 namespace fml {
 
+typedef std::thread::id ThreadId;
+
 class Thread {
  public:
   /// Valid values for priority of Thread.
@@ -59,8 +61,11 @@ class Thread {
 
   static void SetCurrentThreadName(const ThreadConfig& config);
 
-  // Gets the current thread name, which may be useful for logging purposes.
-  static std::string GetName();
+  /// Gets the current thread name, which previously set.
+  static std::string GetCurrentName();
+
+  /// Gets the current thread id, which may be useful for logging purposes.
+  static ThreadId GetCurrentId();
 
  private:
   std::unique_ptr<std::thread> thread_;

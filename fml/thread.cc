@@ -73,8 +73,12 @@ void Thread::SetCurrentThreadName(const Thread::ThreadConfig& config) {
   SetThreadName(config.name);
 }
 
-std::string Thread::GetName() {
+std::string Thread::GetCurrentName() {
   return *(tls_thread_name.get());
+}
+
+ThreadId Thread::GetCurrentId() {
+  return std::this_thread::get_id();
 }
 
 Thread::Thread(const std::string& name)
