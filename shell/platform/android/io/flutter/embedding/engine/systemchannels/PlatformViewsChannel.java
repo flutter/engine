@@ -113,8 +113,8 @@ public class PlatformViewsChannel {
                   new PlatformViewCreationRequest(
                       (int) createArgs.get("id"),
                       (String) createArgs.get("viewType"),
-                      (double) createArgs.get("top"),
-                      (double) createArgs.get("left"),
+                      (double) createArgs.getOrDefault("top", 0.0),
+                      (double) createArgs.getOrDefault("left", 0.0),
                       (double) createArgs.get("width"),
                       (double) createArgs.get("height"),
                       (int) createArgs.get("direction"),
