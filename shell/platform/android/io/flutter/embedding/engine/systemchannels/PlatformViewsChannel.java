@@ -302,7 +302,9 @@ public class PlatformViewsChannel {
      */
     PlatformViewBufferSize resize(@NonNull PlatformViewResizeRequest request);
 
-    /** The Flutter application would like to change the offset an existing Android {@code View}. */
+    /**
+     * The Flutter application would like to change the offset of an existing Android {@code View}.
+     */
     void offset(int viewId, double top, double left);
 
     /**

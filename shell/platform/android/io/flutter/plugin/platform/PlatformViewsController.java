@@ -80,6 +80,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   //
   // This is only applies to hybrid composition (PlatformViewLayer render).
   // TODO(egarciad): Eliminate this.
+  // https://github.com/flutter/flutter/issues/96679
   private final SparseArray<FlutterMutatorView> platformViewParent;
 
   // Map of unique IDs to views that render overlay layers.
@@ -116,6 +117,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         @TargetApi(Build.VERSION_CODES.KITKAT)
         @Override
         // TODO(egarciad): Remove the need for this.
+        // https://github.com/flutter/flutter/issues/96679
         public void createForPlatformViewLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           // API level 19 is required for `android.graphics.ImageReader`.
@@ -247,6 +249,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
           // The platform view is displayed using a PlatformViewLayer.
           // TODO(egarciad): Eliminate this case.
+          // https://github.com/flutter/flutter/issues/96679
           final FlutterMutatorView parentView = platformViewParent.get(viewId);
           if (parentView != null) {
             parentView.unsetOnDescendantFocusChangeListener();
@@ -505,6 +508,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       view.onFlutterViewDetached();
     }
     // TODO(egarciad): Remove this.
+    // https://github.com/flutter/flutter/issues/96679
     destroyOverlaySurfaces();
     removeOverlaySurfaces();
     flutterView = null;
