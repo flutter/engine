@@ -17,7 +17,7 @@ class DisplayListMetalComplexityCalculator
   static DisplayListComplexityCalculator* GetInstance();
 
   unsigned int compute(DisplayList* display_list) override {
-    MetalHelper helper;
+    MetalHelper helper(ceiling_);
     display_list->Dispatch(helper);
     return helper.ComplexityScore();
   }
@@ -27,12 +27,14 @@ class DisplayListMetalComplexityCalculator
     return complexity_score > 200000u;
   }
 
+  void SetComplexityCeiling(unsigned int ceiling) { ceiling_ = ceiling; }
+
  private:
   class MetalHelper : public virtual Dispatcher,
                       public virtual IgnoreClipDispatchHelper,
                       public virtual IgnoreTransformDispatchHelper {
    public:
-    MetalHelper();
+    MetalHelper(unsigned int ceiling);
 
     void setDither(bool dither) override {}
     void setInvertColors(bool invert) override {}
@@ -52,11 +54,6 @@ class DisplayListMetalComplexityCalculator
     void save() override {}
     // We accumulate the cost of restoring a saveLayer() in saveLayer()
     void restore() override {}
-
-    // This API shouldn't be used
-    void drawPicture(const sk_sp<SkPicture> picture,
-                     const SkMatrix* matrix,
-                     bool render_with_attributes) override {}
 
     void setAntiAlias(bool aa) override;
     void setStyle(SkPaint::Style style) override;
@@ -111,6 +108,9 @@ class DisplayListMetalComplexityCalculator
                    const SkSamplingOptions& sampling,
                    const SkRect* cull_rect,
                    bool render_with_attributes) override;
+    void drawPicture(const sk_sp<SkPicture> picture,
+                     const SkMatrix* matrix,
+                     bool render_with_attributes) override;
     void drawDisplayList(const sk_sp<DisplayList> display_list) override;
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
@@ -138,15 +138,21 @@ class DisplayListMetalComplexityCalculator
 
     SkPaint current_paint_;
 
-    // If we overflow the complexity score, then set this to true.
+    // If we exceed the ceiling (defaults to the largest number representable
+    // by unsigned int), then set the is_complex_ bool and we no longer
+    // accumulate.
     bool is_complex_;
+    unsigned int ceiling_;
 
     unsigned int save_layer_count_;
     unsigned int complexity_score_;
   };
 
-  DisplayListMetalComplexityCalculator() {}
+  DisplayListMetalComplexityCalculator()
+      : ceiling_(std::numeric_limits<unsigned int>::max()) {}
   static DisplayListMetalComplexityCalculator* instance_;
+
+  unsigned int ceiling_;
 };
 
 }  // namespace flutter

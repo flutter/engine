@@ -55,26 +55,34 @@ DisplayListMetalComplexityCalculator::GetInstance() {
   return instance_;
 }
 
-DisplayListMetalComplexityCalculator::MetalHelper::MetalHelper()
-    : is_complex_(false) {}
+DisplayListMetalComplexityCalculator::MetalHelper::MetalHelper(
+    unsigned int ceiling)
+    : is_complex_(false), ceiling_(ceiling), save_layer_count_(0) {}
 
 unsigned int
 DisplayListMetalComplexityCalculator::MetalHelper::ComplexityScore() {
-  // We overflowed, return int_max
+  // We hit our ceiling, so return that
   if (is_complex_) {
-    return std::numeric_limits<unsigned int>::max();
+    return ceiling_;
   }
 
-  // Calculate the impact of saveLayer
+  // Calculate the impact of saveLayer.
   unsigned int save_layer_complexity;
-  if (save_layer_count_ > 200) {
-    // m = 1/5
-    // c = 1
-    save_layer_complexity = (save_layer_count_ + 5) * 40000;
+  if (save_layer_count_ == 0) {
+    save_layer_complexity = 0;
   } else {
-    // m = 1/2
-    // c = 1
-    save_layer_complexity = (save_layer_count_ + 2) * 100000;
+    // saveLayer seems to have two trends; if the count is < 200,
+    // then the individual cost of a saveLayer is higher than if
+    // the count is > 200.
+    if (save_layer_count_ > 200) {
+      // m = 1/5
+      // c = 1
+      save_layer_complexity = (save_layer_count_ + 5) * 40000;
+    } else {
+      // m = 1/2
+      // c = 1
+      save_layer_complexity = (save_layer_count_ + 2) * 100000;
+    }
   }
 
   return complexity_score_ + save_layer_complexity;
@@ -83,7 +91,7 @@ DisplayListMetalComplexityCalculator::MetalHelper::ComplexityScore() {
 void DisplayListMetalComplexityCalculator::MetalHelper::AccumulateComplexity(
     unsigned int complexity) {
   // Check to see if we will overflow by accumulating this complexity score
-  if (std::numeric_limits<unsigned int>::max() - complexity < complexity) {
+  if (ceiling_ - complexity_score_ < complexity) {
     is_complex_ = true;
     return;
   }
@@ -111,9 +119,6 @@ void DisplayListMetalComplexityCalculator::MetalHelper::saveLayer(
   if (is_complex_) {
     return;
   }
-  // saveLayer seems to have two trends; if the count is < 200,
-  // then the individual cost of a saveLayer is higher than if
-  // the count is > 200.
   save_layer_count_++;
 }
 
@@ -156,7 +161,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
     aa_penalty = 1.3f;
   }
 
-  SkScalar distance = SkPoint::Distance(p0, p1);
+  // Use an approximation for the distance to avoid floating point or
+  // sqrt() calls.
+  SkScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
 
   // Cost scales linearly with length approximately through the origin
   // So a line length of 500 would roughly have 5x the complexity cost
@@ -183,6 +190,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
   }
 
   // Very roughly there's about a 7x penalty for filled vs stroked.
+  // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
+  // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kFill_Style) {
     fill_penalty = 7.0f;
   }
@@ -213,6 +222,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
   float aa_penalty = 1.0f;
   float fill_penalty = 1.0f;
 
+  // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
+  // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kStroke_Style) {
     // AA penalty for stroked styles is proportional to the oval length
     // with a constant of around 1/100.
@@ -245,6 +256,8 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
   float aa_penalty = 1.0f;
   float fill_penalty = 1.0f;
 
+  // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
+  // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kStroke_Style) {
     // For stroked styles the data is a little noisy with no clear
     // trend, but the average is around 40%.
@@ -323,6 +336,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   // These values were worked out by creating a straight line graph (y=mx+c)
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
+  //
+  // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
+  // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kFill_Style) {
     if (IsAntiAliased()) {
       // m = 1/3500
@@ -414,6 +430,9 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
   // These values were worked out by creating a straight line graph (y=mx+c)
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
+  //
+  // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
+  // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kStroke_Style) {
     if (IsAntiAliased()) {
       // m = 1/8500
@@ -651,12 +670,21 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawAtlas(
   }
 }
 
+void DisplayListMetalComplexityCalculator::MetalHelper::drawPicture(
+    const sk_sp<SkPicture> picture,
+    const SkMatrix* matrix,
+    bool render_with_attributes) {
+  // This API shouldn't be used, but for now just take the approximateOpCount()
+  // and multiply by 50 as a placeholder.
+  AccumulateComplexity(picture->approximateOpCount() * 50);
+}
+
 void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
   if (is_complex_) {
     return;
   }
-  MetalHelper helper;
+  MetalHelper helper(ceiling_ - complexity_score_);
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());
 }
