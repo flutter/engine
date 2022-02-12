@@ -1,4 +1,4 @@
-Signature: 3a7c707d278ef70d82d90cc660dadb2c
+Signature: c7cfe3b4b6a9ae05fc2b2e09d0a8f9a3
 
 UNUSED LICENSES:
 
@@ -2942,8 +2942,6 @@ FILE: ../../../third_party/skia/src/core/SkRecord.cpp
 FILE: ../../../third_party/skia/src/core/SkRecordPattern.h
 FILE: ../../../third_party/skia/src/core/SkRecords.cpp
 FILE: ../../../third_party/skia/src/core/SkSemaphore.cpp
-FILE: ../../../third_party/skia/src/core/SkSharedMutex.cpp
-FILE: ../../../third_party/skia/src/core/SkSharedMutex.h
 FILE: ../../../third_party/skia/src/core/SkSpinlock.cpp
 FILE: ../../../third_party/skia/src/core/SkTDPQueue.h
 FILE: ../../../third_party/skia/src/core/SkThreadID.cpp
