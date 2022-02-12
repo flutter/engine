@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/direct_manipulation.h"
 #include "flutter/shell/platform/windows/keyboard_manager_win32.h"
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
 #include "flutter/shell/platform/windows/text_input_manager_win32.h"
@@ -209,6 +210,8 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
+  std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
+
  private:
   // Release OS resources associated with window.
   void Destroy();
@@ -254,6 +257,9 @@ class WindowWin32 : public KeyboardManagerWin32::WindowDelegate {
 
   // Generates touch point IDs for touch events.
   SequentialIdGenerator touch_id_generator_;
+
+  const static int kVsyncTimer = 1;
+  int framerate_ = 1;
 };
 
 }  // namespace flutter
