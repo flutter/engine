@@ -119,6 +119,13 @@ KeyboardManagerWin32::KeyboardManagerWin32(WindowDelegate* delegate)
 void KeyboardManagerWin32::RedispatchEvent(
     std::unique_ptr<PendingEvent> event) {
   for (const Win32Message& message : event->session) {
+    // Never redispatch sys keys, because their original messages have been
+    // passed to the system default processor.
+    const bool is_syskey =
+        message.action == WM_SYSKEYDOWN || message.action == WM_SYSKEYUP;
+    if (is_syskey) {
+      continue;
+    }
     pending_redispatches_.push_back(message);
     UINT result = window_delegate_->Win32DispatchMessage(
         message.action, message.wparam, message.lparam);
@@ -195,25 +202,8 @@ void KeyboardManagerWin32::HandleOnKeyResult(
     std::unique_ptr<PendingEvent> event,
     bool handled,
     std::list<PendingText>::iterator pending_text) {
-  // First, patch |handled|, because some key events must always be treated as
-  // handled.
-  //
-  // Redispatching dead keys events makes Win32 ignore the dead key state
-  // and redispatches a normal character without combining it with the
-  // next letter key.
-  //
-  // Never redispatch sys keys, because their original messages are always
-  // passed to the system default processor.
-  const bool is_syskey =
-      event->action == WM_SYSKEYDOWN || event->action == WM_SYSKEYUP;
-  const bool real_handled = handled || IsDeadKey(event->character) ||
-                            is_syskey;
-
-  // For handled events, that's all.
-  // For unhandled events, dispatch them to OnText.
-
   if (pending_text != pending_texts_.end()) {
-    if (pending_text->placeholder || real_handled) {
+    if (pending_text->placeholder || handled) {
       pending_texts_.erase(pending_text);
     } else {
       pending_text->ready = true;
@@ -221,7 +211,7 @@ void KeyboardManagerWin32::HandleOnKeyResult(
     DispatchReadyTexts();
   }
 
-  if (real_handled) {
+  if (handled) {
     return;
   }
 
