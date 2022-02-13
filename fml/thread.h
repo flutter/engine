@@ -16,7 +16,8 @@
 
 namespace fml {
 
-typedef std::thread::id ThreadId;
+typedef uint64_t PlatformThreadId;
+const PlatformThreadId kInvalidThreadId(0);
 
 class Thread {
  public:
@@ -61,11 +62,12 @@ class Thread {
 
   static void SetCurrentThreadName(const ThreadConfig& config);
 
-  /// Gets the current thread name, which previously set.
+  /// Gets the thread name of the calling thread, which was previously set.
   static std::string GetCurrentName();
 
-  /// Gets the current thread id, which may be useful for logging purposes.
-  static ThreadId GetCurrentId();
+  /// Gets the system-wide thread id of the calling thread, which may be useful
+  /// for logging purposes.
+  static PlatformThreadId GetCurrentId();
 
  private:
   std::unique_ptr<std::thread> thread_;

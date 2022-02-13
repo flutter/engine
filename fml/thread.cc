@@ -19,12 +19,16 @@
 #include <windows.h>
 #elif defined(OS_FUCHSIA)
 #include <lib/zx/thread.h>
+#elif defined(FML_OS_LINUX) || defined(FML_OS_ANDROID)
+#include <sys/syscall.h>
+#include <unistd.h>
 #else
 #include <pthread.h>
 #endif
 
 namespace fml {
 
+// Thread-local object for thread name.
 FML_THREAD_LOCAL ThreadLocalUniquePtr<std::string> tls_thread_name;
 
 #if defined(FML_OS_WIN)
@@ -54,7 +58,7 @@ void SetThreadName(const std::string& name) {
   THREADNAME_INFO info;
   info.dwType = 0x1000;
   info.szName = name.c_str();
-  info.dwThreadID = GetCurrentThreadId();
+  info.dwThreadID = ::GetCurrentThreadId();
   info.dwFlags = 0;
   __try {
     RaiseException(kVCThreadNameException, 0, sizeof(info) / sizeof(DWORD),
@@ -77,8 +81,26 @@ std::string Thread::GetCurrentName() {
   return *(tls_thread_name.get());
 }
 
-ThreadId Thread::GetCurrentId() {
-  return std::this_thread::get_id();
+PlatformThreadId Thread::GetCurrentId() {
+#if defined(FML_OS_MACOSX)
+  uint64_t thread_id = kInvalidThreadId;
+  errno = pthread_threadid_np(pthread_self(), &thread_id);
+  FML_DCHECK(errno == 0) << "pthread_threadid_np, errno=" << errno;
+  return thread_id;
+#elif defined(FML_OS_WIN)
+  return ::GetCurrentThreadId();
+#elif defined(FML_OS_ANDROID)
+  return gettid();
+#elif defined(FML_OS_LINUX)
+  return syscall(__NR_gettid);
+#elif defined(OS_FUCHSIA)
+  return zx_thread_self();
+#elif defined(FML_OS_POSIX)
+  return pthread_self();
+#else
+  FML_DCHECK(false) << "Please add support for your platform.";
+  return kInvalidThreadId;
+#endif
 }
 
 Thread::Thread(const std::string& name)
