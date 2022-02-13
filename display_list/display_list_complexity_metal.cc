@@ -41,6 +41,21 @@
 // would set the maximum time estimate associated with the complexity score
 // at about 21 seconds, which far exceeds what we would ever expect a
 // DisplayList to take rasterising.
+//
+// Finally, care has been taken to keep the computations as cheap as possible.
+// We need to be able to calculate the complexity as quickly as possible
+// so that we don't end up wasting too much time figuring out if something
+// should be cached or not and eat into the time we could have just spent
+// rasterising the DisplayList.
+//
+// In order to keep the computations cheap, the following tradeoffs were made:
+//
+// a) Limit all computations to simple division, multiplication, addition
+//    and subtraction.
+// b) Try and use integer arithmetic as much as possible.
+// c) If a specific draw op is logarithmic in complexity, do a best fit
+//    onto a linear equation within the range we expect to see the variables
+//    fall within.
 
 namespace flutter {
 
@@ -141,34 +156,35 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPaint() {
   AccumulateComplexity(50);
 }
 
-// Normalise DrawLine to have a score of 100 when drawn with approximate line
-// length of 100, AA disabled and a hairline stroke
-// This represents a wall clock time of around 0.0005 milliseconds
 void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
     const SkPoint& p0,
     const SkPoint& p1) {
   if (is_complex_) {
     return;
   }
-  // The performance penalties seem fairly consistent percentage-wise
+  // The curve here may be log-linear, although it doesn't really match up that
+  // well. To avoid costly computations, try and do a best fit of the data onto
+  // a linear graph as a very rough first order approximation.
+
   float non_hairline_penalty = 1.0f;
   float aa_penalty = 1.0f;
 
   if (!IsHairline()) {
-    non_hairline_penalty = 1.2f;
+    non_hairline_penalty = 1.15f;
   }
   if (IsAntiAliased()) {
-    aa_penalty = 1.3f;
+    aa_penalty = 1.4f;
   }
 
   // Use an approximation for the distance to avoid floating point or
   // sqrt() calls.
   SkScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
 
-  // Cost scales linearly with length approximately through the origin
-  // So a line length of 500 would roughly have 5x the complexity cost
-  // of a line length of 100
-  unsigned int complexity = distance * aa_penalty * non_hairline_penalty;
+  // The baseline complexity is for a hairline stroke with no AA
+  // m = 1/45
+  // c = 5
+  unsigned int complexity =
+      ((distance + 225) * 4 / 9) * non_hairline_penalty * aa_penalty;
 
   AccumulateComplexity(complexity);
 }
@@ -178,30 +194,40 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
   if (is_complex_) {
     return;
   }
-  // Hairline stroke vs non hairline has no real penalty here
-  // There is a penalty for AA being *disabled* of around 50% with stroked
-  // styles At very small sizes (rect area < 4000px^2) stroke vs filled is
-  // approximately the same time cost
-  float nonAA_penalty = 1.0f;
-  float fill_penalty = 1.0f;
 
-  if (!IsAntiAliased() && Style() == SkPaint::Style::kStroke_Style) {
-    nonAA_penalty = 1.5f;
-  }
+  unsigned int complexity;
 
-  // Very roughly there's about a 7x penalty for filled vs stroked.
+  // If stroked, cost scales linearly with the rectangle width/height.
+  // If filled, it scales with the area.
+  //
+  // Hairline stroke vs non hairline has no real penalty at smaller lengths,
+  // but it increases at larger lengths. There isn't enough data to get a good
+  // idea of the penalty at lengths > 1000px.
+  //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kFill_Style) {
-    fill_penalty = 7.0f;
-  }
+    // No real difference for AA with filled styles
+    unsigned int area = rect.width() * rect.height();
 
-  // Cost scales approximately linearly with pixel area
-  // For no attributes intersection is when area ~= 60000px^2
-  // A coefficient of 2.5 gives an approximate mapping here to DrawLine.
-  unsigned int area = rect.width() * rect.height();
-  unsigned int complexity =
-      (area / (60000 * 2.5)) * 100 * nonAA_penalty * fill_penalty;
+    // m = 1/9000
+    // c = 0
+    complexity = area / 225;
+  } else {
+    // Take the average of the width and height
+    unsigned int length = (rect.width() + rect.height()) / 2;
+
+    // There is a penalty for AA being *disabled*
+    if (IsAntiAliased()) {
+      // m = 1/65
+      // c = 0
+      complexity = length * 8 / 13;
+    } else {
+      // m = 1/35
+      // c = 0
+      complexity = length * 8 / 7;
+    }
+  }
 
   AccumulateComplexity(complexity);
 }
@@ -212,35 +238,35 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
     return;
   }
   // DrawOval scales very roughly linearly with the bounding box width/height
-  // (not area)
+  // (not area) for stroked styles without AA.
   //
-  // Take the average of the width and height
-  unsigned int length = (bounds.width() + bounds.height()) / 2;
+  // Filled styles and stroked styles with AA scale linearly with the bounding
+  // box area.
+  unsigned int area = bounds.width() * bounds.height();
 
-  // No penalty for hairline vs non-hairline stroke
-  // Very small penalty for AA vs non-AA in filled style
-  float aa_penalty = 1.0f;
-  float fill_penalty = 1.0f;
+  unsigned int complexity;
 
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kStroke_Style) {
-    // AA penalty for stroked styles is proportional to the oval length
-    // with a constant of around 1/100.
-    aa_penalty = length / 100.0f;
-  }
-
-  // Filled ovals have a penalty that is proportional to the oval
-  // length.
-  //
-  // length/200 seems to give a reasonable approximation of the penalty
-  // for a filled rect vs. a stroked rect.
   if (Style() == SkPaint::Style::kFill_Style) {
-    fill_penalty = std::max(1.0f, length / 200.0f);
-  }
+    // With filled styles, there is no significant AA penalty
+    // m = 1/16000
+    // c = 0
+    complexity = area / 80;
+  } else {
+    if (IsAntiAliased()) {
+      // m = 1/7500
+      // c = 0
+      complexity = area * 2 / 75;
+    } else {
+      // Take the average of the width and height
+      unsigned int length = (bounds.width() + bounds.height()) / 2;
 
-  // A length of 35 ~= baseline timing of 0.0005ms
-  unsigned int complexity = (length / 35) * 100 * aa_penalty * fill_penalty;
+      // m = 1/80
+      // c = 0
+      complexity = length * 5 / 2;
+    }
+  }
 
   AccumulateComplexity(complexity);
 }
@@ -251,29 +277,34 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
   if (is_complex_) {
     return;
   }
-  // No penalty for hairline vs non-hairline stroke
-  // No penalty for AA for non-AA in filled style
-  float aa_penalty = 1.0f;
-  float fill_penalty = 1.0f;
+
+  unsigned int complexity;
 
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kStroke_Style) {
-    // For stroked styles the data is a little noisy with no clear
-    // trend, but the average is around 40%.
-    aa_penalty = 1.4f;
-  }
-
-  // Filled circles have a penalty that is proportional to the radius.
-  //
-  // r/80 seems to give a reasonable approximation of the penalty
-  // for a filled circle vs. a stroked circle.
   if (Style() == SkPaint::Style::kFill_Style) {
-    fill_penalty = std::max(1.0f, radius / 80.0f);
-  }
+    // We can ignore pi here
+    unsigned int area = radius * radius;
+    // m = 1/1300
+    // c = 5
+    complexity = (area + 6500) * 2 / 65;
 
-  // A radius of 250 ~= 10x baseline timing of 0.0005ms (0.005ms)
-  unsigned int complexity = (radius / 250) * 1000 * aa_penalty * fill_penalty;
+    // Penalty of around 5% when AA is disabled
+    if (!IsAntiAliased()) {
+      complexity *= 1.05f;
+    }
+  } else {
+    // Hairline vs non-hairline has no significant performance difference
+    if (IsAntiAliased()) {
+      // m = 1/7
+      // c = 7
+      complexity = (radius + 49) * 40 / 7;
+    } else {
+      // m = 1/16
+      // c = 8
+      complexity = (radius + 128) * 5 / 2;
+    }
+  }
 
   AccumulateComplexity(complexity);
 }
