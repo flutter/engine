@@ -319,8 +319,7 @@ class _Transpiler {
     results[id]?.refCount++;
   }
 
-  /// Add the instruction to the current block
-  void add(_Instruction inst) {
+  void addToCurrentBlock(_Instruction inst) {
     if (inst.isResult) {
       results[inst.id] = inst;
     }
@@ -505,7 +504,7 @@ class _Transpiler {
     final int name = readWord();
     final int value = readWord();
     ref(value);
-    add(_TypeCast(type, name, value));
+    addToCurrentBlock(_TypeCast(type, name, value));
   }
 
   void opExtInstImport() {
@@ -777,13 +776,7 @@ class _Transpiler {
     final int type = readWord();
     final int id = readWord();
     final _Function f = currentFunction!;
-
-    final int i = f.declaredParams;
-    if (type != f.type.params[i]) {
-      throw failure('type mismatch for param $i of function ${f.name}');
-    }
-    f.params[i] = id;
-    f.declaredParams++;
+    f.declareParam(id, type);
   }
 
   void opFunctionEnd() {
@@ -806,7 +799,7 @@ class _Transpiler {
       ref(id);
       args[i] = id;
     }
-    add(_FunctionCall(type, name, functionName, args));
+    addToCurrentBlock(_FunctionCall(type, name, functionName, args));
   }
 
   void opVariable() {
@@ -848,7 +841,7 @@ class _Transpiler {
         }
         return;
       case _storageClassFunction:
-        add(_StringInstruction('$type $name'));
+        addToCurrentBlock(_StringInstruction('$type $name'));
         return;
       default:
         throw failure('$storageClass is an unsupported Storage Class');
@@ -872,14 +865,14 @@ class _Transpiler {
     ref(condition);
     ref(a);
     ref(b);
-    add(_Select(type, name, condition, a, b));
+    addToCurrentBlock(_Select(type, name, condition, a, b));
   }
 
   void opStore() {
     final int pointer = readWord();
     final int object = readWord();
     ref(object);
-    add(_Store(pointer, object));
+    addToCurrentBlock(_Store(pointer, object));
   }
 
   void opAccessChain() {
@@ -899,7 +892,7 @@ class _Transpiler {
       ref(id);
       indices[i] = id;
     }
-    add(_AccessChain(type, id, base, indices));
+    addToCurrentBlock(_AccessChain(type, id, base, indices));
   }
 
   void opDecorate() {
@@ -931,7 +924,7 @@ class _Transpiler {
       final int id = readWord();
       indices[i] = id;
     }
-    add(_VectorShuffle(type, name, vector, indices));
+    addToCurrentBlock(_VectorShuffle(type, name, vector, indices));
   }
 
   void opCompositeConstruct() {
@@ -943,7 +936,7 @@ class _Transpiler {
       ref(id);
       components[i] = id;
     }
-    add(_CompositeConstruct(type, name, components));
+    addToCurrentBlock(_CompositeConstruct(type, name, components));
   }
 
   void opCompositeExtract() {
@@ -956,7 +949,7 @@ class _Transpiler {
       final int index = readWord();
       indices[i] = index;
     }
-    add(_CompositeExtract(type, name, src, indices));
+    addToCurrentBlock(_CompositeExtract(type, name, src, indices));
   }
 
   void opImageSampleImplicitLod() {
@@ -965,7 +958,7 @@ class _Transpiler {
     final int sampledImage = readWord();
     final int coordinate = readWord();
     ref(coordinate);
-    add(_ImageSampleImplicitLod(type, name, sampledImage, coordinate));
+    addToCurrentBlock(_ImageSampleImplicitLod(type, name, sampledImage, coordinate));
   }
 
   void opFNegate() {
@@ -973,30 +966,26 @@ class _Transpiler {
     final int name = readWord();
     final int operand = readWord();
     ref(operand);
-    add(_Negate(type, name, operand));
+    addToCurrentBlock(_Negate(type, name, operand));
   }
 
   void opLabel() {
     final int id = readWord();
-    final _Block b = _Block();
-    final _Function f = currentFunction!;
-    f.blocks[id] = b;
-    f.entry ??= b;
-    currentBlock = b;
+    currentBlock = currentFunction!.addBlock(id);
   }
 
   void opReturn() {
     if (currentFunction!.name == entryPoint) {
       return;
     } else {
-      add(_StringInstruction('return'));
+      addToCurrentBlock(_StringInstruction('return'));
     }
   }
 
   void opReturnValue() {
     final int value = readWord();
     ref(value);
-    add(_ReturnValue(value));
+    addToCurrentBlock(_ReturnValue(value));
   }
 
   void parseOperatorInst(String op) {
@@ -1006,7 +995,7 @@ class _Transpiler {
     final int b = readWord();
     ref(a);
     ref(b);
-    add(_Operator(type, name, op, a, b));
+    addToCurrentBlock(_Operator(type, name, op, a, b));
   }
 
   void parseBuiltinFunction(String functionName) {
@@ -1018,7 +1007,7 @@ class _Transpiler {
       ref(id);
       args[i] = id;
     }
-    add(_BuiltinFunction(type, name, functionName, args));
+    addToCurrentBlock(_BuiltinFunction(type, name, functionName, args));
   }
 
   void parseGLSLInst(int id, int type) {
@@ -1037,6 +1026,6 @@ class _Transpiler {
       ref(id);
       args[i] = id;
     }
-    add(_BuiltinFunction(type, id, opName, args));
+    addToCurrentBlock(_BuiltinFunction(type, id, opName, args));
   }
 }

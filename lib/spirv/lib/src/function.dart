@@ -21,6 +21,23 @@ class _Function {
   final Map<int, _Block> blocks = <int, _Block>{};
   final List<int> deps = <int>[];
 
+  _Block addBlock(int id) {
+    final _Block b = _Block();
+    blocks[id] = b;
+    entry ??= b;
+    return b;
+  }
+
+  void declareParam(int id, int paramType) {
+    final int i = declaredParams;
+    if (paramType != type.params[i]) {
+      throw TranspileException._(_opFunctionParameter,
+          'type mismatch for param $i of function $name');
+    }
+    params[i] = id;
+    declaredParams++;
+  }
+
   void write(_Transpiler t, StringBuffer out) {
     if (declaredParams != params.length) {
       throw t.failure('not all parameters declared for function $name');
