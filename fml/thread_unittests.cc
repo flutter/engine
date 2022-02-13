@@ -50,6 +50,18 @@ TEST(Thread, GetCurrentName) {
   thread.Join();
 }
 
+TEST(Thread, GetCurrentId) {
+  fml::Thread thread;
+  thread.GetTaskRunner()->PostTask([]() {
+    fml::PlatformThreadId thread_id = fml::Thread::GetCurrentId();
+    ASSERT_NE(thread_id, fml::kInvalidThreadId);
+
+    // Make sure that the thread ID is the same across calls.
+    ASSERT_EQ(thread_id, fml::Thread::GetCurrentId());
+  });
+  thread.Join();
+}
+
 #if FLUTTER_PTHREAD_SUPPORTED
 TEST(Thread, ThreadNameCreatedWithConfig) {
   const std::string name = "Thread1";
