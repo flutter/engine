@@ -38,6 +38,54 @@ void RasterCacheResult::draw(SkCanvas& canvas, const SkPaint* paint) const {
                    paint);
 }
 
+void RasterCacheResult::drawTransformed(SkCanvas& canvas,
+                                        const SkMatrix& matrix,
+                                        const SkSamplingOptions& sampling,
+                                        const SkPaint* paint) const {
+  TRACE_EVENT0("flutter", "RasterCacheResult::drawTransformed");
+  SkAutoCanvasRestore auto_restore(&canvas, true);
+  SkIRect bounds =
+      RasterCache::GetDeviceBounds(logical_rect_, canvas.getTotalMatrix());
+  FML_DCHECK(
+      std::abs(bounds.size().width() - image_->dimensions().width()) <= 1 &&
+      std::abs(bounds.size().height() - image_->dimensions().height()) <= 1);
+
+  SkPoint cache_corners[3];
+  cache_corners[0] = SkPoint::Make(bounds.fLeft, bounds.fTop);
+  cache_corners[1] = SkPoint::Make(bounds.fRight, bounds.fTop);
+  cache_corners[2] = SkPoint::Make(bounds.fLeft, bounds.fBottom);
+  // cache_corners are device coordinates of where the cache entry
+  // would have been drawn if we were still using the canvas matrix.
+  // 3 corners are enough to precisely locate the image in an
+  // affine coordinate system (and we would not be caching the
+  // children if the coordinate system was not affine).
+
+  SkMatrix cache_render_matrix;
+  bool invert_success = canvas.getTotalMatrix().invert(&cache_render_matrix);
+  FML_DCHECK(invert_success);
+  SkPoint render_corners[3];
+  cache_render_matrix.mapPoints(render_corners, cache_corners, 3);
+  // render_corners are now the location of the cached image corners
+  // mapped back to the coordinate space of the canvas.
+
+  // Now we look at what would have happened if we were rendering the
+  // child with the specified matrix in addition to the canvas matrix.
+  // We take the location of the cached image in the child coordinate
+  // space (specified by 3 of its corners) and see where those points
+  // would be drawn in device space with the new transform.
+  matrix.mapPoints(render_corners, 3);
+  // render_corners are now relative to the canvas transform.
+  canvas.getTotalMatrix().mapPoints(render_corners, 3);
+  // render_corners are now the device space locations of those same
+  // corners, had they been rendered under the new canvas + matrix
+  cache_render_matrix.setPolyToPoly(cache_corners, render_corners, 3);
+  // cache_render_matrix now maps the original device space corners
+  // to the new device rendering locations of those same corners
+
+  canvas.setMatrix(cache_render_matrix);
+  canvas.drawImage(image_, bounds.fLeft, bounds.fTop, sampling, paint);
+}
+
 RasterCache::RasterCache(size_t access_threshold,
                          size_t picture_and_display_list_cache_limit_per_frame)
     : access_threshold_(access_threshold),
@@ -408,6 +456,29 @@ bool RasterCache::Draw(const Layer* layer,
 
   if (entry.image) {
     entry.image->draw(canvas, paint);
+    return true;
+  }
+
+  return false;
+}
+
+bool RasterCache::DrawTransformed(const Layer* layer,
+                                  SkCanvas& canvas,
+                                  const SkMatrix& matrix,
+                                  const SkSamplingOptions& sampling,
+                                  const SkPaint* paint) const {
+  LayerRasterCacheKey cache_key(layer->unique_id(), canvas.getTotalMatrix());
+  auto it = layer_cache_.find(cache_key);
+  if (it == layer_cache_.end()) {
+    return false;
+  }
+
+  Entry& entry = it->second;
+  entry.access_count++;
+  entry.used_this_frame = true;
+
+  if (entry.image) {
+    entry.image->drawTransformed(canvas, matrix, sampling, paint);
     return true;
   }
 

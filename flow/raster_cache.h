@@ -29,6 +29,11 @@ class RasterCacheResult {
 
   virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
 
+  virtual void drawTransformed(SkCanvas& canvas,
+                               const SkMatrix& matrix,
+                               const SkSamplingOptions& sampling,
+                               const SkPaint* paint) const;
+
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
   };
@@ -226,6 +231,19 @@ class RasterCache {
   bool Draw(const Layer* layer,
             SkCanvas& canvas,
             const SkPaint* paint = nullptr) const;
+
+  // Find the raster cache for the layer and draw it to the canvas with the
+  // given transformation matrix and texture sampling options.
+  //
+  // Additional paint can be given to change how the raster cache is drawn
+  // (e.g., draw the raster cache with some opacity).
+  //
+  // Return true if the layer raster cache was found and drawn.
+  bool DrawTransformed(const Layer* layer,
+                       SkCanvas& canvas,
+                       const SkMatrix& matrix,
+                       const SkSamplingOptions& sampling,
+                       const SkPaint* paint = nullptr) const;
 
   void PrepareNewFrame();
   void CleanupAfterFrame();
