@@ -48,6 +48,8 @@ source_set("flow") {
     "layers/picture_layer.h",
     "layers/platform_view_layer.cc",
     "layers/platform_view_layer.h",
+    "layers/raster_transform_layer.cc",
+    "layers/raster_transform_layer.h",
     "layers/shader_mask_layer.cc",
     "layers/shader_mask_layer.h",
     "layers/texture_layer.cc",
