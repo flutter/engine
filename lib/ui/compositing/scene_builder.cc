@@ -19,6 +19,7 @@
 #include "flutter/flow/layers/physical_shape_layer.h"
 #include "flutter/flow/layers/picture_layer.h"
 #include "flutter/flow/layers/platform_view_layer.h"
+#include "flutter/flow/layers/raster_transform_layer.h"
 #include "flutter/flow/layers/shader_mask_layer.h"
 #include "flutter/flow/layers/texture_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
@@ -52,6 +53,7 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, SceneBuilder);
   V(SceneBuilder, pushBackdropFilter)               \
   V(SceneBuilder, pushShaderMask)                   \
   V(SceneBuilder, pushPhysicalShape)                \
+  V(SceneBuilder, pushRasterTransform)              \
   V(SceneBuilder, pop)                              \
   V(SceneBuilder, addPlatformView)                  \
   V(SceneBuilder, addRetained)                      \
@@ -246,6 +248,26 @@ void SceneBuilder::pushPhysicalShape(Dart_Handle layer_handle,
       static_cast<SkColor>(color), static_cast<SkColor>(shadow_color),
       static_cast<float>(elevation), path->path(),
       static_cast<flutter::Clip>(clipBehavior));
+  PushLayer(layer);
+  EngineLayer::MakeRetained(layer_handle, layer);
+
+  if (oldLayer && oldLayer->Layer()) {
+    layer->AssignOldLayer(oldLayer->Layer().get());
+  }
+}
+
+void SceneBuilder::pushRasterTransform(Dart_Handle layer_handle,
+                                       tonic::Float64List& matrix4,
+                                       double rasterScaleX,
+                                       double rasterScaleY,
+                                       int filterQualityIndex,
+                                       fml::RefPtr<EngineLayer> oldLayer) {
+  SkMatrix sk_matrix = ToSkMatrix(matrix4);
+  auto raster_scale =
+      SkV2{static_cast<float>(rasterScaleX), static_cast<float>(rasterScaleY)};
+  auto sampling = ImageFilter::SamplingFromIndex(filterQualityIndex);
+  auto layer = std::make_shared<flutter::RasterTransformLayer>(
+      sk_matrix, raster_scale, sampling);
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

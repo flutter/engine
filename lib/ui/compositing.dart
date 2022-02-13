@@ -198,6 +198,10 @@ class PhysicalShapeEngineLayer extends _EngineLayerWrapper {
   PhysicalShapeEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
 }
 
+class RasterTransformEngineLayer extends _EngineLayerWrapper {
+  RasterTransformEngineLayer._(EngineLayer nativeLayer) : super._(nativeLayer);
+}
+
 /// Builds a [Scene] containing the given visuals.
 ///
 /// A [Scene] can then be rendered using [FlutterView.render].
@@ -618,6 +622,30 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
       int shadowColor,
       int clipBehavior,
       EngineLayer? oldLayer) native 'SceneBuilder_pushPhysicalShape';
+
+  RasterTransformEngineLayer pushRasterTransform(Float64List matrix4, {
+    double rasterScaleX = 1.0,
+    double rasterScaleY = 1.0,
+    FilterQuality filterQuality = FilterQuality.low,
+    RasterTransformEngineLayer? oldLayer,
+  }) {
+    assert(_matrix4IsValid(matrix4));
+    assert(_debugCheckCanBeUsedAsOldLayer(oldLayer, 'pushRasterTransform'));
+    final EngineLayer engineLayer = EngineLayer._();
+    _pushRasterTransform(engineLayer, matrix4, rasterScaleX, rasterScaleY, filterQuality.index,
+        oldLayer?._nativeLayer);
+    final RasterTransformEngineLayer layer = RasterTransformEngineLayer._(engineLayer);
+    assert(_debugPushLayer(layer));
+    return layer;
+  }
+
+  void _pushRasterTransform(
+      EngineLayer outEngineLayer,
+      Float64List matrix4,
+      double rasterScaleX,
+      double rasterScaleY,
+      int filterQualityIndex,
+      EngineLayer? oldLayer) native 'SceneBuilder_pushRasterTransform';
 
   /// Ends the effect of the most recently pushed operation.
   ///

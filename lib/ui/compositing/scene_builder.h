@@ -86,6 +86,12 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                          int shadowColor,
                          int clipBehavior,
                          fml::RefPtr<EngineLayer> oldLayer);
+  void pushRasterTransform(Dart_Handle layer_handle,
+                           tonic::Float64List& matrix4,
+                           double rasterScaleX,
+                           double rasterScaleY,
+                           int filterQualityIndex,
+                           fml::RefPtr<EngineLayer> oldLayer);
 
   void addRetained(fml::RefPtr<EngineLayer> retainedLayer);
 
