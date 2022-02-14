@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_complexity_gl.h"
 #include "flutter/display_list/display_list_complexity_metal.h"
 
 namespace flutter {
@@ -24,6 +25,8 @@ DisplayListComplexityCalculator* DisplayListComplexityCalculator::GetForBackend(
   switch (backend) {
     case GrBackendApi::kMetal:
       return DisplayListMetalComplexityCalculator::GetInstance();
+    case GrBackendApi::kOpenGL:
+      return DisplayListGLComplexityCalculator::GetInstance();
     default:
       return DisplayListNaiveComplexityCalculator::GetInstance();
   }

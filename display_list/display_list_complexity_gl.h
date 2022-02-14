@@ -2,20 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_METAL_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_METAL_H_
+#ifndef FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_GL_H_
+#define FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_GL_H_
 
 #include "flutter/display_list/display_list_complexity_helper.h"
 
 namespace flutter {
 
-class DisplayListMetalComplexityCalculator
+class DisplayListGLComplexityCalculator
     : public DisplayListComplexityCalculator {
  public:
   static DisplayListComplexityCalculator* GetInstance();
 
   unsigned int compute(DisplayList* display_list) override {
-    MetalHelper helper(ceiling_);
+    GLHelper helper(ceiling_);
     display_list->Dispatch(helper);
     return helper.ComplexityScore();
   }
@@ -28,9 +28,9 @@ class DisplayListMetalComplexityCalculator
   void SetComplexityCeiling(unsigned int ceiling) { ceiling_ = ceiling; }
 
  private:
-  class MetalHelper : public ComplexityCalculatorHelper {
+  class GLHelper : public ComplexityCalculatorHelper {
    public:
-    MetalHelper(unsigned int ceiling) : ComplexityCalculatorHelper(ceiling) {}
+    GLHelper(unsigned int ceiling) : ComplexityCalculatorHelper(ceiling) {}
 
     void drawLine(const SkPoint& p0, const SkPoint& p1) override;
     void drawRect(const SkRect& rect) override;
@@ -76,13 +76,13 @@ class DisplayListMetalComplexityCalculator
     unsigned int SaveLayerComplexity() override;
   };
 
-  DisplayListMetalComplexityCalculator()
+  DisplayListGLComplexityCalculator()
       : ceiling_(std::numeric_limits<unsigned int>::max()) {}
-  static DisplayListMetalComplexityCalculator* instance_;
+  static DisplayListGLComplexityCalculator* instance_;
 
   unsigned int ceiling_;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_METAL_H_
+#endif  // FLUTTER_FLOW_DISPLAY_LIST_COMPLEXITY_GL_H_

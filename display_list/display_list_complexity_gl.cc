@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/display_list/display_list_complexity_metal.h"
+#include "flutter/display_list/display_list_complexity_gl.h"
 
 // The numbers and weightings used in this file stem from taking the
-// data from the DisplayListBenchmarks suite run on an iPhone 12 and
+// data from the DisplayListBenchmarks suite run on an Pixel 4 and
 // applying very rough analysis on them to identify the approximate
 // trends.
 //
@@ -14,59 +14,53 @@
 
 namespace flutter {
 
-DisplayListMetalComplexityCalculator*
-    DisplayListMetalComplexityCalculator::instance_ = nullptr;
+DisplayListGLComplexityCalculator*
+    DisplayListGLComplexityCalculator::instance_ = nullptr;
 
 DisplayListComplexityCalculator*
-DisplayListMetalComplexityCalculator::GetInstance() {
+DisplayListGLComplexityCalculator::GetInstance() {
   if (instance_ == nullptr) {
-    instance_ = new DisplayListMetalComplexityCalculator();
+    instance_ = new DisplayListGLComplexityCalculator();
   }
   return instance_;
 }
 
 unsigned int
-DisplayListMetalComplexityCalculator::MetalHelper::SaveLayerComplexity() {
+DisplayListGLComplexityCalculator::GLHelper::SaveLayerComplexity() {
   // Calculate the impact of saveLayer.
   unsigned int save_layer_complexity;
   if (SaveLayerCount() == 0) {
     save_layer_complexity = 0;
   } else {
-    // saveLayer seems to have two trends; if the count is < 200,
-    // then the individual cost of a saveLayer is higher than if
-    // the count is > 200.
-    if (SaveLayerCount() > 200) {
-      // m = 1/5
-      // c = 1
-      save_layer_complexity = (SaveLayerCount() + 5) * 40000;
-    } else {
-      // m = 1/2
-      // c = 1
-      save_layer_complexity = (SaveLayerCount() + 2) * 100000;
-    }
+    // m = 1/5
+    // c = 10
+    save_layer_complexity = (SaveLayerCount() + 50) * 40000;
   }
 
   return save_layer_complexity;
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
-    const SkPoint& p0,
-    const SkPoint& p1) {
+void DisplayListGLComplexityCalculator::GLHelper::drawLine(const SkPoint& p0,
+                                                           const SkPoint& p1) {
   if (IsComplex()) {
     return;
   }
-  // The curve here may be log-linear, although it doesn't really match up that
-  // well. To avoid costly computations, try and do a best fit of the data onto
-  // a linear graph as a very rough first order approximation.
+
+  // There is a relatively high fixed overhead cost for drawLine on OpenGL.
+  // Further, there is a strange bump where the cost of drawing a line of
+  // length ~500px is actually more costly than drawing a line of length
+  // ~1000px. The calculations here will be for a linear graph that
+  // approximate the overall trend.
 
   float non_hairline_penalty = 1.0f;
-  float aa_penalty = 1.0f;
+  unsigned int aa_penalty = 1;
 
-  if (!IsHairline()) {
+  // The non-hairline penalty is insignificant when AA is on
+  if (!IsHairline() && !IsAntiAliased()) {
     non_hairline_penalty = 1.15f;
   }
   if (IsAntiAliased()) {
-    aa_penalty = 1.4f;
+    aa_penalty = 2;
   }
 
   // Use an approximation for the distance to avoid floating point or
@@ -74,16 +68,14 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
   SkScalar distance = abs(p0.x() - p1.x()) + abs(p0.y() - p1.y());
 
   // The baseline complexity is for a hairline stroke with no AA
-  // m = 1/45
-  // c = 5
-  unsigned int complexity =
-      ((distance + 225) * 4 / 9) * non_hairline_penalty * aa_penalty;
+  // m = 1/40
+  // c = 13
+  unsigned int complexity = (distance + 520) / 2;
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
-    const SkRect& rect) {
+void DisplayListGLComplexityCalculator::GLHelper::drawRect(const SkRect& rect) {
   if (IsComplex()) {
     return;
   }
@@ -93,9 +85,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
   // If stroked, cost scales linearly with the rectangle width/height.
   // If filled, it scales with the area.
   //
-  // Hairline stroke vs non hairline has no real penalty at smaller lengths,
-  // but it increases at larger lengths. There isn't enough data to get a good
-  // idea of the penalty at lengths > 1000px.
+  // Hairline stroke vs non hairline has no significant penalty.
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
@@ -103,29 +93,38 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
     // No real difference for AA with filled styles
     unsigned int area = rect.width() * rect.height();
 
-    // m = 1/9000
+    // m = 1/3500
     // c = 0
-    complexity = area / 225;
+    complexity = area * 2 / 175;
   } else {
     // Take the average of the width and height
     unsigned int length = (rect.width() + rect.height()) / 2;
 
-    // There is a penalty for AA being *disabled*
     if (IsAntiAliased()) {
-      // m = 1/65
+      // m = 1/30
       // c = 0
-      complexity = length * 8 / 13;
+      complexity = length * 4 / 3;
     } else {
-      // m = 1/35
+      // If AA is disabled, the data shows that at larger sizes the overall
+      // cost comes down, peaking at around 1000px. As we don't anticipate
+      // rasterising rects with AA disabled to be all that frequent, just treat
+      // it as a straight line that peaks at 1000px, beyond which it stays
+      // constant. The rationale here is that it makes more sense to
+      // overestimate than to start decreasing the cost as the length goes up.
+      //
+      // This should be a reasonable approximation as it doesn't decrease by
+      // much from 1000px to 2000px.
+      //
+      // m = 1/20
       // c = 0
-      complexity = length * 8 / 7;
+      complexity = std::min(length, 1000u) * 2;
     }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
+void DisplayListGLComplexityCalculator::GLHelper::drawOval(
     const SkRect& bounds) {
   if (IsComplex()) {
     return;
@@ -143,28 +142,28 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
   // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kFill_Style) {
     // With filled styles, there is no significant AA penalty
-    // m = 1/16000
+    // m = 1/6000
     // c = 0
-    complexity = area / 80;
+    complexity = area / 30;
   } else {
     if (IsAntiAliased()) {
-      // m = 1/7500
+      // m = 1/4000
       // c = 0
-      complexity = area * 2 / 75;
+      complexity = area / 20;
     } else {
       // Take the average of the width and height
       unsigned int length = (bounds.width() + bounds.height()) / 2;
 
-      // m = 1/80
+      // m = 1/75
       // c = 0
-      complexity = length * 5 / 2;
+      complexity = length * 8 / 3;
     }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
+void DisplayListGLComplexityCalculator::GLHelper::drawCircle(
     const SkPoint& center,
     SkScalar radius) {
   if (IsComplex()) {
@@ -178,82 +177,90 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
   if (Style() == SkPaint::Style::kFill_Style) {
     // We can ignore pi here
     unsigned int area = radius * radius;
-    // m = 1/1300
-    // c = 5
-    complexity = (area + 6500) * 2 / 65;
+    // m = 1/525
+    // c = 50
+    complexity = (area + 26250) * 8 / 105;
 
-    // Penalty of around 5% when AA is disabled
+    // Penalty of around 8% when AA is disabled
     if (!IsAntiAliased()) {
-      complexity *= 1.05f;
+      complexity *= 1.08f;
     }
   } else {
     // Hairline vs non-hairline has no significant performance difference
     if (IsAntiAliased()) {
-      // m = 1/7
-      // c = 7
-      complexity = (radius + 49) * 40 / 7;
+      // m = 1/3
+      // c = 10
+      complexity = (radius + 30) * 40 / 3;
     } else {
-      // m = 1/16
-      // c = 8
-      complexity = (radius + 128) * 5 / 2;
+      // m = 1/10
+      // c = 20
+      complexity = (radius + 200) * 4;
     }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
+void DisplayListGLComplexityCalculator::GLHelper::drawRRect(
     const SkRRect& rrect) {
   if (IsComplex()) {
     return;
   }
-  // RRects scale linearly with the area of the bounding rect
-  unsigned int area = rrect.width() * rrect.height();
 
-  // Drawing RRects is split into two performance tiers; an expensive
-  // one and a less expensive one. Both scale linearly with area.
+  // Drawing RRects is split into three performance tiers:
   //
-  // Expensive: All filled style, symmetric w/AA
-  bool expensive =
-      (Style() == SkPaint::Style::kFill_Style) ||
-      ((rrect.getType() == SkRRect::Type::kSimple_Type) && IsAntiAliased());
+  // 1) All stroked styles without AA *except* simple/symmetric RRects
+  // 2) All filled styles and symmetric stroked styles w/AA
+  // 3) Remaining stroked styles with AA
+  //
+  // 1) and 3) scale linearly with length, 2) scales with area.
 
   unsigned int complexity;
 
   // These values were worked out by creating a straight line graph (y=mx+c)
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
-  if (expensive) {
-    // m = 1/25000
-    // c = 2
-    // An area of 7000px^2 ~= baseline timing of 0.0005ms
-    complexity = (area + 10500) / 175;
+  if (Style() == SkPaint::Style::kFill_Style ||
+      ((rrect.getType() == SkRRect::Type::kSimple_Type) && IsAntiAliased())) {
+    unsigned int area = rrect.width() * rrect.height();
+    // m = 1/3200
+    // c = 0.5
+    complexity = (area + 1600) / 80;
   } else {
-    // m = 1/7000
-    // c = 1.5
-    // An area of 16000px^2 ~= baseline timing of 0.0005ms
-    complexity = (area + 50000) / 625;
+    // Take the average of the width and height
+    unsigned int length = (rrect.width() + rrect.height()) / 2;
+
+    // There is some difference between hairline and non-hairline performance
+    // but the spread is relatively inconsistent and it's pretty much a wash
+    if (IsAntiAliased()) {
+      // m = 1/25
+      // c = 1
+      complexity = (length + 25) * 8 / 5;
+    } else {
+      // m = 1/50
+      // c = 0.75
+      complexity = ((length * 2) + 75) * 2 / 5;
+    }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
+void DisplayListGLComplexityCalculator::GLHelper::drawDRRect(
     const SkRRect& outer,
     const SkRRect& inner) {
   if (IsComplex()) {
     return;
   }
   // There are roughly four classes here:
-  // a) Filled style with AA enabled
-  // b) Filled style with AA disabled
-  // c) Complex RRect type with AA enabled and filled style
-  // d) Everything else
+  // a) Filled style
+  // b) Complex RRect type with AA enabled and filled style
+  // c) Stroked style with AA enabled
+  // d) Stroked style with AA disabled
   //
-  // a) and c) scale linearly with the area, b) and d) scale linearly with
+  // a) and b) scale linearly with the area, c) and d) scale linearly with
   // a single dimension (length). In all cases, the dimensions refer to
   // the outer RRect.
-  unsigned int length = (outer.width() + outer.height()) / 2;
 
   unsigned int complexity;
 
@@ -266,31 +273,31 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   if (Style() == SkPaint::Style::kFill_Style) {
     unsigned int area = outer.width() * outer.height();
     if (outer.getType() == SkRRect::Type::kComplex_Type) {
-      // m = 1/1000
-      // c = 1
-      complexity = (area + 1000) / 10;
+      // m = 1/500
+      // c = 0.5
+      complexity = (area + 250) / 5;
     } else {
-      if (IsAntiAliased()) {
-        // m = 1/3500
-        // c = 1.5
-        complexity = (area + 5250) / 35;
-      } else {
-        // m = 1/30
-        // c = 1
-        complexity = (300 + (10 * length)) / 3;
-      }
+      // m = 1/1600
+      // c = 2
+      complexity = (area + 3200) / 16;
     }
   } else {
-    // m = 1/60
-    // c = 1.75
-    complexity = ((10 * length) + 1050) / 6;
+    unsigned int length = (outer.width() + outer.height()) / 2;
+    if (IsAntiAliased()) {
+      // m = 1/15
+      // c = 1
+      complexity = (length + 15) * 20 / 3;
+    } else {
+      // m = 1/27
+      // c = 0.5
+      complexity = ((length * 2) + 27) * 50 / 27;
+    }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
-    const SkPath& path) {
+void DisplayListGLComplexityCalculator::GLHelper::drawPath(const SkPath& path) {
   if (IsComplex()) {
     return;
   }
@@ -301,28 +308,34 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPath(
   // to assign scores based on stroked styles.
 
   unsigned int line_verb_cost, quad_verb_cost, conic_verb_cost, cubic_verb_cost;
+  unsigned int complexity;
 
   if (IsAntiAliased()) {
-    line_verb_cost = 75;
-    quad_verb_cost = 100;
-    conic_verb_cost = 160;
-    cubic_verb_cost = 210;
+    // There seems to be a fixed cost of around 1ms for calling drawPath with AA
+    complexity = 200000;
+
+    line_verb_cost = 235;
+    quad_verb_cost = 365;
+    conic_verb_cost = 365;
+    cubic_verb_cost = 725;
   } else {
-    line_verb_cost = 67;
-    quad_verb_cost = 80;
-    conic_verb_cost = 140;
-    cubic_verb_cost = 210;
+    // There seems to be a fixed cost of around 0.25ms for calling drawPath
+    // without AA
+    complexity = 50000;
+
+    line_verb_cost = 135;
+    quad_verb_cost = 150;
+    conic_verb_cost = 200;
+    cubic_verb_cost = 235;
   }
 
-  // There seems to be a fixed cost of around 1ms for calling drawPath
-  unsigned int complexity =
-      200000 + CalculatePathComplexity(path, line_verb_cost, quad_verb_cost,
-                                       conic_verb_cost, cubic_verb_cost);
+  complexity += CalculatePathComplexity(path, line_verb_cost, quad_verb_cost,
+                                        conic_verb_cost, cubic_verb_cost);
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
+void DisplayListGLComplexityCalculator::GLHelper::drawArc(
     const SkRect& oval_bounds,
     SkScalar start_degrees,
     SkScalar sweep_degrees,
@@ -331,12 +344,10 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
     return;
   }
   // Hairline vs non-hairline makes no difference to the performance
-  // Stroked styles without AA scale linearly with the diameter
-  // Stroked styles with AA scale linearly with the area except for small values
-  // Filled styles scale linearly with the area
-  unsigned int diameter = (oval_bounds.width() + oval_bounds.height()) / 2;
+  // Stroked styles without AA scale linearly with the log of the diameter
+  // Stroked styles with AA scale linearly with the area
+  // Filled styles scale lienarly with the area
   unsigned int area = oval_bounds.width() * oval_bounds.height();
-
   unsigned int complexity;
 
   // These values were worked out by creating a straight line graph (y=mx+c)
@@ -347,30 +358,36 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
   // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kStroke_Style) {
     if (IsAntiAliased()) {
-      // m = 1/8500
-      // c = 16
-      complexity = (area + 136000) * 2 / 765;
+      // m = 1/3800
+      // c = 12
+      complexity = (area + 45600) / 171;
     } else {
-      // m = 1/60
-      // c = 3
-      complexity = (diameter + 180) * 10 / 27;
+      unsigned int diameter = (oval_bounds.width() + oval_bounds.height()) / 2;
+      // m = 15
+      // c = -100
+      // This should never go negative though, so use std::max to ensure
+      // c is never larger than 15*log_diameter
+      //
+      // Pre-multiply by 15 here so we get a little bit more precision
+      unsigned int log_diameter = 15 * log(diameter);
+      complexity = (log_diameter - std::max(log_diameter, 100u)) * 200 / 9;
     }
   } else {
     if (IsAntiAliased()) {
-      // m = 1/20000
-      // c = 20
-      complexity = (area + 400000) / 900;
+      // m = 1/1000
+      // c = 10
+      complexity = (area + 10000) / 45;
     } else {
-      // m = 1/2100
-      // c = 8
-      complexity = (area + 16800) * 2 / 189;
+      // m = 1/6500
+      // c = 12
+      complexity = (area + 52000) * 2 / 585;
     }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
+void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
     SkCanvas::PointMode mode,
     uint32_t count,
     const SkPoint points[]) {
@@ -379,34 +396,68 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
   }
   unsigned int complexity;
 
-  // If AA is off then they all behave similarly, and scale
-  // linearly with the point count
-  if (!IsAntiAliased()) {
-    // m = 1/16000
-    // c = 0.75
-    complexity = (count + 12000) * 25 / 2;
-  } else {
-    if (mode == SkCanvas::kPolygon_PointMode) {
-      // m = 1/1250
-      // c = 1
-      complexity = (count + 1250) * 160;
-    } else {
-      if (IsHairline() && mode == SkCanvas::kPoints_PointMode) {
+  if (IsAntiAliased()) {
+    if (mode == SkCanvas::kPoints_PointMode) {
+      if (IsHairline()) {
         // This is a special case, it triggers an extremely fast path
-        // m = 1/14500
+        // m = 1/4500
         // c = 0
-        complexity = count * 400 / 29;
+        complexity = count * 400 / 9;
       } else {
-        // m = 1/2200
-        // c = 0.75
-        complexity = (count + 1650) * 1000 / 11;
+        // m = 1/500
+        // c = 0
+        complexity = count * 400;
+      }
+    } else if (mode == SkCanvas::kLines_PointMode) {
+      if (IsHairline()) {
+        // m = 1/750
+        // c = 0
+        complexity = count * 800 / 3;
+      } else {
+        // m = 1/500
+        // c = 0
+        complexity = count * 400;
+      }
+    } else {
+      if (IsHairline()) {
+        // m = 1/350
+        // c = 0
+        complexity = count * 4000 / 7;
+      } else {
+        // m = 1/250
+        // c = 0
+        complexity = count * 800;
       }
     }
+  } else {
+    if (mode == SkCanvas::kPoints_PointMode) {
+      // Hairline vs non hairline makes no difference for points without AA
+      // m = 1/18000
+      // c = 0.25
+      complexity = (count + 4500) * 100 / 9;
+    } else if (mode == SkCanvas::kLines_PointMode) {
+      if (IsHairline()) {
+        // m = 1/8500
+        // c = 0.25
+        complexity = (count + 2125) * 400 / 17;
+      } else {
+        // m = 1/9000
+        // c = 0.25
+        complexity = (count + 2250) * 200 / 9;
+      }
+    } else {
+      // Polygon only really diverges for hairline vs non hairline at large
+      // point counts, and only by a few %.
+      // m = 1/7500
+      // c = 0.25
+      complexity = (count + 1875) * 80 / 3;
+    }
   }
+
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
+void DisplayListGLComplexityCalculator::GLHelper::drawVertices(
     const sk_sp<SkVertices> vertices,
     SkBlendMode mode) {
   // There is currently no way for us to get the VertexMode from the SkVertices
@@ -427,14 +478,14 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
   // For the baseline, it's hard to identify the trend. It might be O(n^1/2)
   // For now, treat it as linear as an approximation.
   //
-  // m = 1/4000
+  // m = 1/1600
   // c = 1
-  unsigned int complexity = (approximate_vertex_count + 4000) * 50;
+  unsigned int complexity = (approximate_vertex_count + 1600) * 250 / 2;
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
+void DisplayListGLComplexityCalculator::GLHelper::drawImage(
     const sk_sp<SkImage> image,
     const SkPoint point,
     const SkSamplingOptions& sampling,
@@ -447,28 +498,37 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImage(
   //
   // The main difference is if the image is backed by a texture already or not
   // If we don't need to upload, then the cost scales linearly with the
-  // area of the image. If it needs uploading, the cost scales linearly
+  // length of the image. If it needs uploading, the cost scales linearly
   // with the square of the area (!!!).
   SkISize dimensions = image->dimensions();
+  unsigned int length = (dimensions.width() + dimensions.height()) / 2;
   unsigned int area = dimensions.width() * dimensions.height();
 
-  // m = 1/17000
-  // c = 3
-  unsigned int complexity = (area + 51000) * 4 / 170;
+  // m = 1/13
+  // c = 0
+  unsigned int complexity = length * 400 / 13;
 
   if (!image->isTextureBacked()) {
     // We can't square the area here as we'll overflow, so let's approximate
     // by taking the calculated complexity score and applying a multiplier to it
     //
-    // (complexity * area / 35000) + 1200 gives a reasonable approximation.
-    float multiplier = area / 35000.0f;
-    complexity = complexity * multiplier + 1200;
+    // (complexity * area / 60000) + 4000 gives a reasonable approximation with
+    // AA (complexity * area / 19000) gives a reasonable approximation without
+    // AA
+    float multiplier;
+    if (IsAntiAliased()) {
+      multiplier = area / 60000.0f;
+      complexity = complexity * multiplier + 4000;
+    } else {
+      multiplier = area / 19000.0f;
+      complexity = complexity * multiplier;
+    }
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
+void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
     const SkISize& size,
     bool texture_backed,
     bool render_with_attributes,
@@ -479,41 +539,33 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
   // Two main groups here - texture-backed and non-texture-backed images
   // Within each group, they all perform within a few % of each other *except*
   // when we have a strict constraint and anti-aliasing enabled.
-  unsigned int area = size.width() * size.height();
 
   // These values were worked out by creating a straight line graph (y=mx+c)
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
   unsigned int complexity;
-  if (texture_backed) {
-    // Baseline for texture-backed SkImages
-    // m = 1/23000
-    // c = 2.3
-    complexity = (area + 52900) * 2 / 115;
-    if (render_with_attributes &&
-        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-        IsAntiAliased()) {
-      // There's about a 30% performance penalty from the baseline
-      complexity *= 1.3f;
-    }
+  if (!texture_backed ||
+      (texture_backed && render_with_attributes &&
+       constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
+       IsAntiAliased())) {
+    unsigned int area = size.width() * size.height();
+    // m = 1/4000
+    // c = 5
+    complexity = (area + 20000) / 10;
   } else {
-    if (render_with_attributes &&
-        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-        IsAntiAliased()) {
-      // m = 1/12200
-      // c = 2.75
-      complexity = (area + 33550) * 2 / 61;
-    } else {
-      // m = 1/14500
-      // c = 2.5
-      complexity = (area + 36250) * 4 / 145;
-    }
+    unsigned int length = (size.width() + size.height()) / 2;
+    // There's a little bit of spread here but the numbers are pretty large
+    // anyway.
+    //
+    // m = 1/22
+    // c = 0
+    complexity = length * 200 / 11;
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
+void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
     const sk_sp<SkImage> image,
     const SkIRect& center,
     const SkRect& dst,
@@ -522,28 +574,33 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawImageNine(
   if (IsComplex()) {
     return;
   }
-  // Whether uploading or not, the performance is comparable across all
-  // variations
+
   SkISize dimensions = image->dimensions();
   unsigned int area = dimensions.width() * dimensions.height();
 
-  // m = 1/8000
+  // m = 1/3600
   // c = 3
-  unsigned int complexity = (area + 24000) / 20;
+  unsigned int complexity = (area + 10800) / 9;
+
+  // Uploading incurs about a 40% performance penalty
+  if (!image->isTextureBacked()) {
+    complexity *= 1.4f;
+  }
+
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawDisplayList(
+void DisplayListGLComplexityCalculator::GLHelper::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
   if (IsComplex()) {
     return;
   }
-  MetalHelper helper(Ceiling() - CurrentComplexityScore());
+  GLHelper helper(Ceiling() - CurrentComplexityScore());
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
+void DisplayListGLComplexityCalculator::GLHelper::drawTextBlob(
     const sk_sp<SkTextBlob> blob,
     SkScalar x,
     SkScalar y) {
@@ -567,21 +624,19 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawTextBlob(
     // If hairlines are on, we hit a degenerative case within Skia that causes
     // our time to skyrocket.
     //
-    // m = 1/3000
-    // c = 1.75
-    // x = glyph_count * log2(glyph_count)
-    unsigned int x = glyph_count * log(glyph_count);
-    complexity = (x + 5250) * 200 / 3;
+    // m = 1/65
+    // c = 1
+    complexity = (glyph_count + 65) * 40000 / 13;
   } else {
-    // m = 1/5000
-    // c = 0.75
-    complexity = 40 * (glyph_count + 3750);
+    // m = 1/3500
+    // c = 0.5
+    complexity = (glyph_count + 1750) * 40 / 7;
   }
 
   AccumulateComplexity(complexity);
 }
 
-void DisplayListMetalComplexityCalculator::MetalHelper::drawShadow(
+void DisplayListGLComplexityCalculator::GLHelper::drawShadow(
     const SkPath& path,
     const SkColor color,
     const SkScalar elevation,
@@ -598,7 +653,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawShadow(
   // quad and conic all perform similarly.
   float occluder_penalty = 1.0f;
   if (transparent_occluder) {
-    occluder_penalty = 1.05f;
+    occluder_penalty = 1.20f;
   }
 
   // The benchmark uses a test path of around 10 path elements. This is likely
@@ -609,14 +664,13 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawShadow(
   // For now, we will assume that there is no fixed overhead and that the time
   // spent rendering the shadow for a path is split evenly amongst all the verbs
   // enumerated.
-  unsigned int line_verb_cost = 20000;   // 0.1ms
-  unsigned int quad_verb_cost = 20000;   // 0.1ms
-  unsigned int conic_verb_cost = 20000;  // 0.1ms
-  unsigned int cubic_verb_cost = 80000;  // 0.4ms
+  unsigned int line_verb_cost = 17000;    // 0.085ms
+  unsigned int quad_verb_cost = 20000;    // 0.1ms
+  unsigned int conic_verb_cost = 20000;   // 0.1ms
+  unsigned int cubic_verb_cost = 120000;  // 0.6ms
 
-  unsigned int complexity =
-      0 + CalculatePathComplexity(path, line_verb_cost, quad_verb_cost,
-                                  conic_verb_cost, cubic_verb_cost);
+  unsigned int complexity = CalculatePathComplexity(
+      path, line_verb_cost, quad_verb_cost, conic_verb_cost, cubic_verb_cost);
 
   AccumulateComplexity(complexity * occluder_penalty);
 }
