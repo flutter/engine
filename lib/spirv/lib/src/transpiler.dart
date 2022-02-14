@@ -201,6 +201,23 @@ class _Transpiler {
   TranspileException failure(String why) =>
       TranspileException._(currentOp, why);
 
+  void collectDeps(Set<int> collectedDeps, int id) {
+    if (alias.containsKey(id)) {
+      id = alias[id]!;
+      collectedDeps.add(id);
+    }
+    final _Instruction? result = results[id];
+    if (result == null) {
+      return;
+    }
+    for (final int i in result.deps) {
+      if (!collectedDeps.contains(i)) {
+        collectedDeps.add(i);
+        collectDeps(collectedDeps, i);
+      }
+    }
+  }
+
   void writeFunctionAndDeps(Set<int> visited, int function) {
     if (visited.contains(function)) {
       return;
@@ -210,7 +227,7 @@ class _Transpiler {
     for (final int dep in f.deps) {
       writeFunctionAndDeps(visited, dep);
     }
-    f.write(this, src);
+    f.write(src);
   }
 
   void writeHeader() {
@@ -227,6 +244,13 @@ class _Transpiler {
       default:
         break;
     }
+  }
+
+  int resolveId(int id) {
+    if (alias.containsKey(id)) {
+      return alias[id]!;
+    }
+    return id;
   }
 
   String resolveName(int id) {
@@ -446,7 +470,7 @@ class _Transpiler {
         opImageSampleImplicitLod();
         break;
       case _opFNegate:
-        opFNegate();
+        parseUnaryOperator('-');
         break;
       case _opFAdd:
         parseOperatorInst('+');
@@ -463,9 +487,6 @@ class _Transpiler {
       case _opFMod:
         parseBuiltinFunction('mod');
         break;
-      case _opFUnordNotEqual:
-        parseOperatorInst('!=');
-        break;
       case _opVectorTimesScalar:
       case _opMatrixTimesScalar:
       case _opVectorTimesMatrix:
@@ -476,8 +497,53 @@ class _Transpiler {
       case _opDot:
         parseBuiltinFunction('dot');
         break;
+      case _opFOrdEqual:
+        parseOperatorInst('==');
+        break;
+      case _opFUnordNotEqual:
+        parseOperatorInst('!=');
+        break;
+      case _opFOrdLessThan:
+        parseOperatorInst('<');
+        break;
+      case _opFOrdGreaterThan:
+        parseOperatorInst('>');
+        break;
+      case _opFOrdLessThanEqual:
+        parseOperatorInst('<=');
+        break;
+      case _opFOrdGreaterThanEqual:
+        parseOperatorInst('>=');
+        break;
+      case _opLogicalEqual:
+        parseOperatorInst('==');
+        break;
+      case _opLogicalNotEqual:
+        parseOperatorInst('!=');
+        break;
+      case _opLogicalOr:
+        parseOperatorInst('||');
+        break;
+      case _opLogicalAnd:
+        parseOperatorInst('&&');
+        break;
+      case _opLogicalNot:
+        parseUnaryOperator('!');
+        break;
       case _opLabel:
         opLabel();
+        break;
+      case _opBranch:
+        opBranch();
+        break;
+      case _opBranchConditional:
+        opBranchConditional();
+        break;
+      case _opLoopMerge:
+        opLoopMerge();
+        break;
+      case _opSelectionMerge:
+        opSelectionMerge();
         break;
       case _opReturn:
         opReturn();
@@ -767,7 +833,7 @@ class _Transpiler {
       throw failure('function $id has return type mismatch');
     }
 
-    final _Function f = _Function(functionType, id);
+    final _Function f = _Function(this, functionType, id);
     functions[id] = f;
     currentFunction = f;
   }
@@ -841,12 +907,15 @@ class _Transpiler {
         }
         return;
       case _storageClassFunction:
-        addToCurrentBlock(_StringInstruction('$type $name'));
+        // function variables are declared the first time a value is
+        // stored to them.
+        currentFunction!.declareVariable(id, typeId);
         return;
       default:
         throw failure('$storageClass is an unsupported Storage Class');
     }
   }
+
 
   void opLoad() {
     // ignore type
@@ -872,7 +941,19 @@ class _Transpiler {
     final int pointer = readWord();
     final int object = readWord();
     ref(object);
-    addToCurrentBlock(_Store(pointer, object));
+
+    // Variables belonging to the current function need to be declared if they
+    // haven't been already.
+    final _Variable? v = currentFunction!.variable(pointer);
+    if (v == null) {
+      addToCurrentBlock(_Store(pointer, object));
+    } else {
+      addToCurrentBlock(_Store(pointer, object, 
+              shouldDeclare: !v.initialized,
+              declarationType: v.type,
+      ));
+      v.initialized = true;
+    }
   }
 
   void opAccessChain() {
@@ -961,17 +1042,31 @@ class _Transpiler {
     addToCurrentBlock(_ImageSampleImplicitLod(type, name, sampledImage, coordinate));
   }
 
-  void opFNegate() {
-    final int type = readWord();
-    final int name = readWord();
-    final int operand = readWord();
-    ref(operand);
-    addToCurrentBlock(_Negate(type, name, operand));
-  }
-
   void opLabel() {
     final int id = readWord();
-    currentBlock = currentFunction!.addBlock(id);
+    currentBlock = currentFunction!.addBlock(this, id);
+  }
+
+  void opBranch() {
+    currentBlock!.branch = readWord();
+    currentBlock = null;
+  }
+
+  void opBranchConditional() {
+    final _Block b = currentBlock!;
+    b.condition = readWord();
+    b.truthyBlock = readWord();
+    b.falseyBlock = readWord();
+  }
+
+  void opLoopMerge() {
+    final _Block b = currentBlock!;
+    b.mergeBlock = readWord();
+    b.continueBlock = readWord();
+  }
+
+  void opSelectionMerge() {
+    currentBlock!.mergeBlock = readWord();
   }
 
   void opReturn() {
@@ -986,6 +1081,14 @@ class _Transpiler {
     final int value = readWord();
     ref(value);
     addToCurrentBlock(_ReturnValue(value));
+  }
+
+  void parseUnaryOperator(String op) {
+    final int type = readWord();
+    final int name = readWord();
+    final int operand = readWord();
+    ref(operand);
+    addToCurrentBlock(_UnaryOperator(type, name, op, operand));
   }
 
   void parseOperatorInst(String op) {
