@@ -94,8 +94,7 @@ void SkPaintDispatchHelper::setMaskBlurFilter(SkBlurStyle style,
   paint_.setMaskFilter(SkMaskFilter::MakeBlur(style, sigma));
 }
 
-sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter()
-    const {
+sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
   if (!invert_colors_) {
     return color_filter_ ? color_filter_->sk_filter() : nullptr;
   }

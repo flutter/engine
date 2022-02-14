@@ -6,6 +6,26 @@
 
 namespace flutter {
 
+DlColorFilter DlColorFilter::From(SkColorFilter* sk_filter) {
+  if (sk_filter == nullptr) {
+    return DlNoColorFilter::instance;
+  }
+  {
+    SkColor color;
+    SkBlendMode mode;
+    if (sk_filter->asAColorMode(&color, &mode)) {
+      return DlBlendColorFilter(color, mode);
+    }
+  }
+  {
+    float matrix[20];
+    if (sk_filter->asAColorMatrix(matrix)) {
+      return DlMatrixColorFilter(matrix);
+    }
+  }
+  return DlUnknownColorFilter(sk_ref_sp(sk_filter));
+}
+
 DlColorFilter::~DlColorFilter() {
   if (type_ == kUnknown) {
     delete static_cast<const DlUnknownColorFilter*>(this);
@@ -53,19 +73,16 @@ bool DlColorFilter::Equals(const DlColorFilter* a, const DlColorFilter* b) {
       return true;
     case kBlend:
       return static_cast<const DlBlendColorFilter*>(a)->equals(
-        static_cast<const DlBlendColorFilter*>(b)
-      );
+          static_cast<const DlBlendColorFilter*>(b));
     case kMatrix:
       return static_cast<const DlMatrixColorFilter*>(a)->equals(
-        static_cast<const DlMatrixColorFilter*>(b)
-      );
+          static_cast<const DlMatrixColorFilter*>(b));
     case kSrgbToLinearGamma:
     case kLinearToSrgbGamma:
       return true;
     case kUnknown:
       return static_cast<const DlUnknownColorFilter*>(a)->equals(
-        static_cast<const DlUnknownColorFilter*>(b)
-      );
+          static_cast<const DlUnknownColorFilter*>(b));
   }
 }
 
@@ -78,9 +95,11 @@ sk_sp<SkColorFilter> DlColorFilter::sk_filter() const {
     case kMatrix:
       return static_cast<const DlMatrixColorFilter*>(this)->sk_filter();
     case kSrgbToLinearGamma:
-      return static_cast<const DlSrgbToLinearGammaColorFilter*>(this)->sk_filter();
+      return static_cast<const DlSrgbToLinearGammaColorFilter*>(this)
+          ->sk_filter();
     case kLinearToSrgbGamma:
-      return static_cast<const DlLinearToSrgbGammaColorFilter*>(this)->sk_filter();
+      return static_cast<const DlLinearToSrgbGammaColorFilter*>(this)
+          ->sk_filter();
     case kUnknown:
       return static_cast<const DlUnknownColorFilter*>(this)->sk_filter();
   }
@@ -91,15 +110,20 @@ std::shared_ptr<const DlColorFilter> DlColorFilter::shared() const {
     case kNone:
       return std::make_shared<DlNoColorFilter>();
     case kBlend:
-      return std::make_shared<DlBlendColorFilter>(static_cast<const DlBlendColorFilter*>(this));
+      return std::make_shared<DlBlendColorFilter>(
+          static_cast<const DlBlendColorFilter*>(this));
     case kMatrix:
-      return std::make_shared<DlMatrixColorFilter>(static_cast<const DlMatrixColorFilter*>(this));
+      return std::make_shared<DlMatrixColorFilter>(
+          static_cast<const DlMatrixColorFilter*>(this));
     case kSrgbToLinearGamma:
-      return std::make_shared<DlSrgbToLinearGammaColorFilter>(static_cast<const DlSrgbToLinearGammaColorFilter*>(this));
+      return std::make_shared<DlSrgbToLinearGammaColorFilter>(
+          static_cast<const DlSrgbToLinearGammaColorFilter*>(this));
     case kLinearToSrgbGamma:
-      return std::make_shared<DlLinearToSrgbGammaColorFilter>(static_cast<const DlLinearToSrgbGammaColorFilter*>(this));
+      return std::make_shared<DlLinearToSrgbGammaColorFilter>(
+          static_cast<const DlLinearToSrgbGammaColorFilter*>(this));
     case kUnknown:
-      return std::make_shared<DlUnknownColorFilter>(static_cast<const DlUnknownColorFilter*>(this));
+      return std::make_shared<DlUnknownColorFilter>(
+          static_cast<const DlUnknownColorFilter*>(this));
   }
 }
 
@@ -115,7 +139,8 @@ bool DlColorFilter::modifies_transparent_black() const {
       // Look at the matrix to make a faster determination?
       // Basically, are the translation components all 0?
     case kUnknown:
-      return sk_filter()->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
+      return sk_filter()->filterColor(SK_ColorTRANSPARENT) !=
+             SK_ColorTRANSPARENT;
   }
 }
 

@@ -392,7 +392,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void onSetBlender(sk_sp<SkBlender> blender);
   void onSetShader(sk_sp<SkShader> shader);
   void onSetImageFilter(sk_sp<SkImageFilter> filter);
-  void setColorFilter(sk_sp<SkColorFilter> filter);
   void onSetColorFilter(const DlColorFilter* filter);
   void onSetPathEffect(sk_sp<SkPathEffect> effect);
   void onSetMaskFilter(sk_sp<SkMaskFilter> filter);

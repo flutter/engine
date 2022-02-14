@@ -29,6 +29,8 @@ class DlColorFilter {
 
   Type type() const { return type_; }
 
+  static DlColorFilter From(SkColorFilter* sk_filter);
+
   size_t size() const;
   bool equals(const DlColorFilter* other) const;
   static bool Equals(const DlColorFilter* a, const DlColorFilter* b);
@@ -37,15 +39,13 @@ class DlColorFilter {
   bool modifies_transparent_black() const;
 
   const DlBlendColorFilter* asABlendFilter() const {
-    return type_ == kBlend
-               ? reinterpret_cast<const DlBlendColorFilter*>(this)
-               : nullptr;
+    return type_ == kBlend ? reinterpret_cast<const DlBlendColorFilter*>(this)
+                           : nullptr;
   }
 
   const DlMatrixColorFilter* asAMatrixFilter() const {
-    return type_ == kMatrix
-               ? reinterpret_cast<const DlMatrixColorFilter*>(this)
-               : nullptr;
+    return type_ == kMatrix ? reinterpret_cast<const DlMatrixColorFilter*>(this)
+                            : nullptr;
   }
 
   const DlSrgbToLinearGammaColorFilter* asASrgbToLinearFilter() const {
@@ -88,8 +88,7 @@ class DlNoColorFilter final : public DlColorFilter {
 class DlBlendColorFilter final : public DlColorFilter {
  public:
   DlBlendColorFilter(SkColor color, SkBlendMode mode)
-      : DlColorFilter(kBlend), color_(color), mode_(mode) {
-  }
+      : DlColorFilter(kBlend), color_(color), mode_(mode) {}
   DlBlendColorFilter(const DlBlendColorFilter& filter)
       : DlBlendColorFilter(filter.color_, filter.mode_) {}
   DlBlendColorFilter(const DlBlendColorFilter* filter)
@@ -114,8 +113,7 @@ class DlBlendColorFilter final : public DlColorFilter {
 
 class DlMatrixColorFilter final : public DlColorFilter {
  public:
-  DlMatrixColorFilter(const float matrix[20])
-      : DlColorFilter(kMatrix) {
+  DlMatrixColorFilter(const float matrix[20]) : DlColorFilter(kMatrix) {
     memcpy(matrix_, &matrix, sizeof(matrix_));
   }
   DlMatrixColorFilter(const DlMatrixColorFilter& filter)
@@ -156,9 +154,7 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
     return true;
   }
 
-  sk_sp<SkColorFilter> sk_filter() const {
-    return sk_filter_;
-  }
+  sk_sp<SkColorFilter> sk_filter() const { return sk_filter_; }
 
  private:
   static const sk_sp<SkColorFilter> sk_filter_;

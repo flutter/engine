@@ -5,10 +5,10 @@
 #ifndef FLUTTER_LIB_UI_COLOR_FILTER_H_
 #define FLUTTER_LIB_UI_COLOR_FILTER_H_
 
+#include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/tonic/typed_data/typed_list.h"
-#include "flutter/display_list/display_list_color_filter.h"
 
 using tonic::DartPersistentValue;
 

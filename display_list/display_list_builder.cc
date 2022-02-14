@@ -135,33 +135,6 @@ void DisplayListBuilder::onSetImageFilter(sk_sp<SkImageFilter> filter) {
       ? Push<SetImageFilterOp>(0, 0, std::move(filter))
       : Push<ClearImageFilterOp>(0, 0);
 }
-void DisplayListBuilder::setColorFilter(sk_sp<SkColorFilter> filter) {
-  if (filter == nullptr) {
-    if (current_color_filter_->type() != DlColorFilter::kNone) {
-      onSetColorFilter(&DlNoColorFilter::instance);
-    }
-    return;
-  }
-  {
-    SkColor color;
-    SkBlendMode mode;
-    if (filter->asAColorMode(&color, &mode)) {
-      DlBlendColorFilter blend_filter(color, mode);
-      onSetColorFilter(&blend_filter);
-      return;
-    }
-  }
-  {
-    float matrix[20];
-    if (filter->asAColorMatrix(matrix)) {
-      DlMatrixColorFilter matrix_filter(matrix);
-      onSetColorFilter(&matrix_filter);
-      return;
-    }
-  }
-  DlUnknownColorFilter unknown_filter(std::move(filter));
-  onSetColorFilter(&unknown_filter);
-}
 void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   if (filter == nullptr) {
     filter = &DlNoColorFilter::instance;
@@ -278,7 +251,8 @@ void DisplayListBuilder::setAttributesFromPaint(
     // we must clear it because it is a second potential color filter
     // that is composed with the paint's color filter.
     setInvertColors(false);
-    setColorFilter(sk_ref_sp(paint.getColorFilter()));
+    DlColorFilter filter = DlColorFilter::From(paint.getColorFilter());
+    setColorFilter(&filter);
   }
   if (flags.applies_image_filter()) {
     setImageFilter(sk_ref_sp(paint.getImageFilter()));

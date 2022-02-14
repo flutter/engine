@@ -156,8 +156,7 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   }
 
   if (uint_data[kInvertColorIndex]) {
-    sk_sp<SkColorFilter> invert_filter =
-        SkColorFilters::Matrix(invert_colors);
+    sk_sp<SkColorFilter> invert_filter = SkColorFilters::Matrix(invert_colors);
     sk_sp<SkColorFilter> current_filter = paint.refColorFilter();
     if (current_filter) {
       invert_filter = invert_filter->makeComposed(current_filter);
