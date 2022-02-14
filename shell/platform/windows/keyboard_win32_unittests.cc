@@ -21,8 +21,8 @@
 #include "rapidjson/writer.h"
 
 #include <functional>
-#include <vector>
 #include <list>
+#include <vector>
 
 using testing::_;
 using testing::Invoke;
@@ -204,9 +204,9 @@ class MockKeyboardManagerWin32Delegate
     bool handled = keyboard_manager_->HandleMessage(Msg, wParam, lParam);
     if (keyboard_manager_->DuringRedispatch()) {
       redispatched_messages_.push_back(Win32Message{
-        .message = Msg,
-        .wParam = wParam,
-        .lParam = lParam,
+          .message = Msg,
+          .wParam = wParam,
+          .lParam = lParam,
       });
       EXPECT_FALSE(handled);
     }
@@ -466,16 +466,16 @@ constexpr bool kNotSynthesized = false;
 // Define compound `expect` in macros. If they're defined in functions, the
 // stacktrace wouldn't print where the function is called in the unit tests.
 
-#define EXPECT_CALL_IS_EVENT(_key_call, ...) \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey);  \
+#define EXPECT_CALL_IS_EVENT(_key_call, ...)         \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey); \
   EXPECT_EVENT_EQUALS(_key_call.key_event, __VA_ARGS__);
 
-#define EXPECT_CALL_IS_TEXT(_key_call, u16_string) \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnText);       \
+#define EXPECT_CALL_IS_TEXT(_key_call, u16_string)    \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnText); \
   EXPECT_EQ(_key_call.text, u16_string);
 
 #define EXPECT_CALL_IS_TEXT_METHOD_CALL(_key_call, json_string) \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallTextMethodCall);            \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallTextMethodCall);   \
   EXPECT_STREQ(_key_call.text_method_call.c_str(), json_string);
 
 TEST(KeyboardTest, LowerCaseAHandled) {
