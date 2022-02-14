@@ -1,4 +1,4 @@
-Signature: 18fc42e4113883343ad7b2c8350d0e8d
+Signature: 0fc51c041e2d090a9bad557df0c28057
 
 UNUSED LICENSES:
 
@@ -682,6 +682,7 @@ FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/main.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/shared.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/path_performance/worker.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/sampling_types/index.html
+FILE: ../../../third_party/skia/demos.skia.org/demos/spreadsheet/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/index.html
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/spiralshader.js
 FILE: ../../../third_party/skia/demos.skia.org/demos/textedit/textapi_utils.js
@@ -711,6 +712,7 @@ FILE: ../../../third_party/skia/experimental/docs/jsonbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/svgBackend.js
 FILE: ../../../third_party/skia/experimental/docs/svgbaseddoc.htm
 FILE: ../../../third_party/skia/experimental/docs/utilities.js
+FILE: ../../../third_party/skia/experimental/ffmpeg/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/graphite/include/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/graphite/include/mtl/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/graphite/include/private/BUILD.bazel
@@ -785,6 +787,7 @@ FILE: ../../../third_party/skia/experimental/wasm-skp-debugger/package.json
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/example/index.html
 FILE: ../../../third_party/skia/experimental/webgpu-bazel/src/BUILD
 FILE: ../../../third_party/skia/gm/BUILD.bazel
+FILE: ../../../third_party/skia/gm/verifiers/BUILD.bazel
 FILE: ../../../third_party/skia/go.mod
 FILE: ../../../third_party/skia/go.sum
 FILE: ../../../third_party/skia/go_repositories.bzl
@@ -1109,6 +1112,9 @@ FILE: ../../../third_party/skia/modules/canvaskit/skp.js
 FILE: ../../../third_party/skia/modules/canvaskit/util.js
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/gms.html
 FILE: ../../../third_party/skia/modules/canvaskit/wasm_tools/viewer.html
+FILE: ../../../third_party/skia/modules/particles/BUILD.bazel
+FILE: ../../../third_party/skia/modules/particles/include/BUILD.bazel
+FILE: ../../../third_party/skia/modules/particles/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/pathkit/chaining.js
 FILE: ../../../third_party/skia/modules/pathkit/externs.js
 FILE: ../../../third_party/skia/modules/pathkit/helper.js
@@ -1120,6 +1126,17 @@ FILE: ../../../third_party/skia/modules/pathkit/perf/effects.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/path.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../third_party/skia/modules/pathkit/perf/perfReporter.js
+FILE: ../../../third_party/skia/modules/skottie/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/fuzz/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/gm/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/include/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/animator/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/effects/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/layers/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/layers/shapelayer/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/src/text/BUILD.bazel
+FILE: ../../../third_party/skia/modules/skottie/utils/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/bench/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/gm/BUILD.bazel
@@ -1162,8 +1179,13 @@ FILE: ../../../third_party/skia/modules/skparagraph/test.html
 FILE: ../../../third_party/skia/modules/skparagraph/utils/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skparagraph/utils/TestFontCollection.cpp
 FILE: ../../../third_party/skia/modules/skparagraph/utils/TestFontCollection.h
+FILE: ../../../third_party/skia/modules/skresources/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skresources/include/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skresources/src/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/include/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/samples/BUILD.bazel
+FILE: ../../../third_party/skia/modules/sksg/src/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skshaper/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skshaper/include/BUILD.bazel
 FILE: ../../../third_party/skia/modules/skshaper/src/BUILD.bazel
@@ -1325,6 +1347,8 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/bazel/gcs_mirror/gcs_mirror.go + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bazel/gcs_mirror/gcs_mirror.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/codesize/codesize.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/codesize/codesize_test.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 The Chromium Authors. All rights reserved.
 
@@ -2023,7 +2047,6 @@ FILE: ../../../third_party/skia/src/core/SkColorSpace.cpp
 FILE: ../../../third_party/skia/src/core/SkColorSpacePriv.h
 FILE: ../../../third_party/skia/src/core/SkCpu.cpp
 FILE: ../../../third_party/skia/src/core/SkCpu.h
-FILE: ../../../third_party/skia/src/core/SkFixed15.h
 FILE: ../../../third_party/skia/src/core/SkFuzzLogging.h
 FILE: ../../../third_party/skia/src/core/SkGlobalInitialization_core.cpp
 FILE: ../../../third_party/skia/src/core/SkICC.cpp
@@ -2823,7 +2846,6 @@ FILE: ../../../third_party/skia/gm/textblobrandomfont.cpp
 FILE: ../../../third_party/skia/gm/textblobtransforms.cpp
 FILE: ../../../third_party/skia/gm/textblobuseaftergpufree.cpp
 FILE: ../../../third_party/skia/gm/transparency.cpp
-FILE: ../../../third_party/skia/gm/xform.cpp
 FILE: ../../../third_party/skia/include/codec/SkAndroidCodec.h
 FILE: ../../../third_party/skia/include/codec/SkCodec.h
 FILE: ../../../third_party/skia/include/core/SkEncodedImageFormat.h
@@ -3834,7 +3856,6 @@ FILE: ../../../third_party/skia/src/core/SkRasterClipStack.h
 FILE: ../../../third_party/skia/src/core/SkSafeMath.h
 FILE: ../../../third_party/skia/src/core/SkSpriteBlitter_RGB565.cpp
 FILE: ../../../third_party/skia/src/core/SkVertices.cpp
-FILE: ../../../third_party/skia/src/core/SkVptr.h
 FILE: ../../../third_party/skia/src/core/SkWritePixelsRec.h
 FILE: ../../../third_party/skia/src/effects/SkDashImpl.h
 FILE: ../../../third_party/skia/src/effects/SkHighContrastFilter.cpp
@@ -5453,11 +5474,6 @@ FILE: ../../../third_party/skia/docs/examples/Xor.cpp
 FILE: ../../../third_party/skia/docs/examples/incomplete.cpp
 FILE: ../../../third_party/skia/experimental/minimal_ios_mtl_skia_app/main.mm
 FILE: ../../../third_party/skia/experimental/sktext/editor/App.cpp
-FILE: ../../../third_party/skia/experimental/xform/SkShape.cpp
-FILE: ../../../third_party/skia/experimental/xform/SkShape.h
-FILE: ../../../third_party/skia/experimental/xform/SkXform.cpp
-FILE: ../../../third_party/skia/experimental/xform/SkXform.h
-FILE: ../../../third_party/skia/experimental/xform/XContext.cpp
 FILE: ../../../third_party/skia/gm/crbug_918512.cpp
 FILE: ../../../third_party/skia/gm/fp_sample_chaining.cpp
 FILE: ../../../third_party/skia/gm/fpcoordinateoverride.cpp
@@ -6083,27 +6099,38 @@ ORIGIN: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h + .
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/experimental/graphite/src/GlobalCache.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/GlobalCache.h
+FILE: ../../../third_party/skia/experimental/graphite/src/GraphiteResourceKey.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/GraphiteResourceKey.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Log.h
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/PaintParams.h
+FILE: ../../../third_party/skia/experimental/graphite/src/RecorderPriv.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/RecorderPriv.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Resource.h
+FILE: ../../../third_party/skia/experimental/graphite/src/ResourceCache.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/ResourceCache.h
 FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.cpp
 FILE: ../../../third_party/skia/experimental/graphite/src/Sampler.h
+FILE: ../../../third_party/skia/experimental/graphite/src/UploadTask.cpp
+FILE: ../../../third_party/skia/experimental/graphite/src/UploadTask.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.h
 FILE: ../../../third_party/skia/experimental/graphite/src/mtl/MtlSampler.mm
 FILE: ../../../third_party/skia/gm/bug12866.cpp
-FILE: ../../../third_party/skia/include/private/SkPaintParamsKey.h
-FILE: ../../../third_party/skia/include/private/SkShaderCodeDictionary.h
 FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
+FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
 FILE: ../../../third_party/skia/src/core/SkKeyHelpers.cpp
 FILE: ../../../third_party/skia/src/core/SkKeyHelpers.h
 FILE: ../../../third_party/skia/src/core/SkPaintParamsKey.cpp
+FILE: ../../../third_party/skia/src/core/SkPaintParamsKey.h
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
+FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
 FILE: ../../../third_party/skia/src/core/SkUniformData.cpp
 FILE: ../../../third_party/skia/src/core/SkUniformData.h
+FILE: ../../../third_party/skia/src/gpu/text/GrGlyphVector.cpp
+FILE: ../../../third_party/skia/src/gpu/text/GrGlyphVector.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLFinalizationChecks.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google LLC
