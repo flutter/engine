@@ -1,4 +1,4 @@
-Signature: 83978bea91d7650824729c5e01d5c48e
+Signature: 1691915046f2d6e712baa92a400410d7
 
 UNUSED LICENSES:
 
@@ -5642,6 +5642,7 @@ FILE: ../../../third_party/skia/src/sksl/SkSLGLSL.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLExpression.cpp
 FILE: ../../../third_party/skia/src/sksl/lex/TransitionTable.cpp
 FILE: ../../../third_party/skia/src/sksl/lex/TransitionTable.h
+FILE: ../../../third_party/skia/src/utils/SkCycles.h
 FILE: ../../../third_party/skia/src/utils/SkOrderedFontMgr.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 Google Inc.
@@ -6530,6 +6531,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/src/utils/SkBlitterTrace.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google Inc.
 
