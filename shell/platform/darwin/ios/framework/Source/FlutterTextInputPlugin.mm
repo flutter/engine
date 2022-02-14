@@ -45,9 +45,10 @@ static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
-static NSString* const kSetSelectionRects = @"TextInput.setSelectionRects";
-static NSString* const kRegisterUndo = @"TextInput.registerUndo";
-static NSString* const kResetUndoManager = @"TextInput.resetUndoManager";
+static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects";
+static NSString* const kEnableUndoMethod = @"TextInput.enableUndo";
+static NSString* const kEnableRedoMethod = @"TextInput.enableRedo";
+static NSString* const kResetUndoManagerMethod = @"TextInput.resetUndoManager";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -2112,13 +2113,17 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
-  } else if ([method isEqualToString:kSetSelectionRects]) {
+  } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
     result(nil);
-  } else if ([method isEqualToString:kRegisterUndo]) {
+  } else if ([method isEqualToString:kEnableUndoMethod]) {
     [self registerUndoWithDirection:FlutterUndoRedoDirectionUndo];
     result(nil);
-  } else if ([method isEqualToString:kResetUndoManager]) {
+  } else if ([method isEqualToString:kEnableRedoMethod]) {
+    [self registerSilentUndo];
+    [_viewController.undoManager undo];
+    result(nil);
+  } else if ([method isEqualToString:kResetUndoManagerMethod]) {
     [self resetUndoManager];
     result(nil);
   } else {
@@ -2127,16 +2132,21 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)resetUndoManager {
+  NSLog(@"resetUndoManager");
   [_viewController.undoManager removeAllActionsWithTarget:self];
 }
 
 - (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction {
+  NSLog(@"registerUndoWithDirection: %@",
+        direction == FlutterUndoRedoDirectionUndo ? @"undo" : @"redo");
   _viewController.undoManager.groupsByEvent = NO;
   [_viewController.undoManager beginUndoGrouping];
   [_viewController.undoManager
       registerUndoWithTarget:self
                      handler:^(id target) {
                        // register undo with opposite direction
+                       NSLog(@"Undo handler: %@",
+                             direction == FlutterUndoRedoDirectionUndo ? @"undo" : @"redo");
                        FlutterUndoRedoDirection newDirection =
                            (direction == FlutterUndoRedoDirectionRedo)
                                ? FlutterUndoRedoDirectionUndo
@@ -2144,6 +2154,21 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                        [target registerUndoWithDirection:newDirection];
                        // invoke method on delegate
                        [_undoManagerDelegate flutterTextInputPlugin:self handleUndo:direction];
+                     }];
+  [_viewController.undoManager endUndoGrouping];
+  _viewController.undoManager.groupsByEvent = YES;
+}
+
+- (void)registerSilentUndo {
+  NSLog(@"registerSilentUndo");
+  _viewController.undoManager.groupsByEvent = NO;
+  [_viewController.undoManager beginUndoGrouping];
+  [_viewController.undoManager
+      registerUndoWithTarget:self
+                     handler:^(id target) {
+                       // register undo with opposite direction
+                       NSLog(@"Silent undo handler");
+                       [target registerUndoWithDirection:FlutterUndoRedoDirectionRedo];
                      }];
   [_viewController.undoManager endUndoGrouping];
   _viewController.undoManager.groupsByEvent = YES;
