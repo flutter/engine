@@ -1127,7 +1127,6 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public void onDisplayOverlaySurface(int id, int x, int y, int width, int height) {
     ThreadUtils.runOnUiThread(
         () -> {
@@ -1141,7 +1140,6 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public void onBeginFrame() {
     ThreadUtils.runOnUiThread(
         () -> {
@@ -1155,7 +1153,6 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public void onEndFrame() {
     ThreadUtils.runOnUiThread(
         () -> {
@@ -1169,7 +1166,6 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public FlutterOverlaySurface createOverlaySurface() {
     return ThreadUtils.runOnUiThreadBlockingNoException(
         (Callable<FlutterOverlaySurface>)
@@ -1184,7 +1180,6 @@ public class FlutterJNI {
   }
 
   @SuppressWarnings("unused")
-  @UiThread
   public void destroyOverlaySurfaces() {
     ThreadUtils.runOnUiThread(
         () -> {
@@ -1370,7 +1365,6 @@ public class FlutterJNI {
   // ----- End Deferred Components Support ----
 
   // @SuppressWarnings("unused")
-  @UiThread
   public void onDisplayPlatformView(
       int viewId,
       int x,
