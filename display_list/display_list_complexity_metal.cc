@@ -351,15 +351,15 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   if (is_complex_) {
     return;
   }
-  // There are roughly three classes here:
+  // There are roughly four classes here:
   // a) Filled style with AA enabled
   // b) Filled style with AA disabled
-  // c) Everything else
+  // c) Complex RRect type with AA enabled and filled style
+  // d) Everything else
   //
-  // a) scales linearly with the area, b) and c) scale linearly with
+  // a) and c) scale linearly with the area, b) and d) scale linearly with
   // a single dimension (length). In both cases, the dimensions refer to
   // the outer RRect.
-  unsigned int area = outer.width() * outer.height();
   unsigned int length = (outer.width() + outer.height()) / 2;
 
   unsigned int complexity;
@@ -371,14 +371,21 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
   if (Style() == SkPaint::Style::kFill_Style) {
-    if (IsAntiAliased()) {
-      // m = 1/3500
-      // c = 1.5
-      complexity = (area + 5250) / 35;
-    } else {
-      // m = 1/30
+    unsigned int area = outer.width() * outer.height();
+    if (outer.getType() == SkRRect::Type::kComplex_Type) {
+      // m = 1/1000
       // c = 1
-      complexity = (300 + (10 * length)) / 3;
+      complexity = (area + 1000) / 10;
+    } else {
+      if (IsAntiAliased()) {
+        // m = 1/3500
+        // c = 1.5
+        complexity = (area + 5250) / 35;
+      } else {
+        // m = 1/30
+        // c = 1
+        complexity = (300 + (10 * length)) / 3;
+      }
     }
   } else {
     // m = 1/60
