@@ -227,9 +227,6 @@ void KeyboardManagerWin32::HandleOnKeyResult(
                             is_syskey ||
                             IsKeyDownShiftRight(event->key, event->was_down);
 
-  // For handled events, that's all.
-  // For unhandled events, dispatch them to OnText.
-
   if (pending_text != pending_texts_.end()) {
     if (pending_text->placeholder || real_handled) {
       pending_texts_.erase(pending_text);
