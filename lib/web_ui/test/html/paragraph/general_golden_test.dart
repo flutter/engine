@@ -595,17 +595,22 @@ Future<void> testMain() async {
 
     // Expected layout with center-alignment is something like this:
     //
-    // ---------
-    // |   A   |
-    // | AAAAA |
-    // |  AAA  |
-    // ---------
+    // _________________
+    // |       A       |
+    // |    |AAAAA|    |
+    // |    | AAA |    |
+    // |----|-----|----|
+    // |    |<--->|    |
+    // |      100      |
+    // |               |
+    // |<------------->|
+    //        110
     //
     // The width of the paragraph is bigger than the actual content because the
-    // longest line "AAAAA" is 50px, which is smaller than 55px specified in the
-    // constraint. After the layout and centering the paint bounds would "hug"
-    // the text inside the paragraph more tightly than the box allocated for the
-    // paragraph.
+    // longest line "AAAAA" is 100px, which is smaller than 110px specified in
+    // the constraint. After the layout and centering the paint bounds would
+    // "hug" the text inside the paragraph more tightly than the box allocated
+    // for the paragraph.
     builder.addText('A AAAAA AAA');
 
     final CanvasParagraph paragraph = builder.build();

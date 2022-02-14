@@ -15,6 +15,7 @@ void main() {
 }
 
 void testMain() {
+  debugEmulateFlutterTesterEnvironment = true;
   setUpStableTestFonts();
 
   late RecordingCanvas underTest;
