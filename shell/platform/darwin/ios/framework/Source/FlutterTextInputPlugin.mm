@@ -49,6 +49,7 @@ static NSString* const kSetSelectionRectsMethod = @"TextInput.setSelectionRects"
 static NSString* const kEnableUndoMethod = @"TextInput.enableUndo";
 static NSString* const kEnableRedoMethod = @"TextInput.enableRedo";
 static NSString* const kResetUndoManagerMethod = @"TextInput.resetUndoManager";
+static NSString* const kSetUndoStateMethod = @"TextInput.setUndoState";
 
 #pragma mark - TextInputConfiguration Field Names
 static NSString* const kSecureTextEntry = @"obscureText";
@@ -2063,6 +2064,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   [_inputHider release];
   [_autofillContext release];
   [_scribbleElements release];
+  [self resetUndoManager];
   [super dealloc];
 }
 
@@ -2126,6 +2128,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kResetUndoManagerMethod]) {
     [self resetUndoManager];
     result(nil);
+  } else if ([method isEqualToString:kSetUndoStateMethod]) {
+    [self setUndoState:args];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
@@ -2172,6 +2177,22 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
                      }];
   [_viewController.undoManager endUndoGrouping];
   _viewController.undoManager.groupsByEvent = YES;
+}
+
+- (void)setUndoState:(NSDictionary*)dictionary {
+  BOOL canUndo = [dictionary[@"canUndo"] boolValue];
+  BOOL canRedo = [dictionary[@"canRedo"] boolValue];
+  NSLog(@"setUndoState canUndo: %d, canRedo: %d", canUndo, canRedo);
+
+  [self resetUndoManager];
+
+  if (canUndo) {
+    [self registerUndoWithDirection:FlutterUndoRedoDirectionUndo];
+  }
+  if (canRedo) {
+    [self registerSilentUndo];
+    [_viewController.undoManager undo];
+  }
 }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
