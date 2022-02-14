@@ -1586,6 +1586,24 @@ TEST(KeyboardTest, MultibyteCharacter) {
   EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
+// A key down event for shift right must not be redispatched even if
+// the framework returns unhandled.
+//
+// The reason for this test is documented in |IsKeyDownShiftRight|.
+TEST(KeyboardTest, NeverRedispatchShiftRightKeyDown) {
+  KeyboardTester tester;
+  tester.Responding(false);
+
+  // Press ShiftRight and the delegate responds false.
+  tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
+      KeyStateChange{VK_RSHIFT, true, true},
+      WmKeyDownInfo{VK_SHIFT, kScanCodeShiftRight, kNotExtended, kWasUp}.Build(
+          kWmResultZero)});
+
+  EXPECT_EQ(key_calls.size(), 1);
+  clear_key_calls();
+}
+
 // Pressing extended keys during IME events should work properly by not sending
 // any events.
 //
