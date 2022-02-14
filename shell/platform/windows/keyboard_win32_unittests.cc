@@ -21,8 +21,8 @@
 #include "rapidjson/writer.h"
 
 #include <functional>
-#include <vector>
 #include <list>
+#include <vector>
 
 using testing::_;
 using testing::Invoke;
@@ -190,7 +190,7 @@ class MockKeyboardManagerWin32Delegate
           const KeyStateChange& state_change = change.content.key_state_change;
           if (forged_message_expectations_.empty()) {
             key_state_.Set(state_change.key, state_change.pressed,
-                          state_change.toggled_on);
+                           state_change.toggled_on);
           } else {
             forged_message_expectations_.back()
                 .state_changes_afterwards.push_back(state_change);
@@ -501,16 +501,16 @@ constexpr bool kNotSynthesized = false;
 // Define compound `expect` in macros. If they're defined in functions, the
 // stacktrace wouldn't print where the function is called in the unit tests.
 
-#define EXPECT_CALL_IS_EVENT(_key_call, ...) \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey);  \
+#define EXPECT_CALL_IS_EVENT(_key_call, ...)         \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey); \
   EXPECT_EVENT_EQUALS(_key_call.key_event, __VA_ARGS__);
 
-#define EXPECT_CALL_IS_TEXT(_key_call, u16_string) \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnText);       \
+#define EXPECT_CALL_IS_TEXT(_key_call, u16_string)    \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnText); \
   EXPECT_EQ(_key_call.text, u16_string);
 
 #define EXPECT_CALL_IS_TEXT_METHOD_CALL(_key_call, json_string) \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallTextMethodCall);            \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallTextMethodCall);   \
   EXPECT_STREQ(_key_call.text_method_call.c_str(), json_string);
 
 TEST(KeyboardTest, LowerCaseAHandled) {
@@ -1875,13 +1875,13 @@ TEST(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
       WmKeyUpInfo{VK_BACK, kScanCodeBackspace, kNotExtended}.Build(
           kWmResultZero),
       WmKeyDownInfo{VK_PACKET, 0, kNotExtended, kWasUp}.Build(kWmResultDefault),
-      WmCharInfo{0xe0/*'à'*/, 0, kNotExtended, kWasUp}.Build(kWmResultZero),
-      WmKeyUpInfo{VK_PACKET, 0, kNotExtended}.Build(kWmResultDefault)
-  });
+      WmCharInfo{0xe0 /*'à'*/, 0, kNotExtended, kWasUp}.Build(kWmResultZero),
+      WmKeyUpInfo{VK_PACKET, 0, kNotExtended}.Build(kWmResultDefault)});
 
   EXPECT_EQ(key_calls.size(), 3);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackspace,
-                       kLogicalBackspace, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalBackspace, kLogicalBackspace, "",
+                       kNotSynthesized);
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalBackspace,
                        kLogicalBackspace, "", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[2], u"à");
@@ -1890,7 +1890,8 @@ TEST(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
   // Release F
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       WmKeyUpInfo{kVirtualKeyF, kScanCodeKeyF, kNotExtended,
-      /* overwrite_prev_state_0 */ true}.Build(kWmResultZero)});
+                  /* overwrite_prev_state_0 */ true}
+          .Build(kWmResultZero)});
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
@@ -1965,8 +1966,9 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
   // the last character deleted  (denoted by `string1`). Processing the char
   // message before then will cause the final text to set to `string1`.
   EXPECT_EQ(key_calls.size(), 2);
-  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalBackspace,
-                       kLogicalBackspace, "", kNotSynthesized);
+  EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
+                       kPhysicalBackspace, kLogicalBackspace, "",
+                       kNotSynthesized);
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalBackspace,
                        kLogicalBackspace, "", kNotSynthesized);
   clear_key_calls();
@@ -1986,7 +1988,8 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
   // Release F
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       WmKeyUpInfo{kVirtualKeyF, kScanCodeKeyF, kNotExtended,
-      /* overwrite_prev_state_0 */ true}.Build(kWmResultZero)});
+                  /* overwrite_prev_state_0 */ true}
+          .Build(kWmResultZero)});
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
