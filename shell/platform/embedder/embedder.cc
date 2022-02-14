@@ -20,11 +20,11 @@
 #include "third_party/dart/runtime/include/dart_native_api.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
-#if OS_WIN
+#if FML_OS_WIN
 #define FLUTTER_EXPORT __declspec(dllexport)
-#else  // OS_WIN
+#else  // FML_OS_WIN
 #define FLUTTER_EXPORT __attribute__((visibility("default")))
-#endif  // OS_WIN
+#endif  // FML_OS_WIN
 #endif  // !FLUTTER_NO_EXPORT
 
 extern "C" {
@@ -95,7 +95,7 @@ static FlutterEngineResult LogEmbedderError(FlutterEngineResult code,
                                             const char* function,
                                             const char* file,
                                             int line) {
-#if OS_WIN
+#if FML_OS_WIN
   constexpr char kSeparator = '\\';
 #else
   constexpr char kSeparator = '/';
@@ -164,6 +164,26 @@ static bool IsMetalRendererConfigValid(const FlutterRendererConfig* config) {
   return device && command_queue && present && get_texture;
 }
 
+static bool IsVulkanRendererConfigValid(const FlutterRendererConfig* config) {
+  if (config->type != kVulkan) {
+    return false;
+  }
+
+  const FlutterVulkanRendererConfig* vulkan_config = &config->vulkan;
+
+  if (!SAFE_EXISTS(vulkan_config, instance) ||
+      !SAFE_EXISTS(vulkan_config, physical_device) ||
+      !SAFE_EXISTS(vulkan_config, device) ||
+      !SAFE_EXISTS(vulkan_config, queue) ||
+      !SAFE_EXISTS(vulkan_config, get_instance_proc_address_callback) ||
+      !SAFE_EXISTS(vulkan_config, get_next_image_callback) ||
+      !SAFE_EXISTS(vulkan_config, present_image_callback)) {
+    return false;
+  }
+
+  return true;
+}
+
 static bool IsRendererValid(const FlutterRendererConfig* config) {
   if (config == nullptr) {
     return false;
@@ -176,6 +196,8 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
       return IsSoftwareRendererConfigValid(config);
     case kMetal:
       return IsMetalRendererConfigValid(config);
+    case kVulkan:
+      return IsVulkanRendererConfigValid(config);
     default:
       return false;
   }
@@ -183,18 +205,18 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
   return false;
 }
 
-#if OS_LINUX || OS_WIN
+#if FML_OS_LINUX || FML_OS_WIN
 static void* DefaultGLProcResolver(const char* name) {
   static fml::RefPtr<fml::NativeLibrary> proc_library =
-#if OS_LINUX
+#if FML_OS_LINUX
       fml::NativeLibrary::CreateForCurrentProcess();
-#elif OS_WIN  // OS_LINUX
+#elif FML_OS_WIN  // FML_OS_LINUX
       fml::NativeLibrary::Create("opengl32.dll");
-#endif        // OS_WIN
+#endif            // FML_OS_WIN
   return static_cast<void*>(
       const_cast<uint8_t*>(proc_library->ResolveSymbol(name)));
 }
-#endif  // OS_LINUX || OS_WIN
+#endif  // FML_OS_LINUX || FML_OS_WIN
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
@@ -284,7 +306,7 @@ InferOpenGLPlatformViewCreationCallback(
       return ptr(user_data, gl_proc_name);
     };
   } else {
-#if OS_LINUX || OS_WIN
+#if FML_OS_LINUX || FML_OS_WIN
     gl_proc_resolver = DefaultGLProcResolver;
 #endif
   }
@@ -389,6 +411,89 @@ InferMetalPlatformViewCreationCallback(
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
+InferVulkanPlatformViewCreationCallback(
+    const FlutterRendererConfig* config,
+    void* user_data,
+    flutter::PlatformViewEmbedder::PlatformDispatchTable
+        platform_dispatch_table,
+    std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
+        external_view_embedder) {
+  if (config->type != kVulkan) {
+    return nullptr;
+  }
+
+#ifdef SHELL_ENABLE_VULKAN
+  std::function<void*(VkInstance, const char*)>
+      vulkan_get_instance_proc_address =
+          [ptr = config->vulkan.get_instance_proc_address_callback, user_data](
+              VkInstance instance, const char* proc_name) -> void* {
+    return ptr(user_data, instance, proc_name);
+  };
+
+  auto vulkan_get_next_image =
+      [ptr = config->vulkan.get_next_image_callback,
+       user_data](const SkISize& frame_size) -> FlutterVulkanImage {
+    FlutterFrameInfo frame_info = {
+        .struct_size = sizeof(FlutterFrameInfo),
+        .size = {static_cast<uint32_t>(frame_size.width()),
+                 static_cast<uint32_t>(frame_size.height())},
+    };
+
+    return ptr(user_data, &frame_info);
+  };
+
+  auto vulkan_present_image_callback =
+      [ptr = config->vulkan.present_image_callback, user_data](
+          VkImage image, VkFormat format) -> bool {
+    FlutterVulkanImage image_desc = {
+        .struct_size = sizeof(FlutterVulkanImage),
+        .image = reinterpret_cast<uint64_t>(image),
+        .format = static_cast<uint32_t>(format),
+    };
+    return ptr(user_data, &image_desc);
+  };
+
+  flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
+      .get_instance_proc_address = vulkan_get_instance_proc_address,
+      .get_next_image = vulkan_get_next_image,
+      .present_image = vulkan_present_image_callback,
+  };
+
+  std::shared_ptr<flutter::EmbedderExternalViewEmbedder> view_embedder =
+      std::move(external_view_embedder);
+
+  std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
+      std::make_unique<flutter::EmbedderSurfaceVulkan>(
+          config->vulkan.version,
+          static_cast<VkInstance>(config->vulkan.instance),
+          config->vulkan.enabled_instance_extension_count,
+          config->vulkan.enabled_instance_extensions,
+          config->vulkan.enabled_device_extension_count,
+          config->vulkan.enabled_device_extensions,
+          static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
+          static_cast<VkDevice>(config->vulkan.device),
+          config->vulkan.queue_family_index,
+          static_cast<VkQueue>(config->vulkan.queue), vulkan_dispatch_table,
+          view_embedder);
+
+  return fml::MakeCopyable(
+      [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
+       external_view_embedder =
+           std::move(view_embedder)](flutter::Shell& shell) mutable {
+        return std::make_unique<flutter::PlatformViewEmbedder>(
+            shell,                             // delegate
+            shell.GetTaskRunners(),            // task runners
+            std::move(embedder_surface),       // embedder surface
+            platform_dispatch_table,           // platform dispatch table
+            std::move(external_view_embedder)  // external view embedder
+        );
+      });
+#else
+  return nullptr;
+#endif
+}
+
+static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -448,6 +553,10 @@ InferPlatformViewCreationCallback(
           std::move(external_view_embedder));
     case kMetal:
       return InferMetalPlatformViewCreationCallback(
+          config, user_data, platform_dispatch_table,
+          std::move(external_view_embedder));
+    case kVulkan:
+      return InferVulkanPlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
     default:
@@ -558,6 +667,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     if (captures->destruction_callback) {
       captures->destruction_callback(captures->user_data);
     }
+    delete captures;
   };
 
   auto surface = SkSurface::MakeRasterDirectReleaseProc(
@@ -565,7 +675,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       const_cast<void*>(software->allocation),  // pixels
       software->row_bytes,                      // row bytes
       release_proc,                             // release proc
-      captures.release()                        // release context
+      captures.get()                            // get context
   );
 
   if (!surface) {
@@ -575,6 +685,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       software->destruction_callback(software->user_data);
     }
     return nullptr;
+  }
+  if (surface) {
+    captures.release();  // Skia has assumed ownership of the struct.
   }
   return surface;
 }
@@ -615,6 +728,59 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not wrap embedder supplied Metal render texture.";
+    return nullptr;
+  }
+
+  return surface;
+#else
+  return nullptr;
+#endif
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterVulkanBackingStore* vulkan) {
+#ifdef SHELL_ENABLE_VULKAN
+  if (!vulkan->image) {
+    FML_LOG(ERROR) << "Embedder supplied null Vulkan image.";
+    return nullptr;
+  }
+  GrVkImageInfo image_info = {
+      .fImage = reinterpret_cast<VkImage>(vulkan->image->image),
+      .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
+      .fImageLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .fFormat = static_cast<VkFormat>(vulkan->image->format),
+      .fImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                          VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                          VK_IMAGE_USAGE_SAMPLED_BIT,
+      .fSampleCount = 1,
+      .fLevelCount = 1,
+  };
+  GrBackendTexture backend_texture(config.size.width,   //
+                                   config.size.height,  //
+                                   image_info           //
+  );
+
+  SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+  auto surface = SkSurface::MakeFromBackendTexture(
+      context,                   // context
+      backend_texture,           // back-end texture
+      kTopLeft_GrSurfaceOrigin,  // surface origin
+      1,                         // sample count
+      flutter::GPUSurfaceVulkan::ColorTypeFromFormat(
+          static_cast<VkFormat>(vulkan->image->format)),  // color type
+      SkColorSpace::MakeSRGB(),                           // color space
+      &surface_properties,                                // surface properties
+      static_cast<SkSurface::TextureReleaseProc>(
+          vulkan->destruction_callback),  // release proc
+      vulkan->user_data                   // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR) << "Could not wrap embedder supplied Vulkan render texture.";
     return nullptr;
   }
 
@@ -684,6 +850,11 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
     case kFlutterBackingStoreTypeMetal:
       render_surface =
           MakeSkSurfaceFromBackingStore(context, config, &backing_store.metal);
+      break;
+
+    case kFlutterBackingStoreTypeVulkan:
+      render_surface =
+          MakeSkSurfaceFromBackingStore(context, config, &backing_store.vulkan);
       break;
   };
 
@@ -883,7 +1054,8 @@ void PopulateSnapshotMappingCallbacks(
 #if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
   settings.dart_library_sources_kernel =
       make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
+        // FLUTTER_RUNTIME_MODE_DEBUG)
 }
 
 FlutterEngineResult FlutterEngineRun(size_t version,
@@ -1475,6 +1647,12 @@ inline flutter::PointerData::Change ToPointerDataChange(
       return flutter::PointerData::Change::kRemove;
     case kHover:
       return flutter::PointerData::Change::kHover;
+    case kPanZoomStart:
+      return flutter::PointerData::Change::kPanZoomStart;
+    case kPanZoomUpdate:
+      return flutter::PointerData::Change::kPanZoomUpdate;
+    case kPanZoomEnd:
+      return flutter::PointerData::Change::kPanZoomEnd;
   }
   return flutter::PointerData::Change::kCancel;
 }
@@ -1490,6 +1668,8 @@ inline flutter::PointerData::DeviceKind ToPointerDataKind(
       return flutter::PointerData::DeviceKind::kTouch;
     case kFlutterPointerDeviceKindStylus:
       return flutter::PointerData::DeviceKind::kStylus;
+    case kFlutterPointerDeviceKindTrackpad:
+      return flutter::PointerData::DeviceKind::kTrackpad;
   }
   return flutter::PointerData::DeviceKind::kMouse;
 }
@@ -1522,6 +1702,9 @@ inline int64_t PointerDataButtonsForLegacyEvent(
     case flutter::PointerData::Change::kRemove:
     case flutter::PointerData::Change::kHover:
     case flutter::PointerData::Change::kUp:
+    case flutter::PointerData::Change::kPanZoomStart:
+    case flutter::PointerData::Change::kPanZoomUpdate:
+    case flutter::PointerData::Change::kPanZoomEnd:
       return 0;
   }
   return 0;
@@ -1587,6 +1770,13 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         pointer_data.buttons = SAFE_ACCESS(current, buttons, 0);
       }
     }
+    pointer_data.pan_x = SAFE_ACCESS(current, pan_x, 0.0);
+    pointer_data.pan_y = SAFE_ACCESS(current, pan_y, 0.0);
+    // Delta will be generated in pointer_data_packet_converter.cc.
+    pointer_data.pan_delta_x = 0.0;
+    pointer_data.pan_delta_y = 0.0;
+    pointer_data.scale = SAFE_ACCESS(current, scale, 0.0);
+    pointer_data.rotation = SAFE_ACCESS(current, rotation, 0.0);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);

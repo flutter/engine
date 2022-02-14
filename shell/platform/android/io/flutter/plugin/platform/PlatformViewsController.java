@@ -122,6 +122,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
 
+        @TargetApi(Build.VERSION_CODES.KITKAT)
         @Override
         public void createAndroidViewForPlatformView(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
@@ -149,6 +150,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
 
           final PlatformView platformView = factory.create(context, request.viewId, createParams);
+          platformView.getView().setLayoutDirection(request.direction);
           platformViews.put(request.viewId, platformView);
         }
 
@@ -328,13 +330,20 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           }
 
           ensureValidAndroidVersion(Build.VERSION_CODES.KITKAT_WATCH);
-          View view = vdControllers.get(viewId).getView();
-          if (view == null) {
-            throw new IllegalStateException(
-                "Sending touch to an unknown view with id: " + direction);
+          final PlatformView platformView = platformViews.get(viewId);
+          if (platformView != null) {
+            platformView.getView().setLayoutDirection(direction);
+            return;
           }
-
-          view.setLayoutDirection(direction);
+          VirtualDisplayController controller = vdControllers.get(viewId);
+          if (controller == null) {
+            throw new IllegalStateException(
+                "Trying to set direction: "
+                    + direction
+                    + " to an unknown platform view with id: "
+                    + viewId);
+          }
+          controller.getView().setLayoutDirection(direction);
         }
 
         @Override
@@ -499,6 +508,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   public void detachFromView() {
     destroyOverlaySurfaces();
+    removeOverlaySurfaces();
     this.flutterView = null;
     flutterViewConvertedToImageView = false;
 
@@ -961,17 +971,26 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * Destroys the overlay surfaces and removes them from the view hierarchy.
    *
    * <p>This method is used only internally by {@code FlutterJNI}.
-   *
-   * <p>This member is not intended for public use, and is only visible for testing.
    */
   public void destroyOverlaySurfaces() {
     for (int i = 0; i < overlayLayerViews.size(); i++) {
-      FlutterImageView overlayView = overlayLayerViews.valueAt(i);
+      final FlutterImageView overlayView = overlayLayerViews.valueAt(i);
       overlayView.detachFromRenderer();
       overlayView.closeImageReader();
-      if (flutterView != null) {
-        flutterView.removeView(overlayView);
-      }
+      // Don't remove overlayView from the view hierarchy since this method can
+      // be called while the Android framework is iterating over the array of views.
+      // See ViewGroup#dispatchDetachedFromWindow(), and
+      // https://github.com/flutter/flutter/issues/97679.
+    }
+  }
+
+  private void removeOverlaySurfaces() {
+    if (flutterView == null) {
+      Log.e(TAG, "removeOverlaySurfaces called while flutter view is null");
+      return;
+    }
+    for (int i = 0; i < overlayLayerViews.size(); i++) {
+      flutterView.removeView(overlayLayerViews.valueAt(i));
     }
     overlayLayerViews.clear();
   }

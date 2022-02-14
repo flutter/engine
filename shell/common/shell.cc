@@ -762,12 +762,9 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
         waiting_for_first_frame.store(true);
       });
 
-  // TODO(91717): This probably isn't necessary. The engine should be able to
-  // handle things here via normal lifecycle messages.
-  // https://github.com/flutter/flutter/issues/91717
   auto ui_task = [engine = engine_->GetWeakPtr()] {
     if (engine) {
-      engine->OnOutputSurfaceCreated();
+      engine->ScheduleFrame();
     }
   };
 
@@ -863,28 +860,20 @@ void Shell::OnPlatformViewDestroyed() {
       rasterizer->EnableThreadMergerIfNeeded();
       rasterizer->Teardown();
     }
-    // Step 3: Tell the IO thread to complete its remaining work.
+    // Step 2: Tell the IO thread to complete its remaining work.
     fml::TaskRunner::RunNowOrPostTask(io_task_runner, io_task);
   };
 
-  // TODO(91717): This probably isn't necessary. The engine should be able to
-  // handle things here via normal lifecycle messages.
-  // https://github.com/flutter/flutter/issues/91717
-  auto ui_task = [engine = engine_->GetWeakPtr()]() {
-    if (engine) {
-      engine->OnOutputSurfaceDestroyed();
-    }
-  };
-
-  // Step 1: Post a task onto the UI thread to tell the engine that its output
-  // surface is about to go away.
-  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(), ui_task);
-
-  // Step 2: Post a task to the Raster thread (possibly this thread) to tell the
+  // Step 1: Post a task to the Raster thread (possibly this thread) to tell the
   // rasterizer the output surface is going away.
   fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
                                     raster_task);
   latch.Wait();
+  // On Android, the external view embedder posts a task to the platform thread,
+  // and waits until it completes.
+  // As a result, the platform thread must not be blocked prior to calling
+  // this method.
+  rasterizer_->TeardownExternalViewEmbedder();
 }
 
 // |PlatformView::Delegate|
@@ -1091,7 +1080,7 @@ void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorNotifyIdle(int64_t deadline) {
+void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 

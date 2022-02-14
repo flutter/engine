@@ -49,15 +49,26 @@ extern const uint8_t* observatory_assets_archive;
 namespace flutter {
 
 // Arguments passed to the Dart VM in all configurations.
-static const char* kDartLanguageArgs[] = {
+static const char* kDartAllConfigsArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
     "--lazy_async_stacks",
+    "--mark_when_idle",
     // clang-format on
 };
 
 static const char* kDartPrecompilationArgs[] = {"--precompilation"};
+
+static const char* kSerialGCArgs[] = {
+    // clang-format off
+    "--concurrent_mark=false",
+    "--concurrent_sweep=false",
+    "--compactor_tasks=1",
+    "--scavenger_tasks=0",
+    "--marker_tasks=0",
+    // clang-format on
+};
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartWriteProtectCodeArgs[] = {
@@ -211,7 +222,7 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
           // This instructs the profiler to walk C++ frames, and to include
           // them in the profile.
           "--profile-vm",
-#if OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+#if FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
           // Set the profiler interrupt period to 500Hz instead of the
           // default 1000Hz on 32-bit iOS devices to reduce average and worst
           // case frame build times.
@@ -222,7 +233,7 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
           "--profile_period=2000",
 #else
           "--profile_period=1000",
-#endif  // OS_IOS && ARCH_CPU_ARM_FAMILY && ARCH_CPU_ARMEL
+#endif  // FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
     };
   } else {
     return {"--no-profiler"};
@@ -313,7 +324,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     args.push_back(profiler_flag);
   }
 
-  PushBackAll(&args, kDartLanguageArgs, fml::size(kDartLanguageArgs));
+  PushBackAll(&args, kDartAllConfigsArgs, fml::size(kDartAllConfigsArgs));
 
   if (IsRunningPrecompiledCode()) {
     PushBackAll(&args, kDartPrecompilationArgs,
@@ -331,7 +342,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
 #endif  // !OS_FUCHSIA
 
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-#if !OS_IOS && !OS_MACOSX
+#if !FML_OS_IOS && !FML_OS_MACOSX
   // Debug mode uses the JIT, disable code page write protection to avoid
   // memory page protection changes before and after every compilation.
   PushBackAll(&args, kDartWriteProtectCodeArgs,
@@ -351,11 +362,18 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
   PushBackAll(&args, kDartDisableIntegerDivisionArgs,
               fml::size(kDartDisableIntegerDivisionArgs));
 #endif  // TARGET_CPU_ARM
-#endif  // !OS_IOS && !OS_MACOSX
+#endif  // !FML_OS_IOS && !FML_OS_MACOSX
 #endif  // (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
 
   if (enable_asserts) {
     PushBackAll(&args, kDartAssertArgs, fml::size(kDartAssertArgs));
+  }
+
+  // On low power devices with lesser number of cores, using concurrent
+  // marking or sweeping causes contention for the UI thread leading to
+  // Jank, this option can be used to turn off all concurrent GC activities.
+  if (settings_.enable_serial_gc) {
+    PushBackAll(&args, kSerialGCArgs, fml::size(kSerialGCArgs));
   }
 
   if (settings_.start_paused) {

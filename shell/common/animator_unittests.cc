@@ -15,6 +15,9 @@
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 namespace testing {
 
@@ -23,7 +26,7 @@ class FakeAnimatorDelegate : public Animator::Delegate {
   void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                             uint64_t frame_number) override {}
 
-  void OnAnimatorNotifyIdle(int64_t deadline) override {
+  void OnAnimatorNotifyIdle(fml::TimePoint deadline) override {
     notify_idle_called_ = true;
   }
 
@@ -87,21 +90,6 @@ TEST_F(ShellTest, VSyncTargetTime) {
     RunEngine(shell.get(), std::move(configuration));
   });
   platform_task.wait();
-
-  // schedule a frame to trigger window.onBeginFrame
-  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
-                                    [engine = shell->GetEngine()]() {
-                                      if (engine) {
-                                        // Engine needs a surface for frames to
-                                        // be scheduled.
-                                        engine->OnOutputSurfaceCreated();
-                                        // this implies we can re-use the last
-                                        // frame to trigger begin frame rather
-                                        // than re-generating the layer tree.
-                                        engine->ScheduleFrame(true);
-                                      }
-                                    });
-
   on_target_time_latch.Wait();
   const auto vsync_waiter_target_time =
       ConstantFiringVsyncWaiter::frame_target_time;
@@ -110,30 +98,6 @@ TEST_F(ShellTest, VSyncTargetTime) {
 
   // validate that the latest target time has also been updated.
   ASSERT_EQ(GetLatestFrameTargetTime(shell.get()), vsync_waiter_target_time);
-
-  // teardown.
-  DestroyShell(std::move(shell), std::move(task_runners));
-  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-}
-
-TEST_F(ShellTest, AnimatorStartsPaused) {
-  // Create all te prerequisites for a shell.
-  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
-  auto settings = CreateSettingsForFixture();
-  TaskRunners task_runners = GetTaskRunnersForFixture();
-
-  auto shell = CreateShell(std::move(settings), task_runners,
-                           /* simulate_vsync=*/true);
-  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  ASSERT_TRUE(configuration.IsValid());
-
-  configuration.SetEntrypoint("emptyMain");
-
-  RunEngine(shell.get(), std::move(configuration));
-
-  ASSERT_FALSE(IsAnimatorRunning(shell.get()));
 
   // teardown.
   DestroyShell(std::move(shell), std::move(task_runners));
@@ -176,7 +140,6 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
   // Validate it has not notified idle and start it. This will request a frame.
   task_runners.GetUITaskRunner()->PostTask([&] {
     ASSERT_FALSE(delegate.notify_idle_called_);
-    animator->Start();
     // Immediately request a frame saying it can reuse the last layer tree to
     // avoid more calls to BeginFrame by the animator.
     animator->RequestFrame(false);
@@ -211,8 +174,6 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
   // Now it should notify idle. Make sure it is destroyed on the UI thread.
   ASSERT_TRUE(delegate.notify_idle_called_);
 
-  // Stop and do one more flush so we can safely clean up on the UI thread.
-  animator->Stop();
   task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
   latch.Wait();
 
@@ -225,3 +186,5 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

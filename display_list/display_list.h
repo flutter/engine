@@ -150,6 +150,52 @@ enum class DisplayListOpType { FOR_EACH_DISPLAY_LIST_OP(DL_OP_TO_ENUM_VALUE) };
 class Dispatcher;
 class DisplayListBuilder;
 
+class SaveLayerOptions {
+ public:
+  static const SaveLayerOptions kWithAttributes;
+  static const SaveLayerOptions kNoAttributes;
+
+  SaveLayerOptions() : flags_(0) {}
+  SaveLayerOptions(const SaveLayerOptions& options) : flags_(options.flags_) {}
+  SaveLayerOptions(const SaveLayerOptions* options) : flags_(options->flags_) {}
+
+  SaveLayerOptions without_optimizations() const {
+    SaveLayerOptions options;
+    options.fRendersWithAttributes = fRendersWithAttributes;
+    return options;
+  }
+
+  bool renders_with_attributes() const { return fRendersWithAttributes; }
+  SaveLayerOptions with_renders_with_attributes() const {
+    SaveLayerOptions options(this);
+    options.fRendersWithAttributes = true;
+    return options;
+  }
+
+  bool can_distribute_opacity() const { return fCanDistributeOpacity; }
+  SaveLayerOptions with_can_distribute_opacity() const {
+    SaveLayerOptions options(this);
+    options.fCanDistributeOpacity = true;
+    return options;
+  }
+
+  bool operator==(const SaveLayerOptions& other) const {
+    return flags_ == other.flags_;
+  }
+  bool operator!=(const SaveLayerOptions& other) const {
+    return flags_ != other.flags_;
+  }
+
+ private:
+  union {
+    struct {
+      unsigned fRendersWithAttributes : 1;
+      unsigned fCanDistributeOpacity : 1;
+    };
+    uint32_t flags_;
+  };
+};
+
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
@@ -179,7 +225,7 @@ class DisplayList : public SkRefCnt {
            (nested ? nested_byte_count_ : 0);
   }
 
-  int op_count(bool nested = false) const {
+  unsigned int op_count(bool nested = false) const {
     return op_count_ + (nested ? nested_op_count_ : 0);
   }
 
@@ -203,18 +249,18 @@ class DisplayList : public SkRefCnt {
  private:
   DisplayList(uint8_t* ptr,
               size_t byte_count,
-              int op_count,
+              unsigned int op_count,
               size_t nested_byte_count,
-              int nested_op_count,
+              unsigned int nested_op_count,
               const SkRect& cull_rect,
               bool can_apply_group_opacity);
 
   std::unique_ptr<uint8_t, SkFunctionWrapper<void(void*), sk_free>> storage_;
   size_t byte_count_;
-  int op_count_;
+  unsigned int op_count_;
 
   size_t nested_byte_count_;
-  int nested_op_count_;
+  unsigned int nested_op_count_;
 
   uint32_t unique_id_;
   SkRect bounds_;

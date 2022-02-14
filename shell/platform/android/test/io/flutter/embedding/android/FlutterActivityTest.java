@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
 import io.flutter.TestUtils;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
@@ -46,13 +47,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterActivityTest {
   boolean isDelegateAttached;
 
@@ -302,6 +302,19 @@ public class FlutterActivityTest {
     verify(mockDelegate, times(1)).onDestroyView();
     verify(mockDelegate, times(1)).onDetach();
     verify(mockDelegate, times(1)).release();
+  }
+
+  @Test
+  public void itReturnsExclusiveAppComponent() {
+    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    FlutterActivityAndFragmentDelegate delegate =
+        new FlutterActivityAndFragmentDelegate(flutterActivity);
+    flutterActivity.setDelegate(delegate);
+
+    assertEquals(flutterActivity.getExclusiveAppComponent(), delegate);
   }
 
   @Test

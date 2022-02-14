@@ -40,6 +40,19 @@ public class FlutterLoader {
   private static final String ENABLE_SKPARAGRAPH_META_DATA_KEY =
       "io.flutter.embedding.android.EnableSkParagraph";
 
+  /**
+   * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
+   * meta-data in <application /> in AndroidManifest.xml. Set it to true in to leave the Dart VM,
+   * set it to false to destroy VM.
+   *
+   * <p>If your want to let your app destroy the last shell and re-create shells more quickly, set
+   * it to true, otherwise if you want to clean up the memory of the leak VM, set it to false.
+   *
+   * <p>TODO(eggfly): Should it be set to false by default?
+   * https://github.com/flutter/flutter/issues/96843
+   */
+  private static final String LEAK_VM_META_DATA_KEY = "io.flutter.embedding.android.LeakVM";
+
   // Must match values in flutter::switches
   static final String AOT_SHARED_LIBRARY_NAME = "aot-shared-library-name";
   static final String AOT_VMSERVICE_SHARED_LIBRARY_NAME = "aot-vmservice-shared-library-name";
@@ -295,9 +308,13 @@ public class FlutterLoader {
 
       shellArgs.add("--prefetched-default-font-manager");
 
-      if (metaData != null && metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY)) {
+      if (metaData == null || metaData.getBoolean(ENABLE_SKPARAGRAPH_META_DATA_KEY, true)) {
+
         shellArgs.add("--enable-skparagraph");
       }
+
+      final String leakVM = isLeakVM(metaData) ? "true" : "false";
+      shellArgs.add("--leak-vm=" + leakVM);
 
       long initTimeMillis = SystemClock.uptimeMillis() - initStartTimestampMillis;
 
@@ -316,6 +333,14 @@ public class FlutterLoader {
     } finally {
       Trace.endSection();
     }
+  }
+
+  private static boolean isLeakVM(@Nullable Bundle metaData) {
+    final boolean leakVMDefaultValue = true;
+    if (metaData == null) {
+      return leakVMDefaultValue;
+    }
+    return metaData.getBoolean(LEAK_VM_META_DATA_KEY, leakVMDefaultValue);
   }
 
   /**
