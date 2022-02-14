@@ -1073,7 +1073,7 @@ class _Transpiler {
     if (currentFunction!.name == entryPoint) {
       return;
     } else {
-      addToCurrentBlock(_StringInstruction('return'));
+      addToCurrentBlock(_Return());
     }
   }
 

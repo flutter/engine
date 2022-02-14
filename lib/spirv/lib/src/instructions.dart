@@ -1,11 +1,21 @@
 part of spirv;
 
 class _BlockContext {
-  final int merge;
   final StringBuffer out;
   final int indent;
+
+  /// The most local merge block id, or zero.
+  final int merge;
+
+  /// The most local continue block id, or zero.
   final int continueBlock;
+
+  /// The most local loop-construct header block id.
   final int loopHeader;
+
+  /// The most local loop-construct merge block id.
+  /// This is different from [merge] when the context is inside an if-statement
+  /// inside of a for-loop, for example.
   final int loopMerge;
 
   _BlockContext({
@@ -17,6 +27,8 @@ class _BlockContext {
     this.loopMerge = 0,
   });
 
+  /// Return a new [_BlockContext] that is a copy of the current [_BlockContext]
+  /// with an increased indent and any parameters specified here overwritten.
   _BlockContext child({
     int? merge,
     int? continueBlock,
@@ -66,15 +78,20 @@ class _Block {
   bool scanned = false;
 
   void writeContinue(_BlockContext ctx) {
-    int c = 0;
+    bool written = false;
     for (final _Instruction inst in instructions) {
-      if (!inst.isResult) {
-        if (c > 0) {
-          ctx.out.write(', ');
+      if (inst is _Store) {
+        if (written) {
+          throw TranspileException._(_opLoopMerge,
+              'loop continue block $id has multiple OpStore instructions');
         }
         inst.write(transpiler, ctx.out);
-        c++;
+        written = true;
       }
+    }
+    if (!written) {
+      throw TranspileException._(_opLoopMerge,
+          'loop continue block $id has no OpStore instructions');
     }
   }
 
@@ -129,12 +146,20 @@ class _Block {
     }
   }
 
-  void liftLoopVariables() {
+  /// Scans through the entire Control-Flow graph, performing
+  /// some validations, some optimizations, and collecting parts of
+  /// for-loop structures.
+  void preprocess() {
     if (scanned) {
       return;
     }
     scanned = true;
 
+    // SkSL has specific needs for for-loops - they must define a single
+    // index variable to a constant value, they must compare that value
+    // against a constant value, and they must be modified in place with
+    // a constant value. SPIR-V represents all these operations in different
+    // blocks, so we scan here to collect them so they can be written together.
     if (hasLoopStructure) {
       int conditionId = condition;
       if (condition == 0) {
@@ -155,6 +180,9 @@ class _Block {
       deps[0].liftToBlock = id;
     }
 
+    // Transforms Store instructions like `i = i + 5` into `i += 5`.
+    // This is necessary for for-loops in SkSL, but the transform is applied 
+    // liberally.
     for (final _Instruction inst in instructions) {
       if (inst is! _Store) {
         continue;
@@ -170,19 +198,20 @@ class _Block {
       }
     }
 
+    // Scan all blocks that can be reached from this block.
     if (branch != 0) {
-      function.block(branch).liftLoopVariables();
+      function.block(branch).preprocess();
     }
     if (condition != 0) {
       if (truthyBlock != 0) {
-        function.block(truthyBlock).liftLoopVariables();
+        function.block(truthyBlock).preprocess();
       }
       if (falseyBlock != 0) {
-        function.block(falseyBlock).liftLoopVariables();
+        function.block(falseyBlock).preprocess();
       }
     }
     if (mergeBlock != 0) {
-      function.block(mergeBlock).liftLoopVariables();
+      function.block(mergeBlock).preprocess();
     }
   }
 
@@ -318,14 +347,10 @@ class _FunctionCall extends _Instruction {
   List<int> get deps => args;
 }
 
-class _StringInstruction extends _Instruction {
-  final String value;
-
-  _StringInstruction(this.value);
-
+class _Return extends _Instruction {
   @override
   void write(_Transpiler t, StringBuffer out) {
-    out.write(value);
+    out.write('return');
   }
 }
 
@@ -344,11 +369,10 @@ class _Select extends _Instruction {
 
   @override
   void write(_Transpiler t, StringBuffer out) {
-    final String typeName = t.resolveType(type);
     final String aName = t.resolveResult(a);
     final String bName = t.resolveResult(b);
     final String conditionName = t.resolveResult(condition);
-    out.write('mix($bName, $aName, $typeName($conditionName))');
+    out.write('$conditionName ? $aName : $bName');
   }
 
   @override

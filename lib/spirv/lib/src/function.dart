@@ -116,8 +116,7 @@ class _Function {
       out.writeln('  float4 $_colorVariableName;');
     }
 
-    // pre-process the blocks, since for-loops require special handling
-    entry?.liftLoopVariables();
+    entry?.preprocess();
 
     // write the actual function body
     entry?.write(_BlockContext(
