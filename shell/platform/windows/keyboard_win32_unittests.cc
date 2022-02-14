@@ -327,7 +327,7 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_keyboard_state_;
 };
 
-struct {
+typedef struct {
   enum {
     kKeyCallOnKey,
     kKeyCallOnText,

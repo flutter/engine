@@ -457,14 +457,6 @@ void KeyboardKeyEmbedderHandler::InitCriticalKeys() {
                          createCheckedKey(VK_LCONTROL, false, true, false));
   critical_keys_.emplace(VK_RCONTROL,
                          createCheckedKey(VK_RCONTROL, true, true, false));
-  critical_keys_.emplace(VK_LMENU,
-                         createCheckedKey(VK_LMENU, false, true, false));
-  critical_keys_.emplace(VK_RMENU,
-                         createCheckedKey(VK_RMENU, true, true, false));
-  critical_keys_.emplace(VK_LWIN,
-                         createCheckedKey(VK_LWIN, false, true, false));
-  critical_keys_.emplace(VK_RWIN,
-                         createCheckedKey(VK_RWIN, false, true, false));
 
   critical_keys_.emplace(VK_CAPITAL,
                          createCheckedKey(VK_CAPITAL, false, true, true));
