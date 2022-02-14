@@ -35,8 +35,8 @@ if (enable_unittests) {
       "21_OpTypeInt.glsl",
       "22_OpTypeFloat.glsl",
       "23_OpTypeVector.glsl",
-      "24_OpTypeMatrix.glsl",
       "246_OpLoopMerge.glsl",
+      "24_OpTypeMatrix.glsl",
       "250_OpBranchConditional.glsl",
       "33_OpTypeFunction.glsl",
     ]

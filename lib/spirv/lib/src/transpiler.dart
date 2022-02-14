@@ -948,7 +948,7 @@ class _Transpiler {
     if (v == null) {
       addToCurrentBlock(_Store(pointer, object));
     } else {
-      addToCurrentBlock(_Store(pointer, object, 
+      addToCurrentBlock(_Store(pointer, object,
               shouldDeclare: !v.initialized,
               declarationType: v.type,
       ));

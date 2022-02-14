@@ -70,7 +70,7 @@ class _Block {
   int truthyBlock = 0;
   int falseyBlock = 0;
 
-  // structured loop 
+  // structured loop
   _Store? loopInitializer;
   int continueBlock = 0;
 
@@ -181,7 +181,7 @@ class _Block {
     }
 
     // Transforms Store instructions like `i = i + 5` into `i += 5`.
-    // This is necessary for for-loops in SkSL, but the transform is applied 
+    // This is necessary for for-loops in SkSL, but the transform is applied
     // liberally.
     for (final _Instruction inst in instructions) {
       if (inst is! _Store) {
