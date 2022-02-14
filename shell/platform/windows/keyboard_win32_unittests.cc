@@ -354,6 +354,7 @@ class KeyboardTester {
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
   void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
+    assert(window_ != null, "Window not initialized yet.");
     window_->InjectKeyboardChanges(changes);
   }
 
