@@ -59,11 +59,12 @@ std::string ConvertChar32ToUtf8(char32_t ch) {
 
 KeyboardKeyEmbedderHandler::KeyboardKeyEmbedderHandler(
     SendEventHandler send_event,
-    GetKeyStateHandler get_key_state)
+    GetKeyStateHandler get_key_state,
+    MapVirtualKeyToScanCode map_virtual_key_to_scan_code)
     : perform_send_event_(send_event),
       get_key_state_(get_key_state),
       response_id_(1) {
-  InitCriticalKeys();
+  InitCriticalKeys(map_virtual_key_to_scan_code);
 }
 
 KeyboardKeyEmbedderHandler::~KeyboardKeyEmbedderHandler() = default;
@@ -426,16 +427,18 @@ void KeyboardKeyEmbedderHandler::HandleResponse(bool handled, void* user_data) {
   callback(handled, pending->response_id);
 }
 
-void KeyboardKeyEmbedderHandler::InitCriticalKeys() {
+void KeyboardKeyEmbedderHandler::InitCriticalKeys(
+    MapVirtualKeyToScanCode map_virtual_key_to_scan_code) {
   // TODO(dkwingsmt) consider adding support for synchronizing key state for UWP
   // https://github.com/flutter/flutter/issues/70202
 #ifdef WINUWP
   return;
 #else
-  auto createCheckedKey = [this](UINT virtual_key, bool extended,
-                                 bool check_pressed,
-                                 bool check_toggled) -> CriticalKey {
-    UINT scan_code = MapVirtualKey(virtual_key, MAPVK_VK_TO_VSC);
+  auto createCheckedKey = [this, &map_virtual_key_to_scan_code](
+                              UINT virtual_key, bool extended,
+                              bool check_pressed,
+                              bool check_toggled) -> CriticalKey {
+    UINT scan_code = map_virtual_key_to_scan_code(virtual_key, extended);
     return CriticalKey{
         .physical_key = GetPhysicalKey(scan_code, extended),
         .logical_key = GetLogicalKey(virtual_key, extended, scan_code),
@@ -462,9 +465,9 @@ void KeyboardKeyEmbedderHandler::InitCriticalKeys() {
   critical_keys_.emplace(VK_RMENU,
                          createCheckedKey(VK_RMENU, true, true, false));
   critical_keys_.emplace(VK_LWIN,
-                         createCheckedKey(VK_LWIN, false, true, false));
+                         createCheckedKey(VK_LWIN, true, true, false));
   critical_keys_.emplace(VK_RWIN,
-                         createCheckedKey(VK_RWIN, false, true, false));
+                         createCheckedKey(VK_RWIN, true, true, false));
 
   critical_keys_.emplace(VK_CAPITAL,
                          createCheckedKey(VK_CAPITAL, false, true, true));
