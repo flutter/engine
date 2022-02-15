@@ -5279,6 +5279,7 @@ class Picture extends NativeFieldWrapperClass1 {
   /// Although the image is returned synchronously, the picture is actually
   /// rasterized the first time the image is drawn and then cached.
   Future<Image> toImage(int width, int height) {
+    assert(!_disposed);
     if (width <= 0 || height <= 0)
       throw Exception('Invalid image dimensions.');
     return _futurize(
@@ -5297,11 +5298,33 @@ class Picture extends NativeFieldWrapperClass1 {
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
-  ///
+  void dispose() {
+    assert(!_disposed);
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+    _dispose();
+  }
+
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
   @FfiNative<Void Function(Pointer<Void>)>('Picture::dispose')
-  external void dispose();
+  external void _dispose();
+
+  bool _disposed = false;
+  /// Whether this reference to the underlying picture is [dispose]d.
+  ///
+  /// This only returns a valid value if asserts are enabled, and must not be
+  /// used otherwise.
+  bool get debugDisposed {
+    bool? disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed ?? (throw StateError('Picture.debugDisposed is only available when asserts are enabled.'));
+  }
 
   /// Returns the approximate number of bytes allocated for this object.
   ///

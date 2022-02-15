@@ -1,4 +1,4 @@
-Signature: 0ba864c24b36bdfb17a1b472b416c873
+Signature: 2267c3a9f755f7a2bf0c773af0c85a88
 
 UNUSED LICENSES:
 
@@ -1347,6 +1347,8 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/bazel/gcs_mirror/gcs_mirror.go + ../../../LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/bazel/gcs_mirror/gcs_mirror.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/codesize/codesize.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/codesize/codesize_test.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 The Chromium Authors. All rights reserved.
 
@@ -6127,6 +6129,8 @@ FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.cpp
 FILE: ../../../third_party/skia/src/core/SkShaderCodeDictionary.h
 FILE: ../../../third_party/skia/src/core/SkUniformData.cpp
 FILE: ../../../third_party/skia/src/core/SkUniformData.h
+FILE: ../../../third_party/skia/src/gpu/text/GrGlyphVector.cpp
+FILE: ../../../third_party/skia/src/gpu/text/GrGlyphVector.h
 FILE: ../../../third_party/skia/src/sksl/analysis/SkSLFinalizationChecks.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2022 Google LLC

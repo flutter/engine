@@ -267,9 +267,12 @@ TEST_F(ShellTest, InitializeWithInvalidThreads) {
 TEST_F(ShellTest, InitializeWithDifferentThreads) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+  std::string name_prefix = "io.flutter.test." + GetCurrentTestName() + ".";
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      name_prefix, ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
+                       ThreadHost::Type::IO | ThreadHost::Type::UI));
+  ASSERT_EQ(thread_host.name_prefix, name_prefix);
+
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -3116,8 +3119,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeAppends) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::Platform));
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -3153,8 +3157,9 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
 TEST_F(ShellTest, UpdateAssetResolverByTypeDoesNotReplaceMismatchType) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::Platform));
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
