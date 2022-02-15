@@ -72,15 +72,12 @@ class IsolateNameServer {
     return _removePortNameMapping(name);
   }
 
-  @FfiNative<Handle Function(Handle)>(
-      'IsolateNameServerNatives::LookupPortByName')
+  @FfiNative<Handle Function(Handle)>('IsolateNameServerNatives::LookupPortByName')
   external static SendPort? _lookupPortByName(String name);
 
-  @FfiNative<Bool Function(Handle, Handle)>(
-      'IsolateNameServerNatives::RegisterPortWithName')
+  @FfiNative<Bool Function(Handle, Handle)>('IsolateNameServerNatives::RegisterPortWithName')
   external static bool _registerPortWithName(SendPort port, String name);
 
-  @FfiNative<Bool Function(Handle)>(
-      'IsolateNameServerNatives::RemovePortNameMapping')
+  @FfiNative<Bool Function(Handle)>('IsolateNameServerNatives::RemovePortNameMapping')
   external static bool _removePortNameMapping(String name);
 }

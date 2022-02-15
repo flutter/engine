@@ -135,8 +135,7 @@ void _runMainZoned(Function startMainIsolateFunction,
   }, null);
 }
 
-@FfiNative<Void Function(Handle, Handle)>(
-    'PlatformConfigurationClient::ReportUnhandledExceptionOrThrow')
+@FfiNative<Void Function(Handle, Handle)>('PlatformConfigurationClient::ReportUnhandledExceptionOrThrow')
 external void _reportUnhandledException(String error, String stackTrace);
 
 /// Invokes [callback] inside the given [zone].

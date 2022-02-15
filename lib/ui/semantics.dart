@@ -694,10 +694,8 @@ class SpellOutStringAttribute extends StringAttribute {
     _initSpellOutStringAttribute(this, range.start, range.end);
   }
 
-  @FfiNative<Void Function(Handle, Int32, Int32)>(
-      'NativeStringAttribute::initSpellOutStringAttribute')
-  external static void _initSpellOutStringAttribute(
-      SpellOutStringAttribute instance, int start, int end);
+  @FfiNative<Void Function(Handle, Int32, Int32)>('NativeStringAttribute::initSpellOutStringAttribute')
+  external static void _initSpellOutStringAttribute(SpellOutStringAttribute instance, int start, int end);
 
   @override
   StringAttribute copy({required TextRange range}) {
@@ -732,10 +730,8 @@ class LocaleStringAttribute extends StringAttribute {
   /// The lanuage of this attribute.
   final Locale locale;
 
-  @FfiNative<Void Function(Handle, Int32, Int32, Handle)>(
-      'NativeStringAttribute::initLocaleStringAttribute')
-  external static void _initLocaleStringAttribute(
-      LocaleStringAttribute instance, int start, int end, String locale);
+  @FfiNative<Void Function(Handle, Int32, Int32, Handle)>('NativeStringAttribute::initLocaleStringAttribute')
+  external static void _initLocaleStringAttribute(LocaleStringAttribute instance, int start, int end, String locale);
 
   @override
   StringAttribute copy({required TextRange range}) {
@@ -1015,10 +1011,8 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     assert(overrideId != null);
     _updateCustomAction(id, label, hint, overrideId);
   }
-  @FfiNative<Void Function(Pointer<Void>, Int32, Handle, Handle, Int32)>(
-      'SemanticsUpdateBuilder::updateCustomAction')
-  external void _updateCustomAction(
-      int id, String? label, String? hint, int overrideId);
+  @FfiNative<Void Function(Pointer<Void>, Int32, Handle, Handle, Int32)>('SemanticsUpdateBuilder::updateCustomAction')
+  external void _updateCustomAction(int id, String? label, String? hint, int overrideId);
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
   /// by this object.
@@ -1030,8 +1024,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     _build(semanticsUpdate);
     return semanticsUpdate;
   }
-  @FfiNative<Void Function(Pointer<Void>, Handle)>(
-      'SemanticsUpdateBuilder::build')
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('SemanticsUpdateBuilder::build')
   external void _build(SemanticsUpdate outSemanticsUpdate);
 }
 
