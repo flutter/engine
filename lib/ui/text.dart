@@ -3075,5 +3075,5 @@ FutureOr<void> _sendFontChangeMessage() async {
   }
 }
 
-@FfiNative<Void Function(Handle, Handle, Handle)>('FontCollection::LoadFontFromListOrThrowHandle')
+@FfiNative<Void Function(Handle, Handle, Handle)>('FontCollection::LoadFontFromListOrThrow')
 external void _loadFontFromList(Uint8List list, _Callback<void> callback, String? fontFamily);

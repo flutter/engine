@@ -109,7 +109,7 @@ typedef CanvasPath Path;
   V(SceneBuilder::CreateOrThrow, 1)                                       \
   V(SemanticsUpdateBuilder::CreateOrThrow, 1)                             \
   /* Other */                                                             \
-  V(FontCollection::LoadFontFromListOrThrowHandle, 3)                     \
+  V(FontCollection::LoadFontFromListOrThrow, 3)                           \
   V(ImageDescriptor::initEncodedHandle, 3)                                \
   V(ImmutableBuffer::initHandle, 3)                                       \
   V(ImageDescriptor::initRaw, 6)                                          \
