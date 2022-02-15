@@ -542,8 +542,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   }
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Int32, Handle)>('SceneBuilder::pushBackdropFilter')
-  external void _pushBackdropFilter(EngineLayer outEngineLayer,
-      _ImageFilter filter, int blendMode, EngineLayer? oldLayer);
+  external void _pushBackdropFilter(EngineLayer outEngineLayer, _ImageFilter filter, int blendMode, EngineLayer? oldLayer);
 
   /// Pushes a shader mask operation onto the operation stack.
   ///

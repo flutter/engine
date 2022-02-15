@@ -488,8 +488,7 @@ class PlatformDispatcher {
 
   late _SetNeedsReportTimingsFunc _setNeedsReportTimings;
 
-  void _nativeSetNeedsReportTimings(bool value) =>
-      __nativeSetNeedsReportTimings(value);
+  void _nativeSetNeedsReportTimings(bool value) => __nativeSetNeedsReportTimings(value);
 
   @FfiNative<Void Function(Bool)>('PlatformConfigurationClient::SetNeedsReportTimingsOrThrow')
   external static void __nativeSetNeedsReportTimings(bool value);
@@ -550,8 +549,7 @@ class PlatformDispatcher {
   }
 
   /// Called by [_dispatchPlatformMessage].
-  void _respondToPlatformMessage(int responseId, ByteData? data) =>
-      __respondToPlatformMessage(responseId, data);
+  void _respondToPlatformMessage(int responseId, ByteData? data) => __respondToPlatformMessage(responseId, data);
 
   @FfiNative<Void Function(IntPtr, Handle)>('PlatformConfigurationClient::RespondToPlatformMessage')
   external static void __respondToPlatformMessage(int responseId, ByteData? data);
@@ -731,8 +729,7 @@ class PlatformDispatcher {
       supportedLocalesData.add(locale.scriptCode);
     }
 
-    final List<String> result =
-        _computePlatformResolvedLocale(supportedLocalesData);
+    final List<String> result = _computePlatformResolvedLocale(supportedLocalesData);
 
     if (result.isNotEmpty) {
       return Locale.fromSubtags(
@@ -1363,7 +1360,8 @@ class FrameTiming {
   ///
   /// This constructor is usually only called by the Flutter engine, or a test.
   /// To get the [FrameTiming] of your app, see [PlatformDispatcher.onReportTimings].
-  FrameTiming._(this._data) : assert(_data.length == _dataLength);
+  FrameTiming._(this._data)
+      : assert(_data.length == _dataLength);
 
   /// This is a raw timestamp in microseconds from some epoch. The epoch in all
   /// [FrameTiming] is the same, but it may not match [DateTime]'s epoch.
