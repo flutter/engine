@@ -31,7 +31,13 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
 
   intptr_t gr_context_key = reinterpret_cast<intptr_t>(gr_context);
   // Allocate a new surface if there isn't one available.
-  if (available_layer_index_ >= layers_.size()) {
+  bool needsLayer;
+  {
+    std::lock_guard lock(layers_mutex_);
+    needsLayer = available_layer_index_ >= layers_.size();
+  }
+
+  if (needsLayer) {
     std::unique_ptr<AndroidSurface> android_surface =
         surface_factory->CreateSurface();
 
@@ -54,18 +60,26 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
                                        std::move(surface)           //
         );
     layer->gr_context_key = gr_context_key;
-    layers_.push_back(layer);
+    {
+      std::lock_guard lock(layers_mutex_);
+      layers_.push_back(layer);
+    }
   }
-  std::shared_ptr<OverlayLayer> layer = layers_[available_layer_index_];
-  // Since the surfaces are recycled, it's possible that the GrContext is
-  // different.
-  if (gr_context_key != layer->gr_context_key) {
-    layer->gr_context_key = gr_context_key;
-    // The overlay already exists, but the GrContext was changed so we need to
-    // recreate the rendering surface with the new GrContext.
-    std::unique_ptr<Surface> surface =
-        layer->android_surface->CreateGPUSurface(gr_context);
-    layer->surface = std::move(surface);
+
+  std::shared_ptr<OverlayLayer> layer;
+  {
+    std::lock_guard lock(layers_mutex_);
+    layer = layers_[available_layer_index_];
+    // Since the surfaces are recycled, it's possible that the GrContext is
+    // different.
+    if (gr_context_key != layer->gr_context_key) {
+      layer->gr_context_key = gr_context_key;
+      // The overlay already exists, but the GrContext was changed so we need to
+      // recreate the rendering surface with the new GrContext.
+      std::unique_ptr<Surface> surface =
+          layer->android_surface->CreateGPUSurface(gr_context);
+      layer->surface = std::move(surface);
+    }
   }
   available_layer_index_++;
   current_frame_size_ = requested_frame_size_;
@@ -76,16 +90,26 @@ void SurfacePool::RecycleLayers() {
   available_layer_index_ = 0;
 }
 
+bool SurfacePool::HasLayers() {
+  std::lock_guard lock(layers_mutex_);
+  return layers_.size() > 0;
+}
+
 void SurfacePool::DestroyLayers(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-  if (layers_.size() > 0) {
-    jni_facade->FlutterViewDestroyOverlaySurfaces();
+  if (!HasLayers()) {
+    return;
   }
-  layers_.clear();
+  jni_facade->FlutterViewDestroyOverlaySurfaces();
+  {
+    std::lock_guard lock(layers_mutex_);
+    layers_.clear();
+  }
   available_layer_index_ = 0;
 }
 
 std::vector<std::shared_ptr<OverlayLayer>> SurfacePool::GetUnusedLayers() {
+  std::lock_guard lock(layers_mutex_);
   std::vector<std::shared_ptr<OverlayLayer>> results;
   for (size_t i = available_layer_index_; i < layers_.size(); i++) {
     results.push_back(layers_[i]);
