@@ -1846,8 +1846,7 @@ class _Image extends NativeFieldWrapperClass1 {
   @FfiNative<Int32 Function(Pointer<Void>)>('Image::height', isLeaf: true)
   external int get height;
 
-  Future<ByteData?> toByteData(
-      {ImageByteFormat format = ImageByteFormat.rawRgba}) {
+  Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     return _futurize((_Callback<ByteData> callback) {
       return _toByteData(format.index, (Uint8List? encoded) {
         callback(encoded!.buffer.asByteData());
@@ -3313,7 +3312,7 @@ abstract class ImageFilter {
   /// For example, applying a positive scale matrix (see [Matrix4.diagonal3])
   /// when used with [BackdropFilter] would magnify the background image.
   factory ImageFilter.matrix(Float64List matrix4,
-                      { FilterQuality filterQuality = FilterQuality.low }) {
+                     { FilterQuality filterQuality = FilterQuality.low }) {
     assert(matrix4 != null);
     assert(filterQuality != null);
     if (matrix4.length != 16)
@@ -3371,7 +3370,7 @@ class _MatrixImageFilter implements ImageFilter {
 }
 
 class _GaussianBlurImageFilter implements ImageFilter {
-  _GaussianBlurImageFilter({required this.sigmaX, required this.sigmaY, required this.tileMode});
+  _GaussianBlurImageFilter({ required this.sigmaX, required this.sigmaY, required this.tileMode });
 
   final double sigmaX;
   final double sigmaY;
@@ -3739,10 +3738,10 @@ class Gradient extends Shader {
     Offset? focal,
     double focalRadius = 0.0
   ]) : assert(_offsetIsValid(center)),
-        assert(colors != null),
-        assert(tileMode != null),
-        assert(matrix4 == null || _matrix4IsValid(matrix4)),
-        super._() {
+       assert(colors != null),
+       assert(tileMode != null),
+       assert(matrix4 == null || _matrix4IsValid(matrix4)),
+       super._() {
     _validateColorStops(colors, colorStops);
     final Int32List colorsBuffer = _encodeColorList(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
@@ -5051,8 +5050,8 @@ class Canvas extends NativeFieldWrapperClass1 {
     final int qualityIndex = paint.filterQuality.index;
 
     _drawAtlas(
-      paint._objects, paint._data, qualityIndex, atlas._image, rstTransformBuffer,
-      rectBuffer, colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
+      paint._objects, paint._data, qualityIndex, atlas._image, rstTransformBuffer, rectBuffer,
+      colorBuffer, (blendMode ?? BlendMode.src).index, cullRectBuffer
     );
   }
 
@@ -5220,8 +5219,8 @@ class Canvas extends NativeFieldWrapperClass1 {
     final int qualityIndex = paint.filterQuality.index;
 
     _drawAtlas(
-      paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms,
-      rects, colors, (blendMode ?? BlendMode.src).index, cullRect?._getValue32()
+      paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms, rects,
+      colors, (blendMode ?? BlendMode.src).index, cullRect?._getValue32()
     );
   }
 
