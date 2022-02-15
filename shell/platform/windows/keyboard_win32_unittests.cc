@@ -1846,7 +1846,6 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   clear_key_calls();
 
   // ScrollLock, phase 0 -> 1 -> 3
-
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_SCROLL, true, true}, event1});
   EXPECT_EQ(key_calls.size(), 2);

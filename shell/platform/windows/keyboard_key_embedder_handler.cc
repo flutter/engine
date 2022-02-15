@@ -243,7 +243,7 @@ void KeyboardKeyEmbedderHandler::KeyboardHookImpl(
   // updated to the true state, while the critical keys whose toggled state have
   // been changed will be pressed regardless of their true pressed state.
   // Updating the pressed state will be done by SynchronizeCritialPressedStates.
-  SynchronizeCritialToggledStates(key, type == kFlutterKeyEventTypeDown);
+  SynchronizeCritialToggledStates(key, type);
   // Synchronize the pressed states of critical keys (such as whether CapsLocks
   // is pressed).
   //
@@ -402,6 +402,7 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialPressedStates(
     assert(key_info.logical_key != 0);
     if (key_info.check_pressed) {
       SHORT state = get_key_state_(virtual_key);
+      printf("# PreSynth 0x%x (0x%x)\n", virtual_key, state);fflush(stdout);
       auto recorded_pressed_iter = pressingRecords_.find(key_info.physical_key);
       bool recorded_pressed = recorded_pressed_iter != pressingRecords_.end();
       bool should_pressed = state & kStateMaskPressed;
