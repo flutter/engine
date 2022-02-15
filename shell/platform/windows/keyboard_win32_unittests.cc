@@ -1712,6 +1712,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalShiftLeft, kLogicalShiftLeft, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LSHIFT, false, true}, event2});
@@ -1719,6 +1720,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalShiftLeft,
                        kLogicalShiftLeft, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // ShiftRight
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1728,6 +1730,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalShiftRight, kLogicalShiftRight, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RSHIFT, false, true}, event2});
@@ -1736,6 +1739,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalShiftRight, kLogicalShiftRight, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // ControlLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1745,6 +1749,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LCONTROL, false, true}, event2});
@@ -1753,6 +1758,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalControlLeft, kLogicalControlLeft, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // ControlRight
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1762,6 +1768,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalControlRight, kLogicalControlRight, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RCONTROL, false, true}, event2});
@@ -1770,6 +1777,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalControlRight, kLogicalControlRight, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // AltLeft
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1778,6 +1786,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalAltLeft,
                        kLogicalAltLeft, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LMENU, false, true}, event2});
@@ -1785,6 +1794,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltLeft,
                        kLogicalAltLeft, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // AltRight
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1793,6 +1803,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalAltRight, kLogicalAltRight, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RMENU, false, true}, event2});
@@ -1800,6 +1811,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalAltRight,
                        kLogicalAltRight, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // MetaLeft
   tester.InjectKeyboardChanges(
@@ -1808,6 +1820,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalMetaLeft, kLogicalMetaLeft, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_LWIN, false, true}, event2});
@@ -1815,6 +1828,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaLeft,
                        kLogicalMetaLeft, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // MetaRight
   tester.InjectKeyboardChanges(
@@ -1823,6 +1837,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown,
                        kPhysicalMetaRight, kLogicalMetaRight, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_RWIN, false, true}, event2});
@@ -1830,6 +1845,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalMetaRight,
                        kLogicalMetaRight, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // CapsLock, phase 0 -> 2 -> 0.
   // (For phases, see |SynchronizeCritialToggledStates|.)
@@ -1841,6 +1857,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalCapsLock,
                        kLogicalCapsLock, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_CAPITAL, false, false}, event2});
@@ -1850,6 +1867,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalCapsLock,
                        kLogicalCapsLock, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // ScrollLock, phase 0 -> 1 -> 3
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1859,6 +1877,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalScrollLock, kLogicalScrollLock, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_SCROLL, true, false}, event2});
@@ -1870,6 +1889,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
                        kPhysicalScrollLock, kLogicalScrollLock, "",
                        kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   // NumLock, phase 0 -> 3 -> 2
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -1882,6 +1902,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, kPhysicalNumLock,
                        kLogicalNumLock, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
       KeyStateChange{VK_NUMLOCK, false, true}, event2});
@@ -1893,6 +1914,7 @@ TEST(KeyboardTest, SynthesizeModifiers) {
   EXPECT_CALL_IS_EVENT(key_calls[2], kFlutterKeyEventTypeUp, kPhysicalNumLock,
                        kLogicalNumLock, "", kSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 }
 
 // Pressing extended keys during IME events should work properly by not sending
