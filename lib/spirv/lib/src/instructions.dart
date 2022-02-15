@@ -34,19 +34,18 @@ class _BlockContext {
     int? continueBlock,
     int? loopHeader,
     int? loopMerge,
-  }) => _BlockContext(
-    out: out,
-    indent: indent+1,
-    merge: merge ?? this.merge,
-    continueBlock: continueBlock ?? this.continueBlock,
-    loopHeader: loopHeader ?? this.loopHeader,
-    loopMerge: loopMerge ?? this.loopMerge,
-  );
+  }) =>
+      _BlockContext(
+        out: out,
+        indent: indent + 1,
+        merge: merge ?? this.merge,
+        continueBlock: continueBlock ?? this.continueBlock,
+        loopHeader: loopHeader ?? this.loopHeader,
+        loopMerge: loopMerge ?? this.loopMerge,
+      );
 
   void writeIndent() {
-    for (int i = 0; i < indent; i++) {
-      out.write('  ');
-    }
+    out.write('  ' * indent);
   }
 }
 
@@ -59,9 +58,8 @@ class _Block {
 
   final int id;
   final _Function function;
-  final _Transpiler transpiler;
 
-  _Block(this.id, this.function, this.transpiler);
+  _Block(this.id, this.function);
 
   // control flow
   int branch = 0;
@@ -77,22 +75,20 @@ class _Block {
   /// true if this block has been processed by [liftLoopVariables].
   bool scanned = false;
 
+  _Transpiler get transpiler => function.transpiler;
+
   void writeContinue(_BlockContext ctx) {
-    bool written = false;
-    for (final _Instruction inst in instructions) {
-      if (inst is _Store) {
-        if (written) {
-          throw TranspileException._(_opLoopMerge,
-              'loop continue block $id has multiple OpStore instructions');
-        }
-        inst.write(transpiler, ctx.out);
-        written = true;
-      }
+    final List<_CompoundAssignment> assignments =
+        instructions.whereType<_CompoundAssignment>().toList();
+    if (assignments.isEmpty) {
+      throw TranspileException._(
+          _opLoopMerge, 'loop continue block $id has no compound asignments.');
     }
-    if (!written) {
+    if (assignments.length > 1) {
       throw TranspileException._(_opLoopMerge,
-          'loop continue block $id has no OpStore instructions');
+          'loop continue block $id has multiple compound assignments.');
     }
+    assignments[0].write(transpiler, ctx.out);
   }
 
   void write(_BlockContext ctx) {
@@ -146,8 +142,7 @@ class _Block {
     }
   }
 
-  /// Scans through the entire Control-Flow graph, performing
-  /// some validations, some optimizations, and collecting parts of
+  /// Scans through the entire Control-Flow graph to collecting parts of
   /// for-loop structures.
   void preprocess() {
     if (scanned) {
@@ -167,35 +162,19 @@ class _Block {
         if (!branchBlock.isSimple() || branchBlock.condition == 0) {
           throw TranspileException._(
               _opBranch,
-              'block $id has a loop structure but does not immediately branch to a single-expression conditional block');
+              'block $id has a loop structure but does not immediately '
+              'branch to a single-expression conditional block.');
         }
         conditionId = branchBlock.condition;
       }
       final List<_Variable> deps = function.variableDeps(conditionId);
       if (deps.length != 1) {
-          throw TranspileException._(
-              _opLoopMerge,
-              'block $id has a loop structure with a condition using more or fewer than one local variable');
+        throw TranspileException._(
+            _opLoopMerge,
+            'block $id has a loop structure with a condition '
+            'using more or fewer than one local variable.');
       }
       deps[0].liftToBlock = id;
-    }
-
-    // Transforms Store instructions like `i = i + 5` into `i += 5`.
-    // This is necessary for for-loops in SkSL, but the transform is applied
-    // liberally.
-    for (final _Instruction inst in instructions) {
-      if (inst is! _Store) {
-        continue;
-      }
-      final _Variable? v = function.variables[inst.pointer];
-      if (v == null) {
-        continue;
-      }
-      final _Instruction? obj = transpiler.results[inst.object];
-      if (obj is _Operator && transpiler.resolveId(obj.a) == v.id) {
-        inst.selfModifyObject = obj.b;
-        inst.selfModifyOperator = obj.op + '=';
-      }
     }
 
     // Scan all blocks that can be reached from this block.
@@ -232,10 +211,10 @@ class _Block {
 
   void writeLoopStructure(_BlockContext ctx) {
     final _BlockContext childCtx = ctx.child(
-        merge: mergeBlock,
-        continueBlock: continueBlock,
-        loopHeader: id,
-        loopMerge: mergeBlock,
+      merge: mergeBlock,
+      continueBlock: continueBlock,
+      loopHeader: id,
+      loopMerge: mergeBlock,
     );
 
     String conditionString;
@@ -253,7 +232,8 @@ class _Block {
       if (!branchBlock.isSimple() || branchBlock.condition == 0) {
         throw TranspileException._(
             _opBranch,
-            'block $id has a loop structure but does not immediately branch to a single-expression conditional block');
+            'block $id has a loop structure but does not immediately '
+            'branch to a single-expression conditional block.');
       }
 
       conditionString = transpiler.resolveResult(branchBlock.condition);
@@ -266,9 +246,10 @@ class _Block {
     }
 
     if (loopBody == 0) {
-        throw TranspileException._(
-            _opLoopMerge,
-            'block $id does not conditionally branch to its loop merge block');
+      throw TranspileException._(
+          _opLoopMerge,
+          'block $id does not conditionally branch to its '
+          'loop merge block.');
     }
 
     ctx.writeIndent();
@@ -379,6 +360,22 @@ class _Select extends _Instruction {
   List<int> get deps => <int>[condition, a, b];
 }
 
+class _CompoundAssignment extends _Instruction {
+  final int pointer;
+  final _Operator op;
+  final int object;
+
+  _CompoundAssignment(this.pointer, this.op, this.object);
+
+  @override
+  void write(_Transpiler t, StringBuffer out) {
+    final String pointerName = t.resolveResult(pointer);
+    final String objectName = t.resolveResult(object);
+    final String operatorString = _operatorString(op);
+    out.write('$pointerName $operatorString= $objectName');
+  }
+}
+
 class _Store extends _Instruction {
   final int pointer;
   final int object;
@@ -389,7 +386,9 @@ class _Store extends _Instruction {
   int selfModifyObject = 0;
   String selfModifyOperator = '';
 
-  _Store(this.pointer, this.object, {
+  _Store(
+    this.pointer,
+    this.object, {
     this.shouldDeclare = false,
     this.declarationType = 0,
   });
@@ -532,14 +531,16 @@ class _ImageSampleImplicitLod extends _Instruction {
   final int sampledImage;
   final int coordinate;
 
-  _ImageSampleImplicitLod(this.type, this.id, this.sampledImage, this.coordinate);
+  _ImageSampleImplicitLod(
+      this.type, this.id, this.sampledImage, this.coordinate);
 
   @override
   void write(_Transpiler t, StringBuffer out) {
     final String sampledImageString = t.resolveName(sampledImage);
     final String coordinateString = t.resolveResult(coordinate);
     if (t.target == TargetLanguage.sksl) {
-      out.write('$sampledImageString.eval(${sampledImageString}_size * $coordinateString)');
+      out.write(
+          '$sampledImageString.eval(${sampledImageString}_size * $coordinateString)');
     } else {
       out.write('texture($sampledImageString, $coordinateString)');
     }
@@ -556,14 +557,14 @@ class _UnaryOperator extends _Instruction {
   @override
   final int id;
 
-  final String op;
+  final _Operator op;
   final int operand;
 
   _UnaryOperator(this.type, this.id, this.op, this.operand);
 
   @override
   void write(_Transpiler t, StringBuffer out) {
-    out.write(op);
+    out.write(_operatorString(op));
     out.write(t.resolveResult(operand));
   }
 
@@ -586,24 +587,25 @@ class _ReturnValue extends _Instruction {
   List<int> get deps => <int>[value];
 }
 
-class _Operator extends _Instruction {
+class _BinaryOperator extends _Instruction {
   @override
   final int type;
 
   @override
   final int id;
 
-  final String op;
+  final _Operator op;
   final int a;
   final int b;
 
-  _Operator(this.type, this.id, this.op, this.a, this.b);
+  _BinaryOperator(this.type, this.id, this.op, this.a, this.b);
 
   @override
   void write(_Transpiler t, StringBuffer out) {
     final String aStr = t.resolveResult(a);
     final String bStr = t.resolveResult(b);
-    out.write('$aStr $op $bStr');
+    final String opString = _operatorString(op);
+    out.write('$aStr $opString $bStr');
   }
 
   @override

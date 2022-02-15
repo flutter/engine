@@ -226,3 +226,55 @@ const Map<int, int> _glslStd450OpArgc = <int, int>{
   _glslStd450FaceForward: 3,
   _glslStd450Reflect: 2,
 };
+
+enum _Operator {
+  addition,
+  subtraction,
+  division,
+  multiplication,
+  modulo,
+  negation,
+  equality,
+  inequality,
+  and,
+  or,
+  not,
+  lessThan,
+  greaterThan,
+  lessThanEqual,
+  greaterThanEqual,
+}
+
+const Set<_Operator> _compoundAssignmentOperators = <_Operator>{
+  _Operator.addition,
+  _Operator.subtraction,
+  _Operator.division,
+  _Operator.multiplication,
+  _Operator.modulo,
+};
+
+const Map<_Operator, String> _operatorStrings = <_Operator, String>{
+  _Operator.addition: '+',
+  _Operator.subtraction: '-',
+  _Operator.division: '/',
+  _Operator.multiplication: '*',
+  _Operator.modulo: '%',
+  _Operator.negation: '-',
+  _Operator.equality: '==',
+  _Operator.inequality: '!=',
+  _Operator.and: '&&',
+  _Operator.or: '||',
+  _Operator.not: '!',
+  _Operator.lessThan: '<',
+  _Operator.greaterThan: '>',
+  _Operator.lessThanEqual: '<=',
+  _Operator.greaterThanEqual: '>=',
+};
+
+String _operatorString(_Operator op) {
+  return _operatorStrings[op]!;
+}
+
+bool _isCompoundAssignment(_Operator op) {
+  return _compoundAssignmentOperators.contains(op);
+}

@@ -263,7 +263,8 @@ class _Transpiler {
       return 'true';
     } else if (constantFalse > 0 && id == constantFalse) {
       return 'false';
-    } if (id == colorOutput) {
+    }
+    if (id == colorOutput) {
       if (target == TargetLanguage.glslES) {
         return _glslESColorName;
       } else {
@@ -470,19 +471,19 @@ class _Transpiler {
         opImageSampleImplicitLod();
         break;
       case _opFNegate:
-        parseUnaryOperator('-');
+        parseUnaryOperator(_Operator.subtraction);
         break;
       case _opFAdd:
-        parseOperatorInst('+');
+        parseOperatorInst(_Operator.addition);
         break;
       case _opFSub:
-        parseOperatorInst('-');
+        parseOperatorInst(_Operator.negation);
         break;
       case _opFMul:
-        parseOperatorInst('*');
+        parseOperatorInst(_Operator.multiplication);
         break;
       case _opFDiv:
-        parseOperatorInst('/');
+        parseOperatorInst(_Operator.division);
         break;
       case _opFMod:
         parseBuiltinFunction('mod');
@@ -492,43 +493,43 @@ class _Transpiler {
       case _opVectorTimesMatrix:
       case _opMatrixTimesVector:
       case _opMatrixTimesMatrix:
-        parseOperatorInst('*');
+        parseOperatorInst(_Operator.multiplication);
         break;
       case _opDot:
         parseBuiltinFunction('dot');
         break;
       case _opFOrdEqual:
-        parseOperatorInst('==');
+        parseOperatorInst(_Operator.equality);
         break;
       case _opFUnordNotEqual:
-        parseOperatorInst('!=');
+        parseOperatorInst(_Operator.inequality);
         break;
       case _opFOrdLessThan:
-        parseOperatorInst('<');
+        parseOperatorInst(_Operator.lessThan);
         break;
       case _opFOrdGreaterThan:
-        parseOperatorInst('>');
+        parseOperatorInst(_Operator.greaterThan);
         break;
       case _opFOrdLessThanEqual:
-        parseOperatorInst('<=');
+        parseOperatorInst(_Operator.lessThanEqual);
         break;
       case _opFOrdGreaterThanEqual:
-        parseOperatorInst('>=');
+        parseOperatorInst(_Operator.greaterThanEqual);
         break;
       case _opLogicalEqual:
-        parseOperatorInst('==');
+        parseOperatorInst(_Operator.equality);
         break;
       case _opLogicalNotEqual:
-        parseOperatorInst('!=');
+        parseOperatorInst(_Operator.inequality);
         break;
       case _opLogicalOr:
-        parseOperatorInst('||');
+        parseOperatorInst(_Operator.or);
         break;
       case _opLogicalAnd:
-        parseOperatorInst('&&');
+        parseOperatorInst(_Operator.and);
         break;
       case _opLogicalNot:
-        parseUnaryOperator('!');
+        parseUnaryOperator(_Operator.not);
         break;
       case _opLabel:
         opLabel();
@@ -778,12 +779,12 @@ class _Transpiler {
   }
 
   void opConstantTrue() {
-    position++;  // Skip type operand.
+    position++; // Skip type operand.
     constantTrue = readWord();
   }
 
   void opConstantFalse() {
-    position++;  // Skip type operand.
+    position++; // Skip type operand.
     constantFalse = readWord();
   }
 
@@ -916,7 +917,6 @@ class _Transpiler {
     }
   }
 
-
   void opLoad() {
     // ignore type
     position++;
@@ -945,15 +945,28 @@ class _Transpiler {
     // Variables belonging to the current function need to be declared if they
     // haven't been already.
     final _Variable? v = currentFunction!.variable(pointer);
-    if (v == null) {
-      addToCurrentBlock(_Store(pointer, object));
-    } else {
-      addToCurrentBlock(_Store(pointer, object,
-              shouldDeclare: !v.initialized,
-              declarationType: v.type,
+    if (v != null && !v.initialized) {
+      addToCurrentBlock(_Store(
+        pointer,
+        object,
+        shouldDeclare: true,
+        declarationType: v.type,
       ));
       v.initialized = true;
+      return;
     }
+
+    // Is this a compound assignment operation? (x += y)
+    final _Instruction? objInstruction = results[object];
+    if (objInstruction is _BinaryOperator &&
+        resolveId(objInstruction.a) == pointer &&
+        _isCompoundAssignment(objInstruction.op)) {
+      addToCurrentBlock(
+          _CompoundAssignment(pointer, objInstruction.op, objInstruction.b));
+      return;
+    }
+
+    addToCurrentBlock(_Store(pointer, object));
   }
 
   void opAccessChain() {
@@ -1039,12 +1052,13 @@ class _Transpiler {
     final int sampledImage = readWord();
     final int coordinate = readWord();
     ref(coordinate);
-    addToCurrentBlock(_ImageSampleImplicitLod(type, name, sampledImage, coordinate));
+    addToCurrentBlock(
+        _ImageSampleImplicitLod(type, name, sampledImage, coordinate));
   }
 
   void opLabel() {
     final int id = readWord();
-    currentBlock = currentFunction!.addBlock(this, id);
+    currentBlock = currentFunction!.addBlock(id);
   }
 
   void opBranch() {
@@ -1083,7 +1097,7 @@ class _Transpiler {
     addToCurrentBlock(_ReturnValue(value));
   }
 
-  void parseUnaryOperator(String op) {
+  void parseUnaryOperator(_Operator op) {
     final int type = readWord();
     final int name = readWord();
     final int operand = readWord();
@@ -1091,14 +1105,14 @@ class _Transpiler {
     addToCurrentBlock(_UnaryOperator(type, name, op, operand));
   }
 
-  void parseOperatorInst(String op) {
+  void parseOperatorInst(_Operator op) {
     final int type = readWord();
     final int name = readWord();
     final int a = readWord();
     final int b = readWord();
     ref(a);
     ref(b);
-    addToCurrentBlock(_Operator(type, name, op, a, b));
+    addToCurrentBlock(_BinaryOperator(type, name, op, a, b));
   }
 
   void parseBuiltinFunction(String functionName) {
