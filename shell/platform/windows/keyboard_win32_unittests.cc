@@ -166,7 +166,7 @@ class MockKeyboardManagerWin32Delegate
   SHORT GetKeyState(int virtual_key) { return key_state_.Get(virtual_key); }
 
   void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
-    // First queue all messages for peeking to work.
+    // First queue all messages to enable peeking.
     for (const KeyboardChange& change : changes) {
       switch (change.type) {
         case KeyboardChange::kMessage:
@@ -190,7 +190,7 @@ class MockKeyboardManagerWin32Delegate
           const KeyStateChange& state_change = change.content.key_state_change;
           if (forged_message_expectations_.empty()) {
             key_state_.Set(state_change.key, state_change.pressed,
-                          state_change.toggled_on);
+                           state_change.toggled_on);
           } else {
             forged_message_expectations_.back()
                 .state_changes_afterwards.push_back(state_change);
@@ -409,6 +409,7 @@ class KeyboardTester {
   void SetLayout(MapVkToCharHandler layout) { window_->SetLayout(layout); }
 
   void InjectKeyboardChanges(std::vector<KeyboardChange> changes) {
+    assert(window_ != nullptr);
     window_->InjectKeyboardChanges(changes);
   }
 
