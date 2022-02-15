@@ -101,6 +101,7 @@ class SurfacePool {
   // The frame size to be used by future layers.
   SkISize requested_frame_size_;
 
+  // Used to guard layers_ since it's a read/write vector.
   std::mutex layers_mutex_;
 };
 
