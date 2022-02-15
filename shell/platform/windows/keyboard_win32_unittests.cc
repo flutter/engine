@@ -21,8 +21,8 @@
 #include "rapidjson/writer.h"
 
 #include <functional>
-#include <vector>
 #include <list>
+#include <vector>
 
 using testing::_;
 using testing::Invoke;
