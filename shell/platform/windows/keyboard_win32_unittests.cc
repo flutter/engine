@@ -2015,6 +2015,12 @@ TEST(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
                        kLogicalBackspace, "", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[2], u"à");
   clear_key_calls();
+  // TODO(dkwingsmt): This count should probably be 4. Currently the CHAR 0x8
+  // message is redispatched due to being part of the KeyDown session, which is
+  // not handled by the framework, while the 'à' message is not redispatched
+  // for being a standalone message. We should resolve this inconsistency.
+  // https://github.com/flutter/flutter/issues/98306
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 3);
 
   // Release F
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -2026,6 +2032,7 @@ TEST(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
@@ -2055,6 +2062,7 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
                        kLogicalKeyA, "a", kNotSynthesized);
   EXPECT_CALL_IS_TEXT(key_calls[1], u"a");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 2);
 
   // Release A
   tester.InjectKeyboardChanges(std::vector<KeyboardChange>{
@@ -2065,6 +2073,7 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeUp, kPhysicalKeyA,
                        kLogicalKeyA, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
   tester.LateResponding(
@@ -2101,16 +2110,20 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
   EXPECT_CALL_IS_EVENT(key_calls[1], kFlutterKeyEventTypeUp, kPhysicalBackspace,
                        kLogicalBackspace, "", kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 
   EXPECT_EQ(recorded_callbacks.size(), 2);
-  recorded_callbacks[0](true);
+  recorded_callbacks[0](backspace_response);
 
   EXPECT_EQ(key_calls.size(), 1);
   EXPECT_CALL_IS_TEXT(key_calls[0], u"à");
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(),
+            backspace_response ? 0 : 2);
 
-  recorded_callbacks[1](backspace_response);
+  recorded_callbacks[1](false);
   EXPECT_EQ(key_calls.size(), 0);
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 1);
 
   tester.Responding(false);
 
@@ -2124,6 +2137,7 @@ void VietnameseTelexAddDiacriticWithSlowResponse(bool backspace_response) {
   EXPECT_CALL_IS_EVENT(key_calls[0], kFlutterKeyEventTypeDown, 0, 0, "",
                        kNotSynthesized);
   clear_key_calls();
+  EXPECT_EQ(tester.RedispatchedMessageCountAndClear(), 0);
 }
 
 TEST(KeyboardTest, VietnameseTelexAddDiacriticWithSlowFalseResponse) {
