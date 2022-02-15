@@ -351,6 +351,12 @@ void KeyboardKeyEmbedderHandler::SynchronizeCritialToggledStates(
 
     // Check toggling state first, because it might alter pressing state.
     if (key_info.check_toggled) {
+      // The togglable keys observe a 4-phase cycle:
+      //
+      //  Phase#   0          1          2         3
+      //   Event       Down        Up        Down      Up
+      // Pressed   0          1          0         1
+      // Toggled   0          1          1         0
       SHORT state = get_key_state_(virtual_key);
       bool should_toggled = state & kStateMaskToggled;
       if (virtual_key == this_virtual_key && is_down_event) {
